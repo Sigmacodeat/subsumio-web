@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  loadKanzleiSettings,
+  loadKanzleiSettingsStrict,
   saveKanzleiSettings,
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
@@ -29,7 +29,10 @@ export default function KanzleiSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadKanzleiSettings()
+    // Strict: a failed read shows an error and no form, so saving can never
+    // write defaults over the firm's real data. Only a never-saved profile
+    // (404) opens the empty form.
+    loadKanzleiSettingsStrict()
       .then((s) => {
         setSettings({
           ...s,

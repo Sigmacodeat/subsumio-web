@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { can } from "@/lib/permissions";
+import { checkProtectedArrayWrite, rejectionResponse } from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/array-mutate");
@@ -43,6 +45,18 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // Protected records and archived matters are not changed here.
+    const rejected = await checkProtectedArrayWrite(
+      ENGINE_URL,
+      ctx.headers,
+      body.slug,
+      body.field,
+      {
+        email: ctx.user.email,
+        canWriteSettings: can(ctx.user, "settings.write"),
+      }
+    );
+    if (rejected) return rejectionResponse(rejected);
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/array-mutate`, {
         method: "POST",

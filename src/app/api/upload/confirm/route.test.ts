@@ -82,17 +82,23 @@ import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 const mockEnginePatch = vi.mocked(enginePatchPage);
 const mockEnqueue = vi.mocked(enqueueAllPostUploadTasks);
 
+/** Matter read by the archive check (GET /api/pages/<case>). */
+let casePage: Record<string, unknown> = { type: "legal_case", frontmatter: { status: "active" } };
+
 beforeEach(() => {
+  casePage = { type: "legal_case", frontmatter: { status: "active" } };
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      Response.json({
-        slug: "documents/case-1/eingabe.pdf",
-        title: "Eingabe.pdf",
-        extraction_status: "ready",
-        extraction_method: "pdf",
-        async: false,
-      })
+    vi.fn(async (url: string) =>
+      String(url).includes("/api/pages/")
+        ? Response.json(casePage)
+        : Response.json({
+            slug: "documents/case-1/eingabe.pdf",
+            title: "Eingabe.pdf",
+            extraction_status: "ready",
+            extraction_method: "pdf",
+            async: false,
+          })
     )
   );
   mockEnginePatch.mockReset();
@@ -123,9 +129,11 @@ describe("POST /api/upload/confirm", () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
 
-    // Engine was called
-    expect(fetch).toHaveBeenCalledTimes(1);
-    const [url, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    // Engine was called (after the archive check read the matter)
+    const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const confirmCalls = calls.filter(([u]) => String(u).endsWith("/api/upload/confirm"));
+    expect(confirmCalls).toHaveLength(1);
+    const [url, init] = confirmCalls[0];
     expect(String(url)).toBe("http://engine.test/api/upload/confirm");
     expect((init as RequestInit).method).toBe("POST");
     const headers = new Headers((init as RequestInit).headers);
@@ -146,6 +154,16 @@ describe("POST /api/upload/confirm", () => {
     expect(enqueueArg.case_slug).toBe("legal/cases/1");
     expect(enqueueArg.brain_id).toBe("brain-1");
     expect(enqueueArg.doc_title).toBe("Eingabe.pdf");
+  });
+
+  it("refuses to file into an archived matter (409), nothing confirmed", async () => {
+    casePage = { type: "legal_case", frontmatter: { status: "archived" } };
+    const res = await POST(makeRequest({ upload_id: "upl-9", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("case_archived");
+    const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.some(([u]) => String(u).endsWith("/api/upload/confirm"))).toBe(false);
+    expect(mockEnqueue).not.toHaveBeenCalled();
   });
 
   it("enqueues only analyze task when no case_slug", async () => {

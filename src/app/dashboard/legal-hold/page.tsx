@@ -303,15 +303,32 @@ export default function LegalHoldPage() {
                     <Input
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
-                      placeholder={isEn ? "Reason for hold…" : "Grund der Sperre …"}
-                      aria-label={isEn ? "Reason for hold" : "Grund der Sperre"}
+                      placeholder={
+                        c.legalHold
+                          ? isEn
+                            ? "Reason for release (required)…"
+                            : "Grund der Aufhebung (Pflicht) …"
+                          : isEn
+                            ? "Reason for hold…"
+                            : "Grund der Sperre …"
+                      }
+                      aria-label={
+                        c.legalHold
+                          ? isEn
+                            ? "Reason for release"
+                            : "Grund der Aufhebung"
+                          : isEn
+                            ? "Reason for hold"
+                            : "Grund der Sperre"
+                      }
                       className="w-48 text-xs"
                     />
                     <Button
                       size="sm"
                       variant="primary"
                       className="text-xs whitespace-nowrap"
-                      disabled={toggling}
+                      // Lifting a hold needs a documented reason (checked server-side too).
+                      disabled={toggling || (c.legalHold && holdReason.trim().length < 10)}
                       onClick={() => toggleHold(c.slug, c.title, !c.legalHold, holdReason)}
                     >
                       {toggling ? (

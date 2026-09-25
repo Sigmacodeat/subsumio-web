@@ -14,6 +14,7 @@ import {
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
 import type { User } from "@/lib/auth/store";
+import { SMTP_PASSWORD_ENC_FIELD, revealSmtpPassword } from "@/lib/kanzlei-settings-secrets";
 import { logger } from "@/lib/logger";
 
 const log = logger("lib/kanzlei-settings-server");
@@ -128,7 +129,13 @@ export async function loadKanzleiSettingsForBrain(
   } catch {
     throw new KanzleiSettingsUnavailableError("kanzlei settings body unreadable");
   }
-  return normalizeKanzleiSettings((page?.frontmatter ?? null) as Partial<KanzleiSettings> | null);
+  const fm = page?.frontmatter ?? null;
+  const settings = normalizeKanzleiSettings(fm as Partial<KanzleiSettings> | null);
+  // The SMTP password is stored encrypted (kanzlei-settings-secrets.ts).
+  const smtpPassword = await revealSmtpPassword(fm);
+  const out = { ...settings, smtpPassword } as KanzleiSettings & Record<string, unknown>;
+  delete out[SMTP_PASSWORD_ENC_FIELD];
+  return out;
 }
 
 /** SMTP credentials complete enough to send mail. */

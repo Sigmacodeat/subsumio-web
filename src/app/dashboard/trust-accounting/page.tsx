@@ -154,7 +154,8 @@ export default function TrustAccountingPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.legal.trustAccounts.list({ limit: 100 });
+      // Complete list, deleted accounts filtered out server-side.
+      const data = await api.legal.trustAccounts.list();
       setAccounts(data as unknown as TrustAccount[]);
     } catch (err) {
       console.error("[trust] load failed:", err instanceof Error ? err.message : err);
@@ -640,7 +641,17 @@ export default function TrustAccountingPage() {
                 size="sm"
                 className="ml-auto gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                 onClick={handleDelete}
-                disabled={saving}
+                // Fremdgeld stays on the books: only an account without balance
+                // can be deleted (the server enforces the same rule).
+                disabled={
+                  saving ||
+                  Math.round((selectedAccount.frontmatter?.current_balance ?? 0) * 100) !== 0
+                }
+                title={
+                  Math.round((selectedAccount.frontmatter?.current_balance ?? 0) * 100) !== 0
+                    ? "Nur ein Anderkonto ohne Saldo kann gelöscht werden."
+                    : undefined
+                }
               >
                 <Trash2 size={14} />
                 {t("trust.delete" as DashboardKey)}

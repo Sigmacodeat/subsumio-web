@@ -25,7 +25,12 @@ export interface KanzleiSettings {
   smtpHost?: string;
   smtpPort?: string;
   smtpUser?: string;
+  /** Write-only: sent to set a new password, never returned by a read
+   *  (stored encrypted server-side, see kanzlei-settings-secrets.ts). Empty =
+   *  keep the stored password. */
   smtpPassword?: string;
+  /** Read-only: whether an SMTP password is stored. */
+  smtpPasswordSet?: boolean;
   smtpSecure?: boolean;
   emailFrom?: string;
   // Invoice header / branding (legacy invoice-template.ts compatibility)
@@ -166,11 +171,17 @@ export function normalizeKanzleiSettings(input?: Partial<KanzleiSettings> | null
   };
 }
 
+/** The browser copy never holds a secret (older copies may still carry one). */
+function withoutSecrets(settings: KanzleiSettings): KanzleiSettings {
+  const { smtpPassword: _secret, ...rest } = settings;
+  return rest as KanzleiSettings;
+}
+
 export function readLocalKanzleiSettings(): KanzleiSettings {
   if (typeof window === "undefined") return DEFAULT_KANZLEI_SETTINGS;
   try {
     const raw = window.localStorage.getItem("kanzlei_settings");
-    return normalizeKanzleiSettings(raw ? JSON.parse(raw) : null);
+    return withoutSecrets(normalizeKanzleiSettings(raw ? JSON.parse(raw) : null));
   } catch {
     return DEFAULT_KANZLEI_SETTINGS;
   }
@@ -178,7 +189,31 @@ export function readLocalKanzleiSettings(): KanzleiSettings {
 
 export function writeLocalKanzleiSettings(settings: KanzleiSettings) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem("kanzlei_settings", JSON.stringify(settings));
+  try {
+    window.localStorage.setItem("kanzlei_settings", JSON.stringify(withoutSecrets(settings)));
+  } catch {
+    // Storage full or blocked — the copy is a convenience only.
+  }
+}
+
+/** A firm profile someone already filled in (not just provisioned defaults). */
+export function isKanzleiProfileConfigured(settings: Partial<KanzleiSettings> | null): boolean {
+  if (!settings) return false;
+  return [settings.kanzleiName, settings.ustId, settings.iban].some(
+    (v) => typeof v === "string" && v.trim().length > 0
+  );
+}
+
+/**
+ * Whether the onboarding wizard may write the firm profile: only a user with
+ * `settings.write` (admin), and only while no profile exists. A member joining
+ * an existing firm must never replace its settings with the wizard's blanks.
+ */
+export function onboardingMayWriteKanzleiSettings(
+  role: string | undefined,
+  existing: Partial<KanzleiSettings> | null
+): boolean {
+  return role === "admin" && !isKanzleiProfileConfigured(existing);
 }
 
 export async function loadKanzleiSettings(): Promise<KanzleiSettings> {

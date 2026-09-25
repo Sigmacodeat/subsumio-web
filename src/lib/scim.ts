@@ -22,7 +22,7 @@
  *   WORKOS_DIRECTORY_ID  — WorkOS directory ID for Directory Sync
  */
 
-import { type User, getStore, buildNewUser } from "@/lib/auth/store";
+import { type KanzleiRole, type User, getStore, buildNewUser } from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
@@ -328,6 +328,9 @@ export function scimToUserData(scimUser: SCIMUser): {
 
 // ── SCIM Provisioning Logic ───────────────────────────────────────────
 
+/** Role of a user created by SCIM auto-provisioning (never admin). */
+export const SCIM_DEFAULT_ROLE: KanzleiRole = "assistant";
+
 /**
  * Provision or update a user from SCIM data.
  * - If user exists (by externalId or email), update it
@@ -362,6 +365,10 @@ export async function provisionOrUpdateUser(
       locale: "de",
     });
     newUser.orgId = orgId;
+    // buildNewUser defaults to "admin" (the founder of a new firm). A person
+    // provisioned by the firm's IdP joins an existing firm and starts with
+    // least privilege; an admin promotes where needed.
+    newUser.role = SCIM_DEFAULT_ROLE;
     newUser.scimExternalId = externalId || null;
     newUser.ssoProvider = "scim";
     newUser.emailVerifiedAt = new Date().toISOString();

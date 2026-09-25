@@ -37,11 +37,16 @@ export type AuditAction =
   | "trust.reversal"
   | "trust.reconciliation"
   | "trust.status"
+  | "trust.delete"
   | "kyc.create"
   | "kyc.update"
   | "kyc.verify"
   | "kyc.fail"
   | "kyc.mandate_end"
+  | "kyc.sanctions_cleared"
+  | "approval.approve"
+  | "approval.reject"
+  | "approval.execute"
   | "case.delete"
   | "case.restore"
   | "trash.purge"
@@ -384,11 +389,16 @@ const ACTION_LABELS: Record<string, string> = {
   "trust.reversal": "Treuhandbuchung storniert",
   "trust.reconciliation": "Treuhandkonto abgeglichen",
   "trust.status": "Status des Treuhandkontos geändert",
+  "trust.delete": "Treuhandkonto gelöscht",
   "kyc.create": "Identitätsprüfung angelegt",
   "kyc.update": "Identitätsprüfung bearbeitet",
   "kyc.verify": "Identitätsprüfung abgeschlossen",
   "kyc.fail": "Identitätsprüfung nicht bestanden",
   "kyc.mandate_end": "Mandatsende für Aufbewahrung erfasst",
+  "kyc.sanctions_cleared": "Sanktionstreffer mit Begründung ausgeräumt",
+  "approval.approve": "Freigabe erteilt",
+  "approval.reject": "Freigabe abgelehnt",
+  "approval.execute": "Freigegebene Aktion ausgeführt",
   "case.delete": "Akte archiviert",
   "case.restore": "Akte wiederhergestellt",
   "trash.purge": "Papierkorb endgültig gelöscht",

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   assessRiskLevel,
   createKYCVerification,
@@ -71,6 +72,8 @@ export const POST = createHandler(
   }
 );
 
+const KYC_LIST_MAX = 20_000;
+
 const querySchema = z.object({
   case_slug: z.string().max(300).optional(),
   expiring_days: z.coerce.number().optional(),
@@ -79,16 +82,16 @@ const querySchema = z.object({
 export const GET = createHandler(
   { action: "brain.read", rateTier: "standard", query: querySchema },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "kyc_verification", limit: "500" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<{
-      frontmatter?: KYCVerification;
-    }>;
+    // Every record, paged past the engine's per-request cap, without deleted
+    // ones — expiring IDs must not drop out of the list silently.
+    let pages: Array<{ frontmatter?: KYCVerification }>;
+    try {
+      pages = (await listEnginePages(ctx.headers, "kyc_verification", KYC_LIST_MAX, {
+        strict: true,
+      })) as unknown as Array<{ frontmatter?: KYCVerification }>;
+    } catch {
+      return apiError("engine_error", "Die Identitätsprüfungen konnten nicht geladen werden", 502);
+    }
     // The record lives in the page frontmatter.
     let items = pages.map((p) => p.frontmatter).filter((v): v is KYCVerification => Boolean(v?.id));
     if (query?.case_slug) items = items.filter((v) => v.case_slug === query.case_slug);

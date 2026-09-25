@@ -153,10 +153,23 @@ export const POST = createHandler(
           headers: ctx.headers,
           signal: AbortSignal.timeout(10_000),
         });
-        if (!caseRes.ok || ((await caseRes.json()) as { type?: string }).type !== "legal_case") {
+        const casePage = caseRes.ok
+          ? ((await caseRes.json()) as { type?: string; frontmatter?: Record<string, unknown> })
+          : null;
+        if (!casePage || casePage.type !== "legal_case") {
           return Response.json(
             { error: "case_not_found", message: "Die angegebene Akte existiert nicht." },
             { status: 404 }
+          );
+        }
+        // An archived matter is closed: nothing is filed into it any more.
+        if (casePage.frontmatter?.status === "archived") {
+          return Response.json(
+            {
+              error: "case_archived",
+              message: "Die Akte ist archiviert — zuerst wiederherstellen, um Dokumente abzulegen.",
+            },
+            { status: 409 }
           );
         }
       } catch {

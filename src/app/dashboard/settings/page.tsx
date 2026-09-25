@@ -29,7 +29,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
-  loadKanzleiSettings,
+  loadKanzleiSettingsStrict,
   saveKanzleiSettings,
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
@@ -247,6 +247,10 @@ function SettingsPageInner() {
   const [keysSaved, setKeysSaved] = useState(false);
   const [kanzleiSaved, setKanzleiSaved] = useState(false);
   const [kanzleiSaveError, setKanzleiSaveError] = useState(false);
+  // "loading" | "ready" | "failed": saving is only possible once the stored
+  // settings were read — a save after a failed read would overwrite them.
+  const [kanzleiLoad, setKanzleiLoad] = useState<"loading" | "ready" | "failed">("loading");
+  const [smtpPasswordSet, setSmtpPasswordSet] = useState(false);
   const [keysSaveError, setKeysSaveError] = useState(false);
   // Full saved settings — the billing form only edits a subset, the rest must survive a save.
   const savedKanzleiRef = useRef<KanzleiSettings | null>(null);
@@ -362,9 +366,11 @@ function SettingsPageInner() {
   }, [teamQuery.data]);
 
   useEffect(() => {
-    loadKanzleiSettings()
+    loadKanzleiSettingsStrict()
       .then((saved) => {
         savedKanzleiRef.current = saved;
+        setSmtpPasswordSet(saved.smtpPasswordSet === true);
+        setKanzleiLoad("ready");
         kanzleiForm.reset({
           kanzleiName: saved.kanzleiName,
           anwaltName: saved.anwaltName,
@@ -387,7 +393,8 @@ function SettingsPageInner() {
           smtpHost: saved.smtpHost ?? "",
           smtpPort: saved.smtpPort ?? "587",
           smtpUser: saved.smtpUser ?? "",
-          smtpPassword: saved.smtpPassword ?? "",
+          // Never returned by the server; empty = keep the stored password.
+          smtpPassword: "",
           smtpSecure: saved.smtpSecure ?? false,
           emailFrom: saved.emailFrom ?? "",
           rechtsgebietSaetze: saved.rechtsgebietSaetze,
@@ -396,6 +403,7 @@ function SettingsPageInner() {
         });
       })
       .catch((err) => {
+        setKanzleiLoad("failed");
         console.error(
           "[settings] failed to load saved settings:",
           err instanceof Error ? err.message : String(err)
@@ -470,6 +478,8 @@ function SettingsPageInner() {
   }
 
   async function saveKanzleiProfile() {
+    // Never save over settings that could not be read.
+    if (kanzleiLoad !== "ready") return;
     setKanzleiSaveError(false);
     const isValid = await kanzleiForm.trigger();
     if (!isValid) return;
@@ -506,8 +516,10 @@ function SettingsPageInner() {
     };
     try {
       await saveKanzleiSettings(settings);
-      savedKanzleiRef.current = settings;
-      kanzleiForm.reset(data);
+      if (data.smtpPassword) setSmtpPasswordSet(true);
+      // The password is write-only: keep it out of the in-memory copy and form.
+      savedKanzleiRef.current = { ...settings, smtpPassword: undefined };
+      kanzleiForm.reset({ ...data, smtpPassword: "" });
       setKanzleiSaved(true);
       setTimeout(() => setKanzleiSaved(false), 2000);
     } catch {
@@ -1101,7 +1113,15 @@ function SettingsPageInner() {
                       id="settings-smtp-password"
                       type="password"
                       {...kanzleiForm.register("smtpPassword")}
-                      placeholder="••••••"
+                      autoComplete="new-password"
+                      placeholder={
+                        smtpPasswordSet
+                          ? L(
+                              "Gespeichert — leer lassen, um es beizubehalten",
+                              "Stored — leave empty to keep it"
+                            )
+                          : "••••••"
+                      }
                     />
                   </Field>
 
@@ -1121,6 +1141,14 @@ function SettingsPageInner() {
                   </Field>
                 </div>
                 <div className="border-t border-[color:var(--ds-border)] p-6">
+                  {kanzleiLoad === "failed" && (
+                    <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
+                      {L(
+                        "Die gespeicherten Kanzleidaten konnten nicht geladen werden. Speichern ist gesperrt, damit nichts überschrieben wird — bitte laden Sie die Seite neu.",
+                        "The saved firm data could not be loaded. Saving is locked so nothing is overwritten — please reload the page."
+                      )}
+                    </p>
+                  )}
                   {kanzleiSaveError && (
                     <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
                       {L(
@@ -1142,7 +1170,12 @@ function SettingsPageInner() {
                           )}
                     </p>
                   )}
-                  <Button variant="glow" size="md" onClick={saveKanzleiProfile}>
+                  <Button
+                    variant="glow"
+                    size="md"
+                    onClick={saveKanzleiProfile}
+                    disabled={kanzleiLoad !== "ready"}
+                  >
                     {kanzleiSaved ? t("settings.saved") : t("settings.save")}
                   </Button>
                 </div>

@@ -4,10 +4,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Shield, Loader2, Lock, Unlock } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { csrfFetch } from "@/lib/csrf";
-import { useToast } from "@/components/ui/toast";
 
 interface CasePage {
   slug: string;
@@ -49,8 +47,6 @@ async function fetchLegalHolds(): Promise<{ holds: LegalHoldEntry[]; total: numb
 export function LegalHoldWidget() {
   const { lang } = useLang();
   const isEn = lang === "en";
-  const { addToast } = useToast();
-  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["legal-holds"],
     queryFn: fetchLegalHolds,
@@ -62,31 +58,6 @@ export function LegalHoldWidget() {
     if (!data) return { total: 0, onHold: 0 };
     return { total: data.total, onHold: data.holds.length };
   }, [data]);
-
-  const releaseHold = async (caseSlug: string) => {
-    try {
-      const res = await csrfFetch("/api/cases/legal-hold", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ case_slug: caseSlug, legal_hold: false }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      addToast({
-        type: "success",
-        title: isEn ? "Legal Hold released" : "Legal Hold aufgehoben",
-        description: caseSlug,
-        duration: 3000,
-      });
-      void queryClient.invalidateQueries({ queryKey: ["legal-holds"] });
-    } catch (err) {
-      addToast({
-        type: "error",
-        title: isEn ? "Failed to release hold" : "Aufhebung fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unknown error",
-        duration: 5000,
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -154,14 +125,16 @@ export function LegalHoldWidget() {
                       {hold.caseTitle}
                     </span>
                   </Link>
-                  <button
-                    onClick={() => releaseHold(hold.caseSlug)}
+                  {/* Lifting a hold needs a documented reason — done on the
+                      Aufbewahrungssperre page, not with one click here. */}
+                  <Link
+                    href="/dashboard/legal-hold"
                     className="flex shrink-0 items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
                     title={isEn ? "Release hold" : "Hold aufheben"}
                   >
                     <Unlock size={10} />
                     {isEn ? "Release" : "Aufheben"}
-                  </button>
+                  </Link>
                 </div>
                 {hold.reason && (
                   <p className="mt-1 truncate text-[11px] text-[color:var(--ds-text-muted)]">

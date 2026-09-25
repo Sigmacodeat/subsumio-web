@@ -16,6 +16,19 @@
  * the record documents that the check happened, by whom, and against what.
  */
 
+/**
+ * The user-facing text of an error response. The KYC routes answer
+ * `{ error: "<Text>", code }` (apiError); generic guards answer
+ * `{ error: "<code>", message: "<Text>" }`.
+ */
+export function kycErrorText(
+  json: { error?: string; code?: string; message?: string } | null
+): string | undefined {
+  if (!json) return undefined;
+  if (json.code && json.error) return json.error;
+  return json.message || undefined;
+}
+
 export type KYCRiskLevel = "low" | "medium" | "high";
 export type KYCStatus = "pending" | "in_progress" | "verified" | "failed" | "expired";
 export type KYCPartyType = "natural" | "legal";
@@ -85,6 +98,10 @@ export interface KYCVerification {
   sanctions_source?: string;
   sanctions_hit?: boolean;
   sanctions_checked_at?: string;
+  /** A hit cleared as a documented decision (action `sanctions_clear`). */
+  sanctions_cleared_at?: string;
+  sanctions_cleared_by?: string;
+  sanctions_cleared_reason?: string;
   /** Candidates of the last automatic run; a lawyer decides on each. */
   sanctions_matches?: Array<{
     name: string;

@@ -89,3 +89,18 @@ describe("loadKanzleiSettingsForBrain", () => {
     await expect(loadKanzleiSettingsForBrain("brain-a")).rejects.toThrow(/ECONNREFUSED/);
   });
 });
+
+describe("encrypted SMTP password (OPS-18)", () => {
+  test("the stored cipher text is decrypted for sending, never returned raw", async () => {
+    const { sealKanzleiSettingsFrontmatter } = await import("./kanzlei-settings-secrets");
+    const fm = await sealKanzleiSettingsFrontmatter(
+      { smtpHost: "smtp.firm.test", smtpUser: "u", smtpPassword: "p-secret" },
+      null
+    );
+    fetchMock.mockResolvedValue(Response.json({ frontmatter: fm }));
+    const settings = await loadKanzleiSettingsForBrain("brain-a");
+    expect(settings.smtpPassword).toBe("p-secret");
+    expect(isSmtpConfigured(settings)).toBe(true);
+    expect(settings).not.toHaveProperty("smtpPasswordEnc");
+  });
+});

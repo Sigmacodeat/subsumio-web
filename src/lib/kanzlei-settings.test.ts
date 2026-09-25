@@ -105,3 +105,49 @@ describe("clampHourlyRate", async () => {
     expect(normalizeKanzleiSettings({ stundensatz: "180" }).stundensatz).toBe("180");
   });
 });
+
+describe("onboardingMayWriteKanzleiSettings (OPS-19)", async () => {
+  const { onboardingMayWriteKanzleiSettings, isKanzleiProfileConfigured } =
+    await import("./kanzlei-settings");
+  test("a member joining a configured firm never writes the settings", () => {
+    const existing = normalizeKanzleiSettings({ kanzleiName: "Kanzlei A", iban: "AT1" });
+    expect(onboardingMayWriteKanzleiSettings("lawyer", existing)).toBe(false);
+    expect(onboardingMayWriteKanzleiSettings("assistant", null)).toBe(false);
+  });
+  test("an admin writes only while no profile exists", () => {
+    expect(onboardingMayWriteKanzleiSettings("admin", normalizeKanzleiSettings({}))).toBe(true);
+    expect(
+      onboardingMayWriteKanzleiSettings("admin", normalizeKanzleiSettings({ kanzleiName: "A" }))
+    ).toBe(false);
+  });
+  test("provisioned defaults do not count as a configured profile", () => {
+    expect(isKanzleiProfileConfigured(normalizeKanzleiSettings({ rechtsraumCountry: "AT" }))).toBe(
+      false
+    );
+  });
+});
+
+describe("browser copy holds no secret (OPS-18)", async () => {
+  const { writeLocalKanzleiSettings } = await import("./kanzlei-settings");
+  test("writeLocalKanzleiSettings drops the SMTP password", () => {
+    const store = new Map<string, string>();
+    const g = globalThis as unknown as { window?: unknown };
+    g.window = {
+      localStorage: {
+        setItem: (k: string, v: string) => store.set(k, v),
+        getItem: (k: string) => store.get(k) ?? null,
+      },
+    };
+    try {
+      writeLocalKanzleiSettings(
+        normalizeKanzleiSettings({ kanzleiName: "A", smtpPassword: "geheim" })
+      );
+      const saved = JSON.parse(store.get("kanzlei_settings") ?? "{}");
+      expect(saved.kanzleiName).toBe("A");
+      expect(saved).not.toHaveProperty("smtpPassword");
+      expect(readLocalKanzleiSettings()).not.toHaveProperty("smtpPassword");
+    } finally {
+      delete g.window;
+    }
+  });
+});

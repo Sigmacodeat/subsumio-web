@@ -14,6 +14,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const SANCTIONS_CLEAR_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer"]);
+
 const fieldsSchema = z.object({
   client_email: z.string().email().optional(),
   party_type: z.enum(["natural", "legal"]).optional(),
@@ -27,6 +29,11 @@ const fieldsSchema = z.object({
       document_number: z.string().max(100).optional(),
       issuing_authority: z.string().max(200).optional(),
       document_valid_until: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+      // § 8b Abs. 2 RAO; also narrows the sanctions check.
+      birth_date: z
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .optional(),
@@ -67,6 +74,11 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("sanctions_check") }),
   z.object({ action: z.literal("pep_screen") }),
   z.object({ action: z.literal("fail"), reason: z.string().trim().min(10).max(2000) }),
+  // A sanctions hit is cleared only as a documented decision.
+  z.object({
+    action: z.literal("sanctions_clear"),
+    reason: z.string().trim().min(20).max(2000),
+  }),
   z.object({
     action: z.literal("mandate_end"),
     ended_at: z
@@ -114,7 +126,12 @@ export const PATCH = createHandler(
       const now = new Date().toISOString();
       let next: KYCVerification = { ...current };
       let entry: KYCHistoryEntry;
-      let auditAction: "kyc.update" | "kyc.verify" | "kyc.fail" | "kyc.mandate_end";
+      let auditAction:
+        | "kyc.update"
+        | "kyc.verify"
+        | "kyc.fail"
+        | "kyc.mandate_end"
+        | "kyc.sanctions_cleared";
 
       if (body.action === "update") {
         if (current.status === "verified" || current.status === "failed") {
@@ -125,6 +142,20 @@ export const PATCH = createHandler(
           );
         }
         const { risk_assessment, identification, ...rest } = body.fields;
+        // A sanctions hit is not unticked by an ordinary save: it needs the
+        // documented `sanctions_clear` decision.
+        if (current.sanctions_hit === true && rest.sanctions_hit === false) {
+          return apiError(
+            "sanctions_clear_required",
+            "Ein Sanktionstreffer kann nur mit Begründung als ausgeräumt erfasst werden.",
+            409
+          );
+        }
+        // The result of an automatic list check stays as recorded.
+        if (current.sanctions_checked_at) {
+          delete rest.sanctions_checked;
+          delete rest.sanctions_source;
+        }
         next = {
           ...next,
           ...rest,
@@ -219,6 +250,38 @@ export const PATCH = createHandler(
             : `PEP-Screening ohne Kandidaten (${result.source})`,
         };
         auditAction = "kyc.update";
+      } else if (body.action === "sanctions_clear") {
+        if (!SANCTIONS_CLEAR_ROLES.has(ctx.user.role)) {
+          return apiError(
+            "forbidden",
+            "Einen Sanktionstreffer räumen nur Anwältinnen/Anwälte oder Administratoren aus.",
+            403
+          );
+        }
+        if (current.status === "verified" || current.status === "failed") {
+          return apiError(
+            "kyc_closed",
+            "Eine abgeschlossene Prüfung wird nicht mehr geändert. Legen Sie bei Änderungen eine neue Prüfung an.",
+            409
+          );
+        }
+        if (current.sanctions_hit !== true) {
+          return apiError("no_sanctions_hit", "Es liegt kein Sanktionstreffer vor.", 409);
+        }
+        next = {
+          ...next,
+          sanctions_hit: false,
+          sanctions_cleared_at: now,
+          sanctions_cleared_by: ctx.user.email,
+          sanctions_cleared_reason: body.reason,
+        };
+        entry = {
+          at: now,
+          by: ctx.user.email,
+          action: "updated",
+          note: `Sanktionstreffer ausgeräumt: ${body.reason}`,
+        };
+        auditAction = "kyc.sanctions_cleared";
       } else if (body.action === "fail") {
         next = { ...next, status: "failed", failed_reason: body.reason };
         entry = { at: now, by: ctx.user.email, action: "failed", note: body.reason };
@@ -249,7 +312,14 @@ export const PATCH = createHandler(
         brainId: ctx.brainId,
         userId: ctx.user.id,
         userEmail: ctx.user.email,
-        details: { case: next.case_slug, status: next.status, risk: next.risk_level },
+        details: {
+          case: next.case_slug,
+          status: next.status,
+          risk: next.risk_level,
+          ...(auditAction === "kyc.sanctions_cleared"
+            ? { reason: next.sanctions_cleared_reason }
+            : {}),
+        },
       });
       return apiSuccess({ verification: next, missing: missingForVerification(next) });
     });
