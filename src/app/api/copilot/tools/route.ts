@@ -20,6 +20,12 @@ import { reserveInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
 import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
+import {
+  activeBillingRules,
+  feeAgreementRate,
+  ruledTimeItems,
+  type FeeAgreementLike,
+} from "@/lib/billing-rules";
 import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
@@ -2595,31 +2601,69 @@ async function executeInvoiceDraft(
         (e) => e.case_slug === params.case_slug && e.billable !== false && !e.billed
       );
     }
-    const items = params.items?.length
-      ? params.items.map((i) => {
-          const amount = i.amount ?? lineAmount(i.hours ?? 0, i.rate ?? stundensatz);
-          return {
-            description: sanitizeUserInput(i.description),
-            date: firmToday(),
-            hours: i.hours ?? 0,
-            rate: i.rate ?? stundensatz,
-            amount,
-          };
-        })
-      : params.include_unbilled_time
-        ? unbilledEntries.map((e) => {
-            billedEntryIds.push(e.id);
-            const hours = e.minutes / 60;
-            const rate = e.rate ?? stundensatz;
+    // Billing rules (opt-in, src/lib/billing-rules.ts): the same rounding and
+    // rate choice as the invoice dialog, for time entries taken over here.
+    const rules = activeBillingRules(kanzlei);
+    let ruledItems: ReturnType<typeof ruledTimeItems> | null = null;
+    if (rules && !params.items?.length && params.include_unbilled_time) {
+      let agreements: FeeAgreementLike[];
+      try {
+        const pages = await listEnginePages(ctx.headers, "fee_agreement", 10_000, {
+          strict: true,
+        });
+        agreements = pages.map((p) => p.frontmatter as unknown as FeeAgreementLike);
+      } catch {
+        return fail(
+          "fee_agreements_unavailable",
+          "Honorarvereinbarungen nicht lesbar",
+          "Die Honorarvereinbarungen konnten nicht gelesen werden — es wurde kein Rechnungsentwurf angelegt."
+        );
+      }
+      ruledItems = ruledTimeItems(
+        unbilledEntries.map((e) => ({ ...e, description: sanitizeUserInput(e.description) })),
+        rules,
+        {
+          feeAgreementRate: feeAgreementRate(agreements, params.case_slug),
+          legalArea: fm.legal_area,
+          settings: kanzlei,
+        }
+      );
+      if (ruledItems.missingRate > 0) {
+        return fail(
+          "no_hourly_rate",
+          "Kein Stundensatz hinterlegt",
+          "Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+        );
+      }
+      billedEntryIds.push(...unbilledEntries.map((e) => e.id));
+    }
+    const items = ruledItems
+      ? ruledItems.items
+      : params.items?.length
+        ? params.items.map((i) => {
+            const amount = i.amount ?? lineAmount(i.hours ?? 0, i.rate ?? stundensatz);
             return {
-              description: sanitizeUserInput(e.description),
-              date: (e.date ?? "").split("T")[0],
-              hours: Math.round(hours * 100) / 100,
-              rate,
-              amount: Math.round(hours * rate * 100) / 100,
+              description: sanitizeUserInput(i.description),
+              date: firmToday(),
+              hours: i.hours ?? 0,
+              rate: i.rate ?? stundensatz,
+              amount,
             };
           })
-        : [];
+        : params.include_unbilled_time
+          ? unbilledEntries.map((e) => {
+              billedEntryIds.push(e.id);
+              const hours = e.minutes / 60;
+              const rate = e.rate ?? stundensatz;
+              return {
+                description: sanitizeUserInput(e.description),
+                date: (e.date ?? "").split("T")[0],
+                hours: Math.round(hours * 100) / 100,
+                rate,
+                amount: Math.round(hours * rate * 100) / 100,
+              };
+            })
+          : [];
 
     if (items.length === 0) {
       return fail(

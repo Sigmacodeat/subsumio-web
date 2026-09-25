@@ -10,6 +10,7 @@ export const kanzleiSettingsSchema = z.object({
   ustId: z.string().max(50).optional().default(""),
   stundensatz: z.string().max(10).optional().default("200"),
   abrechnungstakt: z.string().max(10).optional().default("15"),
+  billingRulesEnabled: z.boolean().optional().default(false),
   bankName: z.string().max(200).optional().default(""),
   iban: z.string().max(50).optional().default(""),
   bic: z.string().max(20).optional().default(""),
