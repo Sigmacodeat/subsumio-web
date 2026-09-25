@@ -301,6 +301,34 @@ export function judikaturImportArgv(src: JudikaturSource): string[] {
   ];
 }
 
+/**
+ * Resolve the source key from `pipeline_config.fetch_triggered`, as `value::text`.
+ *
+ * The dashboard (`src/app/api/admin/corpus-pipeline/route.ts`) writes
+ * `{"source_key": "jud-bvwg", "seit": …}`; an operator setting the trigger by
+ * hand in psql stored the bare JSON string `"jud-bvwg"`. The old reader
+ * (`value->>'source_key'`) returned NULL for the string form, so the BVwG
+ * discovery fetch requested on 2026-09-23 never started and nothing said so
+ * for two days. Every shape that names a key now triggers; anything else
+ * returns null and the caller warns instead of staying silent.
+ */
+export function parseFetchTrigger(raw: string | null | undefined): string | null {
+  const text = (raw ?? "").trim();
+  if (!text) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return text; // not JSON at all: treat as the key itself
+  }
+  if (typeof parsed === "string") return parsed.trim() || null;
+  if (parsed && typeof parsed === "object" && "source_key" in parsed) {
+    const key = (parsed as { source_key: unknown }).source_key;
+    if (typeof key === "string") return key.trim() || null;
+  }
+  return null;
+}
+
 export const SIMPLE: SimpleSource[] = [
   {
     kind: "statutes",
@@ -741,6 +769,18 @@ const MAX_IMPORT_ATTEMPTS = 5;
  * is a real append-only log per source, so counting its trailing
  * "import"/"failed …" entries — stopping at the most recent "finished" —
  * gives the true streak.
+ *
+ * Operator reset (2026-09-25): once a source is parked as `failed` after
+ * MAX_IMPORT_ATTEMPTS, "the source needs a human" — but the only thing
+ * that broke the streak was a genuine "finished", which never comes because
+ * the import is no longer started. After the cause is fixed (e.g. the
+ * statement_timeout fix in import-judikatur.ts, a827b34f7a) the operator
+ * appends an honest entry and the pipeline retries on its next cycle:
+ *
+ *   SELECT append_stage_history('jud-bvwg', 'import', 'reset: <reason>');
+ *
+ * A "reset…" entry ends the streak like "finished" does, without
+ * pretending anything finished — the reason stays in the history.
  */
 export function consecutiveImportFailures(
   history: DBPipelineState["stage_history"] | null | undefined
@@ -750,8 +790,9 @@ export function consecutiveImportFailures(
   for (let i = history.length - 1; i >= 0; i--) {
     const h = history[i];
     if (!h || h.stage !== "import") continue;
-    if (h.action === "finished") break;
-    if (typeof h.action === "string" && h.action.startsWith("failed")) count++;
+    if (typeof h.action !== "string") continue;
+    if (h.action === "finished" || h.action.startsWith("reset")) break;
+    if (h.action.startsWith("failed")) count++;
   }
   return count;
 }
@@ -2334,9 +2375,15 @@ async function cycle(): Promise<void> {
     }
 
     // ── Fetch-missing trigger (from dashboard: pipeline_config.fetch_triggered) ──
-    const fetchTriggered = psqlQuery(
-      "SELECT value->>'source_key' FROM pipeline_config WHERE key = 'fetch_triggered'"
+    const fetchTriggerRaw = psqlQuery(
+      "SELECT value::text FROM pipeline_config WHERE key = 'fetch_triggered'"
     ).trim();
+    const fetchTriggered = parseFetchTrigger(fetchTriggerRaw) ?? "";
+    if (fetchTriggerRaw && !fetchTriggered) {
+      console.warn(
+        `  ⚠️ fetch_triggered unlesbar: ${fetchTriggerRaw} — erwartet {"source_key": "jud-…"}; Zeile bleibt stehen, es wird nichts geholt`
+      );
+    }
     if (fetchTriggered && !REPORT_ONLY) {
       const key = fetchTriggered.replace(/'/g, "''");
       // Map source_key to fetch script
