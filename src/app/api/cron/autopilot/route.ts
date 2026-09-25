@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  loadKanzleiSettingsForBrain,
+  KanzleiSettingsUnavailableError,
+} from "@/lib/kanzlei-settings-server";
 import {
   DEFAULT_POLICIES,
   buildApprovalGatedJob,
@@ -11,6 +16,9 @@ import {
   type AutopilotExecution,
   type AutopilotTrigger,
 } from "@/lib/autopilot";
+
+import { logger } from "@/lib/logger";
+const log = logger("api/cron/autopilot");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -98,21 +106,27 @@ async function persistExecution(execution: AutopilotExecution, headers: Record<s
   });
 }
 
-async function autopilotHandler(_req: NextRequest): Promise<Response> {
-  if (process.env.DISABLE_AUTOPILOT_CRON === "true") {
-    return NextResponse.json({ disabled: true, reason: "DISABLE_AUTOPILOT_CRON" });
-  }
-
-  const headers = engineHeadersForBrain("system");
+/**
+ * Runs the trigger-scan + policy-fire loop for ONE firm's own brain. Every
+ * execution is approval-gated (buildApprovalGatedJob: approval_required,
+ * may_finalize: false) — autopilot only ever proposes, never finalizes.
+ */
+async function runForBrain(
+  brainId: string,
+  capCents: number
+): Promise<{
+  totalExecutions: number;
+  budgetSpentCents: number;
+  budgetExhausted: boolean;
+  executions: AutopilotExecution[];
+}> {
+  const headers = engineHeadersForBrain(brainId);
   const storedPolicies = await listPages("autopilot_policy", headers);
   const policies = storedPolicies.length
     ? storedPolicies.map((page) => page.frontmatter as unknown as AutoPilotPolicy)
     : DEFAULT_POLICIES;
-  const cap = Math.max(
-    0,
-    Number.parseInt(process.env.AUTOPILOT_NIGHTLY_BUDGET_CENTS ?? "100", 10) || 0
-  );
-  let budget = { capCents: cap, spentCents: 0 };
+
+  let budget = { capCents, spentCents: 0 };
   const executions: AutopilotExecution[] = [];
   let budgetExhausted = false;
 
@@ -157,7 +171,9 @@ async function autopilotHandler(_req: NextRequest): Promise<Response> {
           const response = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
             method: "POST",
             headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify(buildApprovalGatedJob(policy, prompt, cap - budget.spentCents)),
+            body: JSON.stringify(
+              buildApprovalGatedJob(policy, prompt, capCents - budget.spentCents)
+            ),
             signal: AbortSignal.timeout(15_000),
           });
           const data = response.ok
@@ -177,11 +193,85 @@ async function autopilotHandler(_req: NextRequest): Promise<Response> {
     if (budgetExhausted) break;
   }
 
+  return {
+    totalExecutions: executions.length,
+    budgetSpentCents: budget.spentCents,
+    budgetExhausted,
+    executions,
+  };
+}
+
+/**
+ * POST /api/cron/autopilot — runs once per firm that opted in.
+ *
+ * Before 2026-09-25 this ran ONCE against a hardcoded "system" brain, which
+ * is not any real firm's data — even once the method bug (GET vs POST, see
+ * the crontab entry) was fixed, no firm's cases were ever actually scanned.
+ * Now: every firm with kanzleiSettings.autopilotEnabled === true gets its
+ * own scan against its own brain and its own nightly budget
+ * (AUTOPILOT_NIGHTLY_BUDGET_CENTS per firm, not shared). Opt-in, default
+ * off — a firm that never turned this on sees nothing change. Fail-closed:
+ * a firm whose settings can't be read is skipped this run, not assumed
+ * enabled or disabled.
+ */
+async function autopilotHandler(_req: NextRequest): Promise<Response> {
+  if (process.env.DISABLE_AUTOPILOT_CRON === "true") {
+    return NextResponse.json({ disabled: true, reason: "DISABLE_AUTOPILOT_CRON" });
+  }
+
+  const capCents = Math.max(
+    0,
+    Number.parseInt(process.env.AUTOPILOT_NIGHTLY_BUDGET_CENTS ?? "100", 10) || 0
+  );
+
+  const recipientsByBrain = await getRecipientsByBrain();
+  let brainsChecked = 0;
+  let brainsEnabled = 0;
+  let brainsSkippedUnreadable = 0;
+  let totalExecutions = 0;
+  const perBrain: Array<{
+    brainId: string;
+    executions: number;
+    budgetSpentCents: number;
+    budgetExhausted: boolean;
+  }> = [];
+
+  for (const [brainId] of recipientsByBrain) {
+    brainsChecked++;
+    let enabled: boolean;
+    try {
+      const settings = await loadKanzleiSettingsForBrain(brainId);
+      enabled = settings.autopilotEnabled === true;
+    } catch (err) {
+      if (err instanceof KanzleiSettingsUnavailableError) {
+        brainsSkippedUnreadable++;
+        log.warn(`[autopilot] brain ${brainId}: settings unreadable, skipped this run`, {
+          error: err.message,
+        });
+        continue;
+      }
+      throw err;
+    }
+    if (!enabled) continue;
+
+    brainsEnabled++;
+    const result = await runForBrain(brainId, capCents);
+    totalExecutions += result.totalExecutions;
+    perBrain.push({
+      brainId,
+      executions: result.totalExecutions,
+      budgetSpentCents: result.budgetSpentCents,
+      budgetExhausted: result.budgetExhausted,
+    });
+  }
+
   return NextResponse.json({
     executedAt: new Date().toISOString(),
-    totalExecutions: executions.length,
-    budget: { ...budget, exhausted: budgetExhausted },
-    executions,
+    brainsChecked,
+    brainsEnabled,
+    brainsSkippedUnreadable,
+    totalExecutions,
+    perBrain,
   });
 }
 

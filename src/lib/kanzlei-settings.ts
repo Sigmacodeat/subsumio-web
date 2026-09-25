@@ -80,6 +80,12 @@ export interface KanzleiSettings {
   // Tage im Papierkorb bis zur endgültigen Löschung. Default 30,
   // geclampt auf 7–3650 — nie "sofort", nie unendlich.
   trashRetentionDays?: number;
+  // Autopilot (cron/autopilot): automatische Vorschläge zu neuen Eingängen,
+  // nahenden Fristen und hochgeladenen Dokumenten — nie selbst abgeschlossen,
+  // jedes Ergebnis braucht die Freigabe eines Anwalts (approval_required).
+  // Opt-in pro Kanzlei, Standard AUS — die Kanzlei sieht Autopilot nie
+  // ungefragt loslaufen. undefined/false = aus.
+  autopilotEnabled?: boolean;
 }
 
 export const TRASH_RETENTION_DEFAULT_DAYS = 30;
