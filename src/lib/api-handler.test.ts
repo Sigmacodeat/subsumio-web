@@ -94,6 +94,14 @@ vi.mock("./csrf", async () => {
   };
 });
 
+const sentryCapture = vi.hoisted(() => vi.fn());
+vi.mock("@sentry/nextjs", () => ({ captureException: sentryCapture }));
+const logError = vi.hoisted(() => vi.fn());
+vi.mock("./logger", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./logger")>()),
+  logger: () => ({ error: logError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
+}));
+
 // Import after mocks are set up
 import { requireEngineContext, applyUsageGuards } from "./engine";
 import { verifyApiKey } from "./auth/api-key-auth";
@@ -401,6 +409,44 @@ describe("createHandler Guard-Chain", () => {
     expect(body.code).toBe("internal_error");
   });
 
+  it("8b. Unexpected error reaches Sentry and the log keeps the stack (QA-3)", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
+    const boom = new Error("x");
+    const handler = createHandler({ action: "brain.write" }, async () => {
+      throw boom;
+    });
+    const req = makeMockRequest("POST", { foo: "bar" }, { csrfCookie: "tok", csrfHeader: "tok" });
+    const res = await handler(req);
+
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body).toMatchObject({ code: "internal_error" });
+    // Generic text only — the exception message stays server-side.
+    expect(body.error).not.toBe("x");
+    expect(sentryCapture).toHaveBeenCalledTimes(1);
+    expect(sentryCapture.mock.calls[0][0]).toBe(boom);
+    expect(sentryCapture.mock.calls[0][1]).toMatchObject({
+      tags: { action: "brain.write", kind: "route" },
+      extra: { requestId: expect.any(String) },
+    });
+    const logged = logError.mock.calls.find((c) => String(c[0]).includes("uncaught"));
+    expect(logged?.[1]).toMatchObject({
+      action: "brain.write",
+      error: { message: "x", stack: expect.stringContaining("Error: x") },
+    });
+  });
+
+  it("8c. AppError is a handled response — no Sentry report", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
+    const handler = createHandler({ action: "brain.write" }, async () => {
+      throw new AppError("nope", { code: "conflict", statusCode: 409 });
+    });
+    const req = makeMockRequest("POST", { foo: "bar" }, { csrfCookie: "tok", csrfHeader: "tok" });
+    const res = await handler(req);
+    expect(res.status).toBe(409);
+    expect(sentryCapture).not.toHaveBeenCalled();
+  });
+
   it("9. Invalid JSON body → 400", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
@@ -554,6 +600,10 @@ describe("createCronHandler", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.code).toBe("internal_error");
+    expect(sentryCapture).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ tags: expect.objectContaining({ kind: "cron" }) })
+    );
   });
 });
 

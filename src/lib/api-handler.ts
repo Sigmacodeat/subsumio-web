@@ -69,7 +69,40 @@ import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receip
 import type { WorkProductType } from "@/lib/work-product-receipts";
 
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 const log = logger("lib/api-handler");
+
+/**
+ * An exception the handler did not turn into a response. The route answers
+ * a generic 500; the cause goes to the log WITH its stack and to Sentry —
+ * `onRequestError` never sees it, because the wrapper already caught it.
+ */
+export function reportUncaughtError(
+  err: unknown,
+  context: { kind: "route" | "webhook" | "cron"; action?: string; requestId?: string }
+): void {
+  const error =
+    err instanceof Error
+      ? { name: err.name, message: err.message, ...(err.stack ? { stack: err.stack } : {}) }
+      : { message: String(err) };
+  log.error(`[api-handler] uncaught error (${context.kind})`, {
+    ...(context.action ? { action: context.action } : {}),
+    ...(context.requestId ? { requestId: context.requestId } : {}),
+    error,
+  });
+  try {
+    Sentry.captureException(err, {
+      tags: {
+        source: "api-handler",
+        kind: context.kind,
+        ...(context.action ? { action: context.action } : {}),
+      },
+      ...(context.requestId ? { extra: { requestId: context.requestId } } : {}),
+    });
+  } catch {
+    // Monitoring must never change the response.
+  }
+}
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -562,10 +595,7 @@ export function createHandler<
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          `[api-handler] uncaught error for action '${options.action}':`,
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, { kind: "route", action: options.action, requestId });
         response = apiError("internal_error", "An unexpected error occurred", 500);
       }
     }
@@ -763,10 +793,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          "[api-handler] uncaught error in webhook handler:",
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, { kind: "webhook" });
         response = apiError("internal_error", "Webhook processing failed", 500);
       }
     }
@@ -828,10 +855,10 @@ export function createCronHandler(
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          "[api-handler] uncaught error in cron handler:",
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, {
+          kind: "cron",
+          requestId: req?.headers?.get?.("x-request-id") ?? undefined,
+        });
         response = apiError("internal_error", "Cron job failed", 500);
       }
     }
