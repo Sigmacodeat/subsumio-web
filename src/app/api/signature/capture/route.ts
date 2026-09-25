@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -77,7 +78,13 @@ export const POST = createHandler(
     const validationError = validateCaptureInput(input);
     if (validationError) return apiError("validation_error", validationError, 400);
 
-    const signature = createCapturedSignature(input);
+    // Deterministic id/slug per (brain, document): a double-submitted signing
+    // upserts the same captured_signature page instead of duplicating it.
+    const signatureId = `sig-${createHash("sha256")
+      .update(`${ctx.brainId}:${body.document_slug}`)
+      .digest("hex")
+      .slice(0, 20)}`;
+    const signature = { ...createCapturedSignature(input), id: signatureId };
     const saveRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },

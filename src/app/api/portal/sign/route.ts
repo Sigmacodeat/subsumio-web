@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiSuccess, apiError } from "@/lib/api-handler";
@@ -104,7 +105,14 @@ export const POST = createPublicHandler(
       return apiError("validation_error", validationError, 400);
     }
 
-    const signature = createCapturedSignature(input);
+    // Deterministic id/slug per (brain, document): the engine's page write is
+    // an upsert, so a retried or double-submitted signing collapses onto one
+    // captured_signature page instead of creating a duplicate.
+    const signatureId = `sig-${createHash("sha256")
+      .update(`${payload.brain_id}:${body.document_slug}`)
+      .digest("hex")
+      .slice(0, 20)}`;
+    const signature = { ...createCapturedSignature(input), id: signatureId };
 
     const saveRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",

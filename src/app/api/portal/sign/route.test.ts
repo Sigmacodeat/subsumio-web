@@ -103,6 +103,29 @@ describe("POST /api/portal/sign", () => {
     });
   });
 
+  it("writes one deterministic signature page — a retried submit does not duplicate", async () => {
+    const calls = mockEngine({
+      "cases/mueller": openCase,
+      "legal/signatures/vollmacht-1": {
+        body: {
+          type: "power_of_attorney",
+          frontmatter: { case_slug: "cases/mueller", status: "sent" },
+        },
+      },
+    });
+    const [a, b] = await Promise.all([POST(request(baseBody)), POST(request(baseBody))]);
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    const signatureWrites = calls
+      .filter((c) => c.init?.method === "POST")
+      .map((c) => JSON.parse(String(c.init?.body)) as { slug: string; type?: string })
+      .filter((w) => w.type === "captured_signature");
+    // Two submissions, one stable slug — the engine upsert collapses them.
+    expect(signatureWrites).toHaveLength(2);
+    expect(signatureWrites[0].slug).toBe(signatureWrites[1].slug);
+    expect(signatureWrites[0].slug).toMatch(/^legal\/signatures\/captured\/sig-[0-9a-f]{20}$/);
+  });
+
   it("refuses a document that belongs to another matter", async () => {
     mockEngine({
       "cases/mueller": openCase,

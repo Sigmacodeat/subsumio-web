@@ -198,6 +198,70 @@ describe("qualified signature via PDF-AS-WEB", () => {
     expect(uploads).toHaveLength(0);
   });
 
+  it("refuses a valid signature value on an invalid certificate — not a QES", async () => {
+    // ValueCheckCode 0 (value verifies) but CertificateCheckCode 2 (chain to a
+    // trusted root failed / expired / revoked) must never be stored as
+    // "qualified" — the document is only a signed PDF without the legal effect.
+    vi.mocked(fetch).mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.startsWith("http://engine.test/api/pages/")) {
+        return new Response(
+          JSON.stringify({
+            slug: "documents/vollmacht",
+            title: "V",
+            frontmatter: { case_slug: "legal/cases/berger", mime_type: "application/pdf" },
+          }),
+          { status: 200 }
+        );
+      }
+      if (u.startsWith("http://engine.test/api/files/"))
+        return new Response(ORIGINAL, { status: 200 });
+      return new Response(SIGNED, {
+        status: 200,
+        headers: { ValueCheckCode: "0", CertificateCheckCode: "2" },
+      });
+    });
+    const { token } = await start();
+    const { GET: pdf } = await import("./pdf/[token]/route");
+    await pdf(new Request("http://x") as never, params(token));
+    const { GET: done } = await import("./done/[token]/route");
+    const res = await done(
+      new (await import("next/server")).NextRequest(
+        `http://x/done?pdfurl=${encodeURIComponent("https://pdfas.kanzlei.at/pdf-as-web/PDFData")}`
+      ),
+      params(token)
+    );
+    expect(res.headers.get("location")).toContain("qes=failed");
+    const loc = decodeURIComponent(res.headers.get("location") ?? "").replaceAll("+", " ");
+    expect(loc).toContain("Signaturzertifikat");
+    expect(loc).toContain("Code 2");
+    expect(uploads).toHaveLength(0);
+  });
+
+  it("completes exactly once when the invoke-app-url callback fires twice", async () => {
+    const { token } = await start();
+    const { GET: pdf } = await import("./pdf/[token]/route");
+    await pdf(new Request("http://x") as never, params(token));
+    const { GET: done } = await import("./done/[token]/route");
+    const NextReq = (await import("next/server")).NextRequest;
+    const call = () =>
+      done(
+        new NextReq(
+          `http://x/done?pdfurl=${encodeURIComponent("https://pdfas.kanzlei.at/pdf-as-web/PDFData")}`
+        ),
+        params(token)
+      );
+    const [a, b] = await Promise.all([call(), call()]);
+    const locations = [a.headers.get("location"), b.headers.get("location")];
+    expect(uploads).toHaveLength(1);
+    expect(locations.filter((l) => l?.includes("qes=signed"))).toHaveLength(1);
+    expect(locations.filter((l) => l?.includes("qes=processing"))).toHaveLength(1);
+    // A later retry (browser reopen of the redirect) is a clean no-op.
+    const again = await call();
+    expect(again.headers.get("location")).toContain("qes=signed");
+    expect(uploads).toHaveLength(1);
+  });
+
   it("an unknown token reveals nothing", async () => {
     const { GET: pdf } = await import("./pdf/[token]/route");
     expect((await pdf(new Request("http://x") as never, params("x".repeat(32)))).status).toBe(404);

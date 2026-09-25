@@ -434,19 +434,23 @@ export function DocumentsTab() {
 
   return (
     <div className="space-y-4">
-      {(qesResult === "signed" || qesResult === "failed") && (
+      {(qesResult === "signed" || qesResult === "failed" || qesResult === "processing") && (
         <div
           role={qesResult === "failed" ? "alert" : "status"}
           className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${
             qesResult === "signed"
               ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-              : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+              : qesResult === "processing"
+                ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
           }`}
         >
           <span className="flex-1">
             {qesResult === "signed"
               ? "Das Dokument wurde qualifiziert signiert. Das signierte PDF liegt jetzt zusätzlich in dieser Akte."
-              : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
+              : qesResult === "processing"
+                ? "Die qualifizierte Signatur wird gerade abgeschlossen. Die Liste aktualisiert sich nach einem Neuladen."
+                : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
           </span>
           <button
             type="button"

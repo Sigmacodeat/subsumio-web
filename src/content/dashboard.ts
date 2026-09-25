@@ -7810,6 +7810,12 @@ export const D = {
   "signature.quick_expires": { de: "Gültigkeit (Tage)", en: "Validity (days)" },
   "signature.quick_save": { de: "Entwurf speichern", en: "Save draft" },
   "signature.quick_created": { de: "Signatur-Entwurf gespeichert", en: "Signature draft saved" },
+  "signature.quick_case": { de: "Akte", en: "Matter" },
+  "signature.quick_case_placeholder": { de: "Akte wählen …", en: "Select matter …" },
+  "signature.quick_case_hint": {
+    de: "Ohne Akte kann die Anfrage später nicht zum Unterschreiben versendet werden.",
+    en: "Without a matter, the request cannot be sent for signing later.",
+  },
 
   // ── Team page strings ──
   "team.seat_limit_reached": {
