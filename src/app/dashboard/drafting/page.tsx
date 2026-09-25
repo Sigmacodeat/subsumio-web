@@ -16,7 +16,6 @@ import {
   Save,
   UserCheck,
   AlertTriangle,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,45 +146,11 @@ export default function DraftingPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState<string | null>(null);
-  const [enqueuing, setEnqueuing] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [casesError, setCasesError] = useState(false);
 
   const template = TEMPLATES.find((t) => t.key === selectedTemplate)!;
-
-  async function enqueueBackgroundDraft() {
-    const data = f.getValues();
-    if (!canGenerate) return;
-    setEnqueuing(true);
-    try {
-      const res = await fetch("/api/autonomous/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "legal_draft_generation",
-          title: `${template.label}: ${data.title || "Entwurf"}`,
-          payload: {
-            template_key: selectedTemplate,
-            form_data: data,
-            case_slug: data.selectedCaseSlug || undefined,
-          },
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      addToast({
-        type: "success",
-        title: t("drafting.enqueued_ok"),
-        description: t("drafting.enqueued_desc"),
-      });
-    } catch {
-      addToast({
-        type: "error",
-        title: t("drafting.enqueued_error"),
-      });
-    } finally {
-      setEnqueuing(false);
-    }
-  }
 
   // Every AI text surface verifies its statute citations (CLAUDE.md invariant).
   const { grounding, groundAnswer, reset: resetGrounding } = useGroundedAnswer();
@@ -203,6 +168,7 @@ export default function DraftingPage() {
     onSubmit: async (data: DraftingFormData) => {
       setGenerating(true);
       setResult(null);
+      setGenerateError(null);
       setResultCitations([]);
       setResultGaps([]);
       resetGrounding();
@@ -224,7 +190,7 @@ export default function DraftingPage() {
         setResultGaps(res.gaps ?? []);
         setDraftSaved(null);
       } catch {
-        setResult(t("drafting.error_generate"));
+        setGenerateError(t("drafting.error_generate"));
       } finally {
         setGenerating(false);
       }
@@ -570,19 +536,17 @@ export default function DraftingPage() {
               ? t("drafting.btn_generating")
               : `${template.label} ${t("drafting.btn_generate_suffix")}`}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={enqueueBackgroundDraft}
-            disabled={!canGenerate || enqueuing || generating}
-            className="gap-2 active:scale-[0.99]"
-            title={t("drafting.btn_background_hint")}
-          >
-            {enqueuing ? <Loader2 size={16} className="animate-spin" /> : <Clock size={16} />}
-            {t("drafting.btn_background")}
-          </Button>
         </div>
       </form>
+
+      {generateError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          {generateError}
+        </div>
+      )}
 
       {/* Result */}
       {result && (
