@@ -422,6 +422,29 @@ export default function KanzleiSettingsPage() {
           value={settings.deadlineReminderStages ?? ""}
           onChange={(v) => update("deadlineReminderStages", v)}
         />
+        <label htmlFor="quiet-days" className="flex cursor-pointer items-start gap-3">
+          <input
+            id="quiet-days"
+            type="checkbox"
+            checked={settings.deadlineQuietDays ?? true}
+            onChange={(e) => update("deadlineQuietDays", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {L(
+                "Keine Fristen-Mails an Wochenenden & Feiertagen",
+                "No deadline mails on weekends & public holidays"
+              )}
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              {L(
+                "Digest und Notfrist-Eskalation werden auf den nächsten Werktag verschoben (Feiertage nach Rechtsraum). Überfällige Fristen bleiben im nächsten Digest sichtbar — nichts geht verloren.",
+                "Digest and statutory-deadline escalation move to the next business day (holidays per jurisdiction). Overdue deadlines stay visible in the next digest — nothing is lost."
+              )}
+            </p>
+          </div>
+        </label>
         <label htmlFor="notfrist-escalation" className="flex cursor-pointer items-start gap-3">
           <input
             id="notfrist-escalation"
