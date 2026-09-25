@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { translationWarningText } from "@/lib/translation-warnings";
 
 const LANGUAGES = [
   { code: "de", labelKey: "translate.lang_de" },
@@ -262,7 +263,7 @@ export default function TranslatePage() {
             <div className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3">
               {result.warnings.map((w, i) => (
                 <p key={i} className="text-xs text-[color:var(--ds-warning-text)]">
-                  {w}
+                  {translationWarningText(w)}
                 </p>
               ))}
             </div>
