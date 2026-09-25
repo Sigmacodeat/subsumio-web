@@ -9,6 +9,8 @@ import {
   deleteMemory,
   inferMemoriesFromMessage,
   searchMemories,
+  ownWordsOf,
+  MEMORY_TYPES,
   type MemoryType,
 } from "@/lib/copilot-memory";
 import { extractMemoriesWithLLM, isLLMExtractionAvailable } from "@/lib/copilot-memory-llm";
@@ -18,8 +20,10 @@ import { logger } from "@/lib/logger";
 const log = logger("api/copilot/memory");
 
 const memoryPostSchema = z.object({
-  action: z.enum(["create", "update", "delete", "infer", "search"]).optional(),
-  type: z.enum(["preference", "fact", "instruction", "context", "deadline"]).optional(),
+  action: z.enum(["create", "update", "delete", "infer", "search", "agent_action"]).optional(),
+  // Derived from the memory kinds the store knows (was out of sync: the UI's
+  // "Thema"/"Aktennotiz" were rejected, agent facts never saved).
+  type: z.enum(MEMORY_TYPES).optional(),
   key: z.string().max(200).optional(),
   value: z.string().max(5000).optional(),
   source: z.enum(["user_explicit", "inferred", "system"]).optional(),
@@ -111,7 +115,12 @@ export const POST = createHandler(
         });
       }
 
-      // Infer memories from a user message
+      // Infer memories from a user message — only from the user's own words
+      // (quoted/pasted text is excluded).
+      const ownWords = action === "infer" && message ? ownWordsOf(message) : "";
+      if (action === "infer" && message && ownWords.length <= 10) {
+        return NextResponse.json({ inferred: [], superseded: [], proposed: [] });
+      }
       if (action === "infer" && message) {
         // P0.1: Use LLM-based extraction when available, fall back to regex
         let extracted: Array<{
@@ -124,7 +133,7 @@ export const POST = createHandler(
         }> = [];
 
         if (isLLMExtractionAvailable()) {
-          const llmResults = await extractMemoriesWithLLM(message, {
+          const llmResults = await extractMemoriesWithLLM(ownWords, {
             caseSlug,
             headers: ctx.headers,
           });
@@ -140,12 +149,36 @@ export const POST = createHandler(
 
         // Fallback: regex-based inference when LLM is not configured or returns nothing
         if (extracted.length === 0) {
-          extracted = inferMemoriesFromMessage(message);
+          extracted = inferMemoriesFromMessage(ownWords);
         }
 
         const created = [];
+        const proposed = [];
         const allSuperseded: string[] = [];
         for (const item of extracted) {
+          // An "instruction" learned on its own would steer every future
+          // answer: it is only a proposal until the user confirms it, and it
+          // never replaces an existing entry.
+          if (item.type === "instruction") {
+            proposed.push(
+              await createMemory(
+                {
+                  type: item.type,
+                  key: item.key,
+                  value: item.value,
+                  source: "inferred",
+                  caseSlug,
+                  entities: item.entities,
+                  validFrom: item.validFrom,
+                  validTo: item.validTo,
+                  ownerId: ctx.user.id,
+                  status: "proposed",
+                },
+                ctx.headers
+              )
+            );
+            continue;
+          }
           const { memory: mem, superseded } = await createMemoryWithSupersession(
             {
               type: item.type,
@@ -165,6 +198,7 @@ export const POST = createHandler(
         }
         return NextResponse.json({
           inferred: created,
+          proposed,
           superseded: allSuperseded,
           method: isLLMExtractionAvailable() ? "llm" : "regex",
         });
@@ -235,19 +269,25 @@ export const PATCH = createHandler(
     },
   },
   async (ctx, body) => {
-    const { id, value, pinned, type } = (body ?? {}) as {
+    const { id, value, pinned, type, status } = (body ?? {}) as {
       id?: string;
       value?: string;
       pinned?: boolean;
       type?: MemoryType;
+      status?: unknown;
     };
+    if (type !== undefined && !(MEMORY_TYPES as readonly string[]).includes(type)) {
+      return apiError("bad_request", "Unbekannte Art des Eintrags", 400);
+    }
+    // Confirming a proposal ("Merken") is the only status change.
+    const confirm = status === "active" ? ("active" as const) : undefined;
 
     if (!id) {
       return apiError("bad_request", "Memory id required", 400);
     }
 
     try {
-      await updateMemory(id, { value, pinned, type }, ctx.headers, {
+      await updateMemory(id, { value, pinned, type, status: confirm }, ctx.headers, {
         userId: ctx.user.id,
         isAdmin: ctx.user.role === "admin",
       });

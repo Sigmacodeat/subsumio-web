@@ -160,7 +160,15 @@ async function engineSearch(
   return (await res.json()) as Array<{ slug: string }>;
 }
 
-export type MemoryType = "preference" | "fact" | "topic" | "instruction" | "case_note";
+/** The memory kinds — the API schema is derived from this list. */
+export const MEMORY_TYPES = ["preference", "fact", "topic", "instruction", "case_note"] as const;
+export type MemoryType = (typeof MEMORY_TYPES)[number];
+
+/**
+ * "proposed": recognised automatically but not yet confirmed by the user —
+ * never part of the prompt context until confirmed ("Merken").
+ */
+export type MemoryStatus = "active" | "proposed";
 
 export type MemorySource = "user_explicit" | "inferred" | "system";
 
@@ -181,6 +189,8 @@ export interface CopilotMemoryEntry {
   validTo?: string;
   /** WP-5.30: user who owns this entry. Missing on legacy firm-shared rows. */
   ownerId?: string;
+  /** Missing on existing rows = active. */
+  status?: MemoryStatus;
 }
 
 /** Who is acting on a memory — drives the per-user ownership check. */
@@ -238,6 +248,7 @@ function parseMemoryPage(page: BrainPage): CopilotMemoryEntry | null {
     validFrom: fm.valid_from ? String(fm.valid_from) : undefined,
     validTo: fm.valid_to ? String(fm.valid_to) : undefined,
     ownerId: fm.owner_id ? String(fm.owner_id) : undefined,
+    status: fm.memory_status === "proposed" ? "proposed" : "active",
   };
 }
 
@@ -295,6 +306,7 @@ export async function createMemory(
     validFrom?: string;
     validTo?: string;
     ownerId?: string;
+    status?: MemoryStatus;
   },
   headers?: EngineHeaders
 ): Promise<CopilotMemoryEntry> {
@@ -323,6 +335,7 @@ export async function createMemory(
         valid_from: opts.validFrom,
         valid_to: opts.validTo,
         owner_id: opts.ownerId,
+        memory_status: opts.status ?? "active",
         created_at: now,
         updated_at: now,
       },
@@ -345,12 +358,13 @@ export async function createMemory(
     validFrom: opts.validFrom,
     validTo: opts.validTo,
     ownerId: opts.ownerId,
+    status: opts.status ?? "active",
   };
 }
 
 export async function updateMemory(
   id: string,
-  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type">>,
+  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type" | "status">>,
   headers?: EngineHeaders,
   actor?: MemoryActor
 ): Promise<void> {
@@ -376,6 +390,7 @@ export async function updateMemory(
         memory_type: updates.type ?? fm.memory_type ?? "fact",
         memory_value: updates.value ?? fm.memory_value ?? "",
         pinned: updates.pinned ?? fm.pinned ?? false,
+        ...(updates.status ? { memory_status: updates.status } : {}),
         updated_at: now,
       },
     },
@@ -689,6 +704,9 @@ export async function buildMemoryContext(
     selected = [...pinned, ...unpinned].slice(0, max);
   }
 
+  // Unconfirmed proposals never steer answers.
+  selected = selected.filter((m) => m.status !== "proposed");
+
   if (selected.length === 0) return "";
 
   const lines: string[] = ["## GEDÄCHTNIS — Persönliche Kontextinformationen"];
@@ -708,6 +726,19 @@ export async function buildMemoryContext(
   );
 
   return lines.join("\n");
+}
+
+/**
+ * The part of a chat message that is the user's own words: quoted lines
+ * ("> …", pasted mail/brief text) are not the user speaking to the Copilot
+ * and must not become memories.
+ */
+export function ownWordsOf(message: string): string {
+  return message
+    .split("\n")
+    .filter((line) => !/^\s*>/.test(line))
+    .join("\n")
+    .trim();
 }
 
 /**
