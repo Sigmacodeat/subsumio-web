@@ -23,6 +23,7 @@ const OPERATION_LABELS: Record<CreditOperation, string> = {
   agent: "Mehrstufiger Auftrag an den Assistenten",
   deadline_detect: "Fristenerkennung",
   frist_engine: "Fristenrechner",
+  case_scan: "Akten-Scan (je Akte)",
 };
 
 export default function PricingPage({ market = "at" }: { market?: Market }) {

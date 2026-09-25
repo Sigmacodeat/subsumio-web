@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Send,
   UserPlus,
+  Radar,
   RefreshCw,
   X,
   Zap,
@@ -32,6 +33,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { CaseScanFinding } from "@/components/legal/CaseScanFinding";
 
 type ReviewType =
   | "all"
@@ -39,7 +41,8 @@ type ReviewType =
   | "document_request"
   | "client_submission"
   | "suggested_party"
-  | "pending_fact";
+  | "pending_fact"
+  | "case_scan_finding";
 
 interface ReviewItem {
   id: string;
@@ -48,7 +51,8 @@ interface ReviewItem {
     | "suggested_deadline"
     | "client_submission"
     | "suggested_party"
-    | "pending_fact";
+    | "pending_fact"
+    | "case_scan_finding";
   title: string;
   description: string;
   caseSlug: string | null;
@@ -84,6 +88,7 @@ const TYPE_ICON: Record<ReviewItem["type"], React.ElementType> = {
   client_submission: MessageCircle,
   suggested_party: UserPlus,
   pending_fact: Lightbulb,
+  case_scan_finding: Radar,
 };
 
 const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
@@ -92,6 +97,7 @@ const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
   client_submission: { de: "Mandanteneingang", en: "Submission" },
   suggested_party: { de: "Parteienvorschlag", en: "Suggested Party" },
   pending_fact: { de: "Offene Tatsache", en: "Pending Fact" },
+  case_scan_finding: { de: "Fall-Scan (KI)", en: "Case scan (AI)" },
 };
 
 const TYPE_BADGE: Record<ReviewItem["type"], string> = {
@@ -105,6 +111,8 @@ const TYPE_BADGE: Record<ReviewItem["type"], string> = {
     "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
   pending_fact:
     "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  case_scan_finding:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 const ACTION_BTN =
@@ -138,6 +146,9 @@ const I18N: Record<string, { de: string; en: string }> = {
   submissions: { de: "Eingänge", en: "Submissions" },
   parties: { de: "Parteien", en: "Parties" },
   facts: { de: "Tatsachen", en: "Facts" },
+  case_scans: { de: "Fall-Scans", en: "Case scans" },
+  toast_scan_reviewed: { de: "Fall-Scan als geprüft markiert", en: "Case scan marked as reviewed" },
+  toast_scan_rejected: { de: "Fall-Scan verworfen", en: "Case scan discarded" },
   empty_title: { de: "Nichts zu prüfen", en: "Nothing to review" },
   empty: {
     de: "Alle Fristvorschläge, Mandanteneingänge und Tatsachen sind bearbeitet.",
@@ -321,6 +332,17 @@ export function ReviewInboxTab() {
           merge: true,
         });
       }
+      if (type === "case_scan_finding") {
+        // Only the review state of the result page changes — nothing is
+        // written into the matter.
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            review_status: action === "reviewed" ? "reviewed" : "rejected",
+            reviewed_at: new Date().toISOString(),
+          },
+          merge: true,
+        });
+      }
       throw new Error("unknown_type");
     },
     onSuccess: (_data, variables) => {
@@ -341,6 +363,16 @@ export function ReviewInboxTab() {
           type: "success",
           title: tr(
             variables.action === "approve" ? "toast_party_confirmed" : "toast_party_rejected",
+            lang
+          ),
+        });
+        return;
+      }
+      if (variables.type === "case_scan_finding") {
+        addToast({
+          type: "success",
+          title: tr(
+            variables.action === "reviewed" ? "toast_scan_reviewed" : "toast_scan_rejected",
             lang
           ),
         });
@@ -394,6 +426,7 @@ export function ReviewInboxTab() {
     { key: "client_submission", label: tr("submissions", lang) },
     { key: "suggested_party", label: tr("parties", lang) },
     { key: "pending_fact", label: tr("facts", lang) },
+    { key: "case_scan_finding", label: tr("case_scans", lang) },
   ];
 
   // Portal links are not stored: a fresh one is issued for each copy.
@@ -570,6 +603,9 @@ export function ReviewInboxTab() {
                       </Link>
                     )}
                   </div>
+                  {item.type === "case_scan_finding" && (
+                    <CaseScanFinding pageSlug={item.pageSlug} lang={lang === "en" ? "en" : "de"} />
+                  )}
                   {/* Inline actions */}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {item.type === "document_request" && item.status === "draft" && (
@@ -786,6 +822,42 @@ export function ReviewInboxTab() {
                             <MessageCircle size={12} />
                           )}
                           {lang === "en" ? "Party Assertion" : "Parteibehauptung"}
+                        </button>
+                      </>
+                    )}
+                    {item.type === "case_scan_finding" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            actionMutation.mutate({
+                              type: item.type,
+                              action: "reviewed",
+                              item,
+                            })
+                          }
+                          disabled={locked}
+                          className={ACTION_BTN}
+                        >
+                          {busy ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Check size={12} />
+                          )}
+                          {tr("mark_reviewed", lang)}
+                        </button>
+                        <button
+                          onClick={() =>
+                            actionMutation.mutate({
+                              type: item.type,
+                              action: "reject",
+                              item,
+                            })
+                          }
+                          disabled={locked}
+                          className={ACTION_BTN}
+                        >
+                          {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
+                          {tr("reject", lang)}
                         </button>
                       </>
                     )}

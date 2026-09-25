@@ -42,7 +42,8 @@ describe("document ingest recovery schedules", () => {
     const dir = resolve(process.cwd(), "src/app/api/cron");
     const routes = readdirSync(dir).filter((d) => statSync(resolve(dir, d)).isDirectory());
     // Deliberately unscheduled (decision pending, see docs/deploy/CRON_SCHEDULE.md).
-    const allowedUnscheduled = new Set(["time-tracking"]);
+    // case-scanner: on demand only (product decision) — the route answers 410.
+    const allowedUnscheduled = new Set(["time-tracking", "case-scanner"]);
     const missing = routes.filter(
       (r) => !allowedUnscheduled.has(r) && !paths.some((p) => p.startsWith(`/api/cron/${r}`))
     );

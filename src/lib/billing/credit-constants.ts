@@ -10,7 +10,8 @@ export type CreditOperation =
   | "subsumption"
   | "agent"
   | "deadline_detect"
-  | "frist_engine";
+  | "frist_engine"
+  | "case_scan";
 
 export const CREDIT_COSTS: Record<CreditOperation, number> = {
   think: 1,
@@ -19,6 +20,8 @@ export const CREDIT_COSTS: Record<CreditOperation, number> = {
   agent: 5,
   deadline_detect: 1,
   frist_engine: 0,
+  // One matter in an on-demand case scan: a capped supervisor run (like "agent").
+  case_scan: 5,
 };
 
 /**

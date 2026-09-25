@@ -19,6 +19,20 @@ const page = (fm: Record<string, unknown>, title = "p") => ({
 });
 
 describe("buildApprovalSummary", () => {
+  it("counts case scan results as their own review category", () => {
+    const s = buildApprovalSummary({
+      inbox: [inbox("case_scan_finding"), inbox("case_scan_finding")],
+      agentActions: [],
+      analyses: [],
+      timeSuggestions: [],
+      userEmail: "me@example.com",
+    });
+    const by = Object.fromEntries(s.categories.map((c) => [c.key, c]));
+    expect(by.case_scans.count).toBe(2);
+    expect(by.case_scans.href).toBe("/dashboard/communications?view=review");
+    expect(s.total).toBe(2);
+  });
+
   it("groups review-inbox items so each category matches the list it links to", () => {
     const s = buildApprovalSummary({
       inbox: [
@@ -87,7 +101,13 @@ describe("buildApprovalSummary", () => {
       timeSuggestions: [],
       userEmail: "me@example.com",
     });
-    expect(s.unavailable).toEqual(["deadlines", "client_input", "requests", "analyses"]);
+    expect(s.unavailable).toEqual([
+      "deadlines",
+      "client_input",
+      "requests",
+      "case_scans",
+      "analyses",
+    ]);
   });
 
   it("caps the preview at three items", () => {

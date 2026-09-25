@@ -2,7 +2,6 @@ import type {
   AnonymizeResponse,
   BrainPage,
   BrainStats,
-  CaseScannerResponse,
   Citation,
   ConflictCheckResponse,
   ConnectorStatus,
@@ -36,6 +35,19 @@ import type {
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
 import type { IntakeConflictCheck } from "./intake-acceptance";
+import type {
+  CaseScanPreview,
+  CaseScanScope,
+  CaseScanStartResult,
+  CaseScanStatus,
+} from "./legal/case-scan";
+
+interface CaseScanRequest {
+  scope: CaseScanScope;
+  case_slugs?: string[];
+  look_ahead_days?: number;
+  evidence_threshold?: number;
+}
 import type { MatterConflictOutcome as IntakeConflictOutcome } from "./conflict-gate";
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { unwrapApiBody } from "./api-body";
@@ -967,15 +979,33 @@ export const api = {
       });
     },
 
-    caseScan(input: {
-      look_ahead_days?: number;
-      evidence_threshold?: number;
-      max_cases?: number;
-    }): Promise<CaseScannerResponse> {
-      return request("/api/legal/case-scanner", {
+    /** Which matters a case scan covers and what it costs (nothing starts). */
+    async caseScanPreview(input: CaseScanRequest): Promise<CaseScanPreview> {
+      const res = await request<{ data: CaseScanPreview }>("/api/legal/case-scanner", {
         method: "POST",
-        body: JSON.stringify(input),
+        body: JSON.stringify({ ...input, mode: "preview" }),
       });
+      return res.data;
+    },
+
+    /** Starts the confirmed scan (`expected_credits` = the previewed total). */
+    async caseScanStart(
+      input: CaseScanRequest & { expected_credits: number }
+    ): Promise<CaseScanStartResult> {
+      const res = await request<{ data: CaseScanStartResult }>("/api/legal/case-scanner", {
+        method: "POST",
+        body: JSON.stringify({ ...input, mode: "start" }),
+        signal: AbortSignal.timeout(300_000),
+      });
+      return res.data;
+    },
+
+    /** Status of one scan's runs; runs without a result are refunded. */
+    async caseScanStatus(scanId: string): Promise<CaseScanStatus> {
+      const res = await request<{ data: CaseScanStatus }>(
+        `/api/legal/case-scanner?scan_id=${encodeURIComponent(scanId)}`
+      );
+      return res.data;
     },
 
     translate(input: {
@@ -2414,7 +2444,8 @@ export const api = {
           | "suggested_deadline"
           | "client_submission"
           | "suggested_party"
-          | "pending_fact";
+          | "pending_fact"
+          | "case_scan_finding";
         title: string;
         description: string;
         caseSlug: string | null;

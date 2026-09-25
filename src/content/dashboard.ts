@@ -170,7 +170,6 @@ export const D = {
   "nav.tabular_review": { de: "Massenprüfung", en: "Bulk Review" },
   "nav.obligation_tracking": { de: "Pflichtenverfolgung", en: "Obligation Tracking" },
   "nav.case_scanner": { de: "Akten-Scanner", en: "Case Scanner" },
-  "scanner.status_queued": { de: "In Warteschlange", en: "Queued" },
   "nav.clause_library": { de: "Klausel-Bibliothek", en: "Clause Library" },
   "nav.templates": { de: "Vorlagen", en: "Templates" },
   "nav.litigation": { de: "Prozessführung", en: "Litigation" },
@@ -5762,11 +5761,11 @@ export const D = {
   // ── Nav: dashboard ──
   "nav.dashboard": { de: "Übersicht", en: "Dashboard" },
 
-  // ── Case Scanner page ──
+  // ── Case Scanner page (on demand) ──
   "scanner.title": { de: "Akten-Scanner", en: "Case Scanner" },
   "scanner.description": {
-    de: "Die nächtliche Prüfung durchsucht alle Akten nach drohenden Fristen, neuen Streitpunkten und Beweislücken — wird asynchron als Subsumio-Dienst-Job ausgeführt",
-    en: "Night agent scans all cases for impending deadlines, new issues and evidence gaps — runs asynchronously as an engine job",
+    de: "Prüft auf Abruf Akten auf drohende Fristen, Beweislücken und Rechtsprechung — nur nach Ihrer Bestätigung der Kosten",
+    en: "Reviews matters on demand for impending deadlines, evidence gaps and case law — only after you confirm the cost",
   },
   "scanner.error_start": { de: "Scanner-Start fehlgeschlagen.", en: "Failed to start scanner." },
   "scanner.how_it_works": {
@@ -5774,26 +5773,36 @@ export const D = {
     en: "How does the Case Scanner work?",
   },
   "scanner.description_detail": {
-    de: "Der Scanner wird als Hintergrundjob in der Subsumio-Dienst gestartet. Er durchsucht alle Fallakten nach:",
-    en: "The scanner runs as a background job in the engine. It searches all case files for:",
+    de: "Sie wählen eine Akte, eine Auswahl oder alle offenen Akten, die Sie sehen dürfen. Je Akte prüft ein KI-Auftrag mit Kostendeckel:",
+    en: "You pick one matter, a selection or all open matters you may see. For each matter a capped AI run checks:",
   },
   "scanner.feature_deadlines": {
     de: "Fristen, die in den nächsten N Tagen ablaufen",
     en: "Deadlines expiring in the next N days",
   },
   "scanner.feature_issues": {
-    de: "Neuen Issues, die seit dem letzten Scan aufgetaucht sind",
-    en: "New issues that appeared since the last scan",
+    de: "Rechtsprechung und Risiken zu den Normen der Akte",
+    en: "Case law and risks for the matter's provisions",
   },
   "scanner.feature_evidence": {
     de: "Akten mit geringer Evidenz (unter dem Schwellwert)",
     en: "Cases with low evidence (below threshold)",
   },
   "scanner.result_note": {
-    de: "Das Ergebnis wird als Job-Status zurückgegeben. Die Einzelergebnisse schreibt die Prüfung in die jeweiligen Akten-Seiten.",
-    en: "The result is returned as a job status. The agent writes detailed results to the respective case pages.",
+    de: "Es gibt keinen automatischen Nachtlauf. Die Ergebnisse erscheinen als Prüfpunkte unter „Eingang prüfen“ — anwaltlich zu prüfen; in die Akte wird nichts automatisch geschrieben.",
+    en: "There is no automatic nightly run. Results appear as review items under “Review inbox” — to be reviewed by a lawyer; nothing is written into the matter automatically.",
   },
-  "scanner.config": { de: "Konfiguration", en: "Configuration" },
+  "scanner.config": { de: "Umfang und Einstellungen", en: "Scope and settings" },
+  "scanner.scope": { de: "Welche Akten?", en: "Which matters?" },
+  "scanner.scope_case": { de: "Eine Akte", en: "One matter" },
+  "scanner.scope_selection": { de: "Auswahl", en: "Selection" },
+  "scanner.scope_all_open": { de: "Alle offenen Akten", en: "All open matters" },
+  "scanner.pick_case": { de: "Akte wählen", en: "Choose a matter" },
+  "scanner.pick_placeholder": { de: "— Akte auswählen —", en: "— select a matter —" },
+  "scanner.filter_cases": { de: "Akten filtern", en: "Filter matters" },
+  "scanner.selected": { de: "ausgewählt (max. {max})", en: "selected (max. {max})" },
+  "scanner.cases_loading": { de: "Akten werden geladen …", en: "Loading matters …" },
+  "scanner.no_cases": { de: "Keine Akten gefunden.", en: "No matters found." },
   "scanner.look_ahead": { de: "Vorschau-Zeitraum", en: "Look-ahead period" },
   "scanner.days": { de: "Tage", en: "days" },
   "scanner.look_ahead_desc": {
@@ -5802,20 +5811,58 @@ export const D = {
   },
   "scanner.evidence_threshold": { de: "Evidenz-Schwellwert", en: "Evidence threshold" },
   "scanner.evidence_desc": {
-    de: "Akten mit weniger als {evidenceThreshold} Evidenzstücken werden flagged.",
+    de: "Akten mit weniger als {evidenceThreshold} Evidenzstücken werden markiert.",
     en: "Cases with fewer than {evidenceThreshold} evidence items are flagged.",
   },
-  "scanner.max_cases": { de: "Max. Akten pro Scan", en: "Max cases per scan" },
-  "scanner.cases": { de: "Akten", en: "cases" },
-  "scanner.start": { de: "Scan starten", en: "Start scan" },
+  "scanner.cases": { de: "Akten", en: "matters" },
+  "scanner.preview": { de: "Kosten berechnen", en: "Calculate cost" },
+  "scanner.preview_title": { de: "Kostenvorschau", en: "Cost preview" },
+  "scanner.preview_line": {
+    de: "{count} Akten × {rate} Credits = {total} Credits",
+    en: "{count} matters × {rate} credits = {total} credits",
+  },
+  "scanner.balance": {
+    de: "Verfügbares Guthaben: {balance} Credits",
+    en: "Available balance: {balance} credits",
+  },
+  "scanner.insufficient": {
+    de: "Das Guthaben reicht für diesen Scan nicht. Bitte Credits nachkaufen oder weniger Akten wählen.",
+    en: "Your balance does not cover this scan. Buy credits or choose fewer matters.",
+  },
+  "scanner.truncated": {
+    de: "Es gibt mehr offene Akten als erlaubt — gescannt werden die {max} zuletzt bearbeiteten.",
+    en: "There are more open matters than allowed — the {max} most recently updated are scanned.",
+  },
+  "scanner.skipped_count": {
+    de: "{count} Akten werden nicht gescannt (nicht gefunden oder kein Zugriff).",
+    en: "{count} matters are not scanned (not found or no access).",
+  },
+  "scanner.nothing_to_scan": { de: "Keine Akte zu scannen.", en: "No matter to scan." },
+  "scanner.confirm_start": {
+    de: "Scan starten — {total} Credits",
+    en: "Start scan — {total} credits",
+  },
   "scanner.started": { de: "Scan gestartet", en: "Scan started" },
-  "scanner.job_id": { de: "Job-ID", en: "Job ID" },
-  "scanner.days_preview": { de: "Tage Vorschau", en: "Days preview" },
-  "scanner.evidence_threshold_short": { de: "Evidenz-Schwelle", en: "Evidence threshold" },
-  "scanner.max_cases_short": { de: "Max. Akten", en: "Max cases" },
+  "scanner.started_line": {
+    de: "{launched} Akten werden geprüft, {charged} Credits abgebucht.",
+    en: "{launched} matters are being reviewed, {charged} credits charged.",
+  },
+  "scanner.refunded_line": {
+    de: "{refunded} Credits für nicht gestartete Akten zurückgebucht.",
+    en: "{refunded} credits refunded for matters that did not start.",
+  },
+  "scanner.not_started": { de: "Nicht gestartet", en: "Not started" },
+  "scanner.run_status": { de: "Stand der Prüfungen", en: "Review progress" },
+  "scanner.run_done": { de: "fertig", en: "done" },
+  "scanner.run_running": { de: "läuft", en: "running" },
+  "scanner.run_failed": {
+    de: "fehlgeschlagen — Credits zurückgebucht",
+    en: "failed — credits refunded",
+  },
+  "scanner.to_review": { de: "Zu „Eingang prüfen“", en: "Go to review inbox" },
   "scanner.result_wait": {
-    de: "Die Prüfung schreibt Ergebnisse in die jeweiligen Akten-Seiten. Prüfen Sie die Akten-Übersicht in einigen Minuten.",
-    en: "The agent writes results to the respective case pages. Check the case overview in a few minutes.",
+    de: "Die Ergebnisse erscheinen nach einigen Minuten als Prüfpunkte unter „Eingang prüfen“.",
+    en: "Results appear as review items under “Review inbox” after a few minutes.",
   },
 
   // ── Intake page ──

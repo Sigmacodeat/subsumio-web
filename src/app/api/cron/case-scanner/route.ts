@@ -1,80 +1,26 @@
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
-
-import { logger } from "@/lib/logger";
-const log = logger("api/cron/case-scanner");
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
 
 /**
- * GET /api/cron/case-scanner — Nightly Legal Case Scanner.
+ * GET /api/cron/case-scanner — deactivated.
  *
- * Läuft als supercronic Cron (Netcup) oder manuell:
- *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/case-scanner
- *
- * Pro Brain (Kanzlei): scannt alle legal_case Pages und startet
- * Supervisor-Jobs für Akten mit kritischen Fristen, fehlendem Evidence
- * oder stale Analysen.
+ * The case scanner runs on demand only: a lawyer or admin starts it for one
+ * matter, a selection or all open matters, after a cost preview in credits
+ * (Akten-Scanner in the dashboard). There is no nightly run, so no agent work
+ * and no model costs start without someone confirming them. The route stays
+ * so an old scheduler entry gets an honest answer instead of a 404; it is
+ * not in server/deploy/netcup/crontab.
  */
-
-async function triggerCaseScanner(
-  brainId: string
-): Promise<{ ok: boolean; job_id?: number; error?: string }> {
-  try {
-    const res = await fetch(`${ENGINE_URL}/api/legal/case-scanner`, {
-      method: "POST",
-      headers: {
-        ...engineHeadersForBrain(brainId),
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        look_ahead_days: 7,
-        evidence_threshold: 1,
-        max_cases: 50,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      return { ok: false, error: String(data.message ?? data.error ?? `HTTP ${res.status}`) };
-    }
-    const data = (await res.json()) as Record<string, unknown>;
-    return {
-      ok: true,
-      job_id: typeof data.job_id === "number" ? data.job_id : undefined,
-    };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
-}
-
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  // Brain → Org-Mapping (shared helper)
-  const recipientsByBrain = await getRecipientsByBrain();
-  const brainIds = new Set(recipientsByBrain.keys());
-
-  let brainsChecked = 0;
-  let jobsQueued = 0;
-  let failures = 0;
-
-  for (const brainId of brainIds) {
-    brainsChecked++;
-    const result = await triggerCaseScanner(brainId);
-    if (result.ok) {
-      jobsQueued++;
-    } else {
-      failures++;
-      log.error(`[case-scanner] Brain ${brainId}: ${result.error}`);
-    }
-  }
-
-  return Response.json({
-    ok: true,
-    brains_checked: brainsChecked,
-    jobs_queued: jobsQueued,
-    failures,
-  });
+  return Response.json(
+    {
+      ok: false,
+      disabled: true,
+      message:
+        "Der automatische Akten-Scan ist deaktiviert. Scans starten nur auf Abruf im Dashboard (Akten-Scanner).",
+    },
+    { status: 410 }
+  );
 });

@@ -72,3 +72,11 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
 - `/api/cron/outlook-user-sync` (WP-4.19): 2-Wege-Kalendersync pro Nutzer
   via delegiertem Microsoft-OAuth. Empfohlener Zeitplan `*/15 * * * *`.
 - `/api/cron/sanctions-sync` prüft jetzt EU + UN + OFAC (WP-4.18).
+
+## Entfernt am 26.09.2026
+
+- `/api/cron/case-scanner`: kein automatischer Nachtlauf mehr (Produktentscheidung). Der
+  Akten-Scan startet nur auf Abruf durch Anwalt/Admin — für eine Akte, eine Auswahl oder
+  alle offenen Akten (höchstens 50), nach Kostenvorschau in Credits und Bestätigung. Die
+  Route bleibt bestehen und antwortet mit `410` „deaktiviert"; der Crontab-Eintrag ist
+  entfernt.

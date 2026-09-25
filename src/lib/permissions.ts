@@ -226,7 +226,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.case_investigation": ["admin", "lawyer"],
   "legal.case_investigation_review": ["admin", "lawyer"],
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
-  "legal.case_scanner": ["admin", "lawyer", "assistant"],
+  // Starts paid agent runs across matters: lawyers and admins only.
+  "legal.case_scanner": ["admin", "lawyer"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
   // Wirkt ausschließlich auf die eigenen Benachrichtigungen (userId-Scope in der Route).
   "notifications.write": ["admin", "lawyer", "assistant", "client_viewer"],

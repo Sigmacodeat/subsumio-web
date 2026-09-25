@@ -28,7 +28,7 @@ const ADDIN_DIRS = ["word-addin", "outlook-addin"];
 /** Client calls whose response is AI-generated legal text. */
 const AI_CALL_PATTERNS: RegExp[] = [
   /\bapi\.query\.think\(/,
-  /\bapi\.legal\.(translate|schriftsatz|deepAnalysis|tabularReview|caseStrategy|caseInvestigation|caseScan|opponentSimulation|extractObligations|contradictionsCheck|contractRedline|berufungsgruende|analyzeDocument)\(/,
+  /\bapi\.legal\.(translate|schriftsatz|deepAnalysis|tabularReview|caseStrategy|caseInvestigation|caseScan(?:Preview|Start|Status)?|opponentSimulation|extractObligations|contradictionsCheck|contractRedline|berufungsgruende|analyzeDocument)\(/,
   /\/draft-reply["'`]/,
   /["'`}]\/api\/legal\/(memo|summarize|risk-analysis|subsumption|contract-draft|contract-redline|schriftsatz|analyze|deep-analysis|case-strategy|litigation|chronology|perspektiven-room|opponent-simulation|process-strategy|berufungsgruende|contradiction-probe|commentaries|precedent-search|research|submission-review)["'`?/]/,
   /["'`}]\/api\/think["'`?]/,
