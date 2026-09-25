@@ -2142,7 +2142,15 @@ export const api = {
   },
 
   email: {
-    import(email: { subject: string; from: string; body: string; date?: string }): Promise<{
+    import(email: {
+      subject: string;
+      from: string;
+      body: string;
+      date?: string;
+      force_case_slug?: string;
+      /** The original .eml — stored unchanged in the matter, attachments included. */
+      raw_eml?: string;
+    }): Promise<{
       success: boolean;
       duplicate?: boolean;
       error?: string;
