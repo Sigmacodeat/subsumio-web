@@ -34,7 +34,7 @@ import {
   makeResolver,
   type UnresolvedFrontmatterRef,
 } from "./link-extraction.ts";
-import { NotFoundError } from "./engine-errors.ts";
+import { NotFoundError, PageExistsError } from "./engine-errors.ts";
 import { isFactsBackstopEligible } from "./facts/eligibility.ts";
 import { stripTakesFence } from "./takes-fence.ts";
 import { stripFactsFence } from "./facts-fence.ts";
@@ -181,6 +181,15 @@ export class OperationError extends Error {
       docs: this.docs,
     };
   }
+}
+
+/** put_page with if_absent found the slug taken; nothing was written. */
+function pageExistsOperationError(slug: string): OperationError {
+  return new OperationError(
+    "page_exists",
+    `Page already exists: ${slug}`,
+    "Use a different slug, or update the existing page explicitly."
+  );
 }
 
 // --- Upload validators (Fix 1 / B5 / H5 / M4) ---
@@ -1155,11 +1164,18 @@ const put_page: Operation = {
       required: false,
       description: "Richer label paired with source_kind. Remote callers: SERVER-STAMPED.",
     },
+    if_absent: {
+      type: "boolean",
+      required: false,
+      description:
+        "Create-only: fail with page_exists (nothing written) when a page already exists at this slug, including deleted or archived pages. Atomic against concurrent creates.",
+    },
   },
   mutating: true,
   scope: "write",
   handler: async (ctx, p) => {
     const slug = p.slug as string;
+    const ifAbsent = p.if_absent === true;
 
     // v0.39.3.0 CV6 trust gate for provenance write-through (WARN-8).
     // Only trusted LOCAL callers (ctx.remote === false — capture CLI,
@@ -1248,6 +1264,7 @@ const put_page: Operation = {
       slug,
       ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
     );
+    if (ifAbsent && existingPage) throw pageExistsOperationError(slug);
     if (!existingPage) {
       const parsed = await import("./markdown.ts").then((m) =>
         m.parseMarkdown(p.content as string, slug + ".md")
@@ -1294,25 +1311,32 @@ const put_page: Operation = {
       // Pack load failed; fall through to legacy inferType behavior.
       activePack = undefined;
     }
-    const result = await importFromContent(ctx.engine, slug, p.content as string, {
-      noEmbed,
-      // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
-      // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
-      // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
-      remote: ctx.remote !== false,
-      ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
-      // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
-      // inferType behavior when undefined).
-      ...(activePack ? { activePack } : {}),
-      // v0.39.3.0 provenance write-through (WARN-8). Trust-filtered values
-      // computed above; ingested_at is server-stamped at the engine layer.
-      // Null-valued fields signal "no provenance write this call" and the
-      // engine's COALESCE-preserve UPDATE keeps the prior first-write
-      // record intact (CV12 audit-trail survival).
-      source_kind: provenanceKind,
-      source_uri: provenanceUri,
-      ingested_via: provenanceVia,
-    });
+    let result: Awaited<ReturnType<typeof importFromContent>>;
+    try {
+      result = await importFromContent(ctx.engine, slug, p.content as string, {
+        noEmbed,
+        ...(ifAbsent ? { ifAbsent: true } : {}),
+        // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
+        // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
+        // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
+        remote: ctx.remote !== false,
+        ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
+        // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
+        // inferType behavior when undefined).
+        ...(activePack ? { activePack } : {}),
+        // v0.39.3.0 provenance write-through (WARN-8). Trust-filtered values
+        // computed above; ingested_at is server-stamped at the engine layer.
+        // Null-valued fields signal "no provenance write this call" and the
+        // engine's COALESCE-preserve UPDATE keeps the prior first-write
+        // record intact (CV12 audit-trail survival).
+        source_kind: provenanceKind,
+        source_uri: provenanceUri,
+        ingested_via: provenanceVia,
+      });
+    } catch (e) {
+      if (e instanceof PageExistsError) throw pageExistsOperationError(slug);
+      throw e;
+    }
     // A new or changed matter changes what matter references resolve to.
     if (existingPage?.type === "legal_case" || result.parsedPage?.type === "legal_case") {
       invalidateMatterIndex(ctx.sourceId ?? "default");

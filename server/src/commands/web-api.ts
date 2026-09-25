@@ -5038,6 +5038,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ? (body.frontmatter as Record<string, unknown>)
           : {};
       const merge = body.merge === true;
+      // if_absent: create-only. The page INSERT itself refuses an existing
+      // (source_id, slug) — live, deleted or archived — so two concurrent
+      // creates cannot both land and a create never replaces a stored page.
+      const ifAbsent = body.if_absent === true;
+      if (ifAbsent && merge) {
+        apiError(res, 400, "if_absent_with_merge");
+        return;
+      }
       const sourceId = requestSourceId(req);
       // First write of a fresh tenant: pages.source_id has an FK on
       // sources(id) — provision the source row or the INSERT fails.
@@ -5156,7 +5164,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const result = await invokeOp(
         engine,
         "put_page",
-        { slug, content: markdown },
+        { slug, content: markdown, ...(ifAbsent ? { if_absent: true } : {}) },
         sourceId,
         undefined,
         req.matterScope ?? "all",
@@ -5176,6 +5184,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       if (e instanceof OperationError && e.code === "matter_read_only") {
         res.status(403).json({ error: e.code, message: e.message });
+        return;
+      }
+      if (e instanceof OperationError && e.code === "page_exists") {
+        res.status(409).json({ error: "page_exists", message: "Page already exists." });
         return;
       }
       const msg = e instanceof Error ? e.message : "unknown";
