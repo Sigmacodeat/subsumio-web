@@ -210,7 +210,10 @@ export const POST = createHandler(
           route: "send",
           recipient: body.to,
           caseSlug: body.caseSlug,
-          brainId: ctx.brainId,
+          // snake_case: the Resend webhook correlates via raw->>'brain_id'
+          // (delivery-status.ts). The camelCase key it carried until
+          // 2026-09-25 was never read — no Postausgangsbuch status came back.
+          brain_id: ctx.brainId,
           resend_id: result.id ?? null,
           via: result.via,
           attachments: attachments.length,

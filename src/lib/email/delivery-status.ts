@@ -22,7 +22,7 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
-import { filterNewIds } from "@/lib/caselaw-dedup";
+import { filterNewIds, forgetIds } from "@/lib/caselaw-dedup";
 import { logTrackingEvent, type TrackingEventType } from "@/lib/email/tracking";
 import type { ResendWebhookEvent } from "@/lib/email/mailbox";
 import type { DeliveryStatus } from "@/lib/outbound-register";
@@ -52,7 +52,16 @@ export interface DeliveryReconcileResult {
   trackingId: string | null;
   /** outbound_entry pages whose delivery_status was updated. */
   pagesUpdated: number;
+  /**
+   * True when correlation or the Postausgangsbuch write-back failed. The
+   * dedupe claim has been released so the provider's retry (Svix) processes
+   * the event again — the caller must answer non-2xx to trigger that retry.
+   */
+  retryable?: boolean;
 }
+
+const DEDUPE_SCOPE = "system";
+const DEDUPE_NAMESPACE = "resend-delivery";
 
 /**
  * Reconcile one verified Resend webhook event into stored outbound state.
@@ -76,7 +85,7 @@ export async function reconcileResendDeliveryEvent(
     };
   }
 
-  const fresh = await filterNewIds("system", "resend-delivery", [dedupeKey]);
+  const fresh = await filterNewIds(DEDUPE_SCOPE, DEDUPE_NAMESPACE, [dedupeKey]);
   if (fresh.size === 0) {
     return {
       handled: true,
@@ -97,6 +106,8 @@ export async function reconcileResendDeliveryEvent(
   let messageId: string | null = null;
   let brainId: string | null = null;
   let trackingId: string | null = null;
+  // A failed lookup must not consume the event: the claim is released below.
+  let lookupFailed = false;
 
   if (pool) {
     try {
@@ -118,10 +129,13 @@ export async function reconcileResendDeliveryEvent(
       }
 
       // 2) Case-email path: the send route stores the provider id in the
-      //    tracking event's raw payload (`resend_id`).
+      //    tracking event's raw payload (`resend_id`). The brain lives in
+      //    `raw.brain_id`; rows written before 2026-09-25 carry `brainId`
+      //    (the key mismatch left every Postausgangsbuch entry on "sent").
       if (!trackingId && emailId) {
         const { rows } = await pool.query(
-          `SELECT tracking_id, message_id, raw->>'brain_id' AS brain_id
+          `SELECT tracking_id, message_id,
+                  COALESCE(raw->>'brain_id', raw->>'brainId') AS brain_id
              FROM subsumio_email_tracking_events
             WHERE raw->>'resend_id' = $1
             ORDER BY created_at DESC
@@ -152,6 +166,7 @@ export async function reconcileResendDeliveryEvent(
         }
       }
     } catch (err) {
+      lookupFailed = true;
       log.error("correlation lookup failed", {
         emailId,
         error: err instanceof Error ? err.message : String(err),
@@ -196,7 +211,7 @@ export async function reconcileResendDeliveryEvent(
   }
 
   // ── Postausgangsbuch pages ──────────────────────────────────────────
-  const pagesUpdated = brainId
+  const writeBack = brainId
     ? await writeBackOutboundEntries(brainId, {
         trackingId,
         providerId: emailId,
@@ -204,7 +219,21 @@ export async function reconcileResendDeliveryEvent(
         eventType: event.type ?? "unknown",
         eventAt,
       })
-    : 0;
+    : { updated: 0, failed: false };
+  const pagesUpdated = writeBack.updated;
+
+  // Half-done is not done: release the dedupe claim so the provider's retry
+  // is processed instead of dropped as a duplicate. Engine outages used to
+  // lose the Postausgangsbuch status for good.
+  const retryable = lookupFailed || writeBack.failed;
+  if (retryable) {
+    await forgetIds(DEDUPE_SCOPE, DEDUPE_NAMESPACE, [dedupeKey]).catch((err) =>
+      log.error("dedupe release failed", {
+        dedupeKey,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    );
+  }
 
   // `comm.delivery_status` is intentionally NOT in the AuditAction union —
   // src/lib/audit-labels.ts is off-limits for this change; unknown actions
@@ -218,11 +247,20 @@ export async function reconcileResendDeliveryEvent(
       status,
       trackingId,
       pagesUpdated,
+      retryable,
       subject: event.data?.subject ?? null,
     },
   });
 
-  return { handled: true, status, messageId, brainId, trackingId, pagesUpdated };
+  return {
+    handled: true,
+    status,
+    messageId,
+    brainId,
+    trackingId,
+    pagesUpdated,
+    ...(retryable ? { retryable: true } : {}),
+  };
 }
 
 async function writeBackOutboundEntries(
@@ -234,17 +272,19 @@ async function writeBackOutboundEntries(
     eventType: string;
     eventAt: string;
   }
-): Promise<number> {
+): Promise<{ updated: number; failed: boolean }> {
   const headers = engineHeadersForBrain(brainId);
   let pages: ListedPage[];
   try {
-    pages = await listEnginePages(headers, "outbound_entry", 1000);
+    // strict: a partial/failed listing must surface as a failure, not as
+    // "no matching entry" — otherwise the event is consumed with nothing done.
+    pages = await listEnginePages(headers, "outbound_entry", 1000, { strict: true });
   } catch (err) {
     log.error("outbound_entry listing failed", {
       brainId,
       error: err instanceof Error ? err.message : String(err),
     });
-    return 0;
+    return { updated: 0, failed: true };
   }
 
   const targets = pages.filter((page) => {
@@ -257,6 +297,7 @@ async function writeBackOutboundEntries(
   });
 
   let updated = 0;
+  let failed = false;
   for (const page of targets) {
     const fm = page.frontmatter ?? {};
     const existing = String(fm.delivery_status ?? "") as DeliveryStatus;
@@ -275,14 +316,16 @@ async function writeBackOutboundEntries(
       if (res.ok) {
         updated++;
       } else {
+        failed = true;
         log.error("outbound_entry update failed", { slug: page.slug, httpStatus: res.status });
       }
     } catch (err) {
+      failed = true;
       log.error("outbound_entry update failed", {
         slug: page.slug,
         error: err instanceof Error ? err.message : String(err),
       });
     }
   }
-  return updated;
+  return { updated, failed };
 }

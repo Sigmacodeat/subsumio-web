@@ -61,3 +61,19 @@ export async function filterNewHitIds(brainId: string, hitIds: string[]): Promis
   }
   return fresh;
 }
+
+/**
+ * Release a claim taken by `filterNewIds` — for callers that claim BEFORE
+ * doing the work (so parallel deliveries cannot both process an event) and
+ * then fail half-way: without the release, the provider's retry would be
+ * dropped as a duplicate and the work never happens.
+ */
+export async function forgetIds(brainId: string, namespace: string, ids: string[]): Promise<void> {
+  const pool = getSharedPgPool();
+  if (!pool || ids.length === 0) return;
+  await ensureCaselawSeenSchema();
+  await pool.query(
+    `DELETE FROM subsumio_caselaw_seen WHERE brain_id = $1 AND hit_id = ANY($2::text[])`,
+    [brainId, ids.map((id) => `${namespace}:${id}`)]
+  );
+}
