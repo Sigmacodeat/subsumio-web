@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createOutboundEntry,
   exportOutboundRegister,
@@ -77,16 +78,14 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "outbound_entry", limit: "500" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: OutboundEntry[] = (
-      Array.isArray(data) ? data : (data.pages ?? [])
-    ) as OutboundEntry[];
+    // Every entry, not only the first engine batch of 100.
+    let data: unknown[];
+    try {
+      data = await listEnginePages(ctx.headers, "outbound_entry", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    let items: OutboundEntry[] = data as OutboundEntry[];
     if (query?.case_slug) {
       items = items.filter((e) => e.case_slug === query.case_slug);
     }

@@ -25,3 +25,25 @@ export function publicErrorMessage(
 ): string {
   return TECHNICAL_PATTERNS.some((re) => re.test(message)) ? fallback : message;
 }
+
+/**
+ * Error body of an API response, redacted for the client (audit ENG-5).
+ * Any JSON error body with a string `message` gets `publicErrorMessage`
+ * applied; for 5xx answers the raw message is returned as `cause` so the
+ * caller can log it — a 500 must leave a trace in the engine log, not only
+ * on the lawyer's screen.
+ */
+export function redactErrorResponseBody(
+  status: number,
+  body: unknown
+): { body: unknown; cause?: string } {
+  if (status < 400 || !body || typeof body !== "object" || Array.isArray(body)) {
+    return { body };
+  }
+  const message = (body as { message?: unknown }).message;
+  if (typeof message !== "string") return { body };
+  return {
+    body: { ...(body as Record<string, unknown>), message: publicErrorMessage(message) },
+    ...(status >= 500 ? { cause: message } : {}),
+  };
+}

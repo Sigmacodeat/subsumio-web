@@ -11,6 +11,7 @@ import {
   type RksvSignedReceipt,
 } from "@/lib/legal/rksv-adapter";
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 const log = logger("api/legal/rksv");
 
@@ -145,8 +146,12 @@ export const POST = createHandler(
       /[^a-zA-Z0-9/_-]/g,
       "-"
     );
-    try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
+    // Die Signatur ist erfolgt — ein Speicherfehler bricht den Beleg nicht ab,
+    // wird aber protokolliert und als `persisted: false` gemeldet (der Beleg
+    // muss dann nachgetragen werden; DEP-Chain über chain_value nachvollziehbar).
+    const persisted = await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({
@@ -160,13 +165,9 @@ export const POST = createHandler(
           },
         }),
         signal: AbortSignal.timeout(10_000),
-      });
-    } catch (err) {
-      // Signatur ist erfolgt — Persistenz-Fehler nur protokollieren, Beleg
-      // trotzdem zurückgeben (DEP-Chain bleibt über chain_value nachvollziehbar).
-      log.error("[rksv] persist failed:", err instanceof Error ? err.message : String(err));
-    }
-
-    return apiSuccess({ receipt: stored, slug });
+      },
+      "RKSV-Beleg"
+    );
+    return apiSuccess({ receipt: stored, slug, persisted });
   }
 );

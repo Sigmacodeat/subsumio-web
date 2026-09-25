@@ -40,6 +40,7 @@ import type { MatterConflictOutcome as IntakeConflictOutcome } from "./conflict-
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { unwrapApiBody } from "./api-body";
 import { consumeSSEStream } from "./sse-stream";
+import { readApiError } from "./api-response";
 
 /** Areas that require a firm session; a 401 there means "log in again". */
 export function isAuthenticatedArea(pathname: string): boolean {
@@ -203,9 +204,9 @@ async function requestUncached<T>(path: string, options?: RequestInit): Promise<
     const error = await res.text().catch(() => "");
     if (error) {
       try {
-        const parsed = JSON.parse(error) as { message?: unknown; error?: unknown };
-        const code = typeof parsed.error === "string" ? parsed.error : undefined;
-        const message = typeof parsed.message === "string" ? parsed.message : code ? code : "";
+        const parsed = JSON.parse(error) as unknown;
+        // Both envelopes ({error:text, code} and {error:code, message}).
+        const { message, code } = readApiError(parsed, "");
         if (message) throw new ApiRequestError(message, res.status, code, parsed);
       } catch (parseErr) {
         if (parseErr instanceof ApiRequestError) throw parseErr;
@@ -485,8 +486,23 @@ export const api = {
       );
     },
 
+    /**
+     * Results only. A type the server could not list rejects the whole call
+     * — an unreadable type must surface as an error, never as an empty list.
+     */
     batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
-      return api.brain.batchListPagesDetailed(types, limit).then((r) => r.results);
+      return api.brain.batchListPagesDetailed(types, limit).then((r) => {
+        const failed = r.errors ?? [];
+        if (failed.length > 0) {
+          throw new ApiRequestError(
+            `Liste konnte nicht geladen werden (${failed.join(", ")})`,
+            503,
+            "batch_list_incomplete",
+            r
+          );
+        }
+        return r.results;
+      });
     },
 
     /**

@@ -24,6 +24,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
+import { csrfFetch } from "@/lib/csrf";
 
 const STATUS_STYLES: Record<string, string> = {
   pending:
@@ -247,8 +248,10 @@ export default function ReviewQueuePage() {
   async function resumePipeline(caseSlug: string) {
     setUpdating(`pipeline-${caseSlug}`);
     try {
-      const res = await fetch("/api/pipeline/resume", {
+      const res = await csrfFetch("/api/pipeline/resume", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ case_slug: caseSlug, resume_from_layer: 3 }),
       });

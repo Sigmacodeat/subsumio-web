@@ -33,6 +33,7 @@ import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brai
 import { z } from "zod";
 
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 const log = logger("api/whatsapp/webhook");
 
 export const dynamic = "force-dynamic";
@@ -233,31 +234,35 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
         if (!brainId) continue;
       }
 
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...engineHeadersForBrain(brainId),
-        },
-        body: JSON.stringify({
-          slug,
-          title: `WhatsApp Outbound: ${status.status}`,
-          type: "chat_outbox",
-          frontmatter: {
-            type: "chat_outbox",
-            provider: "whatsapp",
-            message_id: status.id,
-            recipient_phone_hash: status.recipientId,
-            direction: "outbound",
-            status: status.status,
-            status_timestamp: status.timestamp,
-            errors: status.errors,
-            updated_at: new Date().toISOString(),
+      await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...engineHeadersForBrain(brainId),
           },
-          merge: true,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
+          body: JSON.stringify({
+            slug,
+            title: `WhatsApp Outbound: ${status.status}`,
+            type: "chat_outbox",
+            frontmatter: {
+              type: "chat_outbox",
+              provider: "whatsapp",
+              message_id: status.id,
+              recipient_phone_hash: status.recipientId,
+              direction: "outbound",
+              status: status.status,
+              status_timestamp: status.timestamp,
+              errors: status.errors,
+              updated_at: new Date().toISOString(),
+            },
+            merge: true,
+          }),
+          signal: AbortSignal.timeout(15_000),
+        },
+        "WhatsApp-Zustellstatus"
+      );
     } catch (err) {
       log.error(
         "[whatsapp-webhook] status update failed:",

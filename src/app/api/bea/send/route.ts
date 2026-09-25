@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import {
   sendFiling,
   confirmReceipt,
@@ -18,6 +18,7 @@ import {
   buildPolicyOutput,
   type AttorneyOverride,
 } from "@/lib/verification-policy";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 
@@ -110,16 +111,12 @@ async function persistFilingPackage(
   draftSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
-        slug: filingSlug,
-        frontmatter: { draft_slug: draftSlug, package: pkg },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const res = await enginePatchPage(
+      ctx.headers,
+      { slug: filingSlug, frontmatter: { draft_slug: draftSlug, package: pkg } },
+      { timeoutMs: 10_000 }
+    );
     return res.ok;
   } catch {
     return false;
@@ -203,7 +200,15 @@ export const POST = createHandler(
 
     // 4. Update status to "sending"
     const sendingPkg = sendFiling(existingPkg, `middleware-${Date.now()}`);
-    await persistFilingPackage(ctx, body.filing_slug, sendingPkg, body.draft_slug);
+    // Without a stored "sending" state the send would leave no trace if the
+    // request dies mid-way — do not send then.
+    if (!(await persistFilingPackage(ctx, body.filing_slug, sendingPkg, body.draft_slug))) {
+      return apiError(
+        "engine_write_failed",
+        "Der Versandstatus konnte nicht gespeichert werden. Es wurde nichts versendet.",
+        502
+      );
+    }
 
     // 5. Send via transport adapter (fail-closed without partner config)
     const transport = resolveFilingTransport("beA", {
@@ -238,13 +243,22 @@ export const POST = createHandler(
       const receipt: FilingReceipt = result.receipt;
 
       const finalPkg = confirmReceipt(sendingPkg, receipt);
-      await persistFilingPackage(ctx, body.filing_slug, finalPkg, body.draft_slug);
+      const packagePersisted = await persistFilingPackage(
+        ctx,
+        body.filing_slug,
+        finalPkg,
+        body.draft_slug
+      );
 
-      // 7. Update deadline if linked
+      // 7. Update deadline if linked (best effort — the filing is sent; a
+      // failed update is reported as `deadline_updated: false`).
+      let deadlineUpdated: boolean | null = null;
       if (body.deadline_id && receipt.is_success) {
-        try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`, {
-            method: "PATCH",
+        deadlineUpdated = await engineWriteBestEffort(
+          `${ENGINE_URL}/api/pages`,
+          {
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.deadline_id,
@@ -257,10 +271,9 @@ export const POST = createHandler(
               },
             }),
             signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
-        }
+          },
+          "Frist-Erledigung nach beA-Versand"
+        );
       }
 
       // 8. Broadcast SSE event
@@ -291,6 +304,9 @@ export const POST = createHandler(
         is_success: receipt.is_success,
         middleware_reference: sendingPkg.middleware_reference,
         middleware_configured: true,
+        // Sent, but the status record / linked deadline may lag behind.
+        package_persisted: packagePersisted,
+        deadline_updated: deadlineUpdated,
       });
     } catch (err) {
       const failedPkg: FilingPackage = {

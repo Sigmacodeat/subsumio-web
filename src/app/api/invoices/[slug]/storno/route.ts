@@ -22,6 +22,7 @@ import { logAudit } from "@/lib/audit";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 
 import { logger } from "@/lib/logger";
+import { firmToday, firmYear } from "@/lib/datetime";
 const log = logger("api/invoices/[slug]/storno");
 
 function validSlug(raw: string): string | null {
@@ -104,7 +105,7 @@ export const POST = createHandler(
       );
     }
 
-    const year = new Date().getFullYear();
+    const year = firmYear();
     const existingNumbers = allInvoices.map((p) => String(p.frontmatter?.invoice_number ?? ""));
     const number = await allocateInvoiceNumber(
       ctx.brainId,
@@ -122,7 +123,7 @@ export const POST = createHandler(
     const advancePayment = -Number(fm.advance_payment ?? 0);
     const tax = -Number(fm.tax ?? 0);
     const total = -Number(fm.total ?? 0);
-    const date = new Date().toISOString().slice(0, 10);
+    const date = firmToday();
     const stornoSlug = `legal/invoices/storno-${number.replace(/[^a-zA-Z0-9-]/g, "-")}`;
 
     const hashInput = {

@@ -221,6 +221,26 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(body.data.released).toEqual({ time: 2, expenses: 1 });
   });
 
+  test("00:30 Vienna on 1 January: storno date and number range are the new year (QA-6)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-12-31T23:30:00Z"));
+    try {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ slug: "storno" }), { status: 200 }));
+      mockListEnginePages.mockResolvedValueOnce([originalInvoice]);
+      const res = await post();
+      expect(res.status).toBe(201);
+      expect(mockAllocateInvoiceNumber).toHaveBeenCalledWith("brain-at", 2027, 1);
+      const payload = JSON.parse(
+        String((mockFetch.mock.calls[1] as [string, RequestInit])[1].body)
+      );
+      expect(payload.frontmatter.date).toBe("2027-01-01");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("returns 503 when the storno page cannot be created", async () => {
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }))

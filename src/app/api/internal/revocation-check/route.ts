@@ -1,4 +1,4 @@
-import { createPublicHandler } from "@/lib/api-handler";
+import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
 import { listRevokedSids } from "@/lib/auth/session-registry";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -44,9 +44,10 @@ export const GET = createPublicHandler(
       ]);
       return Response.json({ minVersion, revokedSids });
     } catch (err) {
-      log.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
-      // Fail-open: return 0 so sessions remain valid if the store is unreachable
-      return Response.json({ minVersion: 0, revokedSids: [] });
+      log.error("[revocation-check] error:", err instanceof Error ? err : { error: String(err) });
+      // 503, never "nothing revoked": the edge verifier only updates its
+      // cache on 2xx, so a stored revocation stays in force during an outage.
+      return apiError("service_unavailable", "Sitzungsstatus vorübergehend nicht verfügbar", 503);
     }
   }
 );

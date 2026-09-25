@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { InterviewDefinition } from "@/lib/document-interviews";
+import { csrfFetch } from "@/lib/csrf";
 
 const STATUS_COLORS: Record<string, string> = {
   unreviewed: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
@@ -55,7 +56,7 @@ export default function DocumentInterviewsPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/document-interviews", {
+      const res = await csrfFetch("/api/document-interviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

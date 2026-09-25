@@ -77,7 +77,12 @@ export const GET = createHandler(
       return apiSuccess(templates);
     } catch (err) {
       log.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
-      return apiSuccess([]);
+      // An unreachable engine is an error, not "no templates".
+      return apiError(
+        "service_unavailable",
+        "Vorlagen konnten nicht geladen werden. Bitte erneut versuchen.",
+        503
+      );
     }
   }
 );

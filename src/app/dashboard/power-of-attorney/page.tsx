@@ -89,7 +89,7 @@ export default function PowerOfAttorneyPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/power-of-attorney", {
+      const res = await csrfFetch("/api/power-of-attorney", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

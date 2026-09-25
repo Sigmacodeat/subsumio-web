@@ -1,6 +1,7 @@
 import { createPublicHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
+import { missingRequiredEnv } from "@/lib/env-validate";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,11 @@ export const GET = createPublicHandler(
     if (!env("AUTH_SECRET")) missingCritical.push("AUTH_SECRET");
     if (!env("SUBSUMIO_API_URL")) missingCritical.push("SUBSUMIO_API_URL");
     if (!env("SUBSUMIO_WEB_API_KEY")) missingCritical.push("SUBSUMIO_WEB_API_KEY");
+    // Production: every variable the startup validation requires (cron and
+    // portal secrets, auth database) — a missing one is a broken deployment.
+    for (const name of missingRequiredEnv()) {
+      if (!missingCritical.includes(name)) missingCritical.push(name);
+    }
 
     checks.config =
       missingCritical.length === 0

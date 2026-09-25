@@ -52,7 +52,7 @@ export interface MatchResult {
   matchReason: string;
 }
 
-export function createBankTransaction(input: {
+type BankTransactionInput = {
   date: string;
   amount: number;
   direction: "debit" | "credit";
@@ -62,9 +62,58 @@ export function createBankTransaction(input: {
   sender_iban?: string;
   reference?: string;
   purpose?: string;
-}): BankTransaction {
+};
+
+/** 53-bit string hash (cyrb53) — deterministic, dependency-free, not cryptographic. */
+function stableHash(text: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/**
+ * Content-derived transaction id: the same booking (account, date, amount,
+ * direction, counterparty, reference, purpose) always gets the same id, so a
+ * statement imported twice is recognised instead of being booked twice.
+ */
+export function bankTransactionId(input: BankTransactionInput): string {
+  const norm = (v: string | undefined) => (v ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const key = [
+    norm(input.iban).replace(/ /g, ""),
+    norm(input.date),
+    Math.round(input.amount * 100),
+    input.direction,
+    norm(input.sender_iban).replace(/ /g, ""),
+    norm(input.reference),
+    norm(input.purpose),
+  ].join("|");
+  return `txn-${stableHash(key)}`;
+}
+
+/**
+ * Two identical bookings in the same statement (same day, amount and
+ * reference) are still two payments: the second and later ones get a
+ * `-2`, `-3` … suffix. Re-importing the statement yields the same suffixes.
+ */
+export function withBatchOccurrenceIds<T extends { id: string }>(transactions: T[]): T[] {
+  const seen = new Map<string, number>();
+  return transactions.map((t) => {
+    const n = (seen.get(t.id) ?? 0) + 1;
+    seen.set(t.id, n);
+    return n === 1 ? t : { ...t, id: `${t.id}-${n}` };
+  });
+}
+
+export function createBankTransaction(input: BankTransactionInput): BankTransaction {
   return {
-    id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: bankTransactionId(input),
     date: input.date,
     amount: input.amount,
     direction: input.direction,

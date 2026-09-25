@@ -21,6 +21,7 @@ import {
 } from "@/lib/workflow";
 
 import { logger } from "@/lib/logger";
+import { assertEngineWriteOk, engineWriteBestEffort } from "@/lib/engine-write";
 const log = logger("lib/provision");
 
 export interface ProvisionResult {
@@ -150,8 +151,9 @@ async function seedWorkflows(
     fm.steps = steps;
     fm.status = "draft";
 
-    try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,10 +163,9 @@ async function seedWorkflows(
           frontmatter: fm,
         }),
         signal: AbortSignal.timeout(5_000),
-      });
-    } catch {
-      // Individual workflow creation failure is non-fatal
-    }
+      },
+      "Workflow-Vorlage"
+    );
   }
 }
 
@@ -213,12 +214,14 @@ async function createSeedPage(
 ): Promise<void> {
   // Create-only: a seed never replaces a page that already exists (a demo
   // matter the lawyer edited, or a retry after a failed existence check).
-  await fetch(`${ENGINE_URL}/api/pages`, {
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ ...payload, if_absent: true }),
     signal: AbortSignal.timeout(5_000),
   });
+  // 409 = already there, which is what a seed wants. Anything else failed.
+  if (res.status !== 409) await assertEngineWriteOk(res, "Startdaten");
 }
 
 async function seedDemoMatter(

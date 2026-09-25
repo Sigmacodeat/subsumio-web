@@ -42,9 +42,22 @@ export function RundownWidget() {
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("rundown.widget_title")}
             </h3>
-            <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-              {t("rundown.widget_empty")}
-            </p>
+            {rundownQuery.isError ? (
+              <p role="alert" className="mt-0.5 text-xs text-[color:var(--ds-danger-text)]">
+                Das Tagesbriefing konnte nicht geladen werden.{" "}
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={() => void rundownQuery.refetch()}
+                >
+                  Erneut versuchen
+                </button>
+              </p>
+            ) : (
+              <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                {t("rundown.widget_empty")}
+              </p>
+            )}
           </div>
           <Button
             size="sm"

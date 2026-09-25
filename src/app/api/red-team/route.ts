@@ -3,6 +3,7 @@ import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/
 import { engineThink } from "@/lib/engine-think";
 import { ENGINE_URL } from "@/lib/engine";
 import { createRedTeamPrompt, parseRedTeamOutput } from "@/lib/red-team-agent";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -62,18 +63,23 @@ export const POST = createHandler(
 
     const result = parseRedTeamOutput(rawOutput, body.case_slug);
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/red-team/${result.id}`,
-        title: `Red-Team: ${body.case_slug}`,
-        type: "red_team_result",
-        frontmatter: result,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    const saved = await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/red-team/${result.id}`,
+          title: `Red-Team: ${body.case_slug}`,
+          type: "red_team_result",
+          frontmatter: result,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Red-Team-Ergebnis"
+    );
 
-    return apiSuccess({ result });
+    // `saved: false`: the analysis is shown but did not land in the history.
+    return apiSuccess({ result, saved });
   }
 );

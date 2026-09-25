@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { useMarket } from "@/lib/use-market";
+import { csrfFetch } from "@/lib/csrf";
 
 const COPY = {
   title: "E-Mail-Adresse bestätigen",
@@ -43,7 +44,7 @@ export default function EmailConfirmForm() {
     setError(null);
     setState("loading");
     try {
-      const res = await fetch("/api/auth/email/confirm-change", {
+      const res = await csrfFetch("/api/auth/email/confirm-change", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),

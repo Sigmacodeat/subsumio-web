@@ -174,6 +174,14 @@ services:
       # Operator console (/ops) and operator APIs are served only on this host.
       OPS_HOSTS: ${OPS_DOMAIN:-ops.subsum.io}
       BACKUP_STATUS_FILE: /backup-status/last-success
+      # Firm civil time. Code uses explicit Europe/Vienna helpers
+      # (src/lib/datetime.ts); this is the safety net for anything that
+      # still reads the process timezone.
+      TZ: Europe/Vienna
+      # The edge session verifier asks this origin for revocations. Local
+      # loopback keeps those checks off the public domain (and off its shared
+      # per-IP rate limit).
+      SUBSUMIO_INTERNAL_URL: http://localhost:3000
     volumes:
       # Corpus read-only mount so the dashboard can enumerate local disk files.
       # Mounted at /app/law-corpus to match src/lib/corpus-index.ts (NORMALIZED_ROOT).

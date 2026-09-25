@@ -882,7 +882,18 @@ export default function AgentsPage() {
                     <Skeleton className="h-16 w-full" />
                   </div>
                 )}
-                {!loading && jobs.length === 0 && (
+                {agentsQuery.isError && jobs.length === 0 && (
+                  <div
+                    role="alert"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]"
+                  >
+                    <span>Aufträge konnten nicht geladen werden.</span>
+                    <Button size="sm" variant="outline" onClick={() => void agentsQuery.refetch()}>
+                      Erneut versuchen
+                    </Button>
+                  </div>
+                )}
+                {!loading && !agentsQuery.isError && jobs.length === 0 && (
                   <p className="rounded-lg border border-dashed border-[color:var(--ds-border-strong)] px-3 py-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                     Noch keine Aufträge. Beschreiben Sie oben eine Aufgabe oder wählen Sie eine
                     Vorlage.

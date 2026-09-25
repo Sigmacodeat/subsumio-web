@@ -12,6 +12,7 @@ import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 const log = logger("api/portal/chat");
 
 /** Model answers per matter and day in the client portal (≈ 1–3 € model cost at most). */
@@ -229,25 +230,29 @@ export const POST = createPublicHandler(
     const grounded = grounding.corpus_checked && !grounding.has_unverified;
 
     const slug = `portal-chat/${access.caseSlug}/${Date.now()}`;
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({
-        slug,
-        title: "Portal-Chat",
-        type: "portal_chat",
-        content: answer,
-        frontmatter: {
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({
+          slug,
+          title: "Portal-Chat",
           type: "portal_chat",
-          case_slug: access.caseSlug,
-          question: body.message,
-          sender: "bot",
-          grounded,
-          created_at: new Date().toISOString(),
-        },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    }).catch(() => {});
+          content: answer,
+          frontmatter: {
+            type: "portal_chat",
+            case_slug: access.caseSlug,
+            question: body.message,
+            sender: "bot",
+            grounded,
+            created_at: new Date().toISOString(),
+          },
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Portal-Chat-Verlauf"
+    );
 
     return Response.json({
       answer,

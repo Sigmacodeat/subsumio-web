@@ -11,6 +11,7 @@ import { withKeyedLock } from "./keyed-lock";
 import { portalTokenHash } from "./portal-token";
 
 import { logger } from "./logger";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 const log = logger("lib/portal-links");
 
 export interface PortalLinkEntry {
@@ -94,19 +95,23 @@ export async function registerPortalLink(
         headers,
         signal: AbortSignal.timeout(10_000),
       });
-      if (!getRes.ok) return;
+      if (!getRes.ok) throw new Error(`case read failed: HTTP ${getRes.status}`);
       const page = (await getRes.json()) as { frontmatter?: Record<string, unknown> };
       const links = appendPortalLink(page.frontmatter, entry);
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
-          slug: caseSlug,
-          merge: true,
-          frontmatter: { portal_links: links },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            slug: caseSlug,
+            merge: true,
+            frontmatter: { portal_links: links },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Portal-Link-Register"
+      );
     });
   } catch (err) {
     log.error(

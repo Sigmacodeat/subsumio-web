@@ -1,17 +1,20 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 
 const schema = z.object({ enabled: z.boolean() });
 
 export const GET = createHandler({ action: "brain.read", rateTier: "standard" }, async (ctx) => {
-  const params = new URLSearchParams({ type: "passive_time_preference", limit: "500" });
-  const response = await fetch(`${ENGINE_URL}/api/pages?${params}`, { headers: ctx.headers });
-  if (!response.ok) return apiError("engine_error", "Einstellung konnte nicht geladen werden", 502);
-  const data = await response.json();
-  const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<{
-    frontmatter?: Record<string, unknown>;
-  }>;
+  // All preferences (one per user) — a single engine batch stops at 100.
+  let pages: Array<{ frontmatter?: Record<string, unknown> }>;
+  try {
+    pages = await listEnginePages(ctx.headers, "passive_time_preference", 10_000, {
+      strict: true,
+    });
+  } catch {
+    return apiError("engine_error", "Einstellung konnte nicht geladen werden", 502);
+  }
   const preference = pages.find(
     (page) => page.frontmatter?.user_email === ctx.user.email
   )?.frontmatter;

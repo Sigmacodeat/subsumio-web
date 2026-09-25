@@ -30,6 +30,7 @@ import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/regulatory-monitors");
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -81,7 +82,7 @@ async function persistAlertPage(
   brainId: string,
   monitor: RegulatoryMonitor,
   hit: JudgementHit
-): Promise<void> {
+): Promise<boolean> {
   const slug = alertSlug(monitor.monitor_id, hit.id);
   const severity = inferSeverity({
     legalArea: hit.legalArea,
@@ -110,8 +111,10 @@ async function persistAlertPage(
     owner_name: monitor.owner_name,
     created_at: new Date().toISOString(),
   };
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  // Einzelne Fehler dürfen den Cron nicht abbrechen — werden aber gezählt.
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -122,10 +125,9 @@ async function persistAlertPage(
         frontmatter: alertToFrontmatter(alert),
       }),
       signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
-    // Einzelne Fehler dürfen den Cron nicht abbrechen
-  }
+    },
+    "Monitoring-Treffer"
+  );
 }
 
 async function updateMonitorStatus(
@@ -134,8 +136,10 @@ async function updateMonitorStatus(
   hits: number,
   status: "ok" | "error"
 ): Promise<void> {
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  // Non-fatal; a refused write is logged by the helper.
+  await engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -151,10 +155,9 @@ async function updateMonitorStatus(
         merge: true,
       }),
       signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Non-fatal
-  }
+    },
+    "Monitor-Status"
+  );
 }
 
 async function filterNewHits(
@@ -222,6 +225,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let alertsCreated = 0;
   let mailsSent = 0;
   let errors = 0;
+  let alertWriteFailures = 0;
 
   for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
@@ -277,8 +281,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
         // 4. Create alert pages for new hits
         for (const hit of allFreshHits) {
-          await persistAlertPage(brainId, monitor, hit);
-          alertsCreated++;
+          if (await persistAlertPage(brainId, monitor, hit)) alertsCreated++;
+          else alertWriteFailures++;
         }
 
         // 5. Update monitor status
@@ -320,5 +324,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     alerts_created: alertsCreated,
     mails_sent: mailsSent,
     errors,
+    alert_write_failures: alertWriteFailures,
   });
 });

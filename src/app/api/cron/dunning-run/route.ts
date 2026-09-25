@@ -4,6 +4,7 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { processDunningRun, applyDunningRun, type OpenItem } from "@/lib/fibu";
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 const log = logger("cron/dunning-run");
 
@@ -22,7 +23,7 @@ export const maxDuration = 300;
  */
 async function runDunningForBrain(
   brainId: string
-): Promise<{ totalItems: number; dunningActions: number }> {
+): Promise<{ totalItems: number; dunningActions: number; failedWrites: number }> {
   const headers = engineHeadersForBrain(brainId);
   const pages = await fetchPages(brainId, "open_item", 2000);
   const openItems: OpenItem[] = pages.map((p) => p.frontmatter as unknown as OpenItem);
@@ -30,12 +31,16 @@ async function runDunningForBrain(
   const results = processDunningRun(openItems);
   const updatedItems = applyDunningRun(openItems, results);
 
+  // A refused write is counted and logged (engineWriteBestEffort), never
+  // taken as a stored dunning level.
+  let failedWrites = 0;
   for (let i = 0; i < updatedItems.length; i++) {
     const item = updatedItems[i];
     const original = openItems[i];
     if (item.dunning_level !== original?.dunning_level) {
-      try {
-        await fetch(`${ENGINE_URL}/api/pages`, {
+      const saved = await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -45,18 +50,15 @@ async function runDunningForBrain(
             frontmatter: item,
           }),
           signal: AbortSignal.timeout(10_000),
-        });
-      } catch (err) {
-        log.warn("[dunning-run] write failed", {
-          brainId,
-          itemId: item.id,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+        },
+        "Mahnstufe"
+      );
+      if (!saved) failedWrites++;
     }
   }
+  if (failedWrites > 0) log.error("[dunning-run] writes failed", { brainId, failedWrites });
 
-  return { totalItems: openItems.length, dunningActions: results.length };
+  return { totalItems: openItems.length, dunningActions: results.length, failedWrites };
 }
 
 async function dunningRunHandler(_req: NextRequest): Promise<Response> {
@@ -64,15 +66,24 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
 
   let totalItems = 0;
   let dunningActions = 0;
-  const perBrain: Array<{ brainId: string; totalItems: number; dunningActions: number }> = [];
+  let failedWrites = 0;
+  let failedBrains = 0;
+  const perBrain: Array<{
+    brainId: string;
+    totalItems: number;
+    dunningActions: number;
+    failedWrites: number;
+  }> = [];
 
   for (const brainId of recipientsByBrain.keys()) {
     try {
       const result = await runDunningForBrain(brainId);
       totalItems += result.totalItems;
       dunningActions += result.dunningActions;
+      failedWrites += result.failedWrites;
       perBrain.push({ brainId, ...result });
     } catch (err) {
+      failedBrains++;
       log.error("[dunning-run] brain failed", {
         brainId,
         error: err instanceof Error ? err.message : String(err),
@@ -85,6 +96,8 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
     brainsChecked: recipientsByBrain.size,
     totalItems,
     dunningActions,
+    failedWrites,
+    failedBrains,
     perBrain,
   });
 }

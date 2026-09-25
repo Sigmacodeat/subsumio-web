@@ -42,6 +42,7 @@ import { GkgTariffForm } from "@/components/legal/GkgTariffForm";
 import { JvegTariffForm } from "@/components/legal/JvegTariffForm";
 import { RvgTariffForm } from "@/components/legal/RvgTariffForm";
 import { useMe } from "@/lib/queries/auth";
+import { computeInvoiceTotals, parseHourlyRate } from "@/lib/invoice-totals";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -288,7 +289,7 @@ export function InvoiceQuickCreateDialog({
   const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
   const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
   const previewItems = [
-    ...timeItemsFor(openTime, parseInt(kanzlei?.stundensatz || "200", 10)),
+    ...timeItemsFor(openTime, parseHourlyRate(kanzlei?.stundensatz) ?? 0),
     ...flatItemsFor(tariffLines),
   ];
   const timeFee = roundCents(
@@ -323,7 +324,8 @@ export function InvoiceQuickCreateDialog({
           clientAddress = [name, company, addr].filter(Boolean).join("\n");
         } catch {}
       }
-      const defaultRate = parseInt(settings?.stundensatz || "200", 10);
+      // "187,50" stays 187.50; without a configured rate nothing is invented.
+      const defaultRate = parseHourlyRate(settings?.stundensatz);
       const billableTime = (c.timeEntries ?? []).filter(
         (entry) => entry.billable !== false && !entry.billed
       );
@@ -335,12 +337,18 @@ export function InvoiceQuickCreateDialog({
         return;
       }
 
+      if (defaultRate === null && billableTime.some((entry) => !entry.rate)) {
+        throw new Error(
+          "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+        );
+      }
+
       const billableTimeIds = billableTime.map((e) => e.id);
       const billableExpenseIds = billableExpenses.map((e) => e.id);
 
       // Hourly time entries plus tariff services calculated under the RATG.
       const items: InvoiceItem[] = [
-        ...timeItemsFor(billableTime, defaultRate),
+        ...timeItemsFor(billableTime, defaultRate ?? 0),
         ...flatItemsFor(tariffLines),
       ];
       const expenses: InvoiceExpenseEntry[] = billableExpenses.map((entry) => ({
@@ -348,13 +356,20 @@ export function InvoiceQuickCreateDialog({
         date: entry.date.split("T")[0],
         amount: entry.amount,
       }));
-      const subtotal = items.reduce((s, i) => s + i.amount, 0);
-      const expTotal = expenses.reduce((s, i) => s + i.amount, 0);
-      const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
       const vatRate = vatRateFor(settings);
-      const taxableBase = subtotal + expTotal;
-      const tax = Math.round(taxableBase * vatRate * 100) / 100;
-      const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
+      // Shared cent-exact computation (same as the Copilot invoice draft).
+      const {
+        subtotal,
+        expenseTotal: expTotal,
+        advance: parsedAdvance,
+        tax,
+        total,
+      } = computeInvoiceTotals({
+        items,
+        expenses,
+        vatRate,
+        advance: parseFloat(String(advancePayment).replace(",", ".")) || 0,
+      });
       const paymentDays = Math.max(1, parseInt(settings?.zahlungszielTage || "14", 10) || 14);
 
       // The server reserves the number (unique per firm and year).

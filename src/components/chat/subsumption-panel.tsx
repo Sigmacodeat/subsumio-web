@@ -20,6 +20,7 @@ import type { ProvenanceResult, DocumentConfidence } from "@/lib/types";
 import { api } from "@/lib/api";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
+import { csrfFetch } from "@/lib/csrf";
 
 const STORAGE_KEY = "subsumio:subsumption-sessions";
 
@@ -390,7 +391,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/legal/subsumption", {
+        const res = await csrfFetch("/api/legal/subsumption", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -544,7 +545,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
       abortRef.current = controller;
 
       try {
-        const res = await fetch("/api/legal/subsumption", {
+        const res = await csrfFetch("/api/legal/subsumption", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

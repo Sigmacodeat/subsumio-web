@@ -30,6 +30,15 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { csrfFetch } from "@/lib/csrf";
+import { readApiError } from "@/lib/api-response";
+
+/** Parse a write response; a non-2xx answer rejects instead of looking like success. */
+async function jsonOrThrow(res: Response): Promise<unknown> {
+  const body = (await res.json().catch(() => null)) as unknown;
+  if (!res.ok) throw new Error(readApiError(body, "Aktion fehlgeschlagen").message);
+  return body;
+}
 
 type ReviewType =
   | "all"
@@ -245,7 +254,7 @@ export function ReviewInboxTab() {
         });
       }
       if (type === "document_request") {
-        return fetch("/api/document-requests", {
+        return csrfFetch("/api/document-requests", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -253,28 +262,30 @@ export function ReviewInboxTab() {
             status: action === "send" ? "sent" : "fulfilled",
             sent_at: action === "send" ? new Date().toISOString() : undefined,
           }),
-        }).then((res) => res.json());
+        }).then(jsonOrThrow);
       }
       if (type === "client_submission") {
         if (action === "import_document") {
-          return fetch("/api/legal/submission-to-document", {
+          return csrfFetch("/api/legal/submission-to-document", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ submissionSlug: item.pageSlug }),
-          }).then((res) => res.json());
+          }).then(jsonOrThrow);
         }
-        return fetch("/api/legal/submission-review", {
+        return csrfFetch("/api/legal/submission-review", {
           method: "POST",
+          // Long-running: csrfFetch would otherwise abort after 30s.
+          signal: AbortSignal.timeout(300_000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             submissionSlug: item.pageSlug,
             action: "reviewed",
           }),
-        }).then((res) => res.json());
+        }).then(jsonOrThrow);
       }
       if (type === "suggested_party" && item.arrayIndex !== null) {
         const reviewStatus = action === "approve" ? "approved" : "rejected";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
+        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -285,11 +296,13 @@ export function ReviewInboxTab() {
             },
             merge: true,
           }),
-        }).then((res) => res.json());
+        }).then(jsonOrThrow);
       }
       if (type === "pending_fact" && item.factId && item.factStatement) {
-        return fetch("/api/legal/matter-knowledge", {
+        return csrfFetch("/api/legal/matter-knowledge", {
           method: "POST",
+          // Long-running: csrfFetch would otherwise abort after 30s.
+          signal: AbortSignal.timeout(300_000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             caseSlug: item.caseSlug || item.pageSlug,
@@ -301,12 +314,12 @@ export function ReviewInboxTab() {
               label: item.source || "Review Inbox",
             },
           }),
-        }).then((res) => res.json());
+        }).then(jsonOrThrow);
       }
       if (type === "pending_fact" && item.arrayIndex !== null) {
         // Fallback for facts without factId — direct patch
         const reviewStatus = action === "approve" ? "approved" : "party_assertion";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
+        return csrfFetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -320,7 +333,7 @@ export function ReviewInboxTab() {
             },
             merge: true,
           }),
-        }).then((res) => res.json());
+        }).then(jsonOrThrow);
       }
       throw new Error("unknown_type");
     },

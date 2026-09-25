@@ -16,6 +16,7 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { csrfFetch } from "@/lib/csrf";
 
 interface WarteEintrag {
   pfad: string;
@@ -56,8 +57,10 @@ export function PublishBanner() {
 
   const publish = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/admin/corpus-files/publish", {
+      const res = await csrfFetch("/api/admin/corpus-files/publish", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });

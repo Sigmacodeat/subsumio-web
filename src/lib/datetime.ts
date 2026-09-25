@@ -100,3 +100,24 @@ export function toZonedDateString(iso?: string | null, timeZone: string = FIRM_T
   if (Number.isNaN(d.getTime())) return zonedDateString(new Date(), timeZone);
   return zonedDateString(d, timeZone);
 }
+
+/**
+ * Today's firm calendar day ("YYYY-MM-DD", Europe/Vienna). Server code runs
+ * in UTC: `new Date().toISOString().slice(0, 10)` still names yesterday
+ * between 00:00 and 01:00/02:00 Vienna time.
+ */
+export function firmToday(now: Date = new Date()): string {
+  return zonedDateString(now);
+}
+
+/** The firm's current calendar year (Europe/Vienna) — for number ranges. */
+export function firmYear(now: Date = new Date()): number {
+  return Number(firmToday(now).slice(0, 4));
+}
+
+/** Calendar day `days` after the ISO day `dateIso` ("YYYY-MM-DD"), DST-safe. */
+export function addDaysToDateString(dateIso: string, days: number): string {
+  const d = new Date(`${dateIso}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}

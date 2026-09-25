@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
 
@@ -54,8 +54,14 @@ export const GET = createHandler({ action: "settings.read", rateTier: "standard"
     ctx.brainId,
     ctx.headers,
     `/api/pages?type=whatsapp_template&limit=100`
-  );
-  if (!res.ok) return Response.json({ templates: [] });
+  ).catch(() => null);
+  if (!res?.ok) {
+    return apiError(
+      "service_unavailable",
+      "WhatsApp-Vorlagen konnten nicht geladen werden. Bitte erneut versuchen.",
+      503
+    );
+  }
   const pages = (await res.json()) as TemplatePage[];
   const templates = pages.map((page) => {
     const fm = page.frontmatter ?? {};

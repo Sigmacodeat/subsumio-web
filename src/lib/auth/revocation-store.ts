@@ -22,21 +22,32 @@ const ensureRevocationSchema = createSchemaInit(`
   )
 `);
 
-/** Get the minimum accepted session version for a user. */
+/**
+ * Get the minimum accepted session version for a user.
+ *
+ * Fail-closed: when the store cannot be read, the last value this process
+ * read or wrote is used; without one the error is thrown — "0" would accept
+ * every revoked session again. Callers decide what an unknown state means
+ * (verifySession: invalid; the revocation endpoint: 503).
+ */
 export async function getMinRevocationVersion(userId: string): Promise<number> {
   const pool = getSharedPgPool();
   if (!pool) {
     return revokedVersions.get(userId) ?? 0;
   }
-  await ensureRevocationSchema();
   try {
+    await ensureRevocationSchema();
     const { rows } = await pool.query<{ min_version: number }>(
       "SELECT min_version FROM subsumio_session_revocations WHERE user_id = $1",
       [userId]
     );
-    return rows[0]?.min_version ?? 0;
-  } catch {
-    return revokedVersions.get(userId) ?? 0;
+    const minVersion = rows[0]?.min_version ?? 0;
+    revokedVersions.set(userId, minVersion);
+    return minVersion;
+  } catch (err) {
+    const lastKnown = revokedVersions.get(userId);
+    if (lastKnown !== undefined) return lastKnown;
+    throw err;
   }
 }
 

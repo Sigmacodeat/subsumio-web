@@ -61,6 +61,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 function TabSkeleton() {
   return (
@@ -200,8 +201,10 @@ function ResearchPageInner() {
     try {
       // Submit to Supervisor agent pipeline for deep, multi-step research.
       // Falls back to one-shot think if the supervisor endpoint is unavailable.
-      const submitRes = await fetch("/api/legal/research", {
+      const submitRes = await csrfFetch("/api/legal/research", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: query, jurisdiction, budget_cents: 200 }),
       });

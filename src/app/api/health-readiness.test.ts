@@ -158,6 +158,30 @@ describe("GET /api/readiness (deep probe)", () => {
     expect(body.checks.config.detail).toContain("SUBSUMIO_WEB_API_KEY");
   });
 
+  it("production without CRON_SECRET is not ready (QA-9)", async () => {
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
+    process.env.SUBSUMIO_ENCRYPTION_KEY = "k";
+    process.env.SUBSUMIO_INTERNAL_SECRET = "s";
+    process.env.PORTAL_TOKEN_SECRET = "p";
+    process.env.DATABASE_URL = "postgres://x";
+    delete process.env.CRON_SECRET;
+
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 })) as never;
+    const { getStore } = await import("@/lib/auth/store");
+    vi.mocked(getStore).mockReturnValue({
+      list: vi.fn().mockResolvedValue([{ id: "user1" }]),
+    } as never);
+
+    const { GET } = await import("@/app/api/readiness/route");
+    const res = await GET({} as never);
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.checks.config.status).toBe("down");
+    expect(body.checks.config.detail).toContain("CRON_SECRET");
+  });
+
   it("reports optional services as degraded, not down", async () => {
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_SENTRY_DSN;

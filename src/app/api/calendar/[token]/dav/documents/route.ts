@@ -1,4 +1,4 @@
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { resolveFeedToken } from "@/lib/feed-auth";
 
 export const dynamic = "force-dynamic";
@@ -25,16 +25,11 @@ export async function GET(_req: Request, context: { params: Promise<{ token: str
   }
 
   try {
-    const url = new URL(`${ENGINE_URL}/api/pages`);
-    url.searchParams.set("type", "document");
-    url.searchParams.set("limit", "200");
-    const res = await fetch(url.toString(), {
-      headers: auth.headers,
-      signal: AbortSignal.timeout(15_000),
+    // The 200 most recent documents — paged, one engine request returns 100.
+    const pages = await listEnginePages(auth.headers, "document", 200, {
+      strict: true,
+      timeoutMs: 15_000,
     });
-    if (!res.ok) throw new Error(`engine pages ${res.status}`);
-    const raw = await res.json();
-    const pages = Array.isArray(raw) ? raw : [];
 
     const documents = pages.map((p) => {
       const page = p as {

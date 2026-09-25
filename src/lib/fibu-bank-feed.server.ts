@@ -39,8 +39,8 @@ export class HttpBankFeedProvider implements BankFeedProvider {
       | { transactions?: ProviderTransaction[] }
       | ProviderTransaction[];
     const transactions = Array.isArray(payload) ? payload : (payload.transactions ?? []);
-    return transactions.map((item) => ({
-      ...createBankTransaction({
+    return transactions.map((item) => {
+      const txn = createBankTransaction({
         date: item.bookingDate ?? item.date ?? new Date().toISOString().slice(0, 10),
         amount: Math.abs(item.amount),
         direction: item.amount >= 0 ? "credit" : "debit",
@@ -49,11 +49,11 @@ export class HttpBankFeedProvider implements BankFeedProvider {
         sender_iban: item.debtorIban ?? item.creditorIban,
         reference: item.reference,
         purpose: item.remittanceInformation,
-      }),
-      id: item.id
-        ? `bank-${item.id}`
-        : createBankTransaction({ date: "", amount: 0, direction: "credit", iban: this.iban }).id,
-    }));
+      });
+      // Provider id when given; otherwise the content-derived id, so a
+      // re-fetched feed window does not book the same payment twice.
+      return item.id ? { ...txn, id: `bank-${item.id}` } : txn;
+    });
   }
 }
 

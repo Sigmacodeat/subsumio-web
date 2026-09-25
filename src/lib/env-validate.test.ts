@@ -3,7 +3,7 @@
 // at startup) and only warns in development.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { validateEnv } from "@/lib/env-validate";
+import { missingRequiredEnv, validateEnv } from "@/lib/env-validate";
 
 const REQUIRED = [
   "AUTH_SECRET",
@@ -11,11 +11,14 @@ const REQUIRED = [
   "SUBSUMIO_API_URL",
   "SUBSUMIO_WEB_API_KEY",
   "SUBSUMIO_INTERNAL_SECRET",
+  "CRON_SECRET",
+  "PORTAL_TOKEN_SECRET",
+  "SUBSUMIO_AUTH_DATABASE_URL",
 ];
 
 describe("validateEnv", () => {
   const snapshot: Record<string, string | undefined> = {};
-  const keys = [...REQUIRED, "NODE_ENV", "NEXT_PUBLIC_SENTRY_DSN"];
+  const keys = [...REQUIRED, "NODE_ENV", "NEXT_PUBLIC_SENTRY_DSN", "DATABASE_URL"];
 
   beforeEach(() => {
     for (const k of keys) snapshot[k] = process.env[k];
@@ -45,6 +48,28 @@ describe("validateEnv", () => {
     const result = validateEnv();
     expect(result.ok).toBe(true);
     expect(result.missing).toEqual([]);
+  });
+
+  it("a missing CRON_SECRET fails production startup (QA-9)", () => {
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
+    for (const k of REQUIRED) process.env[k] = "set";
+    delete process.env.CRON_SECRET;
+
+    const result = validateEnv();
+    expect(result.ok).toBe(false);
+    expect(result.missing.some((m) => m.startsWith("CRON_SECRET"))).toBe(true);
+    expect(missingRequiredEnv()).toEqual(["CRON_SECRET"]);
+  });
+
+  it("DATABASE_URL satisfies the auth-database requirement", () => {
+    (process.env as { NODE_ENV?: string }).NODE_ENV = "production";
+    for (const k of REQUIRED) process.env[k] = "set";
+    delete process.env.SUBSUMIO_AUTH_DATABASE_URL;
+    process.env.DATABASE_URL = "postgres://x";
+
+    expect(validateEnv().ok).toBe(true);
+    delete process.env.DATABASE_URL;
+    expect(validateEnv().ok).toBe(false);
   });
 
   it("only warns (never blocks) in development", () => {

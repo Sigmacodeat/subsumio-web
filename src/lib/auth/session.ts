@@ -84,10 +84,15 @@ export async function verifySession(
   // Demo sessions carry their own 1h expiry and map to no real user row —
   // the revocation store has nothing to say about them.
   if (payload.demo) return payload;
-  if (!(await isSessionVersionValid(payload.uid, payload.v))) return null;
-  if (payload.sid) {
-    if (await isSidRevoked(payload.uid, payload.sid)) return null;
-    void touchSession(payload.uid, payload.sid);
+  // Fail-closed: a revocation state that cannot be determined (store down,
+  // nothing cached in this process) rejects the session instead of
+  // silently accepting a possibly revoked one.
+  try {
+    if (!(await isSessionVersionValid(payload.uid, payload.v))) return null;
+    if (payload.sid && (await isSidRevoked(payload.uid, payload.sid))) return null;
+  } catch {
+    return null;
   }
+  if (payload.sid) void touchSession(payload.uid, payload.sid);
   return payload;
 }

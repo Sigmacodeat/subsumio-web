@@ -6,6 +6,7 @@ import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
 import { activeStaffRecipients, getRecipientsByBrain } from "@/lib/cron-utils";
 import { env } from "@/lib/env";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -62,37 +63,45 @@ async function filterNewHits(brainId: string, hits: JudgementHit[]): Promise<Jud
 }
 
 /** Persistiere Treffer als Brain-Pages (type: judgement) für spätere Brain-Suche. */
-async function persistHitsAsPages(brainId: string, hits: JudgementHit[]) {
+async function persistHitsAsPages(brainId: string, hits: JudgementHit[]): Promise<number> {
+  let failed = 0;
   for (const h of hits) {
     const slug = `legal/judgements/${h.id}`;
     try {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `${h.court} — ${h.title || "Urteil"}`,
-          type: "judgement",
-          content: h.summary || h.snippet || "",
-          frontmatter: {
+      const saved = await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            title: `${h.court} — ${h.title || "Urteil"}`,
             type: "judgement",
-            court: h.court,
-            date: h.date,
-            case_number: h.caseNumber,
-            ecli: h.ecli,
-            url: h.url,
-            source: h.source,
-            legal_area: h.legalArea || "Allgemein",
-            keywords: h.keywords || [],
-            fetched_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(30_000),
-      });
+            content: h.summary || h.snippet || "",
+            frontmatter: {
+              type: "judgement",
+              court: h.court,
+              date: h.date,
+              case_number: h.caseNumber,
+              ecli: h.ecli,
+              url: h.url,
+              source: h.source,
+              legal_area: h.legalArea || "Allgemein",
+              keywords: h.keywords || [],
+              fetched_at: new Date().toISOString(),
+            },
+          }),
+          signal: AbortSignal.timeout(30_000),
+        },
+        "Entscheidung"
+      );
+      if (!saved) failed++;
     } catch {
       // Einzelne Fehler dürfen den Cron nicht abbrechen
+      failed++;
     }
   }
+  return failed;
 }
 
 function renderDigest(
@@ -127,6 +136,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let brainsChecked = 0;
   let brainsWithHits = 0;
   let mailsSent = 0;
+  let pageWriteFailures = 0;
 
   for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
@@ -153,7 +163,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
     // Persistiere neue Treffer als Brain-Pages (type: judgement)
     if (allFreshHits.length > 0) {
-      await persistHitsAsPages(brainId, allFreshHits);
+      pageWriteFailures += await persistHitsAsPages(brainId, allFreshHits);
     }
 
     const total = hitsByTerm.reduce((n, t) => n + t.hits.length, 0);
@@ -172,5 +182,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     brains_checked: brainsChecked,
     brains_with_hits: brainsWithHits,
     mails_sent: mailsSent,
+    page_write_failures: pageWriteFailures,
   });
 });

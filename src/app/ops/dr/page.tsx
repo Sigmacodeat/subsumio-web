@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
 
 interface BackupTarget {
   type: string;
@@ -114,8 +115,10 @@ export default function DRPage() {
 
   const mutation = useMutation({
     mutationFn: async (action: "create_backup" | "run_drill" | "restore") => {
-      const res = await fetch("/api/admin/dr", {
+      const res = await csrfFetch("/api/admin/dr", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, simulate: true }),
       });

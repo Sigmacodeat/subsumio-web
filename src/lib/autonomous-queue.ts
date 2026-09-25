@@ -14,7 +14,8 @@
  */
 
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { ENGINE_LIST_MAX } from "@/lib/engine-pages";
+import { ENGINE_LIST_MAX, listEnginePages } from "@/lib/engine-pages";
+import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { createHash } from "node:crypto";
 import {
@@ -331,28 +332,19 @@ export async function getQueueStats(
   by_priority: Record<TaskPriority, number>;
 }> {
   const headers = callerHeaders ?? engineHeadersForBrain(brainId);
-  const params = new URLSearchParams({ type: "autonomous_task", limit: "500" });
-
-  const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-
-  if (!res.ok) {
-    return {
-      pending: 0,
-      running: 0,
-      completed: 0,
-      failed: 0,
-      requires_approval: 0,
-      by_priority: { urgent: 0, normal: 0, low: 0 },
-    };
+  // Every task, not only the first engine batch of 100. A failed read is an
+  // error — all-zero counts would claim an empty queue.
+  let pages: Array<{ frontmatter: AutonomousTask }>;
+  try {
+    pages = (await listEnginePages(headers, "autonomous_task", 10_000, {
+      strict: true,
+    })) as unknown as Array<{ frontmatter: AutonomousTask }>;
+  } catch {
+    throw new AppError("Die Aufgaben-Warteschlange konnte nicht geladen werden.", {
+      code: "service_unavailable",
+      statusCode: 503,
+    });
   }
-
-  const data = await res.json();
-  const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<{
-    frontmatter: AutonomousTask;
-  }>;
 
   const stats = {
     pending: 0,
