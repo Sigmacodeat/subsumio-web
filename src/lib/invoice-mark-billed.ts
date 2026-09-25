@@ -43,6 +43,17 @@ const defaultDeps: MarkInvoicedEntriesDeps = {
   enqueueMutation,
 };
 
+/**
+ * A 200 from mark-billed is not "everything is booked": the server reports
+ * ids it could not find and ids already billed under a DIFFERENT invoice
+ * (`already_billed`, never re-attributed). Both mean the invoice lists an
+ * item the matter does not carry under this invoice number — the lawyer has
+ * to look, so the caller shows the bookkeeping warning.
+ */
+function bookedIncompletely(res: { not_found: string[]; already_billed?: string[] }): boolean {
+  return res.not_found.length > 0 || (res.already_billed?.length ?? 0) > 0;
+}
+
 /** Returns true when at least one bookkeeping step failed (show a warning). */
 export async function markInvoicedEntriesBilled(
   input: MarkInvoicedEntriesInput,
@@ -67,11 +78,12 @@ export async function markInvoicedEntriesBilled(
 
   if (timeEntryIds.length > 0) {
     try {
-      await deps.markBilled({
+      const res = await deps.markBilled({
         entry_ids: timeEntryIds,
         invoice_number: invoiceNumber,
         case_slug: caseSlug,
       });
+      if (bookedIncompletely(res)) failed = true;
     } catch {
       failed = true;
     }
@@ -79,11 +91,12 @@ export async function markInvoicedEntriesBilled(
 
   if (expenseIds.length > 0) {
     try {
-      await deps.markExpensesBilled({
+      const res = await deps.markExpensesBilled({
         entry_ids: expenseIds,
         invoice_number: invoiceNumber,
         case_slug: caseSlug,
       });
+      if (bookedIncompletely(res)) failed = true;
     } catch {
       failed = true;
     }
