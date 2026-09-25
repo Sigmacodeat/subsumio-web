@@ -29,6 +29,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
+import { CaseSelect } from "@/components/legal/case-select";
 import type { BrainPage } from "@/lib/types";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
 import { buildNdaTemplate } from "@/lib/nda-template";
@@ -80,10 +81,6 @@ export function SignatureQuickCreateDialog({
 
   const { data: drafts } = useDialogFetch<BrainPage[]>(open, async () => {
     return await api.brain.listAllPages({ type: "legal_document", max: 100 });
-  });
-
-  const { data: matters } = useDialogFetch<BrainPage[]>(open && !presetCaseSlug, async () => {
-    return await api.brain.listAllPages({ type: "legal_case", max: 2000 });
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -212,18 +209,15 @@ export function SignatureQuickCreateDialog({
                 <Label htmlFor="quick-sig-case" className="text-xs">
                   Akte *
                 </Label>
-                <Select value={pickedCaseSlug} onValueChange={setPickedCaseSlug}>
-                  <SelectTrigger id="quick-sig-case">
-                    <SelectValue placeholder="Akte auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(matters ?? []).map((m) => (
-                      <SelectItem key={m.slug} value={m.slug}>
-                        {m.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CaseSelect
+                  id="quick-sig-case"
+                  value={pickedCaseSlug}
+                  onChange={setPickedCaseSlug}
+                  placeholder="Akte wählen …"
+                />
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Ohne Akte kann die Anfrage nicht zum Unterschreiben versendet werden.
+                </p>
               </div>
             )}
 

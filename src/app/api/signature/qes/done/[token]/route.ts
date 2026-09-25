@@ -73,7 +73,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
         reason: current.error ?? "Die qualifizierte Signatur wurde nicht abgeschlossen.",
       });
     // Another callback is completing this signature right now.
-    return backToMatter(session.caseSlug, {});
+    return backToMatter(session.caseSlug, { qes: "processing" });
   }
 
   if (!base || !isTrustedPdfUrl(pdfUrl, base))

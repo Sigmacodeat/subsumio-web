@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 
 const addToast = vi.fn();
 const createPage = vi.fn(async () => ({}));
@@ -40,9 +42,14 @@ function fill() {
 
 beforeEach(() => vi.clearAllMocks());
 
+function renderQ(ui: ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
+
 describe("SignatureQuickCreateDialog", () => {
   it("without a matter the request cannot be created (it could never be sent)", async () => {
-    render(<SignatureQuickCreateDialog open onOpenChange={() => {}} />);
+    renderQ(<SignatureQuickCreateDialog open onOpenChange={() => {}} />);
     expect(await screen.findByLabelText(/Akte \*/)).toBeInTheDocument();
     fill();
     const submit = document.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -51,8 +58,22 @@ describe("SignatureQuickCreateDialog", () => {
   });
 
   it("stores the matter on the request, so it can be sent via the portal", async () => {
-    render(<SignatureQuickCreateDialog open onOpenChange={() => {}} presetCaseSlug="cases/a" />);
+    renderQ(<SignatureQuickCreateDialog open onOpenChange={() => {}} presetCaseSlug="cases/a" />);
     expect(screen.queryByLabelText(/Akte \*/)).not.toBeInTheDocument();
+    fill();
+    fireEvent.submit(document.getElementById("quick-sig-doc")!.closest("form")!);
+    await waitFor(() => expect(createPage).toHaveBeenCalled());
+    const payload = (
+      createPage.mock.calls[0] as unknown as [{ frontmatter: { case_slug: string } }]
+    )[0];
+    expect(payload.frontmatter.case_slug).toBe("cases/a");
+  });
+
+  it("a matter chosen in the dialog is stored on the request", async () => {
+    renderQ(<SignatureQuickCreateDialog open onOpenChange={() => {}} />);
+    const select = (await screen.findByLabelText(/Akte \*/)) as HTMLSelectElement;
+    await waitFor(() => expect(select.querySelector('option[value="cases/a"]')).not.toBeNull());
+    fireEvent.change(select, { target: { value: "cases/a" } });
     fill();
     fireEvent.submit(document.getElementById("quick-sig-doc")!.closest("form")!);
     await waitFor(() => expect(createPage).toHaveBeenCalled());
