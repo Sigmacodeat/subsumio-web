@@ -6,6 +6,7 @@
  * use (default bind 127.0.0.1). Optional GBRAIN_WEB_API_KEY gates access.
  */
 
+import { bindPresignCaseSlug } from "../core/upload-case-binding.ts";
 import { installProcessErrorReporting, reportError } from "../core/error-report.ts";
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
@@ -6473,7 +6474,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const opCtx = ctx(req);
         const tenantSource = opCtx.sourceId ?? "default";
-        const caseSlug = body.case_slug ? String(body.case_slug).trim() : undefined;
+        // With a signed upload token the matter is the token's (checked by
+        // the web app when it issued the token); otherwise the body's.
+        const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const caseBinding = bindPresignCaseSlug({
+          tokenPresent: rawUploadToken.length > 0,
+          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        if (!caseBinding.ok) {
+          apiError(res, caseBinding.status, caseBinding.error);
+          return;
+        }
+        const caseSlug = caseBinding.caseSlug;
         if (caseSlug) await assertSlugMatterScope(engine, req, caseSlug);
 
         const mimeType =
@@ -7562,7 +7575,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const opCtx = ctx(req);
         const tenantSource = opCtx.sourceId ?? "default";
-        const caseSlug = body.case_slug ? String(body.case_slug).trim() : undefined;
+        // With a signed upload token the matter is the token's (checked by
+        // the web app when it issued the token); otherwise the body's.
+        const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const caseBinding = bindPresignCaseSlug({
+          tokenPresent: rawUploadToken.length > 0,
+          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        if (!caseBinding.ok) {
+          apiError(res, caseBinding.status, caseBinding.error);
+          return;
+        }
+        const caseSlug = caseBinding.caseSlug;
         if (caseSlug) await assertSlugMatterScope(engine, req, caseSlug);
 
         const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
