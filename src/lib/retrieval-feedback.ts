@@ -11,14 +11,20 @@
  *   - wrong: Result contains factual errors
  *
  * Architecture:
- *   - FeedbackStore: In-memory store (Phase 1), will migrate to DB
- *   - submitFeedback(): Record a single feedback event
+ *   - Feedback is persisted as standalone engine pages of type
+ *     `retrieval_feedback` under `retrieval-feedback/<orgId>/<ts>-<rand>`
+ *     (same standalone-page pattern as `time_entry` in time-tracking.ts).
+ *     Every function takes the route's server brain client
+ *     (`createServerBrainClient(ctx.headers)`) so the engine applies the
+ *     source isolation and matter access rules — no anonymous reads.
+ *   - submitFeedback(): Write one feedback page
+ *   - getFeedbackForOrg()/getFeedbackForBrain(): Tenant-isolated reads
  *   - getFeedbackStats(): Aggregate stats for eval/ranking tuning
- *   - getFeedbackForQuery(): All feedback for a specific query
- *   - getNegativeSignals(): Results that consistently get negative feedback
+ *   - getFeedbackBoosts: Score adjustments based on accumulated feedback
  *   - exportForEval(): Export feedback as qrels-compatible format
- *   - applyFeedbackBoosts: Score adjustments based on accumulated feedback
  */
+
+import { listAllPagesOfType } from "@/lib/time-tracking";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -102,6 +108,79 @@ export interface QrelsExportEntry {
   wrong_slugs: string[];
 }
 
+// ── Engine persistence ────────────────────────────────────────────────
+
+/**
+ * Minimal engine surface the feedback store needs. The route's
+ * `createServerBrainClient(ctx.headers)` satisfies it structurally — the
+ * identity-bearing headers make the engine scope every call to the
+ * caller's own brain/source (tenant isolation is not a filter we apply
+ * here, it is enforced server-side).
+ */
+export interface FeedbackEngineClient {
+  listPages(opts: { type: string; limit: number; offset: number }): Promise<unknown[]>;
+  createPage(page: {
+    slug: string;
+    title: string;
+    content?: string;
+    type?: string;
+    frontmatter?: Record<string, unknown>;
+  }): Promise<unknown>;
+}
+
+export const FEEDBACK_PAGE_TYPE = "retrieval_feedback";
+export const FEEDBACK_SLUG_PREFIX = "retrieval-feedback/";
+
+/**
+ * Upper bound of feedback pages read per request — the same paging cap as
+ * `listAllPagesOfType` applies to `time_entry`. Stats stay org-scoped; the
+ * cap only guards against pathological growth.
+ */
+export const FEEDBACK_LIST_MAX = 5_000;
+
+const FEEDBACK_TYPES: FeedbackType[] = ["relevant", "irrelevant", "outdated", "wrong"];
+const FEEDBACK_SEVERITIES: FeedbackSeverity[] = ["low", "medium", "high"];
+
+function slugPart(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80) || "default";
+}
+
+/**
+ * Maps a `retrieval_feedback` page back to the entry shape. Pages that are
+ * tombstoned or carry no recognizable feedback payload are skipped — a
+ * hand-edited or half-migrated page must not poison the stats.
+ */
+export function feedbackFromPage(page: {
+  slug: string;
+  frontmatter?: unknown;
+}): RetrievalFeedback | null {
+  const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+  if (fm.status === "tombstoned") return null;
+  const type = fm.feedback_type;
+  if (!FEEDBACK_TYPES.includes(type as FeedbackType)) return null;
+  const severity = fm.severity;
+  const query = String(fm.query ?? "");
+  return {
+    id: typeof fm.id === "string" && fm.id ? fm.id : page.slug,
+    query,
+    query_hash: String(fm.query_hash ?? hashQuery(query)),
+    result_slug: String(fm.result_slug ?? ""),
+    result_title: String(fm.result_title ?? ""),
+    feedback_type: type as FeedbackType,
+    severity: FEEDBACK_SEVERITIES.includes(severity as FeedbackSeverity)
+      ? (severity as FeedbackSeverity)
+      : "medium",
+    comment: typeof fm.comment === "string" && fm.comment ? fm.comment : undefined,
+    user_id: String(fm.user_id ?? ""),
+    brain_id: String(fm.brain_id ?? ""),
+    org_id: String(fm.org_id ?? ""),
+    created_at: String(fm.created_at ?? ""),
+    search_mode: typeof fm.search_mode === "string" ? fm.search_mode : undefined,
+    rank_position: typeof fm.rank_position === "number" ? fm.rank_position : undefined,
+    result_score: typeof fm.result_score === "number" ? fm.result_score : undefined,
+  };
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function hashQuery(query: string): string {
@@ -131,62 +210,102 @@ const FEEDBACK_TYPE_WEIGHT: Record<FeedbackType, number> = {
   wrong: -1.5,
 };
 
-// ── Feedback Store ────────────────────────────────────────────────────
+// ── Feedback Store (engine-backed) ────────────────────────────────────
 
-const feedbackStore = new Map<string, RetrievalFeedback>();
-
-export function submitFeedback(
+/**
+ * Writes one feedback event as a `retrieval_feedback` page. The slug is
+ * org-prefixed (`retrieval-feedback/<orgId>/<ts>-<rand>`), so listings can
+ * later be narrowed by slug prefix and the id doubles as the page slug.
+ * Throws when the engine write fails — the route maps that to a 5xx, a
+ * silently dropped vote would corrupt the eval signal.
+ */
+export async function submitFeedback(
+  brain: FeedbackEngineClient,
   feedback: Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">
-): RetrievalFeedback {
-  const id = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const query_hash = hashQuery(feedback.query);
-  const created_at = new Date().toISOString();
-
+): Promise<RetrievalFeedback> {
+  const id = `${FEEDBACK_SLUG_PREFIX}${slugPart(feedback.org_id)}/${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
   const entry: RetrievalFeedback = {
     ...feedback,
     id,
-    query_hash,
-    created_at,
+    query_hash: hashQuery(feedback.query),
+    created_at: new Date().toISOString(),
   };
 
-  feedbackStore.set(id, entry);
+  await brain.createPage({
+    slug: id,
+    title: `Retrieval-Feedback: ${feedback.feedback_type} → ${feedback.result_slug}`,
+    type: FEEDBACK_PAGE_TYPE,
+    // The comment doubles as the page body so full-text search over pages
+    // can find free-text feedback; listings read everything from fm.
+    content: feedback.comment ?? "",
+    frontmatter: {
+      type: FEEDBACK_PAGE_TYPE,
+      ...entry,
+    },
+  });
+
   return entry;
 }
 
-export function getFeedback(id: string): RetrievalFeedback | undefined {
-  return feedbackStore.get(id);
-}
-
-export function getAllFeedback(): RetrievalFeedback[] {
-  return Array.from(feedbackStore.values());
-}
-
-export function getFeedbackForQuery(query: string): RetrievalFeedback[] {
-  const qhash = hashQuery(query);
-  return getAllFeedback().filter((f) => f.query_hash === qhash);
-}
-
-export function getFeedbackForSlug(slug: string): RetrievalFeedback[] {
-  return getAllFeedback().filter((f) => f.result_slug === slug);
-}
-
-export function clearFeedbackStore(): void {
-  feedbackStore.clear();
+async function listAllFeedback(
+  brain: Pick<FeedbackEngineClient, "listPages">,
+  limit: number
+): Promise<RetrievalFeedback[]> {
+  const cap = Math.min(Math.max(1, Math.floor(limit)), FEEDBACK_LIST_MAX);
+  // listAllPagesOfType reads in fixed batches of 100 — a cap under 100 (or a
+  // non-multiple) still fetches a whole batch, so clamp the result here.
+  const pages = (await listAllPagesOfType(brain, FEEDBACK_PAGE_TYPE, cap)).slice(0, cap);
+  return pages
+    .map(feedbackFromPage)
+    .filter((f): f is RetrievalFeedback => f !== null)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 // ── Tenant-Isolated Access ────────────────────────────────────────────
 
-export function getFeedbackForOrg(orgId: string): RetrievalFeedback[] {
-  return getAllFeedback().filter((f) => f.org_id === orgId);
+/**
+ * All feedback of one org. The brain client is already source-scoped via
+ * the caller's ctx.headers; the `org_id` match keeps multi-org brains
+ * (shared corpora) from leaking a sister org's votes.
+ */
+export async function getFeedbackForOrg(
+  brain: Pick<FeedbackEngineClient, "listPages">,
+  orgId: string,
+  opts: { limit?: number } = {}
+): Promise<RetrievalFeedback[]> {
+  const all = await listAllFeedback(brain, opts.limit ?? FEEDBACK_LIST_MAX);
+  return all.filter((f) => f.org_id === orgId);
 }
 
-export function getFeedbackForBrain(brainId: string): RetrievalFeedback[] {
-  return getAllFeedback().filter((f) => f.brain_id === brainId);
+export async function getFeedbackForBrain(
+  brain: Pick<FeedbackEngineClient, "listPages">,
+  brainId: string,
+  opts: { limit?: number } = {}
+): Promise<RetrievalFeedback[]> {
+  const all = await listAllFeedback(brain, opts.limit ?? FEEDBACK_LIST_MAX);
+  return all.filter((f) => f.brain_id === brainId);
+}
+
+export function getFeedbackForQuery(
+  feedback: RetrievalFeedback[],
+  query: string
+): RetrievalFeedback[] {
+  const qhash = hashQuery(query);
+  return feedback.filter((f) => f.query_hash === qhash);
+}
+
+export function getFeedbackForSlug(
+  feedback: RetrievalFeedback[],
+  slug: string
+): RetrievalFeedback[] {
+  return feedback.filter((f) => f.result_slug === slug);
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────
 
-export function getFeedbackStats(feedback: RetrievalFeedback[] = getAllFeedback()): FeedbackStats {
+export function getFeedbackStats(feedback: RetrievalFeedback[] = []): FeedbackStats {
   const byType: Record<FeedbackType, number> = {
     relevant: 0,
     irrelevant: 0,
@@ -273,9 +392,7 @@ export function getFeedbackStats(feedback: RetrievalFeedback[] = getAllFeedback(
 
 // ── Boost Signals for Ranking ─────────────────────────────────────────
 
-export function getFeedbackBoosts(
-  feedback: RetrievalFeedback[] = getAllFeedback()
-): FeedbackBoostSignal[] {
+export function getFeedbackBoosts(feedback: RetrievalFeedback[] = []): FeedbackBoostSignal[] {
   const slugScores = new Map<
     string,
     { slug: string; title: string; netScore: number; count: number }
@@ -312,9 +429,7 @@ export function getFeedbackBoosts(
 
 // ── Eval Export (qrels-compatible) ────────────────────────────────────
 
-export function exportForEval(
-  feedback: RetrievalFeedback[] = getAllFeedback()
-): QrelsExportEntry[] {
+export function exportForEval(feedback: RetrievalFeedback[] = []): QrelsExportEntry[] {
   const queryGroups = new Map<string, QrelsExportEntry>();
 
   for (const f of feedback) {
@@ -372,14 +487,12 @@ export function validateFeedback(
     errors.push("org_id is required");
   }
 
-  const validTypes: FeedbackType[] = ["relevant", "irrelevant", "outdated", "wrong"];
-  if (!validTypes.includes(feedback.feedback_type)) {
-    errors.push(`feedback_type must be one of: ${validTypes.join(", ")}`);
+  if (!FEEDBACK_TYPES.includes(feedback.feedback_type)) {
+    errors.push(`feedback_type must be one of: ${FEEDBACK_TYPES.join(", ")}`);
   }
 
-  const validSeverities: FeedbackSeverity[] = ["low", "medium", "high"];
-  if (!validSeverities.includes(feedback.severity)) {
-    errors.push(`severity must be one of: ${validSeverities.join(", ")}`);
+  if (!FEEDBACK_SEVERITIES.includes(feedback.severity)) {
+    errors.push(`severity must be one of: ${FEEDBACK_SEVERITIES.join(", ")}`);
   }
 
   return { valid: errors.length === 0, errors };
