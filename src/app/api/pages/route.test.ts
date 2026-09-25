@@ -18,6 +18,8 @@ vi.mock("@/lib/engine", async () => ({
 import { GET, POST } from "./route";
 import { requireEngineContext, recordQuota } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
+// The real engine checker — the route is tested against its actual answer shape.
+import { conflictCheck } from "../../../../server/src/core/legal/conflict-check";
 
 const ctx = {
   headers: { "x-subsumio-source": "brain_a" },
@@ -322,24 +324,77 @@ describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
   });
 });
 
-describe("POST /api/pages — conflict check covers additional opponents", () => {
-  let checkedNames: string[];
+describe("POST /api/pages — server conflict gate (§ 10 RAO)", () => {
+  // The engine answer is produced by the REAL engine checker over fixture
+  // rows, so the route is tested against the shape production returns.
+  const caseRows = [
+    {
+      slug: "legal/cases/alt",
+      title: "Alt",
+      client_name: "Dritte Beklagte GmbH",
+      opponent_name: "X Y",
+    },
+    { slug: "legal/cases/folge", title: "Folge", client_name: "Muster AG", opponent_name: "Z Z" },
+    {
+      slug: "legal/cases/gegner",
+      title: "Gegner-Akte",
+      client_name: "Irgendwer",
+      opponent_name: "Neue Mandantin GmbH",
+    },
+  ].map((r) => ({
+    ...r,
+    additional_opponents: null,
+    contact_name: null,
+    contact_company: null,
+    contact_role: null,
+    status: "open",
+    page_type: "legal_case",
+  }));
+  const contactRows = [
+    {
+      slug: "kontakte/muster-ag",
+      title: "Muster AG",
+      client_name: null,
+      opponent_name: null,
+      additional_opponents: null,
+      contact_name: "Muster AG",
+      contact_company: null,
+      contact_role: "client",
+      status: null,
+      page_type: "legal_contact",
+    },
+  ];
+  const fixtureEngine = {
+    async executeRaw<T>(sql: string): Promise<T[]> {
+      return (sql.includes("type = 'person'") ? [] : [...caseRows, ...contactRows]) as T[];
+    },
+  };
+
+  let checks: Array<Record<string, unknown>>;
+  let caseWrites: Array<Record<string, any>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
-    checkedNames = [];
+    checks = [];
+    caseWrites = [];
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
         if (String(url).endsWith("/api/legal/conflict-check")) {
-          const { name } = JSON.parse(String(init?.body ?? "{}")) as { name: string };
-          checkedNames.push(name);
-          const matches =
-            name === "Dritte Beklagte GmbH"
-              ? [{ name: "Dritte Beklagte GmbH", slug: "legal/cases/alt", type: "client" }]
-              : [];
-          return new Response(JSON.stringify({ matches }), { status: 200 });
+          const req = JSON.parse(String(init?.body ?? "{}")) as Record<string, any>;
+          checks.push(req);
+          const result = await conflictCheck(fixtureEngine, {
+            name: req.name,
+            side: req.side,
+            selfCaseSlug: req.self_case_slug,
+            ownContactSlugs: req.own_contact_slugs,
+          });
+          return new Response(JSON.stringify(result), { status: 200 });
+        }
+        if (init?.method === "POST" && String(url).endsWith("/api/pages")) {
+          const body = JSON.parse(String(init.body ?? "{}"));
+          if (body.type === "legal_case") caseWrites.push(body);
         }
         return new Response(JSON.stringify({ slug: "legal/cases/neu", success: true }), {
           status: 200,
@@ -348,7 +403,7 @@ describe("POST /api/pages — conflict check covers additional opponents", () =>
     );
   });
 
-  it("checks every additional opponent and blocks on a hit only there", async () => {
+  it("checks every party with its side and blocks on the additional opponent only", async () => {
     const res = await post({
       slug: "legal/cases/neu",
       title: "Muster gegen Beispiel",
@@ -362,9 +417,163 @@ describe("POST /api/pages — conflict check covers additional opponents", () =>
         ],
       },
     });
-    expect(checkedNames).toEqual(["Muster AG", "Beispiel GmbH", "Dritte Beklagte GmbH"]);
+    expect(checks.map((c) => [c.name, c.side])).toEqual([
+      ["Muster AG", "client"],
+      ["Beispiel GmbH", "opponent"],
+      ["Dritte Beklagte GmbH", "opponent"],
+    ]);
     expect(res.status).toBe(409);
-    const body = (await res.json()) as { conflictWarning: { matches: Array<{ name: string }> } };
-    expect(body.conflictWarning.matches.map((m) => m.name)).toEqual(["Dritte Beklagte GmbH"]);
+    const body = (await res.json()) as any;
+    expect(body.conflictWarning.blocking.map((m: any) => m.name)).toEqual(["Dritte Beklagte GmbH"]);
+    expect(body.conflictWarning.blocking[0]).toMatchObject({
+      slug: "legal/cases/alt",
+      type: "case",
+      role: "client",
+      party: "Dritte Beklagte GmbH",
+    });
+    expect(caseWrites).toHaveLength(0);
+  });
+
+  it("OPS-1: the new client is the opponent in an existing Akte → 409 with filled name", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Mandantin",
+      type: "legal_case",
+      frontmatter: { client_name: "Neue Mandantin Ges.m.b.H." },
+    });
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as any;
+    expect(body.conflictWarning.matches[0].name).toBe("Neue Mandantin GmbH");
+    expect(body.conflictWarning.matches[0].title).toBe("Gegner-Akte");
+  });
+
+  it("OPS-4: follow-up matter for an existing client with its own contact → 200, no warning", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Muster AG — Folgeakte",
+      type: "legal_case",
+      frontmatter: { client_name: "Muster AG", client_slug: "kontakte/muster-ag" },
+    });
+    expect(res.status).toBe(200);
+    expect(checks[0]).toMatchObject({
+      name: "Muster AG",
+      side: "client",
+      self_case_slug: "legal/cases/neu",
+      own_contact_slugs: ["kontakte/muster-ag"],
+    });
+    const body = (await res.json()) as any;
+    expect(body.conflictWarning.matches).toBeUndefined();
+    expect(caseWrites[0]?.frontmatter.conflict_status).toBe("conflict_cleared");
+  });
+
+  it("waiver: assistant is refused (403)", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      ...ctx,
+      user: { ...ctx.user, role: "assistant" },
+    } as any);
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Mandantin",
+      type: "legal_case",
+      frontmatter: {
+        client_name: "Neue Mandantin GmbH",
+        conflict_waiver_reason: "Zustimmung beider Seiten liegt vor",
+      },
+    });
+    expect(res.status).toBe(403);
+    expect(caseWrites).toHaveLength(0);
+  });
+
+  it("waiver by a lawyer is stamped with the real user; client stamps are ignored", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Mandantin",
+      type: "legal_case",
+      frontmatter: {
+        client_name: "Neue Mandantin GmbH",
+        conflict_waiver_reason: "Zustimmung beider Seiten liegt vor",
+        conflict_waived_by: "jemand-anderer@example.com",
+        conflict_waived_at: "2020-01-01T00:00:00.000Z",
+        mandate_acceptance: { intake_slug: "quick-create", conflict_check: { status: "clear" } },
+      },
+    });
+    expect(res.status).toBe(200);
+    const fm = caseWrites[0]!.frontmatter;
+    expect(fm.conflict_status).toBe("conflict_waived");
+    expect(fm.conflict_waived_by).toBe("anwalt@kanzlei.example");
+    expect(fm.conflict_waived_by_id).toBe("u1");
+    expect(fm.conflict_waived_at).not.toBe("2020-01-01T00:00:00.000Z");
+    expect(fm.mandate_acceptance.conflict_check).toMatchObject({
+      status: "conflict",
+      waived: true,
+      waived_by_id: "u1",
+      waived_reason: "Zustimmung beider Seiten liegt vor",
+    });
+  });
+
+  it("a client-claimed conflict status is replaced by the server's", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Sache",
+      type: "legal_case",
+      frontmatter: {
+        client_name: "Berta Unbekannt",
+        conflict_status: "conflict_waived",
+        conflict_waived_by: "jemand@example.com",
+      },
+    });
+    expect(res.status).toBe(200);
+    const fm = caseWrites[0]!.frontmatter;
+    expect(fm.conflict_status).toBe("conflict_cleared");
+    expect(fm.conflict_waived_by).toBeUndefined();
+  });
+
+  it("OPS-5: mandate_acceptance.conflict_check is written from the server result", async () => {
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Sache",
+      type: "legal_case",
+      frontmatter: {
+        client_name: "Berta Unbekannt",
+        mandate_acceptance: {
+          intake_slug: "quick-create",
+          conflict_check: { status: "pending", severity: "unknown", matches: [] },
+          kyc: { required: true, status: "pending" },
+        },
+      },
+    });
+    expect(res.status).toBe(200);
+    const cc = caseWrites[0]!.frontmatter.mandate_acceptance.conflict_check;
+    expect(cc).toMatchObject({
+      status: "clear",
+      performed_by: "anwalt@kanzlei.example",
+      performed_by_id: "u1",
+      parties: [{ name: "Berta Unbekannt", side: "client", severity: "none" }],
+    });
+    expect(caseWrites[0]!.frontmatter.mandate_acceptance.kyc).toEqual({
+      required: true,
+      status: "pending",
+    });
+  });
+
+  it("engine unavailable → 503, nothing written", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (String(url).endsWith("/api/legal/conflict-check")) {
+          return new Response("down", { status: 502 });
+        }
+        if (init?.method === "POST") caseWrites.push(JSON.parse(String(init.body ?? "{}")));
+        return new Response(JSON.stringify({ slug: "x" }), { status: 200 });
+      })
+    );
+    const res = await post({
+      slug: "legal/cases/neu",
+      title: "Neue Sache",
+      type: "legal_case",
+      frontmatter: { client_name: "Berta Unbekannt" },
+    });
+    expect(res.status).toBe(503);
+    expect(caseWrites).toHaveLength(0);
   });
 });

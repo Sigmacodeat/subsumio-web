@@ -11,11 +11,22 @@ export type EngagementLetterStatus = "pending" | "draft" | "sent";
 export interface IntakeConflictCheck {
   status: ConflictCheckStatus;
   performed_at?: string;
+  /** E-mail of the user whose request ran the server-side check. */
   performed_by?: string;
+  /** User id of that user — only ever written by the server. */
+  performed_by_id?: string;
   severity?: ConflictCheckResponse["severity"] | "unknown";
   matches?: string[];
+  /** Parties checked, with their side in the new mandate. */
+  parties?: Array<{
+    name: string;
+    side: "client" | "opponent";
+    severity: ConflictCheckResponse["severity"];
+  }>;
   waived?: boolean;
   waived_by?: string;
+  waived_by_id?: string;
+  waived_by_role?: string;
   waived_reason?: string;
   waived_at?: string;
 }

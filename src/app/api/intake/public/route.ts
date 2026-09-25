@@ -74,15 +74,22 @@ interface ConflictCheckResult {
   severity?: "critical" | "low" | "none";
 }
 
+/**
+ * `side` is the role of the name in the requested mandate: the requester is
+ * the prospective client, the named opponent the prospective opponent. A
+ * requester who is the opponent in an existing Akte (or an opponent who is an
+ * existing client) is a conflict, not "clear".
+ */
 async function checkConflict(
   brainId: string,
-  name: string
+  name: string,
+  side: "client" | "opponent"
 ): Promise<IntakeRequestFrontmatter["conflict_check_status"]> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, side }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return "needs_review";
@@ -124,9 +131,9 @@ export const POST = createPublicHandler(
     const headers = engineHeadersForBrain(brainId);
     // Kollisionsprüfung auf Anfragenden UND Gegenseite — die Gegenseite ist
     // der eigentliche § 10-RAO-Konflikt (bestehendes Mandat der Gegenseite).
-    let conflictStatus = await checkConflict(brainId, body.name);
+    let conflictStatus = await checkConflict(brainId, body.name, "client");
     if (body.opponent && conflictStatus !== "conflict") {
-      const opponentStatus = await checkConflict(brainId, body.opponent);
+      const opponentStatus = await checkConflict(brainId, body.opponent, "opponent");
       if (opponentStatus === "conflict") conflictStatus = "conflict";
       else if (opponentStatus === "needs_review" && conflictStatus === "clear")
         conflictStatus = "needs_review";

@@ -35,6 +35,8 @@ import type {
 } from "./server-brain";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
+import type { IntakeConflictCheck } from "./intake-acceptance";
+import type { MatterConflictOutcome as IntakeConflictOutcome } from "./conflict-gate";
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { unwrapApiBody } from "./api-body";
 import { consumeSSEStream } from "./sse-stream";
@@ -776,10 +778,14 @@ export const api = {
       });
     },
 
-    conflictCheck(name: string): Promise<ConflictCheckResponse> {
+    /**
+     * `side`: role of the name in the NEW mandate. Without it the engine cannot
+     * tell a returning client from a client who is the opponent elsewhere.
+     */
+    conflictCheck(name: string, side?: "client" | "opponent"): Promise<ConflictCheckResponse> {
       return request("/api/legal/conflict-check", {
         method: "POST",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(side ? { name, side } : { name }),
       });
     },
 
@@ -2163,6 +2169,31 @@ export const api = {
       acceptance?: Record<string, unknown>;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake", { method: "PATCH", body: JSON.stringify(input) });
+    },
+
+    /** Server-side Kollisionsprüfung of an intake; the server records the result. */
+    conflictCheck(slug: string): Promise<{
+      data: {
+        conflict_check: IntakeConflictCheck;
+        conflict_check_status: "clear" | "conflict" | "needs_review";
+        outcome: IntakeConflictOutcome;
+      };
+    }> {
+      return request("/api/intake/conflict-check", {
+        method: "POST",
+        body: JSON.stringify({ slug }),
+      });
+    },
+
+    /** Justified waiver of a server-recorded conflict (lawyer/admin only). */
+    waiveConflict(
+      slug: string,
+      reason: string
+    ): Promise<{ data: { conflict_check: IntakeConflictCheck } }> {
+      return request("/api/intake/conflict-waiver", {
+        method: "POST",
+        body: JSON.stringify({ slug, reason }),
+      });
     },
 
     convert(input: {

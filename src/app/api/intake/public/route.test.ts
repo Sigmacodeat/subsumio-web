@@ -109,7 +109,10 @@ describe("POST /api/intake/public", () => {
 
     const [conflictUrl, conflictInit] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(conflictUrl).toBe("http://engine-test:3001/api/legal/conflict-check");
-    expect(JSON.parse(String(conflictInit.body))).toEqual({ name: validBody.name });
+    expect(JSON.parse(String(conflictInit.body))).toEqual({
+      name: validBody.name,
+      side: "client",
+    });
 
     const [createUrl, createInit] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(createUrl).toBe("http://engine-test:3001/api/pages");
@@ -141,6 +144,30 @@ describe("POST /api/intake/public", () => {
     expect(payload.frontmatter.conflict_check_status).toBe("needs_review");
   });
 
+  test("requester who is the opponent in an existing Akte is recorded as conflict (OPS-1)", async () => {
+    // The engine judges with side=client: hit on the opponent side → critical.
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            severity: "critical",
+            side: "client",
+            matches: [{ slug: "legal/cases/alt", role: "opponent", assessment: "critical" }],
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ slug: "legal/intake/x" }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 404 }));
+
+    const res = await post(validBody);
+    expect(res.status).toBe(200);
+    const payload = JSON.parse(String((mockFetch.mock.calls[1] as [string, RequestInit])[1].body));
+    expect(payload.frontmatter.conflict_check_status).toBe("conflict");
+  });
+
   test("checks the opponent against conflicts too (WP-5.28)", async () => {
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ severity: "none" }), { status: 200 }))
@@ -158,6 +185,7 @@ describe("POST /api/intake/public", () => {
     expect(mockFetch.mock.calls[0][0]).toContain("conflict-check");
     expect(JSON.parse(String((mockFetch.mock.calls[1] as [string, RequestInit])[1].body))).toEqual({
       name: "Gegenseite GmbH",
+      side: "opponent",
     });
     const payload = JSON.parse(String((mockFetch.mock.calls[2] as [string, RequestInit])[1].body));
     expect(payload.frontmatter.conflict_check_status).toBe("conflict");

@@ -6,7 +6,13 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
-import { matterConflictParties } from "@/lib/contact-conflict";
+import {
+  SERVER_OWNED_CONFLICT_KEYS,
+  canWaiveConflict,
+  checkMatterConflicts,
+  conflictCheckRecord,
+  type MatterConflictOutcome,
+} from "@/lib/conflict-gate";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 import {
   GUARD_READ_FAILED,
@@ -80,38 +86,6 @@ const pagesPostSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["title"], message: "Required" });
     }
   });
-
-type ConflictMatch = { name: string; slug: string; type: string };
-
-async function checkLegalCaseConflicts(
-  headers: Record<string, string>,
-  frontmatter: Record<string, unknown> | undefined
-): Promise<{ checked: boolean; matches?: ConflictMatch[] }> {
-  // Client, main opponent and every additional opponent (same name once).
-  const namesToCheck = [...new Set(matterConflictParties(frontmatter).map((party) => party.name))];
-  if (namesToCheck.length === 0) return { checked: true };
-
-  const conflicts: ConflictMatch[] = [];
-  for (const name of namesToCheck) {
-    const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ name }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!checkRes.ok) {
-      throw new Error(`Conflict check failed: HTTP ${checkRes.status}`);
-    }
-    const checkData = (await checkRes.json()) as { matches?: ConflictMatch[] };
-    if (checkData.matches?.length) {
-      conflicts.push(
-        ...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
-      );
-    }
-  }
-
-  return { checked: true, matches: conflicts.length > 0 ? conflicts : undefined };
-}
 
 export const GET = createHandler(
   {
@@ -310,12 +284,20 @@ export const POST = createHandler(
         body.frontmatter = guarded.frontmatter;
       }
 
-      let conflictWarning:
-        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
-        | undefined;
+      let conflictWarning: MatterConflictOutcome | undefined;
       if (body.type === "legal_case") {
+        // Conflict status and waiver stamps are server-owned: never taken
+        // from the request body.
+        const fm: Record<string, unknown> = { ...(body.frontmatter ?? {}) };
+        for (const key of SERVER_OWNED_CONFLICT_KEYS) delete fm[key];
+        body.frontmatter = fm;
+
         try {
-          conflictWarning = await checkLegalCaseConflicts(ctx.headers, body.frontmatter);
+          // Each party is checked with its side in THIS matter (§ 10 Abs 1
+          // RAO); the matter itself and the party's own contact are no hits.
+          conflictWarning = await checkMatterConflicts(ctx.headers, fm, {
+            selfCaseSlug: body.slug,
+          });
         } catch (err) {
           log.error(
             "[pages] conflict check failed:",
@@ -329,47 +311,64 @@ export const POST = createHandler(
         }
 
         const waiverReason =
-          typeof body.frontmatter?.conflict_waiver_reason === "string"
-            ? body.frontmatter.conflict_waiver_reason.trim()
-            : "";
-        if (conflictWarning.matches?.length && waiverReason.length === 0) {
+          typeof fm.conflict_waiver_reason === "string" ? fm.conflict_waiver_reason.trim() : "";
+        const blocking = conflictWarning.blocking.length > 0;
+        if (blocking && waiverReason.length === 0) {
           return Response.json(
             {
               error: "conflict_detected",
-              message: "Kollisionsprüfung hat Treffer gefunden. Akte wurde nicht angelegt.",
+              message:
+                "Interessenkonflikt: Eine Partei steht in einer bestehenden Akte auf der Gegenseite. Akte wurde nicht angelegt.",
               conflictWarning,
             },
             { status: 409 }
           );
         }
-
-        // E9: Enforce partner-level approval for conflict waivers
-        if (conflictWarning.matches?.length && waiverReason.length > 0) {
-          const approverRole = ctx.user.role;
-          const allowedWaiverRoles = ["admin", "lawyer"];
-          if (!allowedWaiverRoles.includes(approverRole)) {
-            return Response.json(
-              {
-                error: "conflict_waiver_unauthorized",
-                message: "Konflikt-Waiver erfordert Partner-Freigabe (Rolle: admin oder lawyer).",
-              },
-              { status: 403 }
-            );
-          }
-          // Stamp waiver with approver info for audit trail
-          body.frontmatter = {
-            ...body.frontmatter,
-            conflict_waived_by: ctx.user.email,
-            conflict_waived_by_role: approverRole,
-            conflict_waived_at: new Date().toISOString(),
-            conflict_status: "conflict_waived",
-          };
+        if (blocking && !canWaiveConflict(ctx.user.role)) {
+          return Response.json(
+            {
+              error: "conflict_waiver_unauthorized",
+              message: "Konflikt-Freigabe erfordert die Rolle Anwalt oder Admin.",
+            },
+            { status: 403 }
+          );
         }
 
-        if (conflictWarning.checked && !conflictWarning.matches?.length) {
+        const now = new Date();
+        const actor = { id: ctx.user.id, email: ctx.user.email, role: ctx.user.role };
+        if (blocking) {
+          // Stamp waiver with the real approver for the audit trail
+          body.frontmatter = {
+            ...fm,
+            conflict_waived_by: ctx.user.email,
+            conflict_waived_by_id: ctx.user.id,
+            conflict_waived_by_role: ctx.user.role,
+            conflict_waived_at: now.toISOString(),
+            conflict_status: "conflict_waived",
+          };
+        } else if (conflictWarning.checked) {
+          body.frontmatter = { ...fm, conflict_status: "conflict_cleared" };
+        }
+
+        // Mandatsannahme evidence: the conflict_check block is written from
+        // the server's own result, never from what the client claims.
+        const acceptance = (body.frontmatter as Record<string, unknown>).mandate_acceptance;
+        if (acceptance && typeof acceptance === "object" && !Array.isArray(acceptance)) {
+          const stored = (
+            current?.frontmatter?.mandate_acceptance as Record<string, unknown> | undefined
+          )?.conflict_check;
+          const conflictCheck =
+            !conflictWarning.checked && body.merge === true && stored && typeof stored === "object"
+              ? stored
+              : conflictCheckRecord(
+                  conflictWarning,
+                  actor,
+                  blocking ? { reason: waiverReason, actor } : undefined,
+                  now
+                );
           body.frontmatter = {
             ...body.frontmatter,
-            conflict_status: "conflict_cleared",
+            mandate_acceptance: { ...acceptance, conflict_check: conflictCheck },
           };
         }
       }

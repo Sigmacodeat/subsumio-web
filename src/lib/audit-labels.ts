@@ -85,6 +85,7 @@ export type AuditAction =
   | "drafting.generate"
   | "drafting.export"
   | "conflict.check"
+  | "conflict.waive"
   | "judgements.search"
   | "legal.contract_draft"
   | "legal.document_review"
@@ -427,6 +428,7 @@ const ACTION_LABELS: Record<string, string> = {
   "drafting.generate": "Schriftsatz generiert",
   "drafting.export": "Schriftsatz exportiert",
   "conflict.check": "Kollisionsprüfung",
+  "conflict.waive": "Kollision begründet freigegeben",
   "judgements.search": "Rechtsprechung gesucht",
   "legal.playbook": "Playbook geändert",
   "legal.tabular": "Tabellarische Prüfung",
