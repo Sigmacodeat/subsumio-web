@@ -30,6 +30,7 @@ import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
+import { completeOnboarding } from "./complete-onboarding";
 import {
   MAX_HOURLY_RATE_EUR,
   loadKanzleiSettingsStrict,
@@ -206,11 +207,7 @@ export default function OnboardingPage() {
     setCompleting(true);
     try {
       await saveProfile();
-      await csrfFetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ industry, profile }),
-      });
+      await completeOnboarding({ industry, profile });
       await qc.invalidateQueries({ queryKey: ["auth", "me"] });
       router.replace("/dashboard");
     } catch {

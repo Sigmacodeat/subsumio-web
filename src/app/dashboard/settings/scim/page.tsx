@@ -441,6 +441,8 @@ export default function ScimSettingsPage() {
                   Synchronisation abgeschlossen: {syncMutation.data?.data?.usersCreated ?? 0}{" "}
                   erstellt, {syncMutation.data?.data?.usersUpdated ?? 0} aktualisiert,{" "}
                   {syncMutation.data?.data?.usersDeactivated ?? 0} deaktiviert
+                  {(syncMutation.data?.data?.errors?.length ?? 0) > 0 &&
+                    ` · ${syncMutation.data?.data?.errors.length} Fehler`}
                 </p>
               </div>
             </div>

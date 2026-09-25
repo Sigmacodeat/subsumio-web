@@ -10,12 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/utils";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import type { RedTeamResult, RedTeamAnnotation } from "@/lib/red-team-agent";
 
 import { unwrapApiBody } from "@/lib/api-body";
 import { CaseSelect } from "@/components/legal/case-select";
+import { EmptyState } from "@/components/dashboard/empty-state";
 const SEVERITY_COLORS: Record<string, string> = {
   high: "bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
   medium: "bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
@@ -35,6 +37,7 @@ export default function RedTeamPage() {
   const { t } = useLang();
   const [results, setResults] = useState<RedTeamResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [form, setForm] = useState({
     case_slug: "",
@@ -47,7 +50,9 @@ export default function RedTeamPage() {
     try {
       const pages = await api.brain.listPages({ type: "red_team_result", limit: 50 });
       setResults(pages.map((p) => p.frontmatter as unknown as RedTeamResult));
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("redteam.err_load") });
     } finally {
       setLoading(false);
@@ -157,6 +162,20 @@ export default function RedTeamPage() {
         <div className="flex items-center justify-center py-12" role="status" aria-live="polite">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
+      ) : loadFailed ? (
+        <div role="alert">
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("redteam.err_load")}
+            description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              setLoadFailed(false);
+              setLoading(true);
+              void load();
+            }}
+          />
+        </div>
       ) : results.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[color:var(--ds-border)] p-12 text-center text-[color:var(--ds-text-muted)]">
           <FileText className="mx-auto mb-3 h-12 w-12 opacity-40" />
@@ -193,7 +212,7 @@ function RedTeamResultCard({ result }: { result: RedTeamResult }) {
         <div>
           <span className="text-sm font-medium">{result.case_slug}</span>
           <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
-            {new Date(result.created_at).toLocaleString("de-DE")}
+            {formatDateTime(result.created_at)}
           </span>
         </div>
         <Badge className={SEVERITY_COLORS[result.overall_risk] ?? ""}>

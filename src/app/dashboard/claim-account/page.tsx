@@ -18,6 +18,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
+import { formatEur } from "@/lib/utils";
 import { useMe } from "@/lib/queries/auth";
 import {
   getClaimStatusLabel,
@@ -40,7 +41,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function fmtEUR(n: number) {
-  return n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  return formatEur(n);
 }
 
 export default function ClaimAccountPage() {

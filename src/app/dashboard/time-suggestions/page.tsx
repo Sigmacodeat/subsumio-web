@@ -29,7 +29,9 @@ export default function TimeSuggestionsPage() {
   const [enabled, setEnabled] = useState(false);
   // Suggestions are personal (built from the user's own activity): show only
   // the signed-in user's, never a colleague's.
-  const myEmail = (useMe().data?.user?.email as string | undefined)?.toLowerCase();
+  const meQuery = useMe();
+  const myEmail = (meQuery.data?.user?.email as string | undefined)?.toLowerCase();
+  const [loadFailed, setLoadFailed] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -42,12 +44,16 @@ export default function TimeSuggestionsPage() {
       // Serverseitig auf den eigenen User gefiltert — die firmenweite
       // Liste würde fremde Tätigkeitsbeschreibungen im Payload liefern.
       const res = await fetch("/api/time-suggestions");
-      const data = res.ok ? await res.json() : null;
+      // A failed load is an error, never an empty list.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
       const items = ((data?.data?.suggestions ?? []) as TimeSuggestion[]).sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setSuggestions(items);
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("time_sugg.err_load") });
     } finally {
       setLoading(false);
@@ -227,7 +233,21 @@ export default function TimeSuggestionsPage() {
         </div>
       )}
 
-      {loading || !myEmail ? (
+      {loadFailed || meQuery.isError ? (
+        <div role="alert">
+          <EmptyState
+            icon={Clock}
+            title={t("time_sugg.err_load")}
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              if (meQuery.isError) void meQuery.refetch();
+              setLoadFailed(false);
+              setLoading(true);
+              void load();
+            }}
+          />
+        </div>
+      ) : loading || (!myEmail && !meQuery.isSuccess) ? (
         <div role="status" aria-label="Vorschläge werden geladen">
           <RowSkeleton count={4} />
         </div>

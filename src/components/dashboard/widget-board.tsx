@@ -310,7 +310,7 @@ function RecentQueriesPanel({ data }: { data: CockpitData }) {
             </div>
             {rq.created_at && (
               <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+                {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
                   day: "2-digit",
                   month: "short",
                 })}

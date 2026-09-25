@@ -79,6 +79,7 @@ export default function AltlastenPage() {
 
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("verjaehrung");
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [batchTriggering, setBatchTriggering] = useState(false);
@@ -88,6 +89,7 @@ export default function AltlastenPage() {
 
   const fetchCases = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       // Fetch all legal_case pages
       // listAllPages pages past the engine's 200-row cap and drops tombstones.
@@ -154,6 +156,7 @@ export default function AltlastenPage() {
 
       setCases(rows);
     } catch {
+      setLoadFailed(true);
       addToast({
         type: "error",
         title: t("altlasten.err_load"),
@@ -499,6 +502,16 @@ export default function AltlastenPage() {
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-11 w-full rounded-lg" />
           ))}
+        </div>
+      ) : loadFailed ? (
+        <div role="alert">
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("altlasten.err_load")}
+            description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+            actionLabel={t("common.retry")}
+            onAction={() => void fetchCases()}
+          />
         </div>
       ) : sortedCases.length === 0 ? (
         <EmptyState

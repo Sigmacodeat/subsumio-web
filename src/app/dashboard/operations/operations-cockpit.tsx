@@ -38,6 +38,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { approveConfirmOptions, buildRejectRequests } from "./approval-decisions";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import {
@@ -239,6 +241,7 @@ function OperationsLoadingSkeleton() {
 function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }) {
   const { lang } = useLang();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -268,13 +271,17 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
   }, [searchParams]);
 
   const [busyAction, setBusyAction] = useState<string | null>(null);
-  const [rejectDialog, setRejectDialog] = useState<{ slug: string; title: string } | null>(null);
+  // `slugs` holds one entry for a single rejection, several for a bulk rejection —
+  // both go through the same dialog so a reason is always required.
+  const [rejectDialog, setRejectDialog] = useState<{ slugs: string[]; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
   const listRef = useRef<HTMLUListElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // While a confirmation is open, list shortcuts (Enter, a, r) stay inactive.
+  const confirmPendingRef = useRef(false);
 
   // URL update helper — merges new params into existing ones
   const updateParams = useCallback(
@@ -420,7 +427,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       if (decision === "rejected") {
         // Open reject dialog — reason is required
         const item = allItems.find((i) => i.id === actionSlug);
-        setRejectDialog({ slug: actionSlug, title: item?.title ?? actionSlug });
+        setRejectDialog({ slugs: [actionSlug], title: item?.title ?? actionSlug });
         setRejectReason("");
       } else {
         approvalMutation.mutate({ actionSlug, decision: "approved" });
@@ -431,7 +438,8 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
 
   const confirmReject = useCallback(() => {
     if (!rejectDialog) return;
-    if (!rejectReason.trim()) {
+    const requests = buildRejectRequests(rejectDialog.slugs, rejectReason);
+    if (!requests) {
       addToast({
         type: "error",
         title: lang === "en" ? "Reason required" : "Begründung erforderlich",
@@ -443,11 +451,11 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
       });
       return;
     }
-    approvalMutation.mutate({
-      actionSlug: rejectDialog.slug,
-      decision: "rejected",
-      reason: rejectReason.trim(),
-    });
+    for (const request of requests) approvalMutation.mutate(request);
+    if (rejectDialog.slugs.length > 1) {
+      setSelectedIds(new Set());
+      setLastSelectedId(null);
+    }
     setRejectDialog(null);
     setRejectReason("");
   }, [rejectDialog, rejectReason, approvalMutation, addToast, lang]);
@@ -606,29 +614,42 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
   );
 
   // Bulk approve/reject
-  const bulkApprove = useCallback(() => {
-    for (const item of selectedApprovals) {
+  // Approving executes the action, so a bulk approval asks first.
+  const bulkApprove = useCallback(async () => {
+    const items = selectedApprovals;
+    if (items.length === 0) return;
+    confirmPendingRef.current = true;
+    let ok = false;
+    try {
+      ok = await confirm(approveConfirmOptions(items.length, lang));
+    } finally {
+      confirmPendingRef.current = false;
+    }
+    if (!ok) return;
+    for (const item of items) {
       approvalMutation.mutate({ actionSlug: item.id, decision: "approved" });
     }
     clearSelection();
-  }, [selectedApprovals, approvalMutation, clearSelection]);
+  }, [selectedApprovals, approvalMutation, clearSelection, confirm, lang]);
 
+  // A bulk rejection needs the same written reason as a single one.
   const bulkReject = useCallback(() => {
-    // For bulk reject, use a generic reason
-    for (const item of selectedApprovals) {
-      approvalMutation.mutate({
-        actionSlug: item.id,
-        decision: "rejected",
-        reason: lang === "en" ? "Bulk rejection" : "Sammelablehnung",
-      });
-    }
-    clearSelection();
-  }, [selectedApprovals, approvalMutation, clearSelection, lang]);
+    if (selectedApprovals.length === 0) return;
+    setRejectDialog({
+      slugs: selectedApprovals.map((i) => i.id),
+      title:
+        lang === "en"
+          ? `${selectedApprovals.length} selected approvals`
+          : `${selectedApprovals.length} ausgewählte Freigaben`,
+    });
+    setRejectReason("");
+  }, [selectedApprovals, lang]);
 
   // Keyboard navigation
   useEffect(() => {
     if (rejectDialog) return; // Don't interfere with dialog
     const handler = (e: KeyboardEvent) => {
+      if (confirmPendingRef.current) return;
       // Only handle when focus is in the list area, not in inputs/selects
       const target = e.target as HTMLElement;
       if (
@@ -652,7 +673,15 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
         const item = filtered[activeIndex];
         if (item?.kind === "approval") {
           e.preventDefault();
-          decideApproval(item.id, "approved");
+          // A single keystroke must not execute an action without a confirmation.
+          confirmPendingRef.current = true;
+          void confirm(approveConfirmOptions(1, lang))
+            .then((ok) => {
+              if (ok) decideApproval(item.id, "approved");
+            })
+            .finally(() => {
+              confirmPendingRef.current = false;
+            });
         }
       } else if (e.key === "r" && activeIndex >= 0 && activeIndex < filtered.length) {
         const item = filtered[activeIndex];
@@ -669,7 +698,16 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [filtered, activeIndex, rejectDialog, selectedIds, decideApproval, clearSelection]);
+  }, [
+    filtered,
+    activeIndex,
+    rejectDialog,
+    selectedIds,
+    decideApproval,
+    clearSelection,
+    confirm,
+    lang,
+  ]);
 
   // Scroll active item into view
   useEffect(() => {
@@ -958,7 +996,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              onClick={bulkApprove}
+              onClick={() => void bulkApprove()}
               disabled={approvalMutation.isPending}
               className="gap-1.5 border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]/80"
             >
@@ -1431,7 +1469,9 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
               disabled={!rejectReason.trim() || approvalMutation.isPending}
               className="gap-1.5 border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)]/80"
             >
-              {approvalMutation.isPending && busyAction === rejectDialog?.slug ? (
+              {approvalMutation.isPending &&
+              busyAction !== null &&
+              rejectDialog?.slugs.includes(busyAction) ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <X size={14} />

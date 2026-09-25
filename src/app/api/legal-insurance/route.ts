@@ -11,6 +11,7 @@ import {
   InsuranceNotConfiguredError,
 } from "@/lib/legal/insurance-adapter";
 import { logger } from "@/lib/logger";
+import { getEnginePage, writeEnginePage } from "@/lib/engine-page-io";
 
 const log = logger("api/legal-insurance");
 
@@ -129,5 +130,74 @@ export const GET = createHandler(
       items = items.filter((r) => r.case_slug === query.case_slug);
     }
     return apiSuccess({ items });
+  }
+);
+
+const updateSchema = z.object({
+  id: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^rsv-[a-z0-9-]+$/),
+  coverage_status: z.enum(["pending", "approved", "partially_approved", "denied", "expired"]),
+  coverage_amount: z.number().min(0).optional(),
+});
+
+/** Statuses that record the insurer's decision (sets `decided_at`). */
+const DECIDED_STATUSES = new Set<RSVCaseData["coverage_status"]>([
+  "approved",
+  "partially_approved",
+  "denied",
+]);
+
+/**
+ * PATCH /api/legal-insurance — records the insurer's answer on an existing
+ * coverage inquiry (e.g. "Gedeckt", "Abgelehnt"). Same permission as creating
+ * an inquiry.
+ */
+export const PATCH = createHandler(
+  {
+    action: "brain.write",
+    rateTier: "standard",
+    body: updateSchema,
+    audit: (_ctx, body) => ({
+      action: "case.update" as const,
+      entityType: "rsv_case",
+      entityId: body.id,
+      details: { coverage_status: body.coverage_status },
+    }),
+  },
+  async (ctx, body) => {
+    const slug = `legal/rsv/${body.id}`;
+    let page: Awaited<ReturnType<typeof getEnginePage>>;
+    try {
+      page = await getEnginePage(ctx.headers, slug, { timeoutMs: 10_000 });
+    } catch {
+      return apiError("engine_error", "Deckungsanfrage konnte nicht geladen werden", 502);
+    }
+    const existing = page?.frontmatter as Partial<RSVCaseData> | undefined;
+    if (!page || page.type !== "rsv_case" || !existing || existing.id !== body.id) {
+      return apiError("not_found", "Deckungsanfrage nicht gefunden", 404);
+    }
+
+    const now = new Date().toISOString();
+    const updated: RSVCaseData = {
+      ...(existing as RSVCaseData),
+      coverage_status: body.coverage_status,
+      ...(body.coverage_amount !== undefined ? { coverage_amount: body.coverage_amount } : {}),
+      decided_at: DECIDED_STATUSES.has(body.coverage_status) ? now : existing.decided_at,
+      updated_at: now,
+    };
+
+    try {
+      await writeEnginePage(
+        ctx.headers,
+        { slug, type: "rsv_case", frontmatter: { ...updated } },
+        { merge: true, timeoutMs: 10_000 }
+      );
+    } catch {
+      return apiError("engine_error", "Deckungsstatus konnte nicht gespeichert werden", 502);
+    }
+    return apiSuccess({ rsv: updated });
   }
 );

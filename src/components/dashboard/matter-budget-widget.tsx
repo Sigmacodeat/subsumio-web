@@ -6,7 +6,7 @@ import { Wallet, Loader2, AlertTriangle, TrendingUp, CheckCircle2 } from "lucide
 import { useLang } from "@/lib/use-lang";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatEur } from "@/lib/utils";
 import {
   computeBudgetStatus,
   FEE_MODEL_LABELS,
@@ -199,7 +199,7 @@ export function MatterBudgetWidget() {
               {isEn ? "Tracked value" : "Erfasster Wert"}
             </span>
             <p className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-              {stats.totalValue.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+              {formatEur(stats.totalValue)}
             </p>
           </div>
           <div className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1.5">
@@ -207,7 +207,7 @@ export function MatterBudgetWidget() {
               {isEn ? "Total budget" : "Gesamtbudget"}
             </span>
             <p className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-              {stats.totalBudget.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+              {formatEur(stats.totalBudget)}
             </p>
           </div>
         </div>
@@ -269,12 +269,8 @@ export function MatterBudgetWidget() {
                   {budget.trackedMinutes > 0 && ` · ${Math.round(budget.trackedMinutes / 60)}h`}
                 </span>
                 <span className="tabular-nums">
-                  {budget.status.total_value.toLocaleString("de-DE", {
-                    style: "currency",
-                    currency: "EUR",
-                  })}
-                  {budget.status.budget_cap &&
-                    ` / ${budget.status.budget_cap.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`}
+                  {formatEur(budget.status.total_value)}
+                  {budget.status.budget_cap && ` / ${formatEur(budget.status.budget_cap)}`}
                 </span>
               </div>
             </Link>

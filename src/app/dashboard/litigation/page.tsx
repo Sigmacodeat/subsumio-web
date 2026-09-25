@@ -604,7 +604,7 @@ export default function LitigationFlowPage() {
                         <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]">
                           <Clock size={11} />
                           {new Date(step.dueDate).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE"
+                            lang === "en" ? "en-GB" : "de-AT"
                           )}
                         </div>
                       )}
@@ -652,7 +652,7 @@ export default function LitigationFlowPage() {
                     </Badge>
                     {selectedMatter.frontmatter.settlement.amount && (
                       <p className="mt-2 text-sm text-[color:var(--ds-text)]">
-                        {selectedMatter.frontmatter.settlement.amount.toLocaleString("de-DE")}{" "}
+                        {selectedMatter.frontmatter.settlement.amount.toLocaleString("de-AT")}{" "}
                         {selectedMatter.frontmatter.settlement.currency ?? "EUR"}
                       </p>
                     )}
@@ -672,7 +672,7 @@ export default function LitigationFlowPage() {
                     {selectedMatter.frontmatter.judgment.date && (
                       <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
                         {new Date(selectedMatter.frontmatter.judgment.date).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
+                          lang === "en" ? "en-GB" : "de-AT"
                         )}
                       </p>
                     )}
@@ -697,7 +697,7 @@ export default function LitigationFlowPage() {
                       <span>
                         ·{" "}
                         {new Date(h.changedAt).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
+                          lang === "en" ? "en-GB" : "de-AT"
                         )}
                       </span>
                       {h.changedBy && <span>· {h.changedBy}</span>}

@@ -19,8 +19,11 @@ vi.mock("@/lib/api", () => ({
 }));
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k, lang: "de" }) }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
+const meState = vi.hoisted(() => ({
+  current: { data: { user: { email: "me@example.com" } } } as Record<string, unknown>,
+}));
 vi.mock("@/lib/queries/auth", () => ({
-  useMe: () => ({ data: { user: { email: "me@example.com" } } }),
+  useMe: () => meState.current,
 }));
 vi.mock("@/lib/csrf", () => ({ csrfFetch: vi.fn() }));
 
@@ -60,6 +63,7 @@ function stubSuggestions(items: unknown[]) {
 
 describe("time suggestions", () => {
   beforeEach(() => {
+    meState.current = { data: { user: { email: "me@example.com" } }, isSuccess: true };
     mockFetch.mockReset();
     createPage.mockReset().mockResolvedValue({});
     timeCreate.mockReset().mockResolvedValue({ id: "t1" });
@@ -103,5 +107,27 @@ describe("time suggestions", () => {
     const book = await screen.findByRole("button", { name: /Übernehmen/ });
     expect(book).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent("Bitte eine Akte wählen.");
+  });
+
+  // UIS-1-8: a failed load is an error with retry, never "no suggestions".
+  it("shows a load error instead of the empty state", async () => {
+    mockFetch.mockImplementation((url: string) =>
+      String(url).includes("/api/time-suggestions")
+        ? Promise.resolve(new Response("x", { status: 500 }))
+        : Promise.resolve(Response.json({ data: { enabled: true } }))
+    );
+    vi.stubGlobal("fetch", mockFetch);
+    renderPage();
+    expect(await screen.findByRole("alert")).toHaveTextContent("time_sugg.err_load");
+    expect(screen.queryByText("Keine Zeitvorschläge")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "common.retry" })).toBeInTheDocument();
+  });
+
+  it("does not spin forever when the user could not be loaded", async () => {
+    meState.current = { data: undefined, isError: true, isSuccess: false, refetch: vi.fn() };
+    stubSuggestions([]);
+    renderPage();
+    expect(await screen.findByRole("alert")).toHaveTextContent("time_sugg.err_load");
+    expect(screen.queryByRole("status", { name: "Vorschläge werden geladen" })).toBeNull();
   });
 });
