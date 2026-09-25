@@ -29,12 +29,14 @@ const log = logger("email-tracking");
 // ── Types ─────────────────────────────────────────────────────────────
 
 export type TrackingEventType =
+  | "sent"
   | "delivered"
   | "opened"
   | "clicked"
   | "bounced"
   | "complained"
-  | "forwarded";
+  | "forwarded"
+  | "failed";
 
 export interface TrackingEvent {
   id: string;
@@ -71,7 +73,7 @@ const ensureTrackingSchema = createSchemaInit([
     id              text PRIMARY KEY,
     message_id      text,
     tracking_id     text NOT NULL,
-    event_type      text NOT NULL CHECK (event_type IN ('delivered','opened','clicked','bounced','complained','forwarded')),
+    event_type      text NOT NULL CHECK (event_type IN ('sent','delivered','opened','clicked','bounced','complained','forwarded','failed')),
     link_id         text,
     target_url      text,
     ip_address      text,
@@ -94,6 +96,15 @@ const ensureTrackingSchema = createSchemaInit([
      ADD COLUMN IF NOT EXISTS open_count int NOT NULL DEFAULT 0,
      ADD COLUMN IF NOT EXISTS click_count int NOT NULL DEFAULT 0,
      ADD COLUMN IF NOT EXISTS forwarded boolean NOT NULL DEFAULT false`,
+
+  // Migration for existing deployments: widen the event_type CHECK so the
+  // "sent" send-time marker and the Resend "email.failed" lifecycle event
+  // (permanent send failure) are storable alongside bounce/complaint.
+  `ALTER TABLE subsumio_email_tracking_events
+     DROP CONSTRAINT IF EXISTS subsumio_email_tracking_events_event_type_check`,
+  `ALTER TABLE subsumio_email_tracking_events
+     ADD CONSTRAINT subsumio_email_tracking_events_event_type_check
+     CHECK (event_type IN ('sent','delivered','opened','clicked','bounced','complained','forwarded','failed'))`,
 ]);
 
 // ── Tracking ID ───────────────────────────────────────────────────────
@@ -299,6 +310,13 @@ async function updateMessageTrackingStatus(
          WHERE tracking_id = $1`,
         [trackingId]
       );
+    } else if (eventType === "failed") {
+      await pool.query(
+        `UPDATE subsumio_mail_messages
+         SET tracking_status = 'failed'
+         WHERE tracking_id = $1`,
+        [trackingId]
+      );
     }
   } catch (err) {
     log.error("failed to update message status", {
@@ -460,6 +478,27 @@ function rowToTrackingEvent(row: Record<string, unknown>): TrackingEvent {
     raw: (row.raw && typeof row.raw === "object" ? row.raw : {}) as Record<string, unknown>,
     createdAt: new Date(String(row.created_at)).toISOString(),
   };
+}
+
+// ── Retention ─────────────────────────────────────────────────────────
+
+/**
+ * DSGVO-Löschkonzept: tracking events carry the recipient's IP address and
+ * User-Agent (personal data). After the retention window the proof of
+ * delivery lives on the aggregate tracking_status of the message itself —
+ * the per-event IP/UA rows are no longer needed and must be deleted.
+ *
+ * @returns number of deleted rows (0 when no DB is configured)
+ */
+export async function purgeOldTrackingEvents(retentionDays: number): Promise<number> {
+  const pool = getSharedPgPool();
+  if (!pool) return 0;
+  const { rowCount } = await pool.query(
+    `DELETE FROM subsumio_email_tracking_events
+      WHERE created_at < NOW() - ($1 * INTERVAL '1 day')`,
+    [Math.max(1, Math.floor(retentionDays))]
+  );
+  return rowCount ?? 0;
 }
 
 // ── 1x1 transparent PNG ───────────────────────────────────────────────

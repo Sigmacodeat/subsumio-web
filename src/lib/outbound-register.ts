@@ -8,7 +8,7 @@
 
 export type OutboundChannel = "email" | "bea" | "post" | "fax" | "whatsapp" | "portal";
 
-export type DeliveryStatus = "sent" | "delivered" | "failed" | "bounced" | "pending";
+export type DeliveryStatus = "sent" | "delivered" | "failed" | "bounced" | "complained" | "pending";
 
 export interface OutboundEntry {
   id: string;
@@ -21,6 +21,12 @@ export interface OutboundEntry {
   subject: string;
   pages?: number;
   delivery_status: DeliveryStatus;
+  /** Timestamp of the latest provider delivery-status event (ISO). */
+  delivery_status_at?: string;
+  /** Provider event that produced the current delivery_status (e.g. "email.bounced"). */
+  delivery_event?: string;
+  /** Mail-provider message id (e.g. Resend email_id) for webhook reconciliation. */
+  provider_id?: string;
   delivery_confirmation_slug?: string;
   tracking_id?: string;
   sent_by: string;
@@ -37,6 +43,7 @@ export function createOutboundEntry(input: {
   pages?: number;
   sent_by: string;
   tracking_id?: string;
+  provider_id?: string;
   notes?: string;
 }): OutboundEntry {
   const now = new Date().toISOString();
@@ -53,6 +60,7 @@ export function createOutboundEntry(input: {
     delivery_status: "sent",
     sent_by: input.sent_by,
     tracking_id: input.tracking_id,
+    provider_id: input.provider_id,
     notes: input.notes,
     created_at: now,
   };
@@ -84,6 +92,7 @@ export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, { de: string; en: st
   delivered: { de: "Zugestellt", en: "Delivered" },
   failed: { de: "Fehlgeschlagen", en: "Failed" },
   bounced: { de: "Zurückgewiesen", en: "Bounced" },
+  complained: { de: "Spam-Beschwerde", en: "Spam complaint" },
   pending: { de: "Ausstehend", en: "Pending" },
 };
 

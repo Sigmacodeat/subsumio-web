@@ -217,6 +217,10 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   // per-IP rate limit and payload decryption.
   "/api/whatsapp/flow-endpoint",
   "/api/email/webhook/resend",
+  // Canonical Resend webhook (delivery-status reconciliation): server-to-
+  // server, authenticated by the Svix signature inside the route — no CSRF
+  // cookie exists to double-submit.
+  "/api/webhooks/resend",
   "/api/docusign/webhook",
 ] as const;
 const API_CSRF_EXEMPT_PATHS = new Set([

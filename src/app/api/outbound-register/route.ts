@@ -19,6 +19,8 @@ const createSchema = z.object({
   pages: z.number().min(0).max(1000).optional(),
   sent_by: z.string().min(1).max(300),
   tracking_id: z.string().max(300).optional(),
+  /** Mail-provider message id (Resend email_id) for webhook reconciliation. */
+  provider_id: z.string().max(300).optional(),
   notes: z.string().max(2000).optional(),
 });
 

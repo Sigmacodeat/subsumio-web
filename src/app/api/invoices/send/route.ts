@@ -107,7 +107,7 @@ export const POST = createHandler(
       // Log tracking event for the outbound email
       void logTrackingEvent({
         trackingId,
-        eventType: "delivered",
+        eventType: "sent",
         raw: { source: "smtp", route: "invoice.send", recipient },
       });
 

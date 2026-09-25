@@ -74,7 +74,13 @@ import { assertOutputActionAllowed } from "@/lib/verification-policy";
 const sendMail = sendFirmMail;
 
 describe("POST /api/cases/send-email", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Deterministic engine stub for the Postausgangsbuch page write.
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}", { status: 200 })
+    );
+  });
 
   test("sends email and logs tracking event", async () => {
     const req = new Request("http://localhost/api/cases/send-email", {
@@ -104,7 +110,7 @@ describe("POST /api/cases/send-email", () => {
     expect(logTrackingEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         trackingId: "track-123",
-        eventType: "delivered",
+        eventType: "sent",
       })
     );
   });

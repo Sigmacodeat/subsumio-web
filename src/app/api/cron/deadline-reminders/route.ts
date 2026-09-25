@@ -312,7 +312,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
             // Log tracking event for the outbound email
             void logTrackingEvent({
               trackingId,
-              eventType: "delivered",
+              eventType: "sent",
               raw: { source: "smtp", route: "deadline-reminders", recipients: toEmails },
             });
           } catch (err) {
