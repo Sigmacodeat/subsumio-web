@@ -2,12 +2,7 @@ import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import {
-  unbillExpenses,
-  writeExpensesWithRetry,
-  ExpensesWriteConflictError,
-  type ExpenseEntryWithCase,
-} from "@/lib/expense-tracking";
+import { unbillExpensesAtomic } from "@/lib/expense-tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/expenses/unbill");
@@ -37,22 +32,8 @@ export const POST = createHandler(
       const casePage = await brain.getPage(body.case_slug).catch(() => null);
       if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-      const { meta } = await writeExpensesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const entriesWithCase: ExpenseEntryWithCase[] = freshEntries.map((e) => ({
-            ...e,
-            case_slug: body.case_slug,
-          }));
-          const r = unbillExpenses(entriesWithCase, body.entry_ids);
-          return {
-            nextEntries: r.entries.map(({ case_slug: _cs, ...e }) => e),
-            meta: r,
-          };
-        },
-        log
-      );
+      // Atomic single-statement update (billed=false, invoice_number removed).
+      const meta = await unbillExpensesAtomic(brain, body.case_slug, body.entry_ids);
 
       if (meta.updated === 0) {
         return apiError("expense_not_found", "Keine der angegebenen Auslagen gefunden", 404);
@@ -68,13 +49,6 @@ export const POST = createHandler(
         not_found: meta.not_found,
       });
     } catch (err) {
-      if (err instanceof ExpensesWriteConflictError) {
-        return apiError(
-          "write_conflict",
-          "Abrechnung konnte nicht zurückgenommen werden — bitte erneut versuchen.",
-          409
-        );
-      }
       log.error("[expenses] unbill failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Abrechnung konnte nicht zurückgenommen werden", 500);
     }

@@ -7,12 +7,11 @@ import {
   filterExpenses,
   computeExpenseSummary,
   createExpense,
-  updateExpenseEntry,
-  deleteExpenseEntry,
-  writeExpensesWithRetry,
+  appendExpense,
+  updateExpenseAtomic,
+  deleteExpenseAtomic,
   listAllExpenses,
   ExpensesNotFoundError,
-  ExpensesWriteConflictError,
   ExpenseBilledError,
   type ExpenseEntryWithCase,
 } from "@/lib/expense-tracking";
@@ -21,11 +20,6 @@ import { logger } from "@/lib/logger";
 const log = logger("api/expenses");
 
 export const dynamic = "force-dynamic";
-
-const expenseWriteLog = {
-  warn: (msg: string, ctx?: object) => log.warn(msg, ctx),
-  error: (msg: string, ctx?: object) => log.error(msg, ctx),
-};
 
 /** Maps the lib's write errors to API responses — shared by PATCH/DELETE. */
 function expenseWriteError(err: unknown): ReturnType<typeof apiError> | null {
@@ -36,13 +30,6 @@ function expenseWriteError(err: unknown): ReturnType<typeof apiError> | null {
     return apiError(
       "expense_billed",
       "Die Auslage ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
-      409
-    );
-  }
-  if (err instanceof ExpensesWriteConflictError) {
-    return apiError(
-      "write_conflict",
-      "Auslage konnte nicht gespeichert werden — bitte erneut versuchen.",
       409
     );
   }
@@ -197,21 +184,8 @@ export const POST = createHandler(
     const exists = await brain.getPage(body.case_slug).catch(() => null);
     if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-    try {
-      await writeExpensesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => ({
-          nextEntries: [...freshEntries, entry],
-          meta: null,
-        }),
-        expenseWriteLog
-      );
-    } catch (err) {
-      const mapped = expenseWriteError(err);
-      if (mapped) return mapped;
-      throw err;
-    }
+    // Atomic engine-side append — two parallel creates never lose one.
+    await appendExpense(brain, body.case_slug, entry);
 
     broadcastSseEvent(ctx.brainId, "expense.created", {
       case_slug: body.case_slug,
@@ -260,19 +234,8 @@ export const PATCH = createHandler(
 
     let updated: ExpenseEntry;
     try {
-      const { meta } = await writeExpensesWithRetry<ExpenseEntry>(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const result = updateExpenseEntry(freshEntries, body.id, allowedUpdates);
-          if (result.billed) return { billed: true };
-          if (!result.found || !result.updated) return { notFound: true };
-          const meta: ExpenseEntry = result.updated;
-          return { nextEntries: result.entries, meta };
-        },
-        expenseWriteLog
-      );
-      updated = meta;
+      // One UPDATE with the billed-guard evaluated inside the engine.
+      updated = await updateExpenseAtomic(brain, body.case_slug, body.id, allowedUpdates);
     } catch (err) {
       const mapped = expenseWriteError(err);
       if (mapped) return mapped;
@@ -307,17 +270,8 @@ export const DELETE = createHandler(
     if (!exists) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     try {
-      await writeExpensesWithRetry(
-        brain,
-        body.case_slug,
-        (freshEntries) => {
-          const result = deleteExpenseEntry(freshEntries, body.id);
-          if (result.billed) return { billed: true };
-          if (!result.found) return { notFound: true };
-          return { nextEntries: result.entries, meta: null };
-        },
-        expenseWriteLog
-      );
+      // One UPDATE with the billed-guard evaluated inside the engine.
+      await deleteExpenseAtomic(brain, body.case_slug, body.id);
     } catch (err) {
       const mapped = expenseWriteError(err);
       if (mapped) return mapped;
