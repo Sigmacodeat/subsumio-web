@@ -744,10 +744,11 @@ async function executeCreateCase(
         created_at: new Date().toISOString(),
       },
     };
+    // Create-only: an existing page at this slug is never replaced.
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, if_absent: true }),
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -170,12 +170,20 @@ export const POST = createHandler(
       },
     };
 
+    // Create-only: an invoice already stored at this slug is never replaced.
     const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify(stornoPayload),
+      body: JSON.stringify({ ...stornoPayload, if_absent: true }),
       signal: AbortSignal.timeout(15_000),
     });
+    if (createRes.status === 409) {
+      return apiError(
+        "invoice_exists",
+        "Unter dieser Adresse gibt es bereits eine Rechnung. Es wurde nichts überschrieben.",
+        409
+      );
+    }
     if (!createRes.ok) {
       log.error("[storno] create failed", { status: createRes.status });
       return apiError("engine_unreachable", "Storno-Note konnte nicht angelegt werden", 503);

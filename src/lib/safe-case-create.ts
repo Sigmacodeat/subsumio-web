@@ -9,8 +9,10 @@
  *
  *  - The slug is generated on the server: a readable part plus a random
  *    suffix. User input (Aktenzeichen, title) only shapes the readable part.
- *  - The slug is checked before writing. A taken slug is never written; a
- *    failed check writes nothing (fail closed).
+ *  - The slug is checked before writing, and the write itself is create-only
+ *    (`if_absent`): the engine refuses a taken slug in the same statement
+ *    that inserts the page, so a matter created in between is never
+ *    replaced. A failed check writes nothing (fail closed).
  *  - The conflict check (§ 10 RAO / § 43a BRAO) runs on every party of the
  *    matter; a hit or an unavailable check writes nothing.
  *  - The engine's answer is checked; a rejected write is reported as an
@@ -28,7 +30,11 @@ export const CASE_SLUG_PREFIX = "legal/cases/";
 
 export type CaseConflictMatch = { name: string; slug: string; type: string };
 
-export type CaseWriteOutcome = { ok: true } | { ok: false; status: number; message: string };
+export type CaseWriteOutcome =
+  | { ok: true }
+  /** The slug was taken when the page was inserted; nothing was written. */
+  | { ok: false; exists: true }
+  | { ok: false; status: number; message: string };
 
 export interface SafeCaseCreateDeps {
   /** Existence check for one slug: found / missing / error (unreadable). */
@@ -43,7 +49,10 @@ export interface SafeCaseCreateDeps {
     side: ConflictSide,
     ownContactSlugs: string[]
   ): Promise<CaseConflictMatch[]>;
-  /** Create the page on the engine and report the engine's answer. */
+  /**
+   * Create the page on the engine — create-only: a taken slug must come back
+   * as `exists`, never be replaced — and report the engine's answer.
+   */
   writePage(page: {
     slug: string;
     title: string;
@@ -168,28 +177,42 @@ export async function createCaseSafely(
   }
   if (matches.length > 0) return { status: "conflict", matches };
 
-  // 3. Write and check the engine's answer.
+  // 3. Write (create-only) and check the engine's answer. A generated slug
+  //    that was taken in the meantime is replaced by a fresh one; a requested
+  //    slug is reported as existing.
   const frontmatter: Record<string, unknown> = {
     ...input.frontmatter,
     type: "legal_case",
     conflict_status: "conflict_cleared",
     conflict_checked_at: at.toISOString(),
   };
-  const outcome = await deps.writePage({
-    slug,
-    title: input.title,
-    type: "legal_case",
-    content: caseContentWithAktenblatt(input.content ?? "", input.title, frontmatter),
-    frontmatter,
-  });
-  if (!outcome.ok) {
-    return {
-      status: "error",
-      code: "engine_write_failed",
-      message: outcome.message || `Engine antwortete mit HTTP ${outcome.status}`,
-    };
+  const content = caseContentWithAktenblatt(input.content ?? "", input.title, frontmatter);
+  for (let attempt = 0; ; attempt++) {
+    const outcome = await deps.writePage({
+      slug,
+      title: input.title,
+      type: "legal_case",
+      content,
+      frontmatter,
+    });
+    if (outcome.ok) return { status: "created", slug };
+    if (!("exists" in outcome)) {
+      return {
+        status: "error",
+        code: "engine_write_failed",
+        message: outcome.message || `Engine antwortete mit HTTP ${outcome.status}`,
+      };
+    }
+    if (input.requestedSlug !== undefined) return { status: "exists", slug };
+    if (attempt + 1 >= SLUG_ATTEMPTS) {
+      return {
+        status: "error",
+        code: "case_slug_unavailable",
+        message: "Es konnte keine freie Aktenkennung vergeben werden.",
+      };
+    }
+    slug = generateCaseSlug(input.slugHint ?? input.title);
   }
-  return { status: "created", slug };
 }
 
 function guardUnavailable(): SafeCaseCreateResult {
@@ -215,11 +238,17 @@ export function engineCaseCreateDeps(headers: Record<string, string>): SafeCaseC
         const res = await fetch(`${ENGINE_URL}/api/pages`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...headers },
-          body: JSON.stringify(page),
+          body: JSON.stringify({ ...page, if_absent: true }),
           signal: AbortSignal.timeout(15_000),
         });
         if (res.ok) return { ok: true };
-        const upstream = (await res.json().catch(() => null)) as { message?: unknown } | null;
+        const upstream = (await res.json().catch(() => null)) as {
+          error?: unknown;
+          message?: unknown;
+        } | null;
+        if (res.status === 409 && upstream?.error === "page_exists") {
+          return { ok: false, exists: true };
+        }
         return {
           ok: false,
           status: res.status,

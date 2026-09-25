@@ -327,6 +327,80 @@ export async function readCurrentPage(
   }
 }
 
+// ── Anlegen ersetzt nie still ───────────────────────────────────────────
+//
+// A non-merge POST replaces the stored page completely. For matters and
+// invoices a create must never do that by accident:
+//  - no stored page: the engine write is create-only (`if_absent`), so a
+//    page created in the meantime is refused in the same statement;
+//  - a stored page: refused unless the caller asks for the replacement on
+//    purpose, with If-Match naming the stored version.
+
+/** Page types whose create never replaces a stored page. */
+export const CREATE_ONLY_TYPES: ReadonlySet<string> = new Set(["legal_case", "invoice"]);
+
+function pageTypeOf(page: CurrentPageLike | null): string | undefined {
+  if (!page) return undefined;
+  const fmType = page.frontmatter?.type;
+  return page.type ?? (typeof fmType === "string" ? fmType : undefined);
+}
+
+/** The stored page's version (frontmatter.version; 0 when never versioned). */
+export function storedPageVersion(page: CurrentPageLike | null): number {
+  const v = page?.frontmatter?.version;
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+export type CreateOverExistingVerdict =
+  /** Not a protected create (merge, or another page type). */
+  | { kind: "pass" }
+  /** No stored page: write create-only. */
+  | { kind: "create_only" }
+  /** Deliberate replacement of the stored version; the write carries `version`. */
+  | { kind: "replace"; version: number }
+  | { kind: "reject"; reject: GuardRejection };
+
+export function checkCreateOverExisting(
+  current: CurrentPageLike | null,
+  write: { merge: boolean; type?: unknown; ifMatch: string | null }
+): CreateOverExistingVerdict {
+  if (write.merge) return { kind: "pass" };
+  const incomingType = typeof write.type === "string" ? write.type : undefined;
+  const storedType = pageTypeOf(current);
+  const protectedType =
+    (incomingType !== undefined && CREATE_ONLY_TYPES.has(incomingType)) ||
+    (storedType !== undefined && CREATE_ONLY_TYPES.has(storedType));
+  if (!protectedType) return { kind: "pass" };
+  if (!current) return { kind: "create_only" };
+
+  if (write.ifMatch === null || write.ifMatch.trim() === "") {
+    return {
+      kind: "reject",
+      reject: {
+        status: 409,
+        error: "page_exists",
+        message:
+          storedType === "invoice" || incomingType === "invoice"
+            ? "Unter dieser Adresse gibt es bereits eine Rechnung. Es wurde nichts überschrieben."
+            : "Unter dieser Adresse gibt es bereits eine Akte. Es wurde nichts überschrieben.",
+      },
+    };
+  }
+  const stored = storedPageVersion(current);
+  const expected = Number(write.ifMatch.trim());
+  if (!Number.isInteger(expected) || expected !== stored) {
+    return {
+      kind: "reject",
+      reject: {
+        status: 409,
+        error: "version_conflict",
+        message: "Die Seite wurde zwischenzeitlich von einem anderen Nutzer bearbeitet.",
+      },
+    };
+  }
+  return { kind: "replace", version: stored + 1 };
+}
+
 export const GUARD_READ_FAILED: GuardRejection = {
   status: 503,
   error: "guard_unavailable",

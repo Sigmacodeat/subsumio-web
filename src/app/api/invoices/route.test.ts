@@ -6,6 +6,9 @@ type Fm = Record<string, unknown>;
 const pages = new Map<string, Fm>();
 const invoicePages = new Map<string, Fm>();
 let listFails = false;
+/** An invoice another request writes between the existence check and this write. */
+let takenAtWrite: string | null = null;
+const writes: Array<Record<string, unknown>> = [];
 
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
@@ -34,6 +37,8 @@ import { POST } from "./route";
 
 beforeEach(() => {
   listFails = false;
+  takenAtWrite = null;
+  writes.length = 0;
   pages.clear();
   invoicePages.clear();
   pages.set("cases/a", {
@@ -48,7 +53,16 @@ beforeEach(() => {
     vi.fn(async (url: string, init?: RequestInit) => {
       const u = new URL(url);
       if (init?.method === "POST" && u.pathname === "/api/pages") {
-        const body = JSON.parse(String(init.body)) as { slug: string; frontmatter: Fm };
+        const body = JSON.parse(String(init.body)) as {
+          slug: string;
+          frontmatter: Fm;
+          if_absent?: boolean;
+        };
+        writes.push(body);
+        if (takenAtWrite === body.slug) invoicePages.set(body.slug, { invoice_number: "other" });
+        if (body.if_absent && invoicePages.has(body.slug)) {
+          return Response.json({ error: "page_exists", message: "exists" }, { status: 409 });
+        }
         invoicePages.set(body.slug, body.frontmatter);
         return Response.json({ slug: body.slug });
       }
@@ -114,6 +128,22 @@ describe("POST /api/invoices (GELD-4)", () => {
     const res = await call(payload("2026-001"));
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("invoice_number_taken");
+    expect(entries().every((e) => e.billed === false)).toBe(true);
+  });
+
+  it("writes the invoice page create-only", async () => {
+    await call(payload("2026-001"));
+    expect(writes[0]).toMatchObject({ slug: "invoice/2026-001", if_absent: true });
+    expect(writes[0].merge).toBeUndefined();
+  });
+
+  it("an invoice created at the same slug in the meantime is not replaced: 409 invoice_exists", async () => {
+    takenAtWrite = "invoice/2026-001";
+    const res = await call(payload("2026-001"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_exists");
+    expect(invoicePages.get("invoice/2026-001")).toEqual({ invoice_number: "other" });
+    // The work reserved for the refused invoice is released again.
     expect(entries().every((e) => e.billed === false)).toBe(true);
   });
 

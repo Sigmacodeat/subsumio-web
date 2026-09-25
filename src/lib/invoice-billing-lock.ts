@@ -340,6 +340,8 @@ export interface InvoiceCreateInput {
 export type InvoiceCreateOutcome =
   | { kind: "created"; page: unknown; claimed: EntryIdsByKind }
   | { kind: "conflict"; alreadyBilled: EntryIdsByKind; notFound: EntryIdsByKind }
+  /** A page already sits at the slug (created in the meantime); nothing was written. */
+  | { kind: "exists" }
   | { kind: "create_failed"; status: number; body: unknown };
 
 export type EnginePageCreate = (
@@ -361,6 +363,10 @@ const createEnginePage: EnginePageCreate = (headers, payload) =>
  * release what this call claimed. The release is best-effort — if it fails
  * too, the entries stay billed under a number without an invoice, which the
  * unbill route frees (no issued invoice binds them).
+ *
+ * The page write is create-only (`if_absent`): the engine refuses a taken
+ * slug in the same statement that inserts the page, so an invoice created
+ * between the caller's existence check and this write is never replaced.
  */
 export async function createInvoiceReservingEntries(
   headers: Record<string, string>,
@@ -407,6 +413,7 @@ export async function createInvoiceReservingEntries(
       type: "invoice",
       ...(input.content !== undefined ? { content: input.content } : {}),
       frontmatter: { ...input.frontmatter, type: "invoice" },
+      if_absent: true,
     });
   } catch (err) {
     await release();
@@ -415,6 +422,9 @@ export async function createInvoiceReservingEntries(
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     await release();
+    if (res.status === 409 && (body as { error?: unknown } | null)?.error === "page_exists") {
+      return { kind: "exists" };
+    }
     return { kind: "create_failed", status: res.status, body };
   }
   return {

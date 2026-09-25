@@ -16,6 +16,7 @@ import {
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 import {
   GUARD_READ_FAILED,
+  checkCreateOverExisting,
   checkInvoiceWrite,
   guardProtectedPageWrite,
   guardSecondCheckWrite,
@@ -267,7 +268,7 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, _query, _req) => {
+  async (ctx, body, _query, req) => {
     try {
       // Every write — merge or create — is judged against the stored page, so
       // a create over an existing slug cannot slip past the guards. Fail
@@ -275,6 +276,16 @@ export const POST = createHandler(
       const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
       if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
       const current = currentRead.kind === "found" ? currentRead.page : null;
+
+      // Matters and invoices: a create never replaces a stored page. With no
+      // stored page the engine write is create-only; replacing one needs
+      // If-Match with its stored version.
+      const createVerdict = checkCreateOverExisting(current, {
+        merge: body.merge === true,
+        type: body.type,
+        ifMatch: req.headers.get("if-match"),
+      });
+      if (createVerdict.kind === "reject") return rejectionResponse(createVerdict.reject);
 
       // § 132 BAO / UStG: an issued invoice is frozen — only payment and
       // delivery bookkeeping may change; never overwritten by a create.
@@ -349,6 +360,8 @@ export const POST = createHandler(
           ...(body.frontmatter ?? {}),
           version: (Number.isFinite(storedVersion) ? storedVersion : 0) + 1,
         };
+      } else if (createVerdict.kind === "replace") {
+        body.frontmatter = { ...(body.frontmatter ?? {}), version: createVerdict.version };
       }
 
       let conflictWarning: MatterConflictOutcome | undefined;
@@ -463,11 +476,22 @@ export const POST = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(body),
+        body: JSON.stringify(
+          createVerdict.kind === "create_only" ? { ...body, if_absent: true } : body
+        ),
         signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) {
         const upstream = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+        if (res.status === 409 && upstream?.error === "page_exists") {
+          // Created in the meantime by someone else: nothing was replaced.
+          return rejectionResponse({
+            status: 409,
+            error: "page_exists",
+            message:
+              "Unter dieser Adresse wurde soeben eine Seite angelegt. Es wurde nichts überschrieben.",
+          });
+        }
         log.error("[pages] engine create rejected:", res.status, upstream);
         return Response.json(
           upstream ?? {

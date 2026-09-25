@@ -14,6 +14,12 @@ function fakeClient(initial: Page[]) {
     },
     async createPage(p) {
       if (p.title === "BOOM") throw new Error("Engine nicht erreichbar");
+      if (p.title === "RACE") {
+        // Another user created the matter after the runner's check; the
+        // server refuses the create instead of replacing it.
+        pages.set(p.slug, { slug: p.slug, title: "Kollegin", frontmatter: {} });
+        throw Object.assign(new Error("exists"), { status: 409, code: "page_exists" });
+      }
       log.push(`create ${p.slug}`);
       pages.set(p.slug, { ...p, frontmatter: { ...p.frontmatter } });
     },
@@ -115,6 +121,18 @@ describe("executeImport", () => {
     ]);
     expect(pages.get("legal/cases/2")?.title).toBe("Von Kollegin angelegt");
     expect(out.refs.pages).toEqual(["legal/cases/1"]);
+  });
+
+  it("a matter created after the runner's check is refused by the server and reported as skipped", async () => {
+    const existing: ExistingData = { cases: [], contacts: [], deadlines: [] };
+    const plan = planImport("cases", [["RACE", "7"]], { title: 0, case_number: 1 }, existing, opts);
+    const { client, pages } = fakeClient([]);
+    const out = await executeImport(plan, client);
+    expect(out.rows.map((r) => `${r.status} ${r.reason ?? ""}`.trim())).toEqual([
+      "skipped Wurde inzwischen angelegt",
+    ]);
+    expect(out.refs.pages).toEqual([]);
+    expect(pages.get("legal/cases/7")?.title).toBe("Kollegin");
   });
 
   it("appends time entries with one write per matter and takes them back, keeping invoiced ones", async () => {
