@@ -9968,41 +9968,106 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
-  // ── Legal Case Scanner (Nacht-Agent-Cron) ─────────────────────
+  // ── Legal Case Scanner (on demand) ───────────────────────────
+  // Preview: which of the caller's visible matters a scan covers (the web
+  // app prices it). Start: one capped supervisor run per matter the web app
+  // has already billed; only explicit slugs, re-checked against the caller's
+  // view. There is no unattended path: no nightly run starts agent work.
   app.post(
     "/api/legal/case-scanner",
     express.json({ limit: "64kb" }),
     async (req: Request, res: Response) => {
       try {
         const body = req.body as Record<string, unknown>;
-        const lookAhead = typeof body.look_ahead_days === "number" ? body.look_ahead_days : 7;
-        const evidenceThreshold =
-          typeof body.evidence_threshold === "number" ? body.evidence_threshold : 1;
-        const maxCases = typeof body.max_cases === "number" ? body.max_cases : 50;
+        const mode = body.mode;
+        const scope = body.scope;
+        if (mode !== "preview" && mode !== "start") {
+          apiError(res, 400, "invalid_mode");
+          return;
+        }
+        if (scope !== "case" && scope !== "selection" && scope !== "all_open") {
+          apiError(res, 400, "invalid_scope");
+          return;
+        }
+        const scanner = await import("../core/minions/handlers/legal-case-scanner.ts");
+        let caseSlugs: string[] | undefined;
+        if (body.case_slugs !== undefined) {
+          if (
+            !Array.isArray(body.case_slugs) ||
+            body.case_slugs.length > scanner.CASE_SCAN_MAX_CASES ||
+            !body.case_slugs.every(
+              (s): s is string => typeof s === "string" && s.length > 0 && s.length <= 300
+            )
+          ) {
+            apiError(res, 400, "invalid_case_slugs");
+            return;
+          }
+          caseSlugs = body.case_slugs;
+        }
+        if (scope === "all_open" ? caseSlugs !== undefined : !caseSlugs?.length) {
+          apiError(res, 400, "invalid_case_slugs");
+          return;
+        }
+        if (scope === "case" && caseSlugs?.length !== 1) {
+          apiError(res, 400, "invalid_case_slugs");
+          return;
+        }
+        // Starting always names the matters: the web app bills exactly these.
+        if (mode === "start" && scope === "all_open") {
+          apiError(res, 400, "start_requires_case_slugs");
+          return;
+        }
+        const scanId = typeof body.scan_id === "string" ? body.scan_id : "";
+        if (mode === "start" && !/^[A-Za-z0-9-]{8,80}$/.test(scanId)) {
+          apiError(res, 400, "invalid_scan_id");
+          return;
+        }
 
-        const queue = new MinionQueue(engine);
         const sourceId = requestSourceId(req);
+        const selection = await scanner.selectCaseScanTargets(engine, {
+          scope,
+          caseSlugs,
+          lookAheadDays:
+            typeof body.look_ahead_days === "number"
+              ? Math.min(Math.max(body.look_ahead_days, 1), 90)
+              : 7,
+          evidenceThreshold:
+            typeof body.evidence_threshold === "number"
+              ? Math.min(Math.max(body.evidence_threshold, 0), 10)
+              : 1,
+          limit: typeof body.limit === "number" ? body.limit : undefined,
+          sourceId,
+          matterScope: req.matterScope,
+        });
+        const summary = selection.cases.map((c) => ({
+          case_slug: c.slug,
+          title: c.title,
+          reasons: c.reasons,
+        }));
 
-        const job = await queue.add(
-          "legal-case-scanner",
-          {
-            look_ahead_days: lookAhead,
-            evidence_threshold: evidenceThreshold,
-            max_cases: maxCases,
-            ...(sourceId ? { _source_id: sourceId } : {}),
-            ...agentMatterStamp(req),
-            ...jobOwnerStamp(req.userId),
-          } as Record<string, unknown>,
-          { timeout_ms: 300_000, max_attempts: 1 }
-        );
+        if (mode === "preview") {
+          res.json({
+            cases: summary,
+            skipped: selection.skipped,
+            truncated: selection.truncated,
+            limit: selection.limit,
+          });
+          return;
+        }
 
+        // Tenant agents write into their source — make sure it exists.
+        await ensureSource(sourceId);
+        const launch = await scanner.launchCaseScanRuns(engine, selection.cases, {
+          sourceId,
+          matterStamp: agentMatterStamp(req),
+          ownerUserId: req.userId,
+          scanId,
+        });
         res.json({
-          success: true,
-          job_id: job.id,
-          status: "queued",
-          look_ahead_days: lookAhead,
-          evidence_threshold: evidenceThreshold,
-          max_cases: maxCases,
+          scan_id: scanId,
+          launched: launch.launched,
+          failed: launch.failed,
+          skipped: selection.skipped,
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
@@ -10010,6 +10075,47 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     }
   );
+
+  // Status of one scan's runs, for the caller who started them (the web app
+  // refunds runs that ended without a result).
+  app.get("/api/legal/case-scanner/runs", async (req: Request, res: Response) => {
+    try {
+      const scanId = typeof req.query.scan_id === "string" ? req.query.scan_id : "";
+      if (!/^[A-Za-z0-9-]{8,80}$/.test(scanId)) {
+        apiError(res, 400, "invalid_scan_id");
+        return;
+      }
+      if (!req.userId) {
+        apiError(res, 403, "identity_required");
+        return;
+      }
+      const rows = await engine.executeRaw<{
+        id: number;
+        status: string;
+        case_slug: string | null;
+      }>(
+        `SELECT id, status, data->>'_case_slug' AS case_slug
+           FROM minion_jobs
+          WHERE name = 'supervisor'
+            AND data->>'_case_scan_id' = $1
+            AND data->>'_owner_user_id' = $2
+            AND COALESCE(data->>'_source_id', 'default') = $3
+          ORDER BY id`,
+        [scanId, req.userId, requestSourceId(req)]
+      );
+      res.json({
+        scan_id: scanId,
+        runs: rows.map((r) => ({
+          job_id: Number(r.id),
+          case_slug: r.case_slug ?? "",
+          status: r.status,
+        })),
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "case_scanner_failed", message: msg });
+    }
+  });
 
   app.post("/api/connectors/:service/sync", async (req: Request, res: Response) => {
     try {

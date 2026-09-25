@@ -159,13 +159,52 @@ describe("agent jobs carry the caller's matter scope", () => {
     }
   });
 
-  test("a case scan started by a walled caller is stamped", async () => {
-    const res = await post("/api/legal/case-scanner", lawyer(), {});
+  test("a case scan covers only the caller's matters and its runs are stamped", async () => {
+    const preview = await post("/api/legal/case-scanner", lawyer(), {
+      mode: "preview",
+      scope: "all_open",
+    });
+    expect(preview.status).toBe(200);
+    const { cases } = (await preview.json()) as { cases: Array<{ case_slug: string }> };
+    expect(cases.map((c) => c.case_slug)).toEqual(["cases/open"]);
+
+    const res = await post("/api/legal/case-scanner", lawyer(), {
+      mode: "start",
+      scope: "selection",
+      case_slugs: ["cases/walled", "cases/open"],
+      scan_id: "scan-walls-0001",
+    });
     expect(res.status).toBe(200);
-    const { job_id } = (await res.json()) as { job_id: number };
-    expect((await jobData(job_id))._matter_scope).toEqual(
+    const out = (await res.json()) as {
+      launched: Array<{ case_slug: string; job_id: number }>;
+      skipped: Array<{ case_slug: string; reason: string }>;
+    };
+    expect(out.launched.map((l) => l.case_slug)).toEqual(["cases/open"]);
+    expect(out.skipped).toEqual([{ case_slug: "cases/walled", reason: "not_found" }]);
+    expect((await jobData(out.launched[0]!.job_id))._matter_scope).toEqual(
       expect.arrayContaining(["!cases/walled"])
     );
+
+    // The run status is only listed to the caller who started the scan.
+    const own = await fetch(`${base}/api/legal/case-scanner/runs?scan_id=scan-walls-0001`, {
+      headers: lawyer(),
+    });
+    expect(own.status).toBe(200);
+    const ownRuns = (await own.json()) as { runs: Array<{ case_slug: string }> };
+    expect(ownRuns.runs.map((r) => r.case_slug)).toEqual(["cases/open"]);
+    const other = await fetch(`${base}/api/legal/case-scanner/runs?scan_id=scan-walls-0001`, {
+      headers: admin(),
+    });
+    expect(((await other.json()) as { runs: unknown[] }).runs).toEqual([]);
+  });
+
+  test("a case scan cannot start without named matters", async () => {
+    const res = await post("/api/legal/case-scanner", lawyer(), {
+      mode: "start",
+      scope: "all_open",
+      scan_id: "scan-walls-0002",
+    });
+    expect(res.status).toBe(400);
   });
 });
 

@@ -10,6 +10,8 @@ import {
   withDependencyContext,
   criticRecommendsRevision,
   parseCriticVerdict,
+  reviewMarkerFrontmatter,
+  isCaseScanRun,
   type SupervisorStep,
   type SupervisorChildResult,
 } from "../src/core/minions/handlers/supervisor.ts";
@@ -199,5 +201,23 @@ describe("criticRecommendsRevision", () => {
 
   it("fails closed: no readable verdict means revise", () => {
     expect(parseCriticVerdict("The revised draft already addressed this.")).toBe("revise");
+  });
+});
+
+describe("case scan review marker", () => {
+  it("marks a case scan's result page as an unreviewed review item", () => {
+    const data = { prompt: "x", _review_origin: "case_scan", _case_scan_id: "scan-1234abcd" };
+    expect(isCaseScanRun(data)).toBe(true);
+    expect(reviewMarkerFrontmatter(data)).toEqual({
+      review_origin: "case_scan",
+      review_status: "unreviewed",
+      case_scan_id: "scan-1234abcd",
+    });
+  });
+
+  it("leaves other runs unmarked", () => {
+    expect(isCaseScanRun({ prompt: "x" })).toBe(false);
+    expect(reviewMarkerFrontmatter({ prompt: "x" })).toEqual({});
+    expect(reviewMarkerFrontmatter(null)).toEqual({});
   });
 });

@@ -63,6 +63,9 @@ export interface SupervisorHandlerData {
   _matter_read_only?: string[];
   _owner_user_id?: string;
   _case_slug?: string;
+  /** "case_scan": the result page is a review item awaiting a lawyer. */
+  _review_origin?: string;
+  _case_scan_id?: string;
 }
 
 /**
@@ -415,6 +418,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
             // an unbound result page would be visible to walled colleagues.
             ...(resultCase ? { case_slug: resultCase } : {}),
             ...(data.supervisor_model ? { model: data.supervisor_model } : {}),
+            ...reviewMarkerFrontmatter(data),
           },
         },
         { sourceId: sourceStamp }
@@ -424,6 +428,9 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       // is best-effort so we don't fail a successful analysis.
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[supervisor] put_page failed for agent run ${ctx.id}: ${msg}`);
+      // A case scan's only deliverable is the review item: without it the
+      // run failed (and the scan is refunded).
+      if (isCaseScanRun(data)) throw e;
     }
 
     return {
@@ -433,6 +440,30 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       ...(criticReview ? { critic_review: criticReview } : {}),
       ...(revisedSynthesis ? { revised_synthesis: revisedSynthesis } : {}),
     };
+  };
+}
+
+/** True for a run the case scanner started (its result awaits review). */
+export function isCaseScanRun(data: unknown): boolean {
+  return (
+    !!data &&
+    typeof data === "object" &&
+    (data as Record<string, unknown>)._review_origin === "case_scan"
+  );
+}
+
+/**
+ * Frontmatter that makes a case scan's result page a review item ("Eingang
+ * prüfen"): listed there until a lawyer marks it reviewed or discards it.
+ * Other runs get nothing.
+ */
+export function reviewMarkerFrontmatter(data: unknown): Record<string, unknown> {
+  if (!isCaseScanRun(data)) return {};
+  const scanId = (data as Record<string, unknown>)._case_scan_id;
+  return {
+    review_origin: "case_scan",
+    review_status: "unreviewed",
+    ...(typeof scanId === "string" && scanId ? { case_scan_id: scanId } : {}),
   };
 }
 
