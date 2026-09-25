@@ -741,6 +741,18 @@ const MAX_IMPORT_ATTEMPTS = 5;
  * is a real append-only log per source, so counting its trailing
  * "import"/"failed …" entries — stopping at the most recent "finished" —
  * gives the true streak.
+ *
+ * Operator reset (2026-09-25): once a source is parked as `failed` after
+ * MAX_IMPORT_ATTEMPTS, "the source needs a human" — but the only thing
+ * that broke the streak was a genuine "finished", which never comes because
+ * the import is no longer started. After the cause is fixed (e.g. the
+ * statement_timeout fix in import-judikatur.ts, a827b34f7a) the operator
+ * appends an honest entry and the pipeline retries on its next cycle:
+ *
+ *   SELECT append_stage_history('jud-bvwg', 'import', 'reset: <reason>');
+ *
+ * A "reset…" entry ends the streak like "finished" does, without
+ * pretending anything finished — the reason stays in the history.
  */
 export function consecutiveImportFailures(
   history: DBPipelineState["stage_history"] | null | undefined
@@ -750,8 +762,9 @@ export function consecutiveImportFailures(
   for (let i = history.length - 1; i >= 0; i--) {
     const h = history[i];
     if (!h || h.stage !== "import") continue;
-    if (h.action === "finished") break;
-    if (typeof h.action === "string" && h.action.startsWith("failed")) count++;
+    if (typeof h.action !== "string") continue;
+    if (h.action === "finished" || h.action.startsWith("reset")) break;
+    if (h.action.startsWith("failed")) count++;
   }
   return count;
 }
