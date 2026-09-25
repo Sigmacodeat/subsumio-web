@@ -4,6 +4,9 @@ import { NextRequest } from "next/server";
 
 const deleted = vi.hoisted(() => [] as string[]);
 const caseFetches = vi.hoisted(() => [] as string[]);
+const tombstoneCalls = vi.hoisted(
+  () => [] as Array<{ slug: string; frontmatter?: Record<string, unknown> }>
+);
 const audits = vi.hoisted(() => [] as Array<{ action: string; entityId?: string }>);
 const pagesByType = vi.hoisted(() => new Map<string, Array<Record<string, unknown>>>());
 const casePages = vi.hoisted(() => new Map<string, Record<string, unknown>>());
@@ -25,6 +28,13 @@ vi.mock("@/lib/kanzlei-settings-server", () => ({
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine",
   engineHeadersForBrain: () => ({}),
+  enginePatchPage: async (
+    _h: unknown,
+    body: { slug: string; frontmatter?: Record<string, unknown> }
+  ) => {
+    tombstoneCalls.push({ slug: body.slug, frontmatter: body.frontmatter });
+    return new Response("{}", { status: 200 });
+  },
 }));
 vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: async (
@@ -52,6 +62,7 @@ const realFetch = globalThis.fetch;
 beforeEach(() => {
   deleted.length = 0;
   caseFetches.length = 0;
+  tombstoneCalls.length = 0;
   audits.length = 0;
   pagesByType.clear();
   casePages.clear();
@@ -173,5 +184,114 @@ describe("trash purge cron", () => {
     const { status } = await run();
     expect(status).toBe(200);
     expect(deleted).toEqual([]);
+  });
+});
+
+describe("per-item retention (documents/notes)", () => {
+  const pastDate = "2020-01-01";
+  const futureDate = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+
+  function liveDoc(slug: string, extra: Record<string, unknown> = {}) {
+    return {
+      slug,
+      title: slug,
+      type: "document",
+      created_at: old,
+      frontmatter: { ...extra },
+    };
+  }
+
+  it("tombstones a live document whose retention_until has passed and audits it", async () => {
+    pagesByType.set("document", [liveDoc("docs/expired", { retention_until: pastDate })]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([
+      {
+        slug: "docs/expired",
+        frontmatter: expect.objectContaining({
+          status: "tombstoned",
+          tombstone_reason: "retention_expired",
+          tombstoned_by: "cron:retention",
+        }),
+      },
+    ]);
+    expect(body.retentionTombstoned).toBe(1);
+    expect(audits).toEqual([{ action: "data.delete", entityId: "docs/expired" }]);
+    // frisch tombstoned → geht noch nicht in den Purge
+    expect(deleted).toEqual([]);
+  });
+
+  it("keeps a document whose retention_until is today (expires end of day) or later", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    pagesByType.set("document", [
+      liveDoc("docs/today", { retention_until: today }),
+      liveDoc("docs/future", { retention_until: futureDate }),
+      liveDoc("docs/none"),
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([]);
+    expect(deleted).toEqual([]);
+  });
+
+  it("tombstones notes and documents with retention_days past their basis", async () => {
+    pagesByType.set("document", [
+      liveDoc("docs/old-days", { retention_days: 10 }), // basis: created_at (= old, 40d)
+      liveDoc("docs/young-days", { retention_days: 400 }),
+    ]);
+    pagesByType.set("note", [
+      {
+        slug: "notes/expired",
+        title: "n",
+        type: "note",
+        frontmatter: { retention_days: 5, retention_from: "2020-01-01" },
+      },
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls.map((t) => t.slug).sort()).toEqual(["docs/old-days", "notes/expired"]);
+    expect(body.retentionTombstoned).toBe(2);
+  });
+
+  it("fails closed on unreadable retention config and reports it", async () => {
+    pagesByType.set("document", [liveDoc("docs/bad", { retention_until: "not a date" })]);
+    const { status, body } = await run();
+    expect(status).toBe(500);
+    expect(body.retentionInvalid).toBe(1);
+    expect(tombstoneCalls).toEqual([]);
+  });
+
+  it("never tombstones items under legal hold (own flag or parent case)", async () => {
+    casePages.set("legal/cases/held", {
+      slug: "legal/cases/held",
+      frontmatter: { legal_hold: true },
+    });
+    pagesByType.set("document", [
+      liveDoc("docs/held", { retention_until: pastDate, legal_hold: true }),
+      liveDoc("docs/in-held-case", {
+        retention_until: pastDate,
+        case_slug: "legal/cases/held",
+      }),
+      liveDoc("docs/free", { retention_until: pastDate }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls.map((t) => t.slug)).toEqual(["docs/free"]);
+    expect(body.skippedHold).toBe(2);
+  });
+
+  it("does not re-tombstone already tombstoned pages", async () => {
+    pagesByType.set("document", [tombstoned("docs/trashed", { retention_until: pastDate })]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([]);
+  });
+
+  it("respects brains that disabled auto-purge", async () => {
+    settingsByBrain.set("brain_a", { trashAutoPurge: false });
+    pagesByType.set("document", [liveDoc("docs/expired", { retention_until: pastDate })]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([]);
   });
 });
