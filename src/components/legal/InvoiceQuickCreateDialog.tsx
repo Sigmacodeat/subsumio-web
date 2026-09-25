@@ -77,6 +77,8 @@ interface InvoiceItem {
   recorded_minutes?: number;
   billed_minutes?: number;
   rate_source?: RateSource;
+  /** The time entry this position bills — the server checks it against the record. */
+  time_entry_id?: string;
 }
 
 interface Invoice {
@@ -150,6 +152,7 @@ function timeItemsFor(entries: TimeEntry[], defaultRate: number): InvoiceItem[] 
       hours: roundHours(hours),
       rate,
       amount: roundEur(hours * rate),
+      time_entry_id: entry.id,
     };
   });
 }

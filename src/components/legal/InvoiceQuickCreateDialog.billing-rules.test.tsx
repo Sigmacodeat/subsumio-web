@@ -79,7 +79,23 @@ vi.stubGlobal(
 );
 
 const { InvoiceQuickCreateDialog } = await import("./InvoiceQuickCreateDialog");
-const { activeBillingRules, checkTimeItemBilling } = await import("@/lib/billing-rules");
+const { activeBillingRules, checkTimeItemBilling, checkTimeItemsAgainstEntries, feeAgreementRate } =
+  await import("@/lib/billing-rules");
+
+/** The server's check against the STORED entries (POST /api/invoices, R6-10). */
+function serverRecordCheck(fm: Record<string, unknown>) {
+  const entries = state.caseFm.time_entries as Array<{
+    id: string;
+    description: string;
+    minutes: number;
+  }>;
+  const stored = new Map(entries.map((e) => [e.id, e]));
+  return checkTimeItemsAgainstEntries(fm, stored, activeBillingRules(state.settings), {
+    feeAgreementRate: feeAgreementRate(state.feeAgreements, "cases/a"),
+    legalArea: String(state.caseFm.legal_area ?? ""),
+    settings: state.settings,
+  });
+}
 const { checkStoredInvoiceTotals } = await import("@/lib/invoice-totals");
 
 async function createInvoice() {
@@ -119,12 +135,27 @@ describe("InvoiceQuickCreateDialog — Abrechnungsregeln (OPS-16)", () => {
     };
     const fm = await createInvoice();
     expect(fm.items).toEqual([
-      { description: "Telefonat", date: "2026-09-01", hours: 0.3667, rate: 200, amount: 73.33 },
-      { description: "Schriftsatz", date: "2026-09-02", hours: 0.3333, rate: 200, amount: 66.67 },
+      {
+        description: "Telefonat",
+        date: "2026-09-01",
+        hours: 0.3667,
+        rate: 200,
+        amount: 73.33,
+        time_entry_id: "t1",
+      },
+      {
+        description: "Schriftsatz",
+        date: "2026-09-02",
+        hours: 0.3333,
+        rate: 200,
+        amount: 66.67,
+        time_entry_id: "t2",
+      },
     ]);
     expect(fm.subtotal).toBe(140);
     expect(shownPositions).toBeNull();
     expect(checkTimeItemBilling(fm, activeBillingRules(state.settings))).toEqual([]);
+    expect(serverRecordCheck(fm)).toEqual([]);
     expect(checkStoredInvoiceTotals(fm)).toEqual([]);
   });
 
@@ -157,6 +188,7 @@ describe("InvoiceQuickCreateDialog — Abrechnungsregeln (OPS-16)", () => {
     expect((state.caseFm.time_entries as Fm[]).map((e) => e.minutes)).toEqual([22, 20]);
     // What the dialog sends passes the server's check with the same rules.
     expect(checkTimeItemBilling(fm, activeBillingRules(state.settings))).toEqual([]);
+    expect(serverRecordCheck(fm)).toEqual([]);
     expect(checkStoredInvoiceTotals(fm)).toEqual([]);
     expect(shownPositions).toContain("22 min → 30 min");
     expect(shownPositions).toContain("Satz je Rechtsgebiet");
