@@ -82,6 +82,11 @@ import { persistTrace } from "../core/reasoning-trace.ts";
 import { formatCitationTitle } from "../core/think/ogh-format.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
 import {
+  MODEL_POLICY_HEADER,
+  resolveRequestEuOnly,
+  runWithRequestEuOnly,
+} from "../core/ai/request-eu-policy.ts";
+import {
   readSafeZipEntries,
   type ArchiveBudget,
   ArchiveSafetyError,
@@ -1515,6 +1520,9 @@ function mapSearchResults(results: Array<Record<string, unknown>>) {
     snippet: String(r.chunk_text ?? r.snippet ?? "").slice(0, 300),
     score: Number(r.score ?? 0),
     source: r.source_id ? String(r.source_id) : undefined,
+    // The page type drives the web's area filters and links (the source id
+    // is a tenant/corpus id, not a type).
+    type: r.type ? String(r.type) : undefined,
     case_slug: readCaseSlug(r),
     created_at: undefined,
   }));
@@ -3245,6 +3253,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   });
   app.use("/api", guard);
 
+  // A firm with "Nur EU" (web org policy) sends x-subsumio-model-policy:
+  // eu_only. Everything this request does — model calls and the jobs it
+  // queues — then runs under the EU-only refusal (request-eu-policy.ts).
+  // The demand is remembered per source, so the firm's server-side work
+  // (crons, webhooks) without a session header stays under it too.
+  app.use("/api", async (req: Request, res: Response, next: NextFunction) => {
+    let euOnly: boolean;
+    try {
+      euOnly = await resolveRequestEuOnly(
+        engine,
+        requestSourceId(req),
+        req.headers[MODEL_POLICY_HEADER]
+      );
+    } catch (e) {
+      // Cannot establish the firm's policy: refuse rather than risk a
+      // non-EU call for a firm that demanded EU-only.
+      console.error(
+        `[web-api] EU policy lookup failed: ${e instanceof Error ? e.message : String(e)}`
+      );
+      res.status(503).json({ error: "policy_unavailable" });
+      return;
+    }
+    if (euOnly) {
+      runWithRequestEuOnly(() => next());
+      return;
+    }
+    next();
+  });
+
   // Fail-closed tenant gate: in SaaS mode a missing/invalid tenant header
   // must NEVER silently widen to the all-seeing 'default' scope.
   if (requireTenant) {
@@ -3780,6 +3817,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const instructions = rawInstructions.trim()
       ? sanitizePromptInput(rawInstructions, 60_000).text
       : undefined;
+    // Conversation history / memory from the caller: DATA for the answer,
+    // placed in the user message as a marked block — never system rank.
+    const rawContext = typeof body?.context === "string" ? body.context : "";
+    const callerContext = rawContext.trim()
+      ? neutralizeToolMarkers(sanitizePromptInput(rawContext, 40_000).text)
+      : undefined;
 
     const rawMode = String(body?.mode ?? "balanced");
     const searchMode = (["conservative", "balanced", "tokenmax"] as const).includes(
@@ -3802,6 +3845,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+    // Client gone before the answer finished ("Stopp", tab closed): stop the
+    // model call instead of letting it run on at the firm's expense.
+    const thinkAbort = new AbortController();
+    res.on("close", () => {
+      if (!res.writableEnded) thinkAbort.abort();
+    });
 
     try {
       const { runThink } = await import("../core/think/index.ts");
@@ -3848,6 +3897,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         runThink(engine, {
           question: query,
           ...(instructions ? { instructions } : {}),
+          ...(callerContext ? { callerContext } : {}),
           ...(pickedModel ? { model: pickedModel } : {}),
           remote: false,
           sourceId,
@@ -3862,6 +3912,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // legal-aware system prompt with statute citation discipline.
           legalMode: true,
           jurisdiction,
+          abortSignal: thinkAbort.signal,
           // Real-time token streaming: each text delta fires an SSE chunk event.
           onStreamChunk: (text) => {
             streamedAnswer += text;
@@ -3993,11 +4044,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      const { EuResidencyError } = await import("../core/ai/eu-policy.ts");
+      const euRefused = e instanceof EuResidencyError;
       if (res.headersSent) {
         // SSE already open — deliver error as a structured event then close.
-        res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+        res.write(
+          `data: ${JSON.stringify({ error: msg, ...(euRefused ? { code: "eu_only_refused" } : {}) })}\n\n`
+        );
         res.write("data: [DONE]\n\n");
         res.end();
+      } else if (euRefused) {
+        // "Nur EU": no request left the process — a refusal, not a failure.
+        res.status(403).json({ error: "eu_only_refused", message: msg });
       } else {
         res.status(500).json({ error: "think_failed", message: msg });
       }

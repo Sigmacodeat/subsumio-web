@@ -26,6 +26,7 @@
 import type { MinionJobContext } from "../types.ts";
 import type { BrainEngine } from "../../engine.ts";
 import { MinionQueue } from "../queue.ts";
+import { setOwnerBudget } from "../budget-tracker.ts";
 import {
   inheritedJobMatterStamp,
   jobOwnerStamp,
@@ -33,6 +34,9 @@ import {
   matterScopeAllows,
   readJobMatterAccess,
 } from "../../matter-access.ts";
+
+/** Spend cap per launched supervisor run (same default as a manual agent run). */
+const SCAN_RUN_BUDGET_CENTS = Number(process.env.SUBSUMIO_AGENT_DEFAULT_BUDGET_CENTS ?? 300);
 
 export interface LegalCaseScannerData {
   look_ahead_days?: number;
@@ -210,7 +214,8 @@ export async function legalCaseScannerHandler(
         "supervisor",
         {
           prompt,
-          supervisor_model: "claude-haiku-4-5",
+          // No fixed planner model: the supervisor uses the deployment's
+          // utility tier (native / OpenRouter / Bedrock EU).
           force_specialists: ["legal-researcher", "legal-analyst"],
           skip_critic: false,
           ...(sourceStamp ? { _source_id: sourceStamp } : {}),
@@ -223,6 +228,9 @@ export async function legalCaseScannerHandler(
           max_attempts: 2,
         }
       );
+      // Every scan run gets the same spend cap as a manually started agent
+      // run — without an owner budget a supervisor tree is uncapped.
+      await setOwnerBudget(engine, job.id, SCAN_RUN_BUDGET_CENTS / 100);
       launchedJobs.push({
         case_slug: caseItem.slug,
         job_id: job.id,

@@ -120,6 +120,16 @@ describe("planning-session", () => {
     expect(proposal?.tool).toBeNull();
   });
 
+  it("proposeStepAction never offers sending an e-mail from matter content", async () => {
+    const plan = await seedPlan();
+    store.thinkAnswer =
+      '{"tool":"send_email","params":{"to":["a@example.com"],"subject":"x","text":"y"},"rationale":"x"}';
+    const proposal = await proposeStepAction(HEADERS, plan.id, plan.steps[0].id);
+    expect(proposal?.tool).toBeNull();
+    const think = calls.think[calls.think.length - 1] as { query: string };
+    expect(think.query).not.toContain("send_email");
+  });
+
   it("markStepExecuted completes step, records tool, advances index", async () => {
     const plan = await seedPlan();
     await markStepExecuted(HEADERS, plan.id, plan.steps[0].id, "search_cases", "Keine Kollision");

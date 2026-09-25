@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -8,7 +9,7 @@ const log = logger("api/legal/playbooks");
 const playbooksQuerySchema = z.object({
   limit: z
     .string()
-    .transform((v) => Math.min(parseInt(v, 10) || 50, 200))
+    .transform((v) => Math.min(parseInt(v, 10) || 500, 1000))
     .optional(),
   offset: z
     .string()
@@ -48,28 +49,22 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
-    const params = new URLSearchParams();
-    params.set("type", "legal_playbook");
-    if (query.limit !== undefined) params.set("limit", String(query.limit));
-    if (query.offset !== undefined) params.set("offset", String(query.offset));
-
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
+      // Paged through the engine cursor (one listing is capped at 100 rows);
+      // deleted entries are left out. Strict: a failed read is an error.
+      const pages = await listEnginePages(ctx.headers, "legal_playbook", query.limit ?? 500, {
+        strict: true,
+        timeoutMs: 30_000,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const pages = await res.json();
-
-      let playbooks = Array.isArray(pages) ? pages : [];
+      let playbooks = pages;
       if (query.jurisdiction) {
-        playbooks = playbooks.filter((p: Record<string, unknown>) => {
+        playbooks = playbooks.filter((p) => {
           const fm = p.frontmatter as Record<string, unknown> | undefined;
           return fm?.jurisdiction === query.jurisdiction;
         });
       }
       if (query.contract_type) {
-        playbooks = playbooks.filter((p: Record<string, unknown>) => {
+        playbooks = playbooks.filter((p) => {
           const fm = p.frontmatter as Record<string, unknown> | undefined;
           const types = Array.isArray(fm?.contract_types) ? fm!.contract_types : [];
           return types.includes(query.contract_type);
@@ -79,12 +74,7 @@ export const GET = createHandler(
       return apiSuccess(playbooks);
     } catch (err) {
       log.error("[playbooks] list failed:", err instanceof Error ? err.message : String(err));
-      // An unreachable engine is an error, not "no playbooks".
-      return apiError(
-        "service_unavailable",
-        "Playbooks konnten nicht geladen werden. Bitte erneut versuchen.",
-        503
-      );
+      return apiError("engine_unavailable", "Prüfleitfäden konnten nicht geladen werden", 503);
     }
   }
 );

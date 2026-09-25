@@ -9,8 +9,10 @@ import {
   groundCitations,
   groundLiteratureCitations,
   inferAnswerJurisdiction,
+  NOT_CHECKED_REASON,
   type GroundingJurisdiction,
 } from "@/lib/legal-grounding";
+import type { GroundedCitation } from "@/lib/types";
 import { extractCaseCitations } from "@/lib/case-citations";
 import { groundCaseCitations } from "@/lib/case-grounding";
 
@@ -70,10 +72,15 @@ export async function groundAnswerCitations(
     grounded_citations: grounded,
     analyzed_at: new Date().toISOString(),
     has_unverified: hasUnverified,
-    warning: hasUnverified
-      ? `${unverified} Zitat(e) konnten nicht im Gesetzescorpus verifiziert werden — bitte manuell prüfen.`
-      : undefined,
+    warning: hasUnverified ? unverifiedWarning(grounded, unverified) : undefined,
   };
+}
+
+/** The warning names citations skipped by the check limit separately. */
+function unverifiedWarning(grounded: GroundedCitation[], unverified: number): string {
+  const notChecked = grounded.filter((c) => c.unverifiable_reason === NOT_CHECKED_REASON).length;
+  const base = `${unverified} Zitat(e) konnten nicht im Gesetzescorpus verifiziert werden — bitte manuell prüfen.`;
+  return notChecked > 0 ? `${base} Davon ${notChecked} wegen des Prüflimits nicht geprüft.` : base;
 }
 
 /** Jurisdiction hint for the gate wrappers: the user's profile, used when the text is not decisive. */

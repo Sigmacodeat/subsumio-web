@@ -109,9 +109,8 @@ export function TemplateUseDialog({
   }, [caseSlug, kanzlei, cases]);
 
   const filled = fillTemplate(template.body, values);
-  // Für den Word-Export werden Werte maskiert — ein Name wie „Müller_Bau_GmbH“
-  // darf nicht als Formatierung gelesen werden. Kopieren bleibt Klartext.
   const filledMarkdown = fillTemplateMarkdown(template.body, values);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   function copy() {
     void navigator.clipboard.writeText(filled);
@@ -141,6 +140,10 @@ export function TemplateUseDialog({
       a.download = `${template.title.replace(/[^a-zA-Z0-9äöüßÄÖÜ]+/g, "_").slice(0, 60)}.docx`;
       a.click();
       URL.revokeObjectURL(url);
+      setDownloadError(null);
+    } catch {
+      // Unhandled before: the button just stopped spinning.
+      setDownloadError("Das Word-Dokument konnte nicht erstellt werden. Bitte erneut versuchen.");
     } finally {
       setDownloading(false);
     }
@@ -221,6 +224,11 @@ export function TemplateUseDialog({
               Als DOCX herunterladen
             </Button>
           </div>
+          {downloadError && (
+            <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+              {downloadError}
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

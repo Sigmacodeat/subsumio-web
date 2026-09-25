@@ -44,6 +44,8 @@ import { agentWriteBinding, readJobMatterAccess } from "../../matter-access.ts";
 import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-leases.ts";
 import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
 import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
+import { assertEuResidency } from "../../ai/eu-policy.ts";
+import { withRequestEuPolicy } from "../../ai/request-eu-policy.ts";
 import { buildSystemPrompt, DEFAULT_SUBAGENT_SYSTEM } from "../system-prompt.ts";
 import { toolLoop as gatewayToolLoop, sanitizeForJson } from "../../ai/gateway.ts";
 import type {
@@ -279,6 +281,10 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         configKey: "models.subagent",
         fallback: TIER_DEFAULTS.subagent,
       }));
+    // EU-only (deployment switch or the firm's "Nur EU" on this job): the
+    // legacy Anthropic-direct loop below bypasses the gateway's check, so
+    // the resolved model is checked here, whatever tier it came from.
+    assertEuResidency(model, "chat", withRequestEuPolicy(process.env));
     const maxTurns = data.max_turns ?? DEFAULT_MAX_TURNS;
     // v0.41 Approach C: systemPrompt is now built AFTER toolDefs (a few
     // lines below) so the renderer can splice a tool-usage preamble

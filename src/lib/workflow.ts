@@ -84,6 +84,8 @@ export interface WorkflowFrontmatter {
   started_at: string;
   completed_at?: string;
   started_by: string;
+  /** The agent run that carries out the workflow (see /dashboard/agents). */
+  agent_job_id?: number;
 }
 
 export interface WorkflowInstance {
@@ -201,6 +203,7 @@ export function buildWorkflowFrontmatter(params: {
   prompt: string;
   started_by: string;
   case_slug?: string;
+  agent_job_id?: number;
   at?: Date;
 }): Record<string, unknown> {
   const template = getTemplate(params.template_id);
@@ -217,6 +220,7 @@ export function buildWorkflowFrontmatter(params: {
     steps: buildWorkflowSteps(template),
     started_at: (params.at ?? new Date()).toISOString(),
     started_by: params.started_by,
+    ...(params.agent_job_id !== undefined ? { agent_job_id: params.agent_job_id } : {}),
   };
 
   return { ...fm };

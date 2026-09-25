@@ -24,6 +24,7 @@ import type { BrainEngine } from "./engine.ts";
 import { splitProviderModelId } from "./model-id.ts";
 import { BEDROCK_EU_MODELS } from "./ai/bedrock-config.ts";
 import { assertEuResidency } from "./ai/eu-policy.ts";
+import { withRequestEuPolicy } from "./ai/request-eu-policy.ts";
 
 export type ModelTier = "utility" | "reasoning" | "deep" | "subagent";
 
@@ -265,7 +266,7 @@ function enforceProviderMode(model: string, tier?: ModelTier): string {
   // chat-only tier: `utility` also resolves the embedding model, which has its
   // own policy (SUBSUMIO_EU_ONLY_EMBEDDINGS). Every other tier is enforced at
   // the gateway call.
-  if (tier === "subagent") assertEuResidency(model, "chat", process.env);
+  if (tier === "subagent") assertEuResidency(model, "chat", withRequestEuPolicy(process.env));
   if (isOpenRouterOnlyDeployment() && !model.startsWith("openrouter:")) {
     throw new Error(
       `OpenRouter-only deployment resolved direct model "${model}". ` +

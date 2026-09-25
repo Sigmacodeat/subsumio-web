@@ -110,6 +110,73 @@ The glossary should contain 0-20 entries covering key legal terms that required 
   return system;
 }
 
+/** Characters per translated section (well inside one answer's output budget). */
+export const TRANSLATION_SECTION_CHARS = 12_000;
+
+/**
+ * Split text into sections of at most `max` characters, at paragraph breaks
+ * where possible, then at line breaks, then at sentence ends; a single
+ * overlong run is hard-cut. Joining the sections with "\n\n" restores the
+ * paragraph structure.
+ */
+export function splitForTranslation(text: string, max: number): string[] {
+  if (text.length <= max) return [text];
+  const out: string[] = [];
+  let current = "";
+  const push = () => {
+    if (current.trim()) out.push(current.trim());
+    current = "";
+  };
+  for (const para of text.split(/\n{2,}/)) {
+    const pieces = para.length <= max ? [para] : splitLong(para, max);
+    for (const piece of pieces) {
+      if (current && current.length + 2 + piece.length > max) push();
+      current = current ? `${current}\n\n${piece}` : piece;
+    }
+  }
+  push();
+  return out;
+}
+
+function splitLong(para: string, max: number): string[] {
+  const byLine = para.includes("\n");
+  const units = byLine ? para.split("\n") : para.split(/(?<=[.!?;:])\s+/);
+  const sep = byLine ? "\n" : " ";
+  const out: string[] = [];
+  let current = "";
+  for (const unit of units) {
+    if (unit.length > max) {
+      if (current) out.push(current);
+      current = "";
+      for (let i = 0; i < unit.length; i += max) out.push(unit.slice(i, i + max));
+      continue;
+    }
+    if (current && current.length + sep.length + unit.length > max) {
+      out.push(current);
+      current = unit;
+    } else {
+      current = current ? `${current}${sep}${unit}` : unit;
+    }
+  }
+  if (current) out.push(current);
+  return out;
+}
+
+function failedTranslation(
+  sourceLang: string,
+  targetLang: string,
+  warning: string
+): DocumentTranslation {
+  return {
+    translated_text: "",
+    source_language: sourceLang,
+    target_language: targetLang,
+    glossary: [],
+    warnings: [warning],
+    attorney_review_required: true,
+  };
+}
+
 export async function translateDocument(
   engine: BrainEngine,
   opts: TranslateOpts
@@ -155,7 +222,9 @@ export async function translateDocument(
     };
   }
 
-  const maxChars = opts.maxChars ?? 50_000;
+  // Sectioned translation handles long documents; beyond this the rest is
+  // cut and the DOCUMENT_TRUNCATED warning says so.
+  const maxChars = opts.maxChars ?? 100_000;
   const { clipped, warning } = clipText(text, maxChars);
   const warnings: string[] = [];
   if (warning) warnings.push(warning);
@@ -168,47 +237,61 @@ export async function translateDocument(
     opts.preserve_formatting ?? true
   );
 
-  const userPrompt = `Translate the following text${sourceLang !== "auto" ? ` from ${langLabel(sourceLang)}` : ""} to ${langLabel(opts.target_language)}:\n\n${clipped}`;
+  // Long documents are translated section by section: one model answer is
+  // capped at 8 000 output tokens (~25 000 characters of German), so a single
+  // call silently broke off mid-document and returned a JSON fragment.
+  const sections = splitForTranslation(clipped, TRANSLATION_SECTION_CHARS);
+  const translatedParts: string[] = [];
+  const glossaryByTerm = new Map<string, TranslationGlossaryEntry>();
+  for (const [i, section] of sections.entries()) {
+    const part = sections.length > 1 ? ` (section ${i + 1} of ${sections.length})` : "";
+    const userPrompt = `Translate the following text${part}${sourceLang !== "auto" ? ` from ${langLabel(sourceLang)}` : ""} to ${langLabel(opts.target_language)}:\n\n${section}`;
 
-  let raw: string;
-  try {
-    raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
-  } catch (e) {
-    return {
-      translated_text: "",
-      source_language: sourceLang,
-      target_language: opts.target_language,
-      glossary: [],
-      warnings: [`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`],
-      attorney_review_required: true,
-    };
+    let raw: string;
+    try {
+      raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
+    } catch (e) {
+      return failedTranslation(
+        sourceLang,
+        opts.target_language,
+        `LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`
+      );
+    }
+    const parsed = tryParseJSON(raw);
+    if (!parsed) {
+      // A cut-off JSON answer is an incomplete translation — never shown as one.
+      if (raw.trim().startsWith("{")) {
+        return failedTranslation(
+          sourceLang,
+          opts.target_language,
+          `TRANSLATION_INCOMPLETE: section ${i + 1} of ${sections.length} was not translated completely.`
+        );
+      }
+      translatedParts.push(raw.trim());
+      warnings.push(
+        "UNSTRUCTURED_OUTPUT: Model returned plain text instead of JSON. Translation may be incomplete."
+      );
+      continue;
+    }
+    translatedParts.push(typeof parsed.translated_text === "string" ? parsed.translated_text : "");
+    if (Array.isArray(parsed.glossary)) {
+      for (const g of parsed.glossary) {
+        if (typeof g !== "object" || g === null) continue;
+        const e = g as Record<string, unknown>;
+        const entry: TranslationGlossaryEntry = {
+          source_term: String(e.source_term ?? ""),
+          target_term: String(e.target_term ?? ""),
+          ...(typeof e.note === "string" && e.note ? { note: e.note } : {}),
+        };
+        if (entry.source_term && entry.target_term && !glossaryByTerm.has(entry.source_term)) {
+          glossaryByTerm.set(entry.source_term, entry);
+        }
+      }
+    }
   }
-  const parsed = tryParseJSON(raw);
 
-  if (!parsed) {
-    return {
-      translated_text: raw.trim(),
-      source_language: sourceLang,
-      target_language: opts.target_language,
-      glossary: [],
-      warnings: [
-        "UNSTRUCTURED_OUTPUT: Model returned plain text instead of JSON. Translation may be incomplete.",
-      ],
-      attorney_review_required: true,
-    };
-  }
-
-  const translatedText = typeof parsed.translated_text === "string" ? parsed.translated_text : "";
-  const glossary: TranslationGlossaryEntry[] = Array.isArray(parsed.glossary)
-    ? parsed.glossary
-        .filter((g): g is Record<string, unknown> => typeof g === "object" && g !== null)
-        .map((g) => ({
-          source_term: String(g.source_term ?? ""),
-          target_term: String(g.target_term ?? ""),
-          ...(typeof g.note === "string" && g.note ? { note: g.note } : {}),
-        }))
-        .filter((g) => g.source_term && g.target_term)
-    : [];
+  const translatedText = translatedParts.join("\n\n");
+  const glossary = [...glossaryByTerm.values()].slice(0, 40);
 
   return {
     translated_text: translatedText,

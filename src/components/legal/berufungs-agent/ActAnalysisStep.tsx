@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { api, type BrainPage } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatEur } from "@/lib/utils";
 import Link from "next/link";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
@@ -53,6 +53,7 @@ export function ActAnalysisStep({
 }: ActAnalysisStepProps) {
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [loadingCases, setLoadingCases] = useState(true);
+  const [casesError, setCasesError] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { grounding, isGrounding, groundAnswer } = useGroundedAnswer();
@@ -66,7 +67,7 @@ export function ActAnalysisStep({
     let cancelled = false;
     setLoadingCases(true);
     api.brain
-      .listAllPages({ type: "legal_case", max: 10_000 })
+      .listAllPages({ type: "legal_case", max: 2000 })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })
@@ -74,8 +75,7 @@ export function ActAnalysisStep({
         if (!cancelled) {
           console.error("[berufungs-agent] case list error:", err);
           setCases([]);
-          // A failed load is not "no matters" — say so.
-          setError("Die Akten konnten nicht geladen werden. Bitte laden Sie die Seite neu.");
+          setCasesError(true);
         }
       })
       .finally(() => {
@@ -147,6 +147,13 @@ export function ActAnalysisStep({
           <div className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("act_analysis.loading_cases")}
+          </div>
+        ) : casesError ? (
+          <div
+            role="alert"
+            className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]"
+          >
+            Die Akten konnten nicht geladen werden. Bitte die Seite neu laden.
           </div>
         ) : cases.length === 0 ? (
           <div className="rounded-md border border-dashed bg-[color:var(--ds-surface-2)]/30 p-4 text-sm text-[color:var(--ds-text-muted)]">
@@ -246,8 +253,9 @@ export function ActAnalysisStep({
                     Kostenschätzung
                   </p>
                   <p className="text-sm font-medium">
-                    {analysis.cost_estimate.min}–{analysis.cost_estimate.max}{" "}
-                    {analysis.cost_estimate.currency}
+                    {analysis.cost_estimate.currency === "EUR"
+                      ? `${formatEur(analysis.cost_estimate.min)} – ${formatEur(analysis.cost_estimate.max)}`
+                      : `${analysis.cost_estimate.min.toLocaleString("de-AT")} – ${analysis.cost_estimate.max.toLocaleString("de-AT")} ${analysis.cost_estimate.currency}`}
                   </p>
                 </>
               )}

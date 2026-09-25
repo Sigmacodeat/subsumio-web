@@ -908,6 +908,7 @@ export function OverviewTab() {
                       impact: r.impact,
                     })),
                     generatedAt: result.generatedAt,
+                    documentsConsidered: result.documentsConsidered,
                   },
                 });
               } catch (err) {
@@ -934,6 +935,23 @@ export function OverviewTab() {
         </div>
         {caseData?.strategy ? (
           <>
+            {typeof caseData.strategy.documentsConsidered === "number" && (
+              <p
+                className={
+                  caseData.strategy.documentsConsidered === 0
+                    ? "mb-2 rounded border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)]"
+                    : "mb-2 text-xs text-[color:var(--ds-text-subtle)]"
+                }
+              >
+                {caseData.strategy.documentsConsidered === 0
+                  ? lang === "en"
+                    ? "No documents of this matter were available — the strategy rests on the matter data only."
+                    : "Keine Dokumente der Akte berücksichtigt — die Strategie beruht nur auf den Aktendaten."
+                  : lang === "en"
+                    ? `${caseData.strategy.documentsConsidered} documents considered`
+                    : `${caseData.strategy.documentsConsidered} Dokumente berücksichtigt`}
+              </p>
+            )}
             <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
               {caseData.strategy.recommended}
             </p>

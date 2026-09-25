@@ -45,6 +45,9 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CitationPanel } from "@/components/legal/CitationPanel";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { LoadErrorNotice } from "@/components/dashboard/load-error-notice";
+import { csrfFetch } from "@/lib/csrf";
 
 interface ResearchSession {
   id: string;
@@ -61,7 +64,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import { csrfFetch } from "@/lib/csrf";
 
 function TabSkeleton() {
   return (
@@ -137,6 +139,7 @@ function ResearchPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [savedPages, setSavedPages] = useState<BrainPage[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
+  const [savedLoadError, setSavedLoadError] = useState(false);
   const tabFromUrl = searchParams.get("tab") as ResearchTab | null;
   const [activeTab, setActiveTabState] = useState<ResearchTab>(
     tabFromUrl && TABS.some((tab) => tab.id === tabFromUrl) ? tabFromUrl : "recherche"
@@ -171,6 +174,7 @@ function ResearchPageInner() {
 
   async function loadSavedResearch() {
     setSavedLoading(true);
+    setSavedLoadError(false);
     try {
       const pages = await api.brain.listAllPages({ type: "legal_research", max: 200 });
       setSavedPages(pages);
@@ -182,6 +186,9 @@ function ResearchPageInner() {
         setError(
           "Das Kanzleiwissen ist gerade nicht erreichbar. Es werden zwischengespeicherte Recherchen angezeigt."
         );
+      } else {
+        // Nothing cached: a failed load, not an empty list.
+        setSavedLoadError(true);
       }
     } finally {
       setSavedLoading(false);
@@ -756,6 +763,11 @@ function ResearchPageInner() {
 
           {savedLoading ? (
             <TabSkeleton />
+          ) : savedLoadError ? (
+            <LoadErrorNotice
+              message="Gespeicherte Recherchen konnten nicht geladen werden."
+              onRetry={() => void loadSavedResearch()}
+            />
           ) : savedPages.length === 0 ? (
             <EmptyState
               icon={FolderOpen}
@@ -837,10 +849,14 @@ function ResearchPageInner() {
                         </div>
                       </div>
                       {isExpanded ? (
-                        <div
-                          className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
-                          dangerouslySetInnerHTML={{ __html: renderMarkdown(page.content || "") }}
-                        />
+                        <>
+                          <div
+                            className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(page.content || "") }}
+                          />
+                          {/* Stored AI research: citation check when opened */}
+                          <GroundedOutputPanel text={page.content} />
+                        </>
                       ) : (
                         <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
                           {page.content?.slice(0, 200)}

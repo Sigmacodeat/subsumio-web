@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { csrfFetch } from "@/lib/csrf";
 import {
   CASE_STATUS_LABELS,
   CASE_STATUS_VALUES,
@@ -32,7 +33,6 @@ import {
 } from "@/lib/automation-model";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { formatDateTime } from "@/lib/utils";
-import { csrfFetch } from "@/lib/csrf";
 
 /** Eine Regel, wie /api/automations sie liefert. */
 export interface AutomationRuleView extends AutomationRule {
@@ -190,6 +190,7 @@ export function AutomationsPanel() {
   ): Promise<boolean> {
     setBusy(true);
     try {
+      // Writes carry the CSRF token (raw fetch was refused by the middleware).
       const res = await csrfFetch("/api/automations", {
         method,
         headers: { "Content-Type": "application/json" },

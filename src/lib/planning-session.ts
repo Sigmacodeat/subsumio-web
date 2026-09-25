@@ -35,12 +35,15 @@ export interface PlanStep {
   executed_at?: string;
 }
 
-/** Tools, die ein Plan-Schritt automatisch ausführen darf (Whitelist). */
+/**
+ * Tools, die ein Plan-Schritt automatisch ausführen darf (Whitelist).
+ * Kein `send_email`: Empfänger und Text würde das Modell aus Akteninhalt
+ * vorschlagen — E-Mails gehen nur über die reguläre Mail-Maske hinaus.
+ */
 export const EXECUTABLE_STEP_TOOLS = [
   "create_task",
   "create_deadline",
   "create_contact",
-  "send_email",
   "request_signature",
   "document_request_create",
   "render_template",

@@ -166,7 +166,56 @@ export default function WorkflowBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Slug of the template being edited: later saves update it instead of
+  // creating a new template each time.
+  const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // ?template=<slug>: open an existing template for editing.
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get("template");
+    if (!slug) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/agent-templates/${encodeURIComponent(slug)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const tpl = (await res.json()) as {
+          slug: string;
+          name: string;
+          description?: string;
+          steps?: Array<{ id: string; specialist: string; prompt: string; depends_on?: number }>;
+        };
+        if (cancelled) return;
+        const loaded: WorkflowStep[] = (tpl.steps ?? []).map((st, i) => {
+          const known = STEP_TYPES.some((c) => c.type === st.specialist);
+          const type = (known ? st.specialist : STEP_TYPES[0]!.type) as StepType;
+          return {
+            id: st.id || uid(),
+            type,
+            label: t(getStepConfig(type).labelKey),
+            prompt: st.prompt,
+            x: 32 + (i % 3) * (CARD_W + 32),
+            y: 32 + Math.floor(i / 3) * 140,
+          };
+        });
+        (tpl.steps ?? []).forEach((st, i) => {
+          if (typeof st.depends_on === "number" && loaded[st.depends_on]) {
+            loaded[i]!.dependsOn = loaded[st.depends_on]!.id;
+          }
+        });
+        setMeta({ name: tpl.name, description: tpl.description ?? "" });
+        setSteps(loaded);
+        setSavedSlug(tpl.slug);
+      } catch {
+        if (!cancelled) setSaveError("Die Vorlage konnte nicht geladen werden.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Step Operations ──────────────────────────────────────────────────
 
@@ -316,12 +365,20 @@ export default function WorkflowBuilderPage() {
           };
         }),
       };
-      const res = await csrfFetch("/api/agent-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = savedSlug
+        ? await csrfFetch(`/api/agent-templates/${encodeURIComponent(savedSlug)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await csrfFetch("/api/agent-templates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const saved = (await res.json().catch(() => null)) as { slug?: string } | null;
+      if (saved?.slug) setSavedSlug(saved.slug);
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {

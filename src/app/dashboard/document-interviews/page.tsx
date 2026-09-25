@@ -18,6 +18,18 @@ import {
   type InterviewQuestionType,
 } from "@/lib/document-interviews";
 
+const REVIEW_STATUS_LABEL: Record<string, string> = {
+  unreviewed: "Ungeprüft",
+  draft: "Entwurf",
+  pending: "Offen",
+  pending_review: "Zur Prüfung",
+  in_review: "In Prüfung",
+  reviewed: "Geprüft",
+  approved: "Freigegeben",
+  rejected: "Abgelehnt",
+  completed: "Abgeschlossen",
+};
+
 const STATUS_COLORS: Record<string, string> = {
   unreviewed: "bg-[color:var(--ds-neutral-bg)] text-[color:var(--ds-neutral-text)]",
   reviewed: "bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",

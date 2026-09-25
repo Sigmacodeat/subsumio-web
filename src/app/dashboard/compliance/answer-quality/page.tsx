@@ -41,10 +41,16 @@ export default function AnswerQualityPage() {
 
   useEffect(() => {
     setData(null);
+    // A new period starts clean: an earlier error must not stay on screen.
+    setError(null);
     fetch(`/api/copilot/feedback?days=${days}`)
       .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) throw new Error(body?.error?.message ?? "Nicht verfügbar");
+        const body = await res.json().catch(() => null);
+        // apiError answers { error: "<Text>", code }.
+        if (!res.ok)
+          throw new Error(
+            typeof body?.error === "string" && body.error ? body.error : "Nicht verfügbar"
+          );
         setData(unwrapApiBody<Summary>(body));
       })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));

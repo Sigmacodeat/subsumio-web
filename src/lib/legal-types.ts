@@ -176,6 +176,8 @@ export interface StrategyInfo {
   recommendedApproach?: string;
   generatedAt?: string;
   risks?: StrategyRisk[];
+  /** Documents of the matter the strategy was based on. */
+  documentsConsidered?: number;
 }
 
 export interface CommunicationEntry {

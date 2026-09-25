@@ -14,7 +14,12 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import type { GroundedCitation } from "@/lib/types";
 import type { CaseCourt, RawCaseCitation } from "@/lib/case-citations";
-import { CORPUS_DIR, parseFrontmatter } from "@/lib/legal-grounding";
+import {
+  CORPUS_DIR,
+  MAX_CHECKED_CITATIONS,
+  NOT_CHECKED_REASON,
+  parseFrontmatter,
+} from "@/lib/legal-grounding";
 
 const COURT_DIRS: Record<CaseCourt, string> = {
   OGH: "at-judikatur",
@@ -78,9 +83,7 @@ function excerpt(content: string): string {
 
 export async function groundCaseCitations(raw: RawCaseCitation[]): Promise<GroundedCitation[]> {
   const out: GroundedCitation[] = [];
-  for (const c of raw.slice(0, 20)) {
-    const dir = COURT_DIRS[c.court];
-    const file = (await loadIndex(dir)).get(c.key);
+  for (const [i, c] of raw.entries()) {
     const base: GroundedCitation = {
       code: c.court,
       paragraph: c.cited,
@@ -89,6 +92,13 @@ export async function groundCaseCitations(raw: RawCaseCitation[]): Promise<Groun
       jurisdiction: "at",
       search_url: c.searchUrl,
     };
+    // Beyond the cap: still counted, as "not checked".
+    if (i >= MAX_CHECKED_CITATIONS) {
+      out.push({ ...base, unverifiable_reason: NOT_CHECKED_REASON });
+      continue;
+    }
+    const dir = COURT_DIRS[c.court];
+    const file = (await loadIndex(dir)).get(c.key);
     if (!file) {
       out.push({ ...base, unverifiable_reason: "Entscheidung nicht im Korpus" });
       continue;

@@ -1,52 +1,58 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
-// Audit QA-8: a failed engine read is an error (503), never an empty list.
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
-vi.mock("@/lib/logger", () => ({
-  logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
+/**
+ * Playbook and template lists: paged through the engine (not capped at one
+ * listing), and a failed read is an error — never an empty list.
+ */
+const list = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/api-handler", () => ({
+  createHandler:
+    (
+      opts: { query?: { parse: (d: unknown) => unknown } },
+      handler: (ctx: unknown, body: unknown, query: unknown) => Promise<Response>
+    ) =>
+    async (req: Request) => {
+      const params = Object.fromEntries(new URL(req.url).searchParams);
+      return handler({ headers: {} }, undefined, opts.query ? opts.query.parse(params) : params);
+    },
+  apiError: (code: string, message: string, status: number) =>
+    Response.json({ error: message, code }, { status }),
+  apiSuccess: (data: unknown) => Response.json({ data }),
 }));
-vi.mock("@/lib/api-handler", async () => {
-  const { apiError, apiSuccess } = await import("@/lib/api-response");
-  return {
-    createHandler:
-      (
-        _opts: unknown,
-        handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
-      ) =>
-      async (req: Request) =>
-        handler({ headers: { "x-subsumio-source": "brain-at" } }, {}, {}, req),
-    apiError,
-    apiSuccess,
-    recordCreditConsumption: vi.fn(),
-  };
-});
+vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
+vi.mock("@/lib/engine-pages", () => ({ listEnginePages: list }));
 
-import { GET } from "./route";
+import { GET as playbooksGET } from "./route";
+import { GET as templatesGET } from "../templates/route";
 
-afterEach(() => vi.unstubAllGlobals());
+const get = (h: typeof playbooksGET, url: string) => h(new Request(url) as unknown as NextRequest);
 
-describe("GET /api/legal/playbooks", () => {
-  test("engine unreachable → 503 with error envelope", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new TypeError("fetch failed");
-      })
+afterEach(() => list.mockReset());
+
+describe("GET /api/legal/playbooks and /templates", () => {
+  it("returns every playbook beyond one engine listing (150 > 100)", async () => {
+    list.mockResolvedValue(
+      Array.from({ length: 150 }, (_, i) => ({ slug: `legal/playbooks/p${i}`, frontmatter: {} }))
     );
-    const res = await GET(new Request("http://localhost/api/legal/playbooks") as never);
-    expect(res.status).toBe(503);
-    const json = (await res.json()) as { error: string; code: string };
-    expect(json.code).toBe("service_unavailable");
-    expect(json.error).toMatch(/konnten nicht geladen werden/);
+    const res = await get(playbooksGET, "http://x/api/legal/playbooks?limit=200");
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toHaveLength(150);
+    expect(list.mock.calls[0][1]).toBe("legal_playbook");
+    expect(list.mock.calls[0][3]).toMatchObject({ strict: true });
   });
 
-  test("engine answers 500 → 503, not an empty list", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("down", { status: 500 }))
-    );
-    const res = await GET(new Request("http://localhost/api/legal/playbooks") as never);
-    expect(res.status).toBe(503);
+  it("an engine failure is 503, not an empty list", async () => {
+    list.mockRejectedValue(new Error("down"));
+    for (const [h, url] of [
+      [playbooksGET, "http://x/api/legal/playbooks"],
+      [templatesGET, "http://x/api/legal/templates"],
+    ] as const) {
+      const res = await get(h, url);
+      expect(res.status).toBe(503);
+      expect((await res.json()).data).toBeUndefined();
+    }
   });
 });

@@ -32,6 +32,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import { useToast } from "@/components/ui/toast";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import type {
@@ -507,6 +508,11 @@ export default function InvestigationPage({
       {activeTab === "questions" && <QuestionsTab result={result} />}
 
       {activeTab === "hypotheses" && <HypothesesTab result={result} />}
+
+      {/* AI-generated gaps / questions / hypotheses: grounding + AI notice */}
+      {(activeTab === "gaps" || activeTab === "questions" || activeTab === "hypotheses") && (
+        <GroundedOutputPanel text={investigationTabText(activeTab, result)} />
+      )}
 
       {/* ── Citation Panel + Attorney Review ──────────────────────── */}
       {activeTab === "contradictions" && selectedContradiction && (
@@ -1090,6 +1096,35 @@ function ChronologyTab({ result }: { result: CaseInvestigationResult }) {
 }
 
 // ── Gaps Tab ───────────────────────────────────────────────────────────
+
+/** The AI text of a tab, for the citation check. */
+function investigationTabText(
+  tab: "gaps" | "questions" | "hypotheses",
+  result: CaseInvestigationResult
+): string {
+  if (tab === "gaps") {
+    return result.evidence_gaps
+      .map((g) =>
+        [g.beschreibung, g.fehlendes_beweismittel, g.erwartete_quelle, g.beweisbedeutung].join("\n")
+      )
+      .join("\n\n");
+  }
+  if (tab === "questions") {
+    return result.neutral_questions
+      .map((q) =>
+        [
+          q.einstiegsfrage,
+          ...q.praezisierungsfragen,
+          q.konfrontationsfrage ?? "",
+          q.beweisbedeutung,
+        ].join("\n")
+      )
+      .join("\n\n");
+  }
+  return result.alternative_hypotheses
+    .map((h) => [h.beschreibung, ...h.stuetzende_indizien, ...h.gegen_indizien].join("\n"))
+    .join("\n\n");
+}
 
 function GapsTab({ result }: { result: CaseInvestigationResult }) {
   if (result.evidence_gaps.length === 0) {

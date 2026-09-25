@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { normalizeStrategy, type StrategyResult } from "@/lib/process-strategy";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 
 type WizardStep = "select" | "analyze" | "strategy" | "drafts";
@@ -41,24 +42,6 @@ interface CaseOption {
   evidence: Array<{ id: string; title: string; description?: string }>;
   opponentName?: string;
   legalArea?: string;
-}
-
-interface StrategyResult {
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  opportunities: string[];
-  threats: string[];
-  recommendedActions: Array<{
-    priority: "high" | "medium" | "low";
-    action: string;
-    rationale: string;
-  }>;
-  evidenceGaps: string[];
-  riskAssessment: {
-    overall: "low" | "medium" | "high";
-    factors: string[];
-  };
 }
 
 interface DraftSuggestion {
@@ -97,7 +80,7 @@ export default function ProcessStrategyPage() {
 
   useEffect(() => {
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listAllPages({ type: "legal_case", max: 2000 })
       .then((pages) => {
         const mapped = pages.map((p) => {
           const fm = caseFrontmatter(p);
@@ -180,8 +163,8 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
       const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          const parsed = JSON.parse(jsonMatch[0]) as StrategyResult;
-          setStrategy(parsed);
+          const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+          setStrategy(normalizeStrategy(parsed, accumulated.slice(0, 500)));
         } catch {
           // If JSON parse fails, use the text as summary
           setStrategy({
@@ -192,7 +175,7 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
             threats: [],
             recommendedActions: [],
             evidenceGaps: [],
-            riskAssessment: { overall: "medium", factors: [] },
+            riskAssessment: null,
           });
         }
       } else {
@@ -204,7 +187,7 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
           threats: [],
           recommendedActions: [],
           evidenceGaps: [],
-          riskAssessment: { overall: "medium", factors: [] },
+          riskAssessment: null,
         });
       }
       groundAnalysis(accumulated).catch(() => {});
@@ -532,45 +515,43 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             </p>
           </div>
 
-          {/* Risk Assessment */}
-          <div
-            className={cn(
-              "rounded-xl border p-4",
-              strategy.riskAssessment.overall === "high"
-                ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
-                : strategy.riskAssessment.overall === "medium"
-                  ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
-                  : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
-            )}
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <ShieldAlert
-                size={18}
-                className={cn(
-                  strategy.riskAssessment.overall === "high"
-                    ? "text-[color:var(--ds-danger-text)]"
-                    : strategy.riskAssessment.overall === "medium"
-                      ? "text-[color:var(--ds-warning-text)]"
-                      : "text-[color:var(--ds-success-text)]"
-                )}
-              />
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Risikobewertung:{" "}
-                {strategy.riskAssessment.overall === "high"
-                  ? "Hoch"
+          {/* Risk Assessment — only when the AI delivered one */}
+          {strategy.riskAssessment ? (
+            <div
+              className={cn(
+                "rounded-xl border p-4",
+                strategy.riskAssessment.overall === "high"
+                  ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
                   : strategy.riskAssessment.overall === "medium"
-                    ? "Mittel"
-                    : "Niedrig"}
-              </h3>
+                    ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
+                    : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
+              )}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <ShieldAlert size={18} className="text-[color:var(--ds-text-muted)]" />
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Risikobewertung:{" "}
+                  {strategy.riskAssessment.overall === "high"
+                    ? "Hoch"
+                    : strategy.riskAssessment.overall === "medium"
+                      ? "Mittel"
+                      : "Niedrig"}
+                </h3>
+              </div>
+              {strategy.riskAssessment.factors.length > 0 && (
+                <ul className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
+                  {strategy.riskAssessment.factors.map((f, i) => (
+                    <li key={i}>• {f}</li>
+                  ))}
+                </ul>
+              )}
             </div>
-            {strategy.riskAssessment.factors.length > 0 && (
-              <ul className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
-                {strategy.riskAssessment.factors.map((f, i) => (
-                  <li key={i}>• {f}</li>
-                ))}
-              </ul>
-            )}
-          </div>
+          ) : (
+            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm text-[color:var(--ds-text-muted)]">
+              Keine Risikobewertung: Die KI-Antwort enthielt keine auswertbare Bewertung. Bitte die
+              Analyse erneut ausführen oder das Risiko selbst einschätzen.
+            </div>
+          )}
 
           {/* SWOT Grid */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -656,6 +637,16 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               </ul>
             </div>
           )}
+
+          <CitationPanel
+            data={
+              {
+                grounding: analysisGrounding ?? null,
+                citations: [],
+              } satisfies CitationPanelData
+            }
+            compact
+          />
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-3">

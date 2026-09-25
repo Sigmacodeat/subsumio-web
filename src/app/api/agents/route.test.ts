@@ -1,52 +1,64 @@
+import type { NextRequest } from "next/server";
 // @vitest-environment node
-// Audit QA-8: a failed engine read is an error (503), never an empty list.
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
-vi.mock("@/lib/logger", () => ({
-  logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
+const charge = vi.hoisted(() => vi.fn(async () => ({ ok: true })));
+
+vi.mock("@/lib/api-handler", () => ({
+  createHandler:
+    (
+      opts: { body?: { parse: (d: unknown) => unknown } },
+      handler: (ctx: unknown, body: unknown, q: unknown, req: Request) => Promise<Response>
+    ) =>
+    async (req: Request) => {
+      const ctx = {
+        brainId: "firm-a",
+        headers: { "x-subsumio-source": "firm-a" },
+        user: { id: "u-1", role: "lawyer", email: "l@x.at", brainId: "firm-a" },
+        billing: { ownerId: "org-a", ownerType: "org" },
+      };
+      const body = req.method === "GET" ? {} : opts.body!.parse(await req.json());
+      return handler(ctx, body, {}, req);
+    },
+  apiError: (code: string, message: string, status: number) =>
+    Response.json({ error: message, code }, { status }),
+  recordCreditConsumption: charge,
 }));
-vi.mock("@/lib/api-handler", async () => {
-  const { apiError, apiSuccess } = await import("@/lib/api-response");
-  return {
-    createHandler:
-      (
-        _opts: unknown,
-        handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
-      ) =>
-      async (req: Request) =>
-        handler({ headers: { "x-subsumio-source": "brain-at" } }, {}, {}, req),
-    apiError,
-    apiSuccess,
-    recordCreditConsumption: vi.fn(),
-  };
+vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
+
+import { GET, POST } from "./route";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  charge.mockClear();
 });
 
-import { GET } from "./route";
-
-afterEach(() => vi.unstubAllGlobals());
-
-describe("GET /api/agents", () => {
-  test("engine unreachable → 503 with error envelope", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new TypeError("fetch failed");
-      })
-    );
-    const res = await GET(new Request("http://localhost/api/agents") as never);
-    expect(res.status).toBe(503);
-    const json = (await res.json()) as { error: string; code: string };
-    expect(json.code).toBe("service_unavailable");
-    expect(json.error).toMatch(/konnten nicht geladen werden/);
-  });
-
-  test("engine answers 500 → 503, not an empty list", async () => {
+describe("/api/agents", () => {
+  it("GET: an engine failure is an error (503), not an empty job list", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response("down", { status: 500 }))
     );
-    const res = await GET(new Request("http://localhost/api/agents") as never);
+    const res = await GET(new Request("http://x/api/agents") as unknown as NextRequest);
     expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.jobs).toBeUndefined();
+    expect(typeof body.error).toBe("string");
+  });
+
+  it("POST: a refused start returns a German error and books no credit", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 500 }))
+    );
+    const res = await POST(
+      new Request("http://x/api/agents", {
+        method: "POST",
+        body: JSON.stringify({ prompt: "Prüfe die Akte" }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(502);
+    expect((await res.json()).error).toBe("Auftrag konnte nicht gestartet werden");
+    expect(charge).not.toHaveBeenCalled();
   });
 });

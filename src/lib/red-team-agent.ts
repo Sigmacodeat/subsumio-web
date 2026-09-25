@@ -35,6 +35,14 @@ export interface RedTeamResult {
   created_at: string;
 }
 
+/**
+ * The engine reads at most 20 000 characters of a question; a longer draft
+ * was cut silently and only its beginning was checked. Draft + context +
+ * instructions must fit, so both are bounded (route validation + form).
+ */
+export const RED_TEAM_MAX_DRAFT_CHARS = 15_000;
+export const RED_TEAM_MAX_CONTEXT_CHARS = 3_000;
+
 export function createRedTeamPrompt(input: RedTeamInput): string {
   const parts: string[] = [
     "Du bist ein Red-Team-Agent für anwaltliches Drafting.",

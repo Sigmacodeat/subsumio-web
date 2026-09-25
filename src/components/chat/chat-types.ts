@@ -57,7 +57,6 @@ export type ToolType =
   | "client_update"
   | "meeting_tasks"
   | "intake_create"
-  | "rvg_calculate"
   | "document_request_create"
   | "precedent_search"
   | "translate_text"
@@ -182,6 +181,8 @@ export interface ToolResultDisplay {
   items?: Array<DeadlineCardItem | CalendarCardItem | TaskCardItem>;
   href?: string;
   message?: string;
+  /** Full AI-generated text: shown untruncated with grounding in the chat card. */
+  aiText?: string;
   filterHref?: string;
   summary?: {
     caseTitle?: string;

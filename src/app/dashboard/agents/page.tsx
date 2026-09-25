@@ -37,6 +37,8 @@ import { AgentBuilder } from "@/components/dashboard/agent-builder";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { LoadErrorNotice } from "@/components/dashboard/load-error-notice";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -313,6 +315,7 @@ function JobDetail({
 }) {
   const { t } = useLang();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const children = allJobs.filter((j: AgentJob) => j.parentId === job.id);
   const [acting, setActing] = useState<string | null>(null);
 
@@ -326,7 +329,10 @@ function JobDetail({
       addToast({
         type: "error",
         title: `${label} nicht möglich`,
-        description: "Bitte aktualisieren Sie die Ansicht und versuchen Sie es erneut.",
+        description:
+          err instanceof Error && err.message
+            ? err.message
+            : "Bitte aktualisieren Sie die Ansicht und versuchen Sie es erneut.",
         duration: 5000,
       });
     } finally {
@@ -431,9 +437,19 @@ function JobDetail({
             size="sm"
             variant="ghost"
             className="text-[color:var(--ds-danger-text)]"
-            onClick={() =>
-              runAction("cancel", t("agents.btn_cancel"), () => cancelMutation.mutateAsync(job.id))
-            }
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Auftrag abbrechen?",
+                message:
+                  "Der laufende Auftrag wird beendet; bereits erzeugte Zwischenergebnisse bleiben erhalten, der Auftrag kann aber nicht fortgesetzt werden.",
+                confirmLabel: t("agents.btn_cancel"),
+                variant: "danger",
+              });
+              if (!ok) return;
+              await runAction("cancel", t("agents.btn_cancel"), () =>
+                cancelMutation.mutateAsync(job.id)
+              );
+            }}
             disabled={acting !== null}
           >
             {acting === "cancel" ? (
@@ -723,7 +739,10 @@ export default function AgentsPage() {
       addToast({
         type: "error",
         title: "Auftrag konnte nicht gestartet werden",
-        description: "Bitte versuchen Sie es in einigen Minuten erneut.",
+        description:
+          err instanceof Error && /guthaben|credit|402/i.test(err.message)
+            ? "Das KI-Guthaben reicht nicht aus. Bitte laden Sie unter Plan & Abrechnung Guthaben nach."
+            : "Bitte versuchen Sie es in einigen Minuten erneut.",
         duration: 5000,
       });
     }
@@ -882,16 +901,12 @@ export default function AgentsPage() {
                     <Skeleton className="h-16 w-full" />
                   </div>
                 )}
-                {agentsQuery.isError && jobs.length === 0 && (
-                  <div
-                    role="alert"
-                    className="flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]"
-                  >
-                    <span>Aufträge konnten nicht geladen werden.</span>
-                    <Button size="sm" variant="outline" onClick={() => void agentsQuery.refetch()}>
-                      Erneut versuchen
-                    </Button>
-                  </div>
+                {!loading && agentsQuery.isError && jobs.length === 0 && (
+                  <LoadErrorNotice
+                    message="Aufträge konnten nicht geladen werden."
+                    onRetry={() => agentsQuery.refetch()}
+                    retrying={agentsQuery.isFetching}
+                  />
                 )}
                 {!loading && !agentsQuery.isError && jobs.length === 0 && (
                   <p className="rounded-lg border border-dashed border-[color:var(--ds-border-strong)] px-3 py-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">

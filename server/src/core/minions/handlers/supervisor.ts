@@ -191,7 +191,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       };
     } else {
       // Auto-Dekomposition via LLM
-      plan = await decomposeTask(enrichedPrompt, data.supervisor_model);
+      plan = await decomposeTask(enrichedPrompt, data.supervisor_model, engine);
     }
 
     // Unbekannte Specialists früh ablehnen — vor dem ersten Child-Submit.
@@ -299,9 +299,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     // ── Schritt 4: Synthese ─────────────────────────────────
     let synthesis: string;
     if (data.aggregate_with_llm) {
-      synthesis = await synthesizeWithLlm(data.prompt, children, plan, data.supervisor_model).catch(
-        () => synthesizeResults(children, plan)
-      );
+      synthesis = await synthesizeWithLlm(
+        data.prompt,
+        children,
+        plan,
+        data.supervisor_model,
+        engine
+      ).catch(() => synthesizeResults(children, plan));
     } else {
       synthesis = synthesizeResults(children, plan);
     }
@@ -786,11 +790,33 @@ export function renderCaseContextBlock(ctx: CaseContext): string {
 
 // ── Dekomposition ───────────────────────────────────────────
 
-async function decomposeTask(prompt: string, model?: string): Promise<SupervisorPlan> {
+/**
+ * Model for the supervisor's own calls (plan, synthesis): the caller's pick,
+ * else the deployment's utility tier (native / OpenRouter / Bedrock EU,
+ * config overrides honoured). Always provider-prefixed — the gateway rejects
+ * bare ids — and never a hard-wired vendor that would bypass tier or EU mode.
+ */
+export async function resolveSupervisorModel(
+  engine: BrainEngine | null,
+  model?: string
+): Promise<string> {
+  const { normalizeModelId } = await import("../../model-id.ts");
+  if (model && model.trim()) return normalizeModelId(model.trim());
+  const { resolveModel, TIER_DEFAULTS } = await import("../../model-config.ts");
+  return normalizeModelId(
+    await resolveModel(engine, { tier: "utility", fallback: TIER_DEFAULTS.utility })
+  );
+}
+
+export async function decomposeTask(
+  prompt: string,
+  model?: string,
+  engine: BrainEngine | null = null
+): Promise<SupervisorPlan> {
   // Wir nutzen die Gateway-API für einen schnellen, kostengünstigen Call
   const { chat } = await import("../../ai/gateway.ts");
 
-  const resolvedModel = model ?? "claude-haiku-4-5"; // Kostengünstig für Dekomposition
+  const resolvedModel = await resolveSupervisorModel(engine, model);
 
   const result = await chat({
     model: resolvedModel,
@@ -956,13 +982,14 @@ async function synthesizeWithLlm(
   userPrompt: string,
   children: SupervisorChildResult[],
   plan: SupervisorPlan,
-  model?: string
+  model?: string,
+  engine: BrainEngine | null = null
 ): Promise<string> {
   const { chat } = await import("../../ai/gateway.ts");
   const raw = synthesizeResults(children, plan);
 
   const result = await chat({
-    model: model ?? "claude-haiku-4-5",
+    model: await resolveSupervisorModel(engine, model),
     system: [
       "Du bist der Synthese-Schritt eines Legal-AI-Supervisors.",
       "Du bekommst die Roh-Ergebnisse mehrerer Specialist-Agenten und die ursprüngliche Anfrage.",

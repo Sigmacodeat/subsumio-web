@@ -91,10 +91,10 @@ export default function PrivacySettingsPage() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
+        // apiError answers { error: "<Text>", code }.
+        const raw = body && typeof body === "object" && "error" in body ? body.error : undefined;
         const message =
-          body && typeof body === "object" && "error" in body
-            ? (body.error as { message?: string })?.message
-            : undefined;
+          typeof raw === "string" ? raw : (raw as { message?: string } | undefined)?.message;
         throw new Error(message || `HTTP ${res.status}`);
       }
       // Sessions are revoked and the session cookie is cleared server-side;

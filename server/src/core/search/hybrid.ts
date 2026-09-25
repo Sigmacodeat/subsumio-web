@@ -44,6 +44,7 @@ import { expandLegalQuery } from "../think/legal-query-expand.ts";
 import { expandConceptQuery, extractSectionNumbers } from "../legal/concept-map.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
 import { isAllowedUnderEuPolicy, isEuOnly } from "../ai/eu-policy.ts";
+import { withRequestEuPolicy } from "../ai/request-eu-policy.ts";
 
 export const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
@@ -2265,10 +2266,10 @@ export async function applyLLMReranker(
   // EU-only: skip non-EU rerankers up front (the gateway would refuse them
   // anyway); with none left the results keep their non-LLM (RRF) order.
   const modelsToTry = [model, ...LLM_RERANK_FALLBACK_CHAIN.filter((m) => m !== model)].filter((m) =>
-    isAllowedUnderEuPolicy(m, process.env)
+    isAllowedUnderEuPolicy(m, withRequestEuPolicy(process.env))
   );
   if (modelsToTry.length === 0) {
-    if (isEuOnly(process.env)) {
+    if (isEuOnly(withRequestEuPolicy(process.env))) {
       console.warn("[llm-rerank] EU-only: no EU reranker configured, keeping RRF order");
     }
     return results;

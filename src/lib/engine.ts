@@ -35,6 +35,7 @@ import { getTenant } from "@/lib/tenants";
 import { billingAccountFor, type BillingAccount } from "@/lib/billing/billing-account";
 
 import { logger } from "@/lib/logger";
+import { MODEL_POLICY_HEADER, modelPolicyHeaderValue } from "@/lib/eu-policy-refusal";
 const log = logger("lib/engine");
 
 const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
@@ -223,6 +224,8 @@ export async function engineContext(): Promise<EngineContext | null> {
   let effectiveUser = user;
   let supportSession: SupportSession | undefined;
   let billing = billingAccountFor(user, null);
+  // The firm's "Nur EU" setting, enforced by the engine for every request.
+  let modelPolicy: "any" | "eu_only" | undefined;
 
   if (isPlatformOperator(user)) {
     const active = await getActiveSupportSession(user.id);
@@ -235,6 +238,7 @@ export async function engineContext(): Promise<EngineContext | null> {
         const payer = await getStore().getById(tenant.billing.ownerId);
         if (payer) plan = effectivePlan(payer);
         supportSession = active;
+        modelPolicy = tenant.org?.modelPolicy;
         effectiveUser = { ...user, role: "admin", orgId: tenant.org?.id ?? null };
       }
     }
@@ -246,6 +250,7 @@ export async function engineContext(): Promise<EngineContext | null> {
     if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
+      modelPolicy = org.modelPolicy;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
       if (payer) plan = effectivePlan(payer);
@@ -270,6 +275,9 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
+  // Always stated (eu_only | any): the engine remembers it per source so the
+  // firm's server-side work without a session stays under the same policy.
+  headers[MODEL_POLICY_HEADER] = modelPolicyHeaderValue(modelPolicy);
   addCallerIdentity(headers, brainId, effectiveUser);
   return {
     headers,
@@ -660,13 +668,30 @@ export async function recordCreditConsumption(
   usage?: ActionUsage,
   /** Pass one when the usage is only known later — see attachUsageToBooking. */
   idempotencyKey?: string
-): Promise<void> {
+): Promise<{ ok: boolean; balance?: number; required?: number }> {
   const cost = CREDIT_COSTS[operation];
-  if (cost <= 0 || ctx.demo) return;
+  if (cost <= 0 || ctx.demo) return { ok: true };
   const ownerType: OwnerType = ctx.billing.ownerType;
   const ownerId = ctx.billing.ownerId;
+  let booked = false;
   try {
-    await deductCredits(ownerId, ownerType, cost, { operation, caseSlug, usage, idempotencyKey });
+    const deducted = await deductCredits(ownerId, ownerType, cost, {
+      operation,
+      caseSlug,
+      usage,
+      idempotencyKey,
+    });
+    if (!deducted.ok) {
+      // The pre-flight check passed but the booking did not (parallel requests
+      // drained the balance, spend cap, or a database error). Never silent:
+      // this is AI work that went unpaid.
+      log.warn(
+        `[credits] booking refused: operation=${operation} owner=${ownerType}:${ownerId} ` +
+          `required=${deducted.required} balance=${deducted.balance}`
+      );
+      return { ok: false, balance: deducted.balance, required: deducted.required };
+    }
+    booked = true;
     // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking.
     // Fire-and-forget: don't fail the operation if the alert fails.
     const { balance } = await getBalance(ownerId, ownerType);
@@ -675,10 +700,12 @@ export async function recordCreditConsumption(
         // best-effort, ignore errors
       });
     }
+    return { ok: true, balance };
   } catch (err) {
     log.error(
       `[credits] consumption record failed: ${err instanceof Error ? err.message : String(err)}`
     );
+    return { ok: booked };
   }
 }
 

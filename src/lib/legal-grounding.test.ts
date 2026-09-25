@@ -9,6 +9,8 @@ import {
   inferAnswerJurisdiction,
   lookupAtNormFile,
   CORPUS_META,
+  MAX_CHECKED_CITATIONS,
+  NOT_CHECKED_REASON,
 } from "@/lib/legal-grounding";
 import type { RawCitation } from "@/lib/types";
 import { promises as fs } from "node:fs";
@@ -170,14 +172,17 @@ describe("groundCitations", () => {
     expect(result[0].source_text).toBeUndefined();
   });
 
-  it("limits to 20 citations", async () => {
+  it("reports citations beyond the check limit as not checked instead of dropping them", async () => {
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
-    const raw: RawCitation[] = Array.from({ length: 30 }, (_, i) => ({
+    const raw: RawCitation[] = Array.from({ length: MAX_CHECKED_CITATIONS + 5 }, (_, i) => ({
       code: "BGB",
       paragraph: String(i + 1),
     }));
     const result = await groundCitations(raw);
-    expect(result).toHaveLength(20);
+    expect(result).toHaveLength(MAX_CHECKED_CITATIONS + 5);
+    const notChecked = result.filter((c) => c.unverifiable_reason === NOT_CHECKED_REASON);
+    expect(notChecked).toHaveLength(5);
+    expect(notChecked.every((c) => c.verified === false)).toBe(true);
   });
 
   it("truncates source_text to 600 chars", async () => {

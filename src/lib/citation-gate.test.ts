@@ -103,6 +103,26 @@ describe("groundAnswerCitations", () => {
     expect(result.citations_unverified).toBe(1);
   });
 
+  it("counts every citation of a long brief — 25 are all checked", async () => {
+    vi.mocked(fs.readFile).mockResolvedValue("Normtext");
+    const text = Array.from({ length: 25 }, (_, i) => `§ ${i + 1} BGB`).join(", ");
+    const result = await groundAnswerCitations(text);
+    expect(result.citations_verified + result.citations_unverified).toBe(25);
+  });
+
+  it("citations beyond the check limit are reported as not checked, never dropped", async () => {
+    vi.mocked(fs.readFile).mockResolvedValue("Normtext");
+    const text = Array.from({ length: 70 }, (_, i) => `§ ${i + 1} BGB`).join(", ");
+    const result = await groundAnswerCitations(text);
+    expect(result.citations_verified + result.citations_unverified).toBe(70);
+    expect(result.has_unverified).toBe(true);
+    expect(result.warning).toMatch(/Prüflimit/);
+    const notChecked = result.grounded_citations.filter((c) =>
+      /Nicht geprüft/.test(c.unverifiable_reason ?? "")
+    );
+    expect(notChecked).toHaveLength(10);
+  });
+
   it("returns empty grounding for text without statutes", async () => {
     const text = "Keine Gesetzesreferenzen hier.";
     const result = await groundAnswerCitations(text);

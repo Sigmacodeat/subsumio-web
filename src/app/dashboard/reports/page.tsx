@@ -6,6 +6,8 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { EmptyState as DsEmptyState } from "@/components/dashboard/empty-state";
+import { LoadErrorNotice } from "@/components/dashboard/load-error-notice";
+import { useToast } from "@/components/ui/toast";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { renderMarkdown } from "@/lib/markdown";
@@ -562,6 +564,7 @@ export default function ReportsPage() {
   const [tab, setTab] = useState<"all" | "by_agent" | "recent" | "failed">("all");
   const agentsQuery = useAgents();
   const replayMutation = useReplayAgent();
+  const { addToast } = useToast();
   const [replayingId, setReplayingId] = useState<number | null>(null);
   const [viewJob, setViewJob] = useState<AgentJob | null>(null);
 
@@ -592,6 +595,15 @@ export default function ReportsPage() {
       await replayMutation.mutateAsync(id);
     } catch (err) {
       console.error("[reports] replay failed:", err instanceof Error ? err.message : err);
+      addToast({
+        type: "error",
+        title: "Wiederholen nicht möglich",
+        description:
+          err instanceof Error && err.message
+            ? err.message
+            : "Bitte versuchen Sie es in einigen Minuten erneut.",
+        duration: 5000,
+      });
     } finally {
       setReplayingId(null);
       void agentsQuery.refetch();
@@ -662,15 +674,11 @@ export default function ReportsPage() {
           <RowSkeleton count={4} />
         </div>
       ) : agentsQuery.isError && jobs.length === 0 ? (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-4 text-sm text-[color:var(--ds-danger-text)]"
-        >
-          <span>Berichte konnten nicht geladen werden.</span>
-          <Button size="sm" variant="outline" onClick={() => void agentsQuery.refetch()}>
-            Erneut versuchen
-          </Button>
-        </div>
+        <LoadErrorNotice
+          message="Berichte konnten nicht geladen werden."
+          onRetry={() => agentsQuery.refetch()}
+          retrying={agentsQuery.isFetching}
+        />
       ) : tab === "by_agent" ? (
         <ByAgentView jobs={jobs} t={t} />
       ) : filteredJobs.length === 0 ? (

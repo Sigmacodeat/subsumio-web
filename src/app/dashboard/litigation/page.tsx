@@ -7,6 +7,10 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { CaseSelect } from "@/components/legal/case-select";
+import { formatEur } from "@/lib/utils";
+import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -155,10 +159,23 @@ function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: stri
               {page.content}
             </pre>
           </div>
+          <div className="mt-2 flex flex-col gap-2">
+            <AIActConformityBanner purpose="Verfahrensstrategie" compact />
+            <GroundedOutputPanel text={page.content} />
+          </div>
         </div>
       )}
     </div>
   );
+}
+
+/**
+ * What the lawyer reads when an action fails: engine/HTTP texts are not
+ * shown raw (they were English/technical); the detail goes to the console.
+ */
+function litigationErrorText(err: unknown): string {
+  console.error("[litigation]", err instanceof Error ? err.message : err);
+  return "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut.";
 }
 
 export default function LitigationFlowPage() {
@@ -195,7 +212,7 @@ export default function LitigationFlowPage() {
       const data = await api.legal.litigation.list({ limit: 100 });
       setMatters(data as unknown as Matter[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setLoading(false);
     }
@@ -246,7 +263,7 @@ export default function LitigationFlowPage() {
       setNewInstance("1. Instanz");
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -261,7 +278,7 @@ export default function LitigationFlowPage() {
       setShowPhaseDialog(false);
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -283,7 +300,7 @@ export default function LitigationFlowPage() {
       await api.legal.litigation.update(selectedMatter.slug, { steps: updatedSteps });
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -301,7 +318,7 @@ export default function LitigationFlowPage() {
       showToast(t("litigation.success_saved" as DashboardKey));
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -318,7 +335,7 @@ export default function LitigationFlowPage() {
       setSelectedSlug(null);
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -652,8 +669,9 @@ export default function LitigationFlowPage() {
                     </Badge>
                     {selectedMatter.frontmatter.settlement.amount && (
                       <p className="mt-2 text-sm text-[color:var(--ds-text)]">
-                        {selectedMatter.frontmatter.settlement.amount.toLocaleString("de-AT")}{" "}
-                        {selectedMatter.frontmatter.settlement.currency ?? "EUR"}
+                        {(selectedMatter.frontmatter.settlement.currency ?? "EUR") === "EUR"
+                          ? formatEur(selectedMatter.frontmatter.settlement.amount)
+                          : `${selectedMatter.frontmatter.settlement.amount.toLocaleString("de-AT")} ${selectedMatter.frontmatter.settlement.currency}`}
                       </p>
                     )}
                   </div>
@@ -752,11 +770,8 @@ export default function LitigationFlowPage() {
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {t("litigation.case" as DashboardKey)} *
               </label>
-              <Input
-                value={newCaseSlug}
-                onChange={(e) => setNewCaseSlug(e.target.value)}
-                placeholder="case-slug"
-              />
+              {/* Pick an existing matter instead of typing its technical slug */}
+              <CaseSelect value={newCaseSlug} onChange={setNewCaseSlug} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">

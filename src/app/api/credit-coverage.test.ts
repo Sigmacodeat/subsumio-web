@@ -33,12 +33,13 @@ const NOT_BILLED: Record<string, string> = {
   "cron/agent-tasks": "runs tasks a firm queued itself (assigneeType=agent)",
   "legal/anonymize": "engine proxy; name detection on the utility tier",
   "legal/judgements-sync": "engine proxy without a model call",
-  "legal/translate": "engine proxy without a model call",
-  "legal/case-scanner": "engine proxy without a model call",
+  // Queues a scan job: DB queries + RIS watch, no model call. Supervisor runs
+  // it would start are capped per run by an owner budget in the engine
+  // (server/src/core/minions/handlers/legal-case-scanner.ts).
+  "legal/case-scanner": "queues a scan job; no model call of its own",
   "legal/conflict-check": "engine proxy without a model call",
   "legal/precedent-search": "engine proxy without a model call",
   "legal/portfolio-insights": "engine proxy without a model call",
-  "legal/obligation-extract": "engine proxy without a model call",
   "analytics/adoption": "engine proxy without a model call",
   // Background mail sync: the deadline extractor only runs for a mail that
   // announces a Frist without a parseable date (suggestions for review).

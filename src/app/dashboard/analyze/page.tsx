@@ -223,32 +223,34 @@ export default function AnalyzePage() {
           )}
 
           {/* Key Dates / Deadlines */}
-          {(result.key_dates?.length || result.deadlines?.length) && (
+          {((result.key_dates?.length ?? 0) > 0 || (result.deadlines?.length ?? 0) > 0) && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <CalendarClock size={14} /> {t("analyze.deadlines")}
               </h3>
               <div className="space-y-2">
-                {(result.deadlines ?? result.key_dates ?? []).map((d, i) => {
-                  const label = "what" in d ? d.what : d.label;
-                  const urgency = "urgency" in d ? d.urgency : undefined;
-                  return (
-                    <div key={i} className="flex items-center gap-3 text-sm">
-                      <span className="whitespace-nowrap text-[color:var(--ds-text)] tabular-nums">
-                        {formatDate(d.date)}
-                      </span>
-                      <span className="text-[color:var(--ds-text-muted)]">{label}</span>
-                      {urgency === "critical" && (
-                        <Badge
-                          variant="default"
-                          className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
-                        >
-                          {t("analyze.critical")}
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
+                {(result.deadlines?.length ? result.deadlines : (result.key_dates ?? [])).map(
+                  (d, i) => {
+                    const label = "what" in d ? d.what : d.label;
+                    const urgency = "urgency" in d ? d.urgency : undefined;
+                    return (
+                      <div key={i} className="flex items-center gap-3 text-sm">
+                        <span className="whitespace-nowrap text-[color:var(--ds-text)] tabular-nums">
+                          {formatDate(d.date)}
+                        </span>
+                        <span className="text-[color:var(--ds-text-muted)]">{label}</span>
+                        {urgency === "critical" && (
+                          <Badge
+                            variant="default"
+                            className="border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-xs text-[color:var(--ds-danger-text)]"
+                          >
+                            {t("analyze.critical")}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
               </div>
             </div>
           )}
