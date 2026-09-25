@@ -7,6 +7,11 @@
  * elsewhere (a parallel invoice got there first) or no longer exists, the
  * reservation is rolled back and nothing is created — 409, never a second
  * invoice over the same work.
+ *
+ * The sums are the server's to check: subtotal, expense total, VAT and total
+ * must follow from the positions (in cents, VAT per rate — see
+ * src/lib/invoice-totals.ts). An invoice whose sums do not add up is refused
+ * with 422; the per-rate VAT breakdown is stamped by the server.
  */
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
@@ -16,6 +21,11 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { GUARD_READ_FAILED, readCurrentPage, rejectionResponse } from "@/lib/page-write-guards";
 import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
+import {
+  checkStoredInvoiceTotals,
+  computeInvoiceTotals,
+  totalsInputFromFrontmatter,
+} from "@/lib/invoice-totals";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices");
@@ -64,6 +74,26 @@ export const POST = createHandler(
   async (ctx, body) => {
     const fm = body.frontmatter;
     const invoiceNumber = fm.invoice_number;
+
+    // Rechenrichtigkeit (§ 11 UStG 1994): the stored sums must follow from
+    // the positions. Refused, never silently corrected — the content hash
+    // covers the sums the client showed the lawyer.
+    const mismatched = checkStoredInvoiceTotals(fm);
+    if (mismatched.length > 0) {
+      return apiError(
+        "invoice_totals_mismatch",
+        `Die Rechnungssummen passen nicht zu den Positionen (${mismatched.join(", ")}). Es wurde keine Rechnung angelegt — bitte die Rechnung neu erstellen.`,
+        422
+      );
+    }
+    if (fm.reverse_charge === true && !String(fm.client_vat_id ?? "").trim()) {
+      return apiError(
+        "client_vat_id_required",
+        "Bei Übergang der Steuerschuld (Reverse Charge) ist die UID-Nummer des Mandanten Pflicht.",
+        422
+      );
+    }
+    const taxBreakdown = computeInvoiceTotals(totalsInputFromFrontmatter(fm)).tax_breakdown;
     const caseSlug = fm.case_slugs[0];
     const timeEntryIds = [...new Set(fm.time_entry_ids ?? [])];
     const expenseIds = [...new Set(fm.expense_entry_ids ?? [])];
@@ -101,7 +131,12 @@ export const POST = createHandler(
         slug: body.slug,
         title: body.title,
         content: body.content,
-        frontmatter: { ...fm, time_entry_ids: timeEntryIds, expense_entry_ids: expenseIds },
+        frontmatter: {
+          ...fm,
+          tax_breakdown: taxBreakdown,
+          time_entry_ids: timeEntryIds,
+          expense_entry_ids: expenseIds,
+        },
         caseSlug,
         invoiceNumber,
         timeEntryIds,

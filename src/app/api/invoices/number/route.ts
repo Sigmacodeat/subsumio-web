@@ -16,7 +16,7 @@ export const POST = createHandler(
     rateTier: "standard",
   },
   async (ctx) => {
-    // Vienna calendar year: a number reserved at 00:30 on 1 January belongs to the new year.
+    // The firm's calendar year (Vienna) — never the server's UTC year.
     const year = firmYear();
     let existing: string[] = [];
     try {

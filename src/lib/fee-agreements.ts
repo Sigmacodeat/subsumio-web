@@ -56,14 +56,49 @@ export function createFeeAgreement(input: {
   };
 }
 
+export interface BudgetEntryLike {
+  minutes?: number;
+  rate?: number;
+  billable?: boolean;
+  billed?: boolean;
+}
+
+/**
+ * Budget inputs of a matter from its time entries — ONE rule for the budget
+ * widget and the fee-agreement page. Every billable entry counts exactly
+ * once: billed ones as `billedAmount`, open ones as `minutes`/`trackedValue`
+ * (each at its own rate, else the agreement's).
+ */
+export function budgetInputsFromEntries(
+  entries: BudgetEntryLike[],
+  defaultRate?: number
+): { minutes: number; trackedValue: number; billedAmount: number } {
+  let minutes = 0;
+  let trackedCents = 0;
+  let billedCents = 0;
+  for (const e of entries) {
+    if (e.billable === false) continue;
+    const m = Number(e.minutes) || 0;
+    const cents = Math.round((m / 60) * (Number(e.rate) || defaultRate || 0) * 100);
+    if (e.billed === true) {
+      billedCents += cents;
+    } else {
+      minutes += m;
+      trackedCents += cents;
+    }
+  }
+  return { minutes, trackedValue: trackedCents / 100, billedAmount: billedCents / 100 };
+}
+
 export function computeBudgetStatus(
   agreement: FeeAgreement,
-  tracked: { minutes: number; hourlyRate?: number; billedAmount: number }
+  tracked: { minutes: number; hourlyRate?: number; billedAmount: number; trackedValue?: number }
 ): BudgetStatus {
   const trackedValue =
-    tracked.minutes > 0
+    tracked.trackedValue ??
+    (tracked.minutes > 0
       ? (tracked.hourlyRate ?? agreement.hourly_rate ?? 0) * (tracked.minutes / 60)
-      : 0;
+      : 0);
 
   const totalValue =
     agreement.model === "flat" ? (agreement.flat_amount ?? 0) : trackedValue + tracked.billedAmount;

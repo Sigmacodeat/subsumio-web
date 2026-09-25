@@ -133,22 +133,22 @@ describe("getProviderLabel", () => {
 
 describe("formatCost", () => {
   test("formats costs < 0.01 with 3 decimals", () => {
-    expect(formatCost(0.001)).toBe("$0.001");
+    expect(formatCost(0.001, "en")).toBe("$0.001");
   });
 
   test("formats costs < 1 with 2 decimals", () => {
-    expect(formatCost(0.15)).toBe("$0.15");
-    expect(formatCost(0.5)).toBe("$0.50");
+    expect(formatCost(0.15, "en")).toBe("$0.15");
+    expect(formatCost(0.5, "en")).toBe("$0.50");
   });
 
   test("formats costs >= 1 with 1 decimal", () => {
-    expect(formatCost(3.0)).toBe("$3.0");
-    expect(formatCost(15.0)).toBe("$15.0");
-    expect(formatCost(75.0)).toBe("$75.0");
+    expect(formatCost(3.0, "en")).toBe("$3.0");
+    expect(formatCost(15.0, "en")).toBe("$15.0");
+    expect(formatCost(75.0, "en")).toBe("$75.0");
   });
 
   test("formats zero cost", () => {
-    expect(formatCost(0)).toBe("$0.000");
+    expect(formatCost(0, "en")).toBe("$0.000");
   });
 });
 
@@ -235,5 +235,12 @@ describe("modelsForPolicy", () => {
     const filtered = modelsForPolicy("eu_only");
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every((m) => m.dataResidency === "eu")).toBe(true);
+  });
+});
+
+describe("formatCost (de-AT)", () => {
+  it("uses the Austrian number format", () => {
+    expect(formatCost(0.12)).toBe("0,12 US$");
+    expect(formatCost(12.5)).toBe("12,5 US$");
   });
 });

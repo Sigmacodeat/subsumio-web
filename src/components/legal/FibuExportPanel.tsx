@@ -17,7 +17,9 @@ import { useToast } from "@/components/ui/toast";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { generateRzlExport } from "@/lib/fibu-export/rzl";
 import { generateBmdExport } from "@/lib/fibu-export/bmd";
-import { FibuExportInputError, type FibuBookingInput } from "@/lib/fibu-export/types";
+import { FibuExportInputError } from "@/lib/fibu-export/types";
+import { bookingInputsForPeriod } from "@/lib/fibu-export/from-invoices";
+import { firmToday } from "@/lib/datetime";
 
 /**
  * Buchhaltungsexport für BMD und RZL. Vorher gab es im aktiven (AT-only)
@@ -29,33 +31,6 @@ import { FibuExportInputError, type FibuBookingInput } from "@/lib/fibu-export/t
  */
 
 type Format = "rzl" | "bmd";
-
-interface InvoiceRow {
-  number: string;
-  date: string;
-  client: string;
-  status: string;
-  net: number;
-  vatRate: number;
-  tax: number;
-  total: number;
-  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
-}
-
-const BOOKABLE_STATUS = new Set(["sent", "paid", "overdue"]);
-
-function toBookingInput(inv: InvoiceRow): FibuBookingInput {
-  return {
-    invoiceNumber: inv.number,
-    date: inv.date,
-    clientName: inv.client,
-    net: inv.net,
-    vat: inv.tax,
-    vatRatePercent: Math.round(inv.vatRate * 100),
-    gross: inv.total,
-    invoiceType: inv.invoiceType === "gutschrift" ? "gutschrift" : "standard",
-  };
-}
 
 function download(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -71,7 +46,8 @@ export function FibuExportPanel() {
   const { addToast } = useToast();
   const [settings, setSettings] = useState<KanzleiSettings | null>(null);
   const [format, setFormat] = useState<Format>("rzl");
-  const today = new Date().toISOString().slice(0, 10);
+  // The firm's calendar day (Vienna), not the UTC date.
+  const today = firmToday();
   const monthStart = today.slice(0, 8) + "01";
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
@@ -96,27 +72,15 @@ export function FibuExportPanel() {
     }
     setBusy(true);
     try {
-      const { results, errors } = await api.brain.batchListPagesDetailed(["invoice"], 2000);
+      const { results, errors } = await api.brain.batchListPagesDetailed(["invoice"], 50_000);
       if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
       const invoicePages = results.invoice ?? [];
-      const rows: InvoiceRow[] = invoicePages
-        .map((p) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            number: String(fm.invoice_number ?? p.slug),
-            date: String(fm.date ?? p.created_at ?? ""),
-            client: String(fm.client ?? ""),
-            status: String(fm.status ?? "draft"),
-            net: Number(fm.subtotal ?? 0) + Number(fm.expense_total ?? 0),
-            vatRate: Number(fm.vat_rate ?? 0.2),
-            tax: Number(fm.tax ?? 0),
-            total: Number(fm.total ?? 0),
-            invoiceType: fm.invoice_type as InvoiceRow["invoiceType"],
-          };
-        })
-        .filter((r) => BOOKABLE_STATUS.has(r.status) && r.date >= from && r.date <= to && r.number);
+      // One booking per VAT rate; Storno-Noten as negative bookings; the
+      // booked amount is net + VAT of the service (an advance payment does
+      // not reduce revenue or VAT).
+      const entries = bookingInputsForPeriod(invoicePages, from, to);
 
-      if (rows.length === 0) {
+      if (entries.length === 0) {
         setError("Keine versendeten Rechnungen im gewählten Zeitraum gefunden.");
         return;
       }
@@ -125,7 +89,7 @@ export function FibuExportPanel() {
         debitorKonto: Number(debitorKonto),
         erloesKonto: Number(erloesKonto),
       };
-      const entries = rows.map(toBookingInput);
+      const rows = new Set(entries.map((e) => e.invoiceNumber));
 
       if (format === "rzl") {
         const csv = generateRzlExport(entries, config);
@@ -138,7 +102,7 @@ export function FibuExportPanel() {
         const csv = generateBmdExport(entries, config, steuercodeForRate);
         download(csv, `bmd-export_${from}_${to}.csv`, "text/csv;charset=utf-8");
       }
-      addToast({ type: "success", title: `${rows.length} Rechnung(en) exportiert` });
+      addToast({ type: "success", title: `${rows.size} Rechnung(en) exportiert` });
     } catch (err) {
       setError(err instanceof FibuExportInputError ? err.message : "Export fehlgeschlagen.");
     } finally {

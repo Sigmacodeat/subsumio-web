@@ -19,7 +19,7 @@ import {
   type ConflictParty,
   type MatterConflictOutcome,
 } from "@/lib/conflict-gate";
-import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
+import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
 import {
@@ -138,6 +138,14 @@ export const PATCH = createHandler(
           : undefined,
     });
     if (invoiceRejection) return rejectionResponse(invoiceRejection);
+    const invoiceRouteRejection = checkInvoiceGenericWrite(currentPage, {
+      type: body.type,
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (invoiceRouteRejection) return rejectionResponse(invoiceRouteRejection);
 
     // Billed time entries / expenses are part of an invoice's basis — the
     // billing state moves only through the dedicated billing routes.

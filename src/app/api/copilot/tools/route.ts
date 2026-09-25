@@ -19,6 +19,8 @@ import { requestConflictCheck } from "@/lib/conflict-gate";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
+import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
+import { addDaysToDateString, addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
 import { planVaultOrganization } from "@/lib/vault-organization";
@@ -57,8 +59,6 @@ import {
 } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
-import { addDaysToDateString, firmToday, firmYear } from "@/lib/datetime";
-import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
 const log = logger("api/copilot/tools");
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
@@ -2616,8 +2616,11 @@ async function executeInvoiceDraft(
     }
 
     const vatRate = vatRateFor(kanzlei);
-    // Shared cent-exact computation (same as the invoice dialog).
-    const { subtotal, tax, total } = computeInvoiceTotals({ items, vatRate });
+    // Same calculation (cents, VAT per rate) the invoice route checks.
+    const totals = computeInvoiceTotals({ items, vatRate });
+    const subtotal = totals.subtotal;
+    const tax = totals.tax;
+    const total = totals.total;
     const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
 
     let existing: string[] = [];
@@ -2642,7 +2645,7 @@ async function executeInvoiceDraft(
       clientSlug: fm.client_slug,
       caseNumber: fm.case_number ?? page.slug,
       date: firmToday(now),
-      dueDate: addDaysToDateString(firmToday(now), paymentDays),
+      dueDate: addDaysToIsoDate(firmToday(now), paymentDays),
       items,
       status: "draft" as const,
       subtotal,

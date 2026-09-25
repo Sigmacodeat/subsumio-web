@@ -23,21 +23,41 @@ export function verifyStripeSignature(
 ): boolean {
   if (!header || !secret) return false;
 
-  const parts = Object.fromEntries(
-    header
-      .split(",")
-      .map((kv) => kv.split("=", 2))
-      .filter((pair): pair is [string, string] => pair.length === 2)
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) return false;
+  // A header may carry several v1 signatures (during a signing-secret
+  // rotation Stripe signs with the old and the new secret) — any match counts.
+  const pairs = header
+    .split(",")
+    .map((kv) => {
+      const i = kv.indexOf("=");
+      return i > 0 ? [kv.slice(0, i).trim(), kv.slice(i + 1).trim()] : null;
+    })
+    .filter((pair): pair is [string, string] => pair !== null);
+  const timestamp = pairs.find(([k]) => k === "t")?.[1];
+  const signatures = pairs.filter(([k]) => k === "v1").map(([, v]) => v);
+  if (!timestamp || signatures.length === 0) return false;
 
   const age = Math.abs(nowMs / 1000 - Number(timestamp));
   if (!Number.isFinite(age) || age > STRIPE_SIGNATURE_TOLERANCE_SECONDS) return false;
 
-  const expected = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
-  const a = Buffer.from(expected);
-  const b = Buffer.from(signature);
-  return a.length === b.length && timingSafeEqual(a, b);
+  const expected = Buffer.from(
+    createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex")
+  );
+  return signatures.some((sig) => {
+    const b = Buffer.from(sig);
+    return expected.length === b.length && timingSafeEqual(expected, b);
+  });
+}
+
+/**
+ * Whether a checkout session's money has arrived: `completed` with
+ * payment_status "paid" (or nothing to pay), or the later
+ * `async_payment_succeeded` of a delayed payment method.
+ */
+export function checkoutIsPaid(
+  eventType: string | undefined,
+  session: { payment_status?: string }
+): boolean {
+  if (eventType === "checkout.session.async_payment_succeeded") return true;
+  if (eventType !== "checkout.session.completed") return false;
+  return session.payment_status === "paid" || session.payment_status === "no_payment_required";
 }

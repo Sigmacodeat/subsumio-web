@@ -66,14 +66,15 @@ export const GET = createHandler(
     query: listQuerySchema,
   },
   async (ctx, _body, query) => {
-    // Every entry, not only the first engine batch of 100.
-    let data: unknown[];
+    // Every agreement (paged past the engine cap); the fields live in the
+    // page frontmatter.
+    let items: FeeAgreement[];
     try {
-      data = await listEnginePages(ctx.headers, "fee_agreement", 10_000, { strict: true });
+      const pages = await listEnginePages(ctx.headers, "fee_agreement", 10_000, { strict: true });
+      items = pages.map((p) => p.frontmatter as unknown as FeeAgreement);
     } catch {
       return apiError("engine_error", "Engine request failed", 502);
     }
-    let items: FeeAgreement[] = data as FeeAgreement[];
     if (query?.case_slug) {
       items = items.filter((a) => a.case_slug === query.case_slug);
     }

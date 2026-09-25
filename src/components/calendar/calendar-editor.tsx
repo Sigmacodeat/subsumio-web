@@ -570,7 +570,9 @@ export function useAppointments() {
 
   const reload = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPagesDetailed(["appointment", "legal_case"], 200);
+      // Every appointment and matter (read in batches of 100) — a cut-off would
+      // hide appointments without a word.
+      const batch = await api.brain.batchListPagesDetailed(["appointment", "legal_case"], 10_000);
       if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       setAppointments(
         (batch.results["appointment"] ?? [])

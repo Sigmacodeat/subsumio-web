@@ -11,6 +11,7 @@ import {
 } from "@/lib/page-write-guards";
 import { closeOpenItemForInvoice, createOpenItemForInvoice } from "@/lib/open-items";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
+import { invoiceIssueProblem, isIssuingTransition } from "@/lib/invoice-issue";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/[slug]");
@@ -92,6 +93,28 @@ export const PATCH = createHandler(
     });
     if (rejection) return rejectionResponse(rejection);
 
+    // Issuing (draft → sent/paid/overdue) freezes the invoice: it must be
+    // complete and its sums must add up before that happens.
+    const prevStatus = String(currentRead.page.frontmatter?.status ?? "draft");
+    const nextStatus = (body as Record<string, unknown>).status;
+    const issuing = isIssuingTransition(prevStatus, nextStatus);
+    // A draft is deleted (its billed work is released), never "cancelled" —
+    // a cancelled draft would be frozen with its work still reserved.
+    if (issuing && nextStatus === "cancelled") {
+      return apiError(
+        "draft_cancel_use_delete",
+        "Ein Entwurf wird gelöscht, nicht storniert — die abgerechneten Leistungen werden dabei wieder freigegeben.",
+        409
+      );
+    }
+    if (issuing) {
+      const problem = invoiceIssueProblem({
+        ...((currentRead.page.frontmatter ?? {}) as Record<string, unknown>),
+        ...(body as Record<string, unknown>),
+      });
+      if (problem) return rejectionResponse(problem);
+    }
+
     try {
       const frontmatter = body as Record<string, unknown>;
       const res = await enginePatchPage(ctx.headers, { slug, frontmatter }, { timeoutMs: 15_000 });
@@ -110,16 +133,15 @@ export const PATCH = createHandler(
       // OPOS-Lebenszyklus an Statusübergänge koppeln: "sent" legt den offenen
       // Posten an (idempotent), "paid" schließt ihn. Best-effort — der Patch
       // ist schon geschrieben; ein OP-Fehler wird geloggt, nicht verschluckt.
-      const nextStatus = (body as Record<string, unknown>).status;
-      const prevStatus = String(currentRead.page.frontmatter?.status ?? "");
       try {
-        if (nextStatus === "sent" && prevStatus === "draft") {
+        if (issuing && nextStatus !== "cancelled") {
           await createOpenItemForInvoice(
             ctx.headers,
             slug,
             (currentRead.page.frontmatter ?? {}) as Record<string, unknown>
           );
-        } else if (nextStatus === "paid" && prevStatus !== "paid") {
+        }
+        if (nextStatus === "paid" && prevStatus !== "paid") {
           await closeOpenItemForInvoice(ctx.headers, slug, "paid");
         }
       } catch (err) {

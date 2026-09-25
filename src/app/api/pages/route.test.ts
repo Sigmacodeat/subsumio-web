@@ -268,17 +268,25 @@ describe("POST /api/pages — server-side write guards", () => {
 
   it("still creates a new page when the slug does not exist yet", async () => {
     readStatus = 404;
-    const res = await post({ slug: "legal/invoices/r-2", title: "Rechnung", type: "invoice" });
+    const res = await post({ slug: "legal/cases/r-2", title: "Akte", type: "legal_case" });
     expect(res.status).toBe(200);
     expect(writes()).toHaveLength(1);
   });
 
+  it("an invoice is never created over the generic route — only via /api/invoices", async () => {
+    readStatus = 404;
+    const res = await post({ slug: "legal/invoices/r-2", title: "Rechnung", type: "invoice" });
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_create_via_route");
+    expect(writes()).toHaveLength(0);
+  });
+
   describe("a create never silently replaces a matter or invoice", () => {
-    it("a new matter/invoice is written create-only (if_absent)", async () => {
+    it("a new matter is written create-only (if_absent)", async () => {
       readStatus = 404;
-      const res = await post({ slug: "legal/invoices/r-3", title: "Rechnung", type: "invoice" });
+      const res = await post({ slug: "legal/cases/r-3", title: "Akte", type: "legal_case" });
       expect(res.status).toBe(200);
-      expect(writes()[0].body).toMatchObject({ slug: "legal/invoices/r-3", if_absent: true });
+      expect(writes()[0].body).toMatchObject({ slug: "legal/cases/r-3", if_absent: true });
     });
 
     it("a create over a stored draft invoice → 409 page_exists, nothing written", async () => {
@@ -345,7 +353,7 @@ describe("POST /api/pages — server-side write guards", () => {
           return Response.json({ error: "page_exists", message: "x" }, { status: 409 });
         })
       );
-      const res = await post({ slug: "legal/invoices/r-7", title: "Rechnung", type: "invoice" });
+      const res = await post({ slug: "legal/cases/r-7", title: "Akte", type: "legal_case" });
       expect(res.status).toBe(409);
       expect((await res.json()).error).toBe("page_exists");
     });

@@ -15,7 +15,8 @@
 
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
-import type { OpenItem } from "@/lib/fibu";
+import { DUNNING_FEES, type OpenItem } from "@/lib/fibu";
+import { fromCents, toCents } from "@/lib/invoice-totals";
 
 interface InvoiceFrontmatterLike {
   invoice_number?: unknown;
@@ -93,9 +94,98 @@ export async function createOpenItemForInvoice(
 }
 
 /**
- * Mahngebühr auf den OP aufschlagen (Mahnung über /api/invoices/remind).
- * Erhöht dunning_fee und open_amount um `feeDelta`, damit Bank-Matching
- * gegen den gemahnten Gesamtbetrag weiterhin exakt trifft.
+ * Merge-write only the changed fields of an OP. A full replace would put
+ * back a stale snapshot over a concurrent write (e.g. a payment booked
+ * meanwhile).
+ */
+async function patchOpenItem(
+  headers: Record<string, string>,
+  item: OpenItem,
+  patch: Partial<OpenItem>
+): Promise<void> {
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      slug: `legal/open-items/${item.id}`,
+      frontmatter: { ...patch, updated_at: new Date().toISOString() },
+      merge: true,
+    }),
+    signal: AbortSignal.timeout(WRITE_TIMEOUT),
+  });
+  if (!res.ok) throw new Error(`open_item update failed: HTTP ${res.status}`);
+}
+
+/** The OP of an invoice, or undefined. */
+export async function findOpenItemForInvoice(
+  headers: Record<string, string>,
+  invoiceSlug: string
+): Promise<OpenItem | undefined> {
+  return findByInvoice(await listOpenItems(headers), invoiceSlug);
+}
+
+export interface DunningStepPlan {
+  /** Mahnstufe nach dieser Mahnung (1–3; ab der 4. Mahnung bleibt 3). */
+  level: 1 | 2 | 3;
+  /** Neu hinzukommende Mahnspesen (nie negativ). */
+  feeAdded: number;
+  /** Mahnspesen gesamt nach dieser Mahnung. */
+  feeTotal: number;
+  /** Offener Betrag nach dieser Mahnung (Rechnung − Zahlungen + Spesen gesamt). */
+  openAmount: number;
+}
+
+/**
+ * Die nächste Mahnstufe einer Rechnung — EINE Quelle für manuelle Mahnung
+ * und Mahnlauf: Stufe = max(Stufe des OP, bisherige Mahnungen) + 1,
+ * Spesen = kumulierter Tabellenwert der Stufe minus bereits berechnete
+ * Spesen (nie negativ).
+ */
+export function planDunningStep(
+  item: Pick<OpenItem, "dunning_level" | "dunning_fee" | "open_amount"> | undefined,
+  reminderCount: number,
+  invoiceTotal: number
+): DunningStepPlan {
+  const prevLevel = Math.max(Number(item?.dunning_level ?? 0) || 0, reminderCount || 0);
+  const level = Math.min(3, prevLevel + 1) as 1 | 2 | 3;
+  const feeSoFar = toCents(item?.dunning_fee ?? 0);
+  const addCents = Math.max(0, toCents(DUNNING_FEES[level]) - feeSoFar);
+  const openBefore = item ? toCents(item.open_amount) : toCents(invoiceTotal);
+  return {
+    level,
+    feeAdded: fromCents(addCents),
+    feeTotal: fromCents(feeSoFar + addCents),
+    openAmount: fromCents(openBefore + addCents),
+  };
+}
+
+/**
+ * Mahnung auf den OP buchen (über /api/invoices/remind): Stufe setzen,
+ * Spesen und offenen Betrag um `plan.feeAdded` erhöhen. Bank-Matching gegen
+ * den gemahnten Gesamtbetrag trifft danach weiterhin exakt.
+ */
+export async function applyDunningStep(
+  headers: Record<string, string>,
+  invoiceSlug: string,
+  plan: DunningStepPlan
+): Promise<boolean> {
+  const items = await listOpenItems(headers);
+  const item = findByInvoice(items, invoiceSlug);
+  if (!item || item.status === "paid" || item.status === "written_off") return false;
+  const add = toCents(plan.feeAdded);
+  await patchOpenItem(headers, item, {
+    dunning_level: Math.max(item.dunning_level ?? 0, plan.level) as OpenItem["dunning_level"],
+    dunning_fee: fromCents(toCents(item.dunning_fee) + Math.max(0, add)),
+    open_amount: fromCents(toCents(item.open_amount) + Math.max(0, add)),
+    dunning_date: new Date().toISOString(),
+    status: plan.level >= 3 ? "overdue" : "reminded",
+  });
+  return true;
+}
+
+/**
+ * Mahngebühr auf den OP aufschlagen (ohne Stufenwechsel). Erhöht dunning_fee
+ * und open_amount um `feeDelta`.
  */
 export async function applyOpenItemFee(
   headers: Record<string, string>,
@@ -105,15 +195,13 @@ export async function applyOpenItemFee(
   const items = await listOpenItems(headers);
   const item = findByInvoice(items, invoiceSlug);
   if (!item || item.status === "paid" || item.status === "written_off") return false;
-  const fee = Math.round(feeDelta * 100) / 100;
+  const fee = toCents(feeDelta);
   if (!Number.isFinite(fee) || fee <= 0) return false;
 
-  await persistOpenItem(headers, {
-    ...item,
-    dunning_fee: Math.round((item.dunning_fee + fee) * 100) / 100,
-    open_amount: Math.round((item.open_amount + fee) * 100) / 100,
+  await patchOpenItem(headers, item, {
+    dunning_fee: fromCents(toCents(item.dunning_fee) + fee),
+    open_amount: fromCents(toCents(item.open_amount) + fee),
     status: item.status === "open" ? "reminded" : item.status,
-    updated_at: new Date().toISOString(),
   });
   return true;
 }
@@ -133,14 +221,54 @@ export async function closeOpenItemForInvoice(
   const item = findByInvoice(items, invoiceSlug);
   if (!item || item.status === "paid" || item.status === "written_off") return false;
 
-  const updated: OpenItem = {
-    ...item,
+  await patchOpenItem(headers, item, {
     status: outcome,
     open_amount: outcome === "paid" ? 0 : item.open_amount,
-    paid_amount: outcome === "paid" ? item.amount + item.dunning_fee : item.paid_amount,
-    updated_at: new Date().toISOString(),
+    paid_amount:
+      outcome === "paid"
+        ? fromCents(toCents(item.amount) + toCents(item.dunning_fee))
+        : item.paid_amount,
     ...(note ? { notes: note } : {}),
-  };
-  await persistOpenItem(headers, updated);
+  });
+  return true;
+}
+
+/**
+ * Eine per Zahlungseingang ausgeglichene OP stellt ihre Rechnung auf
+ * „bezahlt“ — sonst bliebe die Rechnung offen und könnte gemahnt werden.
+ * Nur Prozessfelder (vom Rechnungsschutz erlaubt); nur aus sent/overdue.
+ * Gibt true zurück, wenn die Rechnung umgestellt wurde.
+ */
+export async function markInvoicePaidFromOpenItem(
+  headers: Record<string, string>,
+  item: Pick<OpenItem, "invoice_id" | "paid_amount">,
+  paidAt: string
+): Promise<boolean> {
+  const path = item.invoice_id.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+    headers,
+    signal: AbortSignal.timeout(WRITE_TIMEOUT),
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`invoice read failed: HTTP ${res.status}`);
+  const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+  const status = String(page.frontmatter?.status ?? "");
+  if (status !== "sent" && status !== "overdue") return false;
+  const write = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      slug: item.invoice_id,
+      frontmatter: {
+        status: "paid",
+        paid_at: paidAt,
+        paid_amount: item.paid_amount,
+        payment_method: "bank_transfer",
+      },
+      merge: true,
+    }),
+    signal: AbortSignal.timeout(WRITE_TIMEOUT),
+  });
+  if (!write.ok) throw new Error(`invoice update failed: HTTP ${write.status}`);
   return true;
 }

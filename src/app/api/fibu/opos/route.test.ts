@@ -78,11 +78,21 @@ function engineDouble(opts: { failWritesTo?: string } = {}) {
         ? Response.json({ slug, frontmatter: stored.get(slug) })
         : Response.json({ error: "not_found" }, { status: 404 });
     }
-    const body = JSON.parse(String(init?.body)) as { slug: string; frontmatter: unknown };
+    const body = JSON.parse(String(init?.body)) as {
+      slug: string;
+      frontmatter: Record<string, unknown>;
+      if_absent?: boolean;
+      merge?: boolean;
+    };
     if (opts.failWritesTo && body.slug.startsWith(opts.failWritesTo)) {
       return Response.json({ error: "db down" }, { status: 500 });
     }
-    stored.set(body.slug, body.frontmatter);
+    // Same semantics as the engine: create-only answers 409 when the page exists.
+    if (body.if_absent && stored.has(body.slug)) {
+      return Response.json({ error: "page_exists" }, { status: 409 });
+    }
+    const prev = (stored.get(body.slug) ?? {}) as Record<string, unknown>;
+    stored.set(body.slug, body.merge ? { ...prev, ...body.frontmatter } : body.frontmatter);
     return Response.json({ slug: body.slug });
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -96,20 +106,27 @@ describe("POST /api/fibu/opos (bank import)", () => {
     mockListOpenItems.mockResolvedValue([{ ...openItem }]);
   });
 
-  test("a refused open-item update fails the import instead of reporting a match", async () => {
+  test("a refused open-item update is reported as an error and never as a match", async () => {
     const { stored } = engineDouble({ failWritesTo: "legal/open-items/" });
     const res = await POST(importRequest([payment]) as never);
-    expect(res.status).toBe(502);
-    const json = (await res.json()) as { error: string; code: string };
-    expect(json.code).toBe("engine_write_failed");
-    // The transaction is not stored either, so a retry picks it up again.
-    expect([...stored.keys()].some((k) => k.startsWith("legal/bank-transactions/"))).toBe(false);
+    const json = (await res.json()) as { data: { matched: number; errors: number } };
+    expect(json.data.matched).toBe(0);
+    expect(json.data.errors).toBeGreaterThan(0);
+    // The booking stays recorded but unmatched — nothing was credited, it can
+    // be assigned by hand; the open item is untouched.
+    const txn = [...stored.entries()].find(([k]) => k.startsWith("legal/bank-transactions/"));
+    expect(txn).toBeDefined();
+    expect((txn![1] as Record<string, unknown>).matched_invoice_id).toBeUndefined();
+    expect(stored.has(`legal/open-items/${openItem.id}`)).toBe(false);
   });
 
-  test("a refused transaction write fails the import", async () => {
-    engineDouble({ failWritesTo: "legal/bank-transactions/" });
+  test("a refused transaction write is reported as an error and books nothing", async () => {
+    const { stored } = engineDouble({ failWritesTo: "legal/bank-transactions/" });
     const res = await POST(importRequest([payment]) as never);
-    expect(res.status).toBe(502);
+    const json = (await res.json()) as { data: { imported: number; errors: number } };
+    expect(json.data).toMatchObject({ imported: 0 });
+    expect(json.data.errors).toBeGreaterThan(0);
+    expect(stored.has(`legal/open-items/${openItem.id}`)).toBe(false);
   });
 
   test("importing the same statement twice books each payment once", async () => {
@@ -125,9 +142,9 @@ describe("POST /api/fibu/opos (bank import)", () => {
     ]);
     const second = await POST(importRequest([payment]) as never);
     const secondJson = (await second.json()) as {
-      data: { imported: number; skipped: number; matched: number };
+      data: { imported: number; duplicates: number; matched: number };
     };
-    expect(secondJson.data).toMatchObject({ imported: 0, skipped: 1, matched: 0 });
+    expect(secondJson.data).toMatchObject({ imported: 0, duplicates: 1, matched: 0 });
   });
 
   test("two identical payments in one statement are both booked", async () => {

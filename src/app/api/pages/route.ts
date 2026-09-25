@@ -29,7 +29,7 @@ import { can } from "@/lib/permissions";
 import { applyDeadlineWritePolicy, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
 import { logDeadlineEvents } from "@/lib/deadline-audit";
 
-import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
+import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
 
@@ -297,6 +297,11 @@ export const POST = createHandler(
         frontmatter: body.frontmatter,
       });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+      const invoiceRouteRejection = checkInvoiceGenericWrite(current, {
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if (invoiceRouteRejection) return rejectionResponse(invoiceRouteRejection);
 
       // Records with their own route (Kanzlei-Einstellungen, KYC, Anderkonten,
       // Freigaben, Kollisions-/Legal-Hold-Felder, Archiv) are not written here.

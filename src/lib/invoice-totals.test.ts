@@ -1,64 +1,134 @@
-// @vitest-environment node
-import { describe, expect, test } from "vitest";
-import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "./invoice-totals";
+import { describe, expect, it } from "vitest";
+import {
+  parseHourlyRate,
+  checkStoredInvoiceTotals,
+  computeInvoiceTotals,
+  rateFraction,
+  toCents,
+} from "./invoice-totals";
 
-describe("computeInvoiceTotals (audit QA-10)", () => {
-  test("3 × 0,1 h à 190 € with 20 % VAT: lines, subtotal, VAT and total agree", () => {
-    const items = [1, 2, 3].map(() => ({ amount: lineAmount(0.1, 190) }));
-    expect(items[0].amount).toBe(19);
-    const t = computeInvoiceTotals({ items, vatRate: 0.2 });
-    expect(t.subtotal).toBe(57);
-    expect(t.tax).toBe(11.4);
-    expect(t.total).toBe(68.4);
-  });
-
-  test("float-prone amounts sum exactly (0,10 + 0,20 = 0,30)", () => {
-    const t = computeInvoiceTotals({ items: [{ amount: 0.1 }, { amount: 0.2 }], vatRate: 0 });
-    expect(t.subtotal).toBe(0.3);
-  });
-
-  test("disbursements are VAT-able; the advance is deducted after VAT, never below zero", () => {
+describe("computeInvoiceTotals (cents, VAT per rate)", () => {
+  it("sums in cents — no float artefacts", () => {
     const t = computeInvoiceTotals({
-      items: [{ amount: 600 }],
-      expenses: [{ amount: 50 }],
+      items: [{ amount: 0.1 }, { amount: 0.2 }],
       vatRate: 0.2,
-      advance: 100,
     });
-    expect(t).toEqual({
-      subtotal: 600,
-      expenseTotal: 50,
-      taxableBase: 650,
-      tax: 130,
-      advance: 100,
-      total: 680,
-    });
-    expect(computeInvoiceTotals({ items: [{ amount: 10 }], vatRate: 0.2, advance: 50 }).total).toBe(
-      0
-    );
+    expect(t.subtotal).toBe(0.3);
+    expect(t.tax).toBe(0.06);
+    expect(t.total).toBe(0.36);
   });
 
-  test("VAT is rounded once on the cent base (half-up)", () => {
-    // 10,05 € × 20 % = 2,01 €
-    expect(computeInvoiceTotals({ items: [{ amount: 10.05 }], vatRate: 0.2 }).tax).toBe(2.01);
+  it("fee 1000 + court fee 100 at 0 % → VAT 200, total 1300", () => {
+    const t = computeInvoiceTotals({
+      items: [{ amount: 1000 }],
+      expenses: [{ amount: 100, vat_rate: 0 }],
+      vatRate: 0.2,
+    });
+    expect(t).toMatchObject({
+      subtotal: 1000,
+      expense_total: 100,
+      tax: 200,
+      gross: 1300,
+      total: 1300,
+    });
+    expect(t.tax_breakdown).toEqual([
+      { rate: 0.2, net: 1000, tax: 200 },
+      { rate: 0, net: 100, tax: 0 },
+    ]);
   });
 
-  test("dialog and Copilot share the function: same input, same totals", () => {
-    const input = { items: [{ amount: 123.45 }, { amount: 67.89 }], vatRate: 0.2 };
-    expect(computeInvoiceTotals(input)).toEqual(computeInvoiceTotals({ ...input, expenses: [] }));
+  it("an expense without its own rate takes the invoice rate; percent is read as percent", () => {
+    const t = computeInvoiceTotals({
+      items: [],
+      expenses: [{ amount: 50 }, { amount: 50, vat_rate: 20 }],
+      vatRate: 0.2,
+    });
+    expect(t.tax).toBe(20);
+    expect(t.tax_breakdown).toEqual([{ rate: 0.2, net: 100, tax: 20 }]);
+  });
+
+  it("reverse charge: no VAT at all", () => {
+    const t = computeInvoiceTotals({
+      items: [{ amount: 1000 }],
+      expenses: [{ amount: 100, vat_rate: 20 }],
+      vatRate: 0.2,
+      reverseCharge: true,
+    });
+    expect(t.tax).toBe(0);
+    expect(t.total).toBe(1100);
+  });
+
+  it("advance payment: total is the payable rest, gross stays net + VAT", () => {
+    const t = computeInvoiceTotals({
+      items: [{ amount: 1000 }],
+      vatRate: 0.2,
+      advancePayment: 600,
+    });
+    expect(t.gross).toBe(1200);
+    expect(t.total).toBe(600);
+  });
+
+  it("negative (Storno) amounts keep their sign", () => {
+    const t = computeInvoiceTotals({ items: [{ amount: -1000 }], vatRate: 0.2 });
+    expect(t.tax).toBe(-200);
+    expect(t.total).toBe(-1200);
+  });
+
+  it("helpers", () => {
+    expect(toCents(1.005)).toBe(101);
+    expect(toCents(0.30000000000000004)).toBe(30);
+    expect(rateFraction(20, 0)).toBe(0.2);
+    expect(rateFraction(0.13, 0)).toBe(0.13);
+    expect(rateFraction(undefined, 0.2)).toBe(0.2);
+    expect(rateFraction(0, 0.2)).toBe(0);
+  });
+});
+
+describe("checkStoredInvoiceTotals", () => {
+  const good = {
+    items: [{ amount: 100 }],
+    expenses: [{ amount: 10, vat_rate: 0 }],
+    vat_rate: 0.2,
+    subtotal: 100,
+    expense_total: 10,
+    tax: 20,
+    total: 130,
+  };
+  it("consistent invoice → no findings (float noise tolerated)", () => {
+    expect(checkStoredInvoiceTotals(good)).toEqual([]);
+    expect(checkStoredInvoiceTotals({ ...good, subtotal: 100.00000000001 })).toEqual([]);
+  });
+  it("names every field that does not add up", () => {
+    expect(checkStoredInvoiceTotals({ ...good, total: 131 })).toEqual(["total"]);
+    expect(checkStoredInvoiceTotals({ ...good, tax: 22, total: 132 })).toEqual(["tax", "total"]);
+    expect(checkStoredInvoiceTotals({ ...good, total: undefined })).toEqual(["total"]);
+  });
+  it("legacy invoice without expense_total and without expenses is fine", () => {
+    expect(
+      checkStoredInvoiceTotals({
+        items: [{ amount: 50 }],
+        vat_rate: 0.2,
+        subtotal: 50,
+        tax: 10,
+        total: 60,
+      })
+    ).toEqual([]);
   });
 });
 
 describe("parseHourlyRate", () => {
-  test("keeps cents and accepts a decimal comma", () => {
-    expect(parseHourlyRate("187,50")).toBe(187.5);
-    expect(parseHourlyRate("187.50")).toBe(187.5);
-    expect(parseHourlyRate("190")).toBe(190);
+  it.each([
+    ["190", 190],
+    ["187,50", 187.5],
+    ["1.234,50", 1234.5],
+    ["187.50", 187.5],
+    ["€ 250", 250],
+  ])("%s → %s", (input, expected) => {
+    expect(parseHourlyRate(input)).toBe(expected);
   });
-
-  test("no configured rate → null (no silent 200 €)", () => {
-    expect(parseHourlyRate(undefined)).toBeNull();
+  it("returns null for missing or non-positive rates", () => {
     expect(parseHourlyRate("")).toBeNull();
-    expect(parseHourlyRate("abc")).toBeNull();
     expect(parseHourlyRate("0")).toBeNull();
+    expect(parseHourlyRate(null)).toBeNull();
   });
 });

@@ -101,23 +101,22 @@ export function toZonedDateString(iso?: string | null, timeZone: string = FIRM_T
   return zonedDateString(d, timeZone);
 }
 
-/**
- * Today's firm calendar day ("YYYY-MM-DD", Europe/Vienna). Server code runs
- * in UTC: `new Date().toISOString().slice(0, 10)` still names yesterday
- * between 00:00 and 01:00/02:00 Vienna time.
- */
-export function firmToday(now: Date = new Date()): string {
-  return zonedDateString(now);
+/** Today's calendar day in the firm's timezone ("YYYY-MM-DD") — invoice dates, VAT periods. */
+export function firmToday(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): string {
+  return zonedDateString(now, timeZone);
 }
 
-/** The firm's current calendar year (Europe/Vienna) — for number ranges. */
-export function firmYear(now: Date = new Date()): number {
-  return Number(firmToday(now).slice(0, 4));
+/** The calendar year in the firm's timezone — the invoice number range ("R-2027-…"). */
+export function firmYear(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): number {
+  return Number(zonedDateString(now, timeZone).slice(0, 4));
 }
 
-/** Calendar day `days` after the ISO day `dateIso` ("YYYY-MM-DD"), DST-safe. */
-export function addDaysToDateString(dateIso: string, days: number): string {
-  const d = new Date(`${dateIso}T12:00:00.000Z`);
+/** "YYYY-MM-DD" plus `days` calendar days (no timezone involved). */
+export function addDaysToIsoDate(dateIso: string, days: number): string {
+  const d = new Date(`${dateIso.slice(0, 10)}T00:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+/** Alias kept for callers that use the older name. */
+export const addDaysToDateString = addDaysToIsoDate;

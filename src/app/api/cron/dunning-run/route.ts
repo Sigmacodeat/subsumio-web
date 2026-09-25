@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
-import { processDunningRun, applyDunningRun, type OpenItem } from "@/lib/fibu";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import { fetchAllPagesStrict, getRecipientsByBrain } from "@/lib/cron-utils";
+import { processDunningRun, type OpenItem } from "@/lib/fibu";
+import { readCurrentPage } from "@/lib/page-write-guards";
 import { logger } from "@/lib/logger";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 
@@ -12,53 +13,74 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * Run the dunning escalation for one Kanzlei (brain).
+ * Mahnlauf for one Kanzlei (brain): marks which open items are due for the
+ * next reminder level ("Mahnvorschlag").
  *
- * Previously this whole route only ever read/wrote
- * engineHeadersForBrain("system") — a fixed, non-tenant brain that no real
- * Kanzlei's open items live in, so the cron always processed zero items for
- * every actual firm. Mirrors the fetch-all-then-patch-changed shape of the
- * original, just scoped per brainId and paginated past the engine's
- * 200-page cap via fetchPages (see engine-list-cap-and-tombstones).
+ * The run itself neither raises the level nor charges a fee: a dunning fee
+ * is only owed when a reminder is actually sent, and that happens through
+ * /api/invoices/remind — the one place that sets level + fee on the open
+ * item and sends the letter. The run only merge-writes the proposal fields,
+ * re-reads each item right before writing and skips it when it was settled
+ * meanwhile, so a payment booked during the run is never overwritten.
+ * Failed writes are counted, not swallowed.
  */
 async function runDunningForBrain(
   brainId: string
-): Promise<{ totalItems: number; dunningActions: number; failedWrites: number }> {
+): Promise<{ totalItems: number; dunningActions: number; failed: number }> {
   const headers = engineHeadersForBrain(brainId);
-  const pages = await fetchPages(brainId, "open_item", 2000);
+  const pages = await fetchAllPagesStrict(brainId, "open_item");
   const openItems: OpenItem[] = pages.map((p) => p.frontmatter as unknown as OpenItem);
 
   const results = processDunningRun(openItems);
-  const updatedItems = applyDunningRun(openItems, results);
+  let written = 0;
+  let failed = 0;
 
-  // A refused write is counted and logged (engineWriteBestEffort), never
-  // taken as a stored dunning level.
-  let failedWrites = 0;
-  for (let i = 0; i < updatedItems.length; i++) {
-    const item = updatedItems[i];
-    const original = openItems[i];
-    if (item.dunning_level !== original?.dunning_level) {
-      const saved = await engineWriteBestEffort(
-        `${ENGINE_URL}/api/pages`,
+  for (const result of results) {
+    const slug = `legal/open-items/${result.item_id}`;
+    try {
+      const fresh = await readCurrentPage(ENGINE_URL, headers, slug);
+      if (fresh.kind === "error") {
+        failed++;
+        continue;
+      }
+      if (fresh.kind === "missing") continue;
+      const now = fresh.page.frontmatter as unknown as OpenItem;
+      if (now.status === "paid" || now.status === "written_off") continue;
+      if ((now.dunning_level ?? 0) >= result.new_level) continue;
+      if (Number(now.dunning_suggested_level ?? 0) === result.new_level) continue;
+
+      const res = await enginePatchPage(
+        headers,
         {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug: `legal/open-items/${item.id}`,
-            title: `OPOS: ${item.invoice_number} — ${item.client_name}`,
-            type: "open_item",
-            frontmatter: item,
-          }),
-          signal: AbortSignal.timeout(10_000),
+          slug,
+          frontmatter: {
+            dunning_suggested_level: result.new_level,
+            dunning_suggested_at: new Date().toISOString(),
+          },
         },
-        "Mahnstufe"
+        { timeoutMs: 10_000 }
       );
-      if (!saved) failedWrites++;
+      if (res.ok) written++;
+      else {
+        failed++;
+        log.warn("[dunning-run] write failed", {
+          brainId,
+          itemId: result.item_id,
+          status: res.status,
+        });
+      }
+    } catch (err) {
+      failed++;
+      log.warn("[dunning-run] write failed", {
+        brainId,
+        itemId: result.item_id,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
-  if (failedWrites > 0) log.error("[dunning-run] writes failed", { brainId, failedWrites });
+  if (failed > 0) log.error("[dunning-run] writes failed", { brainId, failed });
 
-  return { totalItems: openItems.length, dunningActions: results.length, failedWrites };
+  return { totalItems: openItems.length, dunningActions: written, failed };
 }
 
 async function dunningRunHandler(_req: NextRequest): Promise<Response> {
@@ -66,13 +88,12 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
 
   let totalItems = 0;
   let dunningActions = 0;
-  let failedWrites = 0;
-  let failedBrains = 0;
+  let failed = 0;
   const perBrain: Array<{
     brainId: string;
     totalItems: number;
     dunningActions: number;
-    failedWrites: number;
+    failed: number;
   }> = [];
 
   for (const brainId of recipientsByBrain.keys()) {
@@ -80,10 +101,10 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
       const result = await runDunningForBrain(brainId);
       totalItems += result.totalItems;
       dunningActions += result.dunningActions;
-      failedWrites += result.failedWrites;
+      failed += result.failed;
       perBrain.push({ brainId, ...result });
     } catch (err) {
-      failedBrains++;
+      failed++;
       log.error("[dunning-run] brain failed", {
         brainId,
         error: err instanceof Error ? err.message : String(err),
@@ -96,8 +117,7 @@ async function dunningRunHandler(_req: NextRequest): Promise<Response> {
     brainsChecked: recipientsByBrain.size,
     totalItems,
     dunningActions,
-    failedWrites,
-    failedBrains,
+    failed,
     perBrain,
   });
 }

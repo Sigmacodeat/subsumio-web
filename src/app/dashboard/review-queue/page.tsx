@@ -25,7 +25,6 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
-import { csrfFetch } from "@/lib/csrf";
 
 const STATUS_STYLES: Record<string, string> = {
   pending:

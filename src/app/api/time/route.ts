@@ -122,6 +122,8 @@ const timeDeleteSchema = z.object({
   id: z.string().min(1, "case_slug_and_id_required"),
 });
 
+const TIME_LIST_MAX = 20_000;
+
 export const GET = createHandler(
   {
     action: "invoice.read",
@@ -135,7 +137,9 @@ export const GET = createHandler(
     const to = query.to || undefined;
     const lawyerFilter = query.lawyer || undefined;
     const rawLimit = parseInt(query.limit || "200", 10);
-    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 500) : 200;
+    // Up to TIME_LIST_MAX entries per answer; `total` always counts every
+    // matching entry, so a caller can tell when the list was cut.
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), TIME_LIST_MAX) : 200;
     const wantBillingSummary = query.billing_summary === "true";
 
     try {
@@ -155,27 +159,32 @@ export const GET = createHandler(
         entries = await listAllTimeEntries(brain);
       }
 
-      const filtered = filterEntries(entries, {
+      const matching = filterEntries(entries, {
         billable: query.billable === "true" ? true : query.billable === "false" ? false : undefined,
         unbilled: query.unbilled === "true",
         from,
         to,
         lawyer: lawyerFilter,
-      }).slice(0, limit);
+      });
+      const filtered = matching.slice(0, limit);
+      const total = matching.length;
+      const capped = total > filtered.length;
 
-      const summary = computeSummary(filtered);
+      // Sums over every matching entry, not just the returned page.
+      const summary = computeSummary(matching);
 
       if (wantBillingSummary) {
-        const billingSummary = computeBillingSummary(filtered);
+        const billingSummary = computeBillingSummary(matching);
         return apiSuccess({
           entries: filtered,
-          total: filtered.length,
+          total,
+          capped,
           summary,
           billing: billingSummary,
         });
       }
 
-      return apiSuccess({ entries: filtered, total: filtered.length, summary });
+      return apiSuccess({ entries: filtered, total, capped, summary });
     } catch (err) {
       log.error("[time] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Zeiterfassung konnte nicht geladen werden", 500);

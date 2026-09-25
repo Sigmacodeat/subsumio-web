@@ -5,6 +5,8 @@
  * open items (OPOS) management, and dunning run (Mahnlauf) for clients.
  */
 
+import { zonedDateString } from "@/lib/datetime";
+
 export interface BankTransaction {
   id: string;
   date: string;
@@ -38,6 +40,12 @@ export interface OpenItem {
   dunning_date?: string;
   dunning_fee: number;
   status: "open" | "reminded" | "overdue" | "paid" | "written_off";
+  /**
+   * Mahnvorschlag des Mahnlaufs: diese Stufe ist fällig, die Mahnung wird
+   * aber erst über „Mahnen“ versendet (erst dann Stufe + Spesen).
+   */
+  dunning_suggested_level?: 1 | 2 | 3;
+  dunning_suggested_at?: string;
   /** Grund der Ausbuchung (z.B. Storno-Noten-Nummer) — nur informativ. */
   notes?: string;
   created_at: string;
@@ -52,7 +60,23 @@ export interface MatchResult {
   matchReason: string;
 }
 
-type BankTransactionInput = {
+/** FNV-1a style hash (2×32 bit) — stable and synchronous, keys a booking. */
+function stableHash(input: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x5bd1e995;
+  for (let i = 0; i < input.length; i++) {
+    const c = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+    h2 = Math.imul(h2 ^ c, 0x5bd1e995) >>> 0;
+  }
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+}
+
+function compact(value: string | undefined): string {
+  return (value ?? "").split(/\s+/).filter(Boolean).join(" ");
+}
+
+export interface BankTransactionInput {
   date: string;
   amount: number;
   direction: "debit" | "credit";
@@ -62,58 +86,68 @@ type BankTransactionInput = {
   sender_iban?: string;
   reference?: string;
   purpose?: string;
-};
+}
 
-/** 53-bit string hash (cyrb53) — deterministic, dependency-free, not cryptographic. */
-function stableHash(text: string): string {
-  let h1 = 0xdeadbeef;
-  let h2 = 0x41c6ce57;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+export interface BankTransactionIdOptions {
+  /** The bank's own unique reference (camt AcctSvcrRef, feed transaction id). */
+  bankRef?: string;
+  /** Running number among identical bookings of one statement. */
+  occurrence?: number;
 }
 
 /**
- * Content-derived transaction id: the same booking (account, date, amount,
- * direction, counterparty, reference, purpose) always gets the same id, so a
- * statement imported twice is recognised instead of being booked twice.
+ * Deterministic id of a bank booking. The same booking imported twice
+ * (double click, overlapping daily/monthly statements, feed + file) gets the
+ * same id, so the second import is recognised as a duplicate instead of
+ * paying the open item a second time.
+ *
+ * With the bank's own reference the id is derived from account + reference;
+ * otherwise from account, booking date, amount in cents, direction,
+ * counter-account, reference, purpose and the running number among identical
+ * bookings — two genuinely separate identical payments stay two.
  */
-export function bankTransactionId(input: BankTransactionInput): string {
-  const norm = (v: string | undefined) => (v ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-  const key = [
-    norm(input.iban).replace(/ /g, ""),
-    norm(input.date),
-    Math.round(input.amount * 100),
+export function bankTransactionId(
+  input: BankTransactionInput,
+  opts: BankTransactionIdOptions = {}
+): string {
+  const iban = compact(input.iban).replace(/ /g, "").toUpperCase();
+  const ref = compact(opts.bankRef);
+  if (ref) return `txn-${stableHash(`ref|${iban}|${ref}`)}`;
+  const fingerprint = [
+    iban,
+    (input.date ?? "").slice(0, 10),
+    Math.round((Number(input.amount) || 0) * 100),
     input.direction,
-    norm(input.sender_iban).replace(/ /g, ""),
-    norm(input.reference),
-    norm(input.purpose),
+    compact(input.sender_iban).replace(/ /g, "").toUpperCase(),
+    compact(input.reference),
+    compact(input.purpose),
+    opts.occurrence ?? 0,
   ].join("|");
-  return `txn-${stableHash(key)}`;
+  return `txn-${stableHash(fingerprint)}`;
 }
 
 /**
- * Two identical bookings in the same statement (same day, amount and
- * reference) are still two payments: the second and later ones get a
- * `-2`, `-3` … suffix. Re-importing the statement yields the same suffixes.
+ * Inputs of one import with their running number among identical bookings
+ * (input order = statement order).
  */
-export function withBatchOccurrenceIds<T extends { id: string }>(transactions: T[]): T[] {
+export function withOccurrence<T extends BankTransactionInput>(
+  inputs: T[]
+): Array<{ input: T; occurrence: number }> {
   const seen = new Map<string, number>();
-  return transactions.map((t) => {
-    const n = (seen.get(t.id) ?? 0) + 1;
-    seen.set(t.id, n);
-    return n === 1 ? t : { ...t, id: `${t.id}-${n}` };
+  return inputs.map((input) => {
+    const key = bankTransactionId(input);
+    const occurrence = seen.get(key) ?? 0;
+    seen.set(key, occurrence + 1);
+    return { input, occurrence };
   });
 }
 
-export function createBankTransaction(input: BankTransactionInput): BankTransaction {
+export function createBankTransaction(
+  input: BankTransactionInput,
+  opts: BankTransactionIdOptions = {}
+): BankTransaction {
   return {
-    id: bankTransactionId(input),
+    id: bankTransactionId(input, opts),
     date: input.date,
     amount: input.amount,
     direction: input.direction,
@@ -335,38 +369,44 @@ export function dunningFeeDelta(level: number): number {
   return DUNNING_FEES[l] - DUNNING_FEES[l - 1];
 }
 
+/** Whole calendar days from `fromIso` to `toIso` (both "YYYY-MM-DD"). */
+function calendarDaysBetween(fromIso: string, toIso: string): number {
+  const a = Date.parse(`${fromIso.slice(0, 10)}T00:00:00Z`);
+  const b = Date.parse(`${toIso.slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+  return Math.round((b - a) / 86_400_000);
+}
+
+/** Cumulative fee of `level` minus what was already charged — never negative. */
+function feeToReach(level: number, chargedSoFar: number): number {
+  const target = Math.round((DUNNING_FEES[level] ?? 0) * 100);
+  const charged = Math.round((Number(chargedSoFar) || 0) * 100);
+  return Math.max(0, target - charged) / 100;
+}
+
 export function processDunningRun(openItems: OpenItem[], currentDate?: Date): DunningRunResult[] {
-  const now = currentDate ?? new Date();
-  // Use UTC midnight for both now and due_date to avoid timezone skew
-  // when due_date is a date-only string (e.g. "2024-01-15" parses as UTC midnight)
-  const nowUtcMidnight = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  );
+  // The firm's calendar day (Europe/Vienna) — a due date is a plain date,
+  // never UTC midnight.
+  const today = zonedDateString(currentDate ?? new Date());
   const results: DunningRunResult[] = [];
 
   for (const item of openItems) {
     if (item.status === "paid" || item.status === "written_off") continue;
 
-    const dueDate = new Date(item.due_date);
-    const dueUtcMidnight = new Date(
-      Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate())
-    );
-    const daysOverdue = Math.floor(
-      (nowUtcMidnight.getTime() - dueUtcMidnight.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const daysOverdue = calendarDaysBetween(item.due_date, today);
 
     let newLevel = item.dunning_level;
     let feeAdded = 0;
 
     if (daysOverdue > 42 && item.dunning_level < 3) {
       newLevel = 3;
-      feeAdded = DUNNING_FEES[3] - item.dunning_fee;
+      feeAdded = feeToReach(3, item.dunning_fee);
     } else if (daysOverdue > 21 && item.dunning_level < 2) {
       newLevel = 2;
-      feeAdded = DUNNING_FEES[2] - item.dunning_fee;
+      feeAdded = feeToReach(2, item.dunning_fee);
     } else if (daysOverdue > 7 && item.dunning_level < 1) {
       newLevel = 1;
-      feeAdded = DUNNING_FEES[1] - item.dunning_fee;
+      feeAdded = feeToReach(1, item.dunning_fee);
     }
 
     if (newLevel === item.dunning_level) continue;
@@ -409,15 +449,26 @@ export function getDunningLabel(level: number): string {
   return DUNNING_LABELS[level] ?? "";
 }
 
-export function getOverdueItems(openItems: OpenItem[]): OpenItem[] {
-  const now = new Date();
+/**
+ * Overdue = the due date lies before the firm's today (Europe/Vienna). On the
+ * due date itself the item is still in time.
+ */
+export function isPastDue(dueDate: string, now: Date = new Date()): boolean {
+  if (!dueDate) return false;
+  return dueDate.slice(0, 10) < zonedDateString(now);
+}
+
+export function getOverdueItems(openItems: OpenItem[], now: Date = new Date()): OpenItem[] {
   return openItems.filter(
     (item) =>
-      item.status !== "paid" && item.status !== "written_off" && new Date(item.due_date) < now
+      item.status !== "paid" && item.status !== "written_off" && isPastDue(item.due_date, now)
   );
 }
 
-export function getOposSummary(openItems: OpenItem[]): {
+export function getOposSummary(
+  openItems: OpenItem[],
+  now: Date = new Date()
+): {
   total: number;
   open: number;
   overdue: number;
@@ -426,14 +477,15 @@ export function getOposSummary(openItems: OpenItem[]): {
   totalOpenAmount: number;
   totalOverdueAmount: number;
 } {
-  const now = new Date();
   return openItems.reduce(
     (acc, item) => {
       acc.total++;
+      // A written-off item (Storno) is no receivable any more.
+      if (item.status === "written_off") return acc;
       // Round to 2 decimals to avoid float accumulation errors
       acc.totalOpenAmount = Math.round((acc.totalOpenAmount + item.open_amount) * 100) / 100;
       if (item.status === "paid") acc.paid++;
-      else if (item.status === "overdue" || new Date(item.due_date) < now) {
+      else if (item.status === "overdue" || isPastDue(item.due_date, now)) {
         acc.overdue++;
         acc.totalOverdueAmount =
           Math.round((acc.totalOverdueAmount + item.open_amount) * 100) / 100;

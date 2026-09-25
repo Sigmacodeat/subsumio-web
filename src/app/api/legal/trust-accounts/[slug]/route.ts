@@ -160,6 +160,8 @@ export const POST = createHandler(
         status: ((fm.status as TrustAccountStatus) ?? "active") as TrustAccountStatus,
         currency: (fm.currency as string) ?? "EUR",
         transactions,
+        // The account's legal regime (RAO vs. BRAO) decides the booking hints.
+        jurisdiction: (fm.jurisdiction === "de" ? "de" : "at") as "de" | "at",
       };
       const check = validateTrustBooking(account, body);
       if (!check.ok) return apiError(check.code, check.message, 422);
