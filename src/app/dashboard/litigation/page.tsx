@@ -8,6 +8,8 @@ import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { CaseSelect } from "@/components/legal/case-select";
+import { formatEur } from "@/lib/utils";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +169,15 @@ function PipelineStrategyCard({ caseSlug, lang }: { caseSlug: string; lang: stri
   );
 }
 
+/**
+ * What the lawyer reads when an action fails: engine/HTTP texts are not
+ * shown raw (they were English/technical); the detail goes to the console.
+ */
+function litigationErrorText(err: unknown): string {
+  console.error("[litigation]", err instanceof Error ? err.message : err);
+  return "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut.";
+}
+
 export default function LitigationFlowPage() {
   const { t, lang } = useLang();
   const confirm = useConfirm();
@@ -201,7 +212,7 @@ export default function LitigationFlowPage() {
       const data = await api.legal.litigation.list({ limit: 100 });
       setMatters(data as unknown as Matter[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setLoading(false);
     }
@@ -252,7 +263,7 @@ export default function LitigationFlowPage() {
       setNewInstance("1. Instanz");
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -267,7 +278,7 @@ export default function LitigationFlowPage() {
       setShowPhaseDialog(false);
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -289,7 +300,7 @@ export default function LitigationFlowPage() {
       await api.legal.litigation.update(selectedMatter.slug, { steps: updatedSteps });
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -307,7 +318,7 @@ export default function LitigationFlowPage() {
       showToast(t("litigation.success_saved" as DashboardKey));
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -324,7 +335,7 @@ export default function LitigationFlowPage() {
       setSelectedSlug(null);
       await loadMatters();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(litigationErrorText(err));
     } finally {
       setSaving(false);
     }
@@ -610,7 +621,7 @@ export default function LitigationFlowPage() {
                         <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-subtle)]">
                           <Clock size={11} />
                           {new Date(step.dueDate).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE"
+                            lang === "en" ? "en-GB" : "de-AT"
                           )}
                         </div>
                       )}
@@ -658,8 +669,9 @@ export default function LitigationFlowPage() {
                     </Badge>
                     {selectedMatter.frontmatter.settlement.amount && (
                       <p className="mt-2 text-sm text-[color:var(--ds-text)]">
-                        {selectedMatter.frontmatter.settlement.amount.toLocaleString("de-DE")}{" "}
-                        {selectedMatter.frontmatter.settlement.currency ?? "EUR"}
+                        {(selectedMatter.frontmatter.settlement.currency ?? "EUR") === "EUR"
+                          ? formatEur(selectedMatter.frontmatter.settlement.amount)
+                          : `${selectedMatter.frontmatter.settlement.amount.toLocaleString("de-AT")} ${selectedMatter.frontmatter.settlement.currency}`}
                       </p>
                     )}
                   </div>
@@ -678,7 +690,7 @@ export default function LitigationFlowPage() {
                     {selectedMatter.frontmatter.judgment.date && (
                       <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
                         {new Date(selectedMatter.frontmatter.judgment.date).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
+                          lang === "en" ? "en-GB" : "de-AT"
                         )}
                       </p>
                     )}
@@ -703,7 +715,7 @@ export default function LitigationFlowPage() {
                       <span>
                         ·{" "}
                         {new Date(h.changedAt).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
+                          lang === "en" ? "en-GB" : "de-AT"
                         )}
                       </span>
                       {h.changedBy && <span>· {h.changedBy}</span>}
@@ -758,11 +770,8 @@ export default function LitigationFlowPage() {
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {t("litigation.case" as DashboardKey)} *
               </label>
-              <Input
-                value={newCaseSlug}
-                onChange={(e) => setNewCaseSlug(e.target.value)}
-                placeholder="case-slug"
-              />
+              {/* Pick an existing matter instead of typing its technical slug */}
+              <CaseSelect value={newCaseSlug} onChange={setNewCaseSlug} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
