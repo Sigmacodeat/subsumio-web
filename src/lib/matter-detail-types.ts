@@ -98,6 +98,8 @@ export interface CaseDetail {
   knowledgeReviews: KnowledgeReview[];
   portalEnabled: boolean;
   portalNote?: string;
+  /** Summary the firm released to the client portal; the only case text a client sees. */
+  portalSummary?: string;
   /** WP-7.40: Im Portal mandanten-startbare Workflow-Template-IDs. */
   portalWorkflows?: string[];
   auditLog?: AuditLogEntry[];
@@ -209,6 +211,7 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
       : [],
     portalEnabled: (fm.portal_enabled as boolean) || false,
     portalNote: (fm.portal_note as string) || undefined,
+    portalSummary: typeof fm.portal_summary === "string" ? fm.portal_summary : undefined,
     portalWorkflows: Array.isArray(fm.portal_workflows)
       ? (fm.portal_workflows as string[])
       : undefined,

@@ -70,7 +70,7 @@ interface PortalDocumentRequest {
       key: string;
       label: string;
       required: boolean;
-      received_document_slug?: string;
+      received: boolean;
     }>;
   };
 }
@@ -500,6 +500,7 @@ export default function PortalPage() {
         clientName: fm.client_name || undefined,
         opponentName: fm.opponent_name || undefined,
         courtName: fm.court_name || undefined,
+        // The API view carries only the firm-released portal summary here.
         facts: page.content || "",
         claims: fm.claims || [],
         deadlines: (fm.deadlines || []).map((d) => ({
@@ -1019,7 +1020,7 @@ export default function PortalPage() {
                       request.frontmatter.items.map((item) => ({ request, item }))
                     )
                     .map(({ request, item }) => {
-                      const done = Boolean(item.received_document_slug);
+                      const done = item.received;
                       const key = `${request.slug}:${item.key}`;
                       return (
                         <div

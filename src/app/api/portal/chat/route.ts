@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { portalVisibleDocumentSlugs } from "@/lib/portal-view";
+import { portalReleasedSummary, portalVisibleDocumentSlugs } from "@/lib/portal-view";
 import type { DocumentEntry } from "@/lib/legal-types";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
@@ -183,7 +183,7 @@ export const POST = createPublicHandler(
         caseNumber: String(fm.case_number ?? ""),
         // Only a summary the firm explicitly released to the client. The case
         // page body holds internal notes and strategy — never send it here.
-        facts: typeof fm.portal_summary === "string" ? fm.portal_summary : "",
+        facts: portalReleasedSummary(fm),
         legalArea: String(fm.legal_area ?? ""),
       },
       documents

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPatch = vi.fn();
+const actor = vi.hoisted(() => ({ role: "lawyer" }));
 
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
@@ -24,12 +25,12 @@ vi.mock("@/lib/api-handler", () => ({
     },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
   ) => {
-    const ctx = {
-      headers: { "x-subsumio-source": "brain-at" },
-      brainId: "brain-at",
-      user: { id: "u1", email: "anwalt@example.com", name: "Anwalt", role: "lawyer" },
-    };
     return async (req: Request) => {
+      const ctx = {
+        headers: { "x-subsumio-source": "brain-at" },
+        brainId: "brain-at",
+        user: { id: "u1", email: "anwalt@example.com", name: "Anwalt", role: actor.role },
+      };
       const body = req.method === "DELETE" ? {} : await req.json().catch(() => ({}));
       const res = await handler(ctx, body, {}, req);
       // Like the real createHandler: on success the audit spec is written
@@ -62,6 +63,7 @@ let readStatus = 200;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  actor.role = "lawyer";
   readStatus = 200;
   stored = null;
   mockPatch.mockResolvedValue(Response.json({ success: true }));
@@ -342,5 +344,41 @@ describe("DELETE /api/pages/[...slug] — Audit-Zuordnung (OPS-10)", () => {
       userEmail: "anwalt@example.com",
       entityId: "legal/cases/akte-1",
     });
+  });
+});
+
+describe("PATCH /api/pages/[...slug] — portal summary release", () => {
+  const casePage = () => ({
+    slug: "legal/cases/akte-1",
+    type: "legal_case",
+    frontmatter: { status: "active", portal_summary: "alt" },
+  });
+
+  it("refuses a portal summary change by a role that may not release portal text", async () => {
+    actor.role = "assistant";
+    stored = casePage();
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: { portal_summary: "neu" },
+    });
+    expect(res.status).toBe(403);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("lets other roles save the matter when the summary is unchanged", async () => {
+    actor.role = "assistant";
+    stored = casePage();
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: { portal_summary: "alt", tags: ["x"] },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it("lets a lawyer release the summary", async () => {
+    stored = casePage();
+    const res = await call("PATCH", "legal/cases/akte-1", {
+      frontmatter: { portal_summary: "neu" },
+    });
+    expect(res.status).toBe(200);
+    expect(written()?.frontmatter?.portal_summary).toBe("neu");
   });
 });

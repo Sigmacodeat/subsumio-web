@@ -185,6 +185,22 @@ export const PATCH = createHandler(
     });
     if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
     if (protectedWrite.frontmatter) patchBody.frontmatter = protectedWrite.frontmatter;
+
+    // The portal summary is the only case text a client sees — releasing or
+    // changing it is a lawyer/admin decision.
+    if (
+      bodyFrontmatter &&
+      "portal_summary" in bodyFrontmatter &&
+      (bodyFrontmatter.portal_summary ?? "") !== (curFm.portal_summary ?? "") &&
+      ctx.user.role !== "admin" &&
+      ctx.user.role !== "lawyer"
+    ) {
+      return apiError(
+        "portal_summary_forbidden",
+        "Nur Anwältinnen/Anwälte und Admins dürfen die Portal-Zusammenfassung freigeben.",
+        403
+      );
+    }
     if (isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter)) {
       patchBody.frontmatter = await sealKanzleiSettingsFrontmatter(
         (patchBody.frontmatter as Record<string, unknown> | undefined) ?? {},

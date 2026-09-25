@@ -39,6 +39,7 @@ import {
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
 import { PortalLinksPanel } from "@/components/legal/PortalLinksPanel";
+import { PortalSummaryEditor } from "@/components/legal/PortalSummaryEditor";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { EmailComposeDialog } from "@/components/legal/EmailComposeDialog";
@@ -458,6 +459,18 @@ export function OverviewTab() {
       {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
         <PortalLinksPanel caseSlug={caseData.slug} />
       )}
+
+      {/* The only case text the client portal shows — released explicitly. */}
+      <PortalSummaryEditor
+        value={caseData.portalSummary}
+        canEdit={ctx.userRole === "admin" || ctx.userRole === "lawyer"}
+        disabled={caseData.status === "archived"}
+        lang={lang}
+        onSave={async (next) => {
+          ctx.setCaseData({ ...caseData, portalSummary: next });
+          await ctx.saveCaseUpdate({ portalSummary: next });
+        }}
+      />
 
       {/* WP-7.40: Self-Service-Workflows fürs Mandantenportal freigeben */}
       {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
