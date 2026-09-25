@@ -91,8 +91,8 @@ describe("createCaseSafely", () => {
     const deps = fakeDeps({ conflictsFor: ["Gegner GmbH"] });
     const res = await createCaseSafely(deps, base);
     expect(res.status).toBe("conflict");
-    expect(deps.conflictCheck).toHaveBeenCalledWith("Max Muster");
-    expect(deps.conflictCheck).toHaveBeenCalledWith("Gegner GmbH");
+    expect(deps.conflictCheck).toHaveBeenCalledWith("Max Muster", "client", []);
+    expect(deps.conflictCheck).toHaveBeenCalledWith("Gegner GmbH", "opponent", []);
     expect(deps.writePage).not.toHaveBeenCalled();
   });
 

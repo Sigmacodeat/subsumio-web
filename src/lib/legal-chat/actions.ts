@@ -1,3 +1,5 @@
+import { requestConflictCheck } from "@/lib/conflict-gate";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { randomUUID } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
 import { engineRequest, listPages, think, type EnginePageInput } from "@/lib/engine-client";
@@ -1204,8 +1206,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     const opponentName = str(payload.opponentName);
     const legalArea = str(payload.legalArea) || "civil";
     const description = str(payload.description);
-    const caseNumber = `2026-${String(Date.now()).slice(-4)}`;
-    const caseSlug = `legal/cases/${caseNumber}`;
+    // Aktenzeichen and slug come from the server; the shared safe path never
+    // overwrites an existing matter and runs the conflict check (§ 10 RAO).
+    const caseNumber = `WA-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     const legalAreaLabels: Record<string, string> = {
       family: "Familienrecht",
       civil: "Zivilrecht",
@@ -1217,38 +1220,55 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       ip: "Gewerblicher Rechtsschutz",
     };
     const title = opponentName ? `${clientName} vs. ${opponentName}` : clientName;
-    await putPage(ctx.sender.brainId, {
-      slug: caseSlug,
-      title,
-      type: "legal_case",
-      content: description ? `## Sachverhalt\n\n${description}` : "",
-      frontmatter: {
-        type: "legal_case",
-        case_number: caseNumber,
-        client_name: clientName,
-        opponent_name: opponentName,
-        legal_area: legalArea,
-        legal_area_label: legalAreaLabels[legalArea] || legalArea,
-        status: "intake",
-        created_via: "whatsapp",
-        created_at: new Date().toISOString(),
-        time_entries: [],
-        expenses: [],
-        tasks: [],
-        deadlines: [],
-        documents: [],
-        notes: [],
-        audit_log: [
-          {
-            id: randomUUID(),
-            at: new Date().toISOString(),
-            action: "created",
-            actor: ctx.sender.name || "WhatsApp",
-            note: "Akte via WhatsApp angelegt",
-          },
-        ],
-      },
-    });
+    const created = await createCaseSafely(
+      engineCaseCreateDeps(
+        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope)
+      ),
+      {
+        title,
+        slugHint: caseNumber,
+        content: description ? `## Sachverhalt\n\n${description}` : "",
+        frontmatter: {
+          type: "legal_case",
+          case_number: caseNumber,
+          client_name: clientName,
+          opponent_name: opponentName,
+          legal_area: legalArea,
+          legal_area_label: legalAreaLabels[legalArea] || legalArea,
+          status: "intake",
+          created_via: "whatsapp",
+          created_at: new Date().toISOString(),
+          time_entries: [],
+          expenses: [],
+          tasks: [],
+          deadlines: [],
+          documents: [],
+          notes: [],
+          audit_log: [
+            {
+              id: randomUUID(),
+              at: new Date().toISOString(),
+              action: "created",
+              actor: ctx.sender.name || "WhatsApp",
+              note: "Akte via WhatsApp angelegt",
+            },
+          ],
+        },
+      }
+    );
+    if (created.status === "conflict") {
+      await markAction(ctx, action, "failed");
+      return [
+        "⚠️ Keine Akte angelegt: Die Kollisionsprüfung meldet einen möglichen Interessenkonflikt.",
+        "Bitte in Subsumio über die Mandatsannahme prüfen.",
+      ].join("\n");
+    }
+    if (created.status !== "created") {
+      await markAction(ctx, action, "failed");
+      return `Akte konnte nicht angelegt werden: ${
+        created.status === "exists" ? "Kennung bereits vergeben" : created.message
+      }`;
+    }
     await markAction(ctx, action, "executed");
     return [
       `✅ Neue Akte angelegt:`,
@@ -2267,36 +2287,25 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "conflict_check") {
-    // Query the conflict-check API
     try {
-      const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
-        },
-        body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) throw new Error(`Conflict-Check HTTP ${res.status}`);
-      const data = (await res.json().catch(() => ({}))) as {
-        conflicts?: Array<{
-          case_title: string;
-          case_slug: string;
-          reason: string;
-          severity: string;
-        }>;
-        clean?: boolean;
-      };
-      if (data.conflicts && data.conflicts.length > 0) {
+      const result = await requestConflictCheck(
+        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
+        { name: intent.name }
+      );
+      const relevant = result.matches.filter((m) => m.assessment !== "info");
+      if (relevant.length > 0) {
         return [
-          `⚠️ Konflikt gefunden für "${intent.name}":`,
-          ...data.conflicts.map((c) => `• ${c.case_title} (${c.severity}): ${c.reason}`),
+          `⚠️ Treffer für "${intent.name}" — anwaltlich zu prüfen:`,
+          ...relevant.map(
+            (m) =>
+              `• ${m.title}${m.role === "opponent" ? " (Gegner)" : m.role === "client" ? " (Mandant)" : ""}`
+          ),
+          result.explanation,
         ].join("\n");
       }
-      return `✅ Kein Konflikt gefunden für "${intent.name}".`;
-    } catch (err) {
-      return `Konflikt-Check fehlgeschlagen: ${err instanceof Error ? err.message : "Unbekannter Fehler"}`;
+      return `✅ Kein Treffer für "${intent.name}". ${result.explanation}`;
+    } catch {
+      return `Kollisionsprüfung für "${intent.name}" ist gerade nicht verfügbar. Ohne Prüfung bitte kein Mandat annehmen.`;
     }
   }
 

@@ -290,3 +290,79 @@ describe("POST /api/copilot/tools", () => {
     expect(creates).toHaveLength(1);
   });
 });
+
+describe("copilot conflict tools (§ 10 RAO)", () => {
+  function conflictEngine(opts: { hit?: boolean; down?: boolean }) {
+    const writes: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/api/legal/conflict-check")) {
+          if (opts.down) return new Response("down", { status: 503 });
+          const { name } = JSON.parse(String(init?.body)) as { name: string };
+          return Response.json({
+            name,
+            severity: opts.hit ? "critical" : "none",
+            explanation: opts.hit ? "Interessenkonflikt" : "Kein Konflikt erkennbar.",
+            matches: opts.hit
+              ? [
+                  {
+                    slug: "legal/cases/alt",
+                    title: "Alte Akte",
+                    role: "opponent",
+                    matched_name: name,
+                    assessment: "critical",
+                  },
+                ]
+              : [],
+          });
+        }
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          writes.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        if (url.includes("/api/pages/")) return new Response("{}", { status: 404 });
+        return Response.json({ ok: true });
+      })
+    );
+    return writes;
+  }
+
+  async function runWrite(tool: string, params: Record<string, unknown>) {
+    const prepared = await (await call({ tool, params, mode: "prepare" })).json();
+    return call({ tool, params, confirmation: prepared.data.confirmation });
+  }
+
+  it("intake_create creates no matter when the client is an opponent elsewhere", async () => {
+    const writes = conflictEngine({ hit: true });
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("conflict_detected");
+    expect(writes.filter((w) => w.type === "legal_case")).toHaveLength(0);
+  });
+
+  it("intake_create writes nothing when the conflict check is unavailable", async () => {
+    const writes = conflictEngine({ down: true });
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    expect((await res.json()).success).toBe(false);
+    expect(writes).toHaveLength(0);
+  });
+
+  it("intake_create creates the matter through the safe path when there is no conflict", async () => {
+    const writes = conflictEngine({});
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    expect((await res.json()).success).toBe(true);
+    const created = writes.find((w) => w.type === "legal_case") as
+      | { slug: string; frontmatter: Record<string, unknown> }
+      | undefined;
+    expect(created?.slug).toMatch(/^legal\/cases\/neue-gmbh-[0-9a-f]{8}$/);
+    expect(created?.frontmatter.conflict_status).toBe("conflict_cleared");
+  });
+
+  it("conflict_check sends the side and reports an unavailable check as failure", async () => {
+    conflictEngine({ down: true });
+    const res = await call({ tool: "conflict_check", params: { name: "Meier", side: "opponent" } });
+    expect((await res.json()).success).toBe(false);
+  });
+});

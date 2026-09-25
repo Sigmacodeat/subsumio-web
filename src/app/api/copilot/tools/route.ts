@@ -14,6 +14,8 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { listAllTimeEntries, type TimeEntryWithCase } from "@/lib/time-tracking";
 import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
+import { requestConflictCheck } from "@/lib/conflict-gate";
 import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
@@ -184,6 +186,8 @@ const documentSummarySchema = z.object({
 
 const conflictCheckSchema = z.object({
   name: z.string().min(1).max(500),
+  /** Side of the name in the NEW mandate (§ 10 RAO): client or opponent. */
+  side: z.enum(["client", "opponent"]).default("client"),
 });
 
 const timeEntrySchema = z.object({
@@ -995,47 +999,42 @@ async function executeConflictCheck(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof conflictCheckSchema>
 ): Promise<ToolResponse> {
+  const safeName = sanitizeUserInput(params.name);
   try {
-    const safeName = sanitizeUserInput(params.name);
-    const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({ name: safeName }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as {
-      matches?: Array<{ name: string; slug: string; type: string }>;
-    };
-    const matches = data.matches ?? [];
-    const hasConflict = matches.length > 0;
-
+    const result = await requestConflictCheck(
+      ctx.headers,
+      { name: safeName, side: params.side },
+      30_000
+    );
+    const relevant = result.matches.filter((m) => m.assessment !== "info");
+    const hasConflict = result.severity === "critical";
     return {
       success: true,
-      data: { matches, hasConflict },
+      data: { severity: result.severity, hasConflict, matches: relevant },
       display: {
         kind: "confirmation",
         title: hasConflict
-          ? `⚠️ Konflikt erkannt für "${safeName}"`
-          : `✓ Kein Konflikt für "${safeName}"`,
-        message: hasConflict
-          ? `${matches.length} Treffer gefunden. Prüfe vor Mandatsannahme.`
-          : "Keine Konflikte in der Datenbank gefunden.",
-        items: matches.map((m) => ({
-          label: m.name,
-          value: m.type,
-          href: m.slug ? `/dashboard/cases/${m.slug.replace(/^cases\//, "")}` : undefined,
+          ? `⚠️ Interessenkonflikt für "${safeName}"`
+          : result.severity === "low"
+            ? `Prüfen: Treffer für "${safeName}"`
+            : `✓ Kein Konflikt für "${safeName}"`,
+        message: `${result.explanation} Anwaltlich zu prüfen.`,
+        items: relevant.map((m) => ({
+          label: m.matched_name || m.title,
+          value: m.assessment === "critical" ? "Konflikt" : "prüfen",
+          href: m.slug ? `/dashboard/brain/${encodeURIComponent(m.slug)}` : undefined,
         })),
       },
     };
-  } catch (_err) {
+  } catch {
     return {
       success: false,
-      error: "Conflict check failed",
+      error: "conflict_check_unavailable",
       display: {
-        kind: "confirmation",
-        title: "Konfliktprüfung fehlgeschlagen",
-        message: "Engine nicht erreichbar",
+        kind: "summary",
+        title: "Kollisionsprüfung nicht verfügbar",
+        message:
+          "Die Prüfung konnte nicht durchgeführt werden. Bitte später erneut versuchen — ohne Prüfung kein Mandat annehmen.",
       },
     };
   }
@@ -1228,100 +1227,68 @@ async function executeIntakeCreate(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof intakeCreateSchema>
 ): Promise<ToolResponse> {
-  try {
-    const safeClientName = sanitizeUserInput(params.client_name);
-    const safeMatterType = sanitizeUserInput(params.matter_type);
-    // Step 1: Conflict check if enabled
-    let conflictResult:
-      | { hasConflict: boolean; matches: Array<{ name: string; slug: string; type: string }> }
-      | undefined;
-    if (params.conflict_check) {
-      try {
-        const conflictRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({ name: safeClientName }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (conflictRes.ok) {
-          const conflictData = (await conflictRes.json()) as {
-            matches?: Array<{ name: string; slug: string; type: string }>;
-          };
-          conflictResult = {
-            hasConflict: (conflictData.matches?.length ?? 0) > 0,
-            matches: conflictData.matches ?? [],
-          };
-        }
-      } catch {
-        // Non-blocking: conflict check failure doesn't block intake
-      }
-    }
+  const safeClientName = sanitizeUserInput(params.client_name);
+  const safeMatterType = sanitizeUserInput(params.matter_type);
+  // The conflict check (§ 10 RAO) always runs — the matter is only created
+  // through the shared safe path, never directly on the engine.
+  const outcome = await createCaseSafely(engineCaseCreateDeps(ctx.headers), {
+    title: `${safeClientName} — ${safeMatterType}`,
+    slugHint: safeClientName,
+    content: `# ${safeClientName} — ${safeMatterType}\n\n## Mandanteninformation\n\n- **Mandant:** ${safeClientName}\n- **Aktenart:** ${safeMatterType}\n- **Jurisdiktion:** ${params.jurisdiction.toUpperCase()}\n- **Dringlichkeit:** ${params.urgency}\n`,
+    frontmatter: {
+      client_name: safeClientName,
+      matter_type: safeMatterType,
+      jurisdiction: params.jurisdiction,
+      urgency: params.urgency,
+      status: "intake",
+      created_via: "copilot",
+      created_at: new Date().toISOString(),
+    },
+  });
 
-    // Step 2: Create case
-    const slug = `cases/${safeClientName
-      .toLowerCase()
-      .replace(/ä/g, "ae")
-      .replace(/ö/g, "oe")
-      .replace(/ü/g, "ue")
-      .replace(/ß/g, "ss")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
-    const body = {
-      slug,
-      title: `${safeClientName} — ${safeMatterType}`,
-      type: "legal_case",
-      content: `# ${safeClientName} — ${safeMatterType}\n\n## Mandanteninformation\n\n- **Mandant:** ${safeClientName}\n- **Aktenart:** ${safeMatterType}\n- **Jurisdiktion:** ${params.jurisdiction.toUpperCase()}\n- **Dringlichkeit:** ${params.urgency}\n- **Erstellt:** ${new Date().toISOString()}\n${conflictResult ? `\n## Konfliktprüfung\n- **Geprüft:** ja\n- **Konflikt:** ${conflictResult.hasConflict ? "⚠️ Ja" : "Nein"}\n${conflictResult.matches.length > 0 ? `- **Treffer:** ${conflictResult.matches.map((m) => m.name).join(", ")}\n` : ""}` : ""}\n`,
-      frontmatter: {
-        client_name: safeClientName,
-        matter_type: safeMatterType,
-        jurisdiction: params.jurisdiction,
-        urgency: params.urgency,
-        status: "intake",
-        conflict_checked: params.conflict_check,
-        conflict_status: conflictResult?.hasConflict ? "conflict" : "clear",
-        created_at: new Date().toISOString(),
-      },
-    };
-
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = (await res.json()) as { slug: string };
-
+  if (outcome.status === "created") {
     return {
       success: true,
-      data: { case: result, conflict: conflictResult },
+      data: { case: { slug: outcome.slug }, conflict: { hasConflict: false, matches: [] } },
       display: {
         kind: "confirmation",
         title: `Mandant aufgenommen: ${safeClientName}`,
-        href: `/dashboard/cases/${result.slug.replace(/^cases\//, "")}`,
-        message: `Akte erstellt: ${safeMatterType} (${params.jurisdiction.toUpperCase()})${conflictResult ? ` | Konfliktprüfung: ${conflictResult.hasConflict ? "⚠️ Konflikt erkannt" : "✓ Kein Konflikt"}` : ""}`,
+        href: `/dashboard/cases/${outcome.slug.replace(/^legal\/cases\//, "")}`,
+        message: `Akte erstellt: ${safeMatterType} (${params.jurisdiction.toUpperCase()}) | Kollisionsprüfung: ✓ kein blockierender Konflikt`,
         items: [
           { label: "Mandant", value: safeClientName },
           { label: "Aktenart", value: safeMatterType },
           { label: "Dringlichkeit", value: params.urgency },
-          ...(conflictResult?.matches ?? []).map((m) => ({
-            label: `⚠️ Konflikt: ${m.name}`,
-            value: m.type,
-          })),
         ],
       },
     };
-  } catch (_err) {
+  }
+  if (outcome.status === "conflict") {
     return {
       success: false,
-      error: "Intake failed",
+      error: "conflict_detected",
+      data: { conflict: { hasConflict: true, matches: outcome.matches } },
       display: {
         kind: "confirmation",
-        title: "Mandantsaufnahme fehlgeschlagen",
-        message: "Engine nicht erreichbar",
+        title: `⚠️ Interessenkonflikt — keine Akte angelegt`,
+        message:
+          "Die Kollisionsprüfung hat einen Konflikt gefunden. Bitte über die Mandatsannahme prüfen und nur mit begründeter Freigabe fortfahren.",
+        items: outcome.matches.map((m) => ({ label: `⚠️ ${m.name}`, value: m.type })),
       },
     };
   }
+  return {
+    success: false,
+    error: outcome.status === "exists" ? "case_slug_exists" : outcome.code,
+    display: {
+      kind: "confirmation",
+      title: "Mandantsaufnahme fehlgeschlagen",
+      message:
+        outcome.status === "exists"
+          ? "Unter dieser Kennung gibt es bereits eine Akte."
+          : outcome.message,
+    },
+  };
 }
 
 async function executeDocumentRequestCreate(

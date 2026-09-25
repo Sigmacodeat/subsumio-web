@@ -55,9 +55,24 @@ function installEngine() {
     }
     if (url.pathname === "/api/legal/conflict-check") {
       const { name } = JSON.parse(String(init?.body)) as { name: string };
+      // Engine answer shape: a listed name sits on the other side of an
+      // existing matter — a blocking (critical) hit.
+      const hit = engine.conflictNames.includes(name);
       return Response.json({
-        matches: engine.conflictNames.includes(name)
-          ? [{ name, slug: "contacts/x", type: "legal_contact" }]
+        name,
+        severity: hit ? "critical" : "none",
+        explanation: hit ? "Interessenkonflikt" : "Kein Konflikt erkennbar.",
+        matches: hit
+          ? [
+              {
+                slug: "legal/cases/x",
+                title: "Bestehende Akte",
+                role: "opponent",
+                quelle: "case",
+                matched_name: name,
+                assessment: "critical",
+              },
+            ]
           : [],
       });
     }

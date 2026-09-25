@@ -21,7 +21,7 @@ import { randomBytes } from "node:crypto";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { readCurrentPage, type CurrentPageRead } from "@/lib/page-write-guards";
-import { matterConflictParties } from "@/lib/contact-conflict";
+import { matterParties, requestConflictCheck, type ConflictSide } from "@/lib/conflict-gate";
 import { caseContentWithAktenblatt } from "@/lib/aktenblatt";
 
 export const CASE_SLUG_PREFIX = "legal/cases/";
@@ -33,8 +33,16 @@ export type CaseWriteOutcome = { ok: true } | { ok: false; status: number; messa
 export interface SafeCaseCreateDeps {
   /** Existence check for one slug: found / missing / error (unreadable). */
   readPage(slug: string): Promise<CurrentPageRead>;
-  /** Conflict check for one party name. Throws when the check is unavailable. */
-  conflictCheck(name: string): Promise<CaseConflictMatch[]>;
+  /**
+   * Conflict check for one party with its side in the NEW matter. Returns only
+   * the hits that block the matter (§ 10 RAO: client is an opponent elsewhere
+   * or vice versa); throws when the check is unavailable.
+   */
+  conflictCheck(
+    name: string,
+    side: ConflictSide,
+    ownContactSlugs: string[]
+  ): Promise<CaseConflictMatch[]>;
   /** Create the page on the engine and report the engine's answer. */
   writePage(page: {
     slug: string;
@@ -99,9 +107,14 @@ export async function runCaseConflictCheck(
   deps: Pick<SafeCaseCreateDeps, "conflictCheck">,
   frontmatter: Record<string, unknown>
 ): Promise<CaseConflictMatch[]> {
-  const names = [...new Set(matterConflictParties(frontmatter).map((party) => party.name))];
+  const seen = new Set<string>();
   const matches: CaseConflictMatch[] = [];
-  for (const name of names) matches.push(...(await deps.conflictCheck(name)));
+  for (const party of matterParties(frontmatter)) {
+    const key = `${party.side}:${party.name.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    matches.push(...(await deps.conflictCheck(party.name, party.side, party.ownContactSlugs)));
+  }
   return matches;
 }
 
@@ -191,16 +204,11 @@ function guardUnavailable(): SafeCaseCreateResult {
 export function engineCaseCreateDeps(headers: Record<string, string>): SafeCaseCreateDeps {
   return {
     readPage: (slug) => readCurrentPage(ENGINE_URL, headers, slug),
-    async conflictCheck(name) {
-      const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({ name }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) throw new Error(`conflict_check_failed:${res.status}`);
-      const data = (await res.json()) as { matches?: CaseConflictMatch[] };
-      return (data.matches ?? []).map((m) => ({ name: m.name, slug: m.slug, type: m.type }));
+    async conflictCheck(name, side, ownContactSlugs) {
+      const result = await requestConflictCheck(headers, { name, side, ownContactSlugs });
+      return result.matches
+        .filter((m) => m.assessment === "critical")
+        .map((m) => ({ name: m.matched_name || m.title, slug: m.slug, type: m.quelle ?? "case" }));
     },
     async writePage(page) {
       try {
