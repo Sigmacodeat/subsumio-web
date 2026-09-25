@@ -20,6 +20,9 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 9a  | DSGVO — Nachbesserung      | #49 | 6ba56d4801   | ✅ live | Legal-Hold-Re-Check beim 30d-Hard-Delete, lib-Extraktion + Tests                                                                                                                 |
 | 6a  | Auth — Rest                | #50 | a15e522800   | ✅ live | Session-Registry (sid-Claim, Einzel-Revocation Node+Edge, „Aktive Sitzungen"-UI, Logout nur eigene Session), OWASP-E-Mail-Change (Passwort-Reauth, Single-Use-Token, revoke-all) |
 | 7a  | KI — Rest                  | #50 | a15e522800   | ✅ live | Retrieval-Feedback-UI verdrahtet (👍/👎 + Reason-Picker in /dashboard/search), dormant→aktiv                                                                                     |
+| 7b  | KI — Feedback-Persistenz   | #55 | 9018c6d394   | ✅ live | Retrieval-Feedback als Engine-Pages persistiert (org-scoped, eval-gate robust bei Engine-Ausfall)                                                                                |
+| 8b  | Zeit — Atomares Append     | #56 | a587d36914   | ✅ live | Engine-Ops `page_array_append`/`page_array_mutate` (pglite+pg identisch, ein UPDATE-Statement), alle time_entries-Pfade migriert; Harness-Fix RESTART IDENTITY                   |
+| 8c  | Zeit — Expense-Endpoint    | #57 | c5e3345207   | ✅ live | `/api/expenses` CRUD + mark-billed/unbill, billed-Guard 409, UI migriert (updatePage nur noch Offline-Fallback)                                                                  |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
@@ -27,7 +30,7 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 - [ ] Geld: OPOS-Backfill für Altrechnungen; Mahnformeln vereinheitlichen (20/40/60 vs. 5/10/15 €); restliche `as unknown as AuditAction`-Casts
 - [ ] Kommunikation: Delivery-Status-Reconciliation (Bounce-Webhook); Tracking-Retention (DSGVO); beA-Dead-UI-Check
 - [ ] Portal: optionale zweite Faktor-Ebene für sensible Akten; Link-Registry ggf. als DB-Tabelle; Portal-Aktivitäts-Feed
-- [ ] KI: Retrieval-Feedback-Store weiterhin In-Memory (verliert bei Restart) — Persistenz ins Engine-Backend; Feedback soll ins Ranking-Tuning einfließen
+- [ ] KI: Retrieval-Feedback soll ins Ranking-Tuning einfließen (Persistenz ✅ seit #55); Beleg-Upload für expense `receipt_slug` verdrahten
 - [ ] Auth: Join in suspendierte Org via altem Link technisch möglich (folgenlos — nächster Request fail-closed, aber UX-wart); SSO-Only-Accounts ohne Passwort können E-Mail nicht ändern (brauchen erst Reset-Flow)
-- [ ] Zeit & Honorar: atomares `time_entries`-Append engine-seitig (aktuell Retry-Schleife statt echter Transaktion); Expense-Billing ohne eigenen Endpoint (geht über updatePage-Patch); Timer ohne Obergrenze bei Dauerbetrieb
+- [ ] Zeit & Honorar: Timer ohne Obergrenze bei Dauerbetrieb; `invoice-mark-billed.ts` auf `/api/expenses/mark-billed` umstellen (vereinheitlicht Billed-Guard + Audit)
 - [ ] DSGVO: Auftragsverarbeitungs-Doku (AVV-Template) als Download; Retention-Cron deckt nur Akten, nicht Dokumente/Notizen mit eigener Frist
