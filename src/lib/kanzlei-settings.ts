@@ -10,6 +10,13 @@ export interface KanzleiSettings {
   ustId: string;
   stundensatz: string;
   abrechnungstakt?: string;
+  /**
+   * Abrechnungsregeln (src/lib/billing-rules.ts): nur wenn true werden
+   * Zeiten beim Übernehmen in eine Rechnung auf `abrechnungstakt`
+   * aufgerundet und Sätze nach Honorarvereinbarung / Rechtsgebiet gewählt.
+   * Standard AUS — gespeicherte Takt-/Satzwerte allein ändern nichts.
+   */
+  billingRulesEnabled?: boolean;
   bankName?: string;
   iban?: string;
   bic?: string;
