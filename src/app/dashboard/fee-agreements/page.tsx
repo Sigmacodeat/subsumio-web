@@ -18,7 +18,11 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { FeeAgreement, BudgetStatus } from "@/lib/fee-agreements";
-import { FEE_MODEL_LABELS, computeBudgetStatus } from "@/lib/fee-agreements";
+import {
+  FEE_MODEL_LABELS,
+  budgetInputsFromEntries,
+  computeBudgetStatus,
+} from "@/lib/fee-agreements";
 
 const ALERT_COLORS: Record<string, string> = {
   none: "",
@@ -55,7 +59,9 @@ export default function FeeAgreementsPage() {
 
   const load = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPagesDetailed(["fee_agreement", "legal_case"], 200);
+      // Every agreement and matter (read in batches of 100): a matter beyond a
+      // cut-off would show 0 % budget use.
+      const batch = await api.brain.batchListPagesDetailed(["fee_agreement", "legal_case"], 10_000);
       if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       setAgreements(
         (batch.results["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
@@ -129,14 +135,18 @@ export default function FeeAgreementsPage() {
     return c.caseNumber ? `${c.caseNumber} – ${c.title}` : c.title;
   };
 
-  /** Budget-Auslastung aus den erfassten abrechenbaren Zeiten der Akte. */
+  /** Budget-Auslastung — dieselbe Regel wie das Budget-Widget. */
   const computeStatus = (ag: FeeAgreement): BudgetStatus => {
-    const entries = (caseFor(ag.case_slug)?.timeEntries ?? []).filter((e) => e.billable !== false);
-    const value = entries.reduce(
-      (sum, e) => sum + ((Number(e.minutes) || 0) / 60) * (Number(e.rate) || ag.hourly_rate || 0),
-      0
+    const inputs = budgetInputsFromEntries(
+      caseFor(ag.case_slug)?.timeEntries ?? [],
+      ag.hourly_rate
     );
-    return computeBudgetStatus(ag, { minutes: 0, billedAmount: value });
+    return computeBudgetStatus(ag, {
+      minutes: inputs.minutes,
+      hourlyRate: ag.hourly_rate,
+      trackedValue: inputs.trackedValue,
+      billedAmount: inputs.billedAmount,
+    });
   };
 
   return (

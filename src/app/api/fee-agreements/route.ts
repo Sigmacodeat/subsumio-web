@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createFeeAgreement, type FeeAgreement } from "@/lib/fee-agreements";
 
 export const dynamic = "force-dynamic";
@@ -65,14 +66,15 @@ export const GET = createHandler(
     query: listQuerySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "fee_agreement", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    let items: FeeAgreement[] = (Array.isArray(data) ? data : (data.pages ?? [])) as FeeAgreement[];
+    // Every agreement (paged past the engine cap); the fields live in the
+    // page frontmatter.
+    let items: FeeAgreement[];
+    try {
+      const pages = await listEnginePages(ctx.headers, "fee_agreement", 10_000, { strict: true });
+      items = pages.map((p) => p.frontmatter as unknown as FeeAgreement);
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
     if (query?.case_slug) {
       items = items.filter((a) => a.case_slug === query.case_slug);
     }

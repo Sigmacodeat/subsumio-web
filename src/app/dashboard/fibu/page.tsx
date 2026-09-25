@@ -16,7 +16,13 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
-import { getOposSummary, getDunningLabel, type OpenItem, type BankTransaction } from "@/lib/fibu";
+import {
+  getOposSummary,
+  getDunningLabel,
+  isPastDue,
+  type OpenItem,
+  type BankTransaction,
+} from "@/lib/fibu";
 import { FibuExportPanel } from "@/components/legal/FibuExportPanel";
 
 import { unwrapApiBody } from "@/lib/api-body";
@@ -27,6 +33,16 @@ export default function FibuPage() {
   const [openItems, setOpenItems] = useState<OpenItem[]>([]);
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Load failed — shown as an error with retry, never as "no open items". */
+  const [loadError, setLoadError] = useState(false);
+  /** The EPC-QR of the payment link just created. */
+  const [createdLink, setCreatedLink] = useState<{
+    invoiceNumber: string;
+    amount: number;
+    iban: string;
+    payload: string;
+    qrDataUrl: string | null;
+  } | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showPaymentLink, setShowPaymentLink] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -55,10 +71,13 @@ export default function FibuPage() {
   });
 
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
+      // Every item (read in batches of 100) — a list cut at 200 would hide
+      // receivables without a word.
       const batch = await api.brain.batchListPagesDetailed(
         ["open_item", "bank_transaction", "payment_link"],
-        200
+        10_000
       );
       if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       const items = (batch.results["open_item"] ?? []).map(
@@ -70,6 +89,7 @@ export default function FibuPage() {
       setOpenItems(items);
       setTransactions(txns);
     } catch {
+      setLoadError(true);
       addToast({
         type: "error",
         title: "Buchhaltungsdaten konnten nicht geladen werden",
@@ -113,13 +133,19 @@ export default function FibuPage() {
       const data = unwrapApiBody(await res.json());
       const imported = Number(data.imported) || 0;
       const matched = Number(data.matched) || 0;
+      const duplicates = Number(data.duplicates) || 0;
       addToast({
-        type: "success",
-        title: `${imported} ${imported === 1 ? "Bankbuchung" : "Bankbuchungen"} erfasst`,
+        type: duplicates > 0 && imported === 0 ? "info" : "success",
+        title:
+          duplicates > 0 && imported === 0
+            ? "Diese Bankbuchung ist bereits erfasst"
+            : `${imported} ${imported === 1 ? "Bankbuchung" : "Bankbuchungen"} erfasst`,
         description:
-          matched > 0
-            ? `${matched} davon einem offenen Posten zugeordnet.`
-            : "Keinem offenen Posten automatisch zugeordnet.",
+          duplicates > 0 && imported === 0
+            ? "Sie wurde nicht noch einmal auf den offenen Posten angerechnet."
+            : matched > 0
+              ? `${matched} davon einem offenen Posten zugeordnet.`
+              : "Keinem offenen Posten automatisch zugeordnet.",
       });
       setShowImport(false);
       setImportForm({
@@ -187,7 +213,11 @@ export default function FibuPage() {
       addToast({
         type: "success",
         title: `${result.data?.imported ?? 0} Buchungen aus camt.053 importiert`,
-        description: `${result.data?.matched ?? 0} automatisch zugeordnet.`,
+        description:
+          `${result.data?.matched ?? 0} automatisch zugeordnet.` +
+          (result.data?.duplicates
+            ? ` ${result.data.duplicates} bereits erfasste Buchungen übersprungen.`
+            : ""),
       });
       await load();
     } catch (error) {
@@ -203,15 +233,26 @@ export default function FibuPage() {
     }
   }
 
+  /** Prefill the payment-link form from an open item (amount = open amount). */
+  function startPaymentLink(item: OpenItem) {
+    setLinkForm({
+      invoice_id: item.invoice_id,
+      invoice_number: item.invoice_number,
+      amount: item.open_amount.toFixed(2),
+      client_name: item.client_name,
+      client_email: item.client_email ?? "",
+      iban: "",
+      bic: "",
+      remittance_text: "",
+    });
+    setCreatedLink(null);
+    setShowPaymentLink(true);
+    setShowImport(false);
+  }
+
   async function handlePaymentLink() {
-    if (
-      !linkForm.invoice_id ||
-      !linkForm.invoice_number ||
-      !linkForm.amount ||
-      !linkForm.client_name ||
-      !linkForm.iban
-    ) {
-      addToast({ type: "error", title: "Bitte alle Pflichtfelder ausfüllen" });
+    if (!linkForm.invoice_id) {
+      addToast({ type: "error", title: "Bitte eine Rechnung angeben" });
       return;
     }
     setSaving(true);
@@ -219,18 +260,49 @@ export default function FibuPage() {
       const res = await csrfFetch("/api/fibu/payment-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Amount and IBAN are checked by the server: the open amount of the
+        // invoice, the firm's IBAN (mod-97) when none is entered.
         body: JSON.stringify({
           invoice_id: linkForm.invoice_id,
-          invoice_number: linkForm.invoice_number,
-          amount: parseFloat(linkForm.amount),
-          client_name: linkForm.client_name,
+          invoice_number: linkForm.invoice_number || undefined,
+          amount: linkForm.amount ? parseFloat(linkForm.amount) : undefined,
+          client_name: linkForm.client_name || undefined,
           client_email: linkForm.client_email || undefined,
-          iban: linkForm.iban,
+          iban: linkForm.iban || undefined,
           bic: linkForm.bic || undefined,
           remittance_text: linkForm.remittance_text || undefined,
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        addToast({
+          type: "error",
+          title: "Zahlungslink wurde nicht erstellt",
+          description:
+            (body && typeof body.error === "string" && body.message) ||
+            "Bitte prüfen Sie Betrag und IBAN und versuchen Sie es erneut.",
+        });
+        return;
+      }
+      const data = unwrapApiBody(body) as {
+        epc_qr_payload?: string;
+        payment_link?: { invoice_number?: string; amount?: number; iban?: string };
+      };
+      const payload = String(data.epc_qr_payload ?? "");
+      let qrDataUrl: string | null = null;
+      try {
+        const QRCode = (await import("qrcode")).default;
+        qrDataUrl = await QRCode.toDataURL(payload, { width: 240, margin: 1 });
+      } catch {
+        qrDataUrl = null;
+      }
+      setCreatedLink({
+        invoiceNumber: String(data.payment_link?.invoice_number ?? linkForm.invoice_number),
+        amount: Number(data.payment_link?.amount ?? 0),
+        iban: String(data.payment_link?.iban ?? ""),
+        payload,
+        qrDataUrl,
+      });
       addToast({ type: "success", title: "Zahlungslink erstellt" });
       setShowPaymentLink(false);
       setLinkForm({
@@ -471,30 +543,29 @@ export default function FibuPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Rechnungsnummer *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">Rechnungsnummer</Label>
               <Input
                 value={linkForm.invoice_number}
                 onChange={(e) => setLinkForm({ ...linkForm, invoice_number: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Betrag (€) *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                Betrag (€) — leer = offener Betrag
+              </Label>
               <Input
                 type="number"
                 inputMode="decimal"
                 step="0.01"
                 value={linkForm.amount}
                 onChange={(e) => setLinkForm({ ...linkForm, amount: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">Mandant *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">Mandant</Label>
               <Input
                 value={linkForm.client_name}
                 onChange={(e) => setLinkForm({ ...linkForm, client_name: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-1">
@@ -508,11 +579,12 @@ export default function FibuPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-[color:var(--ds-text-muted)]">IBAN *</Label>
+              <Label className="text-xs text-[color:var(--ds-text-muted)]">
+                IBAN — leer = Kanzleikonto aus den Einstellungen
+              </Label>
               <Input
                 value={linkForm.iban}
                 onChange={(e) => setLinkForm({ ...linkForm, iban: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-1">
@@ -548,8 +620,51 @@ export default function FibuPage() {
         </form>
       )}
 
+      {createdLink && (
+        <section
+          aria-label="EPC-QR-Code"
+          className="flex flex-col gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 sm:flex-row sm:items-center"
+        >
+          {createdLink.qrDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={createdLink.qrDataUrl}
+              alt={`EPC-QR-Code für Rechnung ${createdLink.invoiceNumber}`}
+              width={160}
+              height={160}
+              className="rounded-md border border-[color:var(--ds-border)]"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1 space-y-1 text-sm">
+            <p className="font-semibold text-[color:var(--ds-text)]">
+              Zahlungslink für {createdLink.invoiceNumber}
+            </p>
+            <p className="text-[color:var(--ds-text-muted)] tabular-nums">
+              {formatEur(createdLink.amount, lang)} · {createdLink.iban}
+            </p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              Der Mandant scannt den Code mit seiner Banking-App (SEPA-Überweisung).
+            </p>
+          </div>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setCreatedLink(null)}>
+            Schließen
+          </Button>
+        </section>
+      )}
+
       {loading ? (
         <RowSkeleton count={4} />
+      ) : loadError ? (
+        <EmptyState
+          icon={FileText}
+          title="Buchhaltungsdaten konnten nicht geladen werden"
+          description="Die offenen Posten sind nicht leer — sie konnten nur nicht gelesen werden."
+          actionLabel="Erneut laden"
+          onAction={() => {
+            setLoading(true);
+            void load();
+          }}
+        />
       ) : (
         <>
           {/* OPOS List */}
@@ -571,7 +686,11 @@ export default function FibuPage() {
             ) : (
               <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
                 {openItems.map((item) => {
-                  const isOverdue = item.status !== "paid" && new Date(item.due_date) < new Date();
+                  // Overdue from the day after the due date (firm calendar).
+                  const isOverdue =
+                    item.status !== "paid" &&
+                    item.status !== "written_off" &&
+                    isPastDue(item.due_date);
                   return (
                     <li key={item.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
@@ -591,18 +710,37 @@ export default function FibuPage() {
                           >
                             {item.status === "paid"
                               ? "Bezahlt"
-                              : isOverdue
-                                ? "Überfällig"
-                                : getDunningLabel(item.dunning_level) || "Offen"}
+                              : item.status === "written_off"
+                                ? "Ausgebucht"
+                                : isOverdue
+                                  ? "Überfällig"
+                                  : getDunningLabel(item.dunning_level) || "Offen"}
                           </Badge>
                         </div>
                         <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
                           {item.client_name} · fällig {formatDate(item.due_date)}
+                          {item.dunning_suggested_level &&
+                          item.dunning_suggested_level > item.dunning_level &&
+                          item.status !== "paid" &&
+                          item.status !== "written_off"
+                            ? ` · Mahnvorschlag: ${getDunningLabel(item.dunning_suggested_level)}`
+                            : ""}
                         </div>
                       </div>
                       <div className="shrink-0 text-right text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
                         {formatEur(item.open_amount, lang)}
                       </div>
+                      {item.status !== "paid" && item.status !== "written_off" && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0 text-xs"
+                          onClick={() => startPaymentLink(item)}
+                        >
+                          Zahlungslink
+                        </Button>
+                      )}
                     </li>
                   );
                 })}

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
+  budgetInputsFromEntries,
   computeBudgetStatus,
   FEE_MODEL_LABELS,
   type FeeAgreement,
@@ -70,21 +71,19 @@ async function fetchMatterBudgets(): Promise<MatterBudget[]> {
       }
     }
 
-    const trackedMinutes = timeEntries
-      .filter((e) => e.billable !== false)
-      .reduce((sum, e) => sum + (e.minutes || 0), 0);
-
     const expenseTotal = expenses
       .filter((e) => e.billable !== false)
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-    const billedAmount = timeEntries
-      .filter((e) => e.billed === true)
-      .reduce((sum, e) => sum + (e.rate ?? agreement.hourly_rate ?? 0) * (e.minutes / 60), 0);
+    // Billed entries count once (as billed), open ones once (as tracked).
+    const inputs = budgetInputsFromEntries(timeEntries, agreement.hourly_rate);
+    const trackedMinutes = inputs.minutes;
+    const billedAmount = inputs.billedAmount;
 
     const status = computeBudgetStatus(agreement, {
-      minutes: trackedMinutes,
+      minutes: inputs.minutes,
       hourlyRate: agreement.hourly_rate,
+      trackedValue: inputs.trackedValue,
       billedAmount,
     });
 
