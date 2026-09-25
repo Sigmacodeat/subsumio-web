@@ -23,6 +23,7 @@ import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice
 import { addDaysToDateString, addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
+import { brainPageHref, INVOICING_HREF } from "@/lib/dashboard-hrefs";
 import { planVaultOrganization } from "@/lib/vault-organization";
 import {
   CREDIT_COSTS,
@@ -2432,7 +2433,7 @@ async function executeRenderTemplate(
       display: {
         kind: "confirmation",
         title: `Vorlage gerendert: ${template.title}`,
-        ...(documentSlug ? { href: `/dashboard/documents` } : {}),
+        ...(documentSlug ? { href: brainPageHref(documentSlug) } : {}),
         message:
           unfilled.length > 0
             ? `Offene Platzhalter: ${unfilled.join(", ")} — bitte manuell ergänzen.`
@@ -2717,7 +2718,7 @@ async function executeInvoiceDraft(
       display: {
         kind: "confirmation",
         title: `Rechnungsentwurf ${invoice.number}`,
-        href: "/dashboard/invoices",
+        href: INVOICING_HREF,
         message: `Entwurf über ${total.toFixed(2)} € (inkl. ${vatRate * 100} % USt) zur Akte "${page.title}" angelegt — bitte prüfen und versenden.`,
       },
     };

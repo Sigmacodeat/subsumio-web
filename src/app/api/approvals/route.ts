@@ -21,6 +21,9 @@ const log = logger("api/approvals");
 
 export const dynamic = "force-dynamic";
 
+/** Upper bound for one listing scan (agent_action pages across all statuses). */
+const APPROVALS_SCAN_MAX = 5000;
+
 const approvalsQuerySchema = z.object({
   status: z.string().default("pending"),
   limit: z.string().optional(),
@@ -65,12 +68,13 @@ export const GET = createHandler(
     const limit = Math.min(parseInt(query.limit || "50", 10), 200);
     try {
       const brain = createServerBrainClient(ctx.headers);
-      // The engine returns at most 100 per request — page through until the
-      // caller's limit is filled or the engine reports no further cursor.
+      // The status filter lives in frontmatter, so the engine cannot apply it:
+      // page through ALL proposals (bounded) and filter afterwards — otherwise
+      // an old open approval disappears behind the newest decided ones.
       const pages: BrainPage[] = [];
       let cursor: string | null = null;
-      while (pages.length < limit) {
-        const want = Math.min(100, limit - pages.length);
+      while (pages.length < APPROVALS_SCAN_MAX) {
+        const want = Math.min(100, APPROVALS_SCAN_MAX - pages.length);
         const batch: { items: BrainPage[]; nextCursor: string | null } = brain.listPagesPaged
           ? await brain.listPagesPaged({
               type: "agent_action",
@@ -92,28 +96,36 @@ export const GET = createHandler(
         }
         if (cursor || batch.items.length < want) break;
       }
-      const items = pages
-        .filter((p) => {
-          const fm = p.frontmatter as Record<string, unknown>;
-          if (query.status !== "all" && fm.status !== query.status) return false;
-          return true;
-        })
-        .map((p) => {
-          const fm = p.frontmatter as Record<string, unknown>;
-          return {
-            id: p.slug,
-            action_type: fm.action_type,
-            status: fm.status,
-            proposed_by: fm.proposed_by,
-            target_slug: fm.target_slug ?? null,
-            summary: fm.summary,
-            proposed_at: fm.proposed_at,
-            decided_at: fm.decided_at ?? null,
-            decided_by: fm.decided_by ?? null,
-            reject_reason: fm.reject_reason ?? null,
-          };
-        });
-      return Response.json({ items, total: items.length });
+      const scanCapped = pages.length >= APPROVALS_SCAN_MAX;
+      const matching = pages.filter((p) => {
+        const fm = p.frontmatter as Record<string, unknown>;
+        // Deleted proposals are only marked — never list them.
+        if (fm.status === "tombstoned" || (p as { status?: string }).status === "tombstoned") {
+          return false;
+        }
+        if (query.status !== "all" && fm.status !== query.status) return false;
+        return true;
+      });
+      const items = matching.slice(0, limit).map((p) => {
+        const fm = p.frontmatter as Record<string, unknown>;
+        return {
+          id: p.slug,
+          action_type: fm.action_type,
+          status: fm.status,
+          proposed_by: fm.proposed_by,
+          target_slug: fm.target_slug ?? null,
+          summary: fm.summary,
+          proposed_at: fm.proposed_at,
+          decided_at: fm.decided_at ?? null,
+          decided_by: fm.decided_by ?? null,
+          reject_reason: fm.reject_reason ?? null,
+        };
+      });
+      return Response.json({
+        items,
+        total: matching.length,
+        ...(matching.length > limit || scanCapped ? { capped: true } : {}),
+      });
     } catch (err) {
       log.error("[approvals] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Freigaben konnten nicht geladen werden", 500);

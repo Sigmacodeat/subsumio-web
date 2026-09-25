@@ -44,7 +44,7 @@ export async function sendGuardedSms(params: {
   urgent?: boolean;
   quietHours?: QuietHours;
   /** Injectable for tests — defaults to the Twilio adapter. */
-  send?: (p: { to: string; body: string }) => Promise<SmsSendResult>;
+  send?: (p: { to: string; body: string; statusRef?: string }) => Promise<SmsSendResult>;
 }): Promise<GuardedSmsResult> {
   const normalized = normalizePhone(params.to);
   const hash = phoneHash(normalized);
@@ -72,7 +72,7 @@ export async function sendGuardedSms(params: {
   }
 
   const send = params.send ?? sendSms;
-  const result = await send({ to: normalized, body: params.body });
+  const result = await send({ to: normalized, body: params.body, statusRef: params.brainId });
   if (!result.ok) {
     const reason: SmsBlockReason = result.notConfigured ? "not_configured" : "provider_error";
     await logAudit("sms.outbound_blocked", "sms_outbound", {

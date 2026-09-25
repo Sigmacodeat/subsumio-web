@@ -7,7 +7,7 @@ import { signActionToken, bindFragment, CHALLENGE_TOKEN_TTL_SECONDS } from "@/li
 import { decideSsoAccountLink } from "@/lib/auth/sso-account-link";
 import { twoFactorPolicyFor } from "@/lib/kanzlei-settings-server";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
+import { logUserAudit } from "@/lib/audit-user";
 import { env } from "@/lib/env";
 import { timingSafeCompare } from "@/lib/crypto-utils";
 import { clientIp } from "@/lib/auth/rate-limit";
@@ -161,7 +161,7 @@ export const GET = createPublicHandler(
         ip: clientIp(req.headers),
       });
       (await cookies()).set(SESSION_COOKIE, session.token, session.cookieOptions);
-      void logAudit("user.login", "user", {
+      void logUserAudit("user.login", "user", user, {
         entityId: user.id,
         details: { method: "sso", ip: clientIp(req.headers) },
       });

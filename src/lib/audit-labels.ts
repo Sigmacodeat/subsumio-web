@@ -20,6 +20,9 @@ export type AuditAction =
   | "user.sessions_revoked_others"
   | "user.email_change_requested"
   | "user.email_changed"
+  | "user.2fa_failed"
+  | "user.2fa_locked"
+  | "user.2fa_replaced"
   | "case.create"
   | "case.update"
   | "matter.access_update"
@@ -375,6 +378,9 @@ const ACTION_LABELS: Record<string, string> = {
   "user.sessions_revoked_others": "Alle anderen Sitzungen abgemeldet",
   "user.email_change_requested": "E-Mail-Änderung angefordert",
   "user.email_changed": "E-Mail-Adresse geändert",
+  "user.2fa_failed": "Zweiter Faktor falsch eingegeben",
+  "user.2fa_locked": "Zweiter Faktor gesperrt (zu viele Fehlversuche)",
+  "user.2fa_replaced": "Zwei-Faktor-Anmeldung neu eingerichtet",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
   "matter.access_update": "Aktenzugriff geändert",

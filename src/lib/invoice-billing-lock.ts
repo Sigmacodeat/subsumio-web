@@ -30,7 +30,7 @@ import {
 } from "@/lib/time-tracking";
 import { unbillExpensesAtomic, type ExpensesArrayClient } from "@/lib/expense-tracking";
 import { createServerBrainClient } from "@/lib/server-brain";
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 
 const log = logger("lib/invoice-billing-lock");
@@ -231,6 +231,7 @@ export async function releaseWorkOfInvoice(
       timeEntryIds,
     });
     void logAudit("invoice.update", "invoice", {
+      brainId: headers["x-subsumio-source"] || SYSTEM_BRAIN,
       entityId: invoiceSlug,
       details: { action: "entries_released", reason, invoiceNumber, ...released },
     });

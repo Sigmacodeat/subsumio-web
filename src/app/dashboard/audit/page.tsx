@@ -24,9 +24,33 @@ import { auditLabel, type AuditEntry } from "@/lib/audit-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { useApiQuery } from "@/lib/use-api-query";
+import { buildAuditCsv } from "@/lib/audit-csv";
 import type { Lang } from "@/content/site";
 
 const PAGE_SIZE = 25;
+/** Entries per server page (API maximum). */
+const FETCH_SIZE = 500;
+/** Safety bound for a full export: 200 × 500 = 100.000 entries. */
+const EXPORT_MAX_PAGES = 200;
+
+interface AuditPageResponse {
+  entries: AuditEntry[];
+  nextCursor?: string | null;
+}
+
+async function fetchAuditPage(params: URLSearchParams): Promise<AuditPageResponse> {
+  const res = await fetch(`/api/audit?${params.toString()}`, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    throw new Error(
+      res.status === 403
+        ? "Sie haben keine Berechtigung, das Protokoll einzusehen."
+        : "Das Protokoll konnte nicht geladen werden. Bitte versuchen Sie es in einem Moment erneut."
+    );
+  }
+  return (await res.json()) as AuditPageResponse;
+}
 
 /** Anwaltsverständliche Bezeichnung für den betroffenen Datensatz. */
 const ENTITY_LABELS: Record<string, string> = {
@@ -105,6 +129,20 @@ function formatTimestamp(lang: Lang, ts: string): string {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function matchesSearch(e: AuditEntry, search: string): boolean {
+  const s = search.toLowerCase();
+  if (!s) return true;
+  return (
+    e.action.toLowerCase().includes(s) ||
+    auditLabel(e.action).toLowerCase().includes(s) ||
+    e.entityType.toLowerCase().includes(s) ||
+    entityLabel(e.entityType).toLowerCase().includes(s) ||
+    (e.entityId || "").toLowerCase().includes(s) ||
+    (e.userEmail || "").toLowerCase().includes(s) ||
+    (e.details ? JSON.stringify(e.details).toLowerCase().includes(s) : false)
+  );
 }
 
 function formatRelative(ts: string): string {
@@ -191,48 +229,62 @@ export default function AuditLogPage() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [selectedEntry]);
 
-  const {
-    data: auditData,
-    loading,
-    error,
-    refetch: loadEntries,
-  } = useApiQuery<{ entries: AuditEntry[] }>(async () => {
+  function buildParams(cursor?: string | null): URLSearchParams {
     const params = new URLSearchParams();
     if (filterAction) params.set("action", filterAction);
     if (filterEntityType) params.set("entityType", filterEntityType);
     if (filterFrom) params.set("from", filterFrom);
     if (filterTo) params.set("to", filterTo);
-    params.set("limit", "500");
-    const res = await fetch(`/api/audit?${params.toString()}`, {
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) {
-      throw new Error(
-        res.status === 403
-          ? "Sie haben keine Berechtigung, das Protokoll einzusehen."
-          : "Das Protokoll konnte nicht geladen werden. Bitte versuchen Sie es in einem Moment erneut."
-      );
+    params.set("limit", String(FETCH_SIZE));
+    if (cursor) params.set("cursor", cursor);
+    return params;
+  }
+
+  const {
+    data: auditData,
+    loading,
+    error,
+    refetch: loadEntries,
+  } = useApiQuery<AuditPageResponse>(
+    () => fetchAuditPage(buildParams()),
+    [filterAction, filterEntityType, filterFrom, filterTo]
+  );
+
+  // Older pages appended via "Ältere Einträge laden" (keyset cursor). Reset
+  // whenever the first page is (re)loaded.
+  const [older, setOlder] = useState<AuditEntry[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  useEffect(() => {
+    setOlder([]);
+    setNextCursor(auditData?.nextCursor ?? null);
+    setMoreError(null);
+  }, [auditData]);
+
+  const entries = useMemo(() => [...(auditData?.entries ?? []), ...older], [auditData, older]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setMoreError(null);
+    try {
+      const page = await fetchAuditPage(buildParams(nextCursor));
+      setOlder((prev) => [...prev, ...page.entries]);
+      setNextCursor(page.nextCursor ?? null);
+    } catch (err) {
+      setMoreError(err instanceof Error ? err.message : "Laden fehlgeschlagen");
+    } finally {
+      setLoadingMore(false);
     }
-    return (await res.json()) as { entries: AuditEntry[] };
-  }, [filterAction, filterEntityType, filterFrom, filterTo]);
+  }
 
-  const entries = useMemo(() => auditData?.entries ?? [], [auditData]);
-
-  const filtered = useMemo(() => {
-    const s = search.toLowerCase();
-    return entries.filter((e) => {
-      if (!s) return true;
-      return (
-        e.action.toLowerCase().includes(s) ||
-        auditLabel(e.action).toLowerCase().includes(s) ||
-        e.entityType.toLowerCase().includes(s) ||
-        entityLabel(e.entityType).toLowerCase().includes(s) ||
-        (e.entityId || "").toLowerCase().includes(s) ||
-        (e.userEmail || "").toLowerCase().includes(s) ||
-        (e.details ? JSON.stringify(e.details).toLowerCase().includes(s) : false)
-      );
-    });
-  }, [entries, search]);
+  const filtered = useMemo(
+    () => entries.filter((e) => matchesSearch(e, search)),
+    [entries, search]
+  );
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageEntries = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -246,19 +298,40 @@ export default function AuditLogPage() {
     [entries]
   );
 
-  function exportCsv() {
-    const lines = [
-      "Zeitpunkt,Aktion,Bezeichnung,Datensatz,Kennung,Benutzer,Angaben",
-      ...filtered.map((e) => {
-        const ts = new Date(e.timestamp).toISOString();
-        const label = auditLabel(e.action);
-        const details = e.details
-          ? JSON.stringify(e.details).replace(/,/g, ";").replace(/"/g, "'")
-          : "";
-        return `"${ts}","${e.action}","${label}","${entityLabel(e.entityType)}","${e.entityId || ""}","${e.userEmail || ""}","${details}"`;
-      }),
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  /**
+   * Export the COMPLETE protocol for the current filters — every server page,
+   * not only what is loaded on screen — then apply the free-text search.
+   */
+  async function exportCsv() {
+    if (exporting) return;
+    setExporting(true);
+    setExportError(null);
+    let all: AuditEntry[] = [];
+    try {
+      let cursor: string | null = null;
+      let pages = 0;
+      do {
+        const page = await fetchAuditPage(buildParams(cursor));
+        all = all.concat(page.entries);
+        cursor = page.nextCursor ?? null;
+        pages++;
+      } while (cursor && pages < EXPORT_MAX_PAGES);
+      if (cursor) {
+        throw new Error(
+          "Der Zeitraum enthält zu viele Einträge für einen Export — bitte über „Von“/„Bis“ eingrenzen."
+        );
+      }
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Export fehlgeschlagen");
+      setExporting(false);
+      return;
+    }
+    const csv = buildAuditCsv(
+      all.filter((e) => matchesSearch(e, search)),
+      { action: auditLabel, entity: entityLabel }
+    );
+    setExporting(false);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -308,9 +381,9 @@ export default function AuditLogPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={exportCsv}
-              disabled={filtered.length === 0}
-              title="Die gefilterten Einträge als Tabelle (CSV) herunterladen"
+              onClick={() => void exportCsv()}
+              disabled={filtered.length === 0 || exporting}
+              title="Alle Einträge zu den gewählten Filtern als Tabelle (CSV) herunterladen"
               className="gap-1.5 whitespace-nowrap"
             >
               <Download size={14} aria-hidden />
@@ -481,10 +554,28 @@ export default function AuditLogPage() {
         <span className="tabular-nums">
           {filtered.length} {t("audit.entries_count")}
         </span>
-        {entries.length >= 500 && (
-          <span className="text-[color:var(--ds-text-subtle)]">
-            Angezeigt werden die neuesten 500 Einträge — grenzen Sie den Zeitraum über den Filter
-            ein, um ältere Einträge zu sehen.
+        {nextCursor && (
+          <span className="flex items-center gap-2 text-[color:var(--ds-text-subtle)]">
+            Es gibt ältere Einträge, die noch nicht geladen sind.
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void loadMore()}
+              disabled={loadingMore}
+              className="h-6 px-2 text-xs"
+            >
+              {loadingMore ? "Lädt …" : "Ältere Einträge laden"}
+            </Button>
+          </span>
+        )}
+        {moreError && (
+          <span role="alert" className="text-[color:var(--ds-danger-text)]">
+            {moreError}
+          </span>
+        )}
+        {exportError && (
+          <span role="alert" className="text-[color:var(--ds-danger-text)]">
+            {exportError}
           </span>
         )}
         {filtered.length !== entries.length && (

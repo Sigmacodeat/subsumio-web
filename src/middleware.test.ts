@@ -1,9 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
+import { middleware, config as middlewareConfig } from "./middleware";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { withEnv } from "../test/helpers/with-env";
 import { signSession } from "@/lib/auth/session-core";
+
+describe("middleware matcher (SEC-5)", () => {
+  it.each(["/api/legal/deadlines.ics", "/api/openapi.json", "/api/pages/docs/a.pdf"])(
+    "runs for API path with a file-like last segment: %s",
+    (url) => {
+      expect(unstable_doesMiddlewareMatch({ config: middlewareConfig, url })).toBe(true);
+    }
+  );
+
+  it("still skips static assets and Next internals", () => {
+    expect(unstable_doesMiddlewareMatch({ config: middlewareConfig, url: "/logo.svg" })).toBe(
+      false
+    );
+    expect(
+      unstable_doesMiddlewareMatch({ config: middlewareConfig, url: "/_next/static/x.js" })
+    ).toBe(false);
+  });
+
+  it("blocks the deadline calendar export from a foreign IP when an allowlist is set", async () => {
+    await withEnv({ SUBSUMIO_IP_ALLOWLIST: "10.0.0.1" }, async () => {
+      const res = await middleware(
+        new NextRequest("https://subsumio.test/api/legal/deadlines.ics", {
+          headers: { "x-forwarded-for": "8.8.8.8" },
+        })
+      );
+      expect(res.status).toBe(403);
+    });
+  });
+});
 
 function request(
   pathname: string,

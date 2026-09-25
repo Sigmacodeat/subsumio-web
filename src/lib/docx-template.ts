@@ -15,12 +15,36 @@ export class DocxTemplateError extends Error {}
 
 export type DocxFillData = Record<string, string | number | boolean>;
 
-function normalizeData(values: DocxFillData): DocxFillData {
-  const out: DocxFillData = {};
+/** Sichtbarer Marker für einen nicht befüllten Platzhalter im Dokument. */
+export function missingMarker(name: string): string {
+  return `«FEHLT: ${name}»`;
+}
+
+/**
+ * Leere Werte gelten als nicht befüllt — sie fallen durch zu `nullGetter`
+ * und erscheinen als sichtbarer Marker statt als unauffällige Lücke.
+ */
+function normalizeData(values: DocxFillData): Partial<DocxFillData> {
+  const out: Partial<DocxFillData> = {};
   for (const [k, v] of Object.entries(values)) {
-    out[k] = v === null || v === undefined ? "" : v;
+    if (v === null || v === undefined) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    out[k] = v;
   }
   return out;
+}
+
+/**
+ * Platzhalter der Vorlage, für die kein (nicht-leerer) Wert vorliegt — die
+ * Route meldet sie als `missing_variables`, damit der Anwalt vor dem
+ * Versand nachfüllt.
+ */
+export function missingDocxVariables(
+  template: Buffer | ArrayBuffer,
+  values: DocxFillData
+): string[] {
+  const present = normalizeData(values);
+  return extractDocxVariables(template).filter((k) => present[k] === undefined);
 }
 
 /** Befüllt eine .docx-Vorlage und gibt das fertige Dokument als Buffer zurück. */
@@ -35,9 +59,11 @@ export function fillDocxTemplate(template: Buffer | ArrayBuffer, values: DocxFil
     paragraphLoop: true,
     linebreaks: true,
     delimiters: { start: "{{", end: "}}" },
-    // Fehlende Variablen bleiben leer statt Fehler — Anwalt sieht den
-    // unbefüllten Bereich im Dokument und prüft ihn.
-    nullGetter: () => "",
+    // Fehlende Variablen erzeugen keinen Fehler, aber einen SICHTBAREN
+    // Marker (ein leerer String fällt im Schriftsatz nicht auf). Schleifen/
+    // Bedingungen ohne Daten bleiben leer.
+    nullGetter: (part: { module?: string; value?: string }) =>
+      part.module ? "" : missingMarker(String(part.value ?? "").trim()),
   });
   try {
     doc.render(normalizeData(values));

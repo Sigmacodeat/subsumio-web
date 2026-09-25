@@ -52,7 +52,7 @@ import type { QuotaType } from "@/lib/plans";
 import type { CreditOperation } from "@/lib/billing/credits";
 import { demoGuard } from "@/lib/demo/guard";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
-import { logAudit, type AuditAction } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
 import { emptyGroundingMetadata, userJurisdiction } from "@/lib/citation-gate-client";
@@ -145,6 +145,8 @@ export interface AuditSpec {
   entityType: string;
   entityId?: string;
   details?: Record<string, unknown>;
+  /** Webhook handlers only: tenant of the entry (session handlers use ctx.brainId). */
+  brainId?: string;
 }
 
 export interface HandlerOptions<
@@ -805,6 +807,8 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
         const specs = Array.isArray(spec) ? spec : [spec];
         for (const s of specs) {
           void logAudit(s.action, s.entityType, {
+            // Webhooks carry no session: the spec names the tenant, else system.
+            brainId: s.brainId ?? SYSTEM_BRAIN,
             entityId: s.entityId,
             details: s.details,
             ip: clientIpOf(req),

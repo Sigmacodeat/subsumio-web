@@ -70,7 +70,7 @@ import {
   isSessionVersionValid,
   getMinRevocationVersion,
 } from "./revocation-store";
-import { registerSession, isSidRevoked, touchSession } from "./session-registry";
+import { registerSession, isSessionRevokedOrIdle, touchSession } from "./session-registry";
 
 export { revokeAllSessions, isSessionVersionValid };
 
@@ -89,10 +89,13 @@ export async function verifySession(
   // silently accepting a possibly revoked one.
   try {
     if (!(await isSessionVersionValid(payload.uid, payload.v))) return null;
-    if (payload.sid && (await isSidRevoked(payload.uid, payload.sid))) return null;
+    if (payload.sid) {
+      // Revoked, or idle longer than the limit (SUBSUMIO_SESSION_IDLE_HOURS).
+      if (await isSessionRevokedOrIdle(payload.uid, payload.sid)) return null;
+      void touchSession(payload.uid, payload.sid);
+    }
   } catch {
     return null;
   }
-  if (payload.sid) void touchSession(payload.uid, payload.sid);
   return payload;
 }

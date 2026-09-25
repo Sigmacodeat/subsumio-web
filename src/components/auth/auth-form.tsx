@@ -55,7 +55,8 @@ const COPY = {
   name: "Name",
   namePlaceholder: "Dr. Anna Müller",
   errors: {
-    invalid_credentials: "E-Mail oder Passwort ist falsch.",
+    invalid_credentials:
+      "E-Mail oder Passwort ist falsch. Wenn Ihre Kanzlei die Microsoft- oder Google-Anmeldung nutzt, melden Sie sich bitte darüber an.",
     email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
     weak_password: "Das Passwort braucht mindestens 8 Zeichen.",
     invalid_email: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",

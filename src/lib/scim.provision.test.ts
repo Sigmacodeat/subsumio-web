@@ -28,7 +28,7 @@ vi.mock("@/lib/auth/store", () => ({
     },
   }),
 }));
-vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined), SYSTEM_BRAIN: "system" }));
 vi.mock("@/lib/provision", () => ({ provisionBrainAsync: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ revokeAllSessions: vi.fn(async () => undefined) }));
 

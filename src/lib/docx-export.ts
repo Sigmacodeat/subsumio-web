@@ -114,8 +114,16 @@ function markdownToDocxParagraphs(md: string): string[] {
   // Every piece of text must sit in its own <w:r> — bare text inside <w:p>
   // is invalid OOXML (Word reports unreadable content or drops the text).
   const formatInline = (text: string): string => {
+    // Backslash escapes (`\*`, `\_`, `\#` …) stand for the literal character —
+    // e.g. template values that must not turn into formatting. They are parked
+    // in private-use placeholders and restored after the inline pass.
+    const literals: string[] = [];
+    const unescaped = text.replace(/\\([\\`*_[\]()#>|~+\-.!])/g, (_m, ch: string) => {
+      literals.push(ch);
+      return `\uE000${literals.length - 1}\uE001`;
+    });
     // Links keep their target visible in print: "[§ 1295 ABGB](url)" → "§ 1295 ABGB (url)".
-    const src = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$1 ($2)");
+    const src = unescaped.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$1 ($2)");
     const rx = /\*\*(.+?)\*\*|__(.+?)__|\*(.+?)\*|(?<!\w)_(.+?)_(?!\w)/g;
     const runs: string[] = [];
     let last = 0;
@@ -126,7 +134,10 @@ function markdownToDocxParagraphs(md: string): string[] {
       last = m.index! + m[0].length;
     }
     if (last < src.length) runs.push(run(src.slice(last)));
-    return runs.join("") || run("");
+    const joined = runs.join("") || run("");
+    return literals.length === 0
+      ? joined
+      : joined.replace(/\uE000(\d+)\uE001/g, (_m, i: string) => escapeXml(literals[Number(i)]!));
   };
 
   const closeList = () => {

@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import type { CaseScannerResponse } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 
 export default function CaseScannerPage() {
   const { t } = useLang();
@@ -207,7 +208,9 @@ export default function CaseScannerPage() {
               className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
             >
               <span className="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--ds-success-solid)]" />
-              {result.status}
+              {result.status === "queued"
+                ? t("scanner.status_queued" as DashboardKey)
+                : result.status}
             </Badge>
             <span className="text-xs text-[color:var(--ds-text-muted)]">
               {t("scanner.result_wait")}

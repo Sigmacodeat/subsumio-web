@@ -85,7 +85,7 @@ export const POST = createHandler(
 );
 
 async function stornoInvoice(
-  ctx: { headers: Record<string, string>; brainId: string },
+  ctx: { headers: Record<string, string>; brainId: string; user: { id: string; email: string } },
   slug: string
 ): Promise<Response> {
   const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
@@ -229,6 +229,9 @@ async function stornoInvoice(
   }
 
   void logAudit("invoice.update", "invoice", {
+    brainId: ctx.brainId,
+    userId: ctx.user.id,
+    userEmail: ctx.user.email,
     entityId: stornoSlug,
     details: { action: "storno_created", forInvoice: slug, invoiceNumber: number },
   });

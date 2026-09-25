@@ -30,6 +30,7 @@ vi.mock("@/lib/email/tracking", () => ({
   logTrackingEvent: (...args: unknown[]) => logTrackingEvent(...args),
 }));
 vi.mock("@/lib/audit", () => ({
+  SYSTEM_BRAIN: "system",
   logAudit: (...args: unknown[]) => logAudit(...args),
 }));
 vi.mock("@/lib/engine", () => ({

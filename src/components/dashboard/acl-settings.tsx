@@ -19,6 +19,7 @@ import {
 import { useTeam } from "@/lib/queries/settings";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export function AclSettings() {
   const [newGroupName, setNewGroupName] = useState("");
@@ -33,6 +34,7 @@ export function AclSettings() {
   const removeMemberMutation = useRemoveAclGroupMember();
   const teamQuery = useTeam();
   const { addToast } = useToast();
+  const confirmDialog = useConfirm();
   const reportError = (title: string, err: unknown) =>
     addToast({
       type: "error",
@@ -50,17 +52,23 @@ export function AclSettings() {
       await createGroupMutation.mutateAsync(newGroupName.trim());
       setNewGroupName("");
     } catch (err) {
-      console.error("[acl] create group failed:", err);
+      reportError("Gruppe konnte nicht angelegt werden", err);
     }
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm("Gruppe wirklich löschen? Alle Berechtigungen werden entfernt.")) return;
+    const ok = await confirmDialog({
+      title: "Gruppe löschen",
+      message: "Gruppe wirklich löschen? Alle Berechtigungen werden entfernt.",
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await deleteGroupMutation.mutateAsync(groupId);
       if (selectedGroupId === groupId) setSelectedGroupId(null);
     } catch (err) {
-      console.error("[acl] delete group failed:", err);
+      reportError("Gruppe konnte nicht gelöscht werden", err);
     }
   };
 
@@ -76,6 +84,14 @@ export function AclSettings() {
 
   const handleRemoveMember = async (userId: string) => {
     if (!selectedGroupId) return;
+    const ok = await confirmDialog({
+      title: "Mitglied entfernen",
+      message:
+        "Das Mitglied verliert die Berechtigungen dieser Gruppe. Akten, die nur über diese Gruppe freigegeben sind, sind danach für das Mitglied nicht mehr sichtbar.",
+      confirmLabel: "Entfernen",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await removeMemberMutation.mutateAsync({ groupId: selectedGroupId, userId });
     } catch (err) {
@@ -114,6 +130,17 @@ export function AclSettings() {
         <div className="space-y-3" role="status" aria-label="Wird geladen">
           <Skeleton className="h-16 w-full rounded-xl" />
           <Skeleton className="h-16 w-full rounded-xl" />
+        </div>
+      ) : groupsQuery.isError ? (
+        // A failed load must not read as "no groups" — that text claims every
+        // team member sees every matter.
+        <div role="alert">
+          <EmptyState
+            icon={Lock}
+            title="Gruppen konnten nicht geladen werden"
+            actionLabel="Erneut versuchen"
+            onAction={() => void groupsQuery.refetch()}
+          />
         </div>
       ) : groups.length === 0 ? (
         <EmptyState

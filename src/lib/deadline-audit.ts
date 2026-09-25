@@ -5,7 +5,7 @@
  * and after, and the reason for a Notfrist change.
  */
 
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import { auditActionFor, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
 
 export async function logDeadlineEvents(
@@ -15,7 +15,7 @@ export async function logDeadlineEvents(
   for (const event of events) {
     await logAudit(auditActionFor(event.kind), "deadline", {
       entityId: event.deadline_id,
-      brainId: ctx.brainId,
+      brainId: ctx.brainId ?? SYSTEM_BRAIN,
       userId: ctx.user?.id,
       userEmail: ctx.user?.email,
       details: { ...event },

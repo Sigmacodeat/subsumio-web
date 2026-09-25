@@ -18,6 +18,8 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Skeleton, RowSkeleton } from "@/components/dashboard/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { teamErrorText } from "./team-errors";
 
 interface Member {
   id: string;
@@ -30,30 +32,6 @@ interface OrgState {
   org: { id: string; name: string; ownerId: string } | null;
   members?: Member[];
   isOwner?: boolean;
-}
-
-const ERROR_KEYS: Record<string, string> = {
-  already_in_org: "team.error_already_in_org",
-  invalid_name: "team.error_invalid_name",
-  owner_only: "team.error_owner_only",
-  self_invite: "team.error_self_invite",
-  no_seats_left: "__TEAM_SEAT_LIMIT__",
-  already_member: "team.error_already_member",
-  invalid_email: "team.error_invalid_email",
-  owner_must_remove_members_first: "team.error_owner_remove_members",
-  owner_cannot_remove_self: "team.error_owner_cannot_remove",
-  rate_limited: "team.error_rate_limited",
-  generic: "team.error_generic",
-};
-
-function errMsg(
-  t: (key: import("@/content/dashboard").DashboardKey) => string,
-  code?: string
-): string {
-  const key = ERROR_KEYS[code ?? ""] ?? ERROR_KEYS.generic;
-  return key === "__TEAM_SEAT_LIMIT__"
-    ? "__TEAM_SEAT_LIMIT__"
-    : t(key as import("@/content/dashboard").DashboardKey);
 }
 
 export default function TeamPage() {
@@ -80,8 +58,7 @@ export default function TeamPage() {
     leaveMutation.isPending;
 
   function handleErr(err: unknown) {
-    const raw = err instanceof Error ? errMsg(t, err.message) : errMsg(t);
-    setError(raw === "__TEAM_SEAT_LIMIT__" ? t("team.seat_limit_reached") : raw);
+    setError(teamErrorText(t, err));
   }
 
   if (loading) {
@@ -98,6 +75,31 @@ export default function TeamPage() {
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           <RowSkeleton count={3} />
+        </div>
+      </div>
+    );
+  }
+
+  // A failed load must not look like "no team yet" — that would offer to create
+  // a new organisation instead of saying the team could not be loaded.
+  if (orgQuery.isError) {
+    return (
+      <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
+        <PageHeader
+          title={t("nav.team")}
+          description={t("team.description")}
+          breadcrumbs={[
+            { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+            { label: t("nav.team") },
+          ]}
+        />
+        <div role="alert">
+          <EmptyState
+            icon={AlertCircle}
+            title={t("team.load_error" as DashboardKey)}
+            actionLabel={t("common.retry")}
+            onAction={() => void orgQuery.refetch()}
+          />
         </div>
       </div>
     );

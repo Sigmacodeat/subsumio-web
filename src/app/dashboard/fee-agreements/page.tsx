@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, Wallet } from "lucide-react";
+import { AlertTriangle, Loader2, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { csrfFetch } from "@/lib/csrf";
@@ -45,6 +45,7 @@ export default function FeeAgreementsPage() {
   const [agreements, setAgreements] = useState<FeeAgreement[]>([]);
   const [cases, setCases] = useState<CaseOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -77,7 +78,9 @@ export default function FeeAgreementsPage() {
           };
         })
       );
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("fee.err_load") });
     } finally {
       setLoading(false);
@@ -268,6 +271,20 @@ export default function FeeAgreementsPage() {
 
       {loading ? (
         <RowSkeleton count={3} />
+      ) : loadFailed ? (
+        <div role="alert">
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("fee.err_load")}
+            description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              setLoadFailed(false);
+              setLoading(true);
+              void load();
+            }}
+          />
+        </div>
       ) : agreements.length === 0 ? (
         !showCreate && (
           <EmptyState

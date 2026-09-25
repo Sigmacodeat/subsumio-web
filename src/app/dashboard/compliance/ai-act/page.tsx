@@ -13,6 +13,7 @@ import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { cn } from "@/lib/utils";
+import { art14OversightStatus } from "@/lib/ai-act-status";
 
 interface ConformityItem {
   id: string;
@@ -44,9 +45,10 @@ const CONFORMITY_ITEMS: ConformityItem[] = [
     id: "art14",
     article: "Art. 14 KI-VO",
     reqKey: "aiact.req.art14",
-    status: "compliant",
+    // Aus der serverseitig erzwungenen Freigaberegel abgeleitet, nicht fest behauptet.
+    status: art14OversightStatus(),
     evidence:
-      "Anwaltliche Freigabe vor Schreibaktionen, Belegprüfung der Zitate, Qualitätsprüfung vor jeder Version",
+      "Freigabe von KI-Schreibaktionen nur durch Anwält:innen/Admins und nie durch die vorschlagende Person (Vier-Augen-Prinzip), Belegprüfung der Zitate, Qualitätsprüfung vor jeder Version",
     noteKey: "aiact.note.art14",
   },
   {

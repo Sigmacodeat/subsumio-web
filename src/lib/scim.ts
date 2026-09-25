@@ -24,6 +24,7 @@
 
 import { type KanzleiRole, type User, getStore, buildNewUser } from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
+import { auditBrainForOrg } from "@/lib/audit-user";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
 import { revokeAllSessions } from "@/lib/auth/session";
@@ -381,6 +382,7 @@ export async function provisionOrUpdateUser(
     provisionBrainAsync(user.brainId, { industry: null });
 
     await logAudit("scim.user_provisioned", "user", {
+      brainId: await auditBrainForOrg(orgId),
       entityId: user.id,
       details: { email, externalId, active },
     });
@@ -410,6 +412,7 @@ export async function provisionOrUpdateUser(
   }
 
   await logAudit("scim.user_updated", "user", {
+    brainId: await auditBrainForOrg(orgId ?? user.orgId),
     entityId: user.id,
     details: { email, externalId, active, changes: patch },
   });
@@ -433,6 +436,7 @@ export async function deprovisionUser(userId: string, orgId?: string): Promise<U
   await revokeAllSessions(userId);
 
   await logAudit("scim.user_deprovisioned", "user", {
+    brainId: await auditBrainForOrg(orgId ?? user.orgId),
     entityId: userId,
     details: { email: user.email, externalId: user.scimExternalId },
   });
@@ -694,6 +698,7 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
       const dirGroups = await listWorkOSDirectoryGroups();
       groupsProcessed = dirGroups.length;
       await logAudit("scim.group_synced", "group", {
+        brainId: await auditBrainForOrg(orgId),
         details: { count: groupsProcessed },
       });
     } catch (err) {
@@ -717,6 +722,7 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
   };
 
   await logAudit("scim.sync_manual", "system", {
+    brainId: await auditBrainForOrg(orgId),
     details: result as unknown as Record<string, unknown>,
   });
 

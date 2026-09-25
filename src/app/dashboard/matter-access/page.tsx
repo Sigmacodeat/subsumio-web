@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { unwrapApiBody } from "@/lib/api-body";
 import { csrfFetch } from "@/lib/csrf";
 import { activeGrant, type MatterGrant, type MatterPermissions } from "@/lib/matter-access";
@@ -96,6 +97,7 @@ function MatterAccessContent() {
   const en = lang === "en";
   const L = (de: string, enText: string) => (en ? enText : de);
   const { addToast } = useToast();
+  const confirmDialog = useConfirm();
 
   const [state, setState] = useState<AccessState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -207,6 +209,17 @@ function MatterAccessContent() {
   }
 
   async function revokeGrant(grant: MatterGrant) {
+    // Revoking takes effect immediately for the colleague — ask first.
+    const ok = await confirmDialog({
+      title: L("Freigabe zurücknehmen", "Revoke access"),
+      message: L(
+        `${name(grant.user_id)} verliert den Zugriff auf diese Akte sofort.`,
+        `${name(grant.user_id)} loses access to this matter immediately.`
+      ),
+      confirmLabel: L("Zurücknehmen", "Revoke"),
+      variant: "danger",
+    });
+    if (!ok) return;
     await put(
       { grants: grants.filter((g) => g !== grant) },
       L("Freigabe zurückgenommen", "Access revoked")

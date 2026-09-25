@@ -45,6 +45,9 @@ export const POST = createHandler(
     }
     void logAudit("user.logout", "user", {
       entityId: ctx.user.id,
+      brainId: ctx.brainId,
+      userId: ctx.user.id,
+      userEmail: ctx.user.email,
       details: { allDevices: !ctx.sessionId },
     });
 

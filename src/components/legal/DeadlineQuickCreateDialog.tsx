@@ -498,7 +498,7 @@ export function DeadlineQuickCreateDialog({
                       {t("deadlines.calc_due" as DashboardKey)}{" "}
                       <strong>
                         {new Date(`${calcPreview}T12:00:00Z`).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE",
+                          lang === "en" ? "en-GB" : "de-AT",
                           { weekday: "long", day: "numeric", month: "long", year: "numeric" }
                         )}
                       </strong>
@@ -600,7 +600,7 @@ export function DeadlineQuickCreateDialog({
                         <span className="text-[color:var(--ds-text-muted)]">Vorfrist: </span>
                         <strong className="text-[color:var(--ds-info-text)]">
                           {new Date(`${vorfristPreview}T12:00:00Z`).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE",
+                            lang === "en" ? "en-GB" : "de-AT",
                             { weekday: "short", day: "numeric", month: "short", year: "numeric" }
                           )}
                         </strong>

@@ -70,6 +70,7 @@ import {
 import { tracking } from "@/lib/tracking";
 import { IntakeAcceptanceWizard } from "@/components/legal/IntakeAcceptanceWizard";
 import type { IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
+import { createdIntakeRecord } from "./created-intake";
 
 type IntakeStatus = "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
 
@@ -403,9 +404,8 @@ export default function IntakePage() {
       missing_documents: missingDocuments.length ? missingDocuments : undefined,
     });
     // AP11: Neugestalteter Intake leitet direkt in den Mandatsannahme-Wizard
-    if (result && typeof result === "object" && "slug" in result) {
-      setWizardItem(result as unknown as IntakeRecord);
-    }
+    const created = createdIntakeRecord<IntakeRecord>(result);
+    if (created) setWizardItem(created);
   }
 
   function canStartAcceptance(item: IntakeRecord) {

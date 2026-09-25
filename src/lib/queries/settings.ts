@@ -21,9 +21,21 @@ export class ApiGetError extends Error {
  * `.then((r) => r.json())` alone resolved on 4xx/5xx, so a failed change looked
  * like a success in the UI.
  */
+export class ApiMutationError extends Error {
+  constructor(
+    message: string,
+    /** Machine-readable `code` from `apiError` (`{ error, code }`), if any. */
+    public readonly code: string | undefined,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "ApiMutationError";
+  }
+}
+
 export async function jsonOrThrow<T = unknown>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => null)) as
-    | (T & { message?: string; error?: string | { message?: string } })
+    | (T & { message?: string; code?: string; error?: string | { message?: string } })
     | null;
   if (!res.ok) {
     const err = body?.error;
@@ -31,7 +43,11 @@ export async function jsonOrThrow<T = unknown>(res: Response): Promise<T> {
       body?.message ??
       (typeof err === "string" ? err : err?.message) ??
       `Anfrage fehlgeschlagen (HTTP ${res.status})`;
-    throw new Error(message);
+    throw new ApiMutationError(
+      message,
+      typeof body?.code === "string" ? body.code : undefined,
+      res.status
+    );
   }
   return body as T;
 }
@@ -182,7 +198,7 @@ export function useCreateOrg() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -195,7 +211,7 @@ export function useInviteMemberOrg() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow<{ ok?: boolean; devJoinUrl?: string }>(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -208,7 +224,7 @@ export function useRemoveMemberOrg() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -216,7 +232,7 @@ export function useRemoveMemberOrg() {
 export function useLeaveOrg() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => csrfFetch("/api/org", { method: "DELETE" }).then((r) => r.json()),
+    mutationFn: () => csrfFetch("/api/org", { method: "DELETE" }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -502,7 +518,7 @@ export function useCreateAclGroup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });
 }
@@ -512,7 +528,7 @@ export function useDeleteAclGroup() {
   return useMutation({
     mutationFn: (groupId: string) =>
       csrfFetch(`/api/acls/groups/${encodeURIComponent(groupId)}`, { method: "DELETE" }).then((r) =>
-        r.json()
+        jsonOrThrow(r)
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });

@@ -1,8 +1,10 @@
 /**
  * Audit-Trail Logger für Subsumio.
- * In production: stores audit entries in a dedicated Postgres table (subsumio_audit_log).
- * In dev (no Postgres): falls back to brain pages of type "audit_log".
- * Each tenant's audit trail is isolated by brain_id.
+ * Stores audit entries in a dedicated Postgres table (subsumio_audit_log) —
+ * the only system of record. There is deliberately no fallback into ordinary
+ * (editable) brain pages: a failed write raises an operator alert instead.
+ * Each tenant's audit trail is isolated by brain_id; every caller must name
+ * the tenant (`brainId`) or explicitly opt into the shared SYSTEM_BRAIN.
  */
 
 import { getSharedPgPool } from "@/lib/auth/store";
@@ -11,20 +13,9 @@ import { createSchemaInit } from "@/lib/schema-init";
 export type { AuditEntry, AuditAction } from "@/lib/audit-labels";
 export { auditLabel } from "@/lib/audit-labels";
 import type { AuditEntry, AuditAction } from "@/lib/audit-labels";
-import { auditLabel } from "@/lib/audit-labels";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/audit");
-
-// The browser/engine API client is only needed by the local development
-// fallback. Loading it eagerly made every API route that records an audit log
-// compile the complete upload/SSE/client graph as a server dependency.
-let apiModule: Promise<typeof import("@/lib/api")> | undefined;
-
-async function loadApi() {
-  apiModule ??= import("@/lib/api");
-  return (await apiModule).api;
-}
 
 const ensureAuditSchema = createSchemaInit([
   `CREATE TABLE IF NOT EXISTS subsumio_audit_log (
@@ -74,85 +65,173 @@ function computeHash(prevHash: string | null, data: string): string {
     .digest("hex");
 }
 
+/**
+ * Explicit marker for platform-level events that belong to no tenant (engine
+ * alerts, operator actions without a firm context). Tenant actions must pass
+ * the firm's `ctx.brainId` — otherwise they end up outside the firm's own,
+ * hash-chained protocol.
+ */
+export const SYSTEM_BRAIN = "system";
+
+export interface LogAuditOptions {
+  /** Tenant whose protocol receives the entry — `ctx.brainId` or SYSTEM_BRAIN. */
+  brainId: string;
+  entityId?: string;
+  details?: Record<string, unknown>;
+  userId?: string;
+  userEmail?: string;
+  ip?: string;
+}
+
+export interface AuditWriteFailure {
+  action: string;
+  entityType: string;
+  brainId: string;
+  entityId?: string;
+  error: string;
+}
+
+/** Default alert: one structured error line with a stable tag for monitoring. */
+function defaultAuditFailureHook(failure: AuditWriteFailure): void {
+  log.error("[audit] ALERT audit_write_failed — entry not persisted", {
+    alert: "audit_write_failed",
+    ...failure,
+  });
+}
+
+let auditFailureHook: (failure: AuditWriteFailure) => void = defaultAuditFailureHook;
+
+/**
+ * Replace the alert hook fired when an audit entry cannot be persisted
+ * (tests, or wiring into an external alerting channel). Pass `null` to
+ * restore the default structured-log alert.
+ */
+export function setAuditFailureHook(hook: ((failure: AuditWriteFailure) => void) | null): void {
+  auditFailureHook = hook ?? defaultAuditFailureHook;
+}
+
+function raiseAuditFailure(failure: AuditWriteFailure): void {
+  try {
+    auditFailureHook(failure);
+  } catch {
+    // The alert path must never break the user flow either.
+  }
+}
+
+interface ChainedRow {
+  brainId: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  userId?: string;
+  userEmail?: string;
+  detailsStr: string;
+  ip?: string;
+  now: string;
+}
+
+/**
+ * Append one entry to the tenant's hash chain.
+ *
+ * Reading the previous hash and inserting the new row happen in ONE
+ * transaction under a per-tenant advisory lock — concurrent writers for the
+ * same brain are serialised, so two entries can never chain onto the same
+ * predecessor (which `verifyAuditChain` would report as a chain break).
+ */
+async function insertChained(
+  pool: NonNullable<ReturnType<typeof getSharedPgPool>>,
+  row: ChainedRow
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`audit:${row.brainId}`]);
+    const { rows } = await client.query<{ hash: string }>(
+      "SELECT hash FROM subsumio_audit_log WHERE brain_id = $1 ORDER BY id DESC LIMIT 1",
+      [row.brainId]
+    );
+    const prevHash = rows[0]?.hash ?? null;
+    const hashPayload = `${row.action}:${row.entityType}:${row.entityId ?? ""}:${row.userId ?? ""}:${row.userEmail ?? ""}:${row.detailsStr}:${row.ip ?? ""}:${row.now}`;
+    const hash = computeHash(prevHash, hashPayload);
+    await client.query(
+      `INSERT INTO subsumio_audit_log (brain_id, action, entity_type, entity_id, user_id, user_email, details, ip, hash, prev_hash, hash_payload)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11)`,
+      [
+        row.brainId,
+        row.action,
+        row.entityType,
+        row.entityId,
+        row.userId,
+        row.userEmail,
+        row.detailsStr,
+        row.ip,
+        hash,
+        prevHash,
+        hashPayload,
+      ]
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function logAudit(
   action: AuditAction,
   entityType: string,
-  opts?: {
-    entityId?: string;
-    details?: Record<string, unknown>;
-    brainId?: string;
-    userId?: string;
-    userEmail?: string;
-    ip?: string;
-  }
+  opts: LogAuditOptions
 ): Promise<void> {
   const now = new Date().toISOString();
+  const brainId = opts.brainId || SYSTEM_BRAIN;
   const pool = getSharedPgPool();
 
-  if (pool) {
-    try {
-      await ensureAuditSchema();
-      const brainId = opts?.brainId ?? "system";
-      const detailsStr = JSON.stringify(opts?.details ?? {});
-      // Get previous hash for chain
-      const { rows } = await pool.query<{ hash: string }>(
-        "SELECT hash FROM subsumio_audit_log WHERE brain_id = $1 ORDER BY id DESC LIMIT 1",
-        [brainId]
-      );
-      const prevHash = rows[0]?.hash ?? null;
-      const hashPayload = `${action}:${entityType}:${opts?.entityId ?? ""}:${opts?.userId ?? ""}:${opts?.userEmail ?? ""}:${detailsStr}:${opts?.ip ?? ""}:${now}`;
-      const hash = computeHash(prevHash, hashPayload);
-      await pool.query(
-        `INSERT INTO subsumio_audit_log (brain_id, action, entity_type, entity_id, user_id, user_email, details, ip, hash, prev_hash, hash_payload)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11)`,
-        [
-          brainId,
-          action,
-          entityType,
-          opts?.entityId,
-          opts?.userId,
-          opts?.userEmail,
-          detailsStr,
-          opts?.ip,
-          hash,
-          prevHash,
-          hashPayload,
-        ]
-      );
-      return;
-    } catch (err) {
-      log.error(`[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`);
-      // Fall through to brain-page fallback
-    }
+  if (!pool) {
+    // No audit store configured. There is no second, editable storage — the
+    // loss is reported instead of silently written somewhere nobody reads.
+    raiseAuditFailure({
+      action,
+      entityType,
+      brainId,
+      entityId: opts.entityId,
+      error: "audit store not configured",
+    });
+    return;
   }
 
-  // Dev fallback: store as brain page
-  const id = `audit/${now.slice(0, 10)}/${action.replace(/\./g, "-")}-${Date.now()}`;
-  try {
-    const api = await loadApi();
-    await api.brain.createPage({
-      slug: id,
-      title: auditLabel(action),
-      type: "audit_log",
-      content: JSON.stringify({
-        action,
-        entityType,
-        entityId: opts?.entityId,
-        details: opts?.details,
-        timestamp: now,
-      }),
-      frontmatter: {
-        action,
-        entity_type: entityType,
-        entity_id: opts?.entityId,
-        details: opts?.details,
-        timestamp: now,
-        date: now.split("T")[0],
-      },
-    });
-  } catch {
-    // Audit logging should never break user flows
+  const row: ChainedRow = {
+    brainId,
+    action,
+    entityType,
+    entityId: opts.entityId,
+    userId: opts.userId,
+    userEmail: opts.userEmail,
+    detailsStr: JSON.stringify(opts.details ?? {}),
+    ip: opts.ip,
+    now,
+  };
+
+  let lastError: unknown;
+  // One retry covers a transient connection drop; afterwards: alert.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await ensureAuditSchema();
+      await insertChained(pool, row);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
   }
+  // Audit logging never breaks the user flow — but a lost entry is an alarm.
+  raiseAuditFailure({
+    action,
+    entityType,
+    brainId,
+    entityId: opts.entityId,
+    error: lastError instanceof Error ? lastError.message : String(lastError),
+  });
 }
 
 // ── AI Compliance Audit Helpers ───────────────────────────────────────
@@ -364,7 +443,7 @@ export async function verifyAuditChain(brainId: string): Promise<ChainVerificati
   }
 }
 
-export async function listAuditLogs(opts: {
+export interface ListAuditLogsOptions {
   brainId: string;
   action?: string;
   entityType?: string;
@@ -372,107 +451,133 @@ export async function listAuditLogs(opts: {
   from?: string;
   to?: string;
   limit?: number;
-}): Promise<AuditEntry[]> {
-  const pool = getSharedPgPool();
+  /** Opaque cursor from a previous page (`nextCursor`) — continues below it. */
+  cursor?: string;
+}
 
-  if (pool) {
-    try {
-      await ensureAuditSchema();
-      const conditions: string[] = [`brain_id = $1`];
-      const params: unknown[] = [opts.brainId];
-      let paramIdx = 2;
+export interface AuditLogPage {
+  entries: AuditEntry[];
+  /** Set when more (older) entries exist; pass back as `cursor`. */
+  nextCursor: string | null;
+}
 
-      if (opts?.action) {
-        conditions.push(`action LIKE $${paramIdx++}`);
-        params.push(`%${opts.action.replace(/[%_]/g, "\\$&")}%`);
-      }
-      if (opts?.entityType) {
-        conditions.push(`entity_type = $${paramIdx++}`);
-        params.push(opts.entityType);
-      }
-      if (opts?.entityId) {
-        conditions.push(`entity_id = $${paramIdx++}`);
-        params.push(opts.entityId);
-      }
-      if (opts?.from) {
-        conditions.push(`created_at >= $${paramIdx++}`);
-        params.push(opts.from);
-      }
-      if (opts?.to) {
-        conditions.push(`created_at <= $${paramIdx++}`);
-        params.push(opts.to);
-      }
-
-      const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-      const limit = opts?.limit ?? 200;
-      params.push(limit);
-
-      const { rows } = await pool.query(
-        `SELECT id::text, action, entity_type, entity_id, user_id, user_email, details, ip,
-                hash, prev_hash, created_at::text as timestamp
-         FROM subsumio_audit_log
-         ${where}
-         ORDER BY created_at DESC
-         LIMIT $${paramIdx}`,
-        params
-      );
-
-      return rows.map((r) => ({
-        id: r.id,
-        action: r.action,
-        entityType: r.entity_type,
-        entityId: r.entity_id ?? undefined,
-        userId: r.user_id ?? undefined,
-        userEmail: r.user_email ?? undefined,
-        details: r.details ?? undefined,
-        ip: r.ip ?? undefined,
-        hash: r.hash ?? undefined,
-        prev_hash: r.prev_hash ?? undefined,
-        timestamp: r.timestamp,
-      }));
-    } catch (err) {
-      log.error(
-        `[audit] postgres list failed: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
+/** Thrown when the audit store cannot be read — callers must not show "empty". */
+export class AuditStoreUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuditStoreUnavailableError";
   }
+}
 
-  // Dev fallback: read from brain pages
+export function encodeAuditCursor(createdAt: string, id: string): string {
+  return Buffer.from(`${createdAt}|${id}`, "utf8").toString("base64url");
+}
+
+export function decodeAuditCursor(cursor: string): { createdAt: string; id: string } | null {
   try {
-    const api = await loadApi();
-    const pages = await api.brain.listAllPages({ type: "audit_log", max: opts?.limit || 200 });
-    const entries: AuditEntry[] = pages.map((p) => {
-      const fm = p.frontmatter || {};
-      let details: Record<string, unknown> | undefined;
-      if (fm.details && typeof fm.details === "object") {
-        details = fm.details as Record<string, unknown>;
-      } else {
-        try {
-          const parsed = JSON.parse(p.content || "{}");
-          details = parsed.details;
-        } catch {}
-      }
-      return {
-        id: p.slug,
-        action: String(fm.action || ""),
-        entityType: String(fm.entity_type || ""),
-        entityId: fm.entity_id ? String(fm.entity_id) : undefined,
-        timestamp: String(fm.timestamp || p.created_at || ""),
-        hash: fm.hash ? String(fm.hash) : undefined,
-        prev_hash: fm.prev_hash ? String(fm.prev_hash) : undefined,
-        details,
-      };
-    });
-
-    return entries.filter((e) => {
-      if (opts?.action && !e.action.includes(opts.action)) return false;
-      if (opts?.entityType && e.entityType !== opts.entityType) return false;
-      if (opts?.entityId && e.entityId !== opts.entityId) return false;
-      if (opts?.from && e.timestamp < opts.from) return false;
-      if (opts?.to && e.timestamp > opts.to) return false;
-      return true;
-    });
+    const raw = Buffer.from(cursor, "base64url").toString("utf8");
+    const sep = raw.lastIndexOf("|");
+    if (sep <= 0) return null;
+    const createdAt = raw.slice(0, sep);
+    const id = raw.slice(sep + 1);
+    // Postgres `timestamptz::text`, e.g. "2026-09-25 10:00:00.123456+00".
+    const pgTimestamp =
+      /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)?$/;
+    if (!/^\d{1,19}$/.test(id) || !pgTimestamp.test(createdAt)) return null;
+    return { createdAt, id };
   } catch {
-    return [];
+    return null;
   }
+}
+
+/**
+ * One page of a tenant's audit protocol, newest first, keyset-paginated on
+ * (created_at, id) so every entry is reachable — no hard cap, no skipped rows.
+ * Throws AuditStoreUnavailableError when the store is missing or failing.
+ */
+export async function listAuditLogsPage(opts: ListAuditLogsOptions): Promise<AuditLogPage> {
+  const pool = getSharedPgPool();
+  if (!pool) throw new AuditStoreUnavailableError("audit store not configured");
+
+  const conditions: string[] = [`brain_id = $1`];
+  const params: unknown[] = [opts.brainId];
+  let paramIdx = 2;
+
+  if (opts.action) {
+    conditions.push(`action LIKE $${paramIdx++}`);
+    params.push(`%${opts.action.replace(/[%_]/g, "\\$&")}%`);
+  }
+  if (opts.entityType) {
+    conditions.push(`entity_type = $${paramIdx++}`);
+    params.push(opts.entityType);
+  }
+  if (opts.entityId) {
+    conditions.push(`entity_id = $${paramIdx++}`);
+    params.push(opts.entityId);
+  }
+  if (opts.from) {
+    conditions.push(`created_at >= $${paramIdx++}`);
+    params.push(opts.from);
+  }
+  if (opts.to) {
+    conditions.push(`created_at <= $${paramIdx++}`);
+    params.push(opts.to);
+  }
+  if (opts.cursor) {
+    const c = decodeAuditCursor(opts.cursor);
+    if (!c) throw new RangeError("invalid audit cursor");
+    conditions.push(`(created_at, id) < ($${paramIdx++}::timestamptz, $${paramIdx++}::bigint)`);
+    params.push(c.createdAt, c.id);
+  }
+
+  const limit = Math.max(1, opts.limit ?? 200);
+  // One extra row tells us whether another page exists.
+  params.push(limit + 1);
+
+  let rows: Array<Record<string, unknown>>;
+  try {
+    await ensureAuditSchema();
+    const res = await pool.query(
+      `SELECT id::text, action, entity_type, entity_id, user_id, user_email, details, ip,
+              hash, prev_hash, created_at::text as timestamp
+       FROM subsumio_audit_log
+       WHERE ${conditions.join(" AND ")}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${paramIdx}`,
+      params
+    );
+    rows = res.rows;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error(`[audit] postgres list failed: ${message}`);
+    throw new AuditStoreUnavailableError(message);
+  }
+
+  const page = rows.slice(0, limit);
+  const entries: AuditEntry[] = page.map((r) => ({
+    id: String(r.id),
+    action: String(r.action),
+    entityType: String(r.entity_type),
+    entityId: (r.entity_id as string | null) ?? undefined,
+    userId: (r.user_id as string | null) ?? undefined,
+    userEmail: (r.user_email as string | null) ?? undefined,
+    details: (r.details as Record<string, unknown> | null) ?? undefined,
+    ip: (r.ip as string | null) ?? undefined,
+    hash: (r.hash as string | null) ?? undefined,
+    prev_hash: (r.prev_hash as string | null) ?? undefined,
+    timestamp: String(r.timestamp),
+  }));
+  const last = entries[entries.length - 1];
+  return {
+    entries,
+    nextCursor: rows.length > limit && last ? encodeAuditCursor(last.timestamp, last.id) : null,
+  };
+}
+
+/**
+ * Newest `limit` entries (default 200). Throws AuditStoreUnavailableError on a
+ * missing/failing store — an unreadable protocol is never reported as empty.
+ */
+export async function listAuditLogs(opts: ListAuditLogsOptions): Promise<AuditEntry[]> {
+  return (await listAuditLogsPage(opts)).entries;
 }

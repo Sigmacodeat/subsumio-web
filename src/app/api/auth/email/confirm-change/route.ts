@@ -6,7 +6,7 @@ import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sendMail } from "@/lib/mail";
-import { logAudit } from "@/lib/audit";
+import { logUserAudit } from "@/lib/audit-user";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/auth/email/confirm-change");
@@ -82,7 +82,7 @@ export const POST = createPublicHandler(
     // Every issued session embeds the old email — revoke them all so none
     // outlives the identity change (the session model has no email refresh).
     await revokeAllSessions(user.id);
-    void logAudit("user.email_changed", "user", {
+    void logUserAudit("user.email_changed", "user", updated, {
       entityId: user.id,
       details: { oldDomain: oldEmail.split("@")[1] ?? "", newDomain: newEmail.split("@")[1] ?? "" },
     });

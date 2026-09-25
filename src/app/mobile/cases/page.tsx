@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Search, FolderOpen, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { caseHref } from "@/lib/dashboard-hrefs";
 
 interface Matter {
   slug: string;
@@ -161,7 +162,7 @@ export default function MobileCasesPage() {
           filtered.map((m) => (
             <a
               key={m.slug}
-              href={`/dashboard/matters/${m.slug}`}
+              href={caseHref(m.slug)}
               style={
                 {
                   display: "flex",

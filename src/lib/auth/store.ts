@@ -50,6 +50,8 @@ export interface User {
   pendingTwoFactorExpiresAt?: string | null;
   /** Hashed 2FA backup/recovery codes (SHA-256 hex). Consumed on use. */
   twoFactorBackupCodes?: string[] | null;
+  /** Last accepted TOTP time step (unix/30) — a code is never accepted twice. */
+  twoFactorLastStep?: number | null;
   /** Docusign OAuth tokens (server-persisted, encrypt-at-rest in production). */
   docusignAccessToken?: string | null;
   docusignRefreshToken?: string | null;

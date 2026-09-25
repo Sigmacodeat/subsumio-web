@@ -357,7 +357,7 @@ describe("createHandler Guard-Chain", () => {
 
     // Audit should have been called — attributed to the firm brain and user
     expect(logAudit).toHaveBeenCalledOnce();
-    const auditOpts = vi.mocked(logAudit).mock.calls[0]?.[2] as Record<string, unknown>;
+    const auditOpts = vi.mocked(logAudit).mock.calls[0]?.[2];
     expect(auditOpts).toMatchObject({ brainId: expect.any(String), userId: expect.any(String) });
   });
 

@@ -123,6 +123,7 @@ export type RouteAction =
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
   | "audit.read" // GET /api/audit — kanzleiweites Protokoll, nur admin
   | "mail.read" // GET /api/email/* — Kanzleipostfach, nur Kanzleirollen (kein client_viewer)
+  | "profile.update" // PATCH /api/auth/me — eigener Name/Sprache, alle Rollen (nur Selbstbezug)
   | "admin.*" // nur admin
   | "admin.user_update"
   | "admin.user_deactivate"
@@ -229,6 +230,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
   // Wirkt ausschließlich auf die eigenen Benachrichtigungen (userId-Scope in der Route).
   "notifications.write": ["admin", "lawyer", "assistant", "client_viewer"],
+  "profile.update": ["admin", "lawyer", "assistant", "client_viewer"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -339,6 +341,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "presence.list": "case.view",
     "audit.read": "settings.update",
     "mail.read": "case.view",
+    "profile.update": "settings.update",
     "admin.*": "settings.update",
     "admin.user_update": "admin.user_update",
     "admin.user_deactivate": "admin.user_deactivate",

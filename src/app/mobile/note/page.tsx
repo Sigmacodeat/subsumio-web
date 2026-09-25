@@ -19,6 +19,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { brainPageHref } from "@/lib/dashboard-hrefs";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 
 interface SavedNote {
@@ -258,7 +259,7 @@ export default function MobileNotePage() {
             Neue Notiz
           </button>
           <a
-            href={`/dashboard/pages/${saved.slug}`}
+            href={brainPageHref(saved.slug)}
             style={{
               padding: "10px 20px",
               background: "var(--ds-border)",

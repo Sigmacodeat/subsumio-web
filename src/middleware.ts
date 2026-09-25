@@ -583,5 +583,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // Match everything except Next internals and static files.
   // API routes ARE included for CSRF validation.
-  matcher: ["/((?!_next/|.*\\.[a-zA-Z0-9]+$).*)"],
+  // API routes are ALWAYS included — also when the last segment looks like a
+  // file name (e.g. /api/legal/deadlines.ics), otherwise IP allow-listing,
+  // CSRF and the 2FA gate would silently skip them.
+  matcher: ["/((?!_next/|.*\\.[a-zA-Z0-9]+$).*)", "/api/:path*"],
 };

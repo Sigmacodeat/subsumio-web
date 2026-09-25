@@ -186,13 +186,21 @@ export function SerienbriefDialog({ open, onClose }: { open: boolean; onClose: (
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.data?.base64) {
-        throw new Error(data?.message ?? "Serienbrief fehlgeschlagen");
+        throw new Error(data?.error ?? data?.message ?? "Serienbrief fehlgeschlagen");
       }
       downloadBase64(data.data.base64, data.data.filename ?? "serienbrief.zip", "application/zip");
-      addToast({
-        type: "success",
-        title: `Serienbrief erstellt — ${data.data.count} Dokumente.`,
-      });
+      const missing: string[] = Array.isArray(data.data.missing_variables)
+        ? data.data.missing_variables
+        : [];
+      addToast(
+        missing.length > 0
+          ? {
+              type: "warning",
+              title: `Serienbrief erstellt — ${data.data.count} Dokumente, aber nicht alle Platzhalter befüllt.`,
+              description: `Im Dokument als «FEHLT: …» markiert: ${missing.join(", ")}. Bitte vor dem Versand prüfen.`,
+            }
+          : { type: "success", title: `Serienbrief erstellt — ${data.data.count} Dokumente.` }
+      );
       onClose();
     } catch (err) {
       addToast({

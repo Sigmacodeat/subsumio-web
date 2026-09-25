@@ -10,6 +10,7 @@ const auditEntries: Array<{
 }> = [];
 
 vi.mock("@/lib/audit", () => ({
+  SYSTEM_BRAIN: "system",
   logAudit: vi.fn(async () => undefined),
   listAuditLogs: vi.fn(async () => auditEntries),
 }));
@@ -95,9 +96,9 @@ describe("GET /api/sms/status", () => {
   });
 });
 
-function twilioCallback(params: Record<string, string>): NextRequest {
+function twilioCallback(params: Record<string, string>, query = ""): NextRequest {
   const body = new URLSearchParams(params).toString();
-  return new Request("https://app.example.com/api/sms/status", {
+  return new Request(`https://app.example.com/api/sms/status${query}`, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
@@ -175,5 +176,28 @@ describe("Zustellstatus landet bei der sendenden Kanzlei", () => {
     expect(vi.mocked(listAuditLogs)).toHaveBeenCalledWith(
       expect.objectContaining({ brainId: "test-brain", entityId: h, limit: 5 })
     );
+describe("POST /api/sms/status — Kanzlei-Zuordnung (OPS-10)", () => {
+  beforeEach(() => {
+    seenKeys.clear();
+    vi.mocked(logAudit).mockClear();
+  });
+
+  const handler = POST as unknown as (b: unknown, r: NextRequest) => Promise<Response>;
+
+  test("the signed callback URL names the firm — the entry lands in its protocol", async () => {
+    await handler(
+      undefined,
+      twilioCallback({ MessageSid: "SM9", MessageStatus: "delivered" }, "?b=brain-firm-1")
+    );
+    expect(vi.mocked(logAudit).mock.calls[0][2]).toMatchObject({ brainId: "brain-firm-1" });
+  });
+
+  test("without (or with a malformed) reference it goes to the system chain", async () => {
+    await handler(undefined, twilioCallback({ MessageSid: "SM10", MessageStatus: "sent" }));
+    await handler(
+      undefined,
+      twilioCallback({ MessageSid: "SM11", MessageStatus: "sent" }, "?b=..%2Fevil%20x")
+    );
+    expect(vi.mocked(logAudit).mock.calls.map((c) => c[2].brainId)).toEqual(["system", "system"]);
   });
 });

@@ -17,7 +17,12 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { caseFrontmatter, type CaseFrontmatter } from "@/lib/legal-types";
-import { extractVariableKeys, fillTemplate, resolveKnownVariables } from "@/lib/templates";
+import {
+  extractVariableKeys,
+  fillTemplate,
+  fillTemplateMarkdown,
+  resolveKnownVariables,
+} from "@/lib/templates";
 import { buildLetterheadFromKanzleiSettings } from "@/lib/letterhead-rubrum";
 
 interface TemplateForDialog {
@@ -104,6 +109,9 @@ export function TemplateUseDialog({
   }, [caseSlug, kanzlei, cases]);
 
   const filled = fillTemplate(template.body, values);
+  // Für den Word-Export werden Werte maskiert — ein Name wie „Müller_Bau_GmbH“
+  // darf nicht als Formatierung gelesen werden. Kopieren bleibt Klartext.
+  const filledMarkdown = fillTemplateMarkdown(template.body, values);
 
   function copy() {
     void navigator.clipboard.writeText(filled);
@@ -119,7 +127,7 @@ export function TemplateUseDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: template.title,
-          markdown: filled,
+          markdown: filledMarkdown,
           // Aus der Vorlage befüllt, kein KI-Text — keine KI-Kennzeichnung.
           ai_generated: false,
           letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,

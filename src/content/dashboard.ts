@@ -170,6 +170,7 @@ export const D = {
   "nav.tabular_review": { de: "Massenprüfung", en: "Bulk Review" },
   "nav.obligation_tracking": { de: "Pflichtenverfolgung", en: "Obligation Tracking" },
   "nav.case_scanner": { de: "Akten-Scanner", en: "Case Scanner" },
+  "scanner.status_queued": { de: "In Warteschlange", en: "Queued" },
   "nav.clause_library": { de: "Klausel-Bibliothek", en: "Clause Library" },
   "nav.templates": { de: "Vorlagen", en: "Templates" },
   "nav.litigation": { de: "Prozessführung", en: "Litigation" },
@@ -1663,7 +1664,7 @@ export const D = {
     en: "Keys are stored locally and never sent to the server",
   },
   "settings.tile_acls_desc": {
-    de: "Dokument-Level Zugriffskontrolle und Ethical Walls",
+    de: "Zugriffskontrolle auf Dokumentebene und Informationsbarrieren",
     en: "Document-level access control and ethical walls",
   },
   "settings.tile_scim_desc": {
@@ -2362,7 +2363,7 @@ export const D = {
     en: "Brain — Knowledge Base Explorer",
   },
   "cmd.nav.graph": { de: "Graph — Entitäts-Netzwerk", en: "Graph — Entity Network" },
-  "cmd.nav.sources": { de: "Sources — Quellen-Verwaltung", en: "Sources — Source Management" },
+  "cmd.nav.sources": { de: "Quellen-Verwaltung", en: "Sources — Source Management" },
   "cmd.recent_matters": { de: "Kürzlich bearbeitete Akten", en: "Recently edited matters" },
   "cmd.action.new_case": { de: "Neue Akte", en: "New case" },
   "cmd.action.new_deadline": { de: "Neue Frist", en: "New deadline" },
@@ -2370,7 +2371,7 @@ export const D = {
   "cmd.action.new_contract": { de: "Neuer Vertrag", en: "New contract" },
   "cmd.action.new_signature": { de: "Unterschrift anfordern", en: "Request signature" },
   "cmd.action.new_clause": { de: "Neue Klausel", en: "New clause" },
-  "cmd.action.new_space": { de: "Neuer Shared Space", en: "New shared space" },
+  "cmd.action.new_space": { de: "Neuer Datenraum", en: "New shared space" },
   "cmd.action.upload": { de: "Dokument hochladen", en: "Upload document" },
   "cmd.action.assistant": { de: "Assistent öffnen", en: "Open assistant" },
   "cmd.shortcuts.title": { de: "Tastaturkürzel", en: "Keyboard shortcuts" },
@@ -2872,7 +2873,10 @@ export const D = {
     de: "Hochladen konnte nicht geladen werden",
     en: "Upload could not be loaded",
   },
-  "error.vault_title": { de: "Vault konnte nicht geladen werden", en: "Vault could not be loaded" },
+  "error.vault_title": {
+    de: "Dokumente konnten nicht geladen werden",
+    en: "Vault could not be loaded",
+  },
   "error.verfahrensdoku_title": {
     de: "Verfahrensdokumentation konnte nicht geladen werden",
     en: "Procedure documentation could not be loaded",
@@ -3611,8 +3615,8 @@ export const D = {
   "agents.btn_replay": { de: "Neu starten", en: "Restart" },
   "agents.section_prompt": { de: "Aufgabe", en: "Prompt" },
   "agents.label_model": { de: "Modell", en: "Model" },
-  "agents.label_input_tokens": { de: "Input Tokens", en: "Input Tokens" },
-  "agents.label_output_tokens": { de: "Output Tokens", en: "Output Tokens" },
+  "agents.label_input_tokens": { de: "Eingabe-Token", en: "Input Tokens" },
+  "agents.label_output_tokens": { de: "Ausgabe-Token", en: "Output Tokens" },
   "agents.label_cost": { de: "Kosten", en: "Cost" },
   "agents.section_result": { de: "Ergebnis", en: "Result" },
   "agents.section_children": { de: "Teilaufgaben", en: "Children" },
@@ -5031,7 +5035,7 @@ export const D = {
     de: "Keine erlaubten WhatsApp-Sender konfiguriert.",
     en: "No allowed WhatsApp senders configured.",
   },
-  "whatsapp.workflow_objects": { de: "Workflow Objekte", en: "Workflow objects" },
+  "whatsapp.workflow_objects": { de: "Workflow-Objekte", en: "Workflow objects" },
   "whatsapp.no_workflow": { de: "Noch keine Workflow-Objekte.", en: "No workflow objects yet." },
   "whatsapp.kind_approval": { de: "Freigabe", en: "Approval" },
   "whatsapp.kind_intake": { de: "Mandatsanfrage", en: "Intake" },
@@ -7523,7 +7527,7 @@ export const D = {
   "nav.personal": { de: "Personal", en: "Staff" },
   "nav.case_assignment": { de: "Akten-Zuweisung", en: "Case Assignment" },
   "nav.case_search": { de: "Akten-Suche", en: "Case Search" },
-  "nav.ethical_wall": { de: "Ethical Wall", en: "Ethical Wall" },
+  "nav.ethical_wall": { de: "Informationsbarriere", en: "Ethical Wall" },
   "nav.webhooks": { de: "Webhooks", en: "Webhooks" },
   "nav.time_suggestions": { de: "Zeit-Vorschläge", en: "Time Suggestions" },
   "nav.autonomous": { de: "Autopilot", en: "Autopilot" },
@@ -7893,6 +7897,10 @@ export const D = {
   "compliance.error_save": {
     de: "Speichern fehlgeschlagen — Änderung ist nur lokal sichtbar.",
     en: "Save failed — changes are only visible locally.",
+  },
+  "compliance.error_load": {
+    de: "Die gespeicherte Selbstauskunft konnte nicht geladen werden. Änderungen sind gesperrt, bis sie geladen ist.",
+    en: "The saved self-assessment could not be loaded. Changes are locked until it loads.",
   },
   "compliance.title": { de: "Compliance-Selbstauskunft", en: "Compliance self-assessment" },
   "compliance.description": {
@@ -8448,6 +8456,10 @@ export const D = {
   "team.error_rate_limited": {
     de: "Zu viele Versuche — bitte kurz warten.",
     en: "Too many attempts — please wait briefly.",
+  },
+  "team.load_error": {
+    de: "Das Team konnte nicht geladen werden.",
+    en: "The team could not be loaded.",
   },
   "team.error_generic": {
     de: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
@@ -9935,7 +9947,7 @@ export const D = {
     en: "Shared workspaces for teams and clients",
   },
   "shared.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
-  "shared.new_title": { de: "Neuer Shared Space", en: "New Shared Space" },
+  "shared.new_title": { de: "Neuer Datenraum", en: "New Shared Space" },
   "shared.label_title": { de: "Titel", en: "Title" },
   "shared.title_placeholder": {
     de: "z.B. Kooperation Müller & Partner",
@@ -10203,13 +10215,13 @@ export const D = {
   "webhooks.created": { de: "Erstellt:", en: "Created:" },
 
   // ── Ethical Wall page strings ──
-  "ethical_wall.title": { de: "Ethical Wall", en: "Ethical Wall" },
+  "ethical_wall.title": { de: "Informationsbarriere", en: "Ethical Wall" },
   "ethical_wall.save": { de: "Speichern", en: "Save" },
   "ethical_wall.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
   "ethical_wall.err_save": { de: "Fehler beim Speichern", en: "Failed to save" },
-  "ethical_wall.saved": { de: "Ethical Wall aktualisiert", en: "Ethical Wall updated" },
+  "ethical_wall.saved": { de: "Informationsbarriere aktualisiert", en: "Ethical Wall updated" },
   "ethical_wall.warning": {
-    de: "Die Ethical Wall blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese Einschränkung hat Vorrang vor normalen Berechtigungen.",
+    de: "Die Informationsbarriere blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese Einschränkung hat Vorrang vor normalen Berechtigungen.",
     en: "The Ethical Wall blocks access to this case for specific users. This restriction takes precedence over normal permissions.",
   },
   "ethical_wall.blocked_users": { de: "Blockierte Benutzer", en: "Blocked users" },

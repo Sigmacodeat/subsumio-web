@@ -67,7 +67,7 @@ function daysUntil(date: Date) {
 
 function formatDate(date: Date, lang: Lang = "de") {
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+  return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
     day: "2-digit",
     month: "short",
   });
@@ -856,7 +856,7 @@ type ActivityEntry = {
 
 export function ActivityFeedWidget({ data }: { data: CockpitData }) {
   const { t, lang } = useLang();
-  const locale = lang === "en" ? "en-GB" : "de-DE";
+  const locale = lang === "en" ? "en-GB" : "de-AT";
 
   const entries: ActivityEntry[] = useMemo(() => {
     const today = new Date();
@@ -1212,7 +1212,7 @@ export function WidgetDashboard() {
                 </div>
                 {rq.created_at && (
                   <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                    {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+                    {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
                       day: "2-digit",
                       month: "short",
                     })}

@@ -40,7 +40,10 @@ const ensureLockoutSchema = createSchemaInit(`
 export async function recordFailedLogin(
   email: string
 ): Promise<{ locked: boolean; retryAfterSeconds: number }> {
-  const key = `login:${email.toLowerCase()}`;
+  return recordFailure(`login:${email.toLowerCase()}`);
+}
+
+async function recordFailure(key: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const now = Date.now();
 
   let entry = cache.get(key);
@@ -66,7 +69,10 @@ export async function recordFailedLogin(
 export async function isAccountLocked(
   email: string
 ): Promise<{ locked: boolean; retryAfterSeconds: number }> {
-  const key = `login:${email.toLowerCase()}`;
+  return lockStatus(`login:${email.toLowerCase()}`);
+}
+
+async function lockStatus(key: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const now = Date.now();
   let entry = cache.get(key);
 
@@ -93,6 +99,28 @@ export async function isAccountLocked(
 
 export async function clearLockout(email: string): Promise<void> {
   const key = `login:${email.toLowerCase()}`;
+  cache.delete(key);
+  await removeLockout(key);
+}
+
+// ── Second factor ─────────────────────────────────────────────────────
+// Failed TOTP/backup-code attempts lock the second factor per USER — not per
+// challenge token — so fetching a fresh challenge does not reset the count.
+
+export async function recordFailedSecondFactor(
+  userId: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+  return recordFailure(`2fa:${userId}`);
+}
+
+export async function isSecondFactorLocked(
+  userId: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+  return lockStatus(`2fa:${userId}`);
+}
+
+export async function clearSecondFactorLockout(userId: string): Promise<void> {
+  const key = `2fa:${userId}`;
   cache.delete(key);
   await removeLockout(key);
 }

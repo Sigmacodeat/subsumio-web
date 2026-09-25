@@ -4,7 +4,7 @@ import { getStore } from "@/lib/auth/store";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { revokeAllSessions } from "@/lib/auth/session";
-import { logAudit } from "@/lib/audit";
+import { logUserAudit } from "@/lib/audit-user";
 import { passwordSchema } from "@/lib/api-validation";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { z } from "zod";
@@ -35,6 +35,11 @@ export const POST = createPublicHandler(
       return apiError("invalid_or_expired_token", "Invalid or expired token", 400);
     }
 
+    // SSO-only accounts never get a local password through a reset link.
+    if (!user.passwordHash) {
+      return apiError("invalid_or_expired_token", "Invalid or expired token", 400);
+    }
+
     // Binding check: the token was issued against the CURRENT password hash.
     // Once the password changes (by this or any other reset), the token dies.
     if ((await bindFragment(user.passwordHash)) !== payload.bind) {
@@ -43,7 +48,7 @@ export const POST = createPublicHandler(
 
     await store.update(user.id, { passwordHash: await hashPassword(password) });
     await revokeAllSessions(user.id);
-    void logAudit("settings.update", "password_reset", { entityId: user.id });
+    void logUserAudit("settings.update", "password_reset", user, { entityId: user.id });
     return NextResponse.json({ ok: true });
   }
 );

@@ -1,90 +1,65 @@
+import type { NextRequest } from "next/server";
 import { createPublicHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 import { missingRequiredEnv } from "@/lib/env-validate";
+import { clientIp } from "@/lib/auth/rate-limit";
+import { hasValidInternalSecret } from "@/lib/auth/internal";
+import { timingSafeCompare } from "@/lib/crypto-utils";
 
 export const dynamic = "force-dynamic";
+
+type CheckStatus = "ok" | "degraded" | "down" | "unchecked";
+type Check = { status: CheckStatus; latencyMs?: number; detail?: string };
+
+/** Operators (CRON_SECRET bearer or internal secret) get the diagnostic details. */
+function isOperatorCaller(req: NextRequest): boolean {
+  if (hasValidInternalSecret(req)) return true;
+  const secret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization");
+  return Boolean(secret && auth && timingSafeCompare(auth, `Bearer ${secret}`));
+}
 
 /**
  * GET /api/readiness — Deep readiness probe.
  *
  * Checks that all critical dependencies are reachable and configured:
- *   1. Engine (Subsumio) — fetches /api/stats with API-Key headers
- *   2. Auth store — cold read via getStore().list()
- *   3. Critical env vars — AUTH_SECRET, ENGINE_URL, SUBSUMIO_WEB_API_KEY
+ *   1. Engine (Subsumio) — tenant-free GET /health
+ *   2. Auth store — one indexed point lookup (no table scan, no decryption)
+ *   3. Critical env vars — AUTH_SECRET, SUBSUMIO_API_URL, SUBSUMIO_WEB_API_KEY
  *   4. Optional services — Stripe, Sentry, Resend (degraded, not down)
  *
  * Returns 200 when all critical checks pass, 503 when any critical
- * dependency is down. Optional services report as "degraded" but
- * do not cause a 503.
+ * dependency is down. OCR and SMTP are not probed here and say so
+ * ("unchecked") instead of reporting a green they never verified.
  *
- * Used by deployment pipelines, Kubernetes readiness probes, and
- * traffic-routing decisions. Does NOT require authentication —
- * kept public but returns no sensitive data.
+ * Public and rate-limited per IP. Anonymous callers see statuses only;
+ * error texts and missing configuration are returned only to operators
+ * (CRON_SECRET bearer or x-internal-secret).
  */
 export const GET = createPublicHandler(
   {
     cacheMaxAge: 0, // Readiness checks should not be cached
+    rateLimitKey: (req) => `readiness:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 20,
+    rateLimitWindowMs: 60_000,
   },
-  async () => {
+  async (req) => {
     const start = Date.now();
-    const checks: Record<
-      string,
-      { status: "ok" | "degraded" | "down"; latencyMs?: number; detail?: string }
-    > = {};
+    const checks: Record<string, Check> = {};
 
-    // 1. Engine (Subsumio) — critical
+    // 1. Engine (Subsumio) — critical. /health needs no tenant, so the probe
+    //    never acts on behalf of any firm.
     const engineStart = Date.now();
     try {
-      const apiKey = env("SUBSUMIO_WEB_API_KEY");
-      const headers: Record<string, string> = {};
-      if (apiKey) headers["x-subsumio-api-key"] = apiKey;
-
-      // Use first real user's brainId as tenant header (production has REQUIRE_TENANT=true)
-      try {
-        const { getStore } = await import("@/lib/auth/store");
-        const users = await getStore().list();
-        if (Array.isArray(users) && users.length > 0 && users[0].brainId) {
-          headers["x-subsumio-source"] = users[0].brainId;
-        }
-      } catch {}
-
-      const res = await fetch(`${ENGINE_URL}/api/stats`, {
-        headers,
-        signal: AbortSignal.timeout(4_000),
-      });
-      if (res.ok) {
-        checks.engine = { status: "ok", latencyMs: Date.now() - engineStart };
-      } else if (res.status === 400) {
-        // 400 likely means SUBSUMIO_REQUIRE_TENANT=true but no tenant header
-        // was available (e.g. fresh install with no users yet). Fall back to
-        // /health which doesn't require tenant — if that passes, the engine
-        // is alive and the 400 is just the tenant gate, not a real outage.
-        try {
-          const healthRes = await fetch(`${ENGINE_URL}/health`, {
-            signal: AbortSignal.timeout(4_000),
-          });
-          checks.engine = healthRes.ok
-            ? { status: "ok", latencyMs: Date.now() - engineStart }
-            : {
-                status: "down",
-                latencyMs: Date.now() - engineStart,
-                detail: `Engine /health returned ${healthRes.status}`,
-              };
-        } catch {
-          checks.engine = {
+      const res = await fetch(`${ENGINE_URL}/health`, { signal: AbortSignal.timeout(4_000) });
+      checks.engine = res.ok
+        ? { status: "ok", latencyMs: Date.now() - engineStart }
+        : {
             status: "down",
             latencyMs: Date.now() - engineStart,
-            detail: `Engine returned 400 and /health unreachable`,
+            detail: `Engine /health returned ${res.status}`,
           };
-        }
-      } else {
-        checks.engine = {
-          status: "down",
-          latencyMs: Date.now() - engineStart,
-          detail: `Engine returned ${res.status}`,
-        };
-      }
     } catch (err) {
       checks.engine = {
         status: "down",
@@ -93,15 +68,13 @@ export const GET = createPublicHandler(
       };
     }
 
-    // 2. Auth store — critical
+    // 2. Auth store — critical. A point lookup by id proves the store answers
+    //    without reading (and decrypting) every user row.
     const authStart = Date.now();
     try {
       const { getStore } = await import("@/lib/auth/store");
-      const users = await getStore().list();
-      checks.auth = {
-        status: Array.isArray(users) ? "ok" : "degraded",
-        latencyMs: Date.now() - authStart,
-      };
+      await getStore().getById("__readiness_probe__");
+      checks.auth = { status: "ok", latencyMs: Date.now() - authStart };
     } catch (err) {
       checks.auth = {
         status: "down",
@@ -140,30 +113,29 @@ export const GET = createPublicHandler(
       ? { status: "ok" }
       : { status: "degraded", detail: "RESEND_API_KEY not set" };
 
-    // 5. OCR — enabled by default (agency quality)
-    checks.ocr = { status: "ok" };
-
-    // 6. SMTP is configured PER FIRM (Kanzlei-Einstellungen), not per
-    // deployment — this public, firm-less probe cannot and must not read a
-    // firm's settings. (It used the browser settings loader before, which
-    // server-side always failed and reported "degraded".) The per-firm
-    // status lives in /api/cron/health (CRON_SECRET) and, for a signed-in
-    // firm, /api/notifications/health.
-    checks.smtp = { status: "ok", detail: "configured per firm — see /api/cron/health" };
+    // 5. OCR and 6. SMTP are not probed by this firm-less endpoint (SMTP is
+    //    configured per firm — see /api/cron/health). Say so honestly.
+    checks.ocr = { status: "unchecked", detail: "not probed by /api/readiness" };
+    checks.smtp = { status: "unchecked", detail: "configured per firm — see /api/cron/health" };
 
     // Determine overall status: critical checks (engine, auth, config) must be ok
     const criticalKeys = ["engine", "auth", "config"];
     const anyCriticalDown = criticalKeys.some((k) => checks[k]?.status === "down");
-    const allOk = Object.values(checks).every((c) => c.status === "ok");
+    const allOk = Object.values(checks).every((c) => c.status === "ok" || c.status === "unchecked");
 
     const status = anyCriticalDown ? 503 : 200;
     const overall = anyCriticalDown ? "down" : allOk ? "ok" : "degraded";
+
+    // Anonymous callers: statuses only — no error texts, hosts or config gaps.
+    const publicChecks = isOperatorCaller(req)
+      ? checks
+      : Object.fromEntries(Object.entries(checks).map(([k, c]) => [k, { status: c.status }]));
 
     return Response.json(
       {
         status: overall,
         durationMs: Date.now() - start,
-        checks,
+        checks: publicChecks,
       },
       { status }
     );

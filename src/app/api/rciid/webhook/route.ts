@@ -11,7 +11,7 @@ import {
 } from "@/lib/rciid";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 
 const log = logger("rciid-webhook");
 
@@ -151,7 +151,9 @@ export const POST = createWebhookHandler({}, async (_unused, req) => {
     });
   }
 
+  // The provider callback carries no firm context — filed on the system chain.
   void logAudit("rciid.webhook_received", "case", {
+    brainId: SYSTEM_BRAIN,
     entityId: body.case_id,
     details: {
       eventType: body.event_type,

@@ -89,7 +89,9 @@ export const POST = createHandler(
 
     void logAudit("data.delete", "user", {
       entityId: ctx.user.id,
+      brainId: ctx.brainId,
       userId: ctx.user.id,
+      userEmail: ctx.user.email,
       details: { api_keys_deleted: apiKeys.length, memories_deleted: memoriesDeleted },
     });
 

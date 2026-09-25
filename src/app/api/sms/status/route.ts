@@ -4,7 +4,7 @@ import { createHandler, createWebhookHandler } from "@/lib/api-handler";
 import { verifyTwilioSignature } from "@/lib/sms/twilio-verify";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { normalizePhone } from "@/lib/whatsapp/types";
-import { listAuditLogs, logAudit } from "@/lib/audit";
+import { listAuditLogs, logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import { filterNewIds } from "@/lib/caselaw-dedup";
 import { env } from "@/lib/env";
 import { lookupSmsOutbound } from "@/lib/sms/outbound-index";
@@ -34,7 +34,9 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   // (Caddy) ist req.url intern http:// — Twilio signiert aber https://,
   // also gegen die kanonische Public-URL prüfen, nicht gegen req.url.
   const appUrl = env("NEXT_PUBLIC_APP_URL")?.replace(/\/+$/, "");
-  const callbackUrl = appUrl ? `${appUrl}/api/sms/status` : req.url;
+  // The query (`?b=<brain>`) is part of the signed URL — it cannot be forged.
+  const search = new URL(req.url).search;
+  const callbackUrl = appUrl ? `${appUrl}/api/sms/status${search}` : req.url;
   const signature = req.headers.get("x-twilio-signature");
   if (!verifyTwilioSignature(callbackUrl, params, signature)) {
     return Response.json({ error: "invalid_signature" }, { status: 401 });
@@ -53,12 +55,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     return Response.json({ ok: true, deduped: true });
   }
 
-  // File the status under the firm that sent the SMS (the callback itself
-  // does not know it); the phone hash is the entity, so reads filter in SQL.
+  // File the status under the firm that sent the SMS: the server-side send
+  // record first, else the firm reference in the (Twilio-signed) callback
+  // URL; unknown/legacy callbacks go to the system chain. The phone hash is
+  // the entity, so reads filter in SQL.
   const origin = await lookupSmsOutbound(sid).catch(() => null);
   const toHash = origin?.toHash ?? (params.To ? phoneHash(params.To) : null);
+  const ref = new URL(req.url).searchParams.get("b");
+  const refBrain = ref && /^[A-Za-z0-9_.:-]{1,128}$/.test(ref) ? ref : null;
   await logAudit("sms.delivery_status", "sms_outbound", {
-    brainId: origin?.brainId ?? "system",
+    brainId: origin?.brainId ?? refBrain ?? SYSTEM_BRAIN,
     entityId: toHash ?? undefined,
     details: {
       sid,

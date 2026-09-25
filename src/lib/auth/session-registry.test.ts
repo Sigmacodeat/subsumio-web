@@ -23,6 +23,8 @@ import {
   listRevokedSids,
   touchSession,
   resetSessionRegistryForTests,
+  isSessionRevokedOrIdle,
+  sessionIdleLimitMs,
 } from "./session-registry";
 
 describe("session-registry (in-memory dev mode)", () => {
@@ -117,5 +119,49 @@ describe("session-registry (in-memory dev mode)", () => {
     const row = (await listActiveSessions("u1"))[0];
     expect(row.userAgent).toHaveLength(256);
     expect(row.ip).toHaveLength(64);
+  });
+});
+
+describe("session idle timeout (SEC-18)", () => {
+  beforeEach(() => {
+    resetSessionRegistryForTests();
+    vi.useRealTimers();
+    delete process.env.SUBSUMIO_SESSION_IDLE_HOURS;
+  });
+
+  test("default idle limit is 12 hours; 0 disables", () => {
+    expect(sessionIdleLimitMs()).toBe(12 * 3600 * 1000);
+    process.env.SUBSUMIO_SESSION_IDLE_HOURS = "0";
+    expect(sessionIdleLimitMs()).toBe(0);
+    process.env.SUBSUMIO_SESSION_IDLE_HOURS = "8";
+    expect(sessionIdleLimitMs()).toBe(8 * 3600 * 1000);
+  });
+
+  test("a session idle longer than the limit is rejected and revoked", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-25T08:00:00Z"));
+    await registerSession("sid-idle", "u1");
+    expect(await isSessionRevokedOrIdle("u1", "sid-idle", 12 * 3600 * 1000)).toBe(false);
+
+    vi.setSystemTime(new Date("2026-09-25T20:30:00Z")); // 12.5 h later, no activity
+    expect(await isSessionRevokedOrIdle("u1", "sid-idle", 12 * 3600 * 1000)).toBe(true);
+    // Revoked for good: the device list and the edge check agree.
+    expect(await isSidRevoked("u1", "sid-idle")).toBe(true);
+    vi.useRealTimers();
+  });
+
+  test("activity keeps the session alive", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-25T08:00:00Z"));
+    await registerSession("sid-active", "u1");
+    vi.setSystemTime(new Date("2026-09-25T15:00:00Z"));
+    await touchSession("u1", "sid-active");
+    vi.setSystemTime(new Date("2026-09-25T22:00:00Z")); // 7 h after last activity
+    expect(await isSessionRevokedOrIdle("u1", "sid-active", 12 * 3600 * 1000)).toBe(false);
+    vi.useRealTimers();
+  });
+
+  test("unknown sid stays valid (registry is metadata, fail open)", async () => {
+    expect(await isSessionRevokedOrIdle("u1", "nope", 1000)).toBe(false);
   });
 });

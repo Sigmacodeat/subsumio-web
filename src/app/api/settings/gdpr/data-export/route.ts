@@ -156,7 +156,9 @@ export const GET = createHandler(
 
     void logAudit("data.export", "user", {
       entityId: ctx.user.id,
+      brainId: ctx.brainId,
       userId: ctx.user.id,
+      userEmail: ctx.user.email,
       details: { page_count: brainPages.length },
     });
 
