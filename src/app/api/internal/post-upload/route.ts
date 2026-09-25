@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   // 2 + 3. Enqueue remaining tasks to the persistent outbox.
   //   - analyze: runs legal analysis via /api/legal/analyze
-  //   - contradiction (only if case_slug): runs contradiction probe via /api/cron/contradiction-probe
+  //   - contradiction (only if case_slug): checks the case via /api/legal/contradictions
   //   The drain cron (/api/cron/post-upload-drain, every 2 min) picks these up with
   //   retry-with-backoff — tasks survive web container restarts.
   try {

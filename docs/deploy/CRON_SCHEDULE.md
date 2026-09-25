@@ -18,7 +18,7 @@ Abgleich unten bleibt als Beleg. `src/lib/ingest-schedule.test.ts` prüft seithe
 | `/api/cron/auto-playbook`            | `0 */6 * * *`  | `0 9 * * *`    | Zeitplan weicht ab |
 | `/api/cron/case-law`                 | `0 9 * * *`    | `30 6 * * *`   | Zeitplan weicht ab |
 | `/api/cron/case-scanner`             | `0 22 * * *`   | `0 2 * * *`    | Zeitplan weicht ab |
-| `/api/cron/contradiction-probe`      | `0 23 * * *`   | `0 3 * * *`    | Zeitplan weicht ab |
+| `/api/cron/contradiction-probe`      | `0 23 * * *`   | —              | nur manuell        |
 | `/api/cron/daily-briefing`           | `0 7 * * *`    | `30 6 * * *`   | Zeitplan weicht ab |
 | `/api/cron/agent-tasks`              | —              | `*/15 * * * *` | nur im Crontab     |
 | `/api/cron/dream-cycle`              | `0 2 * * *`    | `30 2 * * *`   | Zeitplan weicht ab |
@@ -81,3 +81,8 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
   alle offenen Akten (höchstens 50), nach Kostenvorschau in Credits und Bestätigung. Die
   Route bleibt bestehen und antwortet mit `410` „deaktiviert"; der Crontab-Eintrag ist
   entfernt.
+- `/api/cron/contradiction-probe`: kein Nachtlauf mehr. Die Engine-Prüfung sucht und
+  speichert datenbankweit, nicht getrennt pro Kanzlei-Quelle; ein Lauf pro Kanzlei ist damit
+  nicht sauber abgrenzbar. Widersprüche in Akten prüft die Post-Upload-Warteschlange nach
+  jedem Upload pro Akte (`/api/legal/contradictions`). Die Route bleibt für manuelle Läufe
+  und verlangt `brain_id` plus genau einen von `doc_type`/`query` (sonst `400`).

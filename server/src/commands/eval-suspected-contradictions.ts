@@ -40,6 +40,18 @@ import {
 import { maybePromptForCostBeforeProbe } from "../core/eval-contradictions/cost-prompt.ts";
 import type { ContradictionFinding, Severity } from "../core/eval-contradictions/types.ts";
 
+/**
+ * An early stop of the probe command. The CLI wrapper turns it into
+ * `process.exit(code)`; server callers catch it — the engine process must
+ * never exit because one request had bad parameters.
+ */
+export class CliExit extends Error {
+  constructor(public readonly code: number) {
+    super(code === 0 ? "aborted" : `contradiction probe stopped (exit ${code})`);
+    this.name = "CliExit";
+  }
+}
+
 interface ParsedFlags {
   sub: "run" | "trend" | "review";
   // run flags
@@ -223,7 +235,7 @@ async function loadFromCapture(engine: BrainEngine, limit?: number): Promise<str
         `  export GBRAIN_CONTRIBUTOR_MODE=1\n` +
         `or set 'eval.capture: true' in your gbrain config. Re-run queries to populate, then try again.`
     );
-    process.exit(2);
+    throw new CliExit(2);
   }
   return rows.map((r) => r.query);
 }
@@ -239,7 +251,7 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     console.error(
       `Must pass exactly one of: --queries-file FILE, --query "...", --from-capture, --doc-type TYPE.`
     );
-    process.exit(2);
+    throw new CliExit(2);
   }
 
   let queries: string[] = [];
@@ -277,7 +289,7 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
 
   if (queries.length === 0) {
     console.error("No queries to evaluate.");
-    process.exit(1);
+    throw new CliExit(1);
   }
 
   // v0.34 / Lane C: route the judge model through resolveModel so the user's
@@ -313,7 +325,7 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     yesOverride: f.yes,
   });
   if (promptResult.kind === "abort") {
-    process.exit(0); // intentional Ctrl-C — not an error
+    throw new CliExit(0); // intentional Ctrl-C — not an error
   }
 
   // Refresh-cache: sweep before run so the cache misses on this pass.
@@ -408,12 +420,12 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
 
     if (out.capHitMidRun && !f.yes) {
       // Cap was hit; we already wrote a partial. Exit non-zero to signal.
-      process.exit(1);
+      throw new CliExit(1);
     }
   } catch (err) {
     if (err instanceof PreFlightBudgetError) {
       console.error(`Pre-flight refused: ${err.message}`);
-      process.exit(1);
+      throw new CliExit(1);
     }
     throw err;
   }
@@ -432,7 +444,7 @@ async function runReview(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   const rows = await loadTrend(engine, 90);
   if (rows.length === 0) {
     console.error("No probe runs in the last 90 days. Run the probe first.");
-    process.exit(1);
+    throw new CliExit(1);
   }
   const latest = rows[0];
   const report = latest.report_json;
@@ -464,7 +476,13 @@ async function runReview(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   }
 }
 
-export async function runEvalSuspectedContradictions(
+/**
+ * Library entry: never ends the process. Every early stop (bad flags, no
+ * queries, pre-flight refusal) throws `CliExit` with the exit code the CLI
+ * would use. Callers inside a long-running server (the engine's HTTP API)
+ * must use this and map `CliExit` to an HTTP status.
+ */
+export async function runEvalSuspectedContradictionsCore(
   engine: BrainEngine,
   args: string[]
 ): Promise<void> {
@@ -474,7 +492,7 @@ export async function runEvalSuspectedContradictions(
   } catch (err) {
     console.error(`Error: ${(err as Error).message}`);
     printHelp();
-    process.exit(2);
+    throw new CliExit(2);
   }
   if (flags.help) {
     printHelp();
@@ -483,4 +501,17 @@ export async function runEvalSuspectedContradictions(
   if (flags.sub === "run") return runRun(engine, flags);
   if (flags.sub === "trend") return runTrend(engine, flags);
   if (flags.sub === "review") return runReview(engine, flags);
+}
+
+/** CLI entry: translates `CliExit` into the process exit code. */
+export async function runEvalSuspectedContradictions(
+  engine: BrainEngine,
+  args: string[]
+): Promise<void> {
+  try {
+    await runEvalSuspectedContradictionsCore(engine, args);
+  } catch (err) {
+    if (err instanceof CliExit) process.exit(err.code);
+    throw err;
+  }
 }

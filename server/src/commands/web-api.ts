@@ -22,6 +22,7 @@ import {
   timingSafeEqual as cryptoTimingSafeEqual,
 } from "crypto";
 import { safeStringEqual } from "../core/timing-safe.ts";
+import { parseContradictionProbeBody } from "../core/eval-contradictions/probe-request.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -10759,37 +10760,37 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
-  app.post("/api/admin/contradiction-probe", async (req: Request, res: Response) => {
-    try {
-      const { runEvalSuspectedContradictions } =
-        await import("../commands/eval-suspected-contradictions.ts");
-      const body = (req.body ?? {}) as {
-        budget_usd?: number;
-        top_k?: number;
-        limit?: number;
-        doc_type?: string;
-      };
-      const args = [
-        "run",
-        "--json",
-        "--yes",
-        "--budget-usd",
-        String(body.budget_usd ?? 0.5),
-        "--top-k",
-        String(body.top_k ?? 5),
-        "--limit",
-        String(body.limit ?? 20),
-      ];
-      if (body.doc_type) {
-        args.push("--doc-type", body.doc_type);
+  app.post(
+    "/api/admin/contradiction-probe",
+    guard,
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      const parsed = parseContradictionProbeBody(req.body);
+      if ("error" in parsed) {
+        apiError(res, 400, parsed.error);
+        return;
       }
-      await runEvalSuspectedContradictions(engine, args);
-      res.json({ status: "ok", message: "contradiction probe completed" });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "unknown";
-      res.status(500).json({ error: "contradiction_probe_failed", message: msg });
+      try {
+        const { runEvalSuspectedContradictionsCore, CliExit } =
+          await import("../commands/eval-suspected-contradictions.ts");
+        try {
+          await runEvalSuspectedContradictionsCore(engine, parsed.args);
+        } catch (e) {
+          // The probe's early stops (no matching pages, budget refusal) end a
+          // CLI run with an exit code; here they are an answer, never an exit.
+          if (e instanceof CliExit) {
+            res.status(422).json({ error: "contradiction_probe_not_run", exit_code: e.code });
+            return;
+          }
+          throw e;
+        }
+        res.json({ status: "ok", message: "contradiction probe completed" });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(500).json({ error: "contradiction_probe_failed", message: msg });
+      }
     }
-  });
+  );
 
   // ── Settlement Retry Queue ─────────────────────────────────────────
   // Failed pipeline settlements (web app transient down, 402 overage unpaid,
