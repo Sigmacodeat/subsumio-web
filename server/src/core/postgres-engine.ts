@@ -123,7 +123,7 @@ import {
 } from "./search/sql-ranking.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 import { DELETE_BATCH_SIZE } from "./engine-constants.ts";
-import { ConfigError, NotFoundError, QueryError } from "./engine-errors.ts";
+import { ConfigError, NotFoundError, PageExistsError, QueryError } from "./engine-errors.ts";
 
 function escapeSqlStringLiteral(value: string): string {
   return value.replace(/'/g, "''");
@@ -1087,9 +1087,14 @@ export class PostgresEngine implements BrainEngine {
     return { slug: r.slug, id: Number(r.id) };
   }
 
-  async putPage(slug: string, page: PageInput, opts?: { sourceId?: string }): Promise<Page> {
+  async putPage(
+    slug: string,
+    page: PageInput,
+    opts?: { sourceId?: string; ifAbsent?: boolean }
+  ): Promise<Page> {
     slug = validateSlug(slug);
     const sql = this.sql;
+    const ifAbsent = opts?.ifAbsent === true;
     const hash = page.content_hash || contentHash(page);
     const frontmatter = page.frontmatter || {};
     const sourceId = opts?.sourceId ?? "default";
@@ -1125,7 +1130,10 @@ export class PostgresEngine implements BrainEngine {
     const rows = await sql`
       INSERT INTO pages (source_id, slug, type, page_kind, title, compiled_truth, timeline, frontmatter, content_hash, updated_at, effective_date, effective_date_source, import_filename, chunker_version, source_path, source_kind, source_uri, ingested_via, ingested_at)
       VALUES (${sourceId}, ${slug}, ${page.type}, ${pageKind}, ${page.title}, ${page.compiled_truth}, ${page.timeline || ""}, ${sql.json(frontmatter as Parameters<typeof sql.json>[0])}, ${hash}, now(), ${effectiveDate}, ${effectiveDateSource}, ${importFilename}, COALESCE(${chunkerVersion}::smallint, 1), ${sourcePath}, ${sourceKind}, ${sourceUri}, ${ingestedVia}, ${ingestedAt})
-      ON CONFLICT (source_id, slug) DO UPDATE SET
+      ON CONFLICT (source_id, slug) ${
+        ifAbsent
+          ? sql`DO NOTHING`
+          : sql`DO UPDATE SET
         type = EXCLUDED.type,
         page_kind = EXCLUDED.page_kind,
         title = EXCLUDED.title,
@@ -1142,9 +1150,13 @@ export class PostgresEngine implements BrainEngine {
         source_kind           = COALESCE(EXCLUDED.source_kind,           pages.source_kind),
         source_uri            = COALESCE(EXCLUDED.source_uri,            pages.source_uri),
         ingested_via          = COALESCE(EXCLUDED.ingested_via,          pages.ingested_via),
-        ingested_at           = COALESCE(EXCLUDED.ingested_at,           pages.ingested_at)
+        ingested_at           = COALESCE(EXCLUDED.ingested_at,           pages.ingested_at)`
+      }
       RETURNING id, source_id, slug, type, title, compiled_truth, timeline, frontmatter, content_hash, created_at, updated_at, effective_date, effective_date_source, import_filename, source_kind, source_uri, ingested_via, ingested_at
     `;
+    // Create-only: the conflict arm wrote nothing, so no row comes back. Any
+    // row at (source_id, slug) counts — live, soft-deleted or tombstoned.
+    if (ifAbsent && rows.length === 0) throw new PageExistsError(slug);
     return rowToPage(rows[0]);
   }
 

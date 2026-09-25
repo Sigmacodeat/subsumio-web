@@ -19,6 +19,8 @@ export interface EnginePageInput {
   content?: string;
   frontmatter?: Record<string, unknown>;
   merge?: boolean;
+  /** Create-only: the engine refuses (409 page_exists) instead of replacing a stored page. */
+  if_absent?: boolean;
 }
 
 export async function engineRequest<T>(

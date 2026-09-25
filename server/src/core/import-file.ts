@@ -70,6 +70,7 @@ import { computeEffectiveDate } from "./effective-date.ts";
 import { logSlugFallback } from "./audit-slug-fallback.ts";
 import { resolveContextualRetrievalMode } from "./contextual-retrieval-resolver.ts";
 import { assessContentSanity, ContentSanityBlockError } from "./content-sanity.ts";
+import { PageExistsError } from "./engine-errors.ts";
 import { loadOperatorLiterals } from "./content-sanity-literals.ts";
 import { logContentSanityAssessment } from "./audit/content-sanity-audit.ts";
 import { isEmbedSkipped, buildEmbedSkipMarker, EMBED_SKIP_KEY } from "./embed-skip.ts";
@@ -537,6 +538,14 @@ export async function importFromContent(
     skipAliases?: boolean;
     skipDedup?: boolean;
     skipSanity?: boolean;
+    /**
+     * Create-only write. When a page already sits at (source_id, slug) —
+     * live, soft-deleted or tombstoned — nothing is written and
+     * `PageExistsError` is thrown. The guard is the page INSERT itself
+     * (ON CONFLICT DO NOTHING inside the import transaction), so two
+     * concurrent creates of the same slug cannot both succeed.
+     */
+    ifAbsent?: boolean;
   } = {}
 ): Promise<ImportResult> {
   // v0.18.0+ multi-source: when caller is syncing under a non-default source,
@@ -831,6 +840,10 @@ export async function importFromContent(
   };
 
   const existing = await engine.getPage(slug, sourceId ? { sourceId } : undefined);
+  // Create-only: fail fast before embedding. The authoritative check is the
+  // INSERT in the transaction below (also covers soft-deleted rows and a
+  // concurrent create that lands after this read).
+  if (opts.ifAbsent && existing) throw new PageExistsError(slug);
   if (existing?.content_hash === hash && !opts.forceRechunk) {
     return { slug, status: "skipped", chunks: 0, parsedPage };
   }
@@ -859,7 +872,9 @@ export async function importFromContent(
   // via the `?.` shape — no failure mode for fake engines.
   const fmId = (parsed.frontmatter as Record<string, unknown> | undefined)?.id;
   const fmIdStr = typeof fmId === "string" && fmId.length > 0 ? fmId : null;
-  if (!opts.forceRechunk && !opts.skipDedup && engine.findDuplicatePage) {
+  // A create-only write must either create exactly this slug or fail — it
+  // never reports success by pointing at a different, pre-existing page.
+  if (!opts.forceRechunk && !opts.skipDedup && !opts.ifAbsent && engine.findDuplicatePage) {
     let dup: { slug: string; id: number } | null = null;
     try {
       dup = await engine.findDuplicatePage(sourceId ?? "default", {
@@ -1181,7 +1196,7 @@ export async function importFromContent(
         // ingested_at is server-stamped at the engine layer when any
         // provenance write fires; never client-controlled.
       },
-      txOpts
+      opts.ifAbsent ? { ...txOpts, ifAbsent: true } : txOpts
     );
 
     // v0.40.3.0: stamp the contextual retrieval state columns alongside

@@ -47,6 +47,12 @@ export interface ImportedTimeEntriesRemoval {
   not_found_ids: string[];
 }
 
+/** The server refused a create because the slug is taken (409 page_exists). */
+function isPageExists(err: unknown): boolean {
+  const e = err as { status?: unknown; code?: unknown } | null;
+  return !!e && e.status === 409 && e.code === "page_exists";
+}
+
 /** What an import wrote, enough to take it back later. */
 export interface ImportRefs {
   pages: string[];
@@ -114,13 +120,24 @@ export async function executeImport(
         if (await client.getPage(w.slug)) {
           set(r, "skipped", "Wurde inzwischen angelegt");
         } else {
-          await client.createPage({
-            slug: w.slug,
-            title: w.title,
-            type: w.type,
-            content: w.content,
-            frontmatter: w.frontmatter,
-          });
+          try {
+            await client.createPage({
+              slug: w.slug,
+              title: w.title,
+              type: w.type,
+              content: w.content,
+              frontmatter: w.frontmatter,
+            });
+          } catch (err) {
+            // Created between the check above and this write: the server
+            // refused the create (nothing replaced) — same outcome as above.
+            if (isPageExists(err)) {
+              set(r, "skipped", "Wurde inzwischen angelegt");
+              tick();
+              continue;
+            }
+            throw err;
+          }
           refs.pages.push(w.slug);
           set(r, "imported");
         }

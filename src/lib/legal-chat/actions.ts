@@ -1372,6 +1372,8 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
         created_via: "whatsapp",
         created_at: new Date().toISOString(),
       },
+      // A new invoice never replaces a stored one.
+      if_absent: true,
     });
     const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
     const invoices = Array.isArray(caseFm.invoices) ? caseFm.invoices : [];

@@ -750,8 +750,17 @@ export interface BrainEngine {
    * is included in the INSERT column list so ON CONFLICT (source_id, slug)
    * DO UPDATE actually targets the intended row instead of fabricating a
    * duplicate at (default, slug). Multi-source brains MUST pass sourceId.
+   *
+   * `opts.ifAbsent` makes the write create-only in the same statement
+   * (ON CONFLICT DO NOTHING): when any row already sits at (source_id, slug)
+   * — including soft-deleted and tombstoned pages — nothing is written and
+   * `PageExistsError` is thrown.
    */
-  putPage(slug: string, page: PageInput, opts?: { sourceId?: string }): Promise<Page>;
+  putPage(
+    slug: string,
+    page: PageInput,
+    opts?: { sourceId?: string; ifAbsent?: boolean }
+  ): Promise<Page>;
   /**
    * v0.41.13 (#1309) — identity-based dedup pre-check for the import pipeline.
    *

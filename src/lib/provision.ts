@@ -211,10 +211,12 @@ async function createSeedPage(
     frontmatter?: Record<string, unknown>;
   }
 ): Promise<void> {
+  // Create-only: a seed never replaces a page that already exists (a demo
+  // matter the lawyer edited, or a retry after a failed existence check).
   await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, if_absent: true }),
     signal: AbortSignal.timeout(5_000),
   });
 }

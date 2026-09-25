@@ -28,7 +28,7 @@ const ctx = {
   user: { id: "u1", email: "anwalt@kanzlei.example", role: "lawyer", name: "Anwalt" },
 };
 
-function post(body: unknown) {
+function post(body: unknown, extraHeaders: Record<string, string> = {}) {
   return POST(
     new NextRequest("http://localhost:3000/api/pages", {
       method: "POST",
@@ -36,6 +36,7 @@ function post(body: unknown) {
         "content-type": "application/json",
         "x-csrf-token": "t",
         cookie: "sb_csrf=t",
+        ...extraHeaders,
       },
       body: JSON.stringify(body),
     })
@@ -270,6 +271,91 @@ describe("POST /api/pages — server-side write guards", () => {
     const res = await post({ slug: "legal/invoices/r-2", title: "Rechnung", type: "invoice" });
     expect(res.status).toBe(200);
     expect(writes()).toHaveLength(1);
+  });
+
+  describe("a create never silently replaces a matter or invoice", () => {
+    it("a new matter/invoice is written create-only (if_absent)", async () => {
+      readStatus = 404;
+      const res = await post({ slug: "legal/invoices/r-3", title: "Rechnung", type: "invoice" });
+      expect(res.status).toBe(200);
+      expect(writes()[0].body).toMatchObject({ slug: "legal/invoices/r-3", if_absent: true });
+    });
+
+    it("a create over a stored draft invoice → 409 page_exists, nothing written", async () => {
+      stored = { slug: "legal/invoices/r-4", type: "invoice", frontmatter: { status: "draft" } };
+      const res = await post({ slug: "legal/invoices/r-4", title: "Neu", type: "invoice" });
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe("page_exists");
+      expect(writes()).toHaveLength(0);
+    });
+
+    it("a create over a stored matter → 409 page_exists, even without a type in the request", async () => {
+      stored = { slug: "legal/cases/a", type: "legal_case", frontmatter: { version: 3 } };
+      const res = await post({ slug: "legal/cases/a", title: "Akte A" });
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe("page_exists");
+      expect(writes()).toHaveLength(0);
+    });
+
+    it("a tombstoned matter still counts as existing", async () => {
+      stored = {
+        slug: "legal/cases/t",
+        type: "legal_case",
+        frontmatter: { status: "tombstoned" },
+      };
+      const res = await post({ slug: "legal/cases/t", title: "Neu", type: "legal_case" });
+      expect(res.status).toBe(409);
+      expect(writes()).toHaveLength(0);
+    });
+
+    it("a deliberate replacement with a stale If-Match → 409 version_conflict", async () => {
+      stored = { slug: "legal/invoices/r-5", type: "invoice", frontmatter: { version: 4 } };
+      const res = await post(
+        { slug: "legal/invoices/r-5", title: "Neu", type: "invoice" },
+        { "If-Match": "3" }
+      );
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe("version_conflict");
+      expect(writes()).toHaveLength(0);
+    });
+
+    it("a deliberate replacement with the stored version is written and advances it", async () => {
+      stored = {
+        slug: "legal/invoices/r-6",
+        type: "invoice",
+        frontmatter: { status: "draft", version: 4 },
+      };
+      const res = await post(
+        { slug: "legal/invoices/r-6", title: "Neu", type: "invoice", frontmatter: { total: 5 } },
+        { "If-Match": "4" }
+      );
+      expect(res.status).toBe(200);
+      expect(writes()).toHaveLength(1);
+      expect(writes()[0].body.if_absent).toBeUndefined();
+      expect(writes()[0].body.frontmatter).toMatchObject({ total: 5, version: 5 });
+    });
+
+    it("an engine page_exists (created in the meantime) is passed on as 409", async () => {
+      readStatus = 404;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string, init?: RequestInit) => {
+          engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+          if (init?.body === undefined) return new Response("{}", { status: 404 });
+          return Response.json({ error: "page_exists", message: "x" }, { status: 409 });
+        })
+      );
+      const res = await post({ slug: "legal/invoices/r-7", title: "Rechnung", type: "invoice" });
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe("page_exists");
+    });
+
+    it("other page types keep plain create semantics", async () => {
+      stored = { slug: "notes/n", type: "note", frontmatter: {} };
+      const res = await post({ slug: "notes/n", title: "Notiz", type: "note" });
+      expect(res.status).toBe(200);
+      expect(writes()[0].body.if_absent).toBeUndefined();
+    });
   });
 });
 
@@ -574,6 +660,10 @@ describe("POST /api/pages — server conflict gate (§ 10 RAO)", () => {
           return new Response("down", { status: 502 });
         }
         if (init?.method === "POST") caseWrites.push(JSON.parse(String(init.body ?? "{}")));
+        // The matter is new: reading it before the write finds nothing.
+        if (!init?.method || init.method === "GET") {
+          return new Response(JSON.stringify({ error: "not_found" }), { status: 404 });
+        }
         return new Response(JSON.stringify({ slug: "x" }), { status: 200 });
       })
     );

@@ -107,6 +107,18 @@ describe("createInvoiceReservingEntries (GELD-4)", () => {
     expect(timeEntries()[0]).toEqual({ id: "te-1", minutes: 60, billed: true });
   });
 
+  it("writes the page create-only; a taken slug is reported as exists and rolled back", async () => {
+    const taken = vi.fn(async (_h: Record<string, string>, payload: Record<string, unknown>) => {
+      created.push(payload);
+      return Response.json({ error: "page_exists", message: "exists" }, { status: 409 });
+    });
+    const out = await createInvoiceReservingEntries({}, brain, input("R-1"), taken);
+    expect(out.kind).toBe("exists");
+    expect(created[0]).toMatchObject({ slug: "invoice/R-1", if_absent: true });
+    expect(timeEntries().every((e) => e.billed === false)).toBe(true);
+    expect(expenses()[0].billed).toBe(false);
+  });
+
   it("releases the reservation when the invoice page cannot be written", async () => {
     const failing = vi.fn(async () => Response.json({ error: "x" }, { status: 500 }));
     const out = await createInvoiceReservingEntries({}, brain, input("R-1"), failing);

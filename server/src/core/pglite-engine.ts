@@ -48,7 +48,13 @@ import { runMigrations } from "./migrate.ts";
 import { PGLITE_SCHEMA_SQL, getPGLiteSchema } from "./pglite-schema.ts";
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 import { DELETE_BATCH_SIZE } from "./engine-constants.ts";
-import { ConfigError, NotFoundError, QueryError, ConnectionError } from "./engine-errors.ts";
+import {
+  ConfigError,
+  NotFoundError,
+  QueryError,
+  ConnectionError,
+  PageExistsError,
+} from "./engine-errors.ts";
 import { acquireLock, releaseLock, type LockHandle } from "./pglite-lock.ts";
 import type {
   Page,
@@ -993,8 +999,13 @@ export class PGLiteEngine implements BrainEngine {
     return { slug: r.slug, id: Number(r.id) };
   }
 
-  async putPage(slug: string, page: PageInput, opts?: { sourceId?: string }): Promise<Page> {
+  async putPage(
+    slug: string,
+    page: PageInput,
+    opts?: { sourceId?: string; ifAbsent?: boolean }
+  ): Promise<Page> {
     slug = validateSlug(slug);
+    const ifAbsent = opts?.ifAbsent === true;
     const hash = page.content_hash || contentHash(page);
     const frontmatter = page.frontmatter || {};
     const sourceId = opts?.sourceId ?? "default";
@@ -1028,7 +1039,10 @@ export class PGLiteEngine implements BrainEngine {
     const { rows } = await this.db.query(
       `INSERT INTO pages (source_id, slug, type, page_kind, title, compiled_truth, timeline, frontmatter, content_hash, updated_at, effective_date, effective_date_source, import_filename, chunker_version, source_path, source_kind, source_uri, ingested_via, ingested_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, now(), $10::timestamptz, $11, $12, COALESCE($13, 1), $14, $15, $16, $17, $18::timestamptz)
-       ON CONFLICT (source_id, slug) DO UPDATE SET
+       ON CONFLICT (source_id, slug) ${
+         ifAbsent
+           ? "DO NOTHING"
+           : `DO UPDATE SET
          type = EXCLUDED.type,
          page_kind = EXCLUDED.page_kind,
          title = EXCLUDED.title,
@@ -1045,7 +1059,8 @@ export class PGLiteEngine implements BrainEngine {
          source_kind           = COALESCE(EXCLUDED.source_kind,           pages.source_kind),
          source_uri            = COALESCE(EXCLUDED.source_uri,            pages.source_uri),
          ingested_via          = COALESCE(EXCLUDED.ingested_via,          pages.ingested_via),
-         ingested_at           = COALESCE(EXCLUDED.ingested_at,           pages.ingested_at)
+         ingested_at           = COALESCE(EXCLUDED.ingested_at,           pages.ingested_at)`
+       }
        RETURNING id, source_id, slug, type, title, compiled_truth, timeline, frontmatter, content_hash, created_at, updated_at, effective_date, effective_date_source, import_filename, source_kind, source_uri, ingested_via, ingested_at`,
       [
         sourceId,
@@ -1068,6 +1083,9 @@ export class PGLiteEngine implements BrainEngine {
         ingestedAt,
       ]
     );
+    // Create-only: the conflict arm wrote nothing, so no row comes back. Any
+    // row at (source_id, slug) counts — live, soft-deleted or tombstoned.
+    if (ifAbsent && rows.length === 0) throw new PageExistsError(slug);
     return rowToPage(rows[0] as Record<string, unknown>);
   }
 

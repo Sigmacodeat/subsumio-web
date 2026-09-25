@@ -301,6 +301,51 @@ describe("POST /api/intake/convert", () => {
     expect(res.status).toBe(409);
   });
 
+  test("a matter created at the slug after the check is not replaced: create-only write, 409", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: [],
+        acceptance: {
+          conflict_check: SERVER_CLEAR,
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
+      .mockResolvedValueOnce(new Response("not found", { status: 404 })) // slug free
+      // …but taken by the time the case is written
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "page_exists" }), { status: 409 })
+      );
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("case_slug_exists");
+    const create = mockFetch.mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith("/api/pages") &&
+        (init as RequestInit | undefined)?.method === "POST" &&
+        String((init as RequestInit).body).includes('"legal_case"')
+    );
+    expect(JSON.parse(String((create![1] as RequestInit).body)).if_absent).toBe(true);
+    // The intake is not marked converted.
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+  });
+
   test("missing_documents become a document_request draft (once)", async () => {
     const intakePage = {
       slug: "legal/intake/2026-06-20/max",

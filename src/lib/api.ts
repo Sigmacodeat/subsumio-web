@@ -413,14 +413,27 @@ export const api = {
       ).then((r) => r.results);
     },
 
-    createPage(page: {
-      slug: string;
-      title: string;
-      content?: string;
-      type?: string;
-      frontmatter?: Record<string, unknown>;
-    }): Promise<{ slug: string }> {
-      return request("/api/pages", { method: "POST", body: JSON.stringify(page) });
+    /**
+     * Create a page. Matters and invoices are never replaced by a create: an
+     * existing slug answers 409 `page_exists`. `ifMatch` replaces the stored
+     * page on purpose — only while it still has that version (409
+     * `version_conflict` otherwise).
+     */
+    createPage(
+      page: {
+        slug: string;
+        title: string;
+        content?: string;
+        type?: string;
+        frontmatter?: Record<string, unknown>;
+      },
+      opts?: { ifMatch?: number }
+    ): Promise<{ slug: string }> {
+      return request("/api/pages", {
+        method: "POST",
+        ...(opts?.ifMatch !== undefined ? { headers: { "If-Match": String(opts.ifMatch) } } : {}),
+        body: JSON.stringify(page),
+      });
     },
 
     /**

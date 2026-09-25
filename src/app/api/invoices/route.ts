@@ -68,7 +68,8 @@ export const POST = createHandler(
     const timeEntryIds = [...new Set(fm.time_entry_ids ?? [])];
     const expenseIds = [...new Set(fm.expense_entry_ids ?? [])];
 
-    // Fail closed: a create must never land on an existing page.
+    // Fail closed: a create must never land on an existing page. This read
+    // answers early; the create-only write below is what guarantees it.
     const existing = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
     if (existing.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
     if (existing.kind === "found") {
@@ -117,6 +118,13 @@ export const POST = createHandler(
             not_found: outcome.notFound,
           },
           { status: 409 }
+        );
+      }
+      if (outcome.kind === "exists") {
+        return apiError(
+          "invoice_exists",
+          "Unter dieser Adresse gibt es bereits eine Rechnung",
+          409
         );
       }
       if (outcome.kind === "create_failed") {

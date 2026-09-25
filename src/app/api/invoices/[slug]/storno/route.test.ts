@@ -154,6 +154,20 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(mockAllocateInvoiceNumber).not.toHaveBeenCalled();
   });
 
+  test("an invoice already stored at the storno slug is not replaced: 409", async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "page_exists" }), { status: 409 })
+      );
+    mockListEnginePages.mockResolvedValueOnce([originalInvoice]);
+    const res = await post();
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_exists");
+    expect(mockLogAudit).not.toHaveBeenCalled();
+    expect(mockRelease).not.toHaveBeenCalled();
+  });
+
   test("creates a negated storno note without changing the original", async () => {
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }))
@@ -177,6 +191,8 @@ describe("POST /api/invoices/[slug]/storno", () => {
     const payload = JSON.parse(String(createInit.body));
     expect(payload.slug).toBe("legal/invoices/storno-R-2026-0002");
     expect(payload.type).toBe("invoice");
+    // Create-only: an invoice already stored at this slug is never replaced.
+    expect(payload.if_absent).toBe(true);
     expect(payload.frontmatter).toMatchObject({
       invoice_type: "storno",
       parent_invoice_id: originalInvoice.slug,

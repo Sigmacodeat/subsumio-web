@@ -215,12 +215,21 @@ export const POST = createHandler(
       // Paket C5 ("Akte sicher anlegen") replaces this direct engine write.
       // The conflict gate above must stay BEFORE that call and hand over
       // `casePage.frontmatter` (conflict_status + mandate_acceptance) as-is.
+      // Create-only: a matter written at this slug since the check above is
+      // refused by the engine, never replaced.
       const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(casePage),
+        body: JSON.stringify({ ...casePage, if_absent: true }),
         signal: AbortSignal.timeout(15_000),
       });
+      if (createRes.status === 409) {
+        return apiError(
+          "case_slug_exists",
+          "Eine Akte mit diesem Slug existiert bereits. Bitte einen anderen Slug oder Aktenzeichen verwenden.",
+          409
+        );
+      }
       if (!createRes.ok) {
         const message = await createRes.text().catch(() => "");
         log.error("[intake/convert] case create failed:", createRes.status, message);
