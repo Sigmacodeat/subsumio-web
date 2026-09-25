@@ -103,6 +103,38 @@ describe("POST /api/portal/sign", () => {
     });
   });
 
+  it("a doubled sign request stores exactly one signature (create-only, stable id)", async () => {
+    const created = new Set<string>();
+    const calls: Call[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ url, init });
+        if (init?.method === "POST" && url === `${ENGINE}/api/pages`) {
+          const b = JSON.parse(String(init.body));
+          if (b.if_absent) {
+            if (created.has(b.slug)) return new Response("{}", { status: 409 });
+            created.add(b.slug);
+          }
+          return new Response("{}", { status: 200 });
+        }
+        const slug = decodeURIComponent(url.replace(`${ENGINE}/api/pages/`, ""));
+        if (slug === "cases/mueller") return new Response(JSON.stringify(openCase.body));
+        if (slug === "legal/signatures/vollmacht-1")
+          return new Response(
+            JSON.stringify({
+              type: "power_of_attorney",
+              frontmatter: { case_slug: "cases/mueller", status: "sent", sent_at: "2026-09-01" },
+            })
+          );
+        return new Response("{}", { status: 404 });
+      })
+    );
+    const [a, b] = await Promise.all([POST(request(baseBody)), POST(request(baseBody))]);
+    expect([a.status, b.status].sort()).toEqual([200, 409]);
+    expect(created.size).toBe(1);
+  });
+
   it("refuses a document that belongs to another matter", async () => {
     mockEngine({
       "cases/mueller": openCase,

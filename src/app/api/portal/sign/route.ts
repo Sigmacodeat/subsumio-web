@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiSuccess, apiError } from "@/lib/api-handler";
@@ -25,6 +26,19 @@ const signSchema = z.object({
 /** Document types a client may sign in the portal, and the statuses that close them. */
 const SIGNABLE_TYPES = new Set(["signature_request", "power_of_attorney"]);
 const CLOSED_STATUSES = new Set(["signed", "declined", "expired", "revoked"]);
+
+/**
+ * One signature per sending of a document: the id is derived from the document
+ * and its `sent_at`, and the page is created create-only — so a double click or
+ * a retried request cannot store a second signature for the same request.
+ */
+function portalSignatureId(documentSlug: string, sentAt: unknown): string {
+  const h = createHash("sha256")
+    .update(`${documentSlug}\n${typeof sentAt === "string" ? sentAt : ""}`)
+    .digest("hex")
+    .slice(0, 24);
+  return `sig-portal-${h}`;
+}
 
 export const POST = createPublicHandler(
   {
@@ -104,7 +118,10 @@ export const POST = createPublicHandler(
       return apiError("validation_error", validationError, 400);
     }
 
-    const signature = createCapturedSignature(input);
+    const signature = {
+      ...createCapturedSignature(input),
+      id: portalSignatureId(body.document_slug, fm.sent_at),
+    };
 
     const saveRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -114,9 +131,17 @@ export const POST = createPublicHandler(
         title: `Signatur: ${signature.signer_name} — ${signature.document_slug}`,
         type: "captured_signature",
         frontmatter: { ...signature, case_slug: caseSlug, channel: "portal" },
+        if_absent: true,
       }),
       signal: AbortSignal.timeout(10_000),
     });
+    if (saveRes.status === 409) {
+      return apiError(
+        "already_signed",
+        "Dieses Dokument ist nicht mehr zur Unterschrift offen",
+        409
+      );
+    }
     if (!saveRes.ok) {
       return apiError("signature_not_saved", "Unterschrift konnte nicht gespeichert werden", 502);
     }

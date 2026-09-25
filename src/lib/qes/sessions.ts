@@ -18,7 +18,7 @@ export interface QesSession {
   caseSlug: string;
   title: string;
   method: QesMethod;
-  status: "pending" | "fetched" | "signed" | "failed";
+  status: "pending" | "fetched" | "processing" | "signed" | "failed";
   originalDigest: string | null;
   signedDocumentSlug: string | null;
   error: string | null;
@@ -97,6 +97,39 @@ export async function updateQesSession(
   const next = { ...current, ...patch, token: current.token };
   await save(next);
   return next;
+}
+
+/**
+ * Atomically move a session from `from` to `to` (compare-and-set). Only one
+ * caller wins, so a retried or doubled completion callback cannot store the
+ * signed document twice. Returns the claimed session, or null when the
+ * session is missing, expired, or already in another state.
+ */
+export async function claimQesSession(
+  token: string,
+  from: QesSession["status"],
+  to: QesSession["status"]
+): Promise<QesSession | null> {
+  const current = await getQesSession(token);
+  if (!current || current.status !== from) return null;
+  const pool = getSharedPgPool();
+  if (!pool) {
+    // Synchronous check-and-set: no await between the read and the write.
+    const live = memory.get(token);
+    if (!live || live.status !== from) return null;
+    const next = { ...live, status: to };
+    memory.set(token, next);
+    return next;
+  }
+  await ensureSchema();
+  const { rows } = await pool.query<{ data: QesSession }>(
+    `UPDATE subsumio_qes_sessions
+        SET data = jsonb_set(data, '{status}', to_jsonb($3::text))
+      WHERE token = $1 AND data->>'status' = $2
+      RETURNING data`,
+    [token, from, to]
+  );
+  return rows[0]?.data ?? null;
 }
 
 async function save(session: QesSession): Promise<void> {
