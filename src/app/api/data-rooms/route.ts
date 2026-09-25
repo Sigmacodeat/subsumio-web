@@ -3,7 +3,7 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getOrgStore } from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
 import { getDataRoomStore, memberActive } from "@/lib/data-rooms";
-import { mayManageCase, readCase } from "@/lib/data-room-access";
+import { mayManageCase, mayReadCase, readCase } from "@/lib/data-room-access";
 import { tenantIdForUser } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,15 @@ export const GET = createHandler({ action: "brain.read", rateTier: "standard" },
   const tenant = tenantIdForUser(ctx.user);
   if (!tenant) return apiSuccess({ hosted: [], shared_with_us: [] });
   const store = getDataRoomStore();
-  const hosted = await store.roomsHostedBy(tenant);
+  // Rooms of matters the caller cannot read (wall, restricted, matter scope)
+  // are not listed — not even their title.
+  const hostedAll = await store.roomsHostedBy(tenant);
+  const readable = await Promise.all(
+    hostedAll.map((room) =>
+      room.hostBrainId === ctx.brainId ? mayReadCase(ctx, room.caseSlug) : Promise.resolve(false)
+    )
+  );
+  const hosted = hostedAll.filter((_, i) => readable[i]);
   const hostedOut = await Promise.all(
     hosted.map(async (room) => {
       const [docs, members] = await Promise.all([store.documents(room.id), store.members(room.id)]);

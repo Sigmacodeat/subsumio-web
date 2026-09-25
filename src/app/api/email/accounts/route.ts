@@ -36,7 +36,7 @@ const accountSchema = z.object({
 
 /** Connected mailboxes of the firm — never includes passwords. */
 export const GET = createHandler(
-  { action: "settings.read", rateTier: "standard" },
+  { action: "mail.read", rateTier: "standard" },
   async (ctx, _body, _query, req) => {
     try {
       const accounts = await listMailAccounts(mailboxScopeFor(ctx, req).brainId);

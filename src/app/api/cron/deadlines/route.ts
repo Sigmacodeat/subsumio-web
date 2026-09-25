@@ -3,16 +3,22 @@ import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { createCronHandler } from "@/lib/api-handler";
 import {
+  activeStaffRecipients,
   fetchAllPagesStrict,
   getRecipientsByBrain,
   createDailyDedup,
   createKeyedDedup,
+  matterPermissionsBySlug,
+  mayReceiveMatterNotice,
+  mayReceiveMatterNoticeAnonymously,
 } from "@/lib/cron-utils";
+import type { MatterPermissions } from "@/lib/matter-access";
+import type { User } from "@/lib/auth/store";
 import { isQuietDay, notfristEscalationKey } from "@/lib/deadline-notify";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { env } from "@/lib/env";
-import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
+import type { WhatsAppSenderBinding, WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 import { syncPipelineDeadlines } from "@/lib/legal/pipeline-sync";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 
@@ -30,7 +36,9 @@ export const maxDuration = 300;
  *
  * Pro Brain (Kanzlei): sammelt Fristen aus legal_case-Frontmattern und
  * legal_deadline-Seiten, filtert auf überfällig / kritisch (≤3 Tage) /
- * bald fällig (≤7 Tage) und schickt JEDEM Nutzer des Brains einen Digest.
+ * bald fällig (≤7 Tage) und schickt jedem aktiven Kanzlei-Mitarbeiter einen
+ * eigenen Digest — nur mit Fristen der Akten, die er sehen darf (Sichtbarkeit,
+ * Aktenteam, Freigaben, Ethical Wall). Mandantenzugänge erhalten keinen.
  * Dedupe: maximal eine Mail pro Brain pro Kalendertag (Postgres-Log;
  * ohne DB — Dev-Modus — wird ohne Dedupe gesendet).
  */
@@ -40,6 +48,8 @@ interface DeadlineItem {
   dueDate: string;
   status: "overdue" | "critical" | "warning" | "vorfrist";
   caseTitle?: string;
+  /** Matter the deadline belongs to — decides who may be told about it. */
+  caseSlug?: string;
   law?: string;
   vorfristDate?: string;
   /** Notfrist (statutory, non-extendable) — escalated separately when overdue. */
@@ -73,7 +83,9 @@ function classify(
   return null;
 }
 
-async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
+async function collectDeadlines(
+  brainId: string
+): Promise<{ items: DeadlineItem[]; permissions: Map<string, MatterPermissions> }> {
   const items: DeadlineItem[] = [];
 
   // Complete and strict: a failed read throws (the run reports an error)
@@ -100,6 +112,7 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
         dueDate: dueDate.slice(0, 10),
         status,
         caseTitle: page.title,
+        caseSlug: page.slug,
         law: d.law ? String(d.law) : undefined,
         vorfristDate: vfDate,
         isNotfrist: d.is_notfrist === true,
@@ -119,6 +132,7 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
       title: page.title || "Frist",
       dueDate: dueDate.slice(0, 10),
       status,
+      caseSlug: typeof fm.case_slug === "string" && fm.case_slug ? fm.case_slug : undefined,
       law: fm.law ? String(fm.law) : undefined,
       vorfristDate: vfDate,
       isNotfrist: fm.is_notfrist === true,
@@ -128,7 +142,36 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
   // Überfällig zuerst, dann nach Datum.
   const rank = { overdue: 0, critical: 1, warning: 2, vorfrist: 3 } as const;
   items.sort((a, b) => rank[a.status] - rank[b.status] || a.dueDate.localeCompare(b.dueDate));
-  return items;
+  return { items, permissions: matterPermissionsBySlug(cases) };
+}
+
+/** The deadlines one person may be told about (see mayReceiveMatterNotice). */
+function itemsFor(
+  user: User,
+  items: DeadlineItem[],
+  permissions: ReadonlyMap<string, MatterPermissions>
+): DeadlineItem[] {
+  return items.filter((i) => mayReceiveMatterNotice(user, i.caseSlug, permissions));
+}
+
+/**
+ * The deadlines for a WhatsApp number: a number bound to a person gets that
+ * person's view; a number bound only to a role gets deadlines of unrestricted
+ * matters. Client/external bindings get nothing.
+ */
+function itemsForWhatsApp(
+  binding: WhatsAppSenderBinding,
+  users: User[],
+  items: DeadlineItem[],
+  permissions: ReadonlyMap<string, MatterPermissions>
+): DeadlineItem[] {
+  if (binding.userId) {
+    const user = users.find((u) => u.id === binding.userId);
+    return user ? itemsFor(user, items, permissions) : [];
+  }
+  return items.filter((i) =>
+    mayReceiveMatterNoticeAnonymously(binding.role, i.caseSlug, permissions)
+  );
 }
 
 function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string; text: string } {
@@ -197,15 +240,17 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const warnings: string[] = [];
 
   const allowedSenders = loadAllowedSenders();
-  const whatsappSendersByBrain = new Map<string, string[]>();
+  const whatsappSendersByBrain = new Map<string, WhatsAppSenderBinding[]>();
   for (const sender of allowedSenders) {
     const list = whatsappSendersByBrain.get(sender.brainId) ?? [];
-    list.push(sender.phone);
+    list.push(sender);
     whatsappSendersByBrain.set(sender.brainId, list);
   }
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Active firm staff only — never client accounts or deactivated users.
+    const recipients = activeStaffRecipients(brainUsers);
 
     // A1: Sync pipeline-extracted deadlines into legal_deadline pages
     // so they reach the reminder infrastructure.
@@ -221,8 +266,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
 
     let items: DeadlineItem[];
+    let permissions: Map<string, MatterPermissions>;
     try {
-      items = await collectDeadlines(brainId);
+      ({ items, permissions } = await collectDeadlines(brainId));
     } catch (err) {
       errors.push(
         `Deadline data unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
@@ -258,9 +304,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     // Der Tages-Digest: einmal pro Brain und Kalendertag, nie an Ruhetagen.
     const digestDue = !quiet && !(await alreadyNotifiedToday(brainId));
 
-    const { subject, text } = renderDigest(items, appUrl);
     if (digestDue) {
       for (const user of recipients) {
+        // Each person gets their own digest with only the matters they may see.
+        const own = itemsFor(user, items, permissions);
+        if (own.length === 0) continue;
+        const { subject, text } = renderDigest(own, appUrl);
         const result = await sendMail({ to: user.email, subject, text });
         if (result.sent) mailsSent++;
         // Not configured is a deployment choice (logged, not sent); a real
@@ -282,40 +331,45 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       try {
         // Nur noch nicht alarmierte Notfristen eskalieren — die Dedup ist
         // pro Frist permanent, nicht pro Tag.
-        const fresh = [];
+        const fresh: Array<{ item: DeadlineItem; key: string }> = [];
         for (const i of overdueNotfristen) {
           const key = notfristEscalationKey(i);
           if (await notfristEscalatedKey.isNew(brainId, key)) fresh.push({ item: i, key });
         }
         if (fresh.length > 0) {
           const extra = kanzlei?.deadlineEscalationEmail?.trim();
-          const to = [
-            ...new Set([
-              ...recipients.map((r) => r.email).filter((e): e is string => Boolean(e)),
-              ...(extra ? [extra] : []),
-            ]),
-          ];
-          const lines = fresh.map(
-            ({ item: i }) =>
-              `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
-          );
-          const escText = [
-            `Folgende Notfristen sind ÜBERFÄLLIG und brauchen sofortige Klärung:`,
-            "",
-            ...lines,
-            "",
-            `Alle Fristen: ${appUrl}/dashboard/deadlines?status=overdue`,
-            "",
-            "Eine versäumte Notfrist ist nicht heilbar — bitte sofort prüfen, ob",
-            "die Leistung fristwahrend erbracht wurde und die Frist als erledigt",
-            "vermerkt ist.",
-          ].join("\n");
+          const escalationText = (list: typeof fresh) =>
+            [
+              `Folgende Notfristen sind ÜBERFÄLLIG und brauchen sofortige Klärung:`,
+              "",
+              ...list.map(
+                ({ item: i }) =>
+                  `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
+              ),
+              "",
+              `Alle Fristen: ${appUrl}/dashboard/deadlines?status=overdue`,
+              "",
+              "Eine versäumte Notfrist ist nicht heilbar — bitte sofort prüfen, ob",
+              "die Leistung fristwahrend erbracht wurde und die Frist als erledigt",
+              "vermerkt ist.",
+            ].join("\n");
+          // Each staff member only about matters they may see; the firm's
+          // configured escalation address (set by an admin) gets all of them.
+          const mails = new Map<string, typeof fresh>();
+          for (const user of recipients) {
+            if (!user.email) continue;
+            const own = fresh.filter(({ item }) =>
+              mayReceiveMatterNotice(user, item.caseSlug, permissions)
+            );
+            if (own.length > 0) mails.set(user.email, own);
+          }
+          if (extra) mails.set(extra, fresh);
           let anySent = false;
-          for (const addr of to) {
+          for (const [addr, list] of mails) {
             const result = await sendMail({
               to: addr,
-              subject: `🚨 NOTFRIST ÜBERFÄLLIG — ${fresh.length} Frist(en)`,
-              text: escText,
+              subject: `🚨 NOTFRIST ÜBERFÄLLIG — ${list.length} Frist(en)`,
+              text: escalationText(list),
             });
             if (result.sent) {
               notfristEscalated++;
@@ -342,23 +396,27 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     // WhatsApp Fristen-Reminder an aktive WhatsApp-Anwälte — gehört zum
     // Tages-Digest, also ebenfalls nicht an Ruhetagen und nur einmal am Tag.
-    const waPhones = whatsappSendersByBrain.get(brainId);
-    if (digestDue && waPhones && waPhones.length > 0) {
-      const waText = `⚖️ Fristen-Übersicht:\n\n${text}`;
+    const waBindings = whatsappSendersByBrain.get(brainId);
+    if (digestDue && waBindings && waBindings.length > 0) {
       const templateName = env("WHATSAPP_DEADLINE_TEMPLATE");
-      const template: WhatsAppTemplateMessage | undefined = templateName
-        ? {
-            name: templateName,
-            language: { code: "de" },
-            components: [
-              {
-                type: "body",
-                parameters: [{ type: "text", text: text.slice(0, 900) }],
-              },
-            ],
-          }
-        : undefined;
-      for (const phone of waPhones) {
+      for (const binding of waBindings) {
+        const own = itemsForWhatsApp(binding, brainUsers, items, permissions);
+        if (own.length === 0) continue;
+        const phone = binding.phone;
+        const { text } = renderDigest(own, appUrl);
+        const waText = `⚖️ Fristen-Übersicht:\n\n${text}`;
+        const template: WhatsAppTemplateMessage | undefined = templateName
+          ? {
+              name: templateName,
+              language: { code: "de" },
+              components: [
+                {
+                  type: "body",
+                  parameters: [{ type: "text", text: text.slice(0, 900) }],
+                },
+              ],
+            }
+          : undefined;
         try {
           const result = await sendProactiveMessage({
             to: phone,

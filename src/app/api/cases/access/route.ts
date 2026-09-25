@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { getStore } from "@/lib/auth/store";
+import { isStaffRole, visibleOrgMembers } from "@/lib/team-visibility";
 import { listAuditLogs, logAudit } from "@/lib/audit";
 import {
   activeGrant,
@@ -92,12 +93,16 @@ export const GET = createHandler(
     if (!loaded) return apiError("case_not_found", "Akte nicht gefunden", 404);
     const me = { userId: ctx.user.id, role: ctx.user.role };
     const myLevel = matterAccessLevel(me, loaded.permissions);
-    const audit = await listAuditLogs({
-      brainId: ctx.brainId,
-      entityType: "matter_access",
-      entityId: caseSlug,
-      limit: 50,
-    });
+    // Client accounts never see other accounts or the access history.
+    const staff = isStaffRole(ctx.user.role);
+    const audit = staff
+      ? await listAuditLogs({
+          brainId: ctx.brainId,
+          entityType: "matter_access",
+          entityId: caseSlug,
+          limit: 50,
+        })
+      : [];
     return apiSuccess({
       case_slug: caseSlug,
       title: loaded.title,
@@ -106,7 +111,8 @@ export const GET = createHandler(
       can_manage: ctx.user.role === "admin",
       can_grant: myLevel === "write" && ctx.user.role !== "client_viewer",
       me: ctx.user.id,
-      members: await firmMembers(ctx.user),
+      // Staff may grant access to client accounts, so they see them here.
+      members: visibleOrgMembers(ctx.user, await firmMembers(ctx.user), { includeClients: true }),
       audit: audit.map((e) => ({
         at: e.timestamp,
         by: e.userEmail ?? e.userId ?? "",

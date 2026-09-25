@@ -34,15 +34,45 @@ export async function caseAccessForUser(
   return checkEthicalWall(userId, page.frontmatter?.permissions).allowed ? "ok" : "blocked";
 }
 
-/** Matters among `caseSlugs` the user is walled off from (unknown matters count as blocked). */
+/**
+ * Fail-closed: only an explicit "ok" grants access. The engine answers matters
+ * outside the caller's matter scope with 404, so "not_found" never means
+ * "unrestricted".
+ */
+export function caseAccessAllowed(access: CaseAccess): boolean {
+  return access === "ok";
+}
+
+/** Upper bound of distinct matters checked per call; the rest counts as blocked. */
+export const MAX_CASE_ACCESS_CHECKS = 250;
+const CASE_ACCESS_CONCURRENCY = 20;
+
+/**
+ * Matters among `caseSlugs` the user may NOT see: walled off, outside the
+ * matter scope, unknown, unreachable or beyond the check budget. Everything
+ * that is not verifiably "ok" counts as blocked.
+ */
 export async function blockedCasesForUser(
   headers: Record<string, string>,
   caseSlugs: string[],
   userId: string
 ): Promise<Set<string>> {
-  const unique = [...new Set(caseSlugs.filter(Boolean))].slice(0, 100);
-  const results = await Promise.all(
-    unique.map(async (slug) => [slug, await caseAccessForUser(headers, slug, userId)] as const)
-  );
-  return new Set(results.filter(([, access]) => access === "blocked").map(([slug]) => slug));
+  const unique = [...new Set(caseSlugs.filter(Boolean))];
+  const blocked = new Set<string>(unique.slice(MAX_CASE_ACCESS_CHECKS));
+  const toCheck = unique.slice(0, MAX_CASE_ACCESS_CHECKS);
+  for (let i = 0; i < toCheck.length; i += CASE_ACCESS_CONCURRENCY) {
+    const batch = toCheck.slice(i, i + CASE_ACCESS_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map(async (slug) => {
+        const access = await caseAccessForUser(headers, slug, userId).catch(
+          (): CaseAccess => "not_found"
+        );
+        return [slug, access] as const;
+      })
+    );
+    for (const [slug, access] of results) {
+      if (!caseAccessAllowed(access)) blocked.add(slug);
+    }
+  }
+  return blocked;
 }

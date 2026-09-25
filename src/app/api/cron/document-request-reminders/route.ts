@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { pageTypeOf } from "@/lib/types";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  fetchPages,
+  getRecipientsByBrain,
+  matterPermissionsBySlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
+import type { MatterPermissions } from "@/lib/matter-access";
 import { createDocumentRequestNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { normalizePhone } from "@/lib/whatsapp/types";
@@ -44,9 +51,12 @@ export const GET = createCronHandler(async (_req) => {
 
   const recipientsByBrain = await getRecipientsByBrain();
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     const pages = await fetchPages(brainId, "document_request", 250);
     if (pages.length === 0) continue;
+    // Active firm staff only; per matter only people who may see the matter.
+    const staff = activeStaffRecipients(brainUsers);
+    let matterPermissions: Map<string, MatterPermissions> | null = null;
 
     const pendingRequests = pages.filter((page) => {
       const fm = page.frontmatter as Record<string, unknown>;
@@ -105,7 +115,15 @@ export const GET = createCronHandler(async (_req) => {
       try {
         const headers = engineHeadersForBrain(brainId);
 
-        // In-app notifications to all recipients
+        if (!matterPermissions) {
+          // Unreadable matters → empty lookup → only admins are told (fail-closed).
+          matterPermissions = matterPermissionsBySlug(
+            await fetchPages(brainId, "legal_case", 10_000).catch(() => [])
+          );
+        }
+        const recipients = recipientsForMatter(staff, fm.case_slug, matterPermissions);
+
+        // In-app notifications to the staff who may see the matter
         for (const recipient of recipients) {
           try {
             await createDocumentRequestNotification({

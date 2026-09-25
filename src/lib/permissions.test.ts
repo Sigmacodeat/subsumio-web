@@ -102,6 +102,20 @@ describe("can (RBAC matrix)", () => {
     expect(can(mockUser("assistant"), "legal.contract_draft")).toBe(false);
   });
 
+  test("audit.read — admin only", () => {
+    expect(can(mockUser("admin"), "audit.read")).toBe(true);
+    expect(can(mockUser("lawyer"), "audit.read")).toBe(false);
+    expect(can(mockUser("assistant"), "audit.read")).toBe(false);
+    expect(can(mockUser("client_viewer"), "audit.read")).toBe(false);
+  });
+
+  test("mail.read — firm staff, never client accounts", () => {
+    expect(can(mockUser("admin"), "mail.read")).toBe(true);
+    expect(can(mockUser("lawyer"), "mail.read")).toBe(true);
+    expect(can(mockUser("assistant"), "mail.read")).toBe(true);
+    expect(can(mockUser("client_viewer"), "mail.read")).toBe(false);
+  });
+
   test("billing.read — admin and lawyer", () => {
     expect(can(mockUser("admin"), "billing.read")).toBe(true);
     expect(can(mockUser("lawyer"), "billing.read")).toBe(true);

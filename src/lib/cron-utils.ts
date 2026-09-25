@@ -10,6 +10,7 @@ import { createSchemaInit } from "@/lib/schema-init";
 import { billingUserOf } from "@/lib/billing/billing-account";
 import { effectivePlan } from "@/lib/billing/trial";
 import { listEnginePages } from "@/lib/engine-pages";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
 
 /**
  * Map an async worker over items with a bounded concurrency (default 8), never
@@ -159,6 +160,77 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
     result.set(brainId, list);
   }
   return result;
+}
+
+// ── Matter-aware notification recipients ─────────────────────────────────
+
+const STAFF_ROLES = new Set(["admin", "lawyer", "assistant"]);
+
+/** Active firm staff only — never client accounts, deactivated or role-less users. */
+export function activeStaffRecipients(users: readonly User[]): User[] {
+  return users.filter((u) => !u.deactivatedAt && Boolean(u.role) && STAFF_ROLES.has(u.role));
+}
+
+/** `permissions` of every matter, keyed by slug (from a full legal_case read). */
+export function matterPermissionsBySlug(
+  cases: readonly EnginePage[]
+): Map<string, MatterPermissions> {
+  const map = new Map<string, MatterPermissions>();
+  for (const page of cases) {
+    const raw = page.frontmatter?.permissions;
+    map.set(page.slug, raw && typeof raw === "object" ? (raw as MatterPermissions) : {});
+  }
+  return map;
+}
+
+/**
+ * May this person be told about something of this matter (deadline title,
+ * matter name)? Active staff only; the matter's visibility, team, grants and
+ * ethical wall apply exactly as when opening the matter. Notices without a
+ * matter go to all active staff. A matter that is not in the lookup (deleted,
+ * unreadable) is known to firm admins only — fail-closed for everybody else.
+ */
+export function mayReceiveMatterNotice(
+  user: User,
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): boolean {
+  if (activeStaffRecipients([user]).length === 0) return false;
+  if (!caseSlug) return true;
+  const perms = permissions.get(caseSlug);
+  if (!perms) return user.role === "admin";
+  return matterAccessLevel({ userId: user.id, role: user.role }, perms) !== "none";
+}
+
+/** Recipients of a matter notice among the firm's users (see mayReceiveMatterNotice). */
+export function recipientsForMatter(
+  users: readonly User[],
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): User[] {
+  return users.filter((u) => mayReceiveMatterNotice(u, caseSlug, permissions));
+}
+
+/**
+ * Matter notice for a recipient whose person is not known (e.g. a shared
+ * WhatsApp number bound to a role only): only matters without any access
+ * restriction — no wall, no team list, no restricted visibility, no grants.
+ */
+export function mayReceiveMatterNoticeAnonymously(
+  role: string | null | undefined,
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): boolean {
+  if (!role || !STAFF_ROLES.has(role)) return false;
+  if (!caseSlug) return true;
+  const perms = permissions.get(caseSlug);
+  if (!perms) return false;
+  const restricted =
+    (perms.blocked_users ?? []).length > 0 ||
+    (perms.allowed_users ?? []).length > 0 ||
+    (perms.grants ?? []).length > 0 ||
+    (perms.visibility ?? "full") !== "full";
+  return !restricted;
 }
 
 /**

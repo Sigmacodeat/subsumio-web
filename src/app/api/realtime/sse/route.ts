@@ -3,7 +3,10 @@ import type { NextRequest } from "next/server";
 import { isAccountBlocked } from "@/lib/auth/account-status";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore } from "@/lib/auth/store";
-import { addSseConnection, removeSseConnection } from "@/lib/realtime-bus";
+import { engineHeadersForUserId } from "@/lib/engine";
+import { createPageVisibilityChecker } from "@/lib/realtime-access";
+import { addSseConnection, removeSseConnection, type SseConnection } from "@/lib/realtime-bus";
+import { isStaffRole } from "@/lib/team-visibility";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -37,6 +40,12 @@ export async function GET(req: NextRequest) {
     if (org) brainId = org.brainId;
   }
 
+  // Firm events are for firm staff only; each stream checks page visibility
+  // with its own user's signed identity (matter scope, grants, walls).
+  const staff = isStaffRole(user.role);
+  const engine = staff ? await engineHeadersForUserId(user.id).catch(() => null) : null;
+  const canSeePage = engine ? createPageVisibilityChecker(engine.headers, user.id) : undefined;
+
   const encoder = new TextEncoder();
   let cleanupRef: (() => void) | null = null;
 
@@ -67,9 +76,10 @@ export async function GET(req: NextRequest) {
         }
       }, 30_000);
 
-      // Register this connection in the global SSE registry
-      const conn = { brainId, userId: user.id, send };
-      addSseConnection(conn);
+      // Register this connection in the global SSE registry — client
+      // accounts never join the firm stream.
+      const conn: SseConnection = { brainId, userId: user.id, role: user.role, canSeePage, send };
+      if (staff) addSseConnection(conn);
 
       // Cleanup on abort
       const cleanup = () => {

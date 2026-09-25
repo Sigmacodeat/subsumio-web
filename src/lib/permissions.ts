@@ -121,6 +121,8 @@ export type RouteAction =
   | "share.receive" // POST /api/share — all authenticated roles
   | "presence.update" // POST /api/realtime/presence — all authenticated roles
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
+  | "audit.read" // GET /api/audit — kanzleiweites Protokoll, nur admin
+  | "mail.read" // GET /api/email/* — Kanzleipostfach, nur Kanzleirollen (kein client_viewer)
   | "admin.*" // nur admin
   | "admin.user_update"
   | "admin.user_deactivate"
@@ -196,6 +198,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "share.receive": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
+  "audit.read": ["admin"],
+  "mail.read": ["admin", "lawyer", "assistant"],
   "admin.*": ["admin"],
   "admin.user_update": ["admin"],
   "admin.user_deactivate": ["admin"],
@@ -330,6 +334,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "share.receive": "share.receive",
     "presence.update": "case.view",
     "presence.list": "case.view",
+    "audit.read": "settings.update",
+    "mail.read": "case.view",
     "admin.*": "settings.update",
     "admin.user_update": "admin.user_update",
     "admin.user_deactivate": "admin.user_deactivate",

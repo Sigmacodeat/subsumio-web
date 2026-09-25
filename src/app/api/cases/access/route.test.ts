@@ -24,6 +24,8 @@ vi.mock("@/lib/auth/store", () => ({
       { id: "u-lawyer", name: "Lawyer", email: "l@x.at", role: "lawyer", orgId: "org-1" },
       { id: "u-assistant", name: "Assistant", email: "s@x.at", role: "assistant", orgId: "org-1" },
       { id: "u-other", name: "Other firm", email: "o@y.at", role: "lawyer", orgId: "org-2" },
+      { id: "u-client", name: "Client A", email: "c@m.at", role: "client_viewer", orgId: "org-1" },
+      { id: "u-client2", name: "Client B", email: "d@m.at", role: "client_viewer", orgId: "org-1" },
     ],
   }),
 }));
@@ -127,5 +129,16 @@ describe("/api/cases/access", () => {
     const { data } = await res.json();
     expect(data).toMatchObject({ my_level: "read", can_manage: false, can_grant: false });
     expect(data.members.map((m: { id: string }) => m.id)).not.toContain("u-other");
+  });
+
+  it("shows a client account only itself and no access history", async () => {
+    stored = { visibility: "restricted", allowed_users: ["u-client"] };
+    user.current = { id: "u-client", role: "client_viewer", email: "c@m.at", orgId: "org-1" };
+    const res = await GET(
+      new Request("http://x/api/cases/access?case_slug=cases/mueller") as unknown as NextRequest
+    );
+    const { data } = await res.json();
+    expect(data.members.map((m: { id: string }) => m.id)).toEqual(["u-client"]);
+    expect(data.audit).toEqual([]);
   });
 });

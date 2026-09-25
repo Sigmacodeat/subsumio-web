@@ -88,4 +88,31 @@ describe("GET /api/email/messages", () => {
     );
     expect(res.status).toBe(404);
   });
+
+  it("hides mail of matters the engine answers with 404 (outside the matter scope)", async () => {
+    // cases/walled is not returned at all — as the engine does for out-of-scope matters.
+    cases({ "cases/open": open });
+    const res = await GET(new NextRequest("http://localhost:3000/api/email/messages"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.messages.map((m: { id: string }) => m.id)).toEqual(["m1", "m3"]);
+  });
+
+  it("checks every distinct matter, not only the first 100", async () => {
+    const pages: Record<string, unknown> = {};
+    const listed = [];
+    for (let i = 0; i < 150; i++) {
+      pages[`cases/c${i}`] = open;
+      listed.push({ id: `m${i}`, subject: "x", caseSlug: `cases/c${i}` });
+    }
+    // The 130th matter is out of scope: its mail must not be listed.
+    delete pages["cases/c130"];
+    cases(pages);
+    vi.mocked(listMailMessages).mockResolvedValue(listed as any);
+    const res = await GET(new NextRequest("http://localhost:3000/api/email/messages?limit=200"));
+    const body = await res.json();
+    const ids = body.messages.map((m: { id: string }) => m.id);
+    expect(ids).toHaveLength(149);
+    expect(ids).not.toContain("m130");
+  });
 });

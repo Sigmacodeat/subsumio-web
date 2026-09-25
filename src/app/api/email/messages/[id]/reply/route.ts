@@ -45,11 +45,11 @@ export const POST = createHandler(
       const scope = mailboxScopeFor(ctx, req);
       const parent = await getMailMessage(scope, id);
       if (!parent) return apiError("not_found", "Nachricht nicht gefunden", 404);
-      if (
-        parent.caseSlug &&
-        (await caseAccessForUser(ctx.headers, parent.caseSlug, ctx.user.id)) === "blocked"
-      ) {
-        return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+      if (parent.caseSlug) {
+        const access = await caseAccessForUser(ctx.headers, parent.caseSlug, ctx.user.id);
+        if (access === "blocked")
+          return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
+        if (access !== "ok") return apiError("not_found", "Nachricht nicht gefunden", 404);
       }
       const draft = buildMailDraft(body, id);
       const message = await sendMailboxMessage(scope, draft);

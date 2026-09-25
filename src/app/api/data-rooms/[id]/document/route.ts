@@ -37,7 +37,10 @@ export const GET = createHandler(
     const shared = (await store.documents(room.id)).find((d) => d.docSlug === query.slug);
     if (!shared) return apiError("not_found", "Dokument nicht freigegeben", 404);
 
-    const hostHeaders = engineHeadersForBrain(room.hostBrainId);
+    // Hosts read with their own identity (matter scope applies); only guests
+    // of another firm read through the host brain on the server.
+    const hostHeaders =
+      role.kind === "host" ? ctx.headers : engineHeadersForBrain(room.hostBrainId);
     const path = query.slug.split("/").map(encodeURIComponent).join("/");
     try {
       if (query.format === "text") {

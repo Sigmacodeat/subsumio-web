@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStore, getOrgStore, buildNewOrg, toPublic, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { visibleOrgMembers } from "@/lib/team-visibility";
 
 const orgPostSchema = z.object({
   name: z.string().trim().min(2, "invalid_name").max(80, "invalid_name"),
@@ -21,9 +22,11 @@ export const GET = createHandler(
     const org = await getOrgStore().getById(ctx.user.orgId);
     if (!org) return Response.json({ org: null });
 
-    const members = (await getStore().list())
-      .filter((u) => u.orgId === org.id)
-      .map((u) => ({ ...toPublic(u), isOwner: u.id === org.ownerId }));
+    const orgUsers = (await getStore().list()).filter((u) => u.orgId === org.id);
+    const members = visibleOrgMembers(ctx.user, orgUsers).map((u) => ({
+      ...toPublic(u),
+      isOwner: u.id === org.ownerId,
+    }));
     return Response.json({
       org: {
         id: org.id,
