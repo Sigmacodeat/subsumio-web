@@ -2,7 +2,7 @@
 //
 // The reminder cron reads SMTP from EACH firm's own settings (server-side,
 // trusted headers) and reports a failed run as HTTP 500 instead of 200.
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
 const m = vi.hoisted(() => ({
@@ -149,5 +149,75 @@ describe("cron deadline-reminders", () => {
         }),
       ])
     );
+  });
+});
+
+describe("cron deadline-reminders — Ruhetage", () => {
+  // 2026-09-26 08:00 UTC = Samstag in Wien. Nur Date wird gefälscht, damit
+  // AbortSignal.timeout & Co. der Route normal weiterlaufen.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-26T08:00:00Z") });
+    const page = (slug: string, fm: Record<string, unknown>) => ({
+      slug,
+      title: slug,
+      frontmatter: { status: "open", ...fm },
+    });
+    m.settings = {
+      "brain-a": {
+        smtpHost: "smtp.a.test",
+        smtpUser: "ua",
+        smtpPassword: "pa",
+        rechtsraumCountry: "AT",
+      },
+      // Firma B hat Ruhetage abgeschaltet.
+      "brain-b": { deadlineQuietDays: false },
+    };
+    m.pages = {
+      "brain-a": {
+        legal_deadline: [
+          // Stufe 3 ("in 3 Tagen") — Routine, wartet bis Montag.
+          page("legal/deadlines/a-routine", { due_date: "2026-09-29" }),
+          // Notfrist in 3 Tagen — geht IMMER raus.
+          page("legal/deadlines/a-notfrist", { due_date: "2026-09-29", is_notfrist: true }),
+          // Heute fällig (Stufe 0) — geht IMMER raus.
+          page("legal/deadlines/a-today", { due_date: "2026-09-26" }),
+        ],
+      },
+      "brain-b": {
+        legal_deadline: [page("legal/deadlines/b-routine", { due_date: "2026-09-29" })],
+      },
+    };
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("am Samstag warten Stufen-Erinnerungen, Notfristen und heute Fälliges gehen raus", async () => {
+    const res = await run();
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.quiet_days_deferred).toBe(1);
+
+    // Firma A: eine Mail mit genau den zwei dringenden Fristen.
+    expect(m.transports).toHaveLength(1);
+    expect(m.transports[0]!.sendMail).toHaveBeenCalledTimes(1);
+    const html = String((m.transports[0]!.sendMail.mock.calls[0]![0] as { html: string }).html);
+    expect(html).toContain("legal/deadlines/a-notfrist");
+    expect(html).toContain("legal/deadlines/a-today");
+    expect(html).not.toContain("legal/deadlines/a-routine");
+
+    // Die zurückgestellte Frist wird NICHT als gesendet markiert.
+    const patchedSlugs = m.patch.mock.calls.map((c) => (c[1] as { slug: string }).slug);
+    expect(patchedSlugs).toContain("legal/deadlines/a-notfrist");
+    expect(patchedSlugs).not.toContain("legal/deadlines/a-routine");
+
+    // Firma B (Ruhetage aus) bekommt ihre Routine-Erinnerung wie immer: drei
+    // fällige Fristen insgesamt, In-App zählt pro Gruppe und Empfänger (A: 1, B: 1).
+    expect(body.total).toBe(3);
+    expect(body.in_app).toBe(2);
+    expect(body.failed).toEqual([
+      expect.objectContaining({
+        deadline_id: "legal/deadlines/b-routine",
+        reason: "smtp_not_configured",
+      }),
+    ]);
   });
 });

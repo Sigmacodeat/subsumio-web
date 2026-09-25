@@ -5,6 +5,8 @@ import { sendFirmMail } from "@/lib/firm-mail";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { ENGINE_URL } from "@/lib/engine";
 import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
+import { createOutboundEntry } from "@/lib/outbound-register";
+import { logger } from "@/lib/logger";
 import {
   assertOutputActionAllowed,
   VerificationPolicyError,
@@ -12,6 +14,8 @@ import {
   type AttorneyOverride,
 } from "@/lib/verification-policy";
 import type { MailAttachment } from "@/lib/mail";
+
+const log = logger("api/cases/send-email");
 
 const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
@@ -194,19 +198,62 @@ export const POST = createHandler(
       attachments,
     });
 
+    let outboundEntryId: string | null = null;
     if (result.sent) {
+      // "sent" — die Übergabe an den Provider ist protokolliert; die echte
+      // Zustellung/Fehlzustellung kommt über den Resend-Webhook zurück.
       void logTrackingEvent({
         trackingId,
-        eventType: "delivered",
+        eventType: "sent",
         raw: {
           source: "case_email",
           route: "send",
           recipient: body.to,
           caseSlug: body.caseSlug,
+          brainId: ctx.brainId,
+          resend_id: result.id ?? null,
           via: result.via,
           attachments: attachments.length,
         },
       });
+
+      // Postausgangsbuch: jede ausgehende Mandatsmail braucht einen
+      // Register-Eintrag mit tracking_id/provider_id, damit der
+      // Resend-Webhook (POST /api/webhooks/resend) den Zustellstatus
+      // atomar zurückschreiben kann.
+      const entry = createOutboundEntry({
+        channel: "email",
+        recipient_name: body.to,
+        recipient_address: body.to,
+        case_slug: body.caseSlug,
+        subject: body.subject,
+        sent_by: ctx.user.email ?? ctx.user.id,
+        tracking_id: result.trackingId ?? trackingId,
+        provider_id: result.id,
+      });
+      outboundEntryId = entry.id;
+      try {
+        const res = await fetch(`${ENGINE_URL}/api/pages`, {
+          method: "POST",
+          headers: { ...ctx.headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug: `legal/outbound-register/${entry.id}`,
+            title: `Ausgang: ${body.subject} → ${body.to}`,
+            type: "outbound_entry",
+            frontmatter: entry,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!res.ok) {
+          outboundEntryId = null;
+          log.error("outbound-register write failed", { status: res.status });
+        }
+      } catch (err) {
+        outboundEntryId = null;
+        log.error("outbound-register write failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     return Response.json({
@@ -215,6 +262,7 @@ export const POST = createHandler(
       via: result.via,
       error: result.error,
       trackingId: result.trackingId,
+      outboundEntryId,
     });
   }
 );

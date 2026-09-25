@@ -71,7 +71,9 @@ export default async function MailboxPage() {
   }
 
   const address = receivingAddress();
-  const webhookUrl = `${siteUrl().replace(/\/$/, "")}/api/email/webhook/resend`;
+  // Canonical Resend endpoint — superset of the legacy
+  // /api/email/webhook/resend (inbound + delivery-status reconciliation).
+  const webhookUrl = `${siteUrl().replace(/\/$/, "")}/api/webhooks/resend`;
 
   return (
     <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">

@@ -6,7 +6,9 @@ export const DEFAULT_TYPES: Record<string, number> = {
   legal_deadline: 50,
   invoice: 50,
   intake_request: 20,
-  bea_draft: 20,
+  // bea_draft is intentionally absent: the beA dashboard is retired, so no
+  // live surface consumes the type — fetching it would be dead engine load
+  // on every cockpit/briefing request.
   bea_message: 20,
   document_request: 50,
   signature_request: 50,

@@ -407,15 +407,20 @@ function swissHolidays(
 
 /**
  * Gibt true zurück wenn `date` ein gesetzlicher Feiertag im `state` ist.
- * Wenn kein Bundesland angegeben wird, wird nur Sa/So geprüft (Fallback).
+ * Wenn kein Bundesland angegeben wird, wird nur Sa/So geprüft (Fallback) —
+ * außer für Österreich: die österreichischen Feiertage gelten bundesweit, eine
+ * AT-Kanzlei hat kein Bundesland zu wählen (die Einstellungsseite setzt
+ * `rechtsraumState` für AT nie). Ohne diesen Fallback kannten Fristenrechnung
+ * und Ruhetage für den Kernmarkt nur Samstag und Sonntag.
  */
 export function isPublicHoliday(
   date: Date,
   state?: Bundesland | Canton,
   country?: "DE" | "AT" | "CH"
 ): boolean {
-  if (!state) return false;
-  const holidays = publicHolidays(date.getUTCFullYear(), state, country);
+  const effectiveState = state ?? (country === "AT" ? ("AT" as Bundesland) : undefined);
+  if (!effectiveState) return false;
+  const holidays = publicHolidays(date.getUTCFullYear(), effectiveState, country);
   return holidays.has(isoDate(date));
 }
 

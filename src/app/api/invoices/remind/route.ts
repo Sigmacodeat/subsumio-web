@@ -4,21 +4,18 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { applyOpenItemFee } from "@/lib/open-items";
+import { dunningFeeDelta } from "@/lib/fibu";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/remind");
 
-function calculateReminderFee(count: number, baseAmount: number): number {
-  switch (count) {
-    case 1:
-      return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
-    case 2:
-      return Math.max(40, Math.round(baseAmount * 1.0 * 100) / 100);
-    case 3:
-      return Math.max(60, Math.round(baseAmount * 1.3 * 100) / 100);
-    default:
-      return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
-  }
+// Mahngebühr = Delta der gemeinsamen Stufentabelle (src/lib/fibu.ts:
+// DUNNING_FEES). Einheitlich mit dem OPOS-Mahnlauf — die alte prozentuale
+// Formel (bis 130 % des Rechnungsbetrags) war als Verzugsschaden unhaltbar
+// und ist nicht mehr erreichbar. § 288 Abs. 5 BGB (40 €) gilt nur einmalig
+// für B2B, nicht als Stufenmodell — Details an DUNNING_FEES.
+function calculateReminderFee(count: number): number {
+  return dunningFeeDelta(count);
 }
 
 const remindSchema = z.object({
@@ -56,7 +53,7 @@ export const POST = createHandler(
       const total = Number(fm.total ?? 0);
       const reminderCount = Number(fm.reminder_count ?? 0);
       const nextCount = reminderCount + 1;
-      const fee = calculateReminderFee(nextCount, total);
+      const fee = calculateReminderFee(nextCount);
       const newTotal = Math.round((total + fee) * 100) / 100;
 
       let recipient: string | undefined;
@@ -97,7 +94,7 @@ export const POST = createHandler(
         html: `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
 <p>wir mussten feststellen, dass die Rechnung <strong>${invoiceNumber}</strong> über <strong>${total.toFixed(2)} €</strong> noch nicht beglichen wurde.</p>
 <p><strong>${label}</strong></p>
-<p>Mahngebühr: <strong>${fee.toFixed(2)} €</strong></p>
+${fee > 0 ? `<p>Mahngebühr: <strong>${fee.toFixed(2)} €</strong></p>` : ""}
 <p>Neuer Gesamtbetrag: <strong>${newTotal.toFixed(2)} €</strong></p>
 <p>Bitte überweisen Sie den Betrag umgehend.</p>
 <p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`,

@@ -246,27 +246,30 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       );
     }
 
-    // Ruhetag (Sa/So/Feiertag im Rechtsraum): Routine-Digest, WhatsApp-Digest
-    // UND die Notfrist-Eskalation gehen am nächsten Werktag raus. Nichts geht
-    // verloren — überfällige Fristen werden beim nächsten Lauf erneut
-    // gefunden; die Eskalations-Dedup ist pro Frist, nicht pro Tag.
-    if (kanzleiLoaded && isQuietDay(new Date(), kanzlei ?? {})) {
-      quietDaysSkipped++;
-      continue;
-    }
+    // Ruhetag (Sa/So/Feiertag im Rechtsraum): der Routine-Digest und der
+    // WhatsApp-Digest gehen am nächsten Werktag raus. Nichts geht verloren —
+    // überfällige Fristen werden beim nächsten Lauf erneut gefunden. Die
+    // Notfrist-Eskalation läuft dagegen IMMER (unten): eine versäumte
+    // Notfrist wartet nicht bis Dienstag nach Ostern, und ihre Dedup ist pro
+    // Frist, nicht pro Tag.
+    const quiet = kanzleiLoaded && isQuietDay(new Date(), kanzlei ?? {});
+    if (quiet) quietDaysSkipped++;
 
-    if (await alreadyNotifiedToday(brainId)) continue;
+    // Der Tages-Digest: einmal pro Brain und Kalendertag, nie an Ruhetagen.
+    const digestDue = !quiet && !(await alreadyNotifiedToday(brainId));
 
     const { subject, text } = renderDigest(items, appUrl);
-    for (const user of recipients) {
-      const result = await sendMail({ to: user.email, subject, text });
-      if (result.sent) mailsSent++;
-      // Not configured is a deployment choice (logged, not sent); a real
-      // delivery failure is an error.
-      else if (result.error !== "mail_not_configured") {
-        errors.push(
-          `Digest mail to user ${user.id} failed for brain ${brainId}: ${result.error ?? "unknown"}`
-        );
+    if (digestDue) {
+      for (const user of recipients) {
+        const result = await sendMail({ to: user.email, subject, text });
+        if (result.sent) mailsSent++;
+        // Not configured is a deployment choice (logged, not sent); a real
+        // delivery failure is an error.
+        else if (result.error !== "mail_not_configured") {
+          errors.push(
+            `Digest mail to user ${user.id} failed for brain ${brainId}: ${result.error ?? "unknown"}`
+          );
+        }
       }
     }
 
@@ -337,9 +340,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     }
 
-    // WhatsApp Fristen-Reminder an aktive WhatsApp-Anwälte
+    // WhatsApp Fristen-Reminder an aktive WhatsApp-Anwälte — gehört zum
+    // Tages-Digest, also ebenfalls nicht an Ruhetagen und nur einmal am Tag.
     const waPhones = whatsappSendersByBrain.get(brainId);
-    if (waPhones && waPhones.length > 0) {
+    if (digestDue && waPhones && waPhones.length > 0) {
       const waText = `⚖️ Fristen-Übersicht:\n\n${text}`;
       const templateName = env("WHATSAPP_DEADLINE_TEMPLATE");
       const template: WhatsAppTemplateMessage | undefined = templateName

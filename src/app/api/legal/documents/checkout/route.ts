@@ -6,7 +6,6 @@ import {
   checkoutDocument,
   VersionError,
 } from "@/lib/document-versions.server";
-import type { AuditAction } from "@/lib/audit";
 
 const schema = z.object({ slug: z.string().min(1) });
 
@@ -16,7 +15,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: schema,
     audit: (_ctx, body) => ({
-      action: "legal.doc_checkout" as unknown as AuditAction,
+      action: "legal.doc_checkout" as const,
       entityType: "document",
       entityId: body.slug,
     }),

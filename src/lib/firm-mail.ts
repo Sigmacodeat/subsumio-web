@@ -18,6 +18,12 @@ export interface FirmMailResult {
   sent: boolean;
   via: "smtp" | "resend" | "none";
   trackingId?: string;
+  /**
+   * Provider-side message id — Resend's email_id on the Resend path, the
+   * SMTP Message-Id on the firm-SMTP path. Needed to reconcile provider
+   * delivery webhooks back to outbound-register / mailbox entries.
+   */
+  id?: string;
   error?: string;
 }
 
@@ -36,7 +42,7 @@ export async function sendFirmMail(
         secure: settings.smtpSecure ?? false,
         auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
       });
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: settings.emailFrom ?? settings.smtpUser!,
         to: input.to,
         ...(input.cc ? { cc: input.cc } : {}),
@@ -56,7 +62,12 @@ export async function sendFirmMail(
             }
           : {}),
       });
-      return { sent: true, via: "smtp", trackingId: input.trackingId };
+      return {
+        sent: true,
+        via: "smtp",
+        trackingId: input.trackingId,
+        id: typeof info.messageId === "string" ? info.messageId : undefined,
+      };
     } catch (err) {
       // SMTP failure falls through to Resend — a temporarily unreachable firm
       // mail server must not silently swallow a lawyer's e-mail. The audit
@@ -74,6 +85,7 @@ export async function sendFirmMail(
     sent: res.sent,
     via: res.sent ? "resend" : "none",
     trackingId: res.trackingId,
+    id: res.id,
     error: res.error,
   };
 }
