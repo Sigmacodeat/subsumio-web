@@ -22,6 +22,8 @@ import {
 } from "@/lib/portal-fulfillment";
 import type { BrainPage } from "@/lib/types";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { caseDocumentsLockKey } from "@/lib/case-documents";
 import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 
 export const dynamic = "force-dynamic";
@@ -225,41 +227,54 @@ export const POST = createPublicHandler(
         502
       );
 
-    const request = await findOpenDocumentRequest(
-      payload.brain_id,
-      payload.case_slug,
+    // The engine upload can take minutes; everything read before it may be
+    // stale. Each list is therefore re-read and written under its lock, so
+    // parallel uploads (or firm edits) never drop each other's entries.
+    const brainId: string = payload.brain_id;
+    const requestSlugHint =
       typeof documentRequestSlug === "string" && documentRequestSlug
         ? documentRequestSlug
-        : undefined
-    );
-    const fulfilled = request
-      ? fulfillDocumentRequestItems(
-          request.frontmatter,
-          upload.slug,
-          scan.cleanName,
-          typeof itemKey === "string" && itemKey ? itemKey : undefined
-        )
-      : null;
-
-    if (request && fulfilled) {
-      const ok = await updatePage(payload.brain_id, {
-        slug: request.slug,
-        title: request.title,
-        type: "document_request",
-        content: request.content,
-        frontmatter: {
-          items: fulfilled.items,
-          status: fulfilled.status,
-          updated_at: new Date().toISOString(),
-        },
-      });
-      if (!ok)
-        return apiError(
-          "document_request_update_failed",
-          "Dokumentenanfrage konnte nicht aktualisiert werden",
-          502
+        : undefined;
+    const requestOutcome = await withKeyedLock(
+      `document-request:${brainId}:${payload.case_slug}`,
+      async () => {
+        const request = await findOpenDocumentRequest(
+          brainId,
+          payload.case_slug,
+          requestSlugHint
         );
-    }
+        const fulfilled = request
+          ? fulfillDocumentRequestItems(
+              request.frontmatter,
+              upload.slug as string,
+              scan.cleanName,
+              typeof itemKey === "string" && itemKey ? itemKey : undefined
+            )
+          : null;
+        if (request && fulfilled) {
+          const ok = await updatePage(brainId, {
+            slug: request.slug,
+            title: request.title,
+            type: "document_request",
+            content: request.content,
+            frontmatter: {
+              items: fulfilled.items,
+              status: fulfilled.status,
+              updated_at: new Date().toISOString(),
+            },
+          });
+          if (!ok) return { failed: true as const, fulfilled, request };
+        }
+        return { failed: false as const, fulfilled, request };
+      }
+    );
+    if (requestOutcome.failed)
+      return apiError(
+        "document_request_update_failed",
+        "Dokumentenanfrage konnte nicht aktualisiert werden",
+        502
+      );
+    const { fulfilled, request } = requestOutcome;
 
     const now = new Date().toISOString();
     const documentEntry = buildPortalDocumentEntry({
@@ -274,24 +289,36 @@ export const POST = createPublicHandler(
       documentName: documentEntry.name,
       at: now,
     });
-    const updatedFrontmatter: Partial<CaseFrontmatter> = {
-      documents: appendCaseDocument(caseFm.documents as DocumentEntry[] | undefined, documentEntry),
-      communications: [
-        ...((Array.isArray(caseFm.communications)
-          ? caseFm.communications
-          : []) as CommunicationEntry[]),
-        communication,
-      ],
-    };
 
-    const caseUpdated = await updatePage(payload.brain_id, {
-      slug: casePage.slug,
-      title: casePage.title,
-      type: String(
-        (casePage.frontmatter as Record<string, unknown> | undefined)?.type || "legal_case"
-      ),
-      frontmatter: updatedFrontmatter as Record<string, unknown>,
-    });
+    // Same lock as every other writer of the matter's document list.
+    const caseUpdated = await withKeyedLock(
+      caseDocumentsLockKey(brainId, payload.case_slug),
+      async () => {
+        const fresh = await getPage(brainId, payload.case_slug);
+        if (!fresh) return false;
+        const freshFm = caseFrontmatter(fresh);
+        const existingComms = (
+          Array.isArray(freshFm.communications) ? freshFm.communications : []
+        ) as CommunicationEntry[];
+        const updatedFrontmatter: Partial<CaseFrontmatter> = {
+          documents: appendCaseDocument(
+            freshFm.documents as DocumentEntry[] | undefined,
+            documentEntry
+          ),
+          communications: existingComms.some((c) => c.id === communication.id)
+            ? existingComms
+            : [...existingComms, communication],
+        };
+        return updatePage(brainId, {
+          slug: fresh.slug,
+          title: fresh.title,
+          type: String(
+            (fresh.frontmatter as Record<string, unknown> | undefined)?.type || "legal_case"
+          ),
+          frontmatter: updatedFrontmatter as Record<string, unknown>,
+        });
+      }
+    );
     if (!caseUpdated)
       return apiError(
         "case_update_failed",
