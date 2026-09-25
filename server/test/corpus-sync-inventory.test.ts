@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { measure } from "../scripts/corpus-sync-inventory.ts";
 
 const ROOT = mkdtempSync(join(tmpdir(), "sync-inventory-"));
 
@@ -78,9 +79,7 @@ const engine = {
 
 describe("corpus-sync-inventory", () => {
   test("puts every document in exactly one bucket, by document number", async () => {
-    process.env.LAW_CORPUS_ROOT = ROOT;
-    const { measure } = await import("../scripts/corpus-sync-inventory.ts");
-    const inv = await measure(engine);
+    const inv = await measure(engine, ROOT);
     const by = Object.fromEntries(inv.sources.map((s) => [s.corpus, s]));
 
     const normen = by["at-normen"];

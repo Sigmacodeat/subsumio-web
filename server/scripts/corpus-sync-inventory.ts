@@ -45,9 +45,6 @@ import { createEngine } from "../src/core/engine-factory.ts";
 import { readFetchOutcomes, type FetchOutcome } from "./ris-fetch-outcomes.ts";
 
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? "/law-corpus";
-const NORMALIZED = join(CORPUS_ROOT, "_normalized");
-const STATE = join(CORPUS_ROOT, "_state");
-const OUT = join(STATE, "corpus-sync-inventory.json");
 const PRINT = process.argv.includes("--print");
 
 /** Sources with an id-exact RIS in-force index. */
@@ -195,9 +192,14 @@ function listDirs(root: string): string[] {
   }
 }
 
-export async function measure(engine: Engine): Promise<SyncInventory> {
+export async function measure(
+  engine: Engine,
+  corpusRoot: string = CORPUS_ROOT
+): Promise<SyncInventory> {
   const started = Date.now();
-  const outcomes = readFetchOutcomes(CORPUS_ROOT);
+  const NORMALIZED = join(corpusRoot, "_normalized");
+  const STATE = join(corpusRoot, "_state");
+  const outcomes = readFetchOutcomes(corpusRoot);
 
   const risHits = new Map<string, number>();
   const hitRows = (await engine.executeRaw(
@@ -207,8 +209,8 @@ export async function measure(engine: Engine): Promise<SyncInventory> {
 
   // Raw dirs: at-*, de*, ch*, and eu/<sub> as eu-<sub>.
   const corpora = new Set<string>(listDirs(NORMALIZED));
-  for (const d of listDirs(CORPUS_ROOT)) {
-    if (d === "eu") for (const sub of listDirs(join(CORPUS_ROOT, "eu"))) corpora.add(`eu-${sub}`);
+  for (const d of listDirs(corpusRoot)) {
+    if (d === "eu") for (const sub of listDirs(join(corpusRoot, "eu"))) corpora.add(`eu-${sub}`);
     else corpora.add(d);
   }
 
@@ -217,8 +219,8 @@ export async function measure(engine: Engine): Promise<SyncInventory> {
     const inScope = corpus === "at" || corpus.startsWith("at-");
     const sourceId = corpus === "eu-regulations" ? "law-eu" : `law-${corpus}`;
     const rawDir = corpus.startsWith("eu-")
-      ? join(CORPUS_ROOT, "eu", corpus.slice(3))
-      : join(CORPUS_ROOT, corpus);
+      ? join(corpusRoot, "eu", corpus.slice(3))
+      : join(corpusRoot, corpus);
     const rawFiles = countMd(rawDir);
     const { ids: diskIds, files: normalizedFiles } = inScope
       ? scanNormalized(join(NORMALIZED, corpus))
@@ -331,6 +333,8 @@ async function main() {
   await engine.connect(cfg);
   try {
     const inv = await measure(engine);
+    const STATE = join(CORPUS_ROOT, "_state");
+    const OUT = join(STATE, "corpus-sync-inventory.json");
     mkdirSync(STATE, { recursive: true });
     writeFileSync(`${OUT}.tmp`, JSON.stringify(inv, null, 1));
     renameSync(`${OUT}.tmp`, OUT);
