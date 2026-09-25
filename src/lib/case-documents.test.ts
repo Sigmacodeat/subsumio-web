@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { reconcileCaseDocuments, type CaseDocumentEntry } from "./case-documents";
+import {
+  CaseArchivedError,
+  reconcileCaseDocuments,
+  type CaseDocumentEntry,
+} from "./case-documents";
 
 // In-memory fake engine: /api/pages/<slug> GET returns the page; POST /api/pages
 // with merge:true overlays the documents array. Lets us drive the convergence
@@ -118,5 +122,51 @@ describe("reconcileCaseDocuments under parallel uploads", () => {
       )
     );
     expect(engine.state.documents.map((d) => d.slug).sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("reconcileCaseDocuments on a closed matter", () => {
+  function engineWithStatus(status: string) {
+    let posts = 0;
+    let documents: unknown[] = [];
+    global.fetch = (async (url: string, init?: { method?: string; body?: string }) => {
+      const path = new URL(url, "http://localhost").pathname;
+      if (init?.method === "POST" && path === "/api/pages") {
+        posts++;
+        const body = JSON.parse(init.body ?? "{}") as { frontmatter?: { documents?: unknown[] } };
+        documents = body.frontmatter?.documents ?? documents;
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ frontmatter: { status, documents } }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+    return {
+      get posts() {
+        return posts;
+      },
+    };
+  }
+
+  it.each(["archived", "tombstoned"])(
+    "a %s matter is not written and reports a permanent CaseArchivedError",
+    async (status) => {
+      const eng = engineWithStatus(status);
+      const err = await reconcileCaseDocuments(
+        { "x-subsumio-source": "b1" },
+        "legal/cases/alt",
+        entry("documents/a")
+      ).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(CaseArchivedError);
+      expect((err as CaseArchivedError).code).toBe("case_archived");
+      expect((err as CaseArchivedError).caseSlug).toBe("legal/cases/alt");
+      expect(eng.posts).toBe(0);
+    }
+  );
+
+  it("an open matter is written as before", async () => {
+    const eng = engineWithStatus("open");
+    await reconcileCaseDocuments({ "x-subsumio-source": "b1" }, "legal/cases/neu", entry("d"));
+    expect(eng.posts).toBe(1);
   });
 });

@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 import type { PostUploadTask } from "@/lib/post-upload-outbox";
 import { MAX_ATTEMPTS } from "@/lib/post-upload-outbox";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
-import { reconcileCaseDocuments } from "@/lib/case-documents";
+import { CaseArchivedError, reconcileCaseDocuments } from "@/lib/case-documents";
 import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 import { listEnginePages } from "@/lib/engine-pages";
 
@@ -126,6 +126,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     let success = false;
     let errorMsg = "";
+    // The matter was archived/deleted before its document could be listed —
+    // permanent, so the task is closed instead of retried.
+    let caseClosed: CaseArchivedError | null = null;
     // A missing internal secret is a CONFIG error, not a real skip. Analyze +
     // contradiction tasks that can't run because of it must NOT be marked done
     // (that silently drops analysis) — they stay pending so they run the moment
@@ -199,13 +202,36 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : String(err);
-      log.error(
-        `[post-upload-drain] ${task_type} failed for ${doc_slug} (attempt ${attempt}):`,
-        errorMsg
-      );
+      if (err instanceof CaseArchivedError) {
+        caseClosed = err;
+      } else {
+        log.error(
+          `[post-upload-drain] ${task_type} failed for ${doc_slug} (attempt ${attempt}):`,
+          errorMsg
+        );
+      }
     }
 
-    if (configBlocked) {
+    if (caseClosed) {
+      // Final, no retry: the document stays in the brain but is not listed on
+      // any active matter. The note makes that visible on the task.
+      const patch = await enginePatchPage(headers, {
+        slug: page.slug,
+        type: "post_upload_task_blocked",
+        frontmatter: {
+          status: "blocked",
+          attempts: attempt,
+          blocked_at: new Date().toISOString(),
+          last_error: "blocked_case_archived",
+          note: `Dokument wurde keiner aktiven Akte zugeordnet — die Akte ${caseClosed.caseSlug} ist archiviert.`,
+        },
+      });
+      if (!patch.ok) log.error(`[post-upload-drain] failed to close ${page.slug}: ${patch.status}`);
+      log.warn(
+        `[post-upload-drain] ${doc_slug} not listed on ${caseClosed.caseSlug}: matter is ${caseClosed.caseStatus} — task closed without retry`
+      );
+      blocked++;
+    } else if (configBlocked) {
       // Keep the task pending WITHOUT burning an attempt or marking it done, so
       // analysis runs as soon as the secret is configured. Short backoff + a
       // clear last_error make the misconfiguration visible in the outbox.
