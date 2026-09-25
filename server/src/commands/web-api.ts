@@ -9355,9 +9355,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // Kanzlei control dates land in the calendar.
   app.get("/api/legal/deadlines.ics", async (req: Request, res: Response) => {
     try {
-      const { ladeFristenbuch, baueIcs, fristenbuchHeute } = await import(
-        "../core/legal/fristenbuch.ts"
-      );
+      const { ladeFristenbuch, baueIcs, fristenbuchHeute } =
+        await import("../core/legal/fristenbuch.ts");
       const heute = fristenbuchHeute();
       const buch = await ladeFristenbuch(engine, {
         heute,

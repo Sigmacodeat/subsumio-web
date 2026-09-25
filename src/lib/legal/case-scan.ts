@@ -68,3 +68,40 @@ export interface CaseScanStatus {
   scan_id: string;
   runs: Array<{ job_id: number; case_slug: string; status: string; refunded: boolean }>;
 }
+
+/** Longest finding text shown (and grounded) per review item. */
+export const CASE_SCAN_FINDING_MAX_CHARS = 8000;
+
+// Section headings of an agent run's result page (engine supervisor handler).
+const RESULT_HEADING = "## Ergebnis";
+const REVISED_HEADING = "## Überarbeitetes Ergebnis (nach Critic)";
+const CRITIC_HEADING = "## Critic-Review";
+const SPECIALISTS_HEADING = "## Specialist-Ergebnisse";
+
+/**
+ * The finding of a scan run's result page: the revised result when the
+ * critic asked for one, else the result section, else the whole page — capped
+ * at CASE_SCAN_FINDING_MAX_CHARS.
+ */
+export function extractScanFinding(content: string | null | undefined): string {
+  const text = (content ?? "").trim();
+  if (!text) return "";
+  // The result itself may use "##" headings: a section ends only at one of the
+  // headings the result page puts after it.
+  const section = (heading: string, endHeadings: string[]): string | null => {
+    const marker = `\n${heading}\n`;
+    const start = text.indexOf(marker);
+    if (start < 0) return null;
+    const body = text.slice(start + marker.length);
+    const ends = endHeadings.map((h) => body.indexOf(`\n${h}\n`)).filter((i) => i >= 0);
+    const end = ends.length > 0 ? Math.min(...ends) : body.length;
+    return body.slice(0, end).trim() || null;
+  };
+  const finding =
+    section(REVISED_HEADING, [CRITIC_HEADING, SPECIALISTS_HEADING]) ??
+    section(RESULT_HEADING, [REVISED_HEADING, CRITIC_HEADING, SPECIALISTS_HEADING]) ??
+    text;
+  return finding.length > CASE_SCAN_FINDING_MAX_CHARS
+    ? `${finding.slice(0, CASE_SCAN_FINDING_MAX_CHARS)}…`
+    : finding;
+}

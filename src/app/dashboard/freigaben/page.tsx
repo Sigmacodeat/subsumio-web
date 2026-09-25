@@ -11,6 +11,7 @@ import {
   Clock,
   FileSearch,
   Inbox,
+  Radar,
   Send,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const ICONS: Record<ApprovalCategoryKey, LucideIcon> = {
   agent_actions: Bot,
   client_input: Inbox,
   analyses: FileSearch,
+  case_scans: Radar,
   requests: Send,
   time: Clock,
 };

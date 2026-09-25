@@ -369,15 +369,6 @@ export interface PrecedentSearchResponse {
   warnings?: string[];
 }
 
-export interface CaseScannerResponse {
-  success: boolean;
-  job_id: string;
-  status: "queued";
-  look_ahead_days: number;
-  evidence_threshold: number;
-  max_cases: number;
-}
-
 export interface TranslationGlossaryEntry {
   source_term: string;
   target_term: string;

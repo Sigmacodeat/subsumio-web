@@ -136,7 +136,7 @@ export const GET = createHandler(
           variant: approvals.urgent > 0 ? "danger" : "warning",
         };
       }
-      const inbox = count("deadlines", "client_input", "requests");
+      const inbox = count("deadlines", "client_input", "requests", "case_scans");
       if (inbox > 0) badges["/dashboard/communications"] = { count: inbox, variant: "warning" };
       const actions = count("agent_actions");
       if (actions > 0) badges["/dashboard/approvals"] = { count: actions, variant: "warning" };

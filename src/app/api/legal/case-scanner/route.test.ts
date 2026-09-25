@@ -18,7 +18,10 @@ const ctxState = vi.hoisted(() => ({ demo: false as boolean }));
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (
-      opts: { body?: { parse: (d: unknown) => unknown }; query?: { parse: (d: unknown) => unknown } },
+      opts: {
+        body?: { parse: (d: unknown) => unknown };
+        query?: { parse: (d: unknown) => unknown };
+      },
       handler: (ctx: unknown, body: unknown, q: unknown, req: Request) => Promise<Response>
     ) =>
     async (req: Request) => {
@@ -293,9 +296,7 @@ describe("status", () => {
           `http://x/api/legal/case-scanner?scan_id=${r.scan_id}`
         ) as unknown as NextRequest
       );
-    const s = await data<{ runs: Array<{ case_slug: string; refunded: boolean }> }>(
-      await status()
-    );
+    const s = await data<{ runs: Array<{ case_slug: string; refunded: boolean }> }>(await status());
     expect(s.runs.find((x) => x.case_slug === "cases/b")?.refunded).toBe(true);
     expect(s.runs.find((x) => x.case_slug === "cases/a")?.refunded).toBe(false);
     expect(ledger.balance).toBe(90);

@@ -14,7 +14,9 @@ describe("cron case scanner", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     try {
-      const res = await GET(new Request("http://x/api/cron/case-scanner") as unknown as NextRequest);
+      const res = await GET(
+        new Request("http://x/api/cron/case-scanner") as unknown as NextRequest
+      );
       expect(res.status).toBe(410);
       const body = (await res.json()) as { disabled: boolean; message: string };
       expect(body.disabled).toBe(true);

@@ -321,7 +321,7 @@
 | `/api/legal/case-investigation/{runId}`                     | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/legal/case-investigation/{runId}/contradictions/{id}` | PATCH                    | Session                   | `legal.case_investigation_review` | standard |
 | `/api/legal/case-number/allocate`                           | POST                     | Session                   | `brain.write`                     | standard |
-| `/api/legal/case-scanner`                                   | POST                     | Session → Engine          | `legal.case_scanner`              | heavy    |
+| `/api/legal/case-scanner`                                   | GET, POST                | Session                   | `legal.case_scanner`              | heavy    |
 | `/api/legal/case-strategy`                                  | POST                     | Session                   | `legal.strategy`                  | heavy    |
 | `/api/legal/chronology`                                     | POST                     | Session                   | `brain.read`                      | standard |
 | `/api/legal/commentaries`                                   | GET, POST                | Session                   | `brain.read`                      | standard |

@@ -1255,14 +1255,30 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   // ── Legal: case-scanner ─────────────────────────────────────────────
   if (path === "/api/legal/case-scanner" && req.method === "POST") {
+    // On demand: preview lists the matters, start launches one run each.
+    const body = safeJsonParse(await readBody(req)) as {
+      mode?: string;
+      case_slugs?: string[];
+      scan_id?: string;
+    };
+    const slugs = body.case_slugs ?? ["cases/e2e-case"];
+    if (body.mode === "start") {
+      return sendJson(res, 200, {
+        scan_id: body.scan_id,
+        launched: slugs.map((s, i) => ({ case_slug: s, job_id: i + 1 })),
+        failed: [],
+        skipped: [],
+      });
+    }
     return sendJson(res, 200, {
-      success: true,
-      job_id: `scan-${Date.now()}`,
-      status: "queued",
-      look_ahead_days: 7,
-      evidence_threshold: 1,
-      max_cases: 50,
+      cases: slugs.map((s) => ({ case_slug: s, title: s, reasons: ["no_prior_analysis"] })),
+      skipped: [],
+      truncated: false,
+      limit: 50,
     });
+  }
+  if (path === "/api/legal/case-scanner/runs" && req.method === "GET") {
+    return sendJson(res, 200, { runs: [] });
   }
 
   // ── Legal: ai-deadlines (GET) ───────────────────────────────────────

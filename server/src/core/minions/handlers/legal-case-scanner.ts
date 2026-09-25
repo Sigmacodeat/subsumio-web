@@ -155,7 +155,8 @@ export async function selectCaseScanTargets(
       ...new Set((sel.caseSlugs ?? []).filter((s) => typeof s === "string" && s.length > 0)),
     ];
     const wanted = requested.slice(0, limit);
-    for (const slug of requested.slice(limit)) skipped.push({ case_slug: slug, reason: "over_limit" });
+    for (const slug of requested.slice(limit))
+      skipped.push({ case_slug: slug, reason: "over_limit" });
     const found =
       wanted.length === 0
         ? []

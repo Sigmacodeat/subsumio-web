@@ -8,7 +8,8 @@ export interface ReviewInboxItem {
     | "suggested_deadline"
     | "client_submission"
     | "suggested_party"
-    | "pending_fact";
+    | "pending_fact"
+    | "case_scan_finding";
   title: string;
   description: string;
   caseSlug: string | null;
@@ -36,6 +37,14 @@ export interface ReviewInboxItem {
   factStatement: string | null;
   factConfidence: string | null;
   arrayIndex: number | null;
+}
+
+/** A case scan result still awaiting a lawyer's review. */
+export function isOpenCaseScanFinding(page: { frontmatter?: Record<string, unknown> }): boolean {
+  const f = (page.frontmatter ?? {}) as Record<string, unknown>;
+  if (f.review_origin !== "case_scan") return false;
+  const status = typeof f.review_status === "string" ? f.review_status : "unreviewed";
+  return status !== "reviewed" && status !== "rejected";
 }
 
 async function fetchPages(
@@ -70,11 +79,12 @@ function dateStr(value: unknown): string {
 export async function loadReviewInboxItems(
   headers: Record<string, string>
 ): Promise<ReviewInboxItem[]> {
-  const [docRequests, deadlines, submissions, casePages] = await Promise.all([
+  const [docRequests, deadlines, submissions, casePages, agentRuns] = await Promise.all([
     fetchPages(headers, "document_request", 5_000),
     fetchPages(headers, "legal_deadline", 10_000),
     fetchPages(headers, "client_submission", 5_000),
     fetchPages(headers, "legal_case", 10_000),
+    fetchPages(headers, "agent_run", 5_000),
   ]);
 
   const items: ReviewInboxItem[] = [];
@@ -396,6 +406,47 @@ export async function loadReviewInboxItems(
         arrayIndex: i,
       });
     }
+  }
+
+  // ── Case scan results (AI, awaiting a lawyer's review) ──
+  // Nothing of the scan is written into the matter: the result page stays a
+  // review item until it is marked reviewed or discarded.
+  for (const page of agentRuns) {
+    if (!isOpenCaseScanFinding(page)) continue;
+    const f = fm(page);
+    const caseSlug = str(f.case_slug) || null;
+    const caseTitle = lookupCaseTitle(caseSlug);
+    items.push({
+      id: page.slug,
+      type: "case_scan_finding",
+      title: `Fall-Scan: ${caseTitle ?? caseSlug ?? (page.title || "Akte")}`,
+      description: "KI-Prüfergebnis zur Akte — anwaltlich zu prüfen, bevor etwas übernommen wird.",
+      caseSlug,
+      caseTitle,
+      priority: "medium",
+      source: "Fall-Scanner (KI)",
+      createdAt: dateStr(page.created_at) || dateStr(page.updated_at),
+      status: str(f.review_status) || "unreviewed",
+      actionLabel: "Als geprüft markieren",
+      secondaryLabel: "Verwerfen",
+      pageSlug: page.slug,
+      requestSlug: null,
+      items: [],
+      channel: null,
+      portalUrl: null,
+      messageDraft: null,
+      dueDate: null,
+      urgency: null,
+      law: null,
+      confidence: null,
+      sourceQuote: null,
+      partyName: null,
+      partyRole: null,
+      factId: null,
+      factStatement: null,
+      factConfidence: null,
+      arrayIndex: null,
+    });
   }
 
   items.sort((a, b) => {

@@ -179,11 +179,7 @@ export const POST = createHandler(
 
     // ── start ──
     if (ctx.demo) {
-      return apiError(
-        "demo_unavailable",
-        "Der Akten-Scan ist in der Demo nicht verfügbar.",
-        403
-      );
+      return apiError("demo_unavailable", "Der Akten-Scan ist in der Demo nicht verfügbar.", 403);
     }
     if (body.expected_credits === undefined) {
       return apiError(
