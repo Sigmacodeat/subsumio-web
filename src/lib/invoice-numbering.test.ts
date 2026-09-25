@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   allocateInvoiceNumber,
   formatInvoiceNumber,
   highestInvoiceNumber,
+  reserveInvoiceNumber,
 } from "@/lib/invoice-numbering";
 
 describe("invoice numbering", () => {
@@ -27,5 +28,24 @@ describe("invoice numbering", () => {
     expect(await allocateInvoiceNumber("brain_existing", 2026, 41)).toBe("R-2026-0042");
     expect(await allocateInvoiceNumber("brain_existing", 2026, 41)).toBe("R-2026-0043");
     expect(await allocateInvoiceNumber("brain_existing", 2027, 0)).toBe("R-2027-0001");
+  });
+});
+
+describe("reserveInvoiceNumber (QA-11)", () => {
+  it("reads the existing invoices only to seed a year's counter", async () => {
+    const load = vi.fn(async () => ["R-2026-0007"]);
+    expect(await reserveInvoiceNumber("brain_seed", 2026, load)).toBe("R-2026-0008");
+    expect(await reserveInvoiceNumber("brain_seed", 2026, load)).toBe("R-2026-0009");
+    expect(load).toHaveBeenCalledTimes(1);
+    // A new year gets its own seed.
+    expect(await reserveInvoiceNumber("brain_seed", 2027, load)).toBe("R-2027-0001");
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it("still reserves a number when the seed list cannot be read", async () => {
+    const load = vi.fn(async (): Promise<string[]> => {
+      throw new Error("engine down");
+    });
+    expect(await reserveInvoiceNumber("brain_seed_fail", 2026, load)).toBe("R-2026-0001");
   });
 });

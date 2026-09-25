@@ -65,3 +65,37 @@ export async function allocateInvoiceNumber(
   );
   return formatInvoiceNumber(year, rows[0].last_number);
 }
+
+/** Whether the firm already has a counter for that year. */
+export async function hasInvoiceCounter(brainId: string, year: number): Promise<boolean> {
+  const pool = getSharedPgPool();
+  if (!pool) return memoryCounters.has(`${brainId}:${year}`);
+  await ensureSchema();
+  const { rows } = await pool.query(
+    `SELECT 1 FROM subsumio_invoice_counters WHERE brain_id = $1 AND year = $2`,
+    [brainId, year]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Reserves the next number of the year. The existing invoice numbers are read
+ * only to seed a year's counter the first time — once the counter exists it
+ * alone carries the sequence (and the invoice create refuses a duplicate
+ * number), so the firm's invoices are not listed on every reservation.
+ */
+export async function reserveInvoiceNumber(
+  brainId: string,
+  year: number,
+  loadExistingNumbers: () => Promise<Array<string | null | undefined>>
+): Promise<string> {
+  let existingMax = 0;
+  if (!(await hasInvoiceCounter(brainId, year))) {
+    try {
+      existingMax = highestInvoiceNumber(await loadExistingNumbers(), year);
+    } catch {
+      // The counter alone still guarantees uniqueness from here on.
+    }
+  }
+  return allocateInvoiceNumber(brainId, year, existingMax);
+}
