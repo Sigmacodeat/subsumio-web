@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { purgeExpiredSoftDeletedUsers } from "@/lib/user-purge";
 import { purgeOldTrackingEvents } from "@/lib/email/tracking";
+import { retentionUntil } from "@/lib/gobd";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/trash-purge");
@@ -49,7 +50,7 @@ const RETENTION_ITEM_TYPES = ["document", "note"] as const;
  * (fail-closed: nie wegen eines Tippfehlers löschen — aber sichtbar machen);
  * `null` bei keiner oder noch laufender Frist.
  */
-function retentionExpiredAt(
+function configuredRetentionExpiry(
   page: ListedPage,
   now: Date
 ): { expiresAt: Date } | { invalid: string } | null {
@@ -90,6 +91,40 @@ function retentionExpiredAt(
 }
 
 /**
+ * Konfigurierte Frist, geklemmt an die gesetzliche Untergrenze: ein
+ * GoBD-gestempelter Beleg (`gobd_retention: true`, § 132 BAO) wird frühestens
+ * am Ende des siebenten Folgejahres nach `hashed_at` löschfällig — egal, was
+ * jemand über die generische Pages-API in `retention_until`/`retention_days`
+ * geschrieben hat (die Felder sind dort nicht geschützt). Ohne lesbares
+ * `hashed_at` ist die Mindestfrist nicht bestimmbar → fail-closed, sichtbar.
+ */
+function retentionExpiredAt(
+  page: ListedPage,
+  now: Date
+): { expiresAt: Date } | { invalid: string } | { floored: Date } | null {
+  const configured = configuredRetentionExpiry(page, now);
+  if (!configured || "invalid" in configured) return configured;
+  const fm = page.frontmatter ?? {};
+  if (fm.gobd_retention !== true) return configured;
+  const hashedRaw = fm.hashed_at;
+  const hashed =
+    hashedRaw instanceof Date
+      ? hashedRaw.getTime()
+      : hashedRaw
+        ? Date.parse(String(hashedRaw))
+        : NaN;
+  if (!Number.isFinite(hashed)) {
+    return {
+      invalid: "gobd_retention ohne lesbares hashed_at — gesetzliche Mindestfrist nicht bestimmbar",
+    };
+  }
+  // retentionUntil() liefert "YYYY-12-31" und gilt bis Ende dieses Tags (UTC).
+  const floor = Date.parse(retentionUntil(new Date(hashed))) + 86_400_000;
+  if (floor > now.getTime()) return { floored: new Date(floor) };
+  return { expiresAt: new Date(Math.max(configured.expiresAt.getTime(), floor)) };
+}
+
+/**
  * GET /api/cron/trash-purge — endgültige Löschung abgelaufener Papierkorb-
  * Einträge (DSGVO-Löschkonzept).
  *
@@ -119,6 +154,7 @@ export const GET = createCronHandler(async () => {
     brainsDisabled: 0,
     retentionTombstoned: 0,
     retentionInvalid: 0,
+    retentionGobdFloored: 0,
     failed: 0,
     errors: [] as string[],
   };
@@ -183,6 +219,11 @@ export const GET = createCronHandler(async () => {
         if (res.ok) {
           const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
           held = page.frontmatter?.legal_hold === true;
+        } else {
+          // 404/403/5xx: die Akte ist gerade nicht lesbar (oder weg) — dann
+          // ist ihr Hold unbekannt. Fail-closed wie beim geworfenen Fehler:
+          // nie auf Verdacht löschen; der nächste Lauf prüft erneut.
+          held = true;
         }
       } catch {
         // Unreadable parent → treat as held (fail-closed, never purge on doubt).
@@ -208,6 +249,11 @@ export const GET = createCronHandler(async () => {
           if ("invalid" in expiry) {
             report.retentionInvalid++;
             report.errors.push(`${page.slug}: ${expiry.invalid}`);
+            continue;
+          }
+          if ("floored" in expiry) {
+            // Konfigurierte Frist abgelaufen, gesetzliche (§ 132 BAO) noch nicht.
+            report.retentionGobdFloored++;
             continue;
           }
           try {
