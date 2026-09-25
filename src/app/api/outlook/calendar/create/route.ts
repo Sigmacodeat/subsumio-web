@@ -7,7 +7,7 @@ import {
   isMs365Connected,
 } from "@/lib/msgraph-user";
 import { getStore } from "@/lib/auth/store";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -30,6 +30,16 @@ const createEventSchema = z.object({
     .optional(),
   categories: z.array(z.string().max(50)).max(10).optional(),
   caseSlug: z.string().max(300).optional(),
+  /**
+   * Subsumio appointment this event mirrors: its outlook_event_id is written
+   * back so the background sync updates/deletes this event instead of
+   * pushing a second copy.
+   */
+  appointmentSlug: z
+    .string()
+    .max(300)
+    .regex(/^legal\/appointments\/[A-Za-z0-9._-]+$/, "invalid_appointment_slug")
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -113,6 +123,34 @@ export const POST = createHandler(
           }),
           signal: AbortSignal.timeout(10_000),
         });
+      }
+
+      // Link the appointment to its Outlook copy (delegated = the owner's own
+      // calendar, the same one the per-user sync writes to).
+      if (delegated && eventId && body.appointmentSlug) {
+        const now = new Date().toISOString();
+        const linked = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: body.appointmentSlug,
+            frontmatter: {
+              outlook_event_id: eventId,
+              synced_to: "outlook",
+              outlook_synced_at: now,
+              synced_at: now,
+            },
+          },
+          { timeoutMs: 10_000 }
+        ).catch(() => null);
+        if (!linked?.ok) {
+          // The event exists in Outlook but the appointment does not know it:
+          // the sync would push a duplicate. Report it instead of "ok".
+          return apiError(
+            "calendar_link_failed",
+            "Termin in Outlook angelegt, aber nicht mit dem Subsumio-Termin verknüpft",
+            502
+          );
+        }
       }
 
       return apiSuccess({

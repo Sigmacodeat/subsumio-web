@@ -98,6 +98,7 @@ CRON_HEARTBEAT_URL_DEADLINES=https://hc-ping.com/<uuid>            # täglich 06
 CRON_HEARTBEAT_URL_DEADLINE_REMINDERS=https://hc-ping.com/<uuid>   # täglich 07:00 UTC
 CRON_HEARTBEAT_URL_DEADLINE_ALERTS=https://hc-ping.com/<uuid>      # alle 30 Minuten
 CRON_HEARTBEAT_URL_HEALTH=https://hc-ping.com/<uuid>               # alle 10 Minuten
+CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS=https://hc-ping.com/<uuid> # stündlich
 ```
 
 Leer oder nicht gesetzt = kein Ping. Ein fehlgeschlagener Ping wird protokolliert, macht den Job

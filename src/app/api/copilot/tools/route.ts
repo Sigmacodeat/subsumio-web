@@ -1934,8 +1934,12 @@ async function executeSearchCalendar(
     const items = pages
       .map((p) => {
         const fm = p.frontmatter ?? {};
+        // Outlook-synced calendar_event pages carry `start` (Graph dateTime).
         const dateStr =
-          (fm.start_date as string) ?? (fm.date as string) ?? (fm.due_date as string) ?? undefined;
+          (fm.start_date as string) ??
+          (fm.date as string) ??
+          (fm.due_date as string) ??
+          (typeof fm.start === "string" ? fm.start.replace(/\.\d+$/, "") : undefined);
         if (!dateStr) return null;
         const eventDate = new Date(dateStr);
         if (Number.isNaN(eventDate.getTime())) return null;

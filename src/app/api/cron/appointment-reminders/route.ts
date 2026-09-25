@@ -3,6 +3,7 @@ import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import {
   activeStaffRecipients,
+  fetchAllPagesStrict,
   fetchPages,
   getRecipientsByBrain,
   matterPermissionsBySlug,
@@ -16,24 +17,33 @@ import { DEFAULT_KANZLEI_SETTINGS, type KanzleiSettings } from "@/lib/kanzlei-se
 import { isSmtpConfigured, loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import nodemailer from "nodemailer";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
+import {
+  dueAppointmentReminders,
+  reminderSentFields,
+  type ReminderStage,
+} from "@/lib/appointment-reminder-schedule";
 
 export const dynamic = "force-dynamic";
 
-async function updateAppointmentReminderSent(brainId: string, slug: string): Promise<void> {
+async function updateAppointmentReminderSent(
+  brainId: string,
+  slug: string,
+  stage: ReminderStage,
+  sentFor: string,
+  now: Date
+): Promise<boolean> {
   const headers = engineHeadersForBrain(brainId);
   try {
     // Engine merge-update (no PATCH/If-Match route). Setting the reminder flag is
     // idempotent, so last-writer-wins is acceptable.
-    await enginePatchPage(
+    const res = await enginePatchPage(
       headers,
-      {
-        slug,
-        frontmatter: { reminder_sent: true, reminder_sent_at: new Date().toISOString() },
-      },
+      { slug, frontmatter: reminderSentFields(stage, sentFor, now) },
       { timeoutMs: 30_000 }
     );
+    return res.ok;
   } catch {
-    // Non-blocking
+    return false;
   }
 }
 
@@ -52,7 +62,16 @@ export const GET = createCronHandler(async () => {
     // Active firm staff only; matter appointments only to people who may see the matter.
     const staff = activeStaffRecipients(brainUsers);
     let matterPermissions: Map<string, MatterPermissions> | null = null;
-    const appointments = await fetchPages(brainId, "appointment", 500);
+    let appointments: Awaited<ReturnType<typeof fetchAllPagesStrict>>;
+    try {
+      // Complete and strict: a truncated read would silently skip reminders.
+      appointments = await fetchAllPagesStrict(brainId, "appointment");
+    } catch (err) {
+      errors.push(
+        `Appointments unreadable for brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+      continue;
+    }
     if (appointments.length === 0) continue;
 
     // SMTP from this firm's own settings, read server-side with trusted headers.
@@ -78,15 +97,12 @@ export const GET = createCronHandler(async () => {
 
     for (const appt of appointments) {
       const fm = appt.frontmatter ?? {};
-      const reminderSent = fm.reminder_sent === true;
-      const status = String(fm.status ?? "");
-      if (reminderSent || status === "cancelled" || status === "completed") continue;
-
-      const reminderAtStr = String(fm.reminder_at ?? "");
-      if (!reminderAtStr) continue;
-
-      const reminderAt = new Date(reminderAtStr);
-      if (reminderAt > now) continue;
+      // Every appointment is reminded (calendar editor, WhatsApp, import):
+      // explicit reminder_minutes / reminder_at, else 24 h before; hearings
+      // additionally 7 days ahead. Times are Europe/Vienna wall time.
+      const dueStages = dueAppointmentReminders(fm, now);
+      if (dueStages.length === 0) continue;
+      const stage = dueStages[0];
 
       const date = String(fm.date ?? "");
       const time = String(fm.time ?? "");
@@ -103,7 +119,7 @@ export const GET = createCronHandler(async () => {
       const recipients = recipientsForMatter(staff, caseSlug, matterPermissions ?? new Map());
 
       const bodyLines = [
-        `📅 Termin-Erinnerung:`,
+        stage.stage === "early" ? `📅 Verhandlung in 7 Tagen:` : `📅 Termin-Erinnerung:`,
         `Datum: ${date}`,
         `Uhrzeit: ${time}`,
         `Thema: ${title}`,
@@ -190,17 +206,28 @@ export const GET = createCronHandler(async () => {
         }
       }
 
-      // Mark reminder as sent
-      await updateAppointmentReminderSent(brainId, appt.slug);
+      // Mark reminder as sent (for this date/time — moving the appointment re-arms it)
+      const marked = await updateAppointmentReminderSent(
+        brainId,
+        appt.slug,
+        stage.stage,
+        stage.sentFor,
+        now
+      );
+      if (!marked) errors.push(`Failed to mark reminder as sent for ${appt.slug}`);
     }
   }
 
-  return NextResponse.json({
-    ok: true,
-    brains_checked: brainsChecked,
-    sent: totalSent,
-    smtp_configured: smtpBrains > 0,
-    smtp_configured_brains: smtpBrains,
-    errors: errors.length > 0 ? errors : undefined,
-  });
+  // Errors answer 5xx so the scheduler (curl -f) records the run as failed.
+  return NextResponse.json(
+    {
+      ok: errors.length === 0,
+      brains_checked: brainsChecked,
+      sent: totalSent,
+      smtp_configured: smtpBrains > 0,
+      smtp_configured_brains: smtpBrains,
+      errors: errors.length > 0 ? errors : undefined,
+    },
+    { status: errors.length > 0 ? 500 : 200 }
+  );
 });
