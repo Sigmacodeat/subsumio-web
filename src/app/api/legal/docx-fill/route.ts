@@ -6,7 +6,6 @@ import { DocxTemplateError, fillDocxBatch, fillDocxTemplate } from "@/lib/docx-t
 import { resolveKnownVariables } from "@/lib/templates";
 import { KANZLEI_SETTINGS_SLUG, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import type { CaseFrontmatter } from "@/lib/legal-types";
-import type { AuditAction } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/legal/docx-fill");
@@ -46,7 +45,7 @@ export const POST = createHandler(
     rateTier: "heavy",
     body: schema,
     audit: (_ctx, body) => ({
-      action: "legal.docx_fill" as unknown as AuditAction,
+      action: "legal.docx_fill" as const,
       entityType: "template",
       details: { caseSlug: body.caseSlug, rows: body.rows?.length ?? 0 },
     }),

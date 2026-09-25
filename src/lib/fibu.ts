@@ -257,8 +257,34 @@ export interface DunningRunResult {
   email_sent: boolean;
 }
 
-const DUNNING_FEES = [0, 5.0, 10.0, 15.0];
+/**
+ * EINZIGE Mahngebühren-Tabelle der Anwendung (Kumulativ-Summe je Stufe).
+ * Auch /api/invoices/remind rechnet über diese Tabelle (dunningFeeDelta) —
+ * die frühere eigene Formel dort (mind. 20/40/60 € bzw. 50–130 % des
+ * Rechnungsbetrags) war als Verzugsschaden nicht durchsetzbar.
+ *
+ * Rechtliche Einordnung (DACH): Die § 288 Abs. 5 BGB-Pauschale von 40 € gilt
+ * nur für B2B-Entgeltforderungen und nur einmal pro Forderung — nicht als
+ * Stufenmodell. Für gemischte Mandanten (B2C/B2B) sind moderate Pauschal-
+ * gebühren je Mahnstufe die konservative, in DE und AT gerichtsfest
+ * akzeptierte Praxis. Deckel bei 15 € gesamt: ab Stufe 3 ist ohnehin das
+ * gerichtliche Mahnverfahren/Inkasso der vorgesehene nächste Schritt.
+ * Bestehende Rechnungen/OPs bleiben unverändert — die Tabelle wirkt nur
+ * auf neu geschriebene Mahngebühren.
+ */
+export const DUNNING_FEES = [0, 5.0, 10.0, 15.0];
 const DUNNING_LABELS = ["", "Mahnung 1", "Mahnung 2", "Mahnung 3"];
+
+/**
+ * Gebühren-Delta beim Erreichen von Mahnstufe `level` (1-basiert):
+ * DUNNING_FEES[level] − DUNNING_FEES[level−1], 0 für level < 1 oder über
+ * dem Deckel (keine weitere Pauschale ab der 4. Mahnung).
+ */
+export function dunningFeeDelta(level: number): number {
+  const l = Math.floor(level);
+  if (l < 1 || l >= DUNNING_FEES.length) return 0;
+  return DUNNING_FEES[l] - DUNNING_FEES[l - 1];
+}
 
 export function processDunningRun(openItems: OpenItem[], currentDate?: Date): DunningRunResult[] {
   const now = currentDate ?? new Date();

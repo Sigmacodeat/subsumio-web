@@ -6,6 +6,7 @@ import {
   createOpenItem,
   processDunningRun,
   applyDunningRun,
+  dunningFeeDelta,
   getDunningLabel,
   getOverdueItems,
   getOposSummary,
@@ -274,6 +275,18 @@ describe("processDunningRun", () => {
   test("bezahlte/abgeschriebene Items werden uebersprungen", () => {
     const i = item({ due_date: "2024-01-01", status: "paid" });
     expect(processDunningRun([i], at("2024-06-01T12:00:00Z"))).toHaveLength(0);
+  });
+
+  test("dunningFeeDelta: 5€ je Stufe, gedeckelt bei Stufe 3", () => {
+    // Einheitliche Mahnformel mit /api/invoices/remind: das Delta der
+    // Kumulativ-Tabelle [0,5,10,15] — also 5€ je Mahnstufe.
+    expect(dunningFeeDelta(0)).toBe(0);
+    expect(dunningFeeDelta(1)).toBe(5);
+    expect(dunningFeeDelta(2)).toBe(5);
+    expect(dunningFeeDelta(3)).toBe(5);
+    // Ab der 4. Mahnung keine weitere Pauschale (Inkasso/gerichtlicher Weg).
+    expect(dunningFeeDelta(4)).toBe(0);
+    expect(dunningFeeDelta(99)).toBe(0);
   });
 
   test("email_sent Flag folgt client_email", () => {

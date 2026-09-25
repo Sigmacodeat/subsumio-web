@@ -12,6 +12,9 @@ import {
   updateEntry,
   deleteEntry,
   unbillEntries,
+  timerExceededMaxDuration,
+  timerMaxDurationEnd,
+  TIMER_MAX_DURATION_MS,
   type TimeEntryWithCase,
   type BillingSummaryEntry,
 } from "@/lib/time-tracking";
@@ -1332,5 +1335,36 @@ describe("atomic time_entries helpers", () => {
       },
     });
     expect(r).toEqual({ updated: 1, not_found: ["t9"] });
+  });
+});
+
+// ── Timer-Höchstdauer ──
+
+describe("timer max duration cap", () => {
+  const started = "2026-03-10T08:00:00.000Z";
+
+  test("TIMER_MAX_DURATION_MS is 12 hours", () => {
+    expect(TIMER_MAX_DURATION_MS).toBe(12 * 60 * 60 * 1000);
+  });
+
+  test("timerExceededMaxDuration: below, at, and over the cap", () => {
+    const activity = { started_at: started };
+    const startMs = new Date(started).getTime();
+    expect(timerExceededMaxDuration(activity, new Date(startMs + TIMER_MAX_DURATION_MS - 1))).toBe(
+      false
+    );
+    // Genau an der Grenze ist noch nicht überschritten.
+    expect(timerExceededMaxDuration(activity, new Date(startMs + TIMER_MAX_DURATION_MS))).toBe(
+      false
+    );
+    expect(timerExceededMaxDuration(activity, new Date(startMs + TIMER_MAX_DURATION_MS + 1))).toBe(
+      true
+    );
+    // Ein Timer mit frischem Heartbeat, aber 13h alt, ist über dem Cap.
+    expect(timerExceededMaxDuration(activity, new Date(startMs + 13 * 60 * 60 * 1000))).toBe(true);
+  });
+
+  test("timerMaxDurationEnd caps the entry at started_at + 12h", () => {
+    expect(timerMaxDurationEnd({ started_at: started })).toBe("2026-03-10T20:00:00.000Z");
   });
 });
