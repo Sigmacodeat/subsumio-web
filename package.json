@@ -26,6 +26,7 @@
     "verify": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && npx tsx scripts/check-route-actions.ts && npx tsx scripts/check-grounding-invariant.ts && npx tsx scripts/check-design-tokens.ts && npx tsx scripts/check-canonical-links.ts && npx tsx scripts/check-nested-interactive.ts && npx tsx scripts/check-audit-labels.ts && npx tsx scripts/check-list-limit.ts && npx tsx scripts/check-unchecked-engine-writes.ts && npx tsx scripts/check-utc-date-strings.ts && npx tsx scripts/check-env-documented.ts",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
+    "test:unit:future-clock": "node scripts/test-future-clock.mjs",
     "test:scripts": "npx vitest run --config vitest.config.scripts.ts",
     "test:lab": "npx vitest run --config vitest.config.lab.ts",
     "test:identity": "npx vitest run --config vitest.config.identity.ts",

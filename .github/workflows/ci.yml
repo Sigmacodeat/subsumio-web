@@ -79,8 +79,13 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run test:unit
-
-  deploy-script:
+      # Same suite with the wall clock moved forward by 400 days (Europe/Vienna):
+      # a test that compares a fixed calendar date with the real "now" fails
+      # here today instead of breaking `main` on the day the date passes.
+      # Date-dependent tests fix their clock with vi.useFakeTimers +
+      # vi.setSystemTime (docs/TESTING.md).
+      - name: Unit tests with the clock moved forward
+        run: bun run test:unit:future-clock
     name: Deploy script guards
     runs-on: ubuntu-latest
     steps:
