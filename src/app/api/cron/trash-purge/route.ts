@@ -9,12 +9,22 @@ import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { purgeExpiredSoftDeletedUsers } from "@/lib/user-purge";
+import { purgeOldTrackingEvents } from "@/lib/email/tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/trash-purge");
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
+
+/**
+ * E-Mail-Tracking-Events (Öffnen/Klicken) tragen IP-Adresse und User-Agent
+ * des Empfängers — personenbezogene Daten. Der Nachweis der Zustellung bleibt
+ * über den aggregierten tracking_status der Nachricht erhalten, deshalb
+ * reichen 90 Tage für die Einzelereignisse (Marktstandard für ESP-Logs und
+ * im Einklang mit den sonstigen technischen Fristen dieses Jobs).
+ */
+const EMAIL_TRACKING_RETENTION_DAYS = 90;
 
 /**
  * GET /api/cron/trash-purge — endgültige Löschung abgelaufener Papierkorb-
@@ -184,6 +194,7 @@ export const GET = createCronHandler(async () => {
   // here too: purgeExpiredSoftDeletedUsers re-checks per firm via the same
   // checkFirmLegalHolds() admin/data-delete used at the initial request.
   let usersPurged = 0;
+  let trackingEventsPurged = 0;
   const pgPool = getSharedPgPool();
   if (pgPool) {
     try {
@@ -192,13 +203,21 @@ export const GET = createCronHandler(async () => {
       report.failed++;
       report.errors.push(`user purge: ${err instanceof Error ? err.message : String(err)}`);
     }
+    try {
+      trackingEventsPurged = await purgeOldTrackingEvents(EMAIL_TRACKING_RETENTION_DAYS);
+    } catch (err) {
+      report.failed++;
+      report.errors.push(
+        `email-tracking purge: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 
   // A run with errors answers 500 so supercronic marks the job FAILED.
   const ok = report.errors.length === 0;
   if (!ok) log.error("[trash-purge] completed with errors", { errors: report.errors });
   return NextResponse.json(
-    { ok, ...report, users_purged: usersPurged },
+    { ok, ...report, users_purged: usersPurged, tracking_events_purged: trackingEventsPurged },
     { status: ok ? 200 : 500 }
   );
 });
