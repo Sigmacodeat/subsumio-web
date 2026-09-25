@@ -398,6 +398,16 @@ async function main() {
 
   const engine = await createEngine(toEngineConfig(cfg));
   await engine.connect(toEngineConfig(cfg));
+  // Disable the statement timeout for this session — the default 5min
+  // (server/src/core/db.ts) is meant to protect live request-serving
+  // connections, not a batch import. Large sources (BVwG 62k, LVwG 91k
+  // decisions) were dying mid-run on `statement_timeout` (SQLSTATE 57014)
+  // a few hundred to ~1300 decisions in and restarting from scratch every
+  // pipeline cycle — this script is the only judikatur/law import script
+  // that didn't already disable it (import-ch-laws.ts, rechunk-missing.ts,
+  // import-split-statutes-direct.ts and import-ch-multilingual-split.ts all
+  // do). One-off script connection, never touches request-serving traffic.
+  await engine.executeRaw("SET statement_timeout = 0");
   await engine.initSchema();
   try {
     await reconfigureGatewayWithEngine(engine);
