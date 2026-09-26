@@ -28,6 +28,7 @@ const EXPORT_MAX_BATCHES = 5_000;
 async function listAllPages(brain: ReturnType<typeof createServerBrainClient>) {
   const pages: unknown[] = [];
   let cursor: string | undefined;
+  let complete = false;
   for (let batch = 0; batch < EXPORT_MAX_BATCHES; batch++) {
     const chunk = brain.listPagesPaged
       ? await brain.listPagesPaged({
@@ -45,8 +46,14 @@ async function listAllPages(brain: ReturnType<typeof createServerBrainClient>) {
       cursor = next;
       continue;
     }
-    if (chunk.items.length < EXPORT_PAGE_SIZE) break;
+    if (chunk.items.length < EXPORT_PAGE_SIZE) {
+      complete = true;
+      break;
+    }
   }
+  // Stopped by the batch bound with more to come: a cut export is no answer
+  // to Art. 15 — the caller fails instead of shipping it as complete.
+  if (!complete) throw new Error(`export stopped after ${EXPORT_MAX_BATCHES} batches`);
   return pages;
 }
 

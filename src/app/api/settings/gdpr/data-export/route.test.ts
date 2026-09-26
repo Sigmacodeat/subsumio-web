@@ -122,3 +122,19 @@ describe("GET /api/settings/gdpr/data-export", () => {
     });
   });
 });
+
+describe("GET /api/settings/gdpr/data-export — no silent cut (R12-14)", () => {
+  it("answers 503 instead of a cut export when the listing never ends", async () => {
+    storedUser = {
+      id: "u_solo",
+      email: "solo@kanzlei.example",
+      role: "admin",
+      createdAt: "2026-01-01",
+    };
+    vi.mocked(requireEngineContext).mockResolvedValue(ctxFor(storedUser) as any);
+    const full = Array.from({ length: 100 }, (_, i) => ({ slug: `p/${i}`, title: "x" }));
+    listPages.mockImplementation(async () => full);
+    const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
+    expect(res.status).toBe(503);
+  });
+});
