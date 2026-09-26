@@ -11,6 +11,13 @@
 import { jsPDF } from "jspdf";
 import type { PowerOfAttorney } from "@/lib/power-of-attorney";
 import { POA_TYPE_LABELS } from "@/lib/power-of-attorney";
+import {
+  PDF_MIN_FONT_PT,
+  addPdfBookmark,
+  applyPdfAccessibility,
+  currentPageNumber,
+  type PdfLang,
+} from "@/lib/pdf-accessibility";
 
 export interface PoaPdfData {
   poa: PowerOfAttorney;
@@ -21,11 +28,22 @@ export interface PoaPdfData {
     email?: string;
     telefon?: string;
   };
+  /** Dokumentsprache für Screenreader (BCP 47). Standard: de-AT. */
+  lang?: PdfLang;
 }
 
 export function generatePoaPdf(data: PoaPdfData): jsPDF {
   const { poa, kanzlei } = data;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const typeLabel = POA_TYPE_LABELS[poa.type].de;
+  // Sprache, Metadaten, Titelleiste, Lesezeichen — vor dem ersten text().
+  applyPdfAccessibility(doc, {
+    title: `Vollmacht — ${typeLabel}`,
+    subject: `${typeLabel} für ${poa.client_name} (Akte ${poa.case_slug})`,
+    author: kanzlei?.name || "Kanzlei",
+    keywords: ["Vollmacht", typeLabel, poa.case_slug].join(", "),
+    lang: data.lang,
+  });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 25;
@@ -74,12 +92,13 @@ export function generatePoaPdf(data: PoaPdfData): jsPDF {
   doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
   doc.setFont("helvetica", "bold");
   doc.text("VOLLMACHT", margin, y);
+  const bmRoot = addPdfBookmark(doc, "Vollmacht", currentPageNumber(doc));
   y += 8;
 
   doc.setFontSize(10);
   doc.setTextColor(lightText);
   doc.setFont("helvetica", "normal");
-  doc.text(POA_TYPE_LABELS[poa.type].de, margin, y);
+  doc.text(typeLabel, margin, y);
   y += 8;
 
   // --- Body ---
@@ -103,6 +122,7 @@ export function generatePoaPdf(data: PoaPdfData): jsPDF {
   y += 4;
   doc.setFont("helvetica", "bold");
   doc.text("Umfang der Vollmacht:", margin, y);
+  addPdfBookmark(doc, "Umfang der Vollmacht", currentPageNumber(doc), bmRoot);
   y += 6;
   doc.setFont("helvetica", "normal");
   const scopeLines = doc.splitTextToSize(poa.scope, maxWidth);
@@ -111,6 +131,7 @@ export function generatePoaPdf(data: PoaPdfData): jsPDF {
 
   // --- Signaturblock ---
   y = Math.max(y, pageH - 60);
+  addPdfBookmark(doc, "Unterschrift", currentPageNumber(doc), bmRoot);
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
   doc.line(margin, y, margin + 70, y);
@@ -122,8 +143,8 @@ export function generatePoaPdf(data: PoaPdfData): jsPDF {
   doc.line(margin, y, margin + 70, y);
   doc.text("Unterschrift Vollmachtgeber:in", margin, y + 4);
 
-  // --- Footer ---
-  doc.setFontSize(8);
+  // --- Footer --- (Mindestschrift 9 pt, BFSG)
+  doc.setFontSize(PDF_MIN_FONT_PT);
   doc.setTextColor(lightText);
   doc.text(
     `Vollmacht-ID: ${poa.id} · Erstellt: ${poa.created_at.split("T")[0]}`,
