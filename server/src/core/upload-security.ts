@@ -195,23 +195,30 @@ export async function inspectUploadBytes(
 }
 
 /**
- * Scan a file by path using clamd SCAN command — no buffer needed.
- * The file stays on disk, ClamAV reads it directly.
+ * Scan a file on disk by streaming it to clamd (INSTREAM) with backpressure,
+ * so large uploads never have to sit in memory. `SCAN <path>` is not an
+ * option: clamd runs in its own container and cannot see the engine's /tmp,
+ * so it answered every path scan with an error and every upload failed as
+ * "scanner unavailable".
  */
 async function scanClamAvByPath(filePath: string, target: string): Promise<UploadSecurityResult> {
   const [hostname, portText] = target.split(":");
   const port = Number(portText || "3310");
+  const { createReadStream } = await import("node:fs");
   return new Promise((resolve) => {
     const socket = connect(port, hostname);
     let response = "";
     let settled = false;
+    let stream: ReturnType<typeof createReadStream> | undefined;
     const finish = (result: UploadSecurityResult) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      stream?.destroy();
       socket.destroy();
       resolve(result);
     };
+    // A 500 MB upload streamed to clamd plus its scan time.
     const timer = setTimeout(
       () =>
         finish({
@@ -219,10 +226,29 @@ async function scanClamAvByPath(filePath: string, target: string): Promise<Uploa
           code: "scanner_unavailable",
           message: "Virenscanner nicht erreichbar.",
         }),
-      60_000
+      300_000
     );
     socket.on("connect", () => {
-      socket.write(`SCAN ${filePath}\0`);
+      socket.write("zINSTREAM\0");
+      stream = createReadStream(filePath, { highWaterMark: 64 * 1024 });
+      stream.on("data", (chunk) => {
+        const data = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+        const length = Buffer.alloc(4);
+        length.writeUInt32BE(data.length);
+        socket.write(length);
+        if (!socket.write(data)) {
+          stream!.pause();
+          socket.once("drain", () => stream!.resume());
+        }
+      });
+      stream.on("end", () => socket.write(Buffer.alloc(4)));
+      stream.on("error", () =>
+        finish({
+          ok: false,
+          code: "scanner_unavailable",
+          message: "Upload konnte für den Virenscan nicht gelesen werden.",
+        })
+      );
     });
     socket.on("data", (chunk) => (response += chunk.toString("utf8")));
     socket.on("end", () => {
@@ -232,7 +258,7 @@ async function scanClamAvByPath(filePath: string, target: string): Promise<Uploa
           code: "malware_detected",
           message: "Schadsoftware erkannt — Upload abgelehnt.",
         });
-      else if (response.includes("OK")) finish({ ok: true });
+      else if (/\bOK\b/.test(response)) finish({ ok: true });
       else
         finish({
           ok: false,

@@ -215,6 +215,27 @@ export async function findStoredDocumentReferenceByHash(
   return rows.length > 0 ? (rows[0] as StoredUploadMatch) : null;
 }
 
+/**
+ * An upload whose original was stored but whose extraction failed before any
+ * page existed (password required, unreadable file, timeout) must not keep an
+ * active filing reference: the duplicate check would answer every retry with
+ * "already uploaded" although nothing was imported. The stored bytes stay
+ * (they are the original); only the filing reference is released. Returns
+ * the number of references released.
+ */
+export async function releaseUnimportedUploadReferences(
+  pageSlug: string,
+  sourceId: string
+): Promise<number> {
+  const sql = db.getConnection();
+  const rows = await sql`
+    UPDATE document_refs SET active = false
+    WHERE source_id = ${sourceId} AND page_slug = ${pageSlug} AND active
+    RETURNING id
+  `;
+  return rows.length;
+}
+
 /** Return the current original stored for a page, if any. */
 export async function findStoredUploadForPage(
   pageSlug: string,

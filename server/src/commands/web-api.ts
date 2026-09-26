@@ -6057,6 +6057,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   app.post("/api/upload", uploadConcurrencyGuard, async (req: Request, res: Response) => {
     let cleanupTempFile: (() => void) | null = null;
+    // Set once the original is stored and cleared once a page exists for it;
+    // a failure in between releases the filing reference (see catch).
+    let unimportedUpload: { slug: string; sourceId: string } | undefined;
     try {
       // Pre-check Content-Length before parsing. Rejects oversized early.
       const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
@@ -6495,6 +6498,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
 
+      unimportedUpload = { slug, sourceId: tenantSource };
       let partSlugs: string[] = [];
       let stampFailures: string[] | undefined;
       if (asyncExtract) {
@@ -6558,6 +6562,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
           { allowProtectedSubmit: true }
         );
+        unimportedUpload = undefined;
       } else {
         const result = await runExtractionAndImport(engine, {
           slug,
@@ -6578,6 +6583,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ownerType: billingOwnerType,
           userId: billingUserId || undefined,
         });
+        unimportedUpload = undefined;
         partSlugs = result.partSlugs;
         if (result.stamp_failures) stampFailures = result.stamp_failures;
       }
@@ -6606,6 +6612,28 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      if (unimportedUpload) {
+        // The original is stored but nothing was imported: free the filing
+        // reference so the corrected retry (with password, after a timeout)
+        // is not refused as a duplicate. A page that did get written keeps it.
+        const pending = unimportedUpload;
+        try {
+          const written = await engine.getPage(pending.slug, {
+            sourceId: pending.sourceId,
+            includeDeleted: true,
+          });
+          if (!written) {
+            const { releaseUnimportedUploadReferences } = await import("../core/file-store.ts");
+            await releaseUnimportedUploadReferences(pending.slug, pending.sourceId);
+          }
+        } catch (releaseErr) {
+          console.error(
+            `[web-api] releasing the filing reference of failed upload ${pending.slug} failed: ${
+              releaseErr instanceof Error ? releaseErr.message : String(releaseErr)
+            }`
+          );
+        }
+      }
       // A recognized-but-unsupported format is a client problem, not a server
       // error — return 415 with the actionable guidance so the UI can show it.
       if (e instanceof UnsupportedUploadError) {
