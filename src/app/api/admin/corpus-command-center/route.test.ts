@@ -167,7 +167,7 @@ describe("GET /api/admin/corpus-command-center", () => {
             dbDocs: 147700,
             dbPages: 147700,
             missingOnDisk: 383,
-            missingByReason: { open: 383, no_text: 0, not_found: 0, failed: 0 },
+            missingByReason: { open: 383, no_text: 0, not_found: 0, failed: 0, superseded: 0 },
             diskNotInDb: 74,
             dbNotOnDisk: 0,
             notInRisSoll: 2240,

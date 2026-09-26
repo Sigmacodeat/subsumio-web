@@ -15,7 +15,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export type FetchOutcome = "no_text" | "not_found" | "failed";
+export type FetchOutcome = "no_text" | "not_found" | "failed" | "superseded";
 
 export interface FetchOutcomeLine {
   corpus: string;

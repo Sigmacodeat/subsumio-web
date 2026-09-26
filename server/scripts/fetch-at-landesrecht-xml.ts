@@ -259,6 +259,7 @@ interface LrDoc {
   gn: string;
   apa: string;
   fileKey: string;
+  inkraft: string;
 }
 
 function normKey(apa: string | null): string | null {
@@ -535,8 +536,41 @@ async function main() {
         gn: d.gnr ?? "",
         apa: d.apa ?? "",
         fileKey,
+        inkraft: d.inkraft ?? "",
       });
     }
+    // RIS listet jede Fassung eines Paragraphen als eigenen Index-Eintrag
+    // (alte Fassungen behalten ihre Dokumentnummer und ausserkraft=null).
+    // Alle landen auf demselben Dateipfad — ohne Vorauswahl überschreibt
+    // die zuletzt geschriebene Fassung die anderen und ein Folgelauf holt
+    // die alten Nummern erneut. Pro Position nur die jüngste Fassung
+    // holen; die überholten Nummern werden als "superseded" verzeichnet.
+    const byPosition = new Map<string, LrDoc>();
+    for (const doc of docs) {
+      const pos = `${landOfDocId(doc.docId) ?? "unbekannt"}|${doc.gn}|${doc.fileKey}`;
+      const cur = byPosition.get(pos);
+      if (!cur || doc.inkraft > cur.inkraft) {
+        if (cur)
+          recordFetchOutcome(
+            _corpusRoot,
+            "at-landesrecht",
+            cur.docId,
+            "superseded",
+            `Folgefassung ${doc.docId}`
+          );
+        byPosition.set(pos, doc);
+      } else {
+        recordFetchOutcome(
+          _corpusRoot,
+          "at-landesrecht",
+          doc.docId,
+          "superseded",
+          `Folgefassung ${cur.docId}`
+        );
+      }
+    }
+    docs.length = 0;
+    docs.push(...byPosition.values());
     console.log(`  Index-Modus: ${docs.length} fehlende Landesnormen aus ${FROM_INDEX}`);
     await runDocs(docs, "index");
   }
@@ -598,7 +632,7 @@ async function main() {
       const lrMeta: Record<string, string> = {};
       if (lr?.Bundesland) lrMeta.bundesland = lr.Bundesland;
 
-      pageDocs.push({ docId, title, xmlUrl, lrMeta, eli, gn, apa, fileKey: key });
+      pageDocs.push({ docId, title, xmlUrl, lrMeta, eli, gn, apa, fileKey: key, inkraft: "" });
       inventory.push(
         JSON.stringify({
           id: docId,

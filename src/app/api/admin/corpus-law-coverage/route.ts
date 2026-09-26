@@ -3,7 +3,12 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { logger } from "@/lib/logger";
 import { computeLawCoverage, type DbLawAgg, type DbLawDoc } from "@/lib/law-coverage";
-import { LAW_SOURCE_CFG, loadLawFetchState, loadRisIndex } from "@/lib/law-coverage-server";
+import {
+  LAW_SOURCE_CFG,
+  loadFetchOutcomes,
+  loadLawFetchState,
+  loadRisIndex,
+} from "@/lib/law-coverage-server";
 import { fetchGiiTocCached } from "@/lib/de-statute-coverage";
 
 const log = logger("api/admin/corpus-law-coverage");
@@ -54,6 +59,7 @@ export const GET = createHandler(
     try {
       const indexResult = cfg.indexFile ? await loadRisIndex(cfg.indexFile) : null;
       const indexAvailable = cfg.indexFile ? indexResult !== null : null;
+      const outcomes = cfg.corpus ? await loadFetchOutcomes(cfg.corpus) : null;
 
       const [aggResult, docResult] = await Promise.all([
         pool.query(
@@ -90,7 +96,7 @@ export const GET = createHandler(
         doc: (r.doc as string | null) ?? null,
       }));
 
-      const { rows, totals } = computeLawCoverage(indexResult?.entries ?? null, docs, aggs);
+      const { rows, totals } = computeLawCoverage(indexResult?.entries ?? null, docs, aggs, outcomes);
 
       // DE: kurze Slugs ("bgb") als Key — amtliche Langtitel aus dem
       // gii-TOC nachreichen (24-h-Cache, fail-open).

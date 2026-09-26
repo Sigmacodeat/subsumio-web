@@ -174,6 +174,7 @@ export function CorpusLawDetail({ sourceParam, lawKey }: { sourceParam: string; 
     [d, q]
   );
   const missing = useShowMore(d?.missing ?? [], `${lawKey}`);
+  const unreachable = useShowMore(d?.unreachable ?? [], `${lawKey}|u`);
   const presentMore = useShowMore(present, `${lawKey}|${q}`);
   const extraMore = useShowMore(d?.extra ?? [], `${lawKey}`);
 
@@ -325,6 +326,11 @@ export function CorpusLawDetail({ sourceParam, lawKey }: { sourceParam: string; 
                 · {fmt(d.missing.length)} fehlen
               </span>
             )}
+            {d.unreachable.length > 0 && (
+              <span className="text-sm text-[color:var(--ds-text-muted)] tabular-nums">
+                · {fmt(d.unreachable.length)} bei RIS ohne Text
+              </span>
+            )}
             {d.fetch.running && <Badge variant="info">wird gerade vom RIS geladen</Badge>}
             {d.fetch.queued && !d.fetch.running && (
               <Badge variant="info">zum Nachladen vorgemerkt</Badge>
@@ -407,11 +413,15 @@ export function CorpusLawDetail({ sourceParam, lawKey }: { sourceParam: string; 
         <Section
           title="Fehlende §§"
           count={d.missing.length}
-          description="Laut amtlichem Verzeichnis gültig, in der Datenbank aber nicht vorhanden."
+          description={
+            d.unreachable.length > 0
+              ? "Laut amtlichem Verzeichnis gültig, in der Datenbank aber nicht vorhanden — Dokumente, die das RIS nur als Bild liefert, sind unten separat gelistet."
+              : "Laut amtlichem Verzeichnis gültig, in der Datenbank aber nicht vorhanden."
+          }
         >
           {d.missing.length === 0 ? (
             <p className="rounded-lg border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]">
-              Alle §§ aus dem amtlichen Verzeichnis sind gespeichert.
+              Alle §§ aus dem amtlichen Verzeichnis, die das RIS als Text liefert, sind gespeichert.
             </p>
           ) : (
             <Card>
@@ -455,6 +465,58 @@ export function CorpusLawDetail({ sourceParam, lawKey }: { sourceParam: string; 
               </CardContent>
             </Card>
           )}
+        </Section>
+      )}
+
+      {d.unreachable.length > 0 && (
+        <Section
+          title="Bei RIS ohne Text"
+          count={d.unreachable.length}
+          description="Diese Dokumente liefert das RIS nur als Bild bzw. gar nicht — sie können nicht nachgeladen werden und sind kein Abruf-Fehler."
+        >
+          <Card>
+            <CardContent className="p-0">
+              <ul aria-label="Bei RIS ohne Text">
+                {unreachable.visible.map((m) => {
+                  const ris = normOfficialUrl(d.source, m.nor);
+                  return (
+                    <li
+                      key={m.nor}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--ds-border)] px-4 py-2.5 last:border-b-0"
+                    >
+                      <span className="font-medium tabular-nums">{m.apa ?? m.nor}</span>
+                      <span className="flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
+                        <span className="tabular-nums">{m.nor}</span>
+                        <span>
+                          {m.outcome === "not_found" ? "im RIS nicht gefunden" : "nur als Bild"}
+                        </span>
+                        {ris && (
+                          <a
+                            href={ris}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
+                          >
+                            im RIS ansehen
+                            <ExternalLink className="h-3 w-3" aria-hidden />
+                            <span className="sr-only"> ({m.apa ?? m.nor}, neues Fenster)</span>
+                          </a>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="px-4 pb-3">
+                <ShowMoreButton
+                  shown={unreachable.visible.length}
+                  total={unreachable.total}
+                  onMore={unreachable.more}
+                  noun="Dokumenten"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </Section>
       )}
 

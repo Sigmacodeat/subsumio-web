@@ -74,6 +74,61 @@ describe("softDeletePage", () => {
   });
 });
 
+describe("putPage over a tombstone", () => {
+  let engine: PGLiteEngine;
+
+  beforeAll(async () => {
+    engine = await setupBrain();
+  }, 30000);
+
+  afterAll(async () => {
+    await engine.disconnect();
+  });
+
+  test("re-import resurrects a soft-deleted page (putPage clears deleted_at)", async () => {
+    await seedPage(engine, "legal/judikatur/at/vfgh/test-tombstone");
+    await engine.softDeletePage("legal/judikatur/at/vfgh/test-tombstone");
+    expect(await engine.getPage("legal/judikatur/at/vfgh/test-tombstone")).toBeNull();
+
+    // The corpus pipeline re-imports the file — the write must resurrect
+    // the row, otherwise the page stays invisible forever (diskNotInDb gap).
+    await engine.putPage("legal/judikatur/at/vfgh/test-tombstone", {
+      type: "note" as any,
+      title: "re-imported",
+      compiled_truth: "re-imported content",
+      timeline: "",
+      frontmatter: {},
+    });
+    const page = await engine.getPage("legal/judikatur/at/vfgh/test-tombstone");
+    expect(page).not.toBeNull();
+    expect(page!.deleted_at).toBeFalsy();
+    expect(page!.title).toBe("re-imported");
+  });
+
+  test("ifAbsent still refuses to resurrect (PageExistsError, tombstone untouched)", async () => {
+    await seedPage(engine, "people/tombstone-ifabsent");
+    await engine.softDeletePage("people/tombstone-ifabsent");
+    await expect(
+      engine.putPage(
+        "people/tombstone-ifabsent",
+        {
+          type: "note" as any,
+          title: "x",
+          compiled_truth: "x",
+          timeline: "",
+          frontmatter: {},
+        },
+        { ifAbsent: true }
+      )
+    ).rejects.toThrow();
+    const rows = await engine.executeRaw<{ deleted_at: string | null }>(
+      `SELECT deleted_at FROM pages WHERE slug = $1`,
+      ["people/tombstone-ifabsent"]
+    );
+    expect(rows[0].deleted_at).not.toBeNull();
+  });
+});
+
 describe("restorePage", () => {
   let engine: PGLiteEngine;
 

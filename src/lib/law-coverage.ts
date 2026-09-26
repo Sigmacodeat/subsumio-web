@@ -9,6 +9,8 @@
  * frontmatter.doc_id).
  */
 
+import type { FetchOutcome } from "@/lib/corpus-sync-inventory";
+
 export interface RisIndexEntry {
   gnr: string;
   kurztitel: string | null;
@@ -109,6 +111,8 @@ export type LawCoverageStatus = "complete" | "partial" | "missing" | "db-only";
 export interface MissingDoc {
   nor: string;
   apa: string | null;
+  /** Abruf-Ergebnis aus ris-fetch-outcomes.jsonl — null = noch nie geholt. */
+  outcome?: FetchOutcome | null;
 }
 
 export interface LawCoverageRow {
@@ -122,6 +126,8 @@ export interface LawCoverageRow {
   missingCount: number;
   missingDocs: MissingDoc[];
   missingTruncated: boolean;
+  /** Im Index, aber RIS liefert keinen Text (Bild-Anlage) oder kennt die Nummer nicht. */
+  unreachableCount: number;
   pages: number;
   chunks: number;
   embedded: number;
@@ -139,6 +145,7 @@ export interface LawCoverageTotals {
   docsWanted: number;
   docsHave: number;
   docsMissing: number;
+  docsUnreachable: number;
   chunks: number;
   embedded: number;
 }
@@ -161,7 +168,8 @@ const MISSING_CAP = 50;
 export function computeLawCoverage(
   index: Map<string, RisIndexEntry> | null,
   dbDocs: DbLawDoc[],
-  dbAggs: DbLawAgg[]
+  dbAggs: DbLawAgg[],
+  outcomes?: Map<string, FetchOutcome> | null
 ): { rows: LawCoverageRow[]; totals: LawCoverageTotals } {
   const docsByLaw = new Map<string, Set<string>>();
   // Vorhanden = die Dokumentnummer ist irgendwo in der Quelle aktiv — nicht
@@ -182,24 +190,41 @@ export function computeLawCoverage(
   if (index) {
     for (const [gnr, entry] of index) {
       const missing: MissingDoc[] = [];
+      const unreachable: MissingDoc[] = [];
       let haveCount = 0;
+      let wanted = 0;
       for (const [nor, apa] of entry.docs) {
-        if (allDocs.has(nor)) haveCount++;
-        else missing.push({ nor, apa });
+        const outcome = outcomes?.get(nor) ?? null;
+        const inDb = allDocs.has(nor);
+        // Alte Fassungs-Nummer: die Paragraph-Position ist im Index durch die
+        // Folgefassung abgedeckt — keine Lücke, außer die alte Fassung ist
+        // selbst gespeichert (dann zählt sie als Bestand).
+        if (outcome === "superseded" && !inDb) continue;
+        wanted++;
+        if (inDb) haveCount++;
+        else if (outcome === "no_text" || outcome === "not_found")
+          unreachable.push({ nor, apa, outcome });
+        else missing.push(outcome ? { nor, apa, outcome } : { nor, apa });
       }
       const agg = aggByLaw.get(gnr);
+      const reachable = wanted - unreachable.length;
       const status: LawCoverageStatus =
-        haveCount === entry.docs.size ? "complete" : haveCount > 0 ? "partial" : "missing";
+        haveCount === reachable && haveCount > 0
+          ? "complete"
+          : haveCount === 0
+            ? "missing"
+            : "partial";
       missing.sort((a, b) => compareParagraphLabels(a.apa ?? a.nor, b.apa ?? b.nor));
       rows.push({
         key: gnr,
         abbr: entry.abk ?? agg?.abbr ?? null,
         title: entry.kurztitel ?? agg?.title ?? null,
-        wanted: entry.docs.size,
+        wanted,
         have: haveCount,
         missingCount: missing.length,
         missingDocs: missing.slice(0, MISSING_CAP),
         missingTruncated: missing.length > MISSING_CAP,
+        unreachableCount: unreachable.length,
         pages: agg?.pages ?? 0,
         chunks: agg?.chunks ?? 0,
         embedded: agg?.embedded ?? 0,
@@ -224,6 +249,7 @@ export function computeLawCoverage(
       missingCount: 0,
       missingDocs: [],
       missingTruncated: false,
+      unreachableCount: 0,
       pages: agg.pages,
       chunks: agg.chunks,
       embedded: agg.embedded,
@@ -249,6 +275,7 @@ export function computeLawCoverage(
     docsWanted: 0,
     docsHave: 0,
     docsMissing: 0,
+    docsUnreachable: 0,
     chunks: 0,
     embedded: 0,
   };
@@ -257,6 +284,7 @@ export function computeLawCoverage(
     totals.docsWanted += r.wanted;
     totals.docsHave += r.have;
     totals.docsMissing += r.missingCount;
+    totals.docsUnreachable += r.unreachableCount;
     totals.chunks += r.chunks;
     totals.embedded += r.embedded;
   }
@@ -476,6 +504,8 @@ export interface LawDetailResponse {
   wanted: number;
   have: number;
   missing: MissingDoc[];
+  /** Im Soll, aber bei RIS ohne Text oder unbekannt — kann nicht nachgeladen werden. */
+  unreachable: MissingDoc[];
   present: LawDetailNorm[];
   /** In der DB, aber nicht (mehr) im RIS-Verzeichnis der geltenden Normen. */
   extra: LawDetailNorm[];
@@ -495,11 +525,13 @@ export interface LawDetailResponse {
  */
 export function computeLawDetail(
   entry: RisIndexEntry | null,
-  pages: DbLawPage[]
+  pages: DbLawPage[],
+  outcomes?: Map<string, FetchOutcome> | null
 ): {
   status: LawCoverageStatus;
   wanted: number;
   missing: MissingDoc[];
+  unreachable: MissingDoc[];
   present: DbLawPage[];
   extra: DbLawPage[];
 } | null {
@@ -521,6 +553,7 @@ export function computeLawDetail(
       status: "db-only",
       wanted: 0,
       missing: [],
+      unreachable: [],
       present: [...byDoc.values(), ...withoutDoc].sort(byLabel),
       extra: [],
     };
@@ -528,20 +561,34 @@ export function computeLawDetail(
 
   const present: DbLawPage[] = [];
   const missing: MissingDoc[] = [];
+  const unreachable: MissingDoc[] = [];
+  let wanted = 0;
   for (const [nor, apa] of entry.docs) {
     const hit = byDoc.get(nor);
+    const outcome = outcomes?.get(nor) ?? null;
+    if (outcome === "superseded" && !hit) continue;
+    wanted++;
     if (hit) present.push({ ...hit, label: hit.label ?? apa });
-    else missing.push({ nor, apa });
+    else if (outcome === "no_text" || outcome === "not_found")
+      unreachable.push({ nor, apa, outcome });
+    else missing.push(outcome ? { nor, apa, outcome } : { nor, apa });
   }
   const extra = [...byDoc.values()].filter((p) => !entry.docs.has(p.doc!)).concat(withoutDoc);
   missing.sort((a, b) => compareParagraphLabels(a.apa ?? a.nor, b.apa ?? b.nor));
+  unreachable.sort((a, b) => compareParagraphLabels(a.apa ?? a.nor, b.apa ?? b.nor));
 
+  const reachable = wanted - unreachable.length;
   const status: LawCoverageStatus =
-    present.length === entry.docs.size ? "complete" : present.length > 0 ? "partial" : "missing";
+    present.length === reachable && present.length > 0
+      ? "complete"
+      : present.length === 0
+        ? "missing"
+        : "partial";
   return {
     status,
-    wanted: entry.docs.size,
+    wanted,
     missing,
+    unreachable,
     present: present.sort(byLabel),
     extra: extra.sort(byLabel),
   };
