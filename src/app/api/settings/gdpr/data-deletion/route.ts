@@ -33,8 +33,8 @@ const deletionSchema = z.object({
  * 1. Re-authentication — a session alone never deletes an account: the
  *    password (if the account has one) and the second factor (if enabled).
  * 2. Single-lawyer firm (no `orgId`, the brain is the firm's data): refused
- *    while a legal hold is set or records must still be kept (closed matters
- *    within § 12 RAO / § 132 BAO, stamped receipts), and refused outright
+ *    while a legal hold is set or records must still be kept (open matters,
+ *    closed matters within § 12 RAO / § 132 BAO, stamped receipts), and refused outright
  *    when the brain belongs to a firm (a founder whose personal brain became
  *    the firm brain). Otherwise the brain is NOT destroyed now: it is purged
  *    with the account after the grace period by the trash-purge cron, which
@@ -138,7 +138,15 @@ export const POST = createHandler(
         );
       }
       if (retention.status === "retained") {
-        return apiError("retention_period_running", retainedMessage(retention), 409);
+        const onlyOpen =
+          (retention.openCases?.length ?? 0) > 0 &&
+          retention.cases.length === 0 &&
+          retention.receipts === 0;
+        return apiError(
+          onlyOpen ? "open_matters" : "retention_period_running",
+          retainedMessage(retention),
+          409
+        );
       }
       purgeBrainOnDelete = true;
     }

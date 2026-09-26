@@ -5,7 +5,11 @@
  *  - closed/archived matters whose retention period runs (§ 12 RAO,
  *    § 132 BAO — src/lib/case-retention.ts), and
  *  - receipts stamped for tax retention (`gobd_retention`, § 132 BAO) whose
- *    period has not ended.
+ *    period has not ended, and
+ *  - OPEN matters (neither archived nor in the Papierkorb): an open Handakte is
+ *    kept as well — the firm closes/archives it first, or moves a matter
+ *    created by mistake to the Papierkorb. The seeded demo matter
+ *    (`demo: true`) does not count.
  * Legal holds are checked separately (src/lib/legal-hold-check.ts).
  *
  * Fail-closed: a failed or truncated read answers "unknown", never "clear".
@@ -17,7 +21,14 @@ import { retentionUntil } from "@/lib/gobd";
 
 export type FirmRetentionResult =
   | { status: "clear" }
-  | { status: "retained"; cases: string[]; receipts: number; until: string | null }
+  | {
+      status: "retained";
+      cases: string[];
+      receipts: number;
+      until: string | null;
+      /** Open matters (not archived, not deleted). */
+      openCases?: string[];
+    }
   | { status: "unknown" };
 
 const SCAN_MAX = 100_000;
@@ -55,6 +66,7 @@ export async function checkFirmRetention(
 ): Promise<FirmRetentionResult> {
   try {
     const cases: string[] = [];
+    const openCases: string[] = [];
     let receipts = 0;
     let until: string | null = null;
     const later = (d: string | null) => {
@@ -71,6 +83,12 @@ export async function checkFirmRetention(
       if (state.running) {
         cases.push(m.slug);
         later(state.until);
+      } else if (
+        !state.applies &&
+        m.frontmatter?.status !== "tombstoned" &&
+        m.frontmatter?.demo !== true
+      ) {
+        openCases.push(m.slug);
       }
     }
 
@@ -88,16 +106,31 @@ export async function checkFirmRetention(
       }
     }
 
-    if (cases.length === 0 && receipts === 0) return { status: "clear" };
-    return { status: "retained", cases, receipts, until };
+    if (cases.length === 0 && receipts === 0 && openCases.length === 0) return { status: "clear" };
+    return { status: "retained", cases, receipts, until, openCases };
   } catch {
     return { status: "unknown" };
   }
 }
 
 /** German refusal text with the export hint. */
-export function retainedMessage(r: { cases: string[]; receipts: number; until: string | null }) {
+export function retainedMessage(r: {
+  cases: string[];
+  receipts: number;
+  until: string | null;
+  openCases?: string[];
+}) {
+  const open = r.openCases?.length ?? 0;
+  if (open > 0 && r.cases.length === 0 && r.receipts === 0) {
+    return (
+      `Ihr Datenbestand enthält ${open} offene Akte(n). Auch offene Handakten sind aufzubewahren ` +
+      `(§ 12 RAO). Schließen bzw. archivieren Sie sie zuerst oder verschieben Sie irrtümlich ` +
+      `angelegte Akten in den Papierkorb. Laden Sie vorher einen vollständigen Export herunter ` +
+      `(Einstellungen → Datenexport).`
+    );
+  }
   const parts: string[] = [];
+  if (open > 0) parts.push(`${open} offene Akte(n)`);
   if (r.cases.length > 0) parts.push(`${r.cases.length} abgeschlossene Akte(n)`);
   if (r.receipts > 0) parts.push(`${r.receipts} aufbewahrungspflichtige(r) Beleg(e)`);
   const bis = r.until ? ` (Fristende spätestens ${r.until.split("-").reverse().join(".")})` : "";

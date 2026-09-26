@@ -67,7 +67,10 @@ vi.mock("@/lib/copilot-memory", () => ({ deleteMemoriesOfUser: async () => 0 }))
 vi.mock("@/lib/legal-hold-check", () => ({ checkFirmLegalHolds: async () => holds.result }));
 vi.mock("@/lib/firm-retention-check", () => ({
   checkFirmRetention: async () => retention.result,
-  retainedMessage: () => "Aufbewahrungspflicht (§ 12 RAO) — Export herunterladen",
+  retainedMessage: (r: { openCases?: string[] }) =>
+    r.openCases?.length
+      ? "offene Akte(n) zuerst abschließen oder in den Papierkorb — Export herunterladen"
+      : "Aufbewahrungspflicht (§ 12 RAO) — Export herunterladen",
 }));
 vi.mock("@/lib/user-purge", () => ({ USER_SOFT_DELETE_GRACE_DAYS: 30 }));
 vi.mock("@/lib/logger", () => ({ logger: () => ({ warn: vi.fn(), error: vi.fn() }) }));
@@ -151,6 +154,22 @@ describe("POST /api/settings/gdpr/data-deletion", () => {
     const body = await res.json();
     expect(body.code).toBe("retention_period_running");
     expect(body.error).toMatch(/Export/);
+    expect(updates).toEqual([]);
+  });
+
+  it("refuses while open matters exist (close/archive or trash them first)", async () => {
+    retention.result = {
+      status: "retained",
+      cases: [],
+      receipts: 0,
+      until: null,
+      openCases: ["legal/cases/laufend"],
+    };
+    const res = await del({ password: "geheim" });
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.code).toBe("open_matters");
+    expect(body.error).toMatch(/Papierkorb/);
     expect(updates).toEqual([]);
   });
 

@@ -170,6 +170,27 @@ describe("purgeExpiredSoftDeletedUsers — self-deleted single-lawyer firm", () 
     expect(calls.some((c) => c.sql.includes("DELETE FROM subsumio_users"))).toBe(false);
   });
 
+  it("keeps brain and account while open matters exist (re-checked after the grace period)", async () => {
+    const { pool } = poolWith([
+      { id: "u1", brain_id: "brain_solo", org_id: null, purge_brain: "true" },
+    ]);
+    const purgeBrain = vi.fn();
+    const purged = await purgeExpiredSoftDeletedUsers(pool, report(), {
+      checkHolds: clear,
+      checkRetention: vi.fn().mockResolvedValue({
+        status: "retained",
+        cases: [],
+        receipts: 0,
+        until: null,
+        openCases: ["legal/cases/neu"],
+      }),
+      isFirmBrain: vi.fn().mockResolvedValue(false),
+      purgeBrain,
+    });
+    expect(purged).toBe(0);
+    expect(purgeBrain).not.toHaveBeenCalled();
+  });
+
   it("never purges a brain that is a firm's brain", async () => {
     const { pool } = poolWith([
       { id: "u1", brain_id: "brain_firm", org_id: null, purge_brain: "true" },

@@ -231,8 +231,8 @@ export default function PrivacySettingsPage() {
         </div>
         <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           {L(
-            "Ihr Konto wird sofort gesperrt und anonymisiert: Anmeldung, API-Schlüssel, MCP-, WebDAV- und Kalender-Zugänge enden, die Kanzleimitgliedschaft endet. Akten und Dokumente einer Kanzlei bleiben bei der Kanzlei. Arbeiten Sie allein (ohne Team), wird Ihr Datenbestand nach 30 Tagen endgültig gelöscht — das ist nur möglich, wenn keine Akte unter Legal Hold steht und keine abgeschlossene Akte oder kein Beleg mehr der gesetzlichen Aufbewahrungspflicht unterliegt (§ 12 RAO, § 132 BAO). Laden Sie vorher einen Export herunter.",
-            "Your account is locked and anonymised at once: sign-in, API keys, MCP, WebDAV and calendar access end, and your firm membership ends. A firm's matters and documents remain with the firm. If you work alone (no team), your data is permanently deleted after 30 days — only possible if no matter is under legal hold and no closed matter or receipt is still subject to statutory retention. Download an export first."
+            "Ihr Konto wird sofort gesperrt und anonymisiert: Anmeldung, API-Schlüssel, MCP-, WebDAV- und Kalender-Zugänge enden, die Kanzleimitgliedschaft endet. Akten und Dokumente einer Kanzlei bleiben bei der Kanzlei. Arbeiten Sie allein (ohne Team), wird Ihr Datenbestand nach 30 Tagen endgültig gelöscht — das ist nur möglich, wenn keine Akte mehr offen ist, keine unter Legal Hold steht und keine abgeschlossene Akte oder kein Beleg mehr der gesetzlichen Aufbewahrungspflicht unterliegt (§ 12 RAO, § 132 BAO). Laden Sie vorher einen Export herunter.",
+            "Your account is locked and anonymised at once: sign-in, API keys, MCP, WebDAV and calendar access end, and your firm membership ends. A firm's matters and documents remain with the firm. If you work alone (no team), your data is permanently deleted after 30 days — only possible if no matter is still open, none is under legal hold and no closed matter or receipt is still subject to statutory retention. Download an export first."
           )}
         </p>
         <div>
