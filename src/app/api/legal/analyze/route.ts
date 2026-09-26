@@ -15,6 +15,7 @@ import {
 } from "@/lib/legal/analysis-utils";
 import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
 import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
+import { normalizeAnalysisParties } from "@/lib/legal/case-suggestions";
 import { checkCaseContradictions } from "@/lib/legal/contradiction-check";
 
 import { createHash } from "node:crypto";
@@ -325,6 +326,11 @@ export const POST = createHandler(
         )
       );
     }
+
+    // One party shape for every consumer (analysis page, contradiction
+    // check, strategy): [{name, role}] — the engine reports names as strings
+    // and roles separately in `party_roles`.
+    parsed.parties = normalizeAnalysisParties(parsed);
 
     // ── 3. Grounding + Precedent search (parallel) ──────────────────────
     const rawCitations = Array.isArray(parsed.cited_statutes)

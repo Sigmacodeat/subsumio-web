@@ -1,6 +1,12 @@
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { encodeSlugPath } from "@/lib/utils";
 import { DEADLINE_CREATE_TIMEOUT, ENGINE_FETCH_TIMEOUT } from "@/lib/legal/analysis-utils";
+import {
+  buildCaseFieldSuggestions,
+  normalizeAnalysisParties,
+  resolvePartySides,
+  type NormalizedParty,
+} from "@/lib/legal/case-suggestions";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/legal/case-writeback");
@@ -10,7 +16,8 @@ interface EngineHeaders {
 }
 
 /**
- * Write extracted deadlines and parties back to the case frontmatter.
+ * Write extracted deadlines, parties and Aktendaten suggestions back to the
+ * case frontmatter.
  *
  * Reads the current case page, deduplicates against existing
  * `suggested_deadlines` / `suggested_parties` entries, and merges
@@ -32,11 +39,15 @@ export async function writeSuggestedDeadlinesAndParties(
     const extractedDeadlines = Array.isArray(parsed.deadlines)
       ? (parsed.deadlines as Array<Record<string, unknown>>)
       : [];
-    const extractedParties = Array.isArray(parsed.parties)
-      ? (parsed.parties as Array<Record<string, unknown>>)
-      : [];
+    // Strings (older engine) and objects (party_roles / inline analysis)
+    // alike — an object used to arrive here as an empty name.
+    const extractedParties = normalizeAnalysisParties(parsed);
+    const hasCaseFacts =
+      !!parsed.case_facts &&
+      typeof parsed.case_facts === "object" &&
+      Object.keys(parsed.case_facts as object).length > 0;
 
-    if (extractedDeadlines.length === 0 && extractedParties.length === 0) return;
+    if (extractedDeadlines.length === 0 && extractedParties.length === 0 && !hasCaseFacts) return;
 
     const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(caseSlug)}`, {
       headers: engineHeaders,
@@ -49,7 +60,18 @@ export async function writeSuggestedDeadlinesAndParties(
     const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
 
     const suggestedDeadlines = deduplicateDeadlines(extractedDeadlines, caseFm, documentSlug);
-    const suggestedParties = deduplicateParties(extractedParties, caseFm, documentSlug);
+    const suggestedParties = deduplicateParties(
+      resolvePartySides(extractedParties, caseFm),
+      caseFm,
+      documentSlug
+    );
+    // Gericht / Geschäftszahl / Streitwert: suggestions only — the matter's
+    // own fields change when the lawyer accepts one.
+    const suggestedCaseFields = buildCaseFieldSuggestions(
+      parsed.case_facts,
+      caseFm,
+      `KI-Analyse: ${documentSlug}`
+    );
 
     // High-urgency suggestions get an unreviewed legal_deadline page up front
     // (visible in the Fristenbuch with the "ungeprüft" badge). Its slug is
@@ -70,6 +92,12 @@ export async function writeSuggestedDeadlinesAndParties(
       mergedFrontmatter.suggested_parties = [
         ...(Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []),
         ...suggestedParties,
+      ];
+    }
+    if (suggestedCaseFields.length > 0) {
+      mergedFrontmatter.suggested_case_fields = [
+        ...(Array.isArray(caseFm.suggested_case_fields) ? caseFm.suggested_case_fields : []),
+        ...suggestedCaseFields,
       ];
     }
     if (Object.keys(mergedFrontmatter).length > 0) {
@@ -119,26 +147,27 @@ function deduplicateDeadlines(
 }
 
 function deduplicateParties(
-  extracted: Array<Record<string, unknown>>,
+  extracted: NormalizedParty[],
   caseFm: Record<string, unknown>,
   documentSlug: string
 ): Array<Record<string, unknown>> {
   const existingKeys = new Set(
     (Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []).map((sp) => {
       const e = sp as Record<string, unknown>;
-      return `${String(e.name ?? "")}|${String(e.role ?? "")}`;
+      return `${String(e.name ?? "").toLowerCase()}|${String(e.role ?? "")}`;
     })
   );
 
   return extracted
+    .filter((p) => p.name.trim().length > 0)
     .map((p) => ({
-      name: String(p.name ?? ""),
-      role: String(p.role ?? "sonstige"),
+      name: p.name,
+      role: p.role,
       source: `KI-Analyse: ${documentSlug}`,
       confirmed: false,
     }))
     .filter((sp) => {
-      const key = `${sp.name}|${sp.role}`;
+      const key = `${sp.name.toLowerCase()}|${sp.role}`;
       if (existingKeys.has(key)) return false;
       existingKeys.add(key);
       return true;
