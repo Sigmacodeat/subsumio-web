@@ -344,7 +344,7 @@ export function CorpusLawDetail({ sourceParam, lawKey }: { sourceParam: string; 
                 ? "Das amtliche Verzeichnis fehlt auf dem Server — angezeigt wird nur, was in der Datenbank liegt."
                 : `Kein amtliches Verzeichnis zum Abgleich — Datenbank-Stand vom ${formatDateTime(d.generated_at)}.`}
             {d.fetch.queued && !d.fetch.running
-              ? " Das Gesetz wird im nächsten erlaubten RIS-Fenster geladen und danach automatisch übernommen."
+              ? " Das Gesetz wird in einem der nächsten Pipeline-Zyklen geladen und danach automatisch übernommen."
               : ""}
             {d.fetch.supported && !canRefetch && d.missing.length === 0 && d.status === "complete"
               ? " Nachladen ist nicht nötig."

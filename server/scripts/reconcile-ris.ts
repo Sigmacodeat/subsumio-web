@@ -19,10 +19,9 @@
  *   bun scripts/reconcile-ris.ts            # measure and record
  *   bun scripts/reconcile-ris.ts --dry-run  # measure, print only
  *
- * RIS OGD rules: one connection, 2 s between requests, shared ris-lock.
- * This is a measurement of about 15 requests, not a mass download, so it
- * does not wait for the night window — it holds the RIS lock while it runs,
- * and waiting would block the daily delta sync for a whole working day.
+ * RIS OGD: one connection, 2 s between requests. About 15 requests, not a
+ * mass download. (ris-lock / time window are currently switched off — see
+ * ris-lock.ts; acquireRisLock returns at once.)
  */
 
 import { existsSync, readFileSync } from "fs";

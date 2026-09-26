@@ -6,8 +6,8 @@ import { csrfFetch } from "@/lib/csrf";
 
 /**
  * „Gesetz nachladen": merkt ein Bundesgesetz (Gesetzesnummer) in der
- * Nachlade-Warteschlange vor. Die Pipeline holt es im nächsten erlaubten
- * RIS-Fenster, der Import folgt automatisch.
+ * Nachlade-Warteschlange vor. Die Pipeline holt es in einem der nächsten
+ * Zyklen (ein Nachlade-Abruf nach dem anderen), der Import folgt automatisch.
  *
  * csrfFetch, nicht fetch: die Middleware verlangt für jeden POST auf /api/*
  * das CSRF-Token im Header — ein nacktes fetch wird mit 403 abgewiesen.
@@ -35,7 +35,7 @@ export function useLawRefetch() {
     onSuccess: (_data, gnr) => {
       addToast({
         title: "Zum Nachladen vorgemerkt",
-        description: `Gesetz ${gnr} wird im nächsten RIS-Fenster geladen und danach automatisch übernommen.`,
+        description: `Gesetz ${gnr} wird im nächsten Pipeline-Zyklus geladen und danach automatisch übernommen.`,
         type: "success",
       });
       void queryClient.invalidateQueries({ queryKey: ["corpus-law-coverage"] });

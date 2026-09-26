@@ -16,8 +16,8 @@ import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const UA = { "User-Agent": RIS_USER_AGENT };
-// RIS OGD: one connection per process; two processes in parallel are
-// allowed (RIS-IT mail 2026-09-22, enforced via ris-lock's 2 slots).
+// RIS OGD: one connection per process. The cross-process slot limit in
+// ris-lock.ts is currently switched off (see its header).
 const CONCURRENCY = 1;
 const PAGE_SIZE = 100;
 

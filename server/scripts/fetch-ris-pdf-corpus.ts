@@ -243,12 +243,11 @@ async function main() {
     `Korpus:    ${CORPUS} (${cfg.endpoint}${cfg.applikation ? "/" + cfg.applikation : ""})`
   );
   console.log(`Ziel:      ${outDir}`);
-  console.log(`Rate:      ${RIS_PAUSE_MS}ms + Fenster-Gate   ${DRY ? "[DRY-RUN]" : ""}`);
+  console.log(`Rate:      ${RIS_PAUSE_MS}ms   ${DRY ? "[DRY-RUN]" : ""}`);
 
   if (!NO_LOCK && !DRY) {
-    console.log("Warte auf RIS-Lock (RIS-OGD erlaubt nur eine aktive Verbindung)…");
+    // acquireRisLock ist derzeit ein No-op (siehe ris-lock.ts).
     await acquireRisLock();
-    console.log("RIS-Lock erhalten.");
   }
 
   let written = 0,

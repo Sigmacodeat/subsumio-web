@@ -29,6 +29,7 @@ import {
   countSections,
   contentHash,
   atomicWrite as atomicWriteUtil,
+  retryDelayMs,
 } from "./backfill-utils";
 
 const MAX_RETRIES = 3;
@@ -50,9 +51,9 @@ const TARGET_DIR = dirIdx >= 0 ? args[dirIdx + 1] : "law-corpus/at-judikatur-vfg
 // For non-RIS sources (EU), higher concurrency is safe.
 const isRIS =
   TARGET_DIR.includes("judikatur") || TARGET_DIR.startsWith("at-") || TARGET_DIR.includes("/at-");
-// RIS erlaubt max. 0,5 req/s pro Prozess (RIS-IT-Mail 2026-09-22) — eine
-// zweite Verbindung läuft über einen eigenen Prozess mit eigenem Slot
-// (ris-lock.ts), nicht über In-Prozess-Concurrency.
+// RIS: max. 0,5 req/s pro Prozess (RIS-IT-Mail 2026-09-22) — keine
+// In-Prozess-Concurrency. Die prozessübergreifende Slot-Begrenzung
+// (ris-lock.ts) ist derzeit abgeschaltet, siehe dort.
 const CONCURRENCY = isRIS ? 1 : concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 const RATE_LIMIT_MS = isRIS ? RIS_PAUSE_MS : 500; // RIS: 2s, EU: 500ms
@@ -77,7 +78,15 @@ async function fetchWithRetry(
       });
       if (res.status === 429 || res.status >= 500) {
         if (attempt < MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+          // After 429 at least the RIS pause / Retry-After (retryDelayMs).
+          const delay = retryDelayMs(
+            res.status,
+            attempt,
+            RETRY_BASE_MS,
+            res.headers.get("retry-after"),
+            0
+          );
+          await new Promise((r) => setTimeout(r, delay));
           continue;
         }
       }

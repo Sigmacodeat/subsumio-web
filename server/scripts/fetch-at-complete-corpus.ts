@@ -29,6 +29,7 @@ import { fileURLToPath } from "url";
 import { dump as yamlDump } from "js-yaml";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause } from "./ris-pace";
+import { retryDelayMs } from "./backfill-utils";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 
 // ── Config ─────────────────────────────────────────────────────────────
@@ -280,7 +281,14 @@ async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Pr
         ...proxyFetchOptions(),
       });
       if (res.status === 429 || res.status >= 500) {
-        const backoff = RETRY_BASE_MS * Math.pow(2, attempt);
+        // After 429 at least the RIS pause / Retry-After (retryDelayMs).
+        const backoff = retryDelayMs(
+          res.status,
+          attempt,
+          RETRY_BASE_MS,
+          res.headers.get("retry-after"),
+          0
+        );
         console.warn(
           `  ⚠ HTTP ${res.status}, retrying in ${backoff}ms (attempt ${attempt + 1}/${maxRetries})`
         );
@@ -1021,10 +1029,8 @@ async function fetchLandesrecht(): Promise<void> {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
-  // Global RIS lock — ensures no other RIS script runs simultaneously
-  console.log("🔒 Acquiring RIS lock...");
+  // RIS lock — currently a no-op (see ris-lock.ts): no cross-process limit.
   await acquireRisLock();
-  console.log("✅ RIS lock acquired.");
 
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║  Subsumio — Fetch Complete AT Legal Corpus               ║");

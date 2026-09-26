@@ -1,6 +1,13 @@
 /**
  * The pace RIS OGD allows (https://www.ris.bka.gv.at/UI/Ogd.aspx, updated
- * per RIS-IT mail 2026-09-22). One place, so no fetcher can drift faster:
+ * per RIS-IT mail 2026-09-22). One place, so no fetcher can drift faster.
+ *
+ * CURRENT STATE (operator decision 2026-09-23, agreed with RIS-IT): the
+ * slot semaphore (acquireRisLock) and the time window (waitForRisWindow)
+ * are switched off — there is NO cross-process limit on parallel RIS
+ * downloads and no window. What stays active is the per-process pause
+ * (risPause/risMassPause, 2 s, ris-pace.ts).
+ * The list below is the original RIS-IT arrangement the code was built for:
  *
  * - at most TWO parallel download processes (see ris-lock.ts, 2 slots)
  * - each process: at most 0.5 requests per second → 2 s between requests,
@@ -103,9 +110,8 @@ export function massDownloadAllowed(now: Date = new Date()): boolean {
  * hammering RIS or dying.
  */
 export async function waitForRisWindow(_label = "Massendownload"): Promise<void> {
-  // Fenster-Warte deaktiviert (Operator-Entscheid 2026-09-23): Downloads
-  // laufen rund um die Uhr, nicht nur 20–5 Uhr/Wochenende/Feiertage.
-  // Das war Teil der RIS-IT-Zusage — Reaktivierung: diesen early return
-  // entfernen.
+  // Fenster-Warte deaktiviert (Operator-Entscheid 2026-09-23, mit RIS-IT
+  // abgestimmt): Downloads laufen rund um die Uhr, nicht nur 20–5 Uhr/
+  // Wochenende/Feiertage. Reaktivierung: diesen early return entfernen.
   return;
 }

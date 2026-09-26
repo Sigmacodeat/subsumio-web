@@ -21,7 +21,7 @@
  *
  * RIS OGD Compliance:
  *   - 2 s Pause zwischen Requests (risPause, ris-pace.ts)
- *   - acquireRisLock für single-connection mode
+ *   - acquireRisLock (derzeit No-op, siehe ris-lock.ts)
  *   - User-Agent gesetzt
  *
  * Keine Deletion-Erkennung via REST API — dafür würde die SOAP

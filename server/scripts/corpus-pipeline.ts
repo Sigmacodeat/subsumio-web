@@ -1624,7 +1624,8 @@ function runKnownBadGenerationRepair(state: CycleState): void {
 // Der §-genaue Gesetzes-Abgleich im Ops-Dashboard (/api/admin/corpus-law-
 // coverage) liest _state/ris-inforce{,-landesrecht}.jsonl als Upstream-Soll.
 // Wöchentlicher Re-Crawl, damit Novellen/außer-Kraft-Tretungen im Soll
-// nicht veralten. Beide Crawler nehmen selbst den RIS-Lock + Pacing.
+// nicht veralten. Beide Crawler pausieren selbst (ris-pace.ts); der
+// RIS-Lock ist derzeit abgeschaltet (siehe ris-lock.ts).
 
 const INFORCE_REFRESH_INTERVAL_S = 7 * 86400;
 const INFORCE_RETRY_AFTER_FAILURE_S = 86400;

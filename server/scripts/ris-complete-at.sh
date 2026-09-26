@@ -1,8 +1,11 @@
 #!/bin/sh
-# Completes the Austrian RIS corpus, one RIS connection at a time.
+# Completes the Austrian RIS corpus; its steps run one after another (one RIS
+# connection from this queue).
 #
-# Runs inside the corpus-pipeline container (shares its RIS lock and the
-# /law-corpus mount). Every step is resumable and only adds what is missing
+# Runs inside the corpus-pipeline container (shares the /law-corpus mount).
+# NOT coordinated with the pipeline's own RIS jobs: the cross-process RIS lock
+# is switched off (operator decision 2026-09-23, agreed with RIS-IT — see
+# scripts/ris-lock.ts); only the per-process pause applies. Every step is resumable and only adds what is missing
 # or failed the validator, so the queue can be restarted at any time:
 #
 #   docker exec -d subsumio-engine-corpus-pipeline-1 \
@@ -25,8 +28,8 @@ STATE=/law-corpus/_state
 mkdir -p "$STATE"
 
 # One queue at a time. Starting it twice ran every step twice (2026-09-20:
-# three copies of the norm backfill at once), which wastes RIS requests and
-# fights over the RIS lock. mkdir is atomic; a lock of a dead run is cleared.
+# three copies of the norm backfill at once), which wastes RIS requests.
+# mkdir is atomic; a lock of a dead run is cleared.
 QUEUE_LOCK=/tmp/ris-complete-at.lock
 if ! mkdir "$QUEUE_LOCK" 2>/dev/null; then
   if [ -f "$QUEUE_LOCK/pid" ] && kill -0 "$(cat "$QUEUE_LOCK/pid")" 2>/dev/null; then

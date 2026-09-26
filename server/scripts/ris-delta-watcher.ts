@@ -17,10 +17,11 @@
  *   8. Alert bei Gap > Threshold oder Fehler
  *
  * RIS OGD Compliance:
- *   - acquireRisLock für single-connection mode
+ *   - acquireRisLock (derzeit No-op, siehe ris-lock.ts)
  *   - 2 s Pause zwischen Requests (RIS_PAUSE_MS, ris-pace.ts)
  *   - User-Agent gesetzt
- *   - Massendownload außerhalb Bürozeiten (Cron: 04:00 UTC = 06:00 CEST)
+ *   - Start: Cron-Trigger 02:30 UTC (server/deploy/netcup/crontab), die
+ *     Pipeline startet den Lauf im nächsten Zyklus
  *
  * Usage:
  *   bun scripts/ris-delta-watcher.ts --once              # ein Zyklus, alle Applikationen
@@ -557,9 +558,9 @@ async function syncApplikation(
     return { ...result, written: 0, failed: 0, skipped: 0 };
   }
 
-  // RIS Lock holen (serialisiert mit anderen RIS-Scripts)
+  // acquireRisLock ist derzeit ein No-op (siehe ris-lock.ts) — keine
+  // Serialisierung mit anderen RIS-Scripts.
   await acquireRisLock();
-  console.log(`  ✅ RIS-Lock erhalten`);
 
   try {
     const result = await fetchDelta(app, cursor);
@@ -717,7 +718,6 @@ async function syncApplikation(
     throw err;
   } finally {
     releaseRisLock();
-    console.log(`  🔓 RIS-Lock freigegeben`);
   }
 }
 
