@@ -111,6 +111,12 @@ describe("can (RBAC matrix)", () => {
     expect(can(user, "settings.write")).toBe(false);
   });
 
+  test("auth.sessions — every account manages its own sessions, client accounts too", () => {
+    for (const role of ["admin", "lawyer", "assistant", "client_viewer"] as const) {
+      expect(can(mockUser(role), "auth.sessions")).toBe(true);
+    }
+  });
+
   test("contract_draft — lawyer only (not assistant)", () => {
     expect(can(mockUser("lawyer"), "legal.contract_draft")).toBe(true);
     expect(can(mockUser("assistant"), "legal.contract_draft")).toBe(false);

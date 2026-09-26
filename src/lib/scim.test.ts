@@ -507,7 +507,7 @@ describe("workOSUserToScim", () => {
   });
 });
 
-describe("isWorkosDirectorySyncConfigured", () => {
+describe("isWorkosDirectorySyncConfigured (per firm)", () => {
   const origEnv = { ...process.env };
 
   afterEach(() => {
@@ -519,24 +519,42 @@ describe("isWorkosDirectorySyncConfigured", () => {
     return await import("./scim");
   }
 
-  test("returns false when no env vars set", async () => {
+  test("returns false when no env vars set and the firm has no directory", async () => {
     delete process.env.WORKOS_API_KEY;
     delete process.env.WORKOS_DIRECTORY_ID;
     const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
-    expect(fresh()).toBe(false);
+    expect(fresh({ id: "org-a" })).toBe(false);
   });
 
-  test("returns true when both env vars are set", async () => {
+  test("the firm's own directory counts", async () => {
+    process.env.WORKOS_API_KEY = "key";
+    delete process.env.WORKOS_DIRECTORY_ID;
+    const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
+    expect(fresh({ id: "org-a", workosDirectoryId: "directory_a" })).toBe(true);
+  });
+
+  test("the installation-wide directory counts only for the firm it is bound to", async () => {
     process.env.WORKOS_API_KEY = "key";
     process.env.WORKOS_DIRECTORY_ID = "dir-123";
+    process.env.WORKOS_DIRECTORY_ORG_ID = "org-a";
+    const { isWorkosDirectorySyncConfigured: fresh, workosDirectoryIdFor } = await freshImport();
+    expect(fresh({ id: "org-a" })).toBe(true);
+    expect(fresh({ id: "org-b" })).toBe(false);
+    expect(workosDirectoryIdFor({ id: "org-b" })).toBeNull();
+  });
+
+  test("an unbound installation-wide directory counts for nobody", async () => {
+    process.env.WORKOS_API_KEY = "key";
+    process.env.WORKOS_DIRECTORY_ID = "dir-123";
+    delete process.env.WORKOS_DIRECTORY_ORG_ID;
     const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
-    expect(fresh()).toBe(true);
+    expect(fresh({ id: "org-a" })).toBe(false);
   });
 
   test("returns false when only API key is set", async () => {
     process.env.WORKOS_API_KEY = "key";
     delete process.env.WORKOS_DIRECTORY_ID;
     const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
-    expect(fresh()).toBe(false);
+    expect(fresh({ id: "org-a" })).toBe(false);
   });
 });

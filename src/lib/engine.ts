@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { effectivePlan } from "@/lib/billing/trial";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
+import { isPersonalBrainOfOtherFirm } from "@/lib/auth/firm-brain";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
 import {
@@ -234,6 +235,8 @@ export async function engineContext(): Promise<EngineContext | null> {
   let billing = billingAccountFor(user, null);
   // The firm's "Nur EU" setting, enforced by the engine for every request.
   let modelPolicy: "any" | "eu_only" | undefined;
+  // Set once the brain comes from the person's firm (not their own brainId).
+  let viaFirm = false;
 
   if (isPlatformOperator(user)) {
     const active = await getActiveSupportSession(user.id);
@@ -258,6 +261,7 @@ export async function engineContext(): Promise<EngineContext | null> {
     if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
+      viaFirm = true;
       modelPolicy = org.modelPolicy;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
@@ -270,6 +274,12 @@ export async function engineContext(): Promise<EngineContext | null> {
         .update(user.id, { orgId: null })
         .catch(() => {});
     }
+  }
+
+  // A personal brain that is the shared brain of a firm this person no longer
+  // belongs to (a founder after leaving) is never opened — fail closed.
+  if (!supportSession && !viaFirm && (await isPersonalBrainOfOtherFirm(effectiveUser))) {
+    return null;
   }
 
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
@@ -334,16 +344,20 @@ export function addCallerIdentity(
  * engineContext() (minus support sessions, which never apply to a login).
  * A member's own `user.brainId` is the unused personal workspace from their
  * signup (org/join leaves it untouched), so firm-wide settings must never be
- * read from it. Returns null when the firm is suspended. Store errors throw.
+ * read from it. Returns null when the firm is suspended, or when a person
+ * without a firm holds a firm's brain as their own (see auth/firm-brain.ts).
+ * Store errors throw.
  */
 export async function firmBrainIdFor(
   user: Pick<User, "brainId" | "orgId">
 ): Promise<string | null> {
-  if (!user.orgId) return user.brainId;
-  const org = await getOrgStore().getById(user.orgId);
+  const org = user.orgId ? await getOrgStore().getById(user.orgId) : null;
   if (org?.suspendedAt) return null;
-  // `orgId` without a firm behind it: the person works alone (see engineContext).
-  return org ? org.brainId : user.brainId;
+  if (org) return org.brainId;
+  // No firm (or `orgId` without a firm behind it — see engineContext): the
+  // person works alone, unless their own brain is a firm's shared brain.
+  if (await isPersonalBrainOfOtherFirm({ brainId: user.brainId, orgId: null })) return null;
+  return user.brainId;
 }
 
 /**

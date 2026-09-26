@@ -44,8 +44,9 @@ export const POST = createPublicHandler(
     const { email, password } = body;
     const ip = clientIp(req.headers);
 
-    // Account lockout check: after 5 failed attempts, lock for 30 minutes
-    const lockStatus = await isAccountLocked(email);
+    // Lockout after 5 failed attempts for 30 minutes — per address AND
+    // network (see lib/auth/lockout.ts), for known and unknown addresses alike.
+    const lockStatus = await isAccountLocked(email, ip);
     if (lockStatus.locked) {
       return apiError(
         "account_locked",
@@ -60,13 +61,13 @@ export const POST = createPublicHandler(
     // Same error — and the same work — for an unknown address, an SSO-only
     // account (no local password) and a wrong password: no account
     // enumeration. The login page points SSO users to their provider button.
-    if (!user || !user.passwordHash) {
-      await burnPasswordCheck(password);
-      return apiError("invalid_credentials", "Invalid credentials", 401);
-    }
-
-    if (!(await verifyPassword(password, user.passwordHash))) {
-      const failStatus = await recordFailedLogin(email);
+    const passwordOk =
+      user && user.passwordHash
+        ? await verifyPassword(password, user.passwordHash)
+        : (await burnPasswordCheck(password), false);
+    if (!user || !passwordOk) {
+      // Failures count the same whether the address exists or not.
+      const failStatus = await recordFailedLogin(email, ip);
       if (failStatus.locked) {
         return apiError("account_locked", "Account locked due to too many failed attempts.", 429, {
           retryAfterSeconds: failStatus.retryAfterSeconds,
@@ -75,8 +76,8 @@ export const POST = createPublicHandler(
       return apiError("invalid_credentials", "Invalid credentials", 401);
     }
 
-    // Successful login — clear any lockout state
-    await clearLockout(email);
+    // Successful login — clear any lockout state of this network
+    await clearLockout(email, ip);
 
     // Checked only after the password, so the status never leaks to a guesser.
     if (await isAccountBlocked(user)) {

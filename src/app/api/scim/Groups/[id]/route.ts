@@ -7,9 +7,13 @@ import {
   SCIM_SCHEMA_PATCH_OP,
   type SCIMGroup,
   type SCIMPatchRequest,
-  type SCIMPatchOperation,
 } from "@/lib/scim";
-import { groups, getGroupForOrg, type StoredScimGroup } from "@/lib/scim-groups";
+import {
+  applyGroupPatch,
+  groups,
+  getGroupForOrg,
+  type StoredScimGroup,
+} from "@/lib/scim-groups";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -176,31 +180,3 @@ export const DELETE = createScimHandler(
     return new Response(null, { status: 204 });
   }
 );
-
-function applyGroupPatch(group: SCIMGroup, op: SCIMPatchOperation): void {
-  const path = op.path || "";
-  const lowerPath = path.toLowerCase();
-
-  switch (op.op.toLowerCase()) {
-    case "replace":
-    case "add":
-      if (lowerPath === "displayname") {
-        group.displayName = String(op.value);
-      } else if (lowerPath === "members" && Array.isArray(op.value)) {
-        const newMembers = op.value as SCIMGroup["members"];
-        if (op.op.toLowerCase() === "add") {
-          group.members = [...(group.members || []), ...(newMembers || [])];
-        } else {
-          group.members = newMembers;
-        }
-      }
-      break;
-    case "remove":
-      if (lowerPath === "members") {
-        group.members = [];
-      } else if (lowerPath === "displayname") {
-        // displayName is required, can't remove
-      }
-      break;
-  }
-}

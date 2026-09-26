@@ -147,7 +147,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "auth.verify": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.2fa": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.sso": ["admin", "lawyer", "assistant", "client_viewer"],
-  "auth.sessions": ["admin", "lawyer", "assistant"],
+  // Own sessions only (scoped in the routes): a client account must be able to
+  // sign out a lost device too.
+  "auth.sessions": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.email_change": ["admin", "lawyer", "assistant"],
   "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.write": ["admin", "lawyer", "assistant"],

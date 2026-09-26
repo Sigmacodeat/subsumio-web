@@ -40,7 +40,7 @@ const getOrgById = vi.fn(async (id: string) => (id === ORG.id ? { ...ORG } : nul
 
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ getById }),
-  getOrgStore: () => ({ getById: getOrgById }),
+  getOrgStore: () => ({ getById: getOrgById, getByBrainId: async () => null }),
 }));
 
 vi.mock("@/lib/env", () => ({

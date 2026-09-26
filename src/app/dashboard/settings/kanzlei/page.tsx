@@ -332,8 +332,8 @@ export default function KanzleiSettingsPage() {
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
               {L(
-                "Jedes Mitglied muss bei der nächsten Anmeldung einen Code aus einer Authenticator-App einrichten.",
-                "Every member must set up a code from an authenticator app at their next sign-in."
+                "Mitglieder ohne Zwei-Faktor-Anmeldung werden beim Speichern sofort abgemeldet und richten bei der nächsten Anmeldung einen Code aus einer Authenticator-App ein.",
+                "Members without two-factor sign-in are signed out as soon as you save and set up a code from an authenticator app at their next sign-in."
               )}
             </p>
           </div>

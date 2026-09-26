@@ -35,11 +35,14 @@ export default function JoinForm({
   token,
   org,
   email,
+  role = "",
   myEmail,
 }: {
   token: string;
   org: string;
   email: string;
+  /** Role the invite was issued for (verified by the server against the token). */
+  role?: string;
   myEmail: string;
 }) {
   const { p } = useMarket();
@@ -57,7 +60,7 @@ export default function JoinForm({
       const res = await csrfFetch("/api/org/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, org, email }),
+        body: JSON.stringify({ token, org, email, ...(role ? { role } : {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

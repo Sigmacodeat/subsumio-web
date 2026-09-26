@@ -19,15 +19,24 @@
  *   SCIM_SINGLE_TENANT_ORG_ID — org id every legacy SCIM_BEARER_TOKEN
  *                          request is scoped to.
  *   WORKOS_API_KEY       — existing WorkOS API key (reused from SSO)
- *   WORKOS_DIRECTORY_ID  — WorkOS directory ID for Directory Sync
+ *   Org.workosDirectoryId — the firm's own WorkOS directory (Directory Sync)
+ *   WORKOS_DIRECTORY_ID + WORKOS_DIRECTORY_ORG_ID — single-tenant fallback:
+ *                          the directory counts only for that one firm
  */
 
-import { type KanzleiRole, type User, getStore, buildNewUser } from "@/lib/auth/store";
+import {
+  type KanzleiRole,
+  type Org,
+  type User,
+  getStore,
+  getOrgStore,
+  buildNewUser,
+} from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
 import { auditBrainForOrg } from "@/lib/audit-user";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
-import { revokeAllSessions } from "@/lib/auth/session";
+import { revokeUserAccess } from "@/lib/auth/revoke-access";
 import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
@@ -72,7 +81,8 @@ export interface SCIMUser extends SCIMResource {
   name?: SCIMName;
   displayName?: string;
   emails: SCIMEmail[];
-  active: boolean;
+  /** Absent means "unchanged" on update and "active" on creation. */
+  active?: boolean;
   title?: string;
   userType?: string;
   department?: string;
@@ -305,7 +315,7 @@ export function scimToUserData(scimUser: SCIMUser): {
   email: string;
   name: string;
   externalId?: string;
-  active: boolean;
+  active: boolean | undefined;
 } {
   const email =
     scimUser.emails?.find((e) => e.primary)?.value ||
@@ -325,6 +335,22 @@ export function scimToUserData(scimUser: SCIMUser): {
     externalId: scimUser.externalId || scimUser.id,
     active: scimUser.active,
   };
+}
+
+/**
+ * SCIM booleans as IdPs send them: JSON `true`/`false`, or the strings
+ * "true"/"false" in any case (Microsoft Entra ID sends "True"/"False").
+ * Anything else is not a boolean — null, so the caller answers 400 instead of
+ * guessing (`Boolean("False")` would be `true`).
+ */
+export function parseScimBoolean(value: unknown): boolean | null {
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true") return true;
+    if (v === "false") return false;
+  }
+  return null;
 }
 
 // ── SCIM Provisioning Logic ───────────────────────────────────────────
@@ -373,7 +399,8 @@ export async function provisionOrUpdateUser(
     newUser.scimExternalId = externalId || null;
     newUser.ssoProvider = "scim";
     newUser.emailVerifiedAt = new Date().toISOString();
-    if (!active) {
+    // Only an explicit `active: false` creates a blocked account.
+    if (active === false) {
       newUser.deactivatedAt = new Date().toISOString();
     }
     user = await store.create(newUser);
@@ -396,10 +423,12 @@ export async function provisionOrUpdateUser(
     scimExternalId: externalId || user.scimExternalId,
   };
 
-  if (active && user.deactivatedAt) {
+  // `active` is applied only when the IdP states it; a request without it
+  // (partial PUT/POST) leaves the account as it is.
+  if (active === true && user.deactivatedAt) {
     // Reactivate
     patch.deactivatedAt = null;
-  } else if (!active && !user.deactivatedAt) {
+  } else if (active === false && !user.deactivatedAt) {
     // Deactivate (deprovision)
     patch.deactivatedAt = new Date().toISOString();
   }
@@ -408,7 +437,7 @@ export async function provisionOrUpdateUser(
   if (!user) throw new Error("Failed to update user during SCIM sync");
 
   if (patch.deactivatedAt) {
-    await revokeAllSessions(user.id);
+    await revokeUserAccess(user.id);
   }
 
   await logAudit("scim.user_updated", "user", {
@@ -433,7 +462,7 @@ export async function deprovisionUser(userId: string, orgId?: string): Promise<U
     deactivatedAt: new Date().toISOString(),
   });
 
-  await revokeAllSessions(userId);
+  await revokeUserAccess(userId);
 
   await logAudit("scim.user_deprovisioned", "user", {
     brainId: await auditBrainForOrg(orgId ?? user.orgId),
@@ -483,8 +512,37 @@ export function parseScimFilter(filter: string): (user: SCIMUser) => boolean {
 
 const WORKOS_API_BASE = "https://api.workos.com";
 
-export function isWorkosDirectorySyncConfigured(): boolean {
-  return Boolean(process.env.WORKOS_API_KEY && process.env.WORKOS_DIRECTORY_ID);
+/**
+ * The WorkOS directory this firm may pull, or null. Each firm has its own
+ * (`Org.workosDirectoryId`); the installation-wide WORKOS_DIRECTORY_ID only
+ * counts for the one firm named in WORKOS_DIRECTORY_ORG_ID (single-tenant
+ * setups) — never for every firm of the installation.
+ */
+export function workosDirectoryIdFor(
+  org: Pick<Org, "id" | "workosDirectoryId"> | null | undefined
+): string | null {
+  if (!org) return null;
+  const own = org.workosDirectoryId?.trim();
+  if (own) return own;
+  const envDir = process.env.WORKOS_DIRECTORY_ID?.trim();
+  const envOrg = process.env.WORKOS_DIRECTORY_ORG_ID?.trim();
+  if (envDir && envOrg && envOrg === org.id) return envDir;
+  return null;
+}
+
+/** Directory Sync is usable for this firm: API key set and a directory of its own. */
+export function isWorkosDirectorySyncConfigured(
+  org: Pick<Org, "id" | "workosDirectoryId"> | null | undefined
+): boolean {
+  return Boolean(process.env.WORKOS_API_KEY && workosDirectoryIdFor(org));
+}
+
+/** Thrown before anything is read or written when a firm has no directory of its own. */
+export class DirectoryNotConfiguredError extends Error {
+  constructor() {
+    super("directory_not_configured");
+    this.name = "DirectoryNotConfiguredError";
+  }
 }
 
 export interface WorkOSDirectoryUser {
@@ -510,8 +568,8 @@ export interface WorkOSDirectoryGroup {
  * List directory users from WorkOS.
  * Paginates through all results.
  */
-export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]> {
-  if (!isWorkosDirectorySyncConfigured()) {
+export async function listWorkOSDirectoryUsers(directoryId: string): Promise<WorkOSDirectoryUser[]> {
+  if (!process.env.WORKOS_API_KEY || !directoryId) {
     throw new Error("WorkOS Directory Sync not configured");
   }
 
@@ -521,7 +579,7 @@ export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]>
 
   do {
     const url = new URL(
-      `${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/users`
+      `${WORKOS_API_BASE}/directory_sync/${encodeURIComponent(directoryId)}/users`
     );
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
@@ -552,8 +610,8 @@ export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]>
 /**
  * List directory groups from WorkOS.
  */
-export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[]> {
-  if (!isWorkosDirectorySyncConfigured()) {
+export async function listWorkOSDirectoryGroups(directoryId: string): Promise<WorkOSDirectoryGroup[]> {
+  if (!process.env.WORKOS_API_KEY || !directoryId) {
     throw new Error("WorkOS Directory Sync not configured");
   }
 
@@ -563,7 +621,7 @@ export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[
 
   do {
     const url = new URL(
-      `${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/groups`
+      `${WORKOS_API_BASE}/directory_sync/${encodeURIComponent(directoryId)}/groups`
     );
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
@@ -650,6 +708,10 @@ export interface SyncResult {
  * This is the "manual sync" triggered from the dashboard.
  */
 export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
+  // Only the firm's own directory — resolved before anything is touched.
+  const directoryId = workosDirectoryIdFor(await getOrgStore().getById(orgId));
+  if (!directoryId || !process.env.WORKOS_API_KEY) throw new DirectoryNotConfiguredError();
+
   const startedAt = new Date().toISOString();
   const errors: string[] = [];
   let usersCreated = 0;
@@ -658,7 +720,7 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
   let groupsProcessed = 0;
 
   try {
-    const dirUsers = await listWorkOSDirectoryUsers();
+    const dirUsers = await listWorkOSDirectoryUsers(directoryId);
     const store = getStore();
 
     // Get all existing SCIM users (this org only) to detect deprovisioning
@@ -695,7 +757,7 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
 
     // Sync groups (just count for now — groups are informational)
     try {
-      const dirGroups = await listWorkOSDirectoryGroups();
+      const dirGroups = await listWorkOSDirectoryGroups(directoryId);
       groupsProcessed = dirGroups.length;
       await logAudit("scim.group_synced", "group", {
         brainId: await auditBrainForOrg(orgId),
@@ -731,16 +793,8 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
 
 // ── Sync Status Store ─────────────────────────────────────────────────
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-
-import { env } from "@/lib/env";
-
 import { logger } from "@/lib/logger";
 const log = logger("lib/scim");
-
-const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
-const SYNC_STATUS_FILE = path.join(DATA_DIR, "scim-sync-status.json");
 
 export interface SyncStatus {
   lastSyncAt: string | null;
@@ -752,44 +806,48 @@ export interface SyncStatus {
   deactivatedScimUsers: number;
 }
 
+/** A SCIM bearer token is scoped to this firm (SCIM_BEARER_TOKENS or the single-tenant pair). */
+export function isScimTokenConfiguredFor(orgId: string): boolean {
+  for (const tokenOrg of parseScimTokenMap().values()) if (tokenOrg === orgId) return true;
+  return Boolean(
+    process.env.SCIM_BEARER_TOKEN && process.env.SCIM_SINGLE_TENANT_ORG_ID?.trim() === orgId
+  );
+}
+
+const MAX_STORED_SYNC_ERRORS = 20;
+
 export async function getSyncStatus(orgId?: string | null): Promise<SyncStatus> {
   const store = getStore();
-  // Counts are per firm. Without an org there is nothing to report — never fall
-  // back to the whole installation.
+  // Everything here is per firm. Without an org there is nothing to report —
+  // never fall back to the whole installation or another firm's sync.
   const allUsers = orgId ? await store.listByOrg(orgId) : [];
+  const org = orgId ? await getOrgStore().getById(orgId) : null;
   const scimUsers = allUsers.filter((u) => u.scimExternalId || u.ssoProvider === "scim");
   const activeScimUsers = scimUsers.filter((u) => !u.deactivatedAt);
   const deactivatedScimUsers = scimUsers.filter((u) => u.deactivatedAt);
 
-  let lastSyncAt: string | null = null;
-  let lastSyncResult: SyncResult | null = null;
-
-  try {
-    const raw = await fs.readFile(SYNC_STATUS_FILE, "utf8");
-    const data = JSON.parse(raw);
-    lastSyncAt = data.lastSyncAt || null;
-    lastSyncResult = data.lastSyncResult || null;
-  } catch {}
+  const last = org?.scimLastSync ?? null;
 
   return {
-    lastSyncAt,
-    lastSyncResult,
-    configured: Boolean(process.env.SCIM_BEARER_TOKEN),
-    workosDirectorySyncConfigured: isWorkosDirectorySyncConfigured(),
+    lastSyncAt: last?.at ?? null,
+    lastSyncResult: (last?.result as SyncResult | undefined) ?? null,
+    configured: orgId ? isScimTokenConfiguredFor(orgId) : false,
+    workosDirectorySyncConfigured: isWorkosDirectorySyncConfigured(org),
     totalScimUsers: scimUsers.length,
     activeScimUsers: activeScimUsers.length,
     deactivatedScimUsers: deactivatedScimUsers.length,
   };
 }
 
-export async function saveSyncStatus(result: SyncResult): Promise<void> {
+/** Stores the result on the firm's own record (never a shared file). */
+export async function saveSyncStatus(orgId: string, result: SyncResult): Promise<void> {
   try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(
-      SYNC_STATUS_FILE,
-      JSON.stringify({ lastSyncAt: result.completedAt, lastSyncResult: result }, null, 2),
-      "utf8"
-    );
+    await getOrgStore().update(orgId, {
+      scimLastSync: {
+        at: result.completedAt,
+        result: { ...result, errors: result.errors.slice(0, MAX_STORED_SYNC_ERRORS) },
+      },
+    });
   } catch (err) {
     log.error(
       "[scim] failed to save sync status:",

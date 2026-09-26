@@ -14,6 +14,8 @@ export interface SseConnection {
    */
   canSeePage?: (slug: string) => Promise<boolean>;
   send: (event: string, data: unknown) => void;
+  /** Ends the stream (the HTTP response); set by the SSE route. */
+  close?: () => void;
 }
 
 const sseConnections = new Set<SseConnection>();
@@ -24,6 +26,27 @@ export function addSseConnection(conn: SseConnection): void {
 
 export function removeSseConnection(conn: SseConnection): void {
   sseConnections.delete(conn);
+}
+
+/**
+ * Ends every open stream of one person in this process — called when they
+ * are removed from the firm, deactivated or get another role, so no event
+ * reaches them after the change. Streams on other instances end at their
+ * next periodic check (see the SSE route). Returns how many were closed.
+ */
+export function closeSseConnectionsForUser(userId: string): number {
+  let closed = 0;
+  for (const conn of [...sseConnections]) {
+    if (conn.userId !== userId) continue;
+    sseConnections.delete(conn);
+    try {
+      conn.close?.();
+    } catch {
+      // already closed
+    }
+    closed++;
+  }
+  return closed;
 }
 
 const FIRM_STAFF_ROLES = new Set(["admin", "lawyer", "assistant"]);

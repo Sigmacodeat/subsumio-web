@@ -58,6 +58,7 @@ vi.mock("@/lib/auth/store", () => ({
         ? { id, brainId: "firm-s", ownerId: "x", suspendedAt: "2026-01-01T00:00:00Z" }
         : null
     ),
+    getByBrainId: vi.fn(async () => null),
   }),
 }));
 

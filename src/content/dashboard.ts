@@ -8536,6 +8536,22 @@ export const D = {
     de: "Nur der Team-Inhaber kann das.",
     en: "Only the team owner can do that.",
   },
+  "team.error_owner_must_stay_admin": {
+    de: "Die Inhaberin oder der Inhaber bleibt Admin. Wechseln Sie zuerst den Inhaber.",
+    en: "The owner stays an admin. Transfer ownership first.",
+  },
+  "team.error_last_admin": {
+    de: "Die Kanzlei braucht mindestens einen aktiven Admin.",
+    en: "The firm needs at least one active admin.",
+  },
+  "team.error_not_in_your_org": {
+    de: "Diese Person gehört nicht zu Ihrer Kanzlei.",
+    en: "This person is not a member of your firm.",
+  },
+  "team.role_change_owner_only": {
+    de: "Rollen kann nur die Inhaberin oder der Inhaber der Kanzlei ändern.",
+    en: "Only the firm owner can change roles.",
+  },
   "team.loading": { de: "Team wird geladen…", en: "Loading team…" },
   "team.empty": {
     de: "Noch keine Mitglieder — laden Sie Kolleginnen und Kollegen ein.",
@@ -8594,16 +8610,16 @@ export const D = {
   "scim.breadcrumb_settings": { de: "Einstellungen", en: "Settings" },
   "scim.breadcrumb_scim": { de: "SCIM", en: "SCIM" },
   "scim.configured": {
-    de: "WORKOS_API_KEY und WORKOS_DIRECTORY_ID konfiguriert",
-    en: "WORKOS_API_KEY and WORKOS_DIRECTORY_ID configured",
+    de: "Verzeichnis dieser Kanzlei verbunden",
+    en: "This firm's directory is connected",
   },
   "scim.not_configured": {
-    de: "Setzen Sie WORKOS_API_KEY und WORKOS_DIRECTORY_ID für die automatische Synchronisation",
-    en: "Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID for automatic synchronization",
+    de: "Für diese Kanzlei ist noch kein Verzeichnis verbunden — bitte beim Subsumio-Support einrichten lassen",
+    en: "No directory is connected for this firm yet — ask Subsumio support to set it up",
   },
   "scim.feature_auto_update": {
-    de: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
-    en: "Auto-update: changes to names, email or roles are synchronized.",
+    de: "Auto-Update: Namensänderungen werden übernommen; E-Mail und Rolle werden in Subsumio gepflegt.",
+    en: "Auto-update: name changes are applied; email and role are managed in Subsumio.",
   },
   "scim.feature_auto_deprovision": {
     de: "Auto-Deprovisioning: Gelöschte Benutzer werden deaktiviert (nicht gelöscht) — für Audit-Trail.",
@@ -8650,8 +8666,8 @@ export const D = {
     en: "Auto-provisioning: new users in IdP are automatically created in Subsumio.",
   },
   "scim.feature_group_sync": {
-    de: "Gruppen-Sync: AD/LDAP-Gruppen werden als SCIM-Gruppen abgebildet.",
-    en: "Group sync: AD/LDAP groups are mapped as SCIM groups.",
+    de: "Gruppen: werden vom Verzeichnis angenommen, vergeben aber keine Rechte und werden nicht dauerhaft gespeichert.",
+    en: "Groups: accepted from the directory, but grant no rights and are not stored permanently.",
   },
   "casesdetail.error_save": {
     de: "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar.",

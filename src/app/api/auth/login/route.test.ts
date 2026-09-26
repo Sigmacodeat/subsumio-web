@@ -58,7 +58,7 @@ vi.mock("@/lib/auth/tokens", () => ({
 }));
 vi.mock("@/lib/auth/lockout", () => ({
   isAccountLocked: vi.fn(async () => ({ locked: false, retryAfterSeconds: 0 })),
-  recordFailedLogin: vi.fn(),
+  recordFailedLogin: vi.fn(async () => ({ locked: false, retryAfterSeconds: 0 })),
   clearLockout: vi.fn(async () => undefined),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));

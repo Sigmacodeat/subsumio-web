@@ -2,10 +2,11 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { isAccountBlocked } from "@/lib/auth/account-status";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
-import { getStore, getOrgStore } from "@/lib/auth/store";
-import { engineHeadersForUserId } from "@/lib/engine";
+import { getStore } from "@/lib/auth/store";
+import { engineHeadersForUserId, firmBrainIdFor } from "@/lib/engine";
 import { createPageVisibilityChecker } from "@/lib/realtime-access";
 import { addSseConnection, removeSseConnection, type SseConnection } from "@/lib/realtime-bus";
+import { SSE_RECHECK_INTERVAL_MS, sseStreamStillAllowed } from "@/lib/realtime-entitlement";
 import { isStaffRole } from "@/lib/team-visibility";
 
 export const maxDuration = 300;
@@ -33,11 +34,12 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Resolve brainId (org brain if team member)
-  let brainId = user.brainId;
-  if (user.orgId) {
-    const org = await getOrgStore().getById(user.orgId);
-    if (org) brainId = org.brainId;
+  // Resolve brainId (org brain if team member) — same resolution as every
+  // other entry point, including "a firm's brain is never someone's personal
+  // brain once they left" (auth/firm-brain.ts).
+  const brainId = await firmBrainIdFor(user).catch(() => null);
+  if (!brainId) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
   // Firm events are for firm staff only; each stream checks page visibility
@@ -81,16 +83,29 @@ export async function GET(req: NextRequest) {
       const conn: SseConnection = { brainId, userId: user.id, role: user.role, canSeePage, send };
       if (staff) addSseConnection(conn);
 
+      // The stream is only as good as the account behind it (a self-hosted
+      // server keeps it open forever): on any instance, removal, deactivation
+      // or a role change ends it within a minute ...
+      const recheck = setInterval(() => {
+        if (closed) return;
+        void sseStreamStillAllowed({ userId: user.id, brainId, role: user.role }).then((ok) => {
+          if (!ok) cleanup();
+        });
+      }, SSE_RECHECK_INTERVAL_MS);
+
       // Cleanup on abort
       const cleanup = () => {
         if (closed) return;
         closed = true;
         clearInterval(heartbeat);
+        clearInterval(recheck);
         removeSseConnection(conn);
         try {
           controller.close();
         } catch {}
       };
+      // ... and in this process at once (closeSseConnectionsForUser).
+      conn.close = () => cleanup();
 
       req.signal.addEventListener("abort", cleanup);
 

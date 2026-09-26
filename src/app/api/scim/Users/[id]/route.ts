@@ -7,6 +7,7 @@ import {
   userToScim,
   provisionOrUpdateUser,
   deprovisionUser,
+  parseScimBoolean,
   SCIM_SCHEMA_USER,
   SCIM_SCHEMA_PATCH_OP,
   type SCIMUser,
@@ -173,7 +174,8 @@ export const PATCH = createScimHandler(
     const currentScim = userToScim(existing, BASE_URL);
 
     for (const op of patchReq.Operations || []) {
-      applyPatchOperation(currentScim, op);
+      const invalid = applyPatchOperation(currentScim, op);
+      if (invalid) return scimError(400, invalid, "invalidValue");
     }
 
     // Now provision/update with the patched data
@@ -221,25 +223,53 @@ export const DELETE = createScimHandler(
 );
 
 // ── Patch Operation Helpers ────────────────────────────────────────────
+//
+// Each helper returns an error text for a value it cannot apply (answered
+// with 400 invalidValue) and null otherwise. Unknown attributes are ignored.
 
-function applyPatchOperation(user: SCIMUser, op: SCIMPatchOperation): void {
+function applyPatchOperation(user: SCIMUser, op: SCIMPatchOperation): string | null {
   const path = op.path || "";
   const value = op.value;
 
   switch (op.op.toLowerCase()) {
     case "replace":
-      applyReplace(user, path, value);
-      break;
+      return applyReplace(user, path, value);
     case "add":
-      applyAdd(user, path, value);
-      break;
+      return applyAdd(user, path, value);
     case "remove":
       applyRemove(user, path);
-      break;
+      return null;
   }
+  return null;
 }
 
-function applyReplace(user: SCIMUser, path: string, value: unknown): void {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * RFC 7644 §3.5.2.3: without `path`, `value` is an object whose attributes
+ * are each replaced (Okta deactivates with `{"value":{"active":false}}`).
+ * A nested `name` object sets its sub-attributes.
+ */
+function applyReplaceAll(user: SCIMUser, value: unknown): string | null {
+  if (!isPlainObject(value)) return "PATCH without path needs an object value";
+  for (const [key, attr] of Object.entries(value)) {
+    if (key.toLowerCase() === "name" && isPlainObject(attr)) {
+      for (const [sub, subValue] of Object.entries(attr)) {
+        const invalid = applyReplace(user, `name.${sub}`, subValue);
+        if (invalid) return invalid;
+      }
+      continue;
+    }
+    const invalid = applyReplace(user, key, attr);
+    if (invalid) return invalid;
+  }
+  return null;
+}
+
+function applyReplace(user: SCIMUser, path: string, value: unknown): string | null {
+  if (path === "") return applyReplaceAll(user, value);
   const lowerPath = path.toLowerCase();
 
   if (lowerPath === "username") {
@@ -247,7 +277,9 @@ function applyReplace(user: SCIMUser, path: string, value: unknown): void {
   } else if (lowerPath === "displayname") {
     user.displayName = String(value);
   } else if (lowerPath === "active") {
-    user.active = Boolean(value);
+    const active = parseScimBoolean(value);
+    if (active === null) return "active must be true or false";
+    user.active = active;
   } else if (lowerPath === "name.familyname") {
     user.name = { ...user.name, familyName: String(value) };
   } else if (lowerPath === "name.givenname") {
@@ -263,19 +295,20 @@ function applyReplace(user: SCIMUser, path: string, value: unknown): void {
   } else if (lowerPath === "usertype") {
     user.userType = String(value);
   }
+  return null;
 }
 
-function applyAdd(user: SCIMUser, path: string, value: unknown): void {
+function applyAdd(user: SCIMUser, path: string, value: unknown): string | null {
   // For "add", we merge rather than replace
   const lowerPath = path.toLowerCase();
 
   if (lowerPath === "emails" && Array.isArray(value)) {
     const newEmails = value as SCIMUser["emails"];
     user.emails = [...(user.emails || []), ...newEmails];
-  } else {
-    // For single-value attributes, add behaves like replace
-    applyReplace(user, path, value);
+    return null;
   }
+  // For single-value attributes (and a path-less object), add behaves like replace
+  return applyReplace(user, path, value);
 }
 
 function applyRemove(user: SCIMUser, path: string): void {

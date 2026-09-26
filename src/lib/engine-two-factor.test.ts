@@ -59,6 +59,7 @@ vi.mock("@/lib/auth/store", () => ({
       if (orgStoreFails) throw new Error("db down");
       return orgs[id] ?? null;
     },
+    getByBrainId: async () => null,
   }),
 }));
 

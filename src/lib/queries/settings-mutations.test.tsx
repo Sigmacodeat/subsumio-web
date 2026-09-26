@@ -18,6 +18,7 @@ import {
   useInviteMemberOrg,
   useLeaveOrg,
   useRemoveMemberOrg,
+  useUpdateTeamRole,
 } from "./settings";
 import { useScimSync } from "./scim";
 
@@ -68,6 +69,18 @@ describe("team mutations", () => {
     await expect(create.current.mutateAsync("Kanzlei")).rejects.toBeInstanceOf(ApiMutationError);
     await expect(remove.current.mutateAsync("u1")).rejects.toBeInstanceOf(ApiMutationError);
     await expect(leave.current.mutateAsync()).rejects.toBeInstanceOf(ApiMutationError);
+  });
+
+  it("role change rejects when the server refuses (409 last admin, 403 owner only)", async () => {
+    failWith(409, "last_admin_cannot_change_role", "Letzter Admin");
+    const { result } = renderHook(() => useUpdateTeamRole(), { wrapper });
+    await expect(result.current.mutateAsync({ userId: "u1", role: "lawyer" })).rejects.toMatchObject(
+      { code: "last_admin_cannot_change_role", status: 409 }
+    );
+    failWith(403, "owner_only", "Nur der Eigentümer");
+    await expect(
+      result.current.mutateAsync({ userId: "u1", role: "client_viewer" })
+    ).rejects.toMatchObject({ code: "owner_only" });
   });
 
   it("invite resolves with the body on success", async () => {

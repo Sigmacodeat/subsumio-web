@@ -4,6 +4,7 @@
 
 import { getOrgStore, getStore, type KanzleiRole, type User } from "@/lib/auth/store";
 import { revokeAllSessions } from "@/lib/auth/session";
+import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
 import { listTenantMembers, type Tenant } from "@/lib/tenants";
 
 export type TenantAdminError =
@@ -13,6 +14,7 @@ export type TenantAdminError =
   | "member_deactivated"
   | "last_admin"
   | "owner_must_stay_admin"
+  | "owner_must_stay_active"
   | "solo_practice"
   | "deletion_scheduled"
   | "data_deleted";
@@ -30,6 +32,8 @@ const MESSAGES: Record<TenantAdminError, string> = {
   member_deactivated: "Dieses Konto ist deaktiviert.",
   last_admin: "Die Kanzlei braucht mindestens einen aktiven Admin.",
   owner_must_stay_admin: "Der Inhaber muss Admin bleiben. Wechseln Sie zuerst den Inhaber.",
+  owner_must_stay_active:
+    "Der Inhaber kann nicht einzeln gesperrt werden. Wechseln Sie zuerst den Inhaber oder sperren Sie die ganze Kanzlei.",
   solo_practice: "Eine Einzelkanzlei hat nur ein Konto.",
   deletion_scheduled:
     "Für diese Kanzlei ist die Löschung der Daten angesetzt. Brechen Sie zuerst die Löschung ab (cancel_deletion).",
@@ -88,6 +92,7 @@ export async function suspendTenant(
   for (const member of active) {
     await store.update(member.id, { deactivatedAt: now });
     await revokeAllSessions(member.id);
+    closeSseConnectionsForUser(member.id);
   }
   return { signedOut: active.length };
 }
@@ -156,7 +161,26 @@ export async function setMemberRole(
   const updated = await getStore().update(member.id, { role });
   // The session carries the role; a fresh sign-in picks up the new one.
   await revokeAllSessions(member.id);
+  closeSseConnectionsForUser(member.id);
   return updated ?? member;
+}
+
+/**
+ * Deactivates one member of a firm. The owner is never deactivated alone
+ * (hand the firm over first, or suspend the whole firm), and the firm keeps
+ * at least one active admin. A solo practice has only its owner — use
+ * suspendTenant for it. Does not end the member's access by itself; callers
+ * follow with revokeUserAccess.
+ */
+export async function assertMemberMayBeDeactivated(tenant: Tenant, userId: string): Promise<void> {
+  if (tenant.kind === "solo") return;
+  const { member, members } = await memberOf(tenant, userId);
+  if (member.deactivatedAt) return;
+  if (member.id === tenant.ownerId) throw new TenantAdminFailure("owner_must_stay_active");
+  if (member.role === "admin") {
+    const others = activeAdmins(members).filter((m) => m.id !== member.id);
+    if (others.length === 0) throw new TenantAdminFailure("last_admin");
+  }
 }
 
 export async function transferOwnership(tenant: Tenant, userId: string): Promise<void> {

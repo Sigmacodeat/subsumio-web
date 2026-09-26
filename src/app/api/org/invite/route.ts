@@ -4,9 +4,11 @@ import { signActionToken, bindFragment, INVITE_TOKEN_TTL_SECONDS } from "@/lib/a
 import { limitsFor } from "@/lib/plans";
 import { sendMail, siteUrl } from "@/lib/mail";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { DEFAULT_INVITE_ROLE, INVITE_ROLES, inviteBinding } from "@/lib/invite-roles";
 
 const inviteSchema = z.object({
   email: z.string().email("invalid_email"),
+  role: z.enum(INVITE_ROLES, { message: "invalid_role" }).default(DEFAULT_INVITE_ROLE),
 });
 
 export const POST = createHandler(
@@ -17,7 +19,7 @@ export const POST = createHandler(
     audit: (ctx, body) => ({
       action: "team.invite" as const,
       entityType: "org",
-      details: { email: body.email, invited_by: ctx.user.email },
+      details: { email: body.email, role: body.role, invited_by: ctx.user.email },
     }),
   },
   async (ctx, body, _query, _req) => {
@@ -45,11 +47,18 @@ export const POST = createHandler(
       return apiError("already_member", "Bereits Mitglied", 409);
     }
 
+    // The role is part of the signed binding: the link cannot be edited into
+    // a different role.
+    const role = body.role;
     const token = await signActionToken(
-      { uid: ctx.user.id, purpose: "invite", bind: await bindFragment(`${org.id}:${email}`) },
+      {
+        uid: ctx.user.id,
+        purpose: "invite",
+        bind: await bindFragment(inviteBinding(org.id, email, role)),
+      },
       INVITE_TOKEN_TTL_SECONDS
     );
-    const joinUrl = `${siteUrl()}/join?token=${encodeURIComponent(token)}&org=${encodeURIComponent(org.id)}&email=${encodeURIComponent(email)}`;
+    const joinUrl = `${siteUrl()}/join?token=${encodeURIComponent(token)}&org=${encodeURIComponent(org.id)}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
 
     const de = ctx.user.locale === "de";
     const result = await sendMail({

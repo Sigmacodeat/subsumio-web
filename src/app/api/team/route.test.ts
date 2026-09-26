@@ -12,7 +12,8 @@ vi.mock("@/lib/engine", async () => ({
   requireEngineContext: vi.fn(),
 }));
 const list = vi.fn();
-vi.mock("@/lib/auth/store", () => ({ getStore: () => ({ list }) }));
+const listByOrg = vi.fn();
+vi.mock("@/lib/auth/store", () => ({ getStore: () => ({ list, listByOrg }) }));
 
 import { GET } from "./route";
 import { requireEngineContext } from "@/lib/engine";
@@ -44,6 +45,13 @@ describe("GET /api/team", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     list.mockResolvedValue(users);
+    listByOrg.mockImplementation(async (orgId: string) => users.filter((u) => u.orgId === orgId));
+  });
+
+  it("reads only the caller's firm, never the whole installation", async () => {
+    await membersFor("a1");
+    expect(listByOrg).toHaveBeenCalledWith("o1");
+    expect(list).not.toHaveBeenCalled();
   });
 
   it("a client account sees only itself — never other clients", async () => {

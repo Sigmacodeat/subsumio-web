@@ -184,6 +184,14 @@ export interface Org {
    */
   workosOrganizationId?: string | null;
   /**
+   * The WorkOS Directory Sync directory (directory_…) of THIS firm. Set by the
+   * platform operator when the firm's directory is connected. Without it the
+   * firm cannot pull a directory (see syncFromWorkOS in src/lib/scim.ts).
+   */
+  workosDirectoryId?: string | null;
+  /** Result of this firm's last manual directory sync (SCIM settings page). */
+  scimLastSync?: { at: string; result: unknown } | null;
+  /**
    * Per-email cutoff for org invites: when a member is removed (or leaves),
    * invites minted before this timestamp must not be usable to (re-)join —
    * invite tokens are stateless, so removal alone would not stop a still-
@@ -217,6 +225,8 @@ export function withInviteRevoked(
 
 export interface OrgStore {
   getById(id: string): Promise<Org | null>;
+  /** The firm whose shared brain this is, if any. */
+  getByBrainId(brainId: string): Promise<Org | null>;
   create(org: Org): Promise<Org>;
   update(id: string, patch: Partial<Org>): Promise<Org | null>;
   delete(id: string): Promise<void>;
@@ -390,6 +400,9 @@ class FileOrgStore implements OrgStore {
 
   async getById(id: string) {
     return (await this.load()).find((o) => o.id === id) ?? null;
+  }
+  async getByBrainId(brainId: string) {
+    return (await this.load()).find((o) => o.brainId === brainId) ?? null;
   }
   async create(org: Org) {
     const orgs = await this.load();
@@ -674,6 +687,15 @@ class PostgresOrgStore implements OrgStore {
     const { rows } = await pool.query<{ data: Org }>(
       "SELECT data FROM subsumio_orgs WHERE id = $1",
       [id]
+    );
+    return rows[0] ? rowToOrg(rows[0]) : null;
+  }
+
+  async getByBrainId(brainId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: Org }>(
+      "SELECT data FROM subsumio_orgs WHERE data->>'brainId' = $1 ORDER BY created_at ASC LIMIT 1",
+      [brainId]
     );
     return rows[0] ? rowToOrg(rows[0]) : null;
   }

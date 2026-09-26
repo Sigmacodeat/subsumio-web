@@ -72,4 +72,30 @@ describe("team page", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
+
+  it("invites with the chosen role; the least privileged staff role is preselected", async () => {
+    orgState.current = {
+      isLoading: false,
+      isError: false,
+      data: {
+        org: { id: "o1", name: "Kanzlei Beispiel", ownerId: "u1" },
+        members: [{ id: "u1", name: "Inhaberin", email: "i@example.at", isOwner: true }],
+        isOwner: true,
+      },
+    };
+    inviteMutateAsync.mockReset();
+    inviteMutateAsync.mockResolvedValue({ ok: true });
+    render(<TeamPage />);
+    const roleSelect = screen.getByLabelText("Rolle im Team") as HTMLSelectElement;
+    expect(roleSelect.value).toBe("assistant");
+    expect([...roleSelect.options].map((o) => o.value)).not.toContain("admin");
+    fireEvent.change(roleSelect, { target: { value: "client_viewer" } });
+    fireEvent.change(screen.getByPlaceholderText("kollegin@kanzlei.at"), {
+      target: { value: "m@example.at" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Einladen" }));
+    await waitFor(() =>
+      expect(inviteMutateAsync).toHaveBeenCalledWith({ email: "m@example.at", role: "client_viewer" })
+    );
+  });
 });

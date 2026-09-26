@@ -385,12 +385,12 @@ export default function ScimSettingsPage() {
               {[
                 {
                   icon: UserPlus,
-                  text: "Neue Mitarbeiter im Verzeichnis erhalten automatisch einen Zugang zu Subsumio.",
+                  text: "Neue Mitarbeiter im Verzeichnis erhalten automatisch einen Zugang zu Subsumio – zunächst mit der Rolle Sekretariat. Weitere Rechte vergibt die Inhaberin oder der Inhaber unter Team.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
                   icon: UserCheck,
-                  text: "Änderungen an Name, E-Mail-Adresse oder Rolle werden übernommen.",
+                  text: "Namensänderungen werden übernommen. E-Mail-Adresse und Rolle werden nicht aus dem Verzeichnis übernommen – diese ändern Sie in Subsumio.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
@@ -400,7 +400,7 @@ export default function ScimSettingsPage() {
                 },
                 {
                   icon: FolderTree,
-                  text: "Gruppen aus dem Verzeichnis werden als Gruppen in Subsumio übernommen.",
+                  text: "Gruppen aus dem Verzeichnis werden angenommen, vergeben in Subsumio aber keine Rechte und werden nicht dauerhaft gespeichert.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
               ].map((item, i) => {
