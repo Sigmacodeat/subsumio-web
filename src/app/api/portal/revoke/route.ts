@@ -14,6 +14,7 @@ import {
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { withKeyedLock } from "@/lib/keyed-lock";
+import { removePortalSubscriptionsFor } from "@/lib/portal-push";
 
 function notStored(): Response {
   return apiError(
@@ -76,6 +77,15 @@ async function persistLinks(
   return Boolean(res?.ok);
 }
 
+/** Best effort: the revocation itself is already stored and blocks access. */
+async function stopNotifications(brainId: string, caseSlug: string, tokenHash?: string) {
+  try {
+    await removePortalSubscriptionsFor(brainId, caseSlug, tokenHash);
+  } catch {
+    // Remaining subscriptions are skipped at send time (revocation check).
+  }
+}
+
 export const POST = createHandler(
   {
     action: "brain.write",
@@ -114,6 +124,9 @@ export const POST = createHandler(
             return marked ? persistLinks(ctx.headers, caseSlug, marked) : true;
           }
         );
+      }
+      if (payload?.case_slug) {
+        await stopNotifications(ctx.brainId, payload.case_slug, portalTokenHash(token));
       }
       return apiSuccess(registryUpdated ? { revoked: 1 } : { revoked: 1, registry_updated: false });
     }
@@ -156,6 +169,10 @@ export const POST = createHandler(
         body.all ? new Date().toISOString() : undefined
       );
       if (!persisted && body.all) return notStored();
+
+      // Revoked links get no further push notifications.
+      if (body.all) await stopNotifications(ctx.brainId, caseSlug);
+      else for (const t of targets) await stopNotifications(ctx.brainId, caseSlug, t.token_hash);
 
       return apiSuccess(
         persisted

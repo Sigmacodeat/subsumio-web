@@ -8,6 +8,7 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
+  checkSignedDocumentWrite,
   guardProtectedPageWrite,
   isInvoicePage,
   guardSecondCheckWrite,
@@ -141,6 +142,16 @@ export const PATCH = createHandler(
           : undefined,
     });
     if (invoiceRejection) return rejectionResponse(invoiceRejection);
+    // A signed document keeps the text its signature was bound to.
+    const signedRejection = checkSignedDocumentWrite(currentPage, {
+      mode: "merge",
+      content: body.content,
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (signedRejection) return rejectionResponse(signedRejection);
     const invoiceRouteRejection = checkInvoiceGenericWrite(currentPage, {
       type: body.type,
       frontmatter:

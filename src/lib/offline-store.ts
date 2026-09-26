@@ -112,7 +112,8 @@ export interface QueuedMutation {
   id: string;
   /** Person+firm that queued it; the replay only runs the current owner's. */
   owner?: string;
-  type: "createPage" | "updatePage" | "deletePage";
+  /** `createTimeEntry`: a POST /api/time body (mobile time tracking offline). */
+  type: "createPage" | "updatePage" | "deletePage" | "createTimeEntry";
   payload: Record<string, unknown>;
   createdAt: string;
   retries?: number;

@@ -40,6 +40,8 @@ interface SignatureDialogProps {
    * externally provided document.
    */
   documentContent?: string;
+  /** Portal: hash of the shown text; the server refuses the signature if it changed. */
+  documentHash?: string;
   /** Pre-filled signer name (e.g. from case/client data). */
   signerName?: string;
   /** Pre-filled signer email. */
@@ -64,6 +66,7 @@ export function SignatureDialog({
   documentType,
   documentTitle,
   documentContent,
+  documentHash,
   signerName = "",
   signerEmail,
   legalLevel = "simple",
@@ -110,7 +113,11 @@ export function SignatureDialog({
         ? await fetch("/api/portal/sign", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...payload, token: portalToken }),
+            body: JSON.stringify({
+              ...payload,
+              token: portalToken,
+              ...(documentHash ? { document_hash: documentHash } : {}),
+            }),
           })
         : await csrfFetch("/api/signature/capture", {
             method: "POST",

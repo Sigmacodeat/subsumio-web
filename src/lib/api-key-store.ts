@@ -23,6 +23,10 @@ export interface StoredApiKey {
   createdBy: string;
   /** userId that owns this key */
   ownerId: string;
+  /** "addin": short-lived Office add-in token (see src/lib/addin-token.ts). */
+  kind?: "api" | "addin";
+  /** After this instant the key no longer authenticates (add-in tokens). */
+  expiresAt?: string;
 }
 
 export interface ApiKeyStore {
@@ -155,6 +159,13 @@ class PgApiKeyStore implements ApiKeyStore {
         )
       `
         )
+        .then(() =>
+          this.pool().query(
+            `ALTER TABLE subsumio_api_keys
+               ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'api',
+               ADD COLUMN IF NOT EXISTS expires_at timestamptz`
+          )
+        )
         .then(() => undefined);
     }
     return this.ready;
@@ -174,6 +185,8 @@ class PgApiKeyStore implements ApiKeyStore {
       createdAt: String(r.created_at),
       lastUsedAt: r.last_used_at ? String(r.last_used_at) : undefined,
       createdBy: String(r.created_by ?? ""),
+      kind: r.kind === "addin" ? "addin" : "api",
+      expiresAt: r.expires_at ? new Date(String(r.expires_at)).toISOString() : undefined,
     };
   }
 
@@ -196,8 +209,8 @@ class PgApiKeyStore implements ApiKeyStore {
     await this.ensureSchema();
     await this.pool().query(
       `INSERT INTO subsumio_api_keys
-         (id, owner_id, name, prefix, secret_hash, scopes, active, created_at, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+         (id, owner_id, name, prefix, secret_hash, scopes, active, created_at, created_by, kind, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         key.id,
         key.ownerId,
@@ -208,6 +221,8 @@ class PgApiKeyStore implements ApiKeyStore {
         key.active,
         key.createdAt,
         key.createdBy,
+        key.kind ?? "api",
+        key.expiresAt ?? null,
       ]
     );
     return key;

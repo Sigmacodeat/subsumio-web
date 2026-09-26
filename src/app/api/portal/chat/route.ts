@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { portalReleasedSummary, portalVisibleDocumentSlugs } from "@/lib/portal-view";
+import { portalReleasedSummary } from "@/lib/portal-view";
+import {
+  buildPortalDocumentContext,
+  maskDataMarkers,
+  portalChatDocumentSlugs,
+  type PortalChatDocument,
+} from "@/lib/portal-chat-context";
 import type { DocumentEntry } from "@/lib/legal-types";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
@@ -23,12 +29,7 @@ const chatSchema = z.object({
   message: z.string().min(1, "message_required").max(4_000, "message_too_long"),
 });
 
-interface CaseDocument {
-  slug: string;
-  title: string;
-  content: string;
-  type: string;
-}
+type CaseDocument = PortalChatDocument;
 
 const REFUSAL_RESPONSES = [
   "Ich kann ausschließlich Auskünfte zu Ihrer eigenen Akte geben. Fragen zu anderen Akten oder internen Notizen kann ich nicht beantworten.",
@@ -80,17 +81,20 @@ function buildGroundedPrompt(
   caseData: { title: string; caseNumber: string; facts: string; legalArea: string },
   documents: CaseDocument[]
 ): string {
-  const docContext = documents
-    .slice(0, 10)
-    .map((d) => `--- ${d.title} (${d.type}) ---\n${d.content.slice(0, 2000)}`)
-    .join("\n\n");
+  // Newest first, the question's matches ahead, within a character budget;
+  // document text can never close the data block.
+  const docContext = buildPortalDocumentContext(documents, message);
 
   return [
     "<daten>",
-    `Akte: ${caseData.title} (${caseData.caseNumber})`,
-    `Rechtsgebiet: ${caseData.legalArea}`,
+    maskDataMarkers(`Akte: ${caseData.title} (${caseData.caseNumber})`),
+    maskDataMarkers(`Rechtsgebiet: ${caseData.legalArea}`),
     ...(caseData.facts
-      ? [`Sachverhalt (für den Mandanten freigegeben): ${caseData.facts.slice(0, 3000)}`]
+      ? [
+          maskDataMarkers(
+            `Sachverhalt (für den Mandanten freigegeben): ${caseData.facts.slice(0, 3000)}`
+          ),
+        ]
       : []),
     "",
     "Freigegebene Dokumente:",
@@ -147,11 +151,9 @@ export const POST = createPublicHandler(
 
     // The assistant may only ground on documents released to the client. Read
     // them one by one: the engine's page list carries no content.
-    const released = [
-      ...portalVisibleDocumentSlugs((fm.documents as DocumentEntry[] | undefined) ?? undefined),
-    ]
-      .filter((slug) => !slug.startsWith("/") && !/^https?:/i.test(slug))
-      .slice(0, 10);
+    // Newest first — a freshly delivered judgment must not fall out behind
+    // older documents.
+    const released = portalChatDocumentSlugs(fm.documents as DocumentEntry[] | undefined);
     const documents: CaseDocument[] = (
       await Promise.all(
         released.map(async (slug) => {

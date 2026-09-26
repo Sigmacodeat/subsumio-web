@@ -39,6 +39,8 @@ export const GET = createHandler(
       createdAt: k.createdAt,
       lastUsedAt: k.lastUsedAt ?? null,
       createdBy: k.createdBy,
+      kind: k.kind ?? "api",
+      expiresAt: k.expiresAt ?? null,
     }));
     return Response.json({ keys });
   }

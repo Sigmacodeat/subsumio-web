@@ -1,10 +1,10 @@
 "use client";
 
-import { Download, CheckCircle2, Copy, KeyRound } from "lucide-react";
-import Link from "next/link";
+import { Download, CheckCircle2, Copy } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { AddinTokenPanel } from "@/components/dashboard/addin-token-panel";
 import { useLang } from "@/lib/use-lang";
 
 const MANIFEST_URL = "https://subsum.io/word-addin/manifest.xml";
@@ -142,14 +142,11 @@ export default function WordAddinPage() {
           </Step>
           <Step n={3} title="Mit Ihrem Konto verbinden">
             <p>
-              Erstellen Sie einen Zugangsschlüssel und fügen Sie ihn im Add-in unter „Verbinden“
-              ein. Der Schlüssel wird nur einmal angezeigt.
+              Erstellen Sie einen Add-in-Zugang und fügen Sie ihn im Word- oder Outlook-Add-in unter
+              „Verbinden“ ein. Er gilt 24 Stunden, erlaubt nur Lesen und Schreiben (keine
+              Verwaltung) und lässt sich hier jederzeit widerrufen.
             </p>
-            <Button variant="primary" size="sm" className="mt-2 gap-2 whitespace-nowrap" asChild>
-              <Link href="/dashboard/api-keys">
-                <KeyRound size={13} aria-hidden /> Zugangsschlüssel erstellen
-              </Link>
-            </Button>
+            <AddinTokenPanel />
           </Step>
         </ol>
       </section>

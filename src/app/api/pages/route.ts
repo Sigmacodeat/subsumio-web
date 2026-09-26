@@ -21,6 +21,7 @@ import {
   hasLeadingFrontmatter,
   checkCreateOverExisting,
   checkInvoiceWrite,
+  checkSignedDocumentWrite,
   guardProtectedPageWrite,
   guardSecondCheckWrite,
   isKanzleiSettingsTarget,
@@ -310,6 +311,13 @@ export const POST = createHandler(
         frontmatter: body.frontmatter,
       });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+      // A signed document keeps the text its signature was bound to.
+      const signedRejection = checkSignedDocumentWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        content: body.content,
+        frontmatter: body.frontmatter,
+      });
+      if (signedRejection) return rejectionResponse(signedRejection);
       const invoiceRouteRejection = checkInvoiceGenericWrite(current, {
         type: body.type,
         frontmatter: body.frontmatter,

@@ -1,20 +1,7 @@
-import { z } from "zod";
-import { uiLanguageSchema } from "@/lib/api-validation";
 import { createEngineProxy } from "@/lib/api-handler";
+import { contractDraftSchema } from "@/lib/legal/contract-draft-schema";
 
 export const maxDuration = 300;
-
-const contractDraftSchema = z.object({
-  type: z.string().min(1, "type_required").max(100),
-  jurisdiction: z.enum(["at", "de", "ch"]),
-  parties: z.object({
-    a: z.string().min(1).max(300),
-    b: z.string().min(1).max(300),
-  }),
-  instructions: z.string().max(5000).optional().default(""),
-  template_slug: z.string().max(200).optional(),
-  language: uiLanguageSchema.default("de"),
-});
 
 export const POST = createEngineProxy({
   action: "legal.contract_draft",

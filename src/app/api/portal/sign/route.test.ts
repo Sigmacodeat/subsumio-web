@@ -103,6 +103,47 @@ describe("POST /api/portal/sign", () => {
     });
   });
 
+  it("binds the signature to the signed text (sha256 of the content)", async () => {
+    const { createHash } = await import("node:crypto");
+    const content = "Vollmacht für Maria Mandantin …";
+    const hash = createHash("sha256").update(content, "utf8").digest("hex");
+    const calls = mockEngine({
+      "cases/mueller": openCase,
+      "legal/signatures/vollmacht-1": {
+        body: {
+          type: "power_of_attorney",
+          content,
+          frontmatter: { case_slug: "cases/mueller", status: "sent" },
+        },
+      },
+    });
+    const res = await POST(request({ ...baseBody, document_hash: hash }));
+    expect(res.status).toBe(200);
+    const writes = calls.filter((c) => c.init?.method === "POST");
+    const stored = JSON.parse(String(writes[0].init?.body));
+    expect(stored.frontmatter.document_hash).toBe(hash);
+    expect(stored.frontmatter.document_hash_algorithm).toBe("sha256");
+    const merge = JSON.parse(String(writes[1].init?.body));
+    expect(merge.frontmatter.signed_document_hash).toBe(hash);
+  });
+
+  it("refuses the signature when the text changed after the client opened it", async () => {
+    const calls = mockEngine({
+      "cases/mueller": openCase,
+      "legal/signatures/vollmacht-1": {
+        body: {
+          type: "power_of_attorney",
+          content: "geänderte Fassung",
+          frontmatter: { case_slug: "cases/mueller", status: "sent" },
+        },
+      },
+    });
+    const res = await POST(request({ ...baseBody, document_hash: "a".repeat(64) }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("document_changed");
+    expect(calls.some((c) => c.init?.method === "POST")).toBe(false);
+  });
+
   it("a doubled sign request stores exactly one signature (create-only, stable id)", async () => {
     const created = new Set<string>();
     const calls: Call[] = [];
@@ -167,6 +208,27 @@ describe("POST /api/portal/sign", () => {
     });
     const res = await POST(request(baseBody));
     expect(res.status).toBe(409);
+  });
+
+  it.each([
+    ["draft", {}],
+    ["missing status", { status: undefined }],
+    ["external tracking row", { status: "sent", provider: "external" }],
+    ["DocuSign envelope", { status: "sent", provider: "docusign" }],
+  ])("refuses a %s (only sent requests are signable)", async (_label, extra) => {
+    const calls = mockEngine({
+      "cases/mueller": openCase,
+      "legal/signatures/vollmacht-1": {
+        body: {
+          type: "signature_request",
+          frontmatter: { case_slug: "cases/mueller", status: "draft", ...extra },
+        },
+      },
+    });
+    const res = await POST(request(baseBody));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("not_signable");
+    expect(calls.some((c) => (c.init?.method ?? "GET") !== "GET")).toBe(false);
   });
 
   it("refuses a request past its expiry date", async () => {

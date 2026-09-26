@@ -6,6 +6,8 @@
    2. Brain-Query: Frage an das Brain stellen (via /api/think)
 */
 
+import { createThinkStreamParser } from "./think-stream";
+
 interface CaseSuggestion {
   slug: string;
   caseNumber?: string;
@@ -90,7 +92,11 @@ function hideAiNotice(noticeId: string) {
  * /api/legal/ground (non-blocking). A failed check says so instead of passing
  * the answer off as verified.
  */
-async function showAiNoticeAndGround(noticeId: string, answer: string): Promise<void> {
+async function showAiNoticeAndGround(
+  noticeId: string,
+  answer: string,
+  serverGrounding?: GroundingResult
+): Promise<void> {
   const el = document.getElementById(noticeId);
   if (!el) return;
   el.innerHTML = `<div style="font-weight:700;color:#e0b341">${AI_BADGE_LABEL}</div><div style="color:#e0b341">${AI_NOTICE}</div>`;
@@ -99,8 +105,14 @@ async function showAiNoticeAndGround(noticeId: string, answer: string): Promise<
   if (text.length < 10) return;
   const slot = document.createElement("div");
   slot.style.cssText = "margin-top:4px;color:#9a9ab8";
-  slot.textContent = "Fundstellen werden geprüft…";
   el.appendChild(slot);
+  // The server already checked this answer's citations — show that result
+  // instead of checking the same text a second time.
+  if (serverGrounding) {
+    slot.innerHTML = groundingHtml(serverGrounding);
+    return;
+  }
+  slot.textContent = "Fundstellen werden geprüft…";
   try {
     const res = await fetch(`${API_BASE}/api/legal/ground`, {
       method: "POST",
@@ -123,12 +135,17 @@ async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
   token = input.value.trim();
   if (!token) {
-    showStatus("Bitte API-Key eingeben (sk_live_...).", "err");
+    showStatus("Bitte Add-in-Zugang eingeben (sk_addin_…).", "err");
     return;
   }
 
-  if (!token.startsWith("sk_live_")) {
-    showStatus("API-Key muss mit 'sk_live_' beginnen.", "err");
+  // Only short-lived add-in tokens (24 h, revocable) — never a permanent API key.
+  if (!token.startsWith("sk_addin_")) {
+    token = "";
+    showStatus(
+      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“). Erstellen unter Subsumio → Word-Add-in → „Add-in-Zugang erstellen“.",
+      "err"
+    );
     return;
   }
 
@@ -187,18 +204,22 @@ async function loadCurrentMail() {
   try {
     const item = Office.context.mailbox.item;
 
+    // The add-in works on received mails (read mode). In compose mode the
+    // fields are async objects, not values — refuse instead of importing
+    // "[object Object]".
+    if (typeof item.subject !== "string" && item.subject !== undefined) {
+      showStatus("Subsumio ist für empfangene E-Mails verfügbar, nicht beim Verfassen.", "err");
+      return;
+    }
     const subject = item.subject || "(Kein Betreff)";
-    const from = item.from
-      ? item.from.emailAddress
-      : item.sender
-        ? item.sender.emailAddress
-        : "unbekannt@absender.de";
+    // No invented sender: without one the import is blocked (see importMail).
+    const from: string = item.from?.emailAddress || item.sender?.emailAddress || "";
     const date = item.dateTimeCreated ? new Date(item.dateTimeCreated).toISOString() : undefined;
 
     currentMail = { subject, from, body: "", date };
 
     document.getElementById("mailSubject")!.textContent = subject;
-    document.getElementById("mailFrom")!.textContent = from;
+    document.getElementById("mailFrom")!.textContent = from || "(Absender unbekannt)";
 
     // WP-4.21: Anhänge der geöffneten Mail auflisten (Read-Mode liefert
     // Metadaten; Inhalt erst bei Bedarf via getAttachmentContentAsync).
@@ -239,6 +260,13 @@ async function loadCurrentMail() {
 async function importMail() {
   if (!currentMail) {
     showStatus("Keine E-Mail geladen.", "err");
+    return;
+  }
+  if (!currentMail.from) {
+    showStatus(
+      "Der Absender dieser E-Mail ist nicht bekannt — Import nicht möglich. Bitte die E-Mail manuell ablegen.",
+      "err"
+    );
     return;
   }
 
@@ -299,6 +327,10 @@ function renderCaseSuggestions(suggestions: CaseSuggestion[]) {
 
 async function importToSpecificCase(slug: string) {
   if (!currentMail) return;
+  if (!currentMail.from) {
+    showStatus("Der Absender dieser E-Mail ist nicht bekannt — Import nicht möglich.", "err");
+    return;
+  }
 
   showStatus("Importiere in ausgewählte Akte…", "info");
 
@@ -359,34 +391,38 @@ async function runQuery() {
 
     const contentType = res.headers.get("Content-Type") || "";
     if (contentType.includes("text/event-stream") && res.body) {
+      // Engine stream: {chunk} text, {final_answer} replaces the draft after
+      // verification, {grounding} is the server's citation check, [DONE] ends.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let result = "";
-
-      while (true) {
+      const parser = createThinkStreamParser();
+      while (!parser.state.done) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              if (parsed.content || parsed.text || parsed.delta) {
-                result += parsed.content || parsed.text || parsed.delta || "";
-                resultEl.textContent = result;
-              }
-            } catch {
-              result += line.slice(6);
-              resultEl.textContent = result;
-            }
-          }
+        if (parser.push(decoder.decode(value, { stream: true }))) {
+          resultEl.textContent = parser.state.answer;
         }
       }
-      if (!result) resultEl.textContent = "(Leere Antwort)";
-      else void showAiNoticeAndGround("queryNotice", result);
+      if (parser.end()) resultEl.textContent = parser.state.answer;
+      await reader.cancel().catch(() => {});
+      const { answer, grounding, error } = parser.state;
+      if (error && !answer) throw new Error(error);
+      if (!answer) resultEl.textContent = "(Leere Antwort)";
+      else {
+        resultEl.textContent = answer;
+        void showAiNoticeAndGround("queryNotice", answer, grounding);
+      }
     } else {
-      const text = await res.text();
+      // JSON answer ({answer} or {data:{answer}}) — never show the raw JSON.
+      const raw = await res.text();
+      let text = raw;
+      try {
+        const j = JSON.parse(raw) as { answer?: unknown; data?: { answer?: unknown } };
+        const a = j.answer ?? j.data?.answer;
+        if (typeof a === "string") text = a;
+      } catch {
+        /* plain text */
+      }
       resultEl.textContent = text;
       if (text.trim()) void showAiNoticeAndGround("queryNotice", text);
     }

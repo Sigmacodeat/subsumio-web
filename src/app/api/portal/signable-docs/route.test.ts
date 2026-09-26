@@ -20,12 +20,13 @@ function pageOfType(
   type: "signature_request" | "power_of_attorney",
   slug: string,
   caseSlug: string,
-  status = "sent"
+  status = "sent",
+  extra: Record<string, unknown> = {}
 ) {
   return {
     slug,
     title: slug,
-    frontmatter: { case_slug: caseSlug, status },
+    frontmatter: { case_slug: caseSlug, status, ...extra } as Record<string, unknown>,
   };
 }
 
@@ -121,6 +122,34 @@ describe("GET /api/portal/signable-docs", () => {
     const json = await res.json();
 
     expect(json.data.docs.map((d: { slug: string }) => d.slug)).toEqual(["docs/open"]);
+  });
+
+  it("offers only sent requests: drafts and tracking rows for external documents stay hidden", async () => {
+    mockEngine({
+      signature_request: [
+        pageOfType("signature_request", "docs/draft", CASE_SLUG, "draft"),
+        pageOfType("signature_request", "docs/nostatus", CASE_SLUG, ""),
+        pageOfType("signature_request", "docs/external", CASE_SLUG, "sent", {
+          provider: "external",
+        }),
+        pageOfType("signature_request", "docs/docusign", CASE_SLUG, "sent", {
+          provider: "docusign",
+        }),
+        pageOfType("signature_request", "docs/sent", CASE_SLUG, "sent", { provider: "template" }),
+      ],
+      power_of_attorney: [
+        pageOfType("power_of_attorney", "poa/draft", CASE_SLUG, "draft"),
+        pageOfType("power_of_attorney", "poa/sent", CASE_SLUG, "sent"),
+      ],
+    });
+
+    const res = await GET(request());
+    const json = await res.json();
+
+    expect(json.data.docs.map((d: { slug: string }) => d.slug).sort()).toEqual([
+      "docs/sent",
+      "poa/sent",
+    ]);
   });
 
   it("fetches the document text so the client can read it before signing", async () => {

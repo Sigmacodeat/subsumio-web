@@ -170,9 +170,25 @@ describe("portal document requests", () => {
     expect(json).not.toContain("+4366012345");
     expect(json).not.toContain("documents/y");
     expect(out.frontmatter.items).toEqual([
-      { key: "a", label: "Vertrag", required: true, received: true },
-      { key: "b", label: "Rechnung", required: false, received: false },
+      { key: "a", label: "Vertrag", required: true, received: true, in_review: false },
+      { key: "b", label: "Rechnung", required: false, received: false, in_review: false },
     ]);
+  });
+
+  it("an upload awaiting the firm's check shows as in review, not received", () => {
+    const out = toPortalRequest({
+      ...base,
+      frontmatter: {
+        ...base.frontmatter,
+        items: [
+          { key: "c", label: "Pass", required: true, submitted_document_slug: "documents/z" },
+        ],
+      },
+    });
+    expect(out.frontmatter.items).toEqual([
+      { key: "c", label: "Pass", required: true, received: false, in_review: true },
+    ]);
+    expect(JSON.stringify(out)).not.toContain("documents/z");
   });
 
   it("drops the author of a questionnaire", () => {

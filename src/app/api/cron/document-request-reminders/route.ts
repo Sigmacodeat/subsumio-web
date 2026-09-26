@@ -23,6 +23,8 @@ interface DocumentRequestItem {
   label: string;
   required: boolean;
   received_document_slug?: string;
+  /** Client upload waiting for the firm's check — not reminded again. */
+  submitted_document_slug?: string;
 }
 
 interface DocumentRequestFm {
@@ -81,7 +83,11 @@ export const GET = createCronHandler(async (_req) => {
       }
       const { daysSinceSent } = decision;
       const reminderCount = fm.reminder_count ?? 0;
-      const openItems = (fm.items ?? []).filter((item) => !item.received_document_slug);
+      // Items the client already uploaded (awaiting the firm's check) are
+      // not requested again.
+      const openItems = (fm.items ?? []).filter(
+        (item) => !item.received_document_slug && !item.submitted_document_slug
+      );
 
       try {
         const headers = engineHeadersForBrain(brainId);

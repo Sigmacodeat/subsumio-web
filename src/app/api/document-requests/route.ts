@@ -31,6 +31,8 @@ const itemSchema = z.union([
     label: z.string().min(1).max(160).optional(),
     required: z.boolean().optional(),
     received_document_slug: z.string().optional(),
+    submitted_document_slug: z.string().optional(),
+    submitted_at: z.string().optional(),
   }),
 ]);
 
@@ -199,6 +201,8 @@ export const PATCH = createHandler(
               label: item.label || item.key || "Unterlage",
               required: item.required ?? true,
               received_document_slug: item.received_document_slug,
+              submitted_document_slug: item.submitted_document_slug,
+              submitted_at: item.submitted_at,
             }
       ),
       message_draft: body.message_draft,

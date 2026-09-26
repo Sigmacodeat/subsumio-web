@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { issuePortalLink } from "@/lib/portal-link-client";
+import { isAwaitingReview, reviewSubmittedItem } from "@/lib/document-request-review";
 import { cn, encodeSlugPath, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -74,6 +75,8 @@ interface DocumentRequestRecord {
       label: string;
       required: boolean;
       received_document_slug?: string;
+      submitted_document_slug?: string;
+      submitted_at?: string;
     }>;
     /** The request offers the client portal (link issued fresh on copy). */
     portal_link?: boolean;
@@ -249,6 +252,22 @@ export default function DocumentRequestsPage() {
       status,
       ...(status === "sent" ? { sent_at: new Date().toISOString() } : {}),
     });
+  }
+
+  // A client upload only counts as received after the firm checked it.
+  async function reviewItem(
+    item: DocumentRequestRecord,
+    key: string,
+    decision: "accept" | "reject"
+  ) {
+    const next = reviewSubmittedItem(
+      item.frontmatter.items,
+      key,
+      decision,
+      item.frontmatter.status
+    );
+    if (!next) return;
+    await updateMutation.mutateAsync({ slug: item.slug, items: next.items, status: next.status });
   }
 
   async function createRequest() {
@@ -534,6 +553,34 @@ export default function DocumentRequestsPage() {
                             <span className="text-[color:var(--ds-text-subtle)]" title="Pflicht">
                               *
                             </span>
+                          )}
+                          {isAwaitingReview(doc) && (
+                            <>
+                              <a
+                                href={`/dashboard/brain/${encodeURIComponent(doc.submitted_document_slug ?? "")}`}
+                                className="text-[color:var(--ds-warning-text)] underline"
+                              >
+                                eingereicht – prüfen
+                              </a>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void reviewItem(item, doc.key, "accept")}
+                                className="rounded px-1 text-[color:var(--ds-success-text)] hover:underline disabled:opacity-50"
+                                aria-label={`${doc.label}: als erhalten bestätigen`}
+                              >
+                                bestätigen
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void reviewItem(item, doc.key, "reject")}
+                                className="rounded px-1 text-[color:var(--ds-danger-text)] hover:underline disabled:opacity-50"
+                                aria-label={`${doc.label}: Einreichung ablehnen`}
+                              >
+                                ablehnen
+                              </button>
+                            </>
                           )}
                         </span>
                       ))}

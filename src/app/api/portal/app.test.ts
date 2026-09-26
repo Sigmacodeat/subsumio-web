@@ -14,6 +14,8 @@ vi.mock("@/lib/portal-token", () => ({
     t === "tok" ? { case_slug: "cases/mueller", brain_id: "brain_a", exp: 9_999_999_999 } : null
   ),
   isPortalTokenSuperseded: vi.fn(() => false),
+  portalTokenHash: vi.fn((t: string) => `hash-${t}`),
+  isPortalTokenHashRevoked: vi.fn(async () => false),
 }));
 vi.mock("web-push", () => ({
   default: {
@@ -119,7 +121,8 @@ describe("portal push", () => {
     const payload = JSON.parse(sent[0]!.payload);
     expect(payload).toMatchObject({
       title: "Neue Nachricht Ihrer Kanzlei",
-      data: { url: "/portal/tok" },
+      // The notification opens the portal session — never the access link.
+      data: { url: "/portal/meine-akte" },
     });
     expect(await notifyPortalClients("brain_b", "cases/mueller", payload)).toBe(0);
   });

@@ -21,7 +21,7 @@ export interface ChronologyEntry {
   event: string;
   on_reference?: string;
   quote?: string;
-  source: "forensic" | "on_table" | "damage" | "deadline" | "manual";
+  source: "forensic" | "on_table" | "damage" | "deadline" | "manual" | "document" | "communication";
   category?: "procedure" | "hearing" | "filing" | "deadline" | "payment" | "other";
   importance?: "high" | "medium" | "low";
 }
@@ -171,6 +171,115 @@ export function buildChronology(
   return {
     case_slug: caseSlug,
     title: `Chronologie — ${caseSlug}`,
+    entries,
+    generated_at: new Date().toISOString(),
+  };
+}
+
+/** The matter's own dated records, as stored on the matter page. */
+export interface MatterChronologyData {
+  deadlines?: Array<{
+    title?: string;
+    description?: string;
+    due_date?: string;
+    status?: string;
+    review_status?: string;
+    is_notfrist?: boolean;
+  }>;
+  documents?: Array<{
+    name?: string;
+    uploadedAt?: string;
+    doc_type_label?: string;
+    slug?: string;
+  }>;
+  communications?: Array<{
+    channel?: string;
+    direction?: string;
+    subject?: string;
+    summary?: string;
+    timestamp?: string;
+  }>;
+}
+
+function isoDay(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : parseDate(value);
+}
+
+function displayDate(iso: string): string {
+  const [y, mo, d] = iso.split("-");
+  return `${d}.${mo}.${y}`;
+}
+
+const CHANNEL_LABELS: Record<string, string> = {
+  email: "E-Mail",
+  whatsapp: "WhatsApp",
+  phone: "Telefonat",
+  letter: "Brief",
+  portal: "Mandantenportal",
+  bea: "beA/webERV",
+  other: "Kommunikation",
+};
+
+/**
+ * Chronology from the matter itself — its deadlines (without rejected AI
+ * suggestions), documents and communications. Used when a caller (e.g. the
+ * Word add-in) sends only the matter; the tables of the forensic pipeline
+ * are optional extras.
+ */
+export function buildMatterChronology(
+  caseSlug: string,
+  title: string,
+  data: MatterChronologyData
+): Chronology {
+  const entries: ChronologyEntry[] = [];
+  let id = 0;
+  for (const d of data.deadlines ?? []) {
+    const iso = isoDay(d.due_date);
+    if (!iso || d.review_status === "rejected") continue;
+    entries.push({
+      id: `dln-${id++}`,
+      date: displayDate(iso),
+      date_iso: iso,
+      event: `Frist: ${d.title || d.description || "Frist"}`,
+      source: "deadline",
+      category: "deadline",
+      importance: d.is_notfrist ? "high" : "medium",
+    });
+  }
+  for (const doc of data.documents ?? []) {
+    const iso = isoDay(doc.uploadedAt);
+    if (!iso) continue;
+    entries.push({
+      id: `doc-${id++}`,
+      date: displayDate(iso),
+      date_iso: iso,
+      event: `Dokument: ${doc.name || doc.slug || "Dokument"}${doc.doc_type_label ? ` (${doc.doc_type_label})` : ""}`,
+      source: "document",
+      category: "filing",
+      importance: "low",
+    });
+  }
+  for (const c of data.communications ?? []) {
+    const iso = isoDay(c.timestamp);
+    if (!iso) continue;
+    const dir = c.direction === "outgoing" ? "Ausgang" : "Eingang";
+    const label = CHANNEL_LABELS[c.channel ?? "other"] ?? "Kommunikation";
+    entries.push({
+      id: `com-${id++}`,
+      date: displayDate(iso),
+      date_iso: iso,
+      event: `${dir} ${label}: ${c.subject || c.summary || "ohne Betreff"}`,
+      source: "communication",
+      category: "other",
+      importance: "low",
+    });
+  }
+  entries.sort((a, b) => (a.date_iso ?? "").localeCompare(b.date_iso ?? ""));
+  return {
+    case_slug: caseSlug,
+    title: `Chronologie — ${title || caseSlug}`,
     entries,
     generated_at: new Date().toISOString(),
   };

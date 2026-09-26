@@ -9388,7 +9388,14 @@ export const D = {
     de: "Angeforderte Unterlagen",
     en: "Requested Documents",
   },
-  "portal.doc_request.submitted": { de: "Eingereicht", en: "Submitted" },
+  "portal.doc_request.submitted": {
+    de: "Eingereicht – wird von der Kanzlei geprüft",
+    en: "Submitted – being checked by the firm",
+  },
+  "portal.doc_request.received": {
+    de: "Von der Kanzlei bestätigt",
+    en: "Confirmed by the firm",
+  },
   "portal.doc_request.required": { de: "Erforderlich", en: "Required" },
   "portal.doc_request.optional": { de: "Optional", en: "Optional" },
   "portal.upload": { de: "Hochladen", en: "Upload" },
@@ -9412,9 +9419,9 @@ export const D = {
     de: "Hochladen fehlgeschlagen. Bitte versuchen Sie es erneut.",
     en: "Upload failed. Please try again.",
   },
-  "portal.upload_success_fulfilled": {
-    de: "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt.",
-    en: "Document uploaded. The document request is fully fulfilled.",
+  "portal.upload_success_in_review": {
+    de: "Dokument hochgeladen. Die Kanzlei prüft es und bestätigt dann den Erhalt.",
+    en: "Document uploaded. The firm will check it and then confirm receipt.",
   },
   "portal.upload_success": {
     de: "Dokument hochgeladen und an die Akte übermittelt.",
@@ -9552,9 +9559,30 @@ export const D = {
     de: "Frage eingeben…",
     en: "Type your question…",
   },
+  "portal.tabs_label": { de: "Bereiche der Akte", en: "Case sections" },
   "portal.chat_escalate": {
     de: "An Anwalt weiterleiten",
     en: "Escalate to lawyer",
+  },
+  "portal.chat_escalated": {
+    de: "Ihre Nachricht wurde an die Kanzlei weitergeleitet. Sie erhalten eine Rückmeldung über den Nachrichten-Tab.",
+    en: "Your message was forwarded to the firm. You will get a reply in the messages tab.",
+  },
+  "portal.chat_escalate_failed": {
+    de: "Die Weiterleitung an die Kanzlei ist fehlgeschlagen. Bitte versuchen Sie es erneut oder schreiben Sie im Nachrichten-Tab.",
+    en: "Forwarding to the firm failed. Please try again or write in the messages tab.",
+  },
+  "portal.chat_error": {
+    de: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
+    en: "Something went wrong. Please try again later.",
+  },
+  "portal.chat_no_answer": {
+    de: "Keine Antwort verfügbar.",
+    en: "No answer available.",
+  },
+  "portal.message_send_failed": {
+    de: "Ihre Nachricht wurde nicht gesendet. Bitte versuchen Sie es erneut.",
+    en: "Your message was not sent. Please try again.",
   },
   "portal.footer": {
     de: "Diese Ansicht ist nur für Sie bestimmt. Bitte teilen Sie den Link nicht.",

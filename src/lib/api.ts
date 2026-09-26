@@ -2616,7 +2616,14 @@ export const api = {
       status?: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
       items?: Array<
         | string
-        | { key?: string; label?: string; required?: boolean; received_document_slug?: string }
+        | {
+            key?: string;
+            label?: string;
+            required?: boolean;
+            received_document_slug?: string;
+            submitted_document_slug?: string;
+            submitted_at?: string;
+          }
       >;
       message_draft?: string;
       sent_at?: string;

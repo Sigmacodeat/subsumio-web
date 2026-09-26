@@ -50,6 +50,8 @@ const SOURCE_LABELS: Record<string, string> = {
   damage: "Schadensliste",
   deadline: "Fristenkalender",
   manual: "Manuell",
+  document: "Dokument",
+  communication: "Kommunikation",
 };
 
 interface ChronologyTimelineProps {

@@ -312,6 +312,59 @@ export function checkInvoiceWrite(
   return null;
 }
 
+// ── Unterschriebene Dokumente ───────────────────────────────────────────
+
+/** Documents a client signs in the portal; their text is bound to the signature. */
+const SIGNABLE_DOCUMENT_TYPES = new Set(["signature_request", "power_of_attorney"]);
+/** The signature evidence stored on the signed document. */
+const SIGNED_EVIDENCE_FIELDS = ["signed_at", "signed_by", "signature_id", "signed_document_hash"];
+
+function isSignedDocument(page: CurrentPageLike | null | undefined): boolean {
+  if (!page) return false;
+  const fmType = page.frontmatter?.type;
+  const type = typeof page.type === "string" && page.type ? page.type : fmType;
+  if (typeof type !== "string" || !SIGNABLE_DOCUMENT_TYPES.has(type)) return false;
+  const fm = page.frontmatter ?? {};
+  return fm.status === "signed" || typeof fm.signed_document_hash === "string";
+}
+
+/**
+ * A signed signature request / power of attorney keeps the text that was
+ * signed: its body and the signature evidence cannot be changed or replaced
+ * (the signature records the text's hash). Status bookkeeping — e.g. revoking
+ * a power of attorney — stays possible. `null` = allowed.
+ */
+export function checkSignedDocumentWrite(
+  current: CurrentPageLike | null,
+  write: {
+    mode: "merge" | "replace";
+    content?: unknown;
+    frontmatter?: Record<string, unknown>;
+  }
+): GuardRejection | null {
+  if (!current || !isSignedDocument(current)) return null;
+  const reject = (detail: string): GuardRejection => ({
+    status: 409,
+    error: "document_signed",
+    message: `Das Dokument ist unterschrieben und kann nicht mehr geändert werden (${detail}). Für eine neue Fassung bitte eine neue Signaturanfrage anlegen.`,
+  });
+  if (write.mode === "replace") return reject("Überschreiben");
+  if (write.content !== undefined && !sameValue(write.content, current.content ?? "")) {
+    return reject("Inhalt");
+  }
+  const fm = current.frontmatter ?? {};
+  for (const key of SIGNED_EVIDENCE_FIELDS) {
+    if (
+      write.frontmatter &&
+      key in write.frontmatter &&
+      !sameValue(write.frontmatter[key], fm[key])
+    ) {
+      return reject(`Feld „${key}“`);
+    }
+  }
+  return null;
+}
+
 // ── Reading the current page (fail closed) ──────────────────────────────
 
 export type CurrentPageRead =

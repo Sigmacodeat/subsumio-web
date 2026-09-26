@@ -188,7 +188,11 @@ export function isPortalTokenSuperseded(
 }
 
 export async function isPortalTokenRevoked(token: string): Promise<boolean> {
-  const hash = tokenHash(token);
+  return isPortalTokenHashRevoked(tokenHash(token));
+}
+
+/** Same check by the stored hash (fail closed). */
+export async function isPortalTokenHashRevoked(hash: string): Promise<boolean> {
   if (REVOKED.has(hash)) return true;
 
   const pool = getSharedPgPool();

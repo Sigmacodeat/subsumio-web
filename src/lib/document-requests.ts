@@ -14,7 +14,11 @@ export interface DocumentRequestItem {
   key: string;
   label: string;
   required: boolean;
+  /** Set only by the firm after checking the file: the item counts as received. */
   received_document_slug?: string;
+  /** A client upload for this item, waiting for the firm's check. */
+  submitted_document_slug?: string;
+  submitted_at?: string;
 }
 
 export interface DocumentRequestFrontmatter {
@@ -77,6 +81,8 @@ function normalizeItem(item: string | Partial<DocumentRequestItem>): DocumentReq
     label,
     required: item.required ?? true,
     received_document_slug: item.received_document_slug,
+    submitted_document_slug: item.submitted_document_slug,
+    submitted_at: item.submitted_at,
   };
 }
 

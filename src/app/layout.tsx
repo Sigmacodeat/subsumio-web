@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Inter, Newsreader, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import AppUpdateBanner from "@/components/pwa/app-update-banner";
+import { NativeAppLock } from "@/components/mobile/native-app-lock";
 import { MonitoringProvider } from "@/components/providers/monitoring-provider";
 import SubsumioTheme from "@/components/brand/subsumio-theme";
 import LangSetter from "@/components/brand/lang-setter";
@@ -185,6 +186,8 @@ export default async function RootLayout({
         </CspNonceProvider>
         <ServiceWorkerRegister />
         <AppUpdateBanner />
+        {/* Native app only: biometric lock on start and after background. */}
+        <NativeAppLock />
         <noscript>
           <div
             style={{

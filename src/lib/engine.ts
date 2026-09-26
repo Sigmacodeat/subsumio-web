@@ -127,6 +127,9 @@ export interface EngineContext {
   /** Registry sid of the current session — lets routes mark it as "Diese
    *  Sitzung" in the active-sessions list and revoke it on logout. */
   sessionId?: string;
+  /** Set when the request authenticated with an API key or an add-in token
+   *  instead of a browser session (src/lib/auth/api-key-auth.ts). */
+  apiKey?: { id: string; kind: "api" | "addin" };
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;

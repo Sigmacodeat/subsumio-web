@@ -45,5 +45,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Subsumio nutzt die Kamera, um Dokumente in Ihre Akte zu scannen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Subsumio greift auf Ihre Fotos zu, damit Sie Bilder und Dokumente in eine Akte hochladen können.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Subsumio speichert auf Wunsch Dokumente in Ihrer Fotomediathek.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Subsumio nutzt Face ID, um die App zu entsperren und Ihre Kanzleidaten zu schützen.</string>
 </dict>
 </plist>

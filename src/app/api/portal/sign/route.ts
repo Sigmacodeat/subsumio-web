@@ -11,6 +11,8 @@ import {
   type SignatureFormat,
 } from "@/lib/signature-capture";
 import { broadcastPortalVisit } from "@/lib/realtime-bus";
+import { isPortalSignable } from "@/lib/portal-view";
+import { signedDocumentHash } from "@/lib/signed-document-hash";
 
 const signSchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -21,11 +23,15 @@ const signSchema = z.object({
   signature_format: z.enum(["canvas_png", "canvas_svg", "typed_name"]),
   signature_data: z.string().min(1).max(500_000),
   signature_paths: z.array(z.string().max(10_000)).max(200).optional(),
+  /** Hash of the text the client was shown (from signable-docs). */
+  document_hash: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/)
+    .optional(),
 });
 
-/** Document types a client may sign in the portal, and the statuses that close them. */
+/** Document types a client may sign in the portal. */
 const SIGNABLE_TYPES = new Set(["signature_request", "power_of_attorney"]);
-const CLOSED_STATUSES = new Set(["signed", "declined", "expired", "revoked"]);
 
 /**
  * One signature per sending of a document: the id is derived from the document
@@ -77,6 +83,8 @@ export const POST = createPublicHandler(
     }
     const doc = (await docRes.json()) as {
       type?: string;
+      content?: string;
+      updated_at?: string;
       frontmatter?: Record<string, unknown>;
     };
     const fm = doc.frontmatter ?? {};
@@ -87,15 +95,34 @@ export const POST = createPublicHandler(
     if (typeof fm.expires_at === "string" && new Date(fm.expires_at).getTime() < Date.now()) {
       return apiError("request_expired", "Diese Signaturanfrage ist abgelaufen", 409);
     }
-    if (CLOSED_STATUSES.has(String(fm.status ?? ""))) {
+    // Positive list: only sent requests (never drafts or closed ones, never
+    // tracking rows for documents signed elsewhere).
+    if (!isPortalSignable(fm)) {
+      const closed = ["signed", "declined", "expired", "revoked"].includes(String(fm.status ?? ""));
+      return closed
+        ? apiError("already_signed", "Dieses Dokument ist nicht mehr zur Unterschrift offen", 409)
+        : apiError("not_signable", "Dieses Dokument ist nicht zur Unterschrift freigegeben", 409);
+    }
+
+    // The signature is bound to the exact text: if it changed after the
+    // client opened it, they must read the current version first.
+    const documentHash = signedDocumentHash(doc.content);
+    if (body.document_hash && body.document_hash !== documentHash) {
       return apiError(
-        "already_signed",
-        "Dieses Dokument ist nicht mehr zur Unterschrift offen",
+        "document_changed",
+        "Das Dokument wurde inzwischen geändert. Bitte laden Sie die Seite neu und lesen Sie die aktuelle Fassung.",
         409
       );
     }
 
     const input = {
+      document_hash: documentHash,
+      document_updated_at:
+        typeof doc.updated_at === "string"
+          ? doc.updated_at
+          : typeof fm.updated_at === "string"
+            ? fm.updated_at
+            : undefined,
       document_slug: body.document_slug,
       document_type: doc.type as "signature_request" | "power_of_attorney",
       signer_name: body.signer_name,
@@ -155,6 +182,7 @@ export const POST = createPublicHandler(
           signed_at: signature.captured_at,
           signed_by: signature.signer_name,
           signature_id: signature.id,
+          signed_document_hash: documentHash,
         },
       },
       { timeoutMs: 10_000 }

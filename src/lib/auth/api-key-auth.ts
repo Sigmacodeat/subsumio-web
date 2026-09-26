@@ -19,6 +19,7 @@ import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
 import { isAccountBlocked } from "@/lib/auth/account-status";
 import { env } from "@/lib/env";
 import { addCallerIdentity, type EngineContext } from "@/lib/engine";
+import { isAddinToken, isStoredKeyUsable } from "@/lib/addin-token";
 
 import { logger } from "@/lib/logger";
 const log = logger("lib/auth/api-key-auth");
@@ -39,14 +40,19 @@ export async function verifyApiKey(
   const token = extractBearerToken(authHeader);
   if (!token) return null;
 
-  // Quick filter: API keys start with sk_live_
-  if (!token.startsWith("sk_live_")) return null;
+  // Quick filter: API keys start with sk_live_, add-in tokens with sk_addin_.
+  const addin = isAddinToken(token);
+  if (!token.startsWith("sk_live_") && !addin) return null;
 
   const secretHash = await hashApiKey(token);
   const store = getApiKeyStore();
 
   const match = await store.findByHash(secretHash);
   if (!match) return null;
+  // Expired or revoked keys never authenticate, and the prefix must match
+  // the stored kind (an add-in token is never a permanent key).
+  if (!isStoredKeyUsable(match)) return null;
+  if (addin !== (match.kind === "addin")) return null;
 
   // Load the owner user
   const user = await getStore().getById(match.ownerId);
@@ -85,7 +91,14 @@ export async function verifyApiKey(
     );
 
   return {
-    ctx: { headers, brainId, plan, user, billing },
+    ctx: {
+      headers,
+      brainId,
+      plan,
+      user,
+      billing,
+      apiKey: { id: match.id, kind: match.kind === "addin" ? "addin" : "api" },
+    },
     key: match,
   };
 }

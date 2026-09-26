@@ -6,74 +6,46 @@ import type {
 } from "@/lib/document-requests";
 import type { CommunicationEntry, DocumentEntry } from "@/lib/legal-types";
 
-function normalize(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function tokens(input: string): string[] {
-  return normalize(input)
-    .split(/\s+/)
-    .filter((part) => part.length >= 3);
-}
-
+/**
+ * The item a portal upload belongs to: only the one the client explicitly
+ * chose (its key). There is no guessing from the file name and no fallback
+ * to "the first open item" — an unrelated file must never tick off a
+ * requested document.
+ */
 export function findDocumentRequestItemIndex(
   items: DocumentRequestItem[],
-  filename: string,
   preferredKey?: string
 ): number {
-  if (preferredKey) {
-    const exact = items.findIndex((item) => item.key === preferredKey);
-    if (exact >= 0) return exact;
-  }
-
-  const file = normalize(filename);
-  const scored = items
-    .map((item, index) => {
-      const haystack = `${normalize(item.key)} ${normalize(item.label)}`;
-      const score = tokens(item.label)
-        .concat(tokens(item.key))
-        .reduce((sum, token) => sum + (file.includes(token) || haystack.includes(file) ? 1 : 0), 0);
-      return { index, score, alreadyReceived: Boolean(item.received_document_slug) };
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => Number(a.alreadyReceived) - Number(b.alreadyReceived) || b.score - a.score);
-
-  if (scored[0]) return scored[0].index;
-
-  const firstOpenRequired = items.findIndex(
-    (item) => item.required && !item.received_document_slug
-  );
-  if (firstOpenRequired >= 0) return firstOpenRequired;
-  return items.findIndex((item) => !item.received_document_slug);
+  if (!preferredKey) return -1;
+  return items.findIndex((item) => item.key === preferredKey);
 }
 
-export function fulfillDocumentRequestItems(
+/**
+ * Records a client upload against the chosen item as SUBMITTED, not received.
+ * Only the firm confirms an item as received (after checking the file); the
+ * request status therefore does not change here.
+ */
+export function submitDocumentRequestItem(
   frontmatter: DocumentRequestFrontmatter,
   uploadedDocumentSlug: string,
-  filename: string,
-  preferredKey?: string
+  preferredKey: string | undefined,
+  at: string = new Date().toISOString()
 ): {
   items: DocumentRequestItem[];
   status: DocumentRequestStatus;
   matchedItem?: DocumentRequestItem;
 } {
   const items = [...frontmatter.items];
-  const index = findDocumentRequestItemIndex(items, filename, preferredKey);
-  if (index >= 0) {
-    items[index] = { ...items[index], received_document_slug: uploadedDocumentSlug };
+  const index = findDocumentRequestItemIndex(items, preferredKey);
+  if (index >= 0 && !items[index].received_document_slug) {
+    items[index] = {
+      ...items[index],
+      submitted_document_slug: uploadedDocumentSlug,
+      submitted_at: at,
+    };
+    return { items, status: frontmatter.status, matchedItem: items[index] };
   }
-  const required = items.filter((item) => item.required);
-  const fulfilledRequired = required.every((item) => Boolean(item.received_document_slug));
-  return {
-    items,
-    status: fulfilledRequired ? "fulfilled" : "partially_fulfilled",
-    matchedItem: index >= 0 ? items[index] : undefined,
-  };
+  return { items, status: frontmatter.status };
 }
 
 export function buildPortalDocumentEntry(input: {

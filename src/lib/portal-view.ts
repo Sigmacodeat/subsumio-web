@@ -178,6 +178,8 @@ export function toPortalRequest(request: ParsedRequest) {
         label: item.label,
         required: item.required === true,
         received: Boolean(item.received_document_slug),
+        // Uploaded by the client, not yet confirmed by the firm.
+        in_review: Boolean(item.submitted_document_slug) && !item.received_document_slug,
       })),
     },
   };
@@ -199,4 +201,19 @@ export function toPortalQuestionnaire(q: Questionnaire) {
     answered_at: q.answered_at,
     answers: q.answers,
   };
+}
+
+/** Signature/power-of-attorney statuses the client may sign in the portal:
+ *  only requests the firm actually sent. Drafts (still being edited) and
+ *  closed requests are never offered. */
+const PORTAL_SIGNABLE_STATUSES = new Set(["sent", "viewed"]);
+/** Providers whose document lives outside this page (paper, DocuSign, an
+ *  emailed PDF) — the page is only a tracking row and must not be signed here. */
+const EXTERNAL_SIGNATURE_PROVIDERS = new Set(["external", "docusign"]);
+
+export function isPortalSignable(frontmatter: Record<string, unknown> | undefined): boolean {
+  const fm = frontmatter ?? {};
+  if (!PORTAL_SIGNABLE_STATUSES.has(String(fm.status ?? ""))) return false;
+  if (EXTERNAL_SIGNATURE_PROVIDERS.has(String(fm.provider ?? ""))) return false;
+  return true;
 }

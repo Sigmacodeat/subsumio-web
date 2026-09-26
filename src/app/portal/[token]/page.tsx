@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { PORTAL_SESSION_SLUG } from "@/lib/portal-session";
+import { PORTAL_SESSION_SLUG, PORTAL_TOKEN_HEADER } from "@/lib/portal-session";
 import { PortalAppBar } from "@/components/portal/portal-app-bar";
 import {
   FileText,
@@ -31,6 +31,7 @@ import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import type { DashboardKey } from "@/content/dashboard";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import type { Questionnaire } from "@/lib/questionnaires";
+import { buildEscalationMessage, portalErrorText } from "@/lib/portal-chat-ui";
 
 interface PortalCase {
   slug: string;
@@ -71,8 +72,16 @@ interface PortalDocumentRequest {
       label: string;
       required: boolean;
       received: boolean;
+      /** Uploaded, waiting for the firm to confirm it. */
+      in_review?: boolean;
     }>;
   };
+}
+
+/** The upload route checks access before reading the body: send the token as a
+ *  header (the session cookie covers the `meine-akte` placeholder). */
+function portalUploadHeaders(token: string): Record<string, string> {
+  return token && token !== PORTAL_SESSION_SLUG ? { [PORTAL_TOKEN_HEADER]: token } : {};
 }
 
 const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: string }> = {
@@ -131,6 +140,8 @@ interface SignableDoc {
   expires_at?: string;
   /** Full document text, so the client can read it before signing. */
   content?: string;
+  /** Hash of `content`; the signature is bound to exactly this text. */
+  content_hash?: string;
 }
 
 export default function PortalPage() {
@@ -201,11 +212,13 @@ export default function PortalPage() {
   const [qnSubmitting, setQnSubmitting] = useState<string | null>(null);
   const [qnError, setQnError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<
-    Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata }>
+    Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata; error?: boolean }>
   >([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [escalating, setEscalating] = useState(false);
+  const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const [signableDocs, setSignableDocs] = useState<SignableDoc[]>([]);
   const [signDoc, setSignDoc] = useState<{
     slug: string;
@@ -214,6 +227,7 @@ export default function PortalPage() {
     recipient_name?: string;
     recipient_email?: string;
     content?: string;
+    content_hash?: string;
   } | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [signNotice, setSignNotice] = useState<string | null>(null);
@@ -271,6 +285,7 @@ export default function PortalPage() {
                   recipient_name: doc.recipient_name,
                   recipient_email: doc.recipient_email,
                   content: doc.content,
+                  content_hash: doc.content_hash,
                 });
                 setActiveTab("sign");
               }, 100);
@@ -449,6 +464,7 @@ export default function PortalPage() {
   async function sendMessage(caseSlug: string) {
     if (!newMessage.trim()) return;
     setSendingMessage(true);
+    setMessageError(null);
     try {
       const res = await fetch("/api/portal/message", {
         method: "POST",
@@ -459,12 +475,17 @@ export default function PortalPage() {
       if (res.ok) {
         setNewMessage("");
         await loadMessages(caseSlug);
+      } else {
+        // The client must know the message did not reach the firm.
+        const data = await res.json().catch(() => null);
+        setMessageError(portalErrorText(data, t("portal.message_send_failed")));
       }
     } catch (err) {
       console.error(
         "[portal] send message failed:",
         err instanceof Error ? err.message : String(err)
       );
+      setMessageError(t("portal.message_send_failed"));
     } finally {
       setSendingMessage(false);
     }
@@ -564,6 +585,7 @@ export default function PortalPage() {
       if (itemKey) formData.append("item_key", itemKey);
       const res = await fetch("/api/portal/upload", {
         method: "POST",
+        headers: portalUploadHeaders(token),
         body: formData,
         signal: AbortSignal.timeout(600_000),
       });
@@ -573,9 +595,7 @@ export default function PortalPage() {
         return;
       }
       setUploadMessage(
-        data.documentRequestStatus === "fulfilled"
-          ? t("portal.upload_success_fulfilled")
-          : t("portal.upload_success")
+        data.matchedItem ? t("portal.upload_success_in_review") : t("portal.upload_success")
       );
       setDocumentPassword("");
       await loadCase();
@@ -602,22 +622,27 @@ export default function PortalPage() {
         body: JSON.stringify({ token, message: userMsg }),
         signal: AbortSignal.timeout(60_000),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        // Daily limit, revoked link, engine error: say so instead of "no answer".
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "bot", text: portalErrorText(data, t("portal.chat_error")), error: true },
+        ]);
+        return;
+      }
       setChatMessages((prev) => [
         ...prev,
         {
           role: "bot",
-          text: data.answer || "Keine Antwort verfügbar.",
-          grounding: data.grounding as GroundingMetadata | undefined,
+          text: data?.answer || t("portal.chat_no_answer"),
+          grounding: data?.grounding as GroundingMetadata | undefined,
         },
       ]);
     } catch {
       setChatMessages((prev) => [
         ...prev,
-        {
-          role: "bot",
-          text: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
-        },
+        { role: "bot", text: t("portal.chat_error"), error: true },
       ]);
     } finally {
       setChatLoading(false);
@@ -627,33 +652,50 @@ export default function PortalPage() {
   async function escalateToLawyer() {
     if (!caseData || escalating) return;
     setEscalating(true);
+    setEscalationError(null);
     try {
-      const summary = chatMessages
-        .map((m) => `${m.role === "user" ? "Mandant" : "Bot"}: ${m.text}`)
-        .join("\n");
+      // Only the latest part of the chat that fits the message limit — a long
+      // chat used to be refused and the escalation silently lost.
       const res = await fetch("/api/portal/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token,
-          message: `[Eskalation aus Portal-Chat]\n\n${summary}`,
+          message: buildEscalationMessage(chatMessages.filter((m) => !m.error)),
         }),
         signal: AbortSignal.timeout(15_000),
       });
       if (res.ok) {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "bot",
-            text: "Ihre Nachricht wurde an die Kanzlei weitergeleitet. Sie erhalten eine Rückmeldung über den Nachrichten-Tab.",
-          },
-        ]);
+        setChatMessages((prev) => [...prev, { role: "bot", text: t("portal.chat_escalated") }]);
+      } else {
+        const data = await res.json().catch(() => null);
+        setEscalationError(portalErrorText(data, t("portal.chat_escalate_failed")));
       }
     } catch {
-      // silent fail
+      setEscalationError(t("portal.chat_escalate_failed"));
     } finally {
       setEscalating(false);
     }
+  }
+
+  // ARIA tab pattern: arrow keys move between tabs (roving tabindex).
+  function onTabKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const list = e.currentTarget.closest('[role="tablist"]');
+    if (!list) return;
+    const tabs = Array.from(list.querySelectorAll<HTMLButtonElement>("[data-portal-tab]"));
+    const current = tabs.findIndex((el) => el === document.activeElement);
+    const nextIndex =
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? tabs.length - 1
+          : (current + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    const next = tabs[nextIndex];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+    next.click();
   }
 
   if (verifying || loadingCase) {
@@ -718,10 +760,20 @@ export default function PortalPage() {
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         <PortalAppBar token={token} />
         {/* Tab Navigation */}
-        <div className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
+        <div
+          role="tablist"
+          aria-label={t("portal.tabs_label")}
+          className="flex gap-1 rounded-xl border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]"
+        >
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "info"}
+            tabIndex={activeTab === "info" ? 0 : -1}
+            onKeyDown={onTabKeyDown}
+            data-portal-tab="info"
             onClick={() => setActiveTab("info")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === "info"
                 ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -731,8 +783,14 @@ export default function PortalPage() {
             {t("portal.tab_info")}
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "chat"}
+            tabIndex={activeTab === "chat" ? 0 : -1}
+            onKeyDown={onTabKeyDown}
+            data-portal-tab="chat"
             onClick={() => setActiveTab("chat")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === "chat"
                 ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -743,8 +801,14 @@ export default function PortalPage() {
           </button>
           {signableDocs.length > 0 && (
             <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "sign"}
+              tabIndex={activeTab === "sign" ? 0 : -1}
+              onKeyDown={onTabKeyDown}
+              data-portal-tab="sign"
               onClick={() => setActiveTab("sign")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
                 activeTab === "sign"
                   ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                   : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -760,8 +824,14 @@ export default function PortalPage() {
             </button>
           )}
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "files"}
+            tabIndex={activeTab === "files" ? 0 : -1}
+            onKeyDown={onTabKeyDown}
+            data-portal-tab="files"
             onClick={() => setActiveTab("files")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === "files"
                 ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -771,11 +841,17 @@ export default function PortalPage() {
             {t("portal.tab_files")}
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "invoices"}
+            tabIndex={activeTab === "invoices" ? 0 : -1}
+            onKeyDown={onTabKeyDown}
+            data-portal-tab="invoices"
             onClick={() => {
               setActiveTab("invoices");
               void loadInvoices();
             }}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] motion-reduce:transition-none ${
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
               activeTab === "invoices"
                 ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
                 : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
@@ -1041,18 +1117,20 @@ export default function PortalPage() {
                             </div>
                             <div className="text-xs [color:var(--mk-text-subtle)]">
                               {done
-                                ? t("portal.doc_request.submitted")
-                                : item.required
-                                  ? t("portal.doc_request.required")
-                                  : t("portal.doc_request.optional")}
+                                ? t("portal.doc_request.received")
+                                : item.in_review
+                                  ? t("portal.doc_request.submitted")
+                                  : item.required
+                                    ? t("portal.doc_request.required")
+                                    : t("portal.doc_request.optional")}
                             </div>
                           </div>
                           {!done && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-solid)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] motion-reduce:transition-none">
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[color:var(--brand-solid)] px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color] focus-within:ring-2 focus-within:ring-[color:var(--brand-text)] hover:bg-[color:var(--brand-solid)] motion-reduce:transition-none">
                               <input
                                 type="file"
                                 accept={UPLOAD_ACCEPT_ATTRIBUTE}
-                                className="hidden"
+                                className="sr-only"
                                 disabled={uploading}
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
@@ -1079,11 +1157,11 @@ export default function PortalPage() {
             <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold">{t("portal.documents_title")}</h3>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[color:var(--brand-solid)] px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color] focus-within:ring-2 focus-within:ring-[color:var(--brand-text)] hover:bg-[color:var(--brand-solid)] disabled:opacity-50 motion-reduce:transition-none">
                   <input
                     type="file"
                     accept={UPLOAD_ACCEPT_ATTRIBUTE}
-                    className="hidden"
+                    className="sr-only"
                     disabled={uploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -1167,7 +1245,7 @@ export default function PortalPage() {
               {messages.length === 0 ? (
                 <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.no_messages")}</p>
               ) : (
-                <div className="max-h-64 space-y-3 overflow-y-auto">
+                <div className="max-h-64 space-y-3 overflow-y-auto" aria-live="polite">
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -1204,6 +1282,7 @@ export default function PortalPage() {
                     if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
                   }}
                   placeholder={t("portal.message_placeholder")}
+                  aria-label={t("portal.message_placeholder")}
                   className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-glow)] focus:outline-none"
                 />
                 <button
@@ -1214,6 +1293,11 @@ export default function PortalPage() {
                   {sendingMessage ? "…" : t("portal.send")}
                 </button>
               </div>
+              {messageError && (
+                <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                  {messageError}
+                </p>
+              )}
             </div>
           </>
         )}
@@ -1356,7 +1440,7 @@ export default function PortalPage() {
             </div>
             <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.chat_disclaimer")}</p>
             {chatMessages.length > 0 && (
-              <div className="max-h-96 space-y-3 overflow-y-auto">
+              <div className="max-h-96 space-y-3 overflow-y-auto" aria-live="polite">
                 {chatMessages.map((msg, i) => (
                   <div
                     key={i}
@@ -1399,6 +1483,7 @@ export default function PortalPage() {
                   if (e.key === "Enter" && !chatLoading) void sendChatMessage();
                 }}
                 placeholder={t("portal.chat_placeholder")}
+                aria-label={t("portal.chat_placeholder")}
                 className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-glow)] focus:outline-none"
               />
               <button
@@ -1422,6 +1507,11 @@ export default function PortalPage() {
                 )}
                 {t("portal.chat_escalate")}
               </button>
+            )}
+            {escalationError && (
+              <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                {escalationError}
+              </p>
             )}
           </div>
         )}
@@ -1514,7 +1604,7 @@ export default function PortalPage() {
 
           {/* Upload button */}
           <label
-            className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-3 text-sm font-medium transition-[background-color,border-color,color] hover:bg-[color:var(--mk-surface-2)] motion-reduce:transition-none ${
+            className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed [border-color:var(--mk-border)] px-4 py-3 text-sm font-medium transition-[background-color,border-color,color] focus-within:ring-2 focus-within:ring-[color:var(--brand-text)] hover:bg-[color:var(--mk-surface-2)] motion-reduce:transition-none ${
               uploadingFile ? "opacity-50" : ""
             }`}
           >
@@ -1522,7 +1612,7 @@ export default function PortalPage() {
             {uploadingFile ? t("portal.files_uploading") : t("portal.files_upload")}
             <input
               type="file"
-              className="hidden"
+              className="sr-only"
               accept={UPLOAD_ACCEPT_ATTRIBUTE}
               disabled={uploadingFile}
               onChange={async (e) => {
@@ -1535,6 +1625,7 @@ export default function PortalPage() {
                   formData.append("file", file);
                   const res = await fetch("/api/portal/upload", {
                     method: "POST",
+                    headers: portalUploadHeaders(token),
                     body: formData,
                     signal: AbortSignal.timeout(600_000),
                   });
@@ -1678,6 +1769,7 @@ export default function PortalPage() {
           documentType={signDoc.document_type}
           documentTitle={signDoc.title}
           documentContent={signDoc.content}
+          documentHash={signDoc.content_hash}
           signerName={signDoc.recipient_name}
           signerEmail={signDoc.recipient_email}
           legalLevel="simple"

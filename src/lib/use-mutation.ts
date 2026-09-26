@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { api, ApiRequestError } from "./api";
+import { csrfFetch } from "./csrf";
 import {
   isOnline,
   enqueueMutation,
@@ -68,6 +69,15 @@ async function replayMutation(
         frontmatter?: Record<string, unknown>;
       }
     );
+  } else if (mut.type === "createTimeEntry") {
+    // The same route the desktop books time through — billable like any entry.
+    const res = await csrfFetch("/api/time", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(mut.payload),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`createTimeEntry failed: HTTP ${res.status}`);
   } else if (mut.type === "deletePage") {
     const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
     if (!slug) throw new Error("deletePage mutation missing slug");

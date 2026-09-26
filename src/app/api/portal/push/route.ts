@@ -3,6 +3,7 @@ import { portalToken } from "@/lib/portal-session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { resolvePortalAccess } from "@/lib/portal-access";
+import { portalTokenHash } from "@/lib/portal-token";
 import {
   isPushServiceEndpoint,
   portalPushPublicKey,
@@ -49,7 +50,8 @@ export const POST = createPublicHandler(
       ...body.subscription,
       brainId: access.payload.brain_id,
       caseSlug: access.caseSlug,
-      portalPath: `/portal/${encodeURIComponent(token)}`,
+      // Only the link's hash is kept — never the usable access link.
+      tokenHash: portalTokenHash(token),
     });
     return Response.json({ ok: true });
   }

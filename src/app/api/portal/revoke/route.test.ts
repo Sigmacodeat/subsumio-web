@@ -8,6 +8,10 @@ vi.mock("@/lib/portal-token", () => ({
   verifyPortalToken: vi.fn(async () => ({ case_slug: "cases/a", exp: 2_000_000_000 })),
   portalTokenHash: vi.fn((t: string) => `hash-${t}`),
 }));
+const removeSubs = vi.fn(async () => {});
+vi.mock("@/lib/portal-push", () => ({
+  removePortalSubscriptionsFor: (...a: unknown[]) => removeSubs(...(a as [])),
+}));
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (
@@ -72,6 +76,24 @@ describe("POST /api/portal/revoke", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it("revoking ends the push notifications of the revoked links", async () => {
+    stubCase(registryFm);
+    expect((await POST(req({ case_slug: "cases/a", all: true }) as never)).status).toBe(200);
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", undefined);
+
+    removeSubs.mockClear();
+    stubCase(registryFm);
+    expect((await POST(req({ case_slug: "cases/a", token_hash: HASH_B }) as never)).status).toBe(
+      200
+    );
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", HASH_B);
+
+    removeSubs.mockClear();
+    stubCase(registryFm);
+    expect((await POST(req({ token: "tok.abc" }) as never)).status).toBe(200);
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", "hash-tok.abc");
   });
 
   it("revokes a raw token directly", async () => {

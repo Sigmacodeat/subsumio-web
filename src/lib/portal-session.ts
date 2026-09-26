@@ -12,6 +12,8 @@
 export const PORTAL_SESSION_COOKIE = "subsumio_portal";
 /** Stands in for the token in URLs and requests once the session cookie is set. */
 export const PORTAL_SESSION_SLUG = "meine-akte";
+/** Header carrying the portal token on uploads, so access is checked before the body is read. */
+export const PORTAL_TOKEN_HEADER = "x-portal-token";
 
 function readCookie(req: Request, name: string): string | null {
   const header = req.headers.get("cookie");

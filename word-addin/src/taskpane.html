@@ -275,7 +275,11 @@
     <!-- Auth -->
     <div id="authSection">
       <p>Verbinden Sie Subsumio mit Word für Vertragsanalyse, Entwürfe und Aktenrecherche.</p>
-      <input type="password" id="token" placeholder="Subsumio API-Token" />
+      <input type="password" id="token" placeholder="Add-in-Zugang (sk_addin_…)" autocomplete="off" />
+      <p style="font-size: 11px; color: #8a8aa8">
+        Erstellen unter subsum.io → Word-Add-in → „Add-in-Zugang erstellen“ (24 Stunden gültig,
+        jederzeit widerrufbar).
+      </p>
       <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
       <div id="status" style="display: none"></div>
     </div>
@@ -326,9 +330,9 @@
         <div id="contractStatus" class="section-status"></div>
 
         <div class="sec-title">Vertragsentwurf</div>
-        <label>Vertragstyp</label>
+        <label for="draftTemplate">Vertragstyp</label>
         <select id="draftTemplate">
-          <option value="">— Vorlage wählen (optional) —</option>
+          <option value="">— Vertragstyp wählen —</option>
           <option value="nda">NDA / Geheimhaltungsvereinbarung</option>
           <option value="agb">AGB</option>
           <option value="lizenz">Lizenzvertrag</option>
@@ -338,9 +342,19 @@
           <option value="dienstleistung">Dienstleistungsvertrag</option>
           <option value="kooperation">Kooperationsvertrag</option>
         </select>
+        <label for="draftJurisdiction">Rechtsordnung</label>
+        <select id="draftJurisdiction">
+          <option value="at">Österreich</option>
+          <option value="de">Deutschland</option>
+          <option value="ch">Schweiz</option>
+        </select>
+        <label for="draftPartyA">Partei A</label>
+        <input id="draftPartyA" type="text" placeholder="z. B. Muster GmbH" />
+        <label for="draftPartyB">Partei B</label>
+        <input id="draftPartyB" type="text" placeholder="z. B. Beispiel AG" />
         <textarea
           id="draftInstruction"
-          placeholder="Zusätzliche Anweisungen (optional): z.B. 'Bayerisches Recht, Vertragslaufzeit 2 Jahre'"
+          placeholder="Zusätzliche Anweisungen (optional): z.B. 'Vertragslaufzeit 2 Jahre'"
         ></textarea>
         <button class="btn" id="draftBtn" onclick="draftContract()">Entwurf erstellen</button>
         <div id="draftResult" class="result"></div>

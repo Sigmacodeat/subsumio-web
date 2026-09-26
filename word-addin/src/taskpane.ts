@@ -4,13 +4,9 @@
  * Akte-Kontext, Chronologie, Export — direkt in Word.
  */
 
-interface BrainPage {
-  slug: string;
-  title: string;
-  type: string;
-  content: string;
-  frontmatter?: Record<string, unknown>;
-}
+import { buildContractDraftRequest, readContractDraftResponse } from "./contract-draft";
+import { listAllCases, playbooksFrom, type PageBatch } from "./lists";
+import { applyRedlines, redlineSummary, type Redline } from "./redlines";
 
 interface Obligation {
   type: string;
@@ -188,7 +184,16 @@ async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
   token = input.value.trim();
   if (!token) {
-    showStatus("Bitte API-Token eingeben.", false);
+    showStatus("Bitte Add-in-Zugang eingeben (sk_addin_…).", false);
+    return;
+  }
+  // Only short-lived add-in tokens (24 h, revocable) — never a permanent API key.
+  if (!token.startsWith("sk_addin_")) {
+    token = "";
+    showStatus(
+      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“). Erstellen unter Subsumio → Word-Add-in → „Add-in-Zugang erstellen“.",
+      false
+    );
     return;
   }
   setLoading("connectBtn", true, "Verbinden");
@@ -197,7 +202,8 @@ async function connect() {
     showStatus("Erfolgreich verbunden.", true);
     document.getElementById("mainContent")!.style.display = "block";
     document.getElementById("authSection")!.style.display = "none";
-    await loadRecentCases();
+    // Both lists need the token — they are loaded once connected.
+    await Promise.all([loadRecentCases(), loadPlaybooks()]);
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Verbindung fehlgeschlagen.", false);
   } finally {
@@ -207,21 +213,22 @@ async function connect() {
 
 async function loadRecentCases() {
   try {
-    // Cases are stored with the engine type "legal_case" (see
-    // src/app/dashboard/cases/new/page.tsx and api/pages/route.ts) — this
-    // was querying the wrong type and always returned an empty list, so the
-    // case-select dropdowns in the add-in stayed empty.
-    const pages = await apiGet<BrainPage[]>("/api/pages?type=legal_case&limit=10");
+    // Every matter the user can see, not only the first page of the list.
+    const pages = await listAllCases((query) => apiGet<PageBatch>(`/api/pages?${query}`));
     const selects = document.querySelectorAll<HTMLSelectElement>(".case-select");
     selects.forEach((sel) => {
       sel.innerHTML =
         `<option value="">— Akte wählen —</option>` +
         pages
-          .map((p) => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.title)}</option>`)
+          .map((p) => {
+            const no = p.frontmatter?.case_number;
+            const label = typeof no === "string" && no ? `${no} — ${p.title}` : p.title;
+            return `<option value="${escapeHtml(p.slug)}">${escapeHtml(label)}</option>`;
+          })
           .join("");
     });
   } catch {
-    // Nicht-kritisch
+    showStatus("Aktenliste konnte nicht geladen werden.", false);
   }
 }
 
@@ -366,29 +373,85 @@ async function draftContract() {
   setLoading("draftBtn", true, "Entwurf erstellen");
   clearResult("draftResult");
   try {
-    const instruction = (
-      document.getElementById("draftInstruction") as HTMLInputElement
-    ).value.trim();
-    const template = (document.getElementById("draftTemplate") as HTMLSelectElement).value;
+    const typeSel = document.getElementById("draftTemplate") as HTMLSelectElement;
+    const typeLabel = typeSel.value ? (typeSel.selectedOptions[0]?.textContent ?? "").trim() : "";
     let context = "";
     try {
       context = await getSelectedText();
     } catch {
       /* kein Text markiert — OK */
     }
-    const result = await apiPost<AnalysisResult>("/api/legal/contract-draft", {
-      context: context || undefined,
-      instruction: instruction || template || "Erstelle einen vollständigen Vertrag",
-      template_type: template || undefined,
+    // Exactly the shape POST /api/legal/contract-draft validates.
+    const request = buildContractDraftRequest({
+      type: typeLabel,
+      jurisdiction: (document.getElementById("draftJurisdiction") as HTMLSelectElement).value,
+      partyA: (document.getElementById("draftPartyA") as HTMLInputElement).value,
+      partyB: (document.getElementById("draftPartyB") as HTMLInputElement).value,
+      instructions: (document.getElementById("draftInstruction") as HTMLTextAreaElement).value,
+      context,
     });
-    const text = result.text ?? result.markdown ?? "";
-    renderTextResult("draftResult", text, true, { sources: sourcesOf(result) });
+    if (!request.ok) {
+      showStatus(request.error, false, "contractStatus");
+      return;
+    }
+    const res = await fetch(`${API_BASE}/api/legal/contract-draft`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(request.body),
+    });
+    const raw = await res.text();
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const err = JSON.parse(raw) as { error?: string; message?: string };
+        message = err.error ?? err.message ?? message;
+      } catch {
+        /* keep HTTP status */
+      }
+      throw new Error(message);
+    }
+    const answer = readContractDraftResponse(raw, res.headers.get("Content-Type") ?? "");
+    if (!answer.text) {
+      throw new Error(
+        answer.warnings.length > 0
+          ? `Kein Entwurf erzeugt (${answer.warnings.join(", ")}).`
+          : "Kein Entwurf erzeugt."
+      );
+    }
+    renderTextResult("draftResult", answer.text, true, { grounding: answer.grounding });
     document.getElementById("insertDraftBtn")!.style.display = "block";
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Entwurf fehlgeschlagen.", false, "contractStatus");
   } finally {
     setLoading("draftBtn", false, "Entwurf erstellen");
   }
+}
+
+/**
+ * Inserts AI-generated text marked as such (EU AI Act Art. 50): inside a
+ * content control titled "KI-generiert · Anwaltlich zu prüfen", with the
+ * notice as its first line. Where content controls are unavailable, the
+ * notice travels as plain text.
+ */
+async function insertAiTextAtCursor(text: string): Promise<void> {
+  const marked = `${AI_BADGE_LABEL}: ${AI_NOTICE}\n\n${text}`;
+  const WordApi = (globalThis as { Word?: typeof Word }).Word;
+  if (WordApi?.run) {
+    try {
+      await WordApi.run(async (context) => {
+        const range = context.document.getSelection().insertText(marked, "Replace");
+        const control = range.insertContentControl();
+        control.title = AI_BADGE_LABEL;
+        control.tag = "subsumio-ai-generated";
+        control.appearance = "BoundingBox";
+        await context.sync();
+      });
+      return;
+    } catch {
+      /* fall back to plain text insertion below */
+    }
+  }
+  await insertTextAtCursor(marked);
 }
 
 async function insertDraftIntoWord() {
@@ -398,7 +461,7 @@ async function insertDraftIntoWord() {
     return;
   }
   try {
-    await insertTextAtCursor(el.dataset.raw);
+    await insertAiTextAtCursor(el.dataset.raw);
     showStatus("Vertragsentwurf in Word eingefügt.", true, "contractStatus");
   } catch (e) {
     showStatus(
@@ -413,10 +476,9 @@ async function loadPlaybooks() {
   const sel = document.getElementById("redlinePlaybook") as HTMLSelectElement | null;
   if (!sel || !token) return;
   try {
-    const data = await apiGet<{ playbooks?: Array<{ slug: string; title: string }> }>(
-      "/api/legal/playbooks"
-    );
-    const items = data.playbooks ?? [];
+    const items = playbooksFrom(await apiGet<unknown>("/api/legal/playbooks"));
+    // Keep the first ("optional") entry, replace earlier results.
+    while (sel.options.length > 1) sel.remove(1);
     for (const pb of items) {
       const opt = document.createElement("option");
       opt.value = pb.slug;
@@ -449,11 +511,24 @@ async function redlineContract() {
       ...(playbookSlug ? { playbook_slug: playbookSlug } : {}),
       perspective,
     });
-    const redlines = result.redlines ?? [];
-    const redlined =
-      redlines.length > 0
-        ? applyRedlines(original, redlines)
-        : (result.redlined ?? result.text ?? result.summary ?? "");
+    const redlines = (result.redlines ?? []) as Redline[];
+    const applied = redlines.length > 0 ? applyRedlines(original, redlines) : null;
+    const redlined = applied
+      ? applied.text
+      : (result.redlined ?? result.text ?? result.summary ?? "");
+    // Changes whose clause could not be located are listed, never dropped silently.
+    const unappliedHtml =
+      applied && applied.unapplied.length > 0
+        ? `<div style="margin:6px 0;padding:6px;border:1px solid #ef4444;border-radius:6px;font-size:11px;color:#ef9a9a">
+            <div style="font-weight:700">Nicht automatisch angewendet — bitte manuell übernehmen:</div>
+            ${applied.unapplied
+              .map(
+                (r) =>
+                  `<div style="margin-top:4px">„${escapeHtml(r.original_clause.slice(0, 160))}“ → ${escapeHtml(r.suggested_text.slice(0, 200))}</div>`
+              )
+              .join("")}
+          </div>`
+        : "";
     const el = document.getElementById("redlineResult")!;
     el.dataset.raw = redlined;
     el.dataset.original = original;
@@ -469,7 +544,8 @@ async function redlineContract() {
       )
       .join("");
     el.innerHTML = `
-      <div style="font-size:11px;color:#8a8aa8;margin-bottom:6px">${redlines.length} Änderungen identifiziert</div>
+      <div style="font-size:11px;color:${applied && applied.unapplied.length > 0 ? "#ef9a9a" : "#8a8aa8"};margin-bottom:6px">${escapeHtml(applied ? redlineSummary(redlines.length, applied) : `${redlines.length} Änderungen identifiziert`)}</div>
+      ${unappliedHtml}
       ${result.summary ? `<div style="font-size:11px;line-height:1.5;margin-bottom:6px">${escapeHtml(result.summary)}</div>` : ""}
       ${changeList}
       ${aiNoticeHtml(sourcesOf(result))}
@@ -497,7 +573,7 @@ async function insertRedlineIntoWord() {
     return;
   }
   try {
-    await insertTextAtCursor(el.dataset.raw);
+    await insertAiTextAtCursor(el.dataset.raw);
     showStatus("Redline in Word eingefügt.", true, "contractStatus");
   } catch (e) {
     showStatus(
@@ -509,29 +585,6 @@ async function insertRedlineIntoWord() {
 }
 
 // ── Tracked Changes (WP-5.26) ─────────────────────────────────────────
-
-/** Applies the engine's structured redlines to produce a revised text.
- *  modify/remove rely on the verbatim `original_clause` guarantee. */
-function applyRedlines(
-  original: string,
-  redlines: NonNullable<AnalysisResult["redlines"]>
-): string {
-  let out = original;
-  const additions: string[] = [];
-  for (const r of redlines) {
-    if (r.change_type === "add" || !r.original_clause) {
-      if (r.change_type === "add" && r.suggested_text) additions.push(r.suggested_text);
-      continue;
-    }
-    if (out.includes(r.original_clause)) {
-      out = out.replace(r.original_clause, r.change_type === "remove" ? "" : r.suggested_text);
-    }
-  }
-  if (additions.length > 0) {
-    out = out.replace(/\n+$/, "") + "\n\n" + additions.join("\n\n");
-  }
-  return out;
-}
 
 type DiffOp = { type: "same" | "del" | "ins"; text: string };
 
@@ -585,8 +638,11 @@ function escapeXml(s: string): string {
 }
 
 /** Builds an OOXML package whose paragraphs carry real w:ins/w:del revision marks. */
-function buildTrackedChangesOoxml(original: string, revised: string): string {
+function buildTrackedChangesOoxml(original: string, revised: string, aiNotice?: string): string {
   const ops = diffLines(original.split("\n"), revised.split("\n"));
+  // The AI notice is itself a tracked insertion: it arrives with the changes
+  // and is removed by the lawyer once the revision is reviewed.
+  if (aiNotice) ops.unshift({ type: "ins", text: aiNotice });
   const date = new Date().toISOString();
   let revId = 1;
   const paras = ops
@@ -615,7 +671,7 @@ async function insertRedlineTrackedChanges() {
   }
   setLoading("insertTrackedBtn", true, "Einfügen…");
   try {
-    const ooxml = buildTrackedChangesOoxml(original, revised);
+    const ooxml = buildTrackedChangesOoxml(original, revised, `${AI_BADGE_LABEL}: ${AI_NOTICE}`);
     await new Promise<void>((resolve, reject) => {
       Office.context.document.setSelectedDataAsync(
         ooxml,
@@ -809,13 +865,22 @@ function groundingHtml(g: GroundingResult): string {
  * citations against the corpus via /api/legal/ground and show the result.
  * Non-blocking; a failure leaves an explicit "please check manually" line.
  */
-async function groundResult(el: HTMLElement, answer: string): Promise<void> {
+async function groundResult(
+  el: HTMLElement,
+  answer: string,
+  serverGrounding?: GroundingResult
+): Promise<void> {
   const text = answer.trim();
   if (text.length < 10) return;
   const slot = document.createElement("div");
   slot.style.cssText = "margin-top:6px;font-size:11px;color:#9a9ab8";
-  slot.textContent = "Fundstellen werden geprüft…";
   (el.querySelector(".ai-notice") ?? el).appendChild(slot);
+  // The route already checked the citations — show that, don't check twice.
+  if (serverGrounding) {
+    slot.innerHTML = groundingHtml(serverGrounding);
+    return;
+  }
+  slot.textContent = "Fundstellen werden geprüft…";
   try {
     const g = await apiPost<GroundingResult>("/api/legal/ground", { text: text.slice(0, 50_000) });
     slot.innerHTML = groundingHtml(g);
@@ -843,7 +908,7 @@ function renderTextResult(
   containerId: string,
   text: string,
   storeRaw = false,
-  options: { ai?: boolean; sources?: string[] } = {}
+  options: { ai?: boolean; sources?: string[]; grounding?: GroundingResult } = {}
 ) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -851,7 +916,7 @@ function renderTextResult(
   const notice = options.ai === false ? "" : aiNoticeHtml(options.sources);
   el.innerHTML = `<div style="font-size:12px;line-height:1.6;color:#c0c0d8">${escapeHtml(text).replace(/\n/g, "<br>")}</div>${notice}`;
   el.style.display = "block";
-  if (options.ai !== false) void groundResult(el, text);
+  if (options.ai !== false) void groundResult(el, text, options.grounding);
 }
 
 function clearResult(containerId: string) {
@@ -869,7 +934,6 @@ Office.onReady(() => {
     btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab") ?? "analyze"));
   });
   switchTab("analyze");
-  void loadPlaybooks();
 });
 
 // Expose to global scope for HTML onclick handlers

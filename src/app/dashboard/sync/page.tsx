@@ -28,6 +28,7 @@ const MUTATION_TYPE_LABELS: Record<QueuedMutation["type"], string> = {
   createPage: "Neu angelegt",
   updatePage: "Geändert",
   deletePage: "Gelöscht",
+  createTimeEntry: "Zeit gebucht",
 };
 
 function ConflictCard({ mut }: { mut: QueuedMutation }) {

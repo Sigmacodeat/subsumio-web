@@ -117,6 +117,8 @@ test.describe("Mandantenportal-Upload", () => {
 
     // ── Step 5: Upload a document via portal ───────────────────────────
     const uploadRes = await page.context().request.post("/api/portal/upload", {
+      // Access is checked before the body is read: the token travels as a header.
+      headers: { "x-portal-token": portalToken },
       multipart: {
         token: portalToken,
         file: {
@@ -237,6 +239,8 @@ test.describe("Mandantenportal-Upload", () => {
     // Upload should also be rejected (valid PDF so the request reaches the
     // portal_enabled gate — invalid files 422 earlier in the pipeline).
     const uploadRes = await page.context().request.post("/api/portal/upload", {
+      // Access is checked before the body is read: the token travels as a header.
+      headers: { "x-portal-token": portalToken },
       multipart: {
         token: portalToken,
         file: {
