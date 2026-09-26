@@ -25,7 +25,8 @@ export interface StoredApiKey {
   ownerId: string;
   /** "addin": short-lived Office add-in token (see src/lib/addin-token.ts). */
   kind?: "api" | "addin";
-  /** After this instant the key no longer authenticates (add-in tokens). */
+  /** After this instant the key no longer authenticates (add-in tokens,
+   *  and API keys created with an expiry — the default is 365 days). */
   expiresAt?: string;
 }
 
@@ -248,6 +249,20 @@ class PgApiKeyStore implements ApiKeyStore {
     if (patch.lastUsedAt !== undefined) {
       sets.push(`last_used_at = $${i++}`);
       vals.push(patch.lastUsedAt);
+    }
+    // Rotation replaces the secret: without these the old key kept working
+    // and the new one never did.
+    if (patch.secretHash !== undefined) {
+      sets.push(`secret_hash = $${i++}`);
+      vals.push(patch.secretHash);
+    }
+    if (patch.prefix !== undefined) {
+      sets.push(`prefix = $${i++}`);
+      vals.push(patch.prefix);
+    }
+    if (patch.expiresAt !== undefined) {
+      sets.push(`expires_at = $${i++}`);
+      vals.push(patch.expiresAt ?? null);
     }
     if (sets.length === 0) return this.getById(id);
     vals.push(id);

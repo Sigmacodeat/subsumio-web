@@ -157,3 +157,37 @@ describe("FileApiKeyStore (dev mode)", () => {
     expect(updated!.lastUsedAt).toBe("2024-06-01T00:00:00Z");
   });
 });
+
+describe("PgApiKeyStore.update", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    (globalThis as Record<string, unknown>).__subsumioApiKeyStore = undefined;
+    (globalThis as Record<string, unknown>).__subsumioApiKeyPool = undefined;
+  });
+
+  test("rotation writes the new secret hash, prefix and expiry", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SUBSUMIO_AUTH_DATABASE_URL", "postgres://example.invalid/db");
+    vi.resetModules();
+    const queries: Array<{ sql: string; vals: unknown[] }> = [];
+    (globalThis as Record<string, unknown>).__subsumioApiKeyStore = undefined;
+    (globalThis as Record<string, unknown>).__subsumioApiKeyPool = {
+      query: async (sql: string, vals: unknown[] = []) => {
+        queries.push({ sql, vals });
+        return { rows: [] };
+      },
+    };
+    const mod = await import("./api-key-store");
+    const store = mod.getApiKeyStore();
+    await store.update("key-1", {
+      secretHash: "new-hash",
+      prefix: "sk_live_new",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    });
+    const update = queries.find((q) => q.sql.startsWith("UPDATE subsumio_api_keys"));
+    expect(update?.sql).toContain("secret_hash = $1");
+    expect(update?.sql).toContain("prefix = $2");
+    expect(update?.sql).toContain("expires_at = $3");
+    expect(update?.vals).toEqual(["new-hash", "sk_live_new", "2099-01-01T00:00:00.000Z", "key-1"]);
+  });
+});

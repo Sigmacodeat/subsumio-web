@@ -47,3 +47,7 @@ export function maskApiKey(key: string): string {
   if (key.length <= 12) return "***";
   return `${key.slice(0, 12)}…${key.slice(-4)}`;
 }
+
+/** New keys expire after a year unless another term (or none) is chosen. */
+export const API_KEY_DEFAULT_EXPIRY_DAYS = 365;
+export const API_KEY_MAX_EXPIRY_DAYS = 730;
