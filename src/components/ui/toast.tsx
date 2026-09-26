@@ -68,10 +68,14 @@ const typeStyles: Record<ToastType, string> = {
 
 function ToastViewport() {
   const { toasts, removeToast } = useToast();
-  if (toasts.length === 0) return null;
+  // Die Live-Region wird IMMER gerendert (auch leer): Screenreader registrieren
+  // aria-live nur für Knoten, die beim Einfügen des Inhalts bereits im DOM
+  // stehen. Ein erst mit dem ersten Toast gemountetes Element würde die erste
+  // Meldung verschlucken. Der leere Container ist pointer-events-none, damit er
+  // keine Klicks abfängt.
   return (
     <div
-      className="fixed right-4 bottom-4 z-[100] flex flex-col gap-2"
+      className="pointer-events-none fixed right-4 bottom-4 z-[100] flex flex-col gap-2"
       role="region"
       aria-label="Benachrichtigungen"
       aria-live="polite"
@@ -79,8 +83,10 @@ function ToastViewport() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
+          // Fehler sind assertiv (role="alert"), alles andere höflich (role="status").
+          role={toast.type === "error" ? "alert" : "status"}
           className={cn(
-            "animate-in slide-in-from-bottom-2 fade-in relative flex w-full max-w-sm items-start gap-3 rounded-lg border px-4 py-3 shadow-lg motion-reduce:animate-none",
+            "animate-in slide-in-from-bottom-2 fade-in pointer-events-auto relative flex w-full max-w-sm items-start gap-3 rounded-lg border px-4 py-3 shadow-lg motion-reduce:animate-none",
             typeStyles[toast.type]
           )}
         >
@@ -93,7 +99,7 @@ function ToastViewport() {
             aria-label="Benachrichtigung schließen"
             className="rounded-md p-0.5 opacity-60 transition-[background-color,color,opacity,transform] duration-[var(--ds-duration-fast)] hover:bg-black/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ))}

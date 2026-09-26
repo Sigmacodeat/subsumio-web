@@ -45,7 +45,7 @@ describe("Dialog", () => {
     );
     fireEvent.click(screen.getByText("Open"));
     expect(screen.getByText("Close Test")).toBeInTheDocument();
-    const closeBtn = screen.getByRole("button", { name: /close/i });
+    const closeBtn = screen.getByRole("button", { name: /schließen/i });
     fireEvent.click(closeBtn);
     expect(screen.queryByText("Close Test")).not.toBeInTheDocument();
   });

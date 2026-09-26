@@ -71,7 +71,7 @@ const DialogContent = React.forwardRef<
             />
             <DialogPrimitive.Close className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg opacity-60 ring-offset-[color:var(--ds-surface-elevated)] transition-opacity hover:opacity-100 focus:ring-2 focus:ring-[color:var(--ds-ring)] focus:ring-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:pointer-events-none">
               <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">Schließen</span>
             </DialogPrimitive.Close>
           </div>
           {/* Scrollbarer Content-Bereich — flex-1 + min-h-0 für zuverlässiges Scrollen */}
@@ -100,7 +100,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-sm opacity-70 ring-offset-[color:var(--ds-surface-elevated)] transition-opacity hover:opacity-100 focus:ring-2 focus:ring-[color:var(--ds-ring)] focus:ring-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:pointer-events-none">
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">Schließen</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>

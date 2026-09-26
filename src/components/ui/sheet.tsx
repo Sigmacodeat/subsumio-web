@@ -11,7 +11,7 @@
  - Wie OpenAI's mobile Analytics Bottom-Sheet.
  */
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -30,6 +30,22 @@ interface SheetProps {
   desktopWidth?: string;
 }
 
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+  "[contenteditable='true']",
+].join(",");
+
+function getFocusable(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => !el.hasAttribute("aria-hidden") && !el.closest("[aria-hidden='true']")
+  );
+}
+
 export function Sheet({
   open,
   onClose,
@@ -41,19 +57,71 @@ export function Sheet({
 }: SheetProps) {
   const { t } = useLang();
   const sheetRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descId = useId();
 
-  // Escape to close + focus trap
+  // Escape to close + Fokusfalle (WCAG 2.1.2 / 2.4.3):
+  // - beim Öffnen: Fokus auf das erste fokussierbare Element im Panel,
+  //   sonst auf das Panel selbst (tabIndex=-1)
+  // - Tab / Shift+Tab zyklisch innerhalb des Panels
+  // - beim Schließen: Fokus zurück auf das zuvor fokussierte Element
   useEffect(() => {
     if (!open) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const focusFirst = () => {
+      const panel = sheetRef.current;
+      if (!panel) return;
+      const first = getFocusable(panel)[0];
+      (first ?? panel).focus({ preventScroll: true });
+    };
+    // Framer Motion mountet das Panel synchron; der Fokus wird trotzdem in
+    // einem Frame nachgezogen, damit initiale Autofocus-Kinder gewinnen.
+    const raf = requestAnimationFrame(() => {
+      const panel = sheetRef.current;
+      if (panel && !panel.contains(document.activeElement)) focusFirst();
+    });
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const panel = sheetRef.current;
+      if (!panel) return;
+      const focusable = getFocusable(panel);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof Node && panel.contains(active);
+      if (e.shiftKey) {
+        if (!inside || active === first || active === panel) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (!inside || active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     // Lock body scroll
     document.body.style.overflow = "hidden";
     return () => {
+      cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      if (previouslyFocused && previouslyFocused.isConnected) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
     };
   }, [open, onClose]);
 
@@ -84,8 +152,10 @@ export function Sheet({
             ref={sheetRef}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
-            aria-describedby={description ? "sheet-desc" : undefined}
+            aria-labelledby={title ? titleId : undefined}
+            aria-label={title ? undefined : t("sheet.aria_close")}
+            aria-describedby={description ? descId : undefined}
+            tabIndex={-1}
             initial={initial}
             animate={animate}
             exit={exit}
@@ -121,10 +191,12 @@ export function Sheet({
               <div className="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] p-4">
                 <div className="min-w-0 flex-1">
                   {title && (
-                    <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+                    <h2 id={titleId} className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      {title}
+                    </h2>
                   )}
                   {description && (
-                    <p id="sheet-desc" className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    <p id={descId} className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                       {description}
                     </p>
                   )}

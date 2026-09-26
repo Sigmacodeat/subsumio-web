@@ -71,6 +71,39 @@ describe("Toast", () => {
     vi.useRealTimers();
   });
 
+  it("rendert die Live-Region schon vor dem ersten Toast (leer, polite)", () => {
+    render(
+      <ToastProvider>
+        <ToastTrigger />
+      </ToastProvider>
+    );
+    const region = screen.getByRole("region", { name: "Benachrichtigungen" });
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region).toBeEmptyDOMElement();
+    expect(region).toHaveClass("pointer-events-none");
+  });
+
+  it("Fehler-Toasts sind role=alert, andere role=status", async () => {
+    function Triggers() {
+      const { addToast } = useToast();
+      return (
+        <>
+          <Button onClick={() => addToast({ title: "Kaputt", type: "error" })}>Fehler</Button>
+          <Button onClick={() => addToast({ title: "Hinweis", type: "info" })}>Info</Button>
+        </>
+      );
+    }
+    render(
+      <ToastProvider>
+        <Triggers />
+      </ToastProvider>
+    );
+    fireEvent.click(screen.getByText("Fehler"));
+    fireEvent.click(screen.getByText("Info"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Kaputt");
+    expect(screen.getByRole("status")).toHaveTextContent("Hinweis");
+  });
+
   it("throws when useToast is used outside provider", () => {
     function NoProvider() {
       useToast();
