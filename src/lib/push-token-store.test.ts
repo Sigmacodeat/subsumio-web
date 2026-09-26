@@ -41,3 +41,10 @@ describe("push registrations follow the sign-in state", () => {
     expect((await getPushTokensForUser("u-others")).map((t) => t.deviceId)).toEqual(["web:me"]);
   });
 });
+
+describe("no installation-wide token list (R8-19)", () => {
+  it("there is no brain-wide token query that ignores the firm", async () => {
+    const mod = await import("./push-token-store");
+    expect("getPushTokensForBrain" in mod).toBe(false);
+  });
+});
