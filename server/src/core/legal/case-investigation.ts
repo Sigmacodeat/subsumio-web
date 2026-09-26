@@ -30,6 +30,8 @@ import {
   normalizeForMatch,
   tryParseJSON,
   asStringArray,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -199,8 +201,8 @@ async function extractFactsFromDoc(
   maxChars: number
 ): Promise<CaseInvestigationFactEntry[]> {
   const { clipped } = clipText(content, maxChars);
-  const system = buildExtractionSystem(jurisdiction);
-  const user = `<dokument slug="${slug}" title="${title}">\n${clipped}\n</dokument>`;
+  const system = withUntrustedRule(buildExtractionSystem(jurisdiction), "dokument");
+  const user = wrapUntrusted("dokument", clipped, { slug, title });
 
   let raw: string;
   try {

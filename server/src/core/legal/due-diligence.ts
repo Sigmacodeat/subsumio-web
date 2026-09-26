@@ -15,6 +15,8 @@ import {
   jurisdictionLabel,
   loadPageText,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export type DDStatus = "ok" | "attention" | "missing" | "unknown";
@@ -198,12 +200,15 @@ export async function runDueDiligence(
     return empty;
   }
 
-  const user = docs.map((d) => `<dokument slug="${d.slug}">\n${d.text}\n</dokument>`).join("\n\n");
+  const user = docs.map((d) => wrapUntrusted("dokument", d.text, { slug: d.slug })).join("\n\n");
 
   let raw: string;
   try {
     raw = await llm({
-      system: buildSystem(category, jurisdiction, checklist, language),
+      system: withUntrustedRule(
+        buildSystem(category, jurisdiction, checklist, language),
+        "dokument"
+      ),
       user,
       maxTokens: 6000,
     });

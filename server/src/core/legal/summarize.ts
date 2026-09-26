@@ -11,6 +11,8 @@ import {
   defaultLegalLLM,
   resolveDocumentText,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface SummaryDate {
@@ -124,10 +126,14 @@ export async function summarizeDocument(
     return empty;
   }
 
-  const user = `<dokument>\n${clipped}\n</dokument>`;
+  const user = wrapUntrusted("dokument", clipped);
   let raw: string;
   try {
-    raw = await llm({ system: buildSystem(type, depth, focus, language), user, maxTokens: 4000 });
+    raw = await llm({
+      system: withUntrustedRule(buildSystem(type, depth, focus, language), "dokument"),
+      user,
+      maxTokens: 4000,
+    });
   } catch (e) {
     warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;

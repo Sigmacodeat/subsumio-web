@@ -24,6 +24,7 @@
 import { engineComplete, isEngineLLMAvailable, parseJsonObject } from "@/lib/engine-llm";
 import { berechneFristAuto, FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
+import { withUntrustedRule, wrapUntrusted } from "@/lib/untrusted-prompt";
 
 /**
  * Known FRISTEN_REGISTRY keys — the LLM must choose from these.
@@ -163,8 +164,8 @@ export async function extractDeadlinesWithLLM(
       // A missed Frist is the costliest error this product can make —
       // extraction runs on the reasoning tier, never the cheapest model.
       tier: "reasoning",
-      system: SYSTEM_PROMPT,
-      prompt: `BEZUGSDATUM: ${referenceDate}\n\nText:\n${truncated}`,
+      system: withUntrustedRule(SYSTEM_PROMPT, "dokument"),
+      prompt: `BEZUGSDATUM: ${referenceDate}\n\nText:\n${wrapUntrusted("dokument", truncated)}`,
       json: true,
       maxTokens: 800,
       timeoutMs: 45_000,

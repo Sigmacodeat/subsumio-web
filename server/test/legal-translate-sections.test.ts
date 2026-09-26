@@ -45,7 +45,11 @@ describe("translateDocument", () => {
     let calls = 0;
     const llm = async ({ user }: { user: string }) => {
       calls++;
-      const body = user.slice(user.indexOf(":\n\n") + 3);
+      // The section sits in the <uebersetzungstext> data block.
+      const body = user.slice(
+        user.indexOf("<uebersetzungstext>\n") + "<uebersetzungstext>\n".length,
+        user.lastIndexOf("\n</uebersetzungstext>")
+      );
       return JSON.stringify({
         translated_text: body.replace(/Absatz/g, "Paragraph"),
         glossary: [],

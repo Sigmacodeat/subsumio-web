@@ -58,6 +58,7 @@ import type {
 import { classifyCapabilities } from "../../ai/capabilities.ts";
 import { randomUUIDv7 } from "bun";
 import { resolveSpecialist } from "../specialist-defs.ts";
+import { withUntrustedRule } from "../../legal/llm-util.ts";
 import { resolveSpecialistTier } from "../../model-profile.ts";
 import type { ModelTier } from "../../model-config.ts";
 
@@ -245,6 +246,12 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           }
         }
       }
+    }
+
+    // Document text embedded under a data tag: the system prompt says it is
+    // data, not instructions (the specialist overlay above replaced `system`).
+    if (typeof data.untrusted_data_tag === "string" && data.untrusted_data_tag) {
+      data.system = withUntrustedRule(data.system ?? "", data.untrusted_data_tag);
     }
 
     // v0.38 (S1.5 + S1.7) — capability-based gate replaces the v0.31.12

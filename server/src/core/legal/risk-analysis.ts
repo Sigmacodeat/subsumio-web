@@ -18,6 +18,8 @@ import {
   resolveDocumentText,
   scoreToLevel,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface ClauseRisk {
@@ -147,11 +149,11 @@ export async function analyzeRisk(
     return empty;
   }
 
-  const user = `<vertrag>\n${clipped}\n</vertrag>`;
+  const user = wrapUntrusted("vertrag", clipped);
   let raw: string;
   try {
     raw = await llm({
-      system: buildSystem(contractType, jurisdiction, perspective),
+      system: withUntrustedRule(buildSystem(contractType, jurisdiction, perspective), "vertrag"),
       user,
       maxTokens: 4000,
     });

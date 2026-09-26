@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, recordCreditConsumption } from "@/lib/api-handler";
 import { engineComplete } from "@/lib/engine-llm";
+import { untrustedDataRule, wrapUntrusted } from "@/lib/untrusted-prompt";
 
 export const maxDuration = 60;
 
@@ -89,7 +90,7 @@ AKTE: ${body.case_slug || "—"}
 SPALTEN: ${body.columns.join(", ")}
 
 DATEN:
-${tableText}
+${wrapUntrusted("tabellendaten", tableText)}
 
 FRAGE DES ANWALTS: ${body.query}
 
@@ -100,6 +101,8 @@ Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`
     const completion = await engineComplete(ctx.headers, {
       purpose: "review_table.ask",
       tier: "reasoning",
+      // Cell values come from documents: data, not instructions.
+      system: untrustedDataRule("tabellendaten"),
       prompt,
       maxTokens: 2_000,
       timeoutMs: 45_000,
