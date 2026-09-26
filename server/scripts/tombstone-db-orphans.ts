@@ -16,7 +16,9 @@
  *
  * Soft-delete only (deleted_at = now()): invisible to search at once,
  * reversible, and the hard purge stays purge-tombstoned-pages.ts's separate
- * decision. Writes an inventory before touching anything. Updates run in
+ * decision. Writes an inventory before touching anything (one file per run,
+ * `<inventory-out>-<run id>.jsonl`, appended + fsynced before each source's
+ * updates). Updates run in
  * small id batches — one large UPDATE with cascading work held locks for
  * hours on 2026-09-24 and stalled every import.
  *
@@ -40,6 +42,12 @@ import { join } from "node:path";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
 import { INDEX_OF, loadIndexIds, scanNormalized } from "./corpus-sync-inventory.ts";
+import {
+  InventoryWriter,
+  inventoryPathFor,
+  makeRunId,
+  tombstoneWithInventory,
+} from "./tombstone-inventory.ts";
 
 interface Engine {
   executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
@@ -135,9 +143,10 @@ function readBaseline(path: string): SollBaseline {
   }
 }
 
-async function main() {
+/** CLI parsing, exported so tests can pin the accepted flags. */
+export function parseCliArgs(argv: string[]) {
   const { values } = parseArgs({
-    args: Bun.argv.slice(2),
+    args: argv,
     options: {
       source: { type: "string" },
       yes: { type: "boolean", default: false },
@@ -149,6 +158,11 @@ async function main() {
     allowPositionals: false,
   });
   if (values.yes && values["dry-run"]) throw new Error("--yes und --dry-run schließen sich aus.");
+  return values;
+}
+
+async function main() {
+  const values = parseCliArgs(Bun.argv.slice(2));
   const APPLY = values.yes as boolean;
   const root = values.root as string;
   const sources = values.source ? [values.source as string] : Object.keys(SOURCES);
@@ -163,7 +177,10 @@ async function main() {
   const engine = (await createEngine(cfg)) as unknown as Engine;
   await engine.connect(cfg);
 
-  const inventory: string[] = [];
+  const runId = makeRunId(`${values.source ?? "all"}${APPLY ? "" : "-dryrun"}`);
+  const inventory = new InventoryWriter(
+    inventoryPathFor(values["inventory-out"] as string, runId)
+  );
   try {
     for (const source of sources) {
       const corpus = SOURCES[source]!;
@@ -198,6 +215,12 @@ async function main() {
       }
 
       const plan = selectOrphans(rows, onDisk, soll);
+      const f = (n: number) => n.toLocaleString("de-AT");
+      console.log(
+        `${source}: ${f(plan.livePages)} aktive Seiten · ${f(plan.orphans.length)} nur in DB (weder Platte noch RIS-Soll)` +
+          ` · ${f(plan.awaitingFetch)} warten auf Nachabruf (bleiben)` +
+          ` · ${f(plan.dated)} datierte ältere Fassungen (bleiben) · ${f(plan.withoutDocId)} ohne doc_id (bleiben)`
+      );
       checkSollPlausible({
         source,
         sollSize: soll.size,
@@ -209,34 +232,28 @@ async function main() {
       });
       // Nur ein akzeptiertes Soll wird zur neuen Vergleichsbasis.
       writeFileSync(baselinePath, JSON.stringify({ ...baseline, [source]: soll.size }) + "\n");
-      const f = (n: number) => n.toLocaleString("de-AT");
-      console.log(
-        `${source}: ${f(plan.livePages)} aktive Seiten · ${f(plan.orphans.length)} nur in DB (weder Platte noch RIS-Soll)` +
-          ` · ${f(plan.awaitingFetch)} warten auf Nachabruf (bleiben)` +
-          ` · ${f(plan.dated)} datierte ältere Fassungen (bleiben) · ${f(plan.withoutDocId)} ohne doc_id (bleiben)`
-      );
-      for (const o of plan.orphans) inventory.push(JSON.stringify({ source_id: source, ...o }));
+      const entries = plan.orphans.map((o) => ({
+        id: o.id,
+        line: JSON.stringify({ run_id: runId, source_id: source, ...o }),
+      }));
 
       if (APPLY) {
-        const ids = plan.orphans.map((o) => o.id);
-        for (let i = 0; i < ids.length; i += 500) {
-          await engine.executeRaw(
-            `UPDATE pages SET deleted_at = now() WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`,
-            [ids.slice(i, i + 500)]
-          );
-          if ((i / 500) % 10 === 0)
-            process.stderr.write(`  ${f(Math.min(i + 500, ids.length))}/${f(ids.length)}\r`);
-        }
+        await tombstoneWithInventory(engine, entries, inventory, 500, (done, total) => {
+          if (done % 5000 === 0 || done === total)
+            process.stderr.write(`  ${f(done)}/${f(total)}\r`);
+        });
         process.stderr.write("\n");
+      } else {
+        inventory.append(entries.map((e) => e.line));
       }
     }
   } finally {
+    inventory.close();
     await engine.disconnect();
   }
 
-  if (inventory.length > 0) {
-    writeFileSync(values["inventory-out"] as string, inventory.join("\n") + "\n");
-    console.log(`Inventar: ${values["inventory-out"]} (${inventory.length} Zeilen)`);
+  if (inventory.lines > 0) {
+    console.log(`Inventar: ${inventory.path} (${inventory.lines} Zeilen, Lauf ${runId})`);
   }
   console.log(APPLY ? "Angewendet (Soft-Delete)." : "TROCKENLAUF — mit --yes anwenden.");
 }
