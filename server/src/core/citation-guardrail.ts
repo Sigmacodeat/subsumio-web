@@ -6,7 +6,8 @@
  *
  * Architecture:
  *   Check 1: Citation Presence — every §-citation must appear in context text
- *   Check 2: Law Validation — every law abbreviation must be a known law
+ *   Check 2: Law Validation — every law abbreviation must be verifiable (known
+ *            law list, retrieved slugs or retrieved text); unverifiable ≠ non-existent
  *   Check 3: Non-§ Reference Grounding — EU directives, articles must be in context
  *   Check 4: Hedging Detection — detect model admitting ungrounded citations
  *   Check 5: Cross-Law Contamination — cited laws must be in retrieved results
@@ -14,11 +15,14 @@
  * No LLM calls. Pure regex + string matching. O(n) in answer length.
  */
 
-// ─── Known Laws Whitelist ─────────────────────────────────────────────────
-// Built from law-corpus/de/, law-corpus/at/, law-corpus/ch/, law-corpus/eu/
-// plus common German legal abbreviations that may not have corpus files.
+import { AT_LAW_ABBREVIATIONS } from "./legal/at-law-abbreviations.generated.ts";
 
-export const KNOWN_LAWS = new Set<string>([
+// ─── Known Laws Whitelist ─────────────────────────────────────────────────
+// Hand-maintained core list (DE/AT/CH/EU) plus every AT short title from the
+// RIS corpus (AT_LAW_ABBREVIATIONS, generated from src/lib/corpus-meta.json —
+// regenerate with `bun server/scripts/generate-at-law-abbreviations.ts`).
+
+const CORE_KNOWN_LAWS = [
   // German federal laws (from law-corpus/de/)
   "AO",
   "BauGB",
@@ -170,7 +174,40 @@ export const KNOWN_LAWS = new Set<string>([
   "DSRL",
   "ePrivacy",
   "BrusselsIbis",
-]);
+];
+
+export const KNOWN_LAWS = new Set<string>([...CORE_KNOWN_LAWS, ...AT_LAW_ABBREVIATIONS]);
+
+// ─── Citation Pattern Pieces ──────────────────────────────────────────────
+// Law abbreviations contain umlauts, ß and hyphens (AußStrG, ÄrzteG, B-VG);
+// an ASCII-only class truncated "AußStrG" to "Au". Absatz is written with or
+// without a dot ("Abs. 1" DE, "Abs 1" AT); AT adds "Z" (Ziffer) and "lit".
+
+const LAW_TOKEN = String.raw`[A-ZÄÖÜ](?:[A-Za-zÄÖÜäöüß-]{0,14}[A-Za-zÄÖÜäöüß])`;
+const LAW_END = String.raw`(?![A-Za-zÄÖÜäöüß])`;
+const PARA_BODY = String.raw`§§?\s*(\d+[a-z]?)\s*(?:Abs\.?\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*(?:Z\s*\d+[a-z]?\s*)?(?:lit\.?\s*[a-z]\s*)?`;
+
+/** § citation with optional law abbreviation. Groups: num, abs, satz, law. */
+function citationRegex(flags: string): RegExp {
+  return new RegExp(`${PARA_BODY}(?:(${LAW_TOKEN})${LAW_END})?`, flags);
+}
+
+/** Lowercase, fold umlauts/ß, drop separators: "AußStrG" → "ausstrg", "B-VG" → "bvg". */
+function normalizeLawKey(law: string): string {
+  return law
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/** True when the abbreviation occurs as a standalone token in the retrieved text. */
+function lawAppearsInText(law: string, text: string): boolean {
+  const escaped = law.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![A-Za-zÄÖÜäöüß])${escaped}${LAW_END}`).test(text);
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -221,9 +258,8 @@ export interface GuardrailResult {
 export function extractCitations(text: string): string[] {
   const citations: string[] = [];
 
-  // Pattern: § or §§ + number(+optional letter) + optional Abs./Satz + optional law abbreviation
-  const pattern =
-    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
+  // Pattern: § or §§ + number(+optional letter) + optional Abs./Satz/Z/lit + optional law abbreviation
+  const pattern = citationRegex("g");
 
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -256,16 +292,15 @@ export function extractLawAbbreviations(text: string): string[] {
 
   // Pattern 1: After § citations: "§ 12 BGB" → "BGB"
   // This is the only reliable pattern — law abbreviations after § are unambiguous
-  const afterPara =
-    /§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/g;
+  const afterPara = citationRegex("g");
   let m: RegExpExecArray | null;
   while ((m = afterPara.exec(text)) !== null) {
-    laws.add(m[1]);
+    if (m[4]) laws.add(m[4]);
   }
 
   // Pattern 2: Explicit law references in parentheses: "(BGB)", "(AO)"
   // These are reliable because the parentheses signal an abbreviation
-  const parenLaw = /\(([A-Z][A-Za-z]{1,10})\)/g;
+  const parenLaw = new RegExp(`\\((${LAW_TOKEN})\\)`, "g");
   while ((m = parenLaw.exec(text)) !== null) {
     const candidate = m[1];
     if (KNOWN_LAWS.has(candidate)) {
@@ -449,9 +484,7 @@ export function extractContextCitations(contextText: string): string[] {
  */
 function citationInContext(citation: string, contextText: string): boolean {
   // Parse the citation
-  const match = citation.match(
-    /§\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/
-  );
+  const match = citation.match(citationRegex(""));
   if (!match) return false;
 
   const [, num, abs, satz, law] = match;
@@ -474,6 +507,9 @@ function citationInContext(citation: string, contextText: string): boolean {
     // Also check without space after Abs.
     const withAbsNoDotSpace = `§ ${num} Abs.${abs}`;
     if (contextText.includes(withAbsNoDotSpace)) return true;
+    // AT style without dot: "§ 7 Abs 4 VwGVG"
+    const withAbsNoDot = `§ ${num} Abs ${abs}`;
+    if (contextText.includes(withAbsNoDot)) return true;
 
     // If Satz is also specified, check that too
     if (satz) {
@@ -573,11 +609,18 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
   }
 
   // ── Check 2: Law Validation ──
+  // An abbreviation counts as verified when it is on the known-law list, is
+  // one of the retrieved statutes (slug form, e.g. "aussstrg") or occurs in the
+  // retrieved text. Anything else is only *unverifiable* — the list is not
+  // exhaustive — so the flag (and the regeneration instruction) must not claim
+  // the law does not exist. Field name kept for API compatibility.
+  const retrievedLawKeys = new Set(retrievedLaws.map(normalizeLawKey));
   const nonExistentLaws: string[] = [];
   for (const law of answerLaws) {
-    if (!KNOWN_LAWS.has(law) && !isCommonFalsePositive(law)) {
-      nonExistentLaws.push(law);
-    }
+    if (KNOWN_LAWS.has(law) || isCommonFalsePositive(law)) continue;
+    if (retrievedLawKeys.has(normalizeLawKey(law))) continue;
+    if (lawAppearsInText(law, context)) continue;
+    nonExistentLaws.push(law);
   }
 
   // ── Check 3: Non-§ Reference Grounding ──
@@ -623,14 +666,13 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
   // ── Check 5: Cross-Law Contamination ──
   const crossLawContamination: string[] = [];
   for (const law of answerLaws) {
-    // Skip if law is not a real law (already caught by Check 2)
+    // Only listed laws are checked here; unverifiable ones are Check 2's job.
     if (!KNOWN_LAWS.has(law)) continue;
 
-    // Check if this law appears in retrieved results
-    // v2: Use exact case-insensitive match, not substring.
-    // Previously "ABGB".includes("BGB") was true → false negative.
-    const lawLower = law.toLowerCase();
-    const isInRetrieved = retrievedLaws.some((rl) => rl.toLowerCase() === lawLower);
+    // Check if this law appears in retrieved results. Exact match on the
+    // normalized key (not substring — "ABGB" must not match "bgb"); the key
+    // folds ß/umlauts/hyphens so "AußStrG" matches the slug "aussstrg".
+    const isInRetrieved = retrievedLawKeys.has(normalizeLawKey(law));
 
     if (!isInRetrieved) {
       // Special case: GG (Grundgesetz) articles are often cited alongside other laws
@@ -663,7 +705,7 @@ export function checkCitationGrounding(input: GuardrailInput): GuardrailResult {
   for (const law of nonExistentLaws) {
     flags.push({
       type: "non_existent_law",
-      detail: `Law abbreviation "${law}" is not a known law`,
+      detail: `Law abbreviation "${law}" could not be verified (not in known-law list or retrieved sources)`,
       citation: law,
       severity: "high" as Severity,
     });
@@ -751,7 +793,8 @@ export function buildRegenerationPrompt(
 
   if (guardrailResult.non_existent_laws.length > 0) {
     prohibitions.push(
-      `Folgende Gesetzesabkürzungen existieren nicht und dürfen NICHT verwendet werden: ` +
+      `Folgende Gesetzesabkürzungen konnten weder im Gesetzesverzeichnis noch in den bereitgestellten Rechtsquellen verifiziert werden — ` +
+        `verwende sie nur, wenn sie in den Quellen wörtlich belegt sind, sonst kennzeichne sie als nicht verifiziert: ` +
         `${guardrailResult.non_existent_laws.join(", ")}`
     );
   }
