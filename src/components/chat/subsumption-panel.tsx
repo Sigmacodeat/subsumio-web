@@ -995,7 +995,7 @@ export function SubsumptionPanel({ jurisdiction, caseSlug, onClose }: Subsumptio
               onChange={(e) => setScenario(e.target.value)}
               placeholder="Beschreiben Sie den Sachverhalt... Beispiel: 'Mein Mandant wurde bei einem Hundebiss verletzt. Der Hund gehört dem Nachbarn und war nicht angeleint.'"
               rows={4}
-              className="w-full resize-none rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:outline-none"
+              className="w-full resize-none rounded-xl border border-[var(--ds-border-control)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] motion-reduce:transition-none"
               disabled={isStreaming}
             />
             <div className="flex items-center justify-between">

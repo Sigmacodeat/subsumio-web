@@ -723,6 +723,11 @@
   --ds-surface-hover: var(--ds-hover);
   --ds-border: var(--neutral-700);
   --ds-border-strong: var(--neutral-600);
+  /* Feldgrenze für Formularsteuerelemente (WCAG 1.4.11, ≥ 3:1):
+     neutral-400 = 4,76:1 auf --ds-surface (neutral-800), 3,24:1 auf
+     --ds-surface-2 (neutral-700). --ds-border bleibt dekorativ. */
+  --ds-border-control: var(--neutral-400);
+  --ds-control-border: var(--ds-border-control);
   --ds-text: var(--neutral-100);
   --ds-text-muted: var(--neutral-300);
   --ds-text-subtle: var(--neutral-400);
@@ -832,6 +837,10 @@
   --ds-surface-hover: var(--ds-hover);
   --ds-border: var(--neutral-200);
   --ds-border-strong: var(--neutral-400);
+  /* Feldgrenze (WCAG 1.4.11): neutral-500 = 4,19:1 auf Weiß, 3,73:1 auf
+     --ds-surface-2 (neutral-100). */
+  --ds-border-control: var(--neutral-500);
+  --ds-control-border: var(--ds-border-control);
 
   /* Editorial palette — additive, marketing-only. */
   --mk-parchment: hsl(38, 26%, 95%);
@@ -910,6 +919,10 @@
   --ds-surface-hover: var(--ds-hover);
   --ds-border: hsla(220, 30%, 96%, 0.16);
   --ds-border-strong: hsla(220, 30%, 96%, 0.26);
+  /* Feldgrenze auf dunklen Bändern: 50 % Weiß-Anteil ergibt ≥ 3:1 auf jedem
+     Band mit Lightness ≤ 20 %. */
+  --ds-border-control: hsla(220, 30%, 96%, 0.5);
+  --ds-control-border: var(--ds-border-control);
   --ds-success-text: hsl(150, 40%, 72%);
   --ds-success-bg: hsla(150, 35%, 55%, 0.12);
   --ds-success-border: hsla(150, 35%, 55%, 0.22);
@@ -1030,8 +1043,16 @@
   --ds-border: hsl(40, 6%, 88%);
   --ds-border-strong: hsl(40, 5%, 80%);
   --ds-border-hover: hsl(40, 6%, 82%);
-  /* Input/control boundaries: 3:1 on white (WCAG 1.4.11). */
-  --ds-control-border: hsl(40, 4%, 53%);
+  /* Feldgrenze für Formularsteuerelemente (WCAG 1.4.11 Non-text Contrast).
+     Berechnet nach WCAG-Formel (relative Luminanz, sRGB):
+       hsl(40, 5%, 53%) → 3,48:1 auf --ds-surface (#fff), 3,19:1 auf
+       --ds-surface-2 (hsl(40,7%,96%)).
+     hsl(40, 5%, 58%) wäre mit 2,96:1 / 2,72:1 zu hell. --ds-border (1,31:1)
+     bleibt für dekorative Trennlinien. Geprüft durch
+     src/app/design-token-contrast.test.ts. */
+  --ds-border-control: hsl(40, 5%, 53%);
+  /* Alias (ältere Aufrufer). */
+  --ds-control-border: var(--ds-border-control);
   /* Three clearly separated text steps on white: 18:1 · 7:1 · 5:1 (≥ 4.5:1 on every surface). */
   --ds-text: hsl(40, 15%, 8%);
   --ds-text-muted: hsl(40, 6%, 34%);
@@ -1076,16 +1097,24 @@
   --ds-success-text: var(--signal-success-700);
   --ds-success-bg: color-mix(in srgb, var(--signal-success-500) 10%, var(--ds-surface));
   --ds-success-border: color-mix(in srgb, var(--signal-success-500) 24%, var(--ds-surface));
-  --ds-success-solid: var(--signal-success-600);
-  --ds-success-solid-hover: var(--signal-success-700);
+  /* Entscheidung *-solid (WCAG 1.4.3): Die Solid-Flächen tragen an 60+
+     Stellen `text-white` (Buttons, Rang-Badges, Toggle-Knöpfe). Statt jede
+     Stelle auf dunklen Text umzustellen, werden die Tokens eine Stufe
+     abgedunkelt, sodass Weiß darauf ≥ 4,5:1 erreicht:
+       success-600 hsl(158,56%,37%) = 3,82:1 → success-700 hsl(158,55%,29%) = 5,78:1
+       warning-600 hsl(38,85%,43%)  = 3,01:1 → warning-700 hsl(36,80%,35%)  = 4,69:1
+     Hover geht jeweils eine Stufe tiefer (-800), bleibt also ebenfalls ≥ 4,5:1.
+     Geprüft durch src/app/design-token-contrast.test.ts. */
+  --ds-success-solid: var(--signal-success-700);
+  --ds-success-solid-hover: var(--signal-success-800);
   /* signal-warning-700 measured 4.34:1 on --ds-warning-bg — just under WCAG
      AA 4.5:1 (axe color-contrast, Playwright a11y suite). signal-warning-800
      is the smallest bump that clears it (6.85:1). */
   --ds-warning-text: var(--signal-warning-800);
   --ds-warning-bg: color-mix(in srgb, var(--signal-warning-500) 10%, var(--ds-surface));
   --ds-warning-border: color-mix(in srgb, var(--signal-warning-500) 24%, var(--ds-surface));
-  --ds-warning-solid: var(--signal-warning-600);
-  --ds-warning-solid-hover: var(--signal-warning-700);
+  --ds-warning-solid: var(--signal-warning-700);
+  --ds-warning-solid-hover: var(--signal-warning-800);
   --ds-danger-text: var(--signal-danger-700);
   --ds-danger-bg: color-mix(in srgb, var(--signal-danger-500) 10%, var(--ds-surface));
   --ds-danger-border: color-mix(in srgb, var(--signal-danger-500) 24%, var(--ds-surface));
@@ -1183,7 +1212,11 @@
   --ds-border: hsla(222, 30%, 62%, 0.14);
   --ds-border-strong: hsla(222, 30%, 66%, 0.22);
   --ds-border-hover: hsla(222, 30%, 72%, 0.28);
-  --ds-control-border: hsla(220, 12%, 66%, 0.62);
+  /* Feldgrenze (WCAG 1.4.11), opak statt Alpha, damit der Kontrast nicht
+     vom Untergrund abhängt: hsl(222, 8%, 45%) → 3,49:1 auf --ds-surface
+     (hsl(222,14%,10.5%)), 3,17:1 auf --ds-surface-2 (hsl(222,12%,14%)). */
+  --ds-border-control: hsl(222, 8%, 45%);
+  --ds-control-border: var(--ds-border-control);
   /* Text hierarchy — verified ≥4.5:1 on --ds-surface and --ds-surface-2.
      Kept intentionally brighter for comfortable small-table legibility. */
   --ds-text: hsl(222, 15%, 94%);
@@ -1230,13 +1263,18 @@
   --ds-success-text: hsl(150, 40%, 72%);
   --ds-success-bg: hsla(150, 35%, 55%, 0.12);
   --ds-success-border: hsla(150, 35%, 55%, 0.22);
-  --ds-success-solid: hsl(150, 45%, 58%);
-  --ds-success-solid-hover: hsl(150, 45%, 66%);
+  /* *-solid tragen auch im Dark-Mode weißen Text (gleiche Aufrufer wie Light).
+     58 % Lightness ergab nur 2,1–2,3:1 mit Weiß → tiefer gesetzt:
+       success hsl(150,40%,32%) = 5,72:1 mit Weiß (3,06:1 auf --ds-surface)
+       warning hsl(38,55%,35%)  = 5,21:1 mit Weiß (3,37:1 auf --ds-surface)
+     Hover hellt um 3 Punkte auf und bleibt ≥ 4,5:1. */
+  --ds-success-solid: hsl(150, 40%, 32%);
+  --ds-success-solid-hover: hsl(150, 40%, 35%);
   --ds-warning-text: hsl(38, 60%, 70%);
   --ds-warning-bg: hsla(38, 55%, 55%, 0.12);
   --ds-warning-border: hsla(38, 55%, 55%, 0.22);
-  --ds-warning-solid: hsl(38, 60%, 58%);
-  --ds-warning-solid-hover: hsl(38, 60%, 66%);
+  --ds-warning-solid: hsl(38, 55%, 35%);
+  --ds-warning-solid-hover: hsl(38, 55%, 38%);
   --ds-danger-text: hsl(0, 50%, 72%);
   --ds-danger-bg: hsla(0, 45%, 55%, 0.12);
   --ds-danger-border: hsla(0, 45%, 55%, 0.22);
@@ -2122,7 +2160,11 @@
 [data-app="dashboard"] [role="menuitem"]:focus-visible,
 [data-app="dashboard"] [role="option"]:focus-visible,
 [data-app="dashboard"] [role="tab"]:focus-visible,
-[data-app="dashboard"] [tabindex]:focus-visible {
+[data-app="dashboard"] [tabindex]:focus-visible,
+[data-app="dashboard"] input:focus-visible,
+[data-app="dashboard"] textarea:focus-visible,
+[data-app="dashboard"] select:focus-visible,
+[data-app="dashboard"] [contenteditable]:focus-visible {
   outline: 2px solid var(--ds-ring);
   outline-offset: 2px;
   border-radius: var(--ds-radius-sm);

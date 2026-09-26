@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex w-full items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-[color:var(--ds-text)] ring-offset-[color:var(--ds-surface)] transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none [data-placeholder]:text-[color:var(--ds-text-subtle)]",
+      "flex w-full items-center justify-between rounded-lg border border-[color:var(--ds-border-control)] bg-[color:var(--ds-surface)] px-3 py-2 text-[color:var(--ds-text)] ring-offset-[color:var(--ds-surface)] transition-[background-color,border-color,color] duration-[var(--ds-duration-fast)] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none [data-placeholder]:text-[color:var(--ds-text-subtle)]",
       // Mobile: 44px Touch-Target + 16px font (verhindert iOS Auto-Zoom),
       // Desktop: 40px + 14px font
       "h-11 text-base sm:h-10 sm:text-sm",

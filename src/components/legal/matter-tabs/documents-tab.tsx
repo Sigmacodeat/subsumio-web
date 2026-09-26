@@ -571,7 +571,7 @@ export function DocumentsTab() {
             onChange={(event) => ctx.setDocumentPassword(event.target.value)}
             onClick={(event) => event.stopPropagation()}
             disabled={!isOnline()}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border-control)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-[border-color,box-shadow] focus:border-[color:var(--ds-ring)] focus:ring-2 focus:ring-[color:var(--ds-ring)]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] motion-reduce:transition-none"
           />
         </div>
         {ctx.folderApi && (
