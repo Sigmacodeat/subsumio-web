@@ -148,6 +148,48 @@ describe("validateBody: screenreader copies", () => {
   });
 });
 
+describe("validateBody: statute too_short", () => {
+  const cases: Array<[string, string, boolean]> = [
+    ["aufgehoben", "# § 223 StPO\n\n§ 223. (Aufgehoben)", false],
+    ["entfallen-Bereich", "# § 295 GewO 1994\n\n§§ 295 bis 332 entfallen.", false],
+    ["Anm-Vermerk", "# Ärztliche Physikatsprüfungsverordnung\n\n(Anm.: § 16 gegenstandslos)", false],
+    ["Kurz-Verweisnorm", "# § 32 UHG\n\n§ 32. Der § 20 ist anzuwenden.", false],
+    ["gestrichen", "# Übereinkommen\n\nArtikel 19\n\nGestrichen.", false],
+    ["echter Leerkörper", "# § 1\n\n§ 1.", true],
+    ["Meta-Rest ohne Norm", "Aufgerufen am 26.09.2026", true],
+  ];
+  for (const [name, body, expectReject] of cases) {
+    test(`too_short: ${name}`, async () => {
+      const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+      const codes = validateBody(body, "statute").map((i) => i.code);
+      if (expectReject) expect(codes).toContain("too_short");
+      else expect(codes).not.toContain("too_short");
+    });
+  }
+
+  test("meta_dump_only: ein einzelner Begriff im Rechtstext reicht nicht", async () => {
+    const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+    const gog5 =
+      "# § 5 GOG\n\n§ 5\n\n(1) Nach der Angelobung wählt der Nationalrat aus seiner Mitte den Präsidenten.\n\n(3) Alle Wahlen gelten für die ganze Gesetzgebungsperiode.";
+    expect(validateBody(gog5, "statute").map((i) => i.code)).not.toContain("meta_dump_only");
+    const dump =
+      "Landesgesetzblatt Nr. 12/2020\nDatum des Landtagsbeschlusses: 01.03.2020\nBegleitende Dokumente: keine";
+    expect(validateBody(dump, "statute").map((i) => i.code)).toContain("meta_dump_only");
+  });
+
+  test("letterhead: Vordruck-DVR allein ist kein Briefkopf", async () => {
+    const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+    const vordruck =
+      "# Anl. 3\n\nZahlschein\n\n€\n\n0,00\n\nKundendaten 980600000099 DVR: 9999999 unbedingt als Verwendungszweck angeben. ".repeat(
+        3
+      );
+    expect(validateBody(vordruck, "statute").map((i) => i.code)).not.toContain("letterhead");
+    const briefkopf =
+      "Magistrat der Stadt\nDVR: 0069699\nUID: ATU12345678\n\n" + "Bescheidtext. ".repeat(10);
+    expect(validateBody(briefkopf, "statute").map((i) => i.code)).toContain("letterhead");
+  });
+});
+
 describe("metadata backfill", () => {
   const NORMEN = ["VwGG §34 Abs1", "B-VG Art133 Abs4"];
   const RAW_OLD = `---

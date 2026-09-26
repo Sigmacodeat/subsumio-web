@@ -247,9 +247,15 @@ const RE_CHROME =
 /** Screenreader-Dopplung aus dem HTML — jede Abkürzung steht doppelt da. */
 const RE_SR_ONLY =
   /römisch\s+[IVXLC]|Paragraph (eins|zwei|drei|vier|fünf)\b|Absatz (eins|zwei|drei)\b|Bundesgesetzblatt Teil (eins|zwei)\b/;
-/** Body enthält nur die RIS-Metadatentabelle, keinen Normtext. */
-const RE_META_DUMP =
-  /Landesgesetzblatt Nr\.|Gesetzgebungsperiode|Datum des Landtagsbeschlusses|Begleitende Dokumente/;
+/** Marker der RIS-Metadatentabelle (Landesrecht). Jeder einzeln gezählt —
+ *  ein echter Dump hat den ganzen Label-Satz; Rechtstext nennt höchstens
+ *  einen der Begriffe ("Gesetzgebungsperiode" steht z. B. im GOG § 5). */
+const RE_META_DUMP_MARKERS = [
+  /Landesgesetzblatt Nr\./,
+  /Gesetzgebungsperiode/,
+  /Datum des Landtagsbeschlusses/,
+  /Begleitende Dokumente/,
+];
 /** Platzhalter statt Inhalt. */
 const RE_STUB = /Volltext nicht abrufbar|nicht abrufbar — siehe Quelle/;
 
@@ -270,8 +276,6 @@ const RE_STUB = /Volltext nicht abrufbar|nicht abrufbar — siehe Quelle/;
  */
 const RE_PDF_PAGEBREAK =
   /www\.ris\.bka\.gv\.at\s*Seite \d+ von \d+|Seite \d+ von \d+\s*www\.ris\.bka\.gv\.at/;
-/** Behördlicher Briefkopf aus der Druckfassung. */
-const RE_LETTERHEAD = /DVR:\s*\d{7}|UID:\s*ATU\d+|P\.b\.b\. Erscheinungsort/;
 /** Body besteht nur aus einem Bildverweis — in RIS nicht digitalisierte Anlagen. */
 const RE_IMAGE_ONLY = /^[\s\S]{0,80}\/Dokumente\/\S+\.(png|jpg|gif|pdf)\s*$/;
 
@@ -316,7 +320,15 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
       "pdf_pagebreak",
       "Kopf-/Fußzeile der Druckfassung im Fließtext — Seitenreihenfolge unzuverlässig"
     );
-  if (RE_LETTERHEAD.test(text)) bad("letterhead", "behördlicher Briefkopf im Fließtext");
+  // Briefkopf-Impressum besteht aus MEHREREN dieser Angaben zusammen.
+  // "DVR: 9999999" allein ist auch legitimer Vordruck-Text (FSG-PV Anl. 3
+  // Zahlschein), "P.b.b." kommt in Postverkehrs-Klauseln vor — ein
+  // Einzeltreffer darf nicht reichen.
+  const letterheadTreffer =
+    Number(/DVR:\s*\d{7}/.test(text)) +
+    Number(/UID:\s*ATU\d+/.test(text)) +
+    Number(/P\.b\.b\. Erscheinungsort/.test(text));
+  if (letterheadTreffer >= 2) bad("letterhead", "behördlicher Briefkopf im Fließtext");
   // Sprachausgabe-Dopplung: verwerfen NUR bei hoher Dichte.
   //
   // Als Ja/Nein-Regel war das die teuerste Fehlentscheidung der Schleuse:
@@ -360,13 +372,31 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
     (substance.length < 20 && /\/Dokumente\/\S+\.(png|jpg|gif|pdf)/.test(text))
   )
     bad("image_only", "Anlage liegt in RIS nur als Bild vor — nicht einbettbar");
-  // Nur-Metadaten-Dump: RIS-Tabellenlabels ohne jeden Normtext
-  else if (RE_META_DUMP.test(text) && substance.length < 400)
+  // Nur-Metadaten-Dump: mehrere RIS-Tabellenlabels, kein Normtext.
+  else if (
+    RE_META_DUMP_MARKERS.filter((re) => re.test(text)).length >= 2 &&
+    substance.length < 400
+  )
     bad("meta_dump_only", "nur RIS-Metadatentabelle, kein Normtext");
   else if (docClass === "statute") {
     // at-normen hat legitime Kurzparagraphen — § 1044 ABGB sind 128 Zeichen.
     // Gemessen wird deshalb nur, ob überhaupt Substanztext vorhanden ist.
-    if (substance.length < 40) bad("too_short", `${substance.length} Zeichen Substanztext`);
+    if (substance.length < 40) {
+      // Aufgehobene Verweis- und Anmerkungsparagraphen sind mit 10–35
+      // Zeichen VOLLSTÄNDIGER Rechtstext: "§ 223. (Aufgehoben)",
+      // "§§ 295 bis 332 entfallen.", "(Anm.: Beilage A nicht darstellbar!)".
+      // Nach dem ris-xml-fetch 2026-09-26 verwarf die 40-Zeichen-Schwelle
+      // 82 solcher Normen als Lücken, obwohl RIS exakt diesen Text liefert.
+      const kurzAberVollstaendig =
+        /\baufgehoben\b|\bentf[äa]llt\b|\bentfallen\b|\bgestrichen\b|\bgegenstandslos\b|\bweggelassen\b/i.test(
+          substance
+        ) ||
+        /\(Anm\.?/i.test(substance) ||
+        (substance.length >= 15 &&
+          /(?:^|\s)(?:§+|Art\.?\s*\d|Artikel\s|Anl\.?\s*\d|Anlage\s)/i.test(substance));
+      if (!kurzAberVollstaendig)
+        bad("too_short", `${substance.length} Zeichen Substanztext`);
+    }
   } else if (docClass === "decision") {
     if (!DECISION_CONTENT_SECTIONS.test(body))
       bad("no_content_section", "keine inhaltliche Sektion (Rechtssatz/Spruch/Text/…)");

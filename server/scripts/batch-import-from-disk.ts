@@ -577,7 +577,8 @@ async function main() {
       const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
       const body = bodyMatch ? bodyMatch[1].trim() : content;
       const isRisLegalPage =
-        content.includes("type: law") && content.includes("source_format: xml");
+        (content.includes("type: law") && content.includes("source_format: xml")) ||
+        content.includes("doc_class: statute");
       if (body.length < 50 && !isRisLegalPage) {
         batchSkipped++;
         cursor.totalSkipped++;
