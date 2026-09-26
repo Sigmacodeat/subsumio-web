@@ -160,6 +160,31 @@ describe("verifyApiKey", () => {
     );
   });
 
+  test("an API key past its expiry is refused; one before it is accepted", async () => {
+    const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
+      mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    };
+    const key = {
+      id: "key-exp",
+      ownerId: "user-1",
+      name: "Automatisierung",
+      prefix: "sk_live_exp12",
+      secretHash: "hash_sk_live_exp123",
+      scopes: ["read"],
+      active: true,
+      createdAt: "2024-01-01T00:00:00Z",
+      createdBy: "test@example.com",
+      kind: "api",
+    };
+    mockStore.findByHash.mockResolvedValue({
+      ...key,
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+    });
+    expect(await verifyApiKey("Bearer sk_live_exp123")).toBeNull();
+    mockStore.findByHash.mockResolvedValue({ ...key, expiresAt: "2999-01-01T00:00:00.000Z" });
+    expect(await verifyApiKey("Bearer sk_live_exp123")).not.toBeNull();
+  });
+
   test("returns null when owner user not found", async () => {
     const { mockStore } = (await import("@/lib/api-key-store")) as unknown as {
       mockStore: { findByHash: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };

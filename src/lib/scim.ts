@@ -37,6 +37,18 @@ import { auditBrainForOrg } from "@/lib/audit-user";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
 import { revokeUserAccess } from "@/lib/auth/revoke-access";
+import { revokeAllSessions } from "@/lib/auth/session";
+import { sendMail } from "@/lib/mail";
+import {
+  getScimGroupStore,
+  groupMemberIds,
+  groupRoleKey,
+  listGroupsForOrg,
+  lowerRole,
+  roleFromGroups,
+  type ScimMappedRole,
+  type StoredScimGroup,
+} from "@/lib/scim-groups";
 import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
@@ -423,6 +435,21 @@ export async function provisionOrUpdateUser(
     scimExternalId: externalId || user.scimExternalId,
   };
 
+  // E-mail changes from the directory are applied when the new address is not
+  // used by another account; otherwise the account keeps its address and the
+  // conflict is recorded (never merged into, never taken over).
+  const oldEmail = user.email;
+  let emailConflict = false;
+  if (email && email !== oldEmail.toLowerCase()) {
+    const holder = await store.getByEmail(email);
+    if (holder && holder.id !== user.id) {
+      emailConflict = true;
+    } else {
+      patch.email = email;
+      patch.emailVerifiedAt = new Date().toISOString();
+    }
+  }
+
   // `active` is applied only when the IdP states it; a request without it
   // (partial PUT/POST) leaves the account as it is.
   if (active === true && user.deactivatedAt) {
@@ -440,11 +467,42 @@ export async function provisionOrUpdateUser(
     await revokeUserAccess(user.id);
   }
 
+  const auditBrain = await auditBrainForOrg(orgId ?? user.orgId);
   await logAudit("scim.user_updated", "user", {
-    brainId: await auditBrainForOrg(orgId ?? user.orgId),
+    brainId: auditBrain,
     entityId: user.id,
-    details: { email, externalId, active, changes: patch },
+    details: {
+      email,
+      externalId,
+      active,
+      changes: patch,
+      ...(emailConflict ? { emailConflict: true, keptEmail: oldEmail } : {}),
+    },
   });
+
+  if (patch.email) {
+    // Same consequences as a self-service e-mail change: every session ends
+    // (it carries the old address) and the old address is told.
+    await revokeAllSessions(user.id);
+    await logAudit("user.email_changed", "user", {
+      brainId: auditBrain,
+      entityId: user.id,
+      details: {
+        source: "scim",
+        oldDomain: oldEmail.split("@")[1] ?? "",
+        newDomain: patch.email.split("@")[1] ?? "",
+      },
+    });
+    void sendMail({
+      to: oldEmail,
+      subject: "Subsumio — E-Mail-Adresse geändert",
+      text: `Guten Tag ${user.name},\n\ndas Benutzerverzeichnis Ihrer Kanzlei hat die E-Mail-Adresse Ihres Subsumio-Kontos auf ${patch.email} geändert. Alle bestehenden Anmeldungen wurden beendet.\n\nFalls das nicht zutrifft, wenden Sie sich bitte an Ihre Kanzleiverwaltung.\n\n— Subsumio`,
+    }).catch((err) =>
+      log.warn("[scim] old-address notice failed", {
+        error: err instanceof Error ? err.message : String(err),
+      })
+    );
+  }
 
   return { user, created: false };
 }
@@ -471,6 +529,79 @@ export async function deprovisionUser(userId: string, orgId?: string): Promise<U
   });
 
   return updated;
+}
+
+// ── Group → role mapping ──────────────────────────────────────────────
+
+/**
+ * Applies the firm's group → role mapping to `userIds` (people whose
+ * membership in a mapped group changed). A person in at least one mapped
+ * group gets the highest mapped role; a person who is in none any more drops
+ * to the lower of their current role and SCIM_DEFAULT_ROLE (never up). Firm
+ * admins and the owner are never changed, and nobody becomes admin, so the
+ * last-admin and owner rules cannot be broken from the directory. Returns
+ * how many roles changed.
+ */
+export async function applyScimGroupRoles(
+  orgId: string,
+  userIds: Iterable<string>
+): Promise<number> {
+  const org = await getOrgStore().getById(orgId);
+  const mapping = org?.scimGroupRoles;
+  if (!org || !mapping || Object.keys(mapping).length === 0) return 0;
+  const groups = await listGroupsForOrg(orgId);
+  const store = getStore();
+  const brainId = await auditBrainForOrg(orgId);
+  let changed = 0;
+  for (const userId of new Set(userIds)) {
+    const user = await store.getById(userId);
+    if (!user || user.orgId !== orgId || user.deactivatedAt) continue;
+    if (user.role === "admin" || user.id === org.ownerId) continue;
+    const current = user.role as ScimMappedRole;
+    const next =
+      roleFromGroups(user.id, groups, mapping) ??
+      lowerRole(current, SCIM_DEFAULT_ROLE as ScimMappedRole);
+    if (next === current) continue;
+    await store.update(user.id, { role: next });
+    changed++;
+    await logAudit("team.role_change", "user", {
+      brainId,
+      entityId: user.id,
+      details: { from: current, to: next, source: "scim_group" },
+    });
+  }
+  return changed;
+}
+
+function isMappedGroup(
+  group: Pick<StoredScimGroup, "displayName"> | null | undefined,
+  mapping: Record<string, string> | null | undefined
+): boolean {
+  return !!group && !!mapping?.[groupRoleKey(group.displayName ?? "")];
+}
+
+/**
+ * After a group was created, changed or deleted: applies the mapping to
+ * everyone whose membership in a mapped group changed (or everyone in it
+ * when the group's name — and so its mapping — changed).
+ */
+export async function syncRolesAfterGroupChange(
+  orgId: string,
+  before: StoredScimGroup | null,
+  after: StoredScimGroup | null
+): Promise<number> {
+  const org = await getOrgStore().getById(orgId);
+  const mapping = org?.scimGroupRoles;
+  if (!isMappedGroup(before, mapping) && !isMappedGroup(after, mapping)) return 0;
+  const a = groupMemberIds(before);
+  const b = groupMemberIds(after);
+  const renamed =
+    groupRoleKey(before?.displayName ?? "") !== groupRoleKey(after?.displayName ?? "");
+  const affected = renamed
+    ? [...new Set([...a, ...b])]
+    : [...a].filter((id) => !b.has(id)).concat([...b].filter((id) => !a.has(id)));
+  if (affected.length === 0) return 0;
+  return applyScimGroupRoles(orgId, affected);
 }
 
 // ── SCIM Filter Parser (basic) ────────────────────────────────────────
@@ -568,7 +699,9 @@ export interface WorkOSDirectoryGroup {
  * List directory users from WorkOS.
  * Paginates through all results.
  */
-export async function listWorkOSDirectoryUsers(directoryId: string): Promise<WorkOSDirectoryUser[]> {
+export async function listWorkOSDirectoryUsers(
+  directoryId: string
+): Promise<WorkOSDirectoryUser[]> {
   if (!process.env.WORKOS_API_KEY || !directoryId) {
     throw new Error("WorkOS Directory Sync not configured");
   }
@@ -610,7 +743,9 @@ export async function listWorkOSDirectoryUsers(directoryId: string): Promise<Wor
 /**
  * List directory groups from WorkOS.
  */
-export async function listWorkOSDirectoryGroups(directoryId: string): Promise<WorkOSDirectoryGroup[]> {
+export async function listWorkOSDirectoryGroups(
+  directoryId: string
+): Promise<WorkOSDirectoryGroup[]> {
   if (!process.env.WORKOS_API_KEY || !directoryId) {
     throw new Error("WorkOS Directory Sync not configured");
   }
@@ -729,11 +864,15 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
       allUsers.filter((u) => u.scimExternalId).map((u) => u.scimExternalId as string)
     );
 
+    // Directory user id → our user id (group members are stored by ours).
+    const localIdByDirectoryId = new Map<string, string>();
+
     // Process each directory user
     for (const dirUser of dirUsers) {
       try {
         const scimUser = workOSUserToScim(dirUser);
-        const { created } = await provisionOrUpdateUser(scimUser, orgId);
+        const { user: local, created } = await provisionOrUpdateUser(scimUser, orgId);
+        localIdByDirectoryId.set(dirUser.id, local.id);
         if (created) {
           usersCreated++;
         } else {
@@ -755,9 +894,39 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
       }
     }
 
-    // Sync groups (just count for now — groups are informational)
+    // Groups: stored per firm with their members (our user ids, resolved
+    // from the directory users' group lists), then the firm's group → role
+    // mapping is applied to everyone whose membership changed.
     try {
       const dirGroups = await listWorkOSDirectoryGroups(directoryId);
+      const members = new Map<string, string[]>();
+      for (const dirUser of dirUsers) {
+        const localId = localIdByDirectoryId.get(dirUser.id);
+        if (!localId) continue;
+        for (const g of dirUser.groups ?? []) {
+          members.set(g.value, [...(members.get(g.value) ?? []), localId]);
+        }
+      }
+      const groupStore = getScimGroupStore();
+      const now = new Date().toISOString();
+      for (const dirGroup of dirGroups) {
+        const before = await groupStore.get(orgId, dirGroup.id);
+        const after: StoredScimGroup = {
+          schemas: [SCIM_SCHEMA_GROUP],
+          id: dirGroup.id,
+          externalId: dirGroup.id,
+          displayName: dirGroup.displayName,
+          members: (members.get(dirGroup.id) ?? []).map((value) => ({ value })),
+          meta: {
+            resourceType: "Group",
+            created: before?.meta?.created ?? now,
+            lastModified: now,
+          },
+          _orgId: orgId,
+        };
+        await groupStore.put(after);
+        await syncRolesAfterGroupChange(orgId, before, after);
+      }
       groupsProcessed = dirGroups.length;
       await logAudit("scim.group_synced", "group", {
         brainId: await auditBrainForOrg(orgId),

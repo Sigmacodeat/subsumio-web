@@ -54,3 +54,41 @@ export function supportAccessLogKey(
   if (action.startsWith("auth.")) return null;
   return `${session.id} ${method.toUpperCase()} ${pathname}`;
 }
+
+/** Longest support approval a firm can give: 7 days. */
+export const SUPPORT_GRANT_MAX_HOURS = 7 * 24;
+
+/** Whether a firm approval allows a session in `mode` right now. */
+export function supportGrantAllows(
+  grant: { mode: SupportSessionMode; expiresAt: string; revokedAt?: string | null } | null,
+  mode: SupportSessionMode,
+  now: number = Date.now()
+): boolean {
+  if (!grant || grant.revokedAt) return false;
+  const until = Date.parse(grant.expiresAt);
+  if (!Number.isFinite(until) || until <= now) return false;
+  return mode === "read" || grant.mode === "write";
+}
+
+/** A session ends after `ttlMs`, and never after the approval it runs under. */
+export function supportSessionExpiry(now: Date, grantExpiresAt: string, ttlMs: number): Date {
+  const byTtl = now.getTime() + ttlMs;
+  const byGrant = Date.parse(grantExpiresAt);
+  return new Date(Number.isFinite(byGrant) ? Math.min(byTtl, byGrant) : now.getTime());
+}
+
+/**
+ * Who the web app's own matter checks (src/lib/matter-access.ts) must look
+ * at: inside a support session the engine role ("support"/"lawyer"), never
+ * the firm-admin view the web side keeps for settings — so restricted
+ * matters stay closed on the web side exactly as in the engine.
+ */
+export function matterAccessUserFor(ctx: {
+  user: { id: string; role?: string };
+  supportSession?: { mode: SupportSessionMode };
+}): { userId: string; role?: string } {
+  return {
+    userId: ctx.user.id,
+    role: ctx.supportSession ? supportEngineRole(ctx.supportSession.mode) : ctx.user.role,
+  };
+}

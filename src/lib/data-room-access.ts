@@ -7,6 +7,7 @@
 import { ENGINE_URL, type EngineContext } from "@/lib/engine";
 import { tenantIdForUser } from "@/lib/tenants";
 import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
 import {
   getDataRoomStore,
   memberActive,
@@ -18,7 +19,7 @@ export type RoomRole =
   | { kind: "host"; canManage: boolean }
   | { kind: "guest"; member: DataRoomMember };
 
-type Ctx = Pick<EngineContext, "headers" | "brainId" | "user">;
+type Ctx = Pick<EngineContext, "headers" | "brainId" | "user" | "supportSession">;
 
 /** The matter as the caller sees it through the engine (walls apply), or null. */
 export async function readCase(
@@ -49,9 +50,7 @@ export async function mayManageCase(ctx: Ctx, caseSlug: string): Promise<boolean
   if (ctx.user.role === "client_viewer") return false;
   const matter = await readCase(ctx, caseSlug);
   if (!matter) return false;
-  return (
-    matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, matter.permissions) === "write"
-  );
+  return matterAccessLevel(matterAccessUserFor(ctx), matter.permissions) === "write";
 }
 
 /**
@@ -63,9 +62,7 @@ export async function mayReadCase(ctx: Ctx, caseSlug: string): Promise<boolean> 
   if (!["admin", "lawyer", "assistant"].includes(ctx.user.role ?? "")) return false;
   const matter = await readCase(ctx, caseSlug).catch(() => null);
   if (!matter) return false;
-  return (
-    matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, matter.permissions) !== "none"
-  );
+  return matterAccessLevel(matterAccessUserFor(ctx), matter.permissions) !== "none";
 }
 
 export async function roomRole(ctx: Ctx, room: DataRoom): Promise<RoomRole | null> {

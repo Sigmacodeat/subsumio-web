@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { isSupportedUploadName, SUPPORTED_UPLOAD_MIME_TYPES } from "@/lib/upload-formats";
 import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
 
 export const maxDuration = 10;
 
@@ -167,9 +168,7 @@ export const POST = createHandler(
         // (The direct upload the token authorises carries no session, so
         // this is where write access is decided.)
         const permissions = casePage.frontmatter?.permissions as MatterPermissions | undefined;
-        if (
-          matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, permissions) !== "write"
-        ) {
+        if (matterAccessLevel(matterAccessUserFor(ctx), permissions) !== "write") {
           return Response.json(
             {
               error: "matter_read_only",

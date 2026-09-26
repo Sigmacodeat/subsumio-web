@@ -4,6 +4,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 import { randomUUID } from "node:crypto";
 import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
 import { isStaffRole } from "@/lib/team-visibility";
 
 const shareSchema = z
@@ -62,10 +63,7 @@ export const POST = createHandler(
       if ((casePage?.type ?? casePage?.frontmatter?.type) !== "legal_case") {
         return apiError("case_not_found", "Akte nicht gefunden", 404);
       }
-      const level = matterAccessLevel(
-        { userId: ctx.user.id, role: ctx.user.role },
-        casePage?.frontmatter?.permissions
-      );
+      const level = matterAccessLevel(matterAccessUserFor(ctx), casePage?.frontmatter?.permissions);
       if (level !== "write") {
         return apiError("forbidden", "Kein Schreibrecht auf diese Akte", 403);
       }

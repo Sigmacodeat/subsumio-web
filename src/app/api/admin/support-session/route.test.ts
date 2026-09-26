@@ -24,7 +24,20 @@ vi.mock("@/lib/auth/store", () => ({
 const startSupportSession = vi.fn(async (_input: unknown) => ({}) as unknown);
 const getActiveSupportSession = vi.fn(async (_id: string) => null as unknown);
 const endSupportSession = vi.fn(async (_id: string) => null as unknown);
+const WRITE_GRANT = {
+  id: "g1",
+  orgId: "org_a",
+  mode: "write",
+  grantedById: "owner_1",
+  grantedByEmail: "admin@kanzlei-a.example",
+  createdAt: "2099-01-01T00:00:00.000Z",
+  expiresAt: "2099-01-08T00:00:00.000Z",
+  revokedAt: null,
+  revokedByEmail: null,
+};
+const getActiveSupportGrant = vi.fn(async (_orgId: string) => WRITE_GRANT as unknown);
 vi.mock("@/lib/support-session", () => ({
+  getActiveSupportGrant: (orgId: string) => getActiveSupportGrant(orgId),
   startSupportSession: (input: unknown) => startSupportSession(input),
   getActiveSupportSession: (id: string) => getActiveSupportSession(id),
   endSupportSession: (id: string) => endSupportSession(id),
@@ -70,6 +83,31 @@ describe("POST /api/admin/support-session (start)", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("PLATFORM_OPERATOR_EMAILS", OPERATOR.email);
     vi.mocked(requireEngineContext).mockResolvedValue(opCtx() as any);
+    getActiveSupportGrant.mockResolvedValue(WRITE_GRANT);
+  });
+
+  it("refuses to start without a valid firm approval (403, fail-closed)", async () => {
+    getActiveSupportGrant.mockResolvedValue(null);
+    const res = await POST(postRequest({ orgId: ORG.id, reason: "Ticket #98 — Ansicht prüfen" }));
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("support_grant_required");
+    expect(startSupportSession).not.toHaveBeenCalled();
+    expect(writeFirmVisibleSupportAuditEntry).not.toHaveBeenCalled();
+  });
+
+  it("refuses write access when the firm approved reading only", async () => {
+    getActiveSupportGrant.mockResolvedValue({ ...WRITE_GRANT, mode: "read" });
+    const res = await POST(
+      postRequest({
+        orgId: ORG.id,
+        reason: "Ticket #97 — Import reparieren",
+        mode: "write",
+        writeReason: "Fehlerhafte Importzeilen korrigieren",
+      })
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("support_grant_read_only");
+    expect(startSupportSession).not.toHaveBeenCalled();
   });
 
   it("starts a session for an existing org and writes both audit trails", async () => {
@@ -94,7 +132,7 @@ describe("POST /api/admin/support-session (start)", () => {
     expect(body.data.session).toMatchObject({ orgId: ORG.id, orgName: ORG.name });
 
     expect(startSupportSession).toHaveBeenCalledWith(
-      expect.objectContaining({ operatorId: OPERATOR.id, orgId: ORG.id })
+      expect.objectContaining({ operatorId: OPERATOR.id, orgId: ORG.id, grant: WRITE_GRANT })
     );
     expect(logAudit).toHaveBeenCalledWith(
       "support.session_start",

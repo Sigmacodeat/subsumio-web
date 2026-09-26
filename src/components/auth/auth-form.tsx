@@ -75,6 +75,17 @@ const COPY = {
       "Bitte bestätigen Sie die AGB und die Datenschutzerklärung und schließen Sie den AVV ab.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   } as Record<string, string>,
+  // Same text for every registration — it never says whether an account exists.
+  confirm: {
+    title: "Bitte bestätigen Sie Ihre E-Mail-Adresse",
+    body: "Wir haben eine Nachricht an {email} geschickt. Öffnen Sie den Link darin, um fortzufahren — danach sind Sie angemeldet. Der Link ist 48 Stunden gültig.",
+    hint: "Keine Nachricht erhalten? Prüfen Sie den Spam-Ordner oder registrieren Sie sich in einigen Minuten erneut.",
+  },
+  verifyNotice: {
+    exists: "Ihr Konto ist bereits angelegt. Bitte melden Sie sich an.",
+    invalid:
+      "Der Bestätigungslink ist ungültig oder abgelaufen. Bitte registrieren Sie sich erneut oder melden Sie sich an.",
+  } as Record<string, string>,
   twoFactor: {
     title: "Zwei-Faktor-Anmeldung",
     sub: "Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App oder einen Backup-Code ein.",
@@ -124,6 +135,10 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
     const code = params.get("error");
     return code ? (t.errors[code] ?? null) : null;
   });
+  // After a registration: the address the confirmation went to.
+  const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
+  // ?verify=exists|invalid from the confirmation link.
+  const verifyNotice = t.verifyNotice[params.get("verify") ?? ""] ?? null;
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoConfigured, setSsoConfigured] = useState(false);
@@ -240,6 +255,7 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                 jurisdiction,
                 acceptTerms,
                 acceptDpa,
+                next,
               }
             : { email, password }
         ),
@@ -257,12 +273,17 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         setLoading(false);
         return;
       }
-      if (mode === "login") {
-        tracking.auth.loginSuccess("password");
-      } else {
+      if (mode === "signup") {
+        // No session yet: the account is created when the link in the
+        // confirmation mail is opened (the same answer for every address).
         tracking.auth.signupSuccess("password");
         if (fromDemo) tracking.demo?.signupCompleted();
+        setConfirmSentTo(email.trim());
+        setPassword("");
+        setLoading(false);
+        return;
       }
+      tracking.auth.loginSuccess("password");
       // Hard navigation — router.push + router.refresh races in Next.js 15
       // and leaves the browser stuck on /login. The session cookie is already
       // set by the Set-Cookie header in the API response, so a full page load
@@ -325,7 +346,27 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
             <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
           </ClipReveal>
 
-          {challengeToken ? (
+          {verifyNotice && !confirmSentTo && (
+            <div
+              role="status"
+              className="mb-4 rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] p-3 text-xs [color:var(--mk-text)]"
+            >
+              {verifyNotice}
+            </div>
+          )}
+
+          {confirmSentTo ? (
+            <div role="status" className="space-y-3" data-testid="signup-confirm-sent">
+              <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
+                <Mail size={16} className="text-[var(--brand-primary)]" aria-hidden />
+                {t.confirm.title}
+              </div>
+              <p className="text-sm [color:var(--mk-text-muted)]">
+                {t.confirm.body.replace("{email}", confirmSentTo)}
+              </p>
+              <p className="text-xs [color:var(--mk-text-muted)]">{t.confirm.hint}</p>
+            </div>
+          ) : challengeToken ? (
             <form method="post" onSubmit={verifyTwoFactor} className="space-y-4" noValidate>
               <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
                 <ShieldCheck size={16} className="text-[var(--brand-primary)]" aria-hidden />

@@ -205,6 +205,8 @@ export type AuditAction =
   | "admin.chunk_clear_flag"
   | "support.session_start"
   | "support.session_end"
+  | "support.grant_created"
+  | "support.grant_revoked"
   | "acl.add_member"
   | "acl.remove_member"
   | "acl.delete_group"
@@ -547,6 +549,8 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.chunk_clear_flag": "Admin: Chunk-Markierung entfernt",
   "support.session_start": "Subsumio-Support: Zugriff gestartet",
   "support.session_end": "Subsumio-Support: Zugriff beendet",
+  "support.grant_created": "Subsumio-Support: Freigabe erteilt",
+  "support.grant_revoked": "Subsumio-Support: Freigabe widerrufen",
   "dms.push": "Dokument an DMS gepusht",
   "dms.content_download": "DMS-Dokument geöffnet",
   "dms.config_update": "DMS-Anbindung eingerichtet/geändert",

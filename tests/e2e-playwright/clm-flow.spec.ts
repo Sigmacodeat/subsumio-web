@@ -4,12 +4,13 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 
 async function signUpViaApi(page: Page) {
   const email = `clm-${Date.now()}-${++testCounter}@subsumio.local`;
-  const signup = await page.context().request.post("/api/auth/signup", {
+  const signup = await signupAndConfirm(page.context().request, {
     data: {
       acceptTerms: true,
       acceptDpa: true,

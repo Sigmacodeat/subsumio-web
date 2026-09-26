@@ -16,6 +16,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = {
@@ -30,7 +31,7 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
       acceptTerms: true,
       acceptDpa: true,

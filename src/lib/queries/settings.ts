@@ -85,8 +85,17 @@ export interface ApiKey {
   scopes: string[];
   active: boolean;
   createdAt: string;
-  lastUsedAt?: string;
+  lastUsedAt?: string | null;
   createdBy?: string;
+  kind?: "api" | "addin";
+  expiresAt?: string | null;
+  /** Still marked active, but past its expiry — no longer accepted. */
+  expired?: boolean;
+}
+
+/** A key in the firm-wide overview (admins), with its owner. */
+export interface FirmApiKey extends ApiKey {
+  owner: { id: string; name: string; email: string };
 }
 
 interface ApiKeyResponse {
@@ -100,14 +109,24 @@ export function useApiKeys() {
   });
 }
 
+/** Every key of every member of the firm — firm admins only. */
+export function useFirmApiKeys(enabled: boolean) {
+  return useQuery({
+    queryKey: ["settings", "api-keys", "firm"],
+    queryFn: () => apiGet<{ keys: FirmApiKey[] }>("/api/api-keys?scope=firm"),
+    enabled,
+  });
+}
+
 export function useCreateApiKey() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) =>
+    // expiresInDays: null = no expiry; omitted = the server default (365 days).
+    mutationFn: (input: string | { name: string; expiresInDays?: number | null }) =>
       csrfFetch("/api/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(typeof input === "string" ? { name: input } : input),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "api-keys"] }),
   });

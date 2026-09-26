@@ -6,7 +6,7 @@
  * (docs/TESTING.md). Use `daysFromNow(n)` — the firm's calendar day (Vienna)
  * n days from the moment the test runs.
  */
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type APIResponse, type Page } from "@playwright/test";
 
 const FIRM_TZ = "Europe/Vienna";
 
@@ -26,6 +26,32 @@ export function firmTodayE2E(): string {
   return daysFromNow(0);
 }
 
+/**
+ * Registers through the real signup flow and confirms it. Signup never signs
+ * in by itself (it answers the same for new and taken addresses and mails a
+ * confirmation link — src/lib/auth/pending-signup.ts); under the E2E harness
+ * (SUBSUMIO_E2E=1) the response carries that link, and opening it creates the
+ * account and sets the session cookie on this request context. Returns the
+ * signup response (201 for every valid registration).
+ */
+export async function signupAndConfirm(
+  request: APIRequestContext,
+  options: { data: Record<string, unknown> }
+): Promise<APIResponse> {
+  const res = await request.post("/api/auth/signup", options);
+  if (res.status() !== 201) return res;
+  const body = (await res.json().catch(() => ({}))) as { e2eVerifyUrl?: string };
+  if (body.e2eVerifyUrl) {
+    const link = new URL(body.e2eVerifyUrl);
+    const confirm = await request.get(`${link.pathname}${link.search}`, { maxRedirects: 0 });
+    expect(confirm.status(), "confirmation link redirects into the app").toBeGreaterThanOrEqual(
+      300
+    );
+    expect(confirm.status()).toBeLessThan(400);
+  }
+  return res;
+}
+
 /** Signs up a fresh user (legal industry), finishes onboarding, returns the CSRF token. */
 export async function signUpLegalUser(
   page: Page,
@@ -33,7 +59,7 @@ export async function signUpLegalUser(
   password = "E2eTestPass123!"
 ): Promise<{ email: string; csrf: string }> {
   const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@subsumio.local`;
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
       acceptTerms: true,
       acceptDpa: true,

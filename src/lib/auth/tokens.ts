@@ -9,7 +9,14 @@
 
 import { getAuthSecret, b64url, b64urlDecode, hmacKey } from "./session";
 
-export type TokenPurpose = "reset" | "verify" | "invite" | "2fa_challenge" | "email_change";
+export type TokenPurpose =
+  | "reset"
+  | "verify"
+  | "invite"
+  | "2fa_challenge"
+  | "email_change"
+  /** Confirms a registration; the account is created only then (pending-signup.ts). */
+  | "signup";
 
 export interface ActionTokenPayload {
   uid: string;
@@ -21,6 +28,8 @@ export interface ActionTokenPayload {
   /** email_change only: the proposed new address, carried inside the signed
    *  payload so it cannot be swapped without invalidating the signature. */
   email?: string;
+  /** signup only: the encrypted registration (see src/lib/auth/pending-signup.ts). */
+  data?: string;
 }
 
 export const RESET_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour

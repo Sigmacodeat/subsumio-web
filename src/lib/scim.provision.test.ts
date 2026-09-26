@@ -35,12 +35,7 @@ vi.mock("@/lib/auth/revoke-access", () => ({
   revokeUserAccess: vi.fn(async () => ({ keysRevoked: 0 })),
 }));
 
-import {
-  SCIM_DEFAULT_ROLE,
-  parseScimBoolean,
-  provisionOrUpdateUser,
-  type SCIMUser,
-} from "./scim";
+import { SCIM_DEFAULT_ROLE, parseScimBoolean, provisionOrUpdateUser, type SCIMUser } from "./scim";
 import { revokeUserAccess } from "@/lib/auth/revoke-access";
 
 const scimUser: SCIMUser = {
@@ -86,14 +81,26 @@ describe("active attribute", () => {
   });
 
   it("leaves an existing account unchanged when active is absent", async () => {
-    existing = { id: "u-1", orgId: "org-1", role: "lawyer", deactivatedAt: null };
+    existing = {
+      id: "u-1",
+      email: "sekretariat@kanzlei.example",
+      orgId: "org-1",
+      role: "lawyer",
+      deactivatedAt: null,
+    };
     await provisionOrUpdateUser(withoutActive, "org-1");
     expect(updates[0]).not.toHaveProperty("deactivatedAt");
     expect(revokeUserAccess).not.toHaveBeenCalled();
   });
 
   it("deactivates on explicit false and ends standing access", async () => {
-    existing = { id: "u-1", orgId: "org-1", role: "lawyer", deactivatedAt: null };
+    existing = {
+      id: "u-1",
+      email: "sekretariat@kanzlei.example",
+      orgId: "org-1",
+      role: "lawyer",
+      deactivatedAt: null,
+    };
     await provisionOrUpdateUser({ ...scimUser, active: false }, "org-1");
     expect(updates[0].deactivatedAt).toBeTruthy();
     expect(revokeUserAccess).toHaveBeenCalledWith("u-1");

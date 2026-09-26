@@ -5,15 +5,26 @@ import {
   scimResponse,
   SCIM_SCHEMA_GROUP,
   SCIM_SCHEMA_PATCH_OP,
+  syncRolesAfterGroupChange,
   type SCIMGroup,
   type SCIMPatchRequest,
 } from "@/lib/scim";
 import {
   applyGroupPatch,
-  groups,
   getGroupForOrg,
+  getScimGroupStore,
   type StoredScimGroup,
 } from "@/lib/scim-groups";
+import { logAudit } from "@/lib/audit";
+import { auditBrainForOrg } from "@/lib/audit-user";
+
+async function auditGroup(orgId: string, id: string, operation: string, displayName?: string) {
+  await logAudit("scim.group_synced", "group", {
+    brainId: await auditBrainForOrg(orgId),
+    entityId: id,
+    details: { operation, ...(displayName ? { displayName } : {}) },
+  });
+}
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +66,7 @@ export const GET = createScimHandler(
     const orgId = (ctx as Record<string, unknown>).orgId as string;
     const params = await (extra.params || Promise.resolve({}));
     const { id } = params as { id: string };
-    const group = getGroupForOrg(id, orgId);
+    const group = await getGroupForOrg(id, orgId);
 
     if (!group) {
       return scimError(404, `Group ${id} not found`);
@@ -82,7 +93,7 @@ export const PUT = createScimHandler(
     const orgId = (ctx as Record<string, unknown>).orgId as string;
     const params = await (extra.params || Promise.resolve({}));
     const { id } = params as { id: string };
-    const existing = getGroupForOrg(id, orgId);
+    const existing = await getGroupForOrg(id, orgId);
 
     if (!existing) {
       return scimError(404, `Group ${id} not found`);
@@ -106,7 +117,9 @@ export const PUT = createScimHandler(
       _orgId: orgId,
     };
 
-    groups.set(id, updated);
+    await getScimGroupStore().put(updated);
+    await syncRolesAfterGroupChange(orgId, existing, updated);
+    await auditGroup(orgId, id, "replace", updated.displayName);
     return scimResponse(updated);
   }
 );
@@ -127,32 +140,30 @@ export const PATCH = createScimHandler(
     const orgId = (ctx as Record<string, unknown>).orgId as string;
     const params = await (extra.params || Promise.resolve({}));
     const { id } = params as { id: string };
-    const existing = getGroupForOrg(id, orgId);
-
-    if (!existing) {
-      return scimError(404, `Group ${id} not found`);
-    }
-
     const patchReq = body as SCIMPatchRequest;
 
     if (!patchReq.schemas?.includes(SCIM_SCHEMA_PATCH_OP)) {
       return scimError(400, "Missing or invalid schemas for PATCH");
     }
 
-    const updated: StoredScimGroup = { ...existing };
-
-    for (const op of patchReq.Operations || []) {
-      applyGroupPatch(updated, op);
+    const result = await getScimGroupStore().update(orgId, id, (group) => {
+      for (const op of patchReq.Operations || []) {
+        applyGroupPatch(group, op);
+      }
+      group.meta = {
+        resourceType: "Group",
+        created: group.meta?.created,
+        lastModified: new Date().toISOString(),
+      };
+      return group;
+    });
+    if (!result) {
+      return scimError(404, `Group ${id} not found`);
     }
 
-    updated.meta = {
-      resourceType: "Group",
-      created: updated.meta?.created,
-      lastModified: new Date().toISOString(),
-    };
-
-    groups.set(id, updated);
-    return scimResponse(updated);
+    await syncRolesAfterGroupChange(orgId, result.before, result.after);
+    await auditGroup(orgId, id, "patch", result.after.displayName);
+    return scimResponse(result.after);
   }
 );
 
@@ -172,11 +183,13 @@ export const DELETE = createScimHandler(
     const params = await (extra.params || Promise.resolve({}));
     const { id } = params as { id: string };
 
-    if (!getGroupForOrg(id, orgId)) {
+    const removed = await getScimGroupStore().delete(orgId, id);
+    if (!removed) {
       return scimError(404, `Group ${id} not found`);
     }
 
-    groups.delete(id);
+    await syncRolesAfterGroupChange(orgId, removed, null);
+    await auditGroup(orgId, id, "delete", removed.displayName);
     return new Response(null, { status: 204 });
   }
 );
