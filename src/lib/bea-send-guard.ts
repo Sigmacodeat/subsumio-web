@@ -35,7 +35,7 @@ const KNOWN_STATES: ReadonlySet<string> = new Set([
 export interface GuardCtx {
   headers: Record<string, string>;
   brainId: string;
-  user: { id: string; email?: string };
+  user: { id: string; email?: string; role?: string };
 }
 
 export interface StoredDraftVerification {
@@ -97,6 +97,14 @@ export async function enforceFileCourtPolicy(
     title: stored.title,
   });
   const reason = overrideReason?.trim();
+  // Overriding an unverified draft is an attorney decision.
+  if (reason && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
+    return apiError(
+      "override_forbidden",
+      "Eine Übersteuerung der Prüfung dürfen nur Anwältinnen/Anwälte oder Administratoren vornehmen.",
+      403
+    );
+  }
   const override: AttorneyOverride | undefined = reason
     ? {
         user_id: ctx.user.id,

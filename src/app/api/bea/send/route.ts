@@ -13,6 +13,7 @@ import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { resolveFilingTransport } from "@/lib/legal/filing-transport";
 import { logAudit } from "@/lib/audit";
 import { completeDeadlineAfterFiling } from "@/lib/deadline-guarded-write";
+import { hasServerFilingApproval } from "@/lib/bea-filing";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
@@ -68,7 +69,11 @@ function getMiddlewareConfig(): MiddlewareConfig | null {
 async function fetchFilingPackage(
   ctx: { headers: Record<string, string>; brainId: string },
   filingSlug: string
-): Promise<{ pkg: FilingPackage | null; draftSlug: string | null } | null> {
+): Promise<{
+  pkg: FilingPackage | null;
+  draftSlug: string | null;
+  frontmatter: Record<string, unknown>;
+} | null> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
       headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -80,6 +85,7 @@ async function fetchFilingPackage(
     return {
       pkg: (fm.package as FilingPackage) ?? null,
       draftSlug: typeof fm.draft_slug === "string" ? fm.draft_slug : null,
+      frontmatter: fm,
     };
   } catch {
     return null;
@@ -159,6 +165,15 @@ export const POST = createHandler(
     // 2. Validate: must be approved
     if (existingPkg.status !== "approved") {
       return apiError("filing_not_approved", "Filing-Paket muss freigegeben sein vor Versand", 422);
+    }
+    // The release must come from the filing route (lawyer/admin, stamped
+    // with the approver) — a status written any other way does not count.
+    if (!hasServerFilingApproval(filing?.frontmatter, existingPkg)) {
+      return apiError(
+        "filing_not_approved",
+        "Die Freigabe des Filing-Pakets durch eine Anwältin/einen Anwalt fehlt.",
+        422
+      );
     }
 
     const validation = validateFilingPackage(existingPkg);

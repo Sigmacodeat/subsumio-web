@@ -12,6 +12,7 @@ import {
 import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
 import { completeDeadlineAfterFiling } from "@/lib/deadline-guarded-write";
+import { hasServerFilingApproval } from "@/lib/bea-filing";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
@@ -67,6 +68,7 @@ export const POST = createHandler(
     // 1. Fetch filing package
     let existingPkg: FilingPackage | null = null;
     let filingDraftSlug: string | null = null;
+    let filingFm: Record<string, unknown> = {};
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
         headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -76,6 +78,7 @@ export const POST = createHandler(
         const data = await res.json();
         const fm = (data.frontmatter ?? {}) as Record<string, unknown>;
         existingPkg = fm.package as FilingPackage;
+        filingFm = fm;
         filingDraftSlug = typeof fm.draft_slug === "string" ? fm.draft_slug : null;
       }
     } catch {
@@ -91,6 +94,15 @@ export const POST = createHandler(
         "filing_draft_mismatch",
         "Das Filing-Paket gehört zu einem anderen Entwurf",
         409
+      );
+    }
+
+    // Only a package a lawyer/admin released through the filing route.
+    if (!hasServerFilingApproval(filingFm, existingPkg)) {
+      return apiError(
+        "filing_not_approved",
+        "Die Freigabe des Filing-Pakets durch eine Anwältin/einen Anwalt fehlt.",
+        422
       );
     }
 

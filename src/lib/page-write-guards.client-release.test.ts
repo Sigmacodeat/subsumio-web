@@ -135,3 +135,16 @@ describe("checkClientReleaseArrayOp", () => {
     expect(checkClientReleaseArrayOp("time_entries", { set: { portal_visible: true } })).toBeNull();
   });
 });
+
+describe("beA filing packages are not written through the generic page API", () => {
+  it("refuses marking a package approved via a page write", () => {
+    const res = guardProtectedPageWrite({
+      slug: "legal/bea-filings/d1",
+      current: { slug: "legal/bea-filings/d1", type: "filing_package", frontmatter: {} },
+      actor: lawyer,
+      mode: "merge",
+      frontmatter: { package: { status: "approved" } },
+    });
+    expect("reject" in res && res.reject.error).toBe("protected_page");
+  });
+});

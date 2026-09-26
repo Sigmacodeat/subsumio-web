@@ -702,6 +702,7 @@ function pageTypes(
   if (slug.startsWith("legal/kyc/")) types.add("kyc_verification");
   if (slug.startsWith("trust-accounts/")) types.add("trust_account");
   if (slug.startsWith("settings/webhooks/")) types.add("webhook_config");
+  if (slug.startsWith("legal/bea-filings/")) types.add("filing_package");
   return types;
 }
 
@@ -857,6 +858,16 @@ export function guardProtectedPageWrite(input: {
     return {
       reject: forbiddenPage(
         "Webhooks werden nur unter Einstellungen → Webhooks angelegt und geändert."
+      ),
+    };
+  }
+
+  // beA filing packages: state changes (release for sending!) only through
+  // /api/bea/filing and the send routes, which stamp the acting person.
+  if (types.has("filing_package")) {
+    return {
+      reject: forbiddenPage(
+        "Filing-Pakete werden nur über den beA-Ablauf angelegt und freigegeben."
       ),
     };
   }
