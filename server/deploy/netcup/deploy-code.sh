@@ -185,7 +185,7 @@ REMOTE
 case " $BUILD " in
   *" engine "*)
     echo "[deploy] Engine-Datenvolume für den Engine-Nutzer vorbereiten …"
-    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --user 0:0 --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --entrypoint sh engine -c 'find /data ( ! -user 10001 -o ! -group 10001 ) -exec chown -h 10001:10001 {} +'" || {
+    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --user 0:0 --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --entrypoint sh engine -c 'find /data \\( ! -user 10001 -o ! -group 10001 \\) -exec chown -h 10001:10001 {} +'" || {
       echo "[deploy] Übergabe des Datenvolumes fehlgeschlagen — nichts umgeschaltet." >&2
       exit 1
     }
