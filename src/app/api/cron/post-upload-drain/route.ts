@@ -104,10 +104,15 @@ async function drainOutbox(): Promise<Response> {
     const headers = engineHeadersForBrain(brain_id);
 
     // Reconciliation and inbound-register retries may run immediately, but
-    // analysis and contradiction must never inspect the async placeholder or
-    // a document without embeddings.
+    // analysis and contradiction must never inspect the async placeholder.
     if (task_type !== "reconcile_case" && task_type !== "inbound_stamp") {
-      const readiness = await documentReadiness(headers, doc_slug);
+      // The analysis reads the document text only — it never waits for
+      // embeddings (an embedding outage used to hold back every analysis and
+      // its deadline suggestions). The contradiction probe searches the
+      // matter, so it waits for them, but at most EMBEDDING_WAIT_MAX_MS.
+      const readiness = await documentReadiness(headers, doc_slug, {
+        requireEmbedding: task_type === "contradiction" && !waitedLongEnough(fm.uploaded_at, now),
+      });
       if (!readiness.ready && readiness.terminal) {
         // The document will never become analysable — close the task instead
         // of re-deferring it every 2 minutes forever. The document itself
@@ -400,9 +405,18 @@ function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");
 }
 
+/** Longest a contradiction probe waits for embeddings before it runs anyway. */
+const EMBEDDING_WAIT_MAX_MS = 30 * 60_000;
+
+function waitedLongEnough(uploadedAt: string | undefined, now: Date): boolean {
+  const at = uploadedAt ? Date.parse(uploadedAt) : NaN;
+  return !Number.isNaN(at) && now.getTime() - at >= EMBEDDING_WAIT_MAX_MS;
+}
+
 async function documentReadiness(
   headers: Record<string, string>,
-  slug: string
+  slug: string,
+  opts: { requireEmbedding: boolean }
 ): Promise<{ ready: boolean; reason: string; terminal?: boolean }> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
@@ -422,6 +436,7 @@ async function documentReadiness(
     if (!["ready", "partial", "text_layer", "ocr_complete"].includes(extraction)) {
       return { ready: false, reason: `extraction_${extraction}` };
     }
+    if (!opts.requireEmbedding) return { ready: true, reason: "ready" };
     if (embedding === "failed") {
       return { ready: false, reason: "embedding_failed", terminal: true };
     }

@@ -129,6 +129,61 @@ describe("post-upload drain — overlapping runs", () => {
   });
 });
 
+describe("post-upload drain — embeddings", () => {
+  it("the analysis runs although embeddings are still pending (it reads the text)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (String(url).startsWith("http://engine/api/pages/")) {
+          return Response.json({
+            frontmatter: { extraction_status: "ready", embedding_status: "pending" },
+          });
+        }
+        analyzeCalls.push(JSON.parse(String(init?.body)));
+        return Response.json({ ok: true });
+      })
+    );
+    const out = await run();
+    expect(out.done).toBe(1);
+    expect(analyzeCalls).toHaveLength(1);
+  });
+
+  it("a contradiction probe waits for embeddings, but not longer than 30 minutes", async () => {
+    const task = (uploadedMinutesAgo: number) => ({
+      slug: `legal/post-upload-tasks/contradiction/doc-${uploadedMinutesAgo}`,
+      frontmatter: {
+        doc_slug: "documents/doc-1",
+        case_slug: "legal/cases/m1",
+        brain_id: "brain_a",
+        task_type: "contradiction",
+        attempts: 0,
+        status: "pending",
+        uploaded_at: new Date(Date.now() - uploadedMinutesAgo * 60_000).toISOString(),
+      },
+    });
+    tasks.length = 0;
+    tasks.push(task(5), task(45));
+    const probes: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (String(url).startsWith("http://engine/api/pages/")) {
+          return Response.json({
+            frontmatter: { extraction_status: "ready", embedding_status: "pending" },
+          });
+        }
+        probes.push(String(url));
+        return Response.json({ ok: true });
+      })
+    );
+    const out = await run();
+    expect(probes).toHaveLength(1); // only the 45-minute-old one
+    expect(out.done).toBe(1);
+    const waiting = patches.find((p) => p.slug.endsWith("doc-5"));
+    expect(waiting?.frontmatter?.last_error).toBe("waiting_for_embedding_pending");
+  });
+});
+
 describe("post-upload drain — terminal states reach the document", () => {
   it("after the last failed attempt the document shows 'failed' and the retry cron takes over", async () => {
     (tasks[0]!.frontmatter as Record<string, unknown>).attempts = 3; // MAX_ATTEMPTS - 1
