@@ -638,8 +638,14 @@ export async function buildMarkdownFromUpload(
       extracted = await extractDocumentText(data, ext, {
         filename,
         password: archiveContext?.password,
-        ocrImage: async (image, imageExtension) =>
-          (await ocrImageBuffer(engine, image, imageExtension)).text,
+        // A failed or unavailable OCR throws so the extractor reports the
+        // image as unread (office_visual_ocr_failed / attachment warning)
+        // instead of silently dropping it.
+        ocrImage: async (image, imageExtension) => {
+          const result = await ocrImageBuffer(engine, image, imageExtension);
+          if (result.error) throw new Error(result.error);
+          return result.text;
+        },
       });
     } catch (error) {
       if (error instanceof PasswordRequiredError || error instanceof InvalidDocumentPasswordError) {
@@ -658,18 +664,42 @@ export async function buildMarkdownFromUpload(
   // the upload path read image bytes as UTF-8 → garbage. OCR output is tagged
   // unverified (recognized, not read verbatim).
   if (isImageFilePath(filename)) {
-    const { text } = await ocrImageBuffer(engine, data, ext);
+    const {
+      text,
+      engine: ocrEngine,
+      confidence,
+      error: ocrError,
+    } = await ocrImageBuffer(engine, data, ext);
     if (text.trim()) {
       const body = withUnverifiedBanner(text, "ocr_vision");
       return withUploadFrontmatter(body, {
         title: t,
         type: "image",
         extraction_method: "ocr_vision",
+        ...(ocrEngine ? { ocr_engine: ocrEngine } : {}),
+        ...(typeof confidence === "number" ? { ocr_confidence_mean: confidence } : {}),
         extraction_status: "ready",
         extraction_char_count: text.length,
         extraction_unverified: "true",
         ...extraFrontmatter,
       });
+    }
+    if (ocrError === "ocr_unavailable" || ocrError === "ocr_failed") {
+      return withUploadFrontmatter(
+        "> ⚠️ Bild gespeichert, aber die Texterkennung ist fehlgeschlagen. Inhalt ist noch nicht durchsuchbar — die Erkennung kann später erneut gestartet werden.\n",
+        {
+          title: t,
+          type: "image",
+          extraction_method: "none",
+          extraction_status: "failed",
+          extraction_error:
+            ocrError === "ocr_unavailable"
+              ? "Keine Texterkennung verfügbar."
+              : "Texterkennung fehlgeschlagen.",
+          ocr_status: "needs_backfill",
+          ...extraFrontmatter,
+        }
+      );
     }
     // OCR off/unavailable/empty: store an honest placeholder, never garbage.
     return withUploadFrontmatter(

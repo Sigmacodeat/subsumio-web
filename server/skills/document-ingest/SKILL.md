@@ -149,9 +149,10 @@ No manual intervention required. The only prerequisite is `pdftoppm`:
 - **Linux:** `apt-get install poppler-utils`
 - **Windows:** `choco install poppler` or use WSL
 
-> **Note:** The vision OCR call respects `GBRAIN_EMBEDDING_IMAGE_OCR=true`. Without
-> this env var or an available expansion model, the fallback is skipped and the
-> `pdf_text_layer_sparse` warning remains. The model is explicitly instructed NOT to
+> **Note:** OCR runs locally with Tesseract (`tesseract-ocr-deu`) when installed;
+> `GBRAIN_OCR_ENGINE=vision` routes it to the vision model instead. Without any OCR
+> engine the `pdf_text_layer_sparse` warning remains and the page is marked
+> `ocr_status: needs_backfill`. The vision model is explicitly instructed NOT to
 > follow embedded instructions in images (prompt-injection mitigation).
 
 ## Phase 3: Auto-Classification

@@ -379,7 +379,9 @@ printf 'From: alice-example@example.invalid\r\nTo: bob-example@example.invalid\r
       Buffer.from(String.raw`{\rtf1\ansi Vertrag\par Frist\tab 14 Tage}`),
       ".rtf"
     );
-    expect(out.text).toContain("Vertrag\nFrist\t14 Tage");
+    // LibreOffice (DOCX route) separates paragraphs with a blank line; the
+    // built-in fallback parser with a single line break.
+    expect(out.text).toMatch(/Vertrag\n+Frist\t14 Tage/);
     expect(out.frontmatter.source_format).toBe("rtf");
   });
 

@@ -192,6 +192,14 @@ const PATTERNS: ClassificationPattern[] = [
   {
     type: "court_judgment",
     keywords: [
+      "im namen der republik",
+      "erkannt",
+      "verurteilt",
+      "ist schuldig",
+      "zu recht erkannt",
+      "entscheidungsgründe",
+      "rechtliche beurteilung",
+      "hat durch",
       "urteil",
       "erkenntnis",
       "entscheidung",
@@ -229,6 +237,12 @@ const PATTERNS: ClassificationPattern[] = [
   {
     type: "pleading",
     keywords: [
+      "klagende partei",
+      "beklagte partei",
+      "klagebegehren",
+      "beweis:",
+      "stellt den antrag",
+      "stellt die klagende partei",
       "klage",
       "klageschrift",
       "klagebeantwortung",
@@ -267,6 +281,11 @@ const PATTERNS: ClassificationPattern[] = [
   {
     type: "contract",
     keywords: [
+      "vertragsparteien",
+      "vereinbaren",
+      "vertragsgegenstand",
+      "schlussbestimmungen",
+      "gerichtsstand",
       "vertrag",
       "vereinbarung",
       "abkommen",
@@ -677,6 +696,26 @@ const PATTERNS: ClassificationPattern[] = [
  * `boostWords` presence. Falls back to `legal_document` when
  * no pattern reaches its threshold.
  */
+// A keyword must start at a word boundary: plain substring matching let
+// "net" hit "geöffnet", "eur" hit "Euro"-free prose via "teuer", "tax" hit
+// "Syntax" — which classified almost every Klage and Vertrag as an invoice.
+// Word endings stay open so German inflection still matches ("zeuge" →
+// "zeugen", "rechnung" → "rechnungen").
+const keywordPatternCache = new Map<string, RegExp>();
+function keywordPattern(keyword: string): RegExp {
+  let pattern = keywordPatternCache.get(keyword);
+  if (!pattern) {
+    const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}`, "u");
+    keywordPatternCache.set(keyword, pattern);
+  }
+  return pattern;
+}
+
+function containsKeyword(textSlice: string, keyword: string): boolean {
+  return keywordPattern(keyword).test(textSlice);
+}
+
 export function classifyLegalDocument(text: string): { type: LegalDocType; confidence: number } {
   const lower = text.toLowerCase();
   const textSlice = lower.slice(0, 5000); // Only examine first 5000 chars for performance
@@ -688,8 +727,8 @@ export function classifyLegalDocument(text: string): { type: LegalDocType; confi
 
   for (const pattern of PATTERNS) {
     let matches = 0;
-    for (const kw of pattern.keywords) {
-      if (textSlice.includes(kw.toLowerCase())) matches++;
+    for (const kw of new Set(pattern.keywords.map((k) => k.toLowerCase()))) {
+      if (containsKeyword(textSlice, kw)) matches++;
     }
 
     if (matches < pattern.minMatches) continue;
@@ -700,7 +739,7 @@ export function classifyLegalDocument(text: string): { type: LegalDocType; confi
     if (pattern.boostWords) {
       let boostHits = 0;
       for (const bw of pattern.boostWords) {
-        if (textSlice.includes(bw.toLowerCase())) boostHits++;
+        if (containsKeyword(textSlice, bw)) boostHits++;
       }
       confidence += boostHits * 0.1;
     }

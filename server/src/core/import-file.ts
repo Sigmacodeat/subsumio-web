@@ -2021,22 +2021,35 @@ async function readExifSafe(buf: Buffer): Promise<Record<string, unknown>> {
 }
 
 /**
- * Cherry-1 OCR: optional gpt-4o-mini pass extracting visible text from an
- * image. Returns '' when:
- * - the embedding_image_ocr config flag is off (default)
- * - the configured expansion model is unavailable (no API key)
+ * OCR pass extracting visible text from an image through the shared OCR
+ * entry point (ocr/recognize.ts): local Tesseract by default, the vision
+ * model only when configured. Returns empty text (plus `error`) when:
+ * - the GBRAIN_EMBEDDING_IMAGE_OCR flag is "false"
+ * - no OCR engine is usable
  * - the OCR call itself fails (logged once per session)
  *
  * Eng-1B: per-call result is reflected in counters the doctor `ocr_health`
  * check reads. Counter writes are best-effort; never fail the import.
  *
- * The system prompt explicitly tells the model not to follow instructions
- * embedded in the image (mitigation for the OCR-as-prompt-injection vector).
+ * The vision prompt tells the model not to follow instructions embedded in
+ * the image (mitigation for the OCR-as-prompt-injection vector).
  */
+export interface ImageOcrResult {
+  text: string;
+  engine?: "tesseract" | "vision";
+  confidence?: number | null;
+  /** Why no text came back when OCR was attempted (engine missing, failure). */
+  error?: string;
+}
+
 let _ocrWarnedThisSession = false;
-async function maybeOcr(engine: BrainEngine, imgBuf: Buffer, mime: string): Promise<string> {
+async function maybeOcr(
+  engine: BrainEngine,
+  imgBuf: Buffer,
+  mime: string
+): Promise<ImageOcrResult> {
   const opt = process.env.GBRAIN_EMBEDDING_IMAGE_OCR;
-  if (opt === "false") return "";
+  if (opt === "false") return { text: "" };
 
   // Counter helpers — quiet failure if config table is unavailable.
   async function bump(key: string) {
@@ -2050,20 +2063,22 @@ async function maybeOcr(engine: BrainEngine, imgBuf: Buffer, mime: string): Prom
 
   await bump("ocr_attempted");
   try {
-    const { isAvailable, generateOcrText } = await import("./ai/gateway.ts");
-    if (!isAvailable("expansion")) {
-      if (!_ocrWarnedThisSession) {
-        console.warn(
-          "[gbrain] OCR opt-in is true but expansion model is unavailable; skipping OCR for this session"
-        );
-        _ocrWarnedThisSession = true;
+    const { recognizeImage, OcrUnavailableError } = await import("./ocr/recognize.ts");
+    try {
+      const outcome = await recognizeImage(imgBuf, mime);
+      await bump("ocr_succeeded");
+      return { text: outcome.text, engine: outcome.engine, confidence: outcome.confidence };
+    } catch (err) {
+      if (err instanceof OcrUnavailableError) {
+        if (!_ocrWarnedThisSession) {
+          console.warn(`[gbrain] ${err.message}; skipping OCR for this session`);
+          _ocrWarnedThisSession = true;
+        }
+        await bump("ocr_failed_no_key");
+        return { text: "", error: "ocr_unavailable" };
       }
-      await bump("ocr_failed_no_key");
-      return "";
+      throw err;
     }
-    const text = await generateOcrText(imgBuf, mime);
-    await bump("ocr_succeeded");
-    return text;
   } catch (err) {
     if (!_ocrWarnedThisSession) {
       console.warn(
@@ -2072,31 +2087,36 @@ async function maybeOcr(engine: BrainEngine, imgBuf: Buffer, mime: string): Prom
       _ocrWarnedThisSession = true;
     }
     await bump("ocr_failed_other");
-    return "";
+    return { text: "", error: "ocr_failed" };
   }
 }
 
 /**
  * OCR an in-memory image buffer (e.g. a dashboard upload, which never touches
- * disk). Decodes HEIC/AVIF to PNG first so the vision model accepts it, then
- * runs the same `maybeOcr` pass as the file-based image importer — so a
- * photographed/scanned document uploaded via the web app becomes chattable
- * text, gated by the same `GBRAIN_EMBEDDING_IMAGE_OCR` flag. Returns '' when
- * OCR is off, unavailable, or finds no text. Never throws on OCR failure.
+ * disk). HEIC/AVIF are decoded to PNG first; a TIFF goes to Tesseract as is,
+ * so every page of a multi-page scan is read (the PNG re-encode keeps only
+ * page 1). Gated by the same `GBRAIN_EMBEDDING_IMAGE_OCR` flag as the file
+ * importer. Never throws on OCR failure — `error` says why text is missing.
  */
 export async function ocrImageBuffer(
   engine: BrainEngine,
   buf: Buffer,
   ext: string
-): Promise<{ text: string; mime: string }> {
+): Promise<ImageOcrResult & { mime: string }> {
+  const lowered = ext.toLowerCase();
+  if (lowered === ".tif" || lowered === ".tiff") {
+    const { resolveOcrEngine } = await import("./ocr/recognize.ts");
+    if ((await resolveOcrEngine()) === "tesseract") {
+      return { ...(await maybeOcr(engine, buf, "image/tiff")), mime: "image/tiff" };
+    }
+  }
   let decoded: { buf: Buffer; mime: string };
   try {
-    decoded = await decodeIfNeeded(ext.toLowerCase(), buf);
+    decoded = await decodeIfNeeded(lowered, buf);
   } catch {
-    return { text: "", mime: "application/octet-stream" };
+    return { text: "", mime: "application/octet-stream", error: "decode_failed" };
   }
-  const text = await maybeOcr(engine, decoded.buf, decoded.mime);
-  return { text, mime: decoded.mime };
+  return { ...(await maybeOcr(engine, decoded.buf, decoded.mime)), mime: decoded.mime };
 }
 
 export interface ImportImageOptions {
@@ -2181,7 +2201,7 @@ export async function importImageFile(
   // images first-import doesn't serialize into 200s of OCR latency.
   const ocrText: string = opts.noEmbed
     ? ""
-    : await _ocrLimiter(() => maybeOcr(engine, decoded.buf, decoded.mime));
+    : (await _ocrLimiter(() => maybeOcr(engine, decoded.buf, decoded.mime))).text;
 
   // Multimodal embed.
   let embedding: Float32Array | null = null;

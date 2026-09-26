@@ -64,8 +64,11 @@ describe("G16: persistEnginePostUploadTasks backoff", () => {
 describe("G19: OCR tryOcrFallback parallelization", () => {
   it("uses bounded concurrency (4) for rasterization and OCR", () => {
     const src = readFileSync(EXTRACT_DOC, "utf-8");
-    expect(src).toContain("G19 fix");
     expect(src).toContain("OCR_CONCURRENCY = 4");
+    // pdf2pic wrote pages to ./untitled.N.png and returned no image; pages
+    // are rendered by pdftoppm from one private temp copy instead.
+    expect(src).toContain("openPdfRasterizer");
+    expect(src).not.toContain("pdf2pic");
     expect(src).toContain("Promise.all");
   });
 

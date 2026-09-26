@@ -124,13 +124,19 @@ files (`files` table + `src/core/storage.ts`):
 
 ### Scanned-PDF OCR
 
-PDFs **with** a text layer, DOCX, EML, XLSX extract with no system deps. **Scanned
-(image-only) PDFs** are rasterized + vision-OCR'd as a fallback:
+PDFs **with** a text layer, DOCX, EML, XLSX extract with no system deps. Pages of
+a PDF whose text layer is missing, glyph garbage or a failed scanner OCR layer are
+rendered with `pdftoppm` at the scan's own resolution and OCR'd page by page:
 
-- Requires `GBRAIN_EMBEDDING_IMAGE_OCR=true` **and** a vision-capable model key.
-  Without OCR, scanned PDFs store a placeholder and aren't searchable.
-- System deps `graphicsmagick`, `ghostscript`, `poppler-utils` are baked into the
-  engine image (Dockerfile). If you run the engine outside that image, install them.
+- `GBRAIN_OCR_ENGINE=auto` (default) uses **local Tesseract** (`deu+eng`) when it
+  is installed — no document leaves the host — and falls back to the configured
+  vision model otherwise. `local` forbids the model, `vision` forces it.
+- Each OCR page carries `[OCR-Seite · Erkennungssicherheit NN %]`; the page's
+  frontmatter records `ocr_engine`, `ocr_confidence_mean` and `ocr_confidence_min`.
+  A misread "§" in front of a norm citation ("8 1295 ABGB") is corrected.
+- System deps `poppler-utils`, `tesseract-ocr`, `tesseract-ocr-deu`,
+  `graphicsmagick` are baked into the engine image (Dockerfile). If you run the
+  engine outside that image, install them.
 - `GBRAIN_OCR_MAX_PAGES` (default 100) caps how many pages are OCR'd synchronously
   per document, so a huge scanned bundle can't time out the upload. Pages beyond
   the cap aren't searchable (a note is added to the extracted text).

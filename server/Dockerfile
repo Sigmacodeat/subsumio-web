@@ -14,12 +14,15 @@ FROM oven/bun:1.3.13
 
 WORKDIR /app
 
-# System deps for scanned-PDF OCR: pdf2pic rasterizes pages via GraphicsMagick +
-# Ghostscript; poppler-utils provides pdfinfo/pdftoppm as a fallback rasterizer.
-# Without these, OCR of image-only PDFs silently degrades to "no text extracted".
+# System deps for scanned-document OCR: poppler-utils (pdftoppm/pdfimages)
+# renders scanned PDF pages at the scan's own resolution, Tesseract with the
+# German model recognizes them on this host (no document leaves the server),
+# GraphicsMagick decodes TIFF/BMP for the vision fallback. Without these, OCR
+# of image-only PDFs degrades to "no text extracted" (reported, never silent).
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     graphicsmagick ghostscript poppler-utils pst-utils qpdf \
+    tesseract-ocr tesseract-ocr-deu \
     libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress \
     postgresql-client \
   && rm -rf /var/lib/apt/lists/*

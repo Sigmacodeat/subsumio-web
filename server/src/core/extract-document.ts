@@ -9,10 +9,11 @@
  * Legacy Office/iWork formats use an isolated, time-limited LibreOffice
  * conversion process in the production container.
  *
- * Scanned PDFs (no text layer) are detected and OCR'd via pdf2pic +
- * vision model. The extraction returns a `pdf_text_layer_sparse` warning,
- * then attempts automatic OCR fallback. If OCR dependencies are missing,
- * the warning explains what to install (poppler-utils / poppler via brew).
+ * Scanned PDF pages (no or garbage text layer) are rasterized with pdftoppm
+ * and OCR'd via ocr/recognize.ts — local Tesseract by default. The extraction
+ * returns a `pdf_text_layer_sparse` warning, then attempts OCR page by page.
+ * If OCR dependencies are missing, the warning names what is missing
+ * (poppler-utils, tesseract-ocr-deu).
  *
  * Parsers are imported lazily inside each branch so the common
  * markdown/code import path pays zero startup cost for them.
@@ -148,7 +149,9 @@ async function decryptPdfIfNeeded(buf: Buffer, password?: string): Promise<Buffe
   if (!head.includes("/Encrypt") && !tail.includes("/Encrypt")) {
     return buf;
   }
-  if (!password) throw new PasswordRequiredError("pdf");
+  // Without a password we still try an empty user password: PDFs that only
+  // carry an owner password (print/copy restrictions — common for court and
+  // authority PDFs) open without one and must not be rejected as locked.
   const { mkdtemp, writeFile, readFile, rm } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
@@ -159,7 +162,7 @@ async function decryptPdfIfNeeded(buf: Buffer, password?: string): Promise<Buffe
   try {
     await Promise.all([
       writeFile(input, buf, { mode: 0o600 }),
-      writeFile(passwordFile, password, { mode: 0o600 }),
+      writeFile(passwordFile, password ?? "", { mode: 0o600 }),
     ]);
     const { converterEnv, limitedArgv } = await import("./converter-sandbox.ts");
     const proc = Bun.spawn(
@@ -171,7 +174,11 @@ async function decryptPdfIfNeeded(buf: Buffer, password?: string): Promise<Buffe
     );
     const timeout = setTimeout(() => proc.kill("SIGKILL"), 120_000);
     const exitCode = await proc.exited.finally(() => clearTimeout(timeout));
-    if (exitCode !== 0) throw new InvalidDocumentPasswordError("pdf");
+    // qpdf exit 3 = done with warnings (typical for slightly damaged files).
+    if (exitCode !== 0 && exitCode !== 3) {
+      if (!password) throw new PasswordRequiredError("pdf");
+      throw new InvalidDocumentPasswordError("pdf");
+    }
     return await readFile(output);
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -180,6 +187,37 @@ async function decryptPdfIfNeeded(buf: Buffer, password?: string): Promise<Buffe
 
 /** Average chars-per-page below which a PDF is considered scan-only. */
 const PDF_SPARSE_TEXT_CHARS_PER_PAGE = 32;
+
+/**
+ * A page's text layer is unreliable when it is (nearly) empty, glyph garbage
+ * (fonts without a ToUnicode map extract as control characters, private-use
+ * code points or U+FFFD), or a failed scanner OCR layer of letter fragments.
+ * Such a page reads as "100 % covered" while its § signs, names and amounts
+ * are gone, so it is OCR'd like a scan.
+ */
+export function isUnreliableTextLayer(page: string): boolean {
+  if (page.length < PDF_SPARSE_TEXT_CHARS_PER_PAGE) return true;
+  let garbage = 0;
+  let counted = 0;
+  for (const ch of page) {
+    if (/\s/.test(ch)) continue;
+    counted += 1;
+    const code = ch.codePointAt(0) ?? 0;
+    if (code < 0x20 || code === 0x7f || code === 0xfffd || (code >= 0xe000 && code <= 0xf8ff)) {
+      garbage += 1;
+    }
+  }
+  if (counted > 0 && garbage / counted > 0.05) return true;
+  // Copier/scanner OCR layers that failed come out letter-spaced or as
+  // fragments ("Kl a g e B e z i r k s g e r i c h t"). Real prose, tables
+  // and number columns are dominated by multi-letter words or numbers.
+  const tokens = page.split(/\s+/).filter((token) => /[\p{L}\p{N}]/u.test(token));
+  if (tokens.length < 12) return false;
+  const wordLike = tokens.filter(
+    (token) => /\p{N}/u.test(token) || /\p{L}{2,}/u.test(token) || /^[§&]$/.test(token)
+  ).length;
+  return wordLike / tokens.length < 0.5;
+}
 
 /**
  * Extraction whose text was produced by a model (OCR / speech-to-text), not
@@ -237,6 +275,13 @@ export async function extractDocumentText(
       break;
     }
     case ".doc":
+    case ".rtf":
+    case ".odt":
+      // Word-processor formats go through LibreOffice → DOCX so tracked
+      // deletions, comments and footnotes keep their structure (the DOCX
+      // review layer separates them) instead of flattening into body text.
+      result = await extractWordProcessorDocument(decrypted, lowered, opts.filename, opts.ocrImage);
+      break;
     case ".ppt":
     case ".odp":
     case ".pages":
@@ -265,9 +310,6 @@ export async function extractDocumentText(
     case ".numbers":
       result = await extractNumbers(buf, opts.filename);
       break;
-    case ".rtf":
-      result = await extractRtf(buf);
-      break;
     case ".pptx":
     case ".pptm": {
       const extracted = await extractPptx(decrypted, opts.ocrImage);
@@ -275,9 +317,6 @@ export async function extractDocumentText(
       result = extracted;
       break;
     }
-    case ".odt":
-      result = await extractOdt(buf);
-      break;
     // v0.43.0: audio transcription via existing transcription.ts
     case ".mp3":
     case ".wav":
@@ -345,7 +384,7 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
   const PAGE_SEP = "###***###";
   const normalizedPages = pages.map((page) => normalizeWhitespace(page ?? ""));
   const sparsePages = normalizedPages
-    .map((page, index) => (page.length < PDF_SPARSE_TEXT_CHARS_PER_PAGE ? index + 1 : 0))
+    .map((page, index) => (isUnreliableTextLayer(page) ? index + 1 : 0))
     .filter(Boolean);
   const textLayer = normalizedPages
     .map((page, index) => (page ? `--- Page ${index + 1} ---\n${page}` : ""))
@@ -387,22 +426,35 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
     const ocr = await tryOcrFallback(buf, totalPages, sparsePages);
     warnings.push(...ocr.warnings);
     if (ocr.pageTexts.size > 0) {
+      const sparseSet = new Set(sparsePages);
       const coveredPages = totalPages - sparsePages.length + ocr.pageTexts.size;
       const coveragePercent =
         totalPages > 0 ? Math.round((coveredPages / totalPages) * 10000) / 100 : 100;
       const mergedPages = normalizedPages.map((page, index) => {
         const pageNo = index + 1;
         const recognized = ocr.pageTexts.get(pageNo);
+        // One short per-page tag instead of repeating the full banner on every
+        // page: the banner is chunked and embedded with the page text, so a
+        // per-page banner turned ~16 % of every OCR chunk into boilerplate.
         const content = recognized
-          ? withUnverifiedBanner(recognized, "ocr_vision")
-          : page || "[Kein durchsuchbarer Text extrahiert]";
+          ? `[OCR-Seite${recognized.confidence !== null ? ` · Erkennungssicherheit ${Math.round(recognized.confidence)} %` : ""}]\n${recognized.text}`
+          : sparseSet.has(pageNo)
+            ? "[Kein durchsuchbarer Text extrahiert]"
+            : page;
         return `--- Page ${pageNo} ---\n${content}`;
       });
+      const confidences = [...ocr.pageTexts.values()]
+        .map((p) => p.confidence)
+        .filter((c): c is number => c !== null);
       warnings.push(
         `pdf_ocr_fallback: OCR completed for ${ocr.pageTexts.size} of ${sparsePages.length} sparse page(s)`
       );
       return {
-        text: [mergedPages.join(`\n${PAGE_SEP}\n`), annotations.section]
+        text: [
+          UNVERIFIED_BANNERS.ocr_vision,
+          mergedPages.join(`\n${PAGE_SEP}\n`),
+          annotations.section,
+        ]
           .filter(Boolean)
           .join("\n\n"),
         frontmatter: {
@@ -410,6 +462,15 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
           source_format: "pdf",
           pages: totalPages,
           extraction_method: "ocr_vision",
+          ocr_engine: ocr.engine ?? "unknown",
+          ...(confidences.length > 0
+            ? {
+                ocr_confidence_mean:
+                  Math.round((confidences.reduce((a, b) => a + b, 0) / confidences.length) * 10) /
+                  10,
+                ocr_confidence_min: Math.min(...confidences),
+              }
+            : {}),
           extraction_unverified: "true",
           extraction_pages_total: totalPages,
           extraction_pages_covered: coveredPages,
@@ -501,38 +562,41 @@ async function extractPdfAnnotations(
 }
 
 /**
- * OCR fallback for scanned PDFs: rasterize pages to images, then run vision
- * OCR on each page. Returns combined text, or '' if OCR unavailable.
+ * OCR for scanned PDF pages: pdftoppm renders each requested page at 300 dpi
+ * with its real aspect ratio into a private temp dir (removed afterwards),
+ * then `recognizeImage` reads it — local Tesseract by default, the vision
+ * model only when configured (see ocr/recognize.ts). Pages over the per-
+ * document cap or the firm's daily budget are reported, never dropped
+ * silently.
  */
+interface PdfOcrPage {
+  text: string;
+  engine: "tesseract" | "vision";
+  confidence: number | null;
+}
+
 async function tryOcrFallback(
   pdfBuf: Buffer,
   totalPages: number,
   requestedPages: number[]
-): Promise<{ pageTexts: Map<number, string>; warnings: string[] }> {
-  const pageTexts = new Map<number, string>();
+): Promise<{ pageTexts: Map<number, PdfOcrPage>; warnings: string[]; engine: string | null }> {
+  const pageTexts = new Map<number, PdfOcrPage>();
   const warnings: string[] = [];
-  // 1. Check if expansion model (GPT-4o-mini etc.) is available for OCR.
-  //    Gateway stays lazy-imported — this module is statically imported by
-  //    import-file.ts and sync.ts, and must not pull AI SDKs at startup.
-  const { isAvailable, generateOcrText } = await import("./ai/gateway.ts");
-  if (!isAvailable("expansion")) {
-    warnings.push("pdf_ocr_unavailable: no OCR model configured");
-    return { pageTexts, warnings };
+  const { resolveOcrEngine, recognizeImage } = await import("./ocr/recognize.ts");
+  const { pdfRasterizerAvailable, openPdfRasterizer } = await import("./ocr/local-ocr.ts");
+  const engine = await resolveOcrEngine();
+  if (!engine) {
+    warnings.push("pdf_ocr_unavailable: no OCR engine (tesseract or vision model) configured");
+    return { pageTexts, warnings, engine };
+  }
+  if (!pdfRasterizerAvailable()) {
+    warnings.push("pdf_ocr_unavailable: pdf rasterizer (pdftoppm) missing");
+    return { pageTexts, warnings, engine };
   }
 
-  // 2. Lazy-import pdf2pic — if missing, bail gracefully.
-  let fromBuffer: typeof import("pdf2pic").fromBuffer;
-  try {
-    ({ fromBuffer } = await import("pdf2pic"));
-  } catch {
-    warnings.push("pdf_ocr_unavailable: pdf rasterizer missing");
-    return { pageTexts, warnings };
-  }
-
-  // 3. Convert PDF pages to PNG images. Cap the page count so a huge scanned
-  //    bundle (e.g. a 1 GB / 800-page Akte) can't rasterize-and-OCR the whole
-  //    document synchronously inside the upload request (timeout + cost blowup).
-  //    Tune via GBRAIN_OCR_MAX_PAGES; 0/negative disables the cap.
+  // Cap the page count so a huge scanned bundle (e.g. a 1 GB / 800-page Akte)
+  // can't OCR the whole document inside one extraction. Tune via
+  // GBRAIN_OCR_MAX_PAGES; 0/negative disables the cap.
   const rawCap = Number(process.env.GBRAIN_OCR_MAX_PAGES);
   const maxPages = Number.isFinite(rawCap) ? Math.floor(rawCap) : 100;
   const uniqueRequested = [...new Set(requestedPages)]
@@ -543,95 +607,81 @@ async function tryOcrFallback(
   // are reported like the per-document cap.
   const { reserveOcrPages } = await import("./ocr-budget.ts");
   const granted = reserveOcrPages(perDocument.length);
-  const pagesToConvert = perDocument.slice(0, granted);
-  const capped = pagesToConvert.length < uniqueRequested.length;
+  const pagesToOcr = perDocument.slice(0, granted);
   if (granted < perDocument.length) {
     warnings.push(
       `pdf_ocr_quota_exhausted: daily OCR budget of this firm reached — ${perDocument.length - granted} page(s) left for later`
     );
   }
+  if (pagesToOcr.length < uniqueRequested.length) {
+    warnings.push(
+      `pdf_ocr_partial: only ${pagesToOcr.length} of ${uniqueRequested.length} sparse pages processed`
+    );
+  }
 
-  const convert = fromBuffer(pdfBuf, {
-    density: 300,
-    format: "png",
-    width: 2000,
-  });
-
-  // G19 fix: parallelize rasterization and OCR with bounded concurrency
-  // and per-page timeout. Pre-fix, both loops were sequential — a 50-page
-  // sparse PDF meant 50 serial rasterize calls + 50 serial OCR calls.
+  // Bounded concurrency; each page gets its own deadline, and the deadline
+  // aborts a vision request instead of letting it run (and bill) on.
   const OCR_CONCURRENCY = 4;
-  const OCR_PAGE_TIMEOUT_MS = 30_000; // 30s per page
+  const OCR_PAGE_TIMEOUT_MS = 30_000; // vision model per page
+  const pageTimeout = engine === "tesseract" ? 120_000 : OCR_PAGE_TIMEOUT_MS;
 
-  // 3. Rasterize pages in parallel (bounded).
-  const images: Array<{ pageNo: number; image: { buffer?: Buffer; base64?: string } } | null> = [];
+  let rasterizer: Awaited<ReturnType<typeof openPdfRasterizer>>;
   try {
-    for (let i = 0; i < pagesToConvert.length; i += OCR_CONCURRENCY) {
-      const batch = pagesToConvert.slice(i, i + OCR_CONCURRENCY);
+    rasterizer = await openPdfRasterizer(pdfBuf);
+  } catch {
+    warnings.push("pdf_ocr_failed: PDF rasterization failed");
+    return { pageTexts, warnings, engine };
+  }
+  try {
+    for (let i = 0; i < pagesToOcr.length; i += OCR_CONCURRENCY) {
+      const batch = pagesToOcr.slice(i, i + OCR_CONCURRENCY);
       const results = await Promise.all(
         batch.map(async (pageNo) => {
+          let image: Buffer;
           try {
-            return { pageNo, image: await convert(pageNo) };
+            image = await rasterizer.render(pageNo);
           } catch {
-            return null;
+            return { pageNo, page: null, error: "produced no image" };
+          }
+          const controller = new AbortController();
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          try {
+            const outcome = await Promise.race([
+              recognizeImage(image, "image/png", { signal: controller.signal }),
+              new Promise<never>((_, reject) => {
+                timer = setTimeout(() => {
+                  controller.abort();
+                  reject(new Error("ocr_timeout"));
+                }, pageTimeout);
+              }),
+            ]);
+            return { pageNo, page: outcome, error: null as string | null };
+          } catch (err) {
+            const msg =
+              err instanceof Error && err.message === "ocr_timeout" ? "ocr timeout" : "ocr failed";
+            return { pageNo, page: null, error: msg };
+          } finally {
+            if (timer) clearTimeout(timer);
           }
         })
       );
-      images.push(...results);
-    }
-  } catch {
-    warnings.push("pdf_ocr_failed: PDF rasterization failed");
-    return { pageTexts, warnings };
-  }
-
-  // 4. OCR each page image in parallel (bounded) with per-page timeout.
-  if (capped) {
-    warnings.push(
-      `pdf_ocr_partial: only ${pagesToConvert.length} of ${uniqueRequested.length} sparse pages processed`
-    );
-  }
-  const validImages = images.filter(
-    (img): img is { pageNo: number; image: { buffer?: Buffer; base64?: string } } => img !== null
-  );
-  for (let i = 0; i < validImages.length; i += OCR_CONCURRENCY) {
-    const batch = validImages.slice(i, i + OCR_CONCURRENCY);
-    const results = await Promise.all(
-      batch.map(async ({ pageNo, image: img }) => {
-        const imgBuf: Buffer | undefined =
-          img.buffer ?? (img.base64 ? Buffer.from(img.base64, "base64") : undefined);
-        if (!imgBuf) {
-          return { pageNo, text: null, error: "no image" };
+      for (const { pageNo, page, error } of results) {
+        if (error === "produced no image") {
+          warnings.push(`pdf_ocr_failed: page ${pageNo} produced no image`);
+        } else if (error) {
+          warnings.push(`pdf_ocr_failed: page ${pageNo} (${error})`);
+        } else if (page && page.text.trim()) {
+          pageTexts.set(pageNo, { ...page, text: page.text.trim() });
+        } else {
+          warnings.push(`pdf_ocr_failed: page ${pageNo} returned no text`);
         }
-        try {
-          // Per-page timeout to prevent hanging on problematic pages.
-          const text = await Promise.race([
-            generateOcrText(imgBuf, "image/png"),
-            new Promise<string>((_, reject) =>
-              setTimeout(() => reject(new Error("ocr_timeout")), OCR_PAGE_TIMEOUT_MS)
-            ),
-          ]);
-          return { pageNo, text, error: null as string | null };
-        } catch (err) {
-          const msg =
-            err instanceof Error && err.message === "ocr_timeout" ? "ocr timeout" : "ocr failed";
-          return { pageNo, text: null, error: msg };
-        }
-      })
-    );
-    for (const { pageNo, text, error } of results) {
-      if (error === "no image") {
-        warnings.push(`pdf_ocr_failed: page ${pageNo} produced no image`);
-      } else if (error) {
-        warnings.push(`pdf_ocr_failed: page ${pageNo} (${error})`);
-      } else if (text && text.trim()) {
-        pageTexts.set(pageNo, text.trim());
-      } else {
-        warnings.push(`pdf_ocr_failed: page ${pageNo} returned no text`);
       }
     }
+  } finally {
+    await rasterizer.close();
   }
 
-  return { pageTexts, warnings };
+  return { pageTexts, warnings, engine };
 }
 
 async function extractDocx(
@@ -644,6 +694,7 @@ async function extractDocx(
     .filter((m) => m.type === "warning")
     .map((m) => `docx: ${m.message}`);
   const review = await extractDocxReviewLayer(buf);
+  const notes = await extractDocxNotes(buf);
   const visual = await extractOfficeMedia(buf, "word/media/", ocrImage);
   const macrosPresent = await containsOfficeMacros(buf);
   warnings.push(...review.warnings);
@@ -652,11 +703,15 @@ async function extractDocx(
     warnings.push("office_macros_present: VBA content retained in original but never executed");
   return {
     text: normalizeWhitespace(
-      [result.value ?? "", ...review.sections, ...visual.sections].filter(Boolean).join("\n\n")
+      [result.value ?? "", ...notes.sections, ...review.sections, ...visual.sections]
+        .filter(Boolean)
+        .join("\n\n")
     ),
     frontmatter: {
       type: "document",
       source_format: "docx",
+      footnotes_count: notes.footnotes,
+      endnotes_count: notes.endnotes,
       comments_count: review.commentsCount,
       tracked_changes_count: review.changesCount,
       redline_detected: review.changesCount > 0 ? "true" : "false",
@@ -666,6 +721,41 @@ async function extractDocx(
     },
     warnings,
   };
+}
+
+/**
+ * Footnotes and endnotes. mammoth's raw-text pass drops them, but in a
+ * Schriftsatz or an opinion they carry citations and qualifications.
+ * Separator pseudo-notes (w:type="separator"/"continuationSeparator") are
+ * skipped; each note keeps its number so the body reference stays traceable.
+ */
+async function extractDocxNotes(
+  buf: Buffer
+): Promise<{ sections: string[]; footnotes: number; endnotes: number }> {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(buf);
+  const read = async (kind: "footnote" | "endnote") => {
+    const xml = await zip.file(`word/${kind}s.xml`)?.async("string");
+    if (!xml) return [] as string[];
+    const out: string[] = [];
+    const pattern = new RegExp(`<w:${kind}\\b([^>]*)>([\\s\\S]*?)<\\/w:${kind}>`, "gi");
+    for (const match of xml.matchAll(pattern)) {
+      if (/w:type="(?:separator|continuationSeparator|continuationNotice)"/i.test(match[1]))
+        continue;
+      const paragraphs = [...match[2].matchAll(/<w:p\b[\s\S]*?<\/w:p>/gi)]
+        .map((p) => xmlText(p[0]).trim())
+        .filter(Boolean);
+      const text = paragraphs.join(" ").trim();
+      if (!text) continue;
+      out.push(`[${out.length + 1}] ${text}`);
+    }
+    return out;
+  };
+  const [footnotes, endnotes] = await Promise.all([read("footnote"), read("endnote")]);
+  const sections: string[] = [];
+  if (footnotes.length > 0) sections.push(`## Fußnoten\n\n${footnotes.join("\n")}`);
+  if (endnotes.length > 0) sections.push(`## Endnoten\n\n${endnotes.join("\n")}`);
+  return { sections, footnotes: footnotes.length, endnotes: endnotes.length };
 }
 
 async function containsOfficeMacros(buf: Buffer): Promise<boolean> {
@@ -927,15 +1017,7 @@ async function extractEml(
   // Prefer the plain-text part; fall back to a tag-stripped HTML body.
   let body = (parsed.text ?? "").trim();
   if (!body && parsed.html) {
-    body = parsed.html
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .trim();
+    body = htmlToText(parsed.html);
   }
 
   const warnings: string[] = [];
@@ -1210,23 +1292,190 @@ function renderWorkbookWithProvenance(
   return sections.join("\n\n");
 }
 
+// RTF destinations whose content is metadata, not document text.
+const RTF_SKIP_DESTINATIONS = new Set([
+  "fonttbl",
+  "colortbl",
+  "stylesheet",
+  "info",
+  "listtable",
+  "listoverridetable",
+  "revtbl",
+  "rsidtbl",
+  "generator",
+  "xmlnstbl",
+  "latentstyles",
+  "datastore",
+  "themedata",
+  "colorschememapping",
+  "pict",
+  "object",
+  "header",
+  "headerl",
+  "headerr",
+  "headerf",
+  "footer",
+  "footerl",
+  "footerr",
+  "footerf",
+  "fldinst",
+  "pgdsctbl",
+  "filetbl",
+  "operator",
+  "company",
+  "title",
+  "author",
+]);
+
+/**
+ * Minimal RTF → text: a real tokenizer instead of regex passes, so
+ *  - font/style/info tables and `{\*…}` destinations never leak as text,
+ *  - `\uN` honours `\ucN` and skips its ANSI fallback (no doubled umlauts,
+ *    no "§§" for one "§"),
+ *  - runs marked `\deleted` (tracked deletions) are left out of the body.
+ * Used only when LibreOffice is unavailable.
+ */
+export function rtfToText(source: string): string {
+  type State = { skip: boolean; uc: number; deleted: boolean };
+  const stack: State[] = [];
+  let state: State = { skip: false, uc: 1, deleted: false };
+  let out = "";
+  let pendingSkip = 0;
+  let i = 0;
+  const emit = (text: string) => {
+    if (pendingSkip > 0) {
+      const drop = Math.min(pendingSkip, text.length);
+      pendingSkip -= drop;
+      text = text.slice(drop);
+    }
+    if (!state.skip && !state.deleted) out += text;
+  };
+  while (i < source.length) {
+    const ch = source[i];
+    if (ch === "{") {
+      stack.push(state);
+      state = { ...state };
+      pendingSkip = 0;
+      i += 1;
+      if (source.startsWith("\\*", i)) {
+        state.skip = true;
+        i += 2;
+      }
+      continue;
+    }
+    if (ch === "}") {
+      state = stack.pop() ?? { skip: false, uc: 1, deleted: false };
+      pendingSkip = 0;
+      i += 1;
+      continue;
+    }
+    if (ch === "\\") {
+      const next = source[i + 1];
+      if (next === "'") {
+        const hex = source.slice(i + 2, i + 4);
+        i += 4;
+        if (pendingSkip > 0) {
+          pendingSkip -= 1;
+          continue;
+        }
+        emit(Buffer.from([Number.parseInt(hex, 16) || 0x3f]).toString("latin1"));
+        continue;
+      }
+      if (next === "\\" || next === "{" || next === "}") {
+        emit(next);
+        i += 2;
+        continue;
+      }
+      if (next === "~") {
+        emit("\u00a0");
+        i += 2;
+        continue;
+      }
+      if (next === "-" || next === "_") {
+        if (next === "_") emit("-");
+        i += 2;
+        continue;
+      }
+      const match = /^([a-zA-Z]+)(-?\d+)? ?/.exec(source.slice(i + 1, i + 40));
+      if (!match) {
+        i += 2;
+        continue;
+      }
+      const word = match[1];
+      const param = match[2] !== undefined ? Number(match[2]) : undefined;
+      i += 1 + match[0].length;
+      if (RTF_SKIP_DESTINATIONS.has(word)) {
+        state.skip = true;
+        continue;
+      }
+      switch (word) {
+        case "par":
+        case "line":
+        case "sect":
+        case "page":
+          emit("\n");
+          break;
+        case "tab":
+        case "cell":
+          emit("\t");
+          break;
+        case "row":
+          emit("\n");
+          break;
+        case "uc":
+          state.uc = param ?? 1;
+          break;
+        case "u": {
+          const code = (param ?? 0) < 0 ? (param ?? 0) + 65536 : (param ?? 0);
+          emit(String.fromCharCode(code));
+          pendingSkip = state.uc;
+          break;
+        }
+        case "deleted":
+          state.deleted = param !== 0;
+          break;
+        case "plain":
+          state.deleted = false;
+          break;
+        case "emdash":
+          emit("—");
+          break;
+        case "endash":
+          emit("–");
+          break;
+        case "lquote":
+          emit("‘");
+          break;
+        case "rquote":
+          emit("’");
+          break;
+        case "ldblquote":
+          emit("„");
+          break;
+        case "rdblquote":
+          emit("“");
+          break;
+        case "bullet":
+          emit("•");
+          break;
+        default:
+          break;
+      }
+      continue;
+    }
+    if (ch === "\r" || ch === "\n") {
+      i += 1;
+      continue;
+    }
+    emit(ch);
+    i += 1;
+  }
+  return out;
+}
+
 async function extractRtf(buf: Buffer): Promise<ExtractedDocument> {
-  const source = buf.toString("latin1");
-  const decoded = source
-    .replace(/\\par[d]?\b\s?/g, "\n")
-    .replace(/\\tab\b\s?/g, "\t")
-    .replace(/\\u(-?\d+)\??/g, (_match, raw: string) => {
-      const value = Number(raw);
-      return String.fromCharCode(value < 0 ? value + 65536 : value);
-    })
-    .replace(/\\'([0-9a-f]{2})/gi, (_match, hex: string) =>
-      Buffer.from([Number.parseInt(hex, 16)]).toString("latin1")
-    )
-    .replace(/\\[a-z]+-?\d*\s?/gi, "")
-    .replace(/\\([{}\\])/g, "$1")
-    .replace(/[{}]/g, "");
   return {
-    text: normalizeWhitespace(decoded),
+    text: normalizeWhitespace(rtfToText(buf.toString("latin1"))),
     frontmatter: { type: "document", source_format: "rtf" },
     warnings: [],
   };
@@ -1297,6 +1546,32 @@ async function extractNumbers(buf: Buffer, filename?: string): Promise<Extracted
   return extractWorkbook(converted, ".numbers");
 }
 
+async function extractWordProcessorDocument(
+  buf: Buffer,
+  ext: ".doc" | ".rtf" | ".odt",
+  filename: string | undefined,
+  ocrImage?: (data: Buffer, extension: string) => Promise<string>
+): Promise<ExtractedDocument> {
+  let docx: Buffer;
+  try {
+    docx = await convertWithLibreOffice(buf, ext, filename, "docx");
+  } catch (error) {
+    // Hosts without LibreOffice: RTF and ODT have built-in fallbacks.
+    if (ext === ".rtf" || ext === ".odt") {
+      const fallback = ext === ".rtf" ? await extractRtf(buf) : await extractOdt(buf);
+      fallback.warnings.push(
+        `${ext.slice(1)}_fallback_parser: LibreOffice conversion unavailable (${error instanceof Error ? error.message : String(error)}); tracked changes and footnotes may be incomplete`
+      );
+      return fallback;
+    }
+    throw error;
+  }
+  const extracted = await extractDocx(docx, ocrImage);
+  extracted.frontmatter.source_format = ext.slice(1);
+  extracted.frontmatter.converted_via = "libreoffice";
+  return extracted;
+}
+
 async function extractViaLibreOffice(
   buf: Buffer,
   ext: string,
@@ -1313,7 +1588,7 @@ async function convertWithLibreOffice(
   buf: Buffer,
   ext: string,
   filename: string | undefined,
-  target: "pdf" | "xlsx"
+  target: "pdf" | "xlsx" | "docx"
 ): Promise<Buffer> {
   const { mkdtemp, mkdir, writeFile, readFile, rm, readdir, stat } =
     await import("node:fs/promises");
@@ -1392,6 +1667,81 @@ function assertSafeOfficePackage(zip: import("jszip")): void {
   }
 }
 
+// Named HTML entities that occur in German legal e-mail bodies. Numeric
+// entities are decoded generically; unknown names are left as written.
+const HTML_ENTITIES: Record<string, string> = {
+  nbsp: "\u00a0",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  auml: "ä",
+  ouml: "ö",
+  uuml: "ü",
+  Auml: "Ä",
+  Ouml: "Ö",
+  Uuml: "Ü",
+  szlig: "ß",
+  sect: "§",
+  para: "¶",
+  euro: "€",
+  copy: "©",
+  reg: "®",
+  deg: "°",
+  middot: "·",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  bdquo: "„",
+  ldquo: "“",
+  rdquo: "”",
+  lsquo: "‘",
+  rsquo: "’",
+  sbquo: "‚",
+  laquo: "«",
+  raquo: "»",
+  times: "×",
+  eacute: "é",
+  egrave: "è",
+  aacute: "á",
+  agrave: "à",
+  oacute: "ó",
+  iacute: "í",
+  uacute: "ú",
+  ccedil: "ç",
+  ntilde: "ñ",
+  shy: "",
+  zwnj: "",
+  zwj: "",
+  bull: "•",
+};
+
+/**
+ * HTML e-mail body → readable text: block elements become line breaks,
+ * table cells tabs, all entities decoded ("Gem&auml;&szlig; &sect; 1380"
+ * → "Gemäß § 1380").
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(?:td|th)>/gi, "\t")
+    .replace(/<\/(?:p|div|tr|li|h[1-6]|blockquote|table|section|article)>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&([a-zA-Z]+);/g, (match, name: string) => HTML_ENTITIES[name] ?? match)
+    .replace(/&#(\d+);/g, (_m, raw: string) => String.fromCodePoint(Number(raw)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, raw: string) =>
+      String.fromCodePoint(Number.parseInt(raw, 16))
+    )
+    .replace(/[ \t\u00a0]*\n[ \t\u00a0]*/g, "\n")
+    .replace(/[ \u00a0]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function decodeXmlEntities(value: string): string {
   return value
     .replace(/&lt;/g, "<")
@@ -1463,7 +1813,10 @@ export async function synthesizeDocumentMarkdown(
   // "law" for statute uploads, "court_decision" for known judgments). The
   // heuristic classification is stamped as doc_type regardless, so the
   // pipeline's Layer 0 doc-classifier can see it and skip re-classification.
-  if (extracted.text.trim().length > 50 && !fm.type) {
+  // Extractors stamp the generic `type: "document"` — that is "no explicit
+  // type", not an uploader choice, so it must not switch classification off
+  // (it did for every PDF/DOCX/RTF/ODT/XLSX upload).
+  if (extracted.text.trim().length > 50 && (!fm.type || fm.type === "document")) {
     try {
       const { classifyLegalDocument } = await import("./legal/doc-classifier.ts");
       const classification = classifyLegalDocument(extracted.text);
@@ -1502,7 +1855,9 @@ export async function synthesizeDocumentMarkdown(
     fm.ocr_backfill_reason = ocrQuota
       ? "ocr_quota_exhausted"
       : ocrUnavailable
-        ? "rasterizer_missing"
+        ? extracted.warnings.some((w) => w.includes("rasterizer"))
+          ? "rasterizer_missing"
+          : "ocr_engine_missing"
         : "ocr_failed";
   } else if (fm.extraction_method === "ocr_vision") {
     fm.ocr_status = "completed";
@@ -1526,92 +1881,49 @@ export async function synthesizeDocumentMarkdown(
 }
 
 /**
- * Repair German Umlaut encoding artifacts from PDF text extraction.
+ * Repair German Umlaut encoding artifacts that are unambiguous:
  *
- * PDFs often use custom font encodings (WinAnsi, MacRoman, custom CMaps)
- * that produce decomposed Unicode (ü → u + U+0308) or lose diacritics
- * entirely (ü → space or question mark). This function:
+ * 1. NFC normalization — combines decomposed diacritics (u + U+0308 → ü).
+ * 2. UTF-8-read-as-Latin-1 mojibake ("Ã¼" → "ü", "Â§" → "§"); longer
+ *    sequences are replaced first so "â€œ" becomes "“", not "“œ".
  *
- * 1. Normalizes to NFC (precomposed) — combines decomposed diacritics
- * 2. Repairs common WinAnsi→UTF-8 mojibake patterns
- * 3. Repairs space-substituted umlauts (e.g. "M ller" → "Müller")
- * 4. Repairs common replacement-character patterns
+ * Deliberately NOT done: guessing lost umlauts from word lists ("M ller" →
+ * "Müller") — that invents text ("Fr ha" is not "Frage") in a legal
+ * document — and deleting U+FFFD, which is the visible sign of an
+ * unreadable glyph and lets the PDF path detect a broken text layer and OCR
+ * the page instead.
  */
+const MOJIBAKE_MAP: Array<[string, string]> = [
+  ["\u00E2\u20AC\u0153", "\u201C"],
+  ["\u00E2\u20AC\u009D", "\u201D"],
+  ["\u00E2\u20AC\u201C", "\u2013"],
+  ["\u00E2\u20AC\u201D", "\u2014"],
+  ["\u00E2\u20AC\u017E", "\u201E"],
+  ["\u00E2\u20AC\u02DC", "\u2018"],
+  ["\u00E2\u20AC\u2122", "\u2019"],
+  ["Ã¼", "ü"],
+  ["Ã¶", "ö"],
+  ["Ã¤", "ä"],
+  ["Ãœ", "Ü"],
+  ["Ã–", "Ö"],
+  ["Ã„", "Ä"],
+  ["ÃŸ", "ß"],
+  ["Ã¡", "á"],
+  ["Ã©", "é"],
+  ["Ã­", "í"],
+  ["Ã³", "ó"],
+  ["Ãº", "ú"],
+  ["Ã±", "ñ"],
+  ["Â§", "§"],
+  ["Â¶", "¶"],
+  ["Â°", "°"],
+];
+
 function fixGermanUmlauts(text: string): string {
-  let result = text;
-
-  // Step 1: NFC normalization — combine decomposed diacritics
-  // (u + U+0308 → ü, a + U+0308 → ä, o + U+0308 → ö, etc.)
-  result = result.normalize("NFC");
-
-  // Step 2: Repair common mojibake (UTF-8 bytes decoded as Latin-1)
-  const mojibakeMap: Record<string, string> = {
-    "Ã¼": "ü",
-    "Ã¶": "ö",
-    "Ã¤": "ä",
-    Ãœ: "Ü",
-    "Ã–": "Ö",
-    "Ã„": "Ä",
-    ÃŸ: "ß",
-    "Ã¡": "á",
-    "Ã©": "é",
-    "Ã­": "í",
-    "Ã³": "ó",
-    Ãº: "ú",
-    "Ã±": "ñ",
-    "Â§": "§",
-    "Â¶": "¶",
-    "\u00E2\u20AC": "\u201C",
-    "\u00E2\u20AC\u0153": "\u201C",
-    "\u00E2\u20AC\u009D": "\u201D",
-    "\u00E2\u20AC\u201C": "\u2013",
-    "\u00E2\u20AC\u201D": "\u2014",
-    "Â°": "°",
-  };
-  for (const [broken, fixed] of Object.entries(mojibakeMap)) {
-    result = result.split(broken).join(fixed);
+  let result = text.normalize("NFC");
+  for (const [broken, fixed] of MOJIBAKE_MAP) {
+    if (result.includes(broken)) result = result.split(broken).join(fixed);
   }
-
-  // Step 3: Repair space-substituted umlauts
-  // PDFs with broken font encodings often replace ü/ö/ä/ß with a space
-  // or nothing, producing patterns like "M ller" (Müller), "Stra e" (Straße),
-  // "Gr e" (Große), "K ln" (Köln), "M nchen" (München), "D sseldorf" (Düsseldorf)
-  // Only apply when the pattern is unambiguous to avoid false positives.
-  const spaceSubstitutedPatterns: Array<[RegExp, string]> = [
-    // Common German words/names with umlauts
-    [/\bM ller\b/g, "Müller"],
-    [/\bm ller\b/g, "müller"],
-    [/\bM nchen\b/g, "München"],
-    [/\bm nchen\b/g, "münchen"],
-    [/\bK ln\b/g, "Köln"],
-    [/\bk ln\b/g, "köln"],
-    [/\bD sseldorf\b/g, "Düsseldorf"],
-    [/\bd sseldorf\b/g, "düsseldorf"],
-    [/\bStra e\b/g, "Straße"],
-    [/\bstra e\b/g, "straße"],
-    [/\bGr e\b/g, "Große"],
-    [/\bgr e\b/g, "große"],
-    [/\bFl ge\b/g, "Flüge"],
-    [/\bfl ge\b/g, "flüge"],
-    [/\bL cke\b/g, "Lücke"],
-    [/\bl cke\b/g, "lücke"],
-    [/\bBr cke\b/g, "Brücke"],
-    [/\bbr cke\b/g, "brücke"],
-    [/\bH he\b/g, "Höhe"],
-    [/\bh he\b/g, "höhe"],
-    [/\bFr ha\b/g, "Frage"],
-    // Generic patterns: vowel + space + consonant cluster common in German
-    // Only for ß-replacement: "a e" → "aße" at word end is too ambiguous
-    // so we stick to specific patterns above
-  ];
-  for (const [pattern, replacement] of spaceSubstitutedPatterns) {
-    result = result.replace(pattern, replacement);
-  }
-
-  // Step 4: Repair replacement characters (U+FFFD) that some extractors
-  // produce for unmappable glyphs — try to infer from context
-  result = result.replace(/\uFFFD/g, "");
-
   return result;
 }
 

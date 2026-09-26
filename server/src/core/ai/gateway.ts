@@ -2401,14 +2401,19 @@ export async function expand(query: string): Promise<string[]> {
  * Eng-1B counter writes happen at the importImageFile site, not here —
  * keeping the gateway focused on the LLM call.
  */
-export async function generateOcrText(imageBytes: Buffer, mime: string): Promise<string> {
+export async function generateOcrText(
+  imageBytes: Buffer,
+  mime: string,
+  signal?: AbortSignal
+): Promise<string> {
   if (!isAvailable("expansion")) return "";
   const { model } = await resolveExpansionProvider(getExpansionModel());
   const base64 = imageBytes.toString("base64");
   const result = await generateText({
     model,
     // v0.42.20.0 (codex) — OCR is a 5th unbounded generateText entry point.
-    abortSignal: withDefaultTimeout(undefined, AI_CHAT_TIMEOUT_MS),
+    // A caller's per-page deadline aborts the request instead of letting it run on.
+    abortSignal: withDefaultTimeout(signal, AI_CHAT_TIMEOUT_MS),
     messages: [
       {
         role: "system",
