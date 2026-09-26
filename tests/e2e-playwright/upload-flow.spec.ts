@@ -43,7 +43,7 @@ test.describe("Upload Flow", () => {
   test("navigates to upload page", async ({ page }) => {
     await page.goto("/dashboard/upload");
     await expect(page.locator("text=Dokument hochladen")).toBeVisible();
-    await expect(page.locator("text=Markdown, PDF oder Text")).toBeVisible();
+    await expect(page.locator("text=PDF, Word, E-Mails oder Bilder")).toBeVisible();
   });
 
   test("shows validation for unsupported file type", async ({ page }) => {
