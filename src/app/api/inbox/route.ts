@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { triageBatch, type TriageInput } from "@/lib/triage";
 
 export const dynamic = "force-dynamic";
@@ -46,22 +46,19 @@ export const GET = createHandler(
 
     const types = ["bea_message", "portal_message", "chat_inbox", "activity_event"];
     const pagesByType: Record<string, Array<Record<string, unknown>>> = {};
+    const failedTypes: string[] = [];
 
+    // Paged past the engine's 100-row cap, deleted pages left out. A failed
+    // list is reported (`partial`), never passed off as an empty channel.
     await Promise.all(
       types.map(async (type) => {
         try {
-          const res = await fetch(`${ENGINE_URL}/api/pages?type=${type}&limit=${limit}`, {
-            headers,
-            signal: AbortSignal.timeout(15_000),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            pagesByType[type] = Array.isArray(data) ? data : (data.pages ?? []);
-          } else {
-            pagesByType[type] = [];
-          }
+          pagesByType[type] = (await listEnginePages(headers, type, limit, {
+            strict: true,
+          })) as unknown as Array<Record<string, unknown>>;
         } catch {
           pagesByType[type] = [];
+          failedTypes.push(type);
         }
       })
     );
@@ -199,6 +196,7 @@ export const GET = createHandler(
       messages: filtered,
       counts,
       triage: triageSummary,
+      ...(failedTypes.length > 0 ? { partial: true, failed_types: failedTypes } : {}),
     });
   }
 );

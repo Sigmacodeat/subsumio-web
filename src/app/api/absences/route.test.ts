@@ -314,20 +314,13 @@ describe("GET /api/absences", () => {
   }
 
   test("filtert auf dem Frontmatter, nicht auf dem Page-Wrapper", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          pages: [
-            { slug: "legal/absences/a1", frontmatter: ABSENCE },
-            {
-              slug: "legal/absences/a2",
-              frontmatter: { ...ABSENCE, id: "a2", user_email: "andere@example.com" },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/a1", frontmatter: ABSENCE },
+      {
+        slug: "legal/absences/a2",
+        frontmatter: { ...ABSENCE, id: "a2", user_email: "andere@example.com" },
+      },
+    ]);
     const res = await get("?user_email=ra@example.com");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -336,23 +329,34 @@ describe("GET /api/absences", () => {
   });
 
   test("status-Filter trifft das Frontmatter-Feld", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          pages: [
-            { slug: "legal/absences/a1", frontmatter: ABSENCE },
-            {
-              slug: "legal/absences/a2",
-              frontmatter: { ...ABSENCE, id: "a2", status: "cancelled" },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/a1", frontmatter: ABSENCE },
+      { slug: "legal/absences/a2", frontmatter: { ...ABSENCE, id: "a2", status: "cancelled" } },
+    ]);
     const res = await get("?status=cancelled");
     const body = await res.json();
     expect(body.data.absences).toHaveLength(1);
     expect(body.data.absences[0].id).toBe("a2");
+  });
+
+  test("150 Datensätze → 150 (vollständige, strikte Liste)", async () => {
+    mockList.mockResolvedValueOnce(
+      Array.from({ length: 150 }, (_, i) => ({
+        slug: `legal/absences/a${i}`,
+        frontmatter: { ...ABSENCE, id: `a${i}` },
+      }))
+    );
+    const res = await get();
+    const body = await res.json();
+    expect(body.data.absences).toHaveLength(150);
+    expect(mockList).toHaveBeenCalledWith(expect.anything(), "absence_record", 10_000, {
+      strict: true,
+    });
+  });
+
+  test("Lesefehler → 502 statt gekürzter Liste", async () => {
+    mockList.mockRejectedValueOnce(new Error("engine down"));
+    const res = await get();
+    expect(res.status).toBe(502);
   });
 });

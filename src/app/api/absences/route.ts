@@ -234,21 +234,19 @@ export const GET = createHandler(
     query: listAbsenceQuerySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "absence_record", limit: "100" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
+    // Every record (paged past the engine's 100-row cap), deleted ones left
+    // out; a failed read is an error, never a shortened list.
+    let pages: Awaited<ReturnType<typeof listEnginePages>>;
+    try {
+      pages = await listEnginePages(ctx.headers, "absence_record", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
     // Pages wrap the record in `frontmatter` — filtering on the wrapper
     // fields made every user_email/status query return [].
-    let absences: AbsenceRecord[] = (Array.isArray(data) ? data : (data.pages ?? [])).map(
-      (p: unknown) => {
-        const page = p as { frontmatter?: AbsenceRecord };
-        return (page.frontmatter ?? (p as AbsenceRecord)) as AbsenceRecord;
-      }
-    );
+    let absences: AbsenceRecord[] = pages
+      .map((page) => page.frontmatter as unknown as AbsenceRecord | undefined)
+      .filter((a): a is AbsenceRecord => Boolean(a));
 
     if (query?.user_email) {
       absences = absences.filter((a) => a.user_email === query.user_email);
