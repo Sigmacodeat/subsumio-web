@@ -13,11 +13,7 @@ import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { mountWebApi } from "../src/commands/web-api.ts";
 import { createIdentityToken } from "../src/core/identity-token.ts";
 import { addGroupMember, createAccessGroup, setPagePermission } from "../src/core/acl.ts";
-import {
-  inheritedAgentStamps,
-  jobAclStamp,
-  readJobAclGroups,
-} from "../src/core/matter-access.ts";
+import { inheritedAgentStamps, jobAclStamp, readJobAclGroups } from "../src/core/matter-access.ts";
 import { buildBrainTools } from "../src/core/minions/tools/brain-allowlist.ts";
 import { loadCaseContext } from "../src/core/minions/handlers/supervisor.ts";
 import type { GBrainConfig } from "../src/core/config.ts";

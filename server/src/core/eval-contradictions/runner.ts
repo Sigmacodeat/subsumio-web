@@ -287,9 +287,7 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
   // search returned.
   const searchFn = sourceId
     ? async (engine: BrainEngine, query: string, o: { limit: number }) =>
-        (await baseSearch(engine, query, o)).filter(
-          (r) => (r.source_id ?? "default") === sourceId
-        )
+        (await baseSearch(engine, query, o)).filter((r) => (r.source_id ?? "default") === sourceId)
     : baseSearch;
 
   const errs = new JudgeErrorCollector();

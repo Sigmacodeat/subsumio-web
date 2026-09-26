@@ -6902,9 +6902,7 @@ export class PostgresEngine implements BrainEngine {
     const baselineStart = new Date(sinceDate.getTime() - lookbackDays * 86400000);
     // Only pages of the caller's sources (none given = no source filter).
     const anomalySources = sourceScopeList(opts);
-    const srcCond = anomalySources
-      ? sql`AND p.source_id = ANY(${anomalySources}::text[])`
-      : sql``;
+    const srcCond = anomalySources ? sql`AND p.source_id = ANY(${anomalySources}::text[])` : sql``;
 
     // Tag cohort baseline with day densification + zero-fill (codex C4#6).
     const tagBaseline = await sql`

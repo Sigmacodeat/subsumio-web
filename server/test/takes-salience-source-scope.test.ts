@@ -19,9 +19,7 @@ const ctx = (sourceId: string, allowedSources?: string[]) =>
     dryRun: false,
     remote: true,
     sourceId,
-    ...(allowedSources
-      ? { auth: { token: "", clientId: "", scopes: [], allowedSources } }
-      : {}),
+    ...(allowedSources ? { auth: { token: "", clientId: "", scopes: [], allowedSources } } : {}),
   }) as unknown as OperationContext;
 
 beforeAll(async () => {
@@ -76,13 +74,13 @@ describe("takes are bound to the caller's sources", () => {
   test("takes_list", async () => {
     const rows = (await op("takes_list").handler(ctx("firm-a"), {})) as Array<{ claim: string }>;
     expect(rows.map((r) => r.claim)).toEqual(["Einschätzung firm-a"]);
-    const both = (await op("takes_list").handler(ctx("firm-a", ["firm-a", "firm-b"]), {})) as Array<{
+    const both = (await op("takes_list").handler(
+      ctx("firm-a", ["firm-a", "firm-b"]),
+      {}
+    )) as Array<{
       claim: string;
     }>;
-    expect(both.map((r) => r.claim).sort()).toEqual([
-      "Einschätzung firm-a",
-      "Einschätzung firm-b",
-    ]);
+    expect(both.map((r) => r.claim).sort()).toEqual(["Einschätzung firm-a", "Einschätzung firm-b"]);
     const none = (await op("takes_list").handler(ctx("firm-c"), {})) as unknown[];
     expect(none).toEqual([]);
   });

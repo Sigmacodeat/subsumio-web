@@ -77,7 +77,11 @@ beforeAll(async () => {
   await put("cases/walled", "legal_case", { permissions: { blocked_users: ["u-walled"] } });
   // Deadlines: 2 open due soon, 1 open far away, 1 done, 1 tombstoned, 1 deleted,
   // 1 restricted by ACL, 1 in the walled matter, 1 in another firm.
-  await put("d/soon-1", "legal_deadline", { status: "open", due_date: "2030-01-10", case_slug: "cases/open" });
+  await put("d/soon-1", "legal_deadline", {
+    status: "open",
+    due_date: "2030-01-10",
+    case_slug: "cases/open",
+  });
   await put("d/soon-2", "legal_deadline", { status: "Open", due_date: "2030-01-31" });
   await put("d/far", "legal_deadline", { status: "open", due_date: "2031-06-01" });
   await put("d/done", "legal_deadline", { status: "done", due_date: "2030-01-05" });
@@ -141,9 +145,7 @@ describe("engine.countPagesByStatus", () => {
     expect(validateCountOpts({ types: [] })).toBe("types_required");
     expect(validateCountOpts({ types: ["x; drop"] })).toBe("invalid_type");
     expect(validateCountOpts({ types: ["a"], statusField: "a->b" })).toBe("invalid_status_field");
-    expect(validateCountOpts({ types: ["a"], dateBefore: "tomorrow" })).toBe(
-      "invalid_date_before"
-    );
+    expect(validateCountOpts({ types: ["a"], dateBefore: "tomorrow" })).toBe("invalid_date_before");
     expect(
       aggregateCountRows([
         { type: "a", status: "open", before: true },

@@ -903,7 +903,11 @@ describeBoth("Engine parity — page array ops", () => {
         { holder: "parity-scope-holder", ...scope },
         undefined
       );
-      const salience = await eng.getRecentSalience({ days: 1, slugPrefix: "parity-scope", ...scope });
+      const salience = await eng.getRecentSalience({
+        days: 1,
+        slugPrefix: "parity-scope",
+        ...scope,
+      });
       const anomalies = await eng.findAnomalies({ since: today, sigma: 0, ...scope });
       return {
         takes: takes.map((t) => t.claim),
