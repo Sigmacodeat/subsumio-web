@@ -122,6 +122,22 @@ describe("can (RBAC matrix)", () => {
     expect(can(mockUser("assistant"), "legal.contract_draft")).toBe(false);
   });
 
+  test("assistant (Konzipient/Sekretariat) researches and drafts; release stays with lawyers", () => {
+    const a = mockUser("assistant");
+    for (const action of [
+      "legal.research",
+      "legal.ground",
+      "legal.statute",
+      "legal.schriftsatz",
+      "legal.redline",
+    ] as const) {
+      expect(can(a, action)).toBe(true);
+    }
+    // Release, publication and invoicing are not drafts.
+    expect(can(a, "workflow.approve")).toBe(false);
+    expect(can(mockUser("client_viewer"), "legal.research")).toBe(false);
+  });
+
   test("audit.read — admin only", () => {
     expect(can(mockUser("admin"), "audit.read")).toBe(true);
     expect(can(mockUser("lawyer"), "audit.read")).toBe(false);

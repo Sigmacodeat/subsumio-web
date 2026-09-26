@@ -185,8 +185,10 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.due_diligence": ["admin", "lawyer"],
   "legal.risk_analysis": ["admin", "lawyer", "assistant"],
   "legal.memo": ["admin", "lawyer", "assistant"],
-  "legal.redline": ["admin", "lawyer"],
-  "legal.schriftsatz": ["admin", "lawyer"],
+  // Drafts only (Konzipient/Sekretariat): release, sending and publication
+  // stay with workflow.approve and the approval queue (admin, lawyer).
+  "legal.redline": ["admin", "lawyer", "assistant"],
+  "legal.schriftsatz": ["admin", "lawyer", "assistant"],
   "legal.fristenreport": ["admin", "lawyer", "assistant"],
   "legal.playbook": ["admin", "lawyer"],
   "legal.rvg": ["admin", "lawyer", "assistant"],
@@ -219,7 +221,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.eval_fixture_review": ["admin", "lawyer"],
   "legal.strategy": ["admin", "lawyer"],
-  "legal.research": ["admin", "lawyer"],
+  "legal.research": ["admin", "lawyer", "assistant"],
   "legal.subsumption": ["admin", "lawyer"],
   "legal.ground": ["admin", "lawyer", "assistant"],
   "legal.translate": ["admin", "lawyer", "assistant"],
