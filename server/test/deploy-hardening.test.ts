@@ -146,6 +146,16 @@ describe("scripts/deploy.sh only deploys reviewed, pushed main", () => {
   });
 });
 
+describe("restore verification leaves a result for the operator console", () => {
+  const verify = readFileSync(join(NETCUP, "backup", "verify.sh"), "utf8");
+  test("success and every failure path record the outcome next to the backup status", () => {
+    expect(verify).toContain('"$(dirname "$BACKUP_STATUS_FILE")/last-verify"');
+    expect(verify).toMatch(/trap '[^']*write_verify_status false/);
+    expect(verify).toMatch(/write_verify_status true/);
+    expect(verify).toMatch(/write_verify_status false ",\\"pages\\":0"/);
+  });
+});
+
 const dockerfile = readFileSync(join(SERVER, "Dockerfile"), "utf8");
 const webDockerfile = readFileSync(join(SERVER, "..", "Dockerfile.web"), "utf8");
 

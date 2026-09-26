@@ -12,6 +12,17 @@ set -eu
 
 check_db="subsumio_restore_check"
 
+# Result of this run for the operator console (/ops/dr), next to the backup
+# status file: {"at","passed"[,"pages","cases","files"]}.
+verify_status_file=""
+[ -n "${BACKUP_STATUS_FILE:-}" ] && verify_status_file="$(dirname "$BACKUP_STATUS_FILE")/last-verify"
+write_verify_status() {
+  [ -n "${verify_status_file}" ] || return 0
+  mkdir -p "$(dirname "${verify_status_file}")" 2>/dev/null || true
+  printf '{"at":"%s","passed":%s%s}\n' "$(date -u +%FT%TZ)" "$1" "${2:-}" \
+    >"${verify_status_file}" 2>/dev/null || true
+}
+
 cleanup() {
   # Guard the only recursive cleanup: this script may remove exclusively its
   # own timestamped verification directory, never an arbitrary environment
@@ -21,7 +32,7 @@ cleanup() {
   esac
   dropdb -h "${PGHOST}" -U "${PGUSER}" --if-exists "${check_db}" 2>/dev/null || true
 }
-trap 'cleanup; alert "Restore-Verifikation fehlgeschlagen (verify.sh, exit $?)."' EXIT
+trap 'rc=$?; cleanup; write_verify_status false; alert "Restore-Verifikation fehlgeschlagen (verify.sh, exit ${rc})."' EXIT
 
 echo "[verify] $(date -u +%FT%TZ) starting restore verification"
 rdir="/tmp/verify-$(date -u +%s)"
@@ -69,7 +80,9 @@ trap - EXIT
 
 if [ "${pages:-0}" -gt 0 ]; then
   echo "[verify] OK — pages=${pages}, Akten=${cases}, Nutzer=${users}, Originaldateien=${restored_files}"
+  write_verify_status true ",\"pages\":${pages:-0},\"cases\":${cases:-0},\"files\":${restored_files:-0}"
 else
+  write_verify_status false ",\"pages\":0"
   alert "Restore-Verifikation: wiederhergestellte DB hat 0 Seiten — Backup könnte unbrauchbar sein!"
   exit 1
 fi

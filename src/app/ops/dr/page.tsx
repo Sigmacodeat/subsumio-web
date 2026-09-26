@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,16 +10,12 @@ import {
   AlertTriangle,
   RefreshCw,
   HardDrive,
-  Clock,
   CheckCircle2,
   XCircle,
-  PlayCircle,
-  RotateCcw,
   Server,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
-import { csrfFetch } from "@/lib/csrf";
 
 interface BackupTarget {
   type: string;
@@ -33,61 +28,22 @@ interface BackupTarget {
 }
 
 interface DRStatus {
-  total_manifests: number;
-  total_drills: number;
+  configured: boolean;
   last_backup_at: string | null;
+  backup_ok: boolean;
+  backup_detail: string | null;
+  backup_offsite: boolean | null;
+  backup_files: string | null;
   last_drill_at: string | null;
   last_drill_passed: boolean | null;
-  all_targets_defined: boolean;
+  last_drill_pages: number | null;
   critical_targets: number;
-  rpo_max_hours: number;
-  rto_max_hours: number;
-}
-
-interface BackupManifest {
-  id: string;
-  created_at: string;
-  created_by: string;
-  overall_status: string;
-  total_size_bytes: number;
-  rpo_met: boolean;
-  rto_met: boolean;
-  entries: Array<{
-    target_type: string;
-    target_name: string;
-    status: string;
-    size_bytes?: number;
-    checksum?: string;
-  }>;
-}
-
-interface RestoreDrill {
-  id: string;
-  started_at: string;
-  completed_at: string;
-  duration_ms: number;
-  targets_tested: number;
-  targets_passed: number;
-  targets_failed: number;
-  rpo_met: boolean;
-  rto_met: boolean;
-  rto_actual_hours: number;
-  overall_passed: boolean;
 }
 
 interface DRResponse {
   timestamp: string;
   status: DRStatus;
   targets: BackupTarget[];
-  recent_manifests: BackupManifest[];
-  recent_drills: RestoreDrill[];
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
 }
 
 function formatDate(iso: string | null): string {
@@ -98,12 +54,17 @@ function formatDate(iso: string | null): string {
   });
 }
 
+const FILES_LABEL: Record<string, string> = {
+  offsite: "offsite",
+  local: "nur lokal",
+  none: "nicht gesichert",
+  not_mounted: "Objektspeicher",
+};
+
 export default function DRPage() {
   const { t } = useLang();
-  const queryClient = useQueryClient();
-  const [actionResult, setActionResult] = useState<string | null>(null);
 
-  const { data, isLoading, refetch } = useQuery<DRResponse>({
+  const { data, isLoading, isError, refetch } = useQuery<DRResponse>({
     queryKey: ["dr-status"],
     queryFn: async () => {
       const res = await fetch("/api/admin/dr");
@@ -113,36 +74,8 @@ export default function DRPage() {
     refetchInterval: 30_000,
   });
 
-  const mutation = useMutation({
-    mutationFn: async (action: "create_backup" | "run_drill" | "restore") => {
-      const res = await csrfFetch("/api/admin/dr", {
-        method: "POST",
-        // Long-running: csrfFetch would otherwise abort after 30s.
-        signal: AbortSignal.timeout(300_000),
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, simulate: true }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data.success === false) {
-        throw new Error(data.error ?? data.hint ?? "Action not available in this context");
-      }
-      return data;
-    },
-    onSuccess: (_, action) => {
-      setActionResult(`${action}: ${_.hint ?? "Erfolgreich"}`);
-      queryClient.invalidateQueries({ queryKey: ["dr-status"] });
-      setTimeout(() => setActionResult(null), 5000);
-    },
-    onError: (err: Error) => {
-      setActionResult(`Fehler: ${err.message}`);
-      setTimeout(() => setActionResult(null), 5000);
-    },
-  });
-
   const status = data?.status;
   const targets = data?.targets ?? [];
-  const manifests = data?.recent_manifests ?? [];
-  const drills = data?.recent_drills ?? [];
 
   return (
     <div className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
@@ -157,64 +90,41 @@ export default function DRPage() {
           Auto-Refresh alle 30s ·{" "}
           {data ? `Aktualisiert: ${new Date(data.timestamp).toLocaleTimeString("de-AT")}` : "Lädt…"}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mutation.mutate("create_backup")}
-            disabled={mutation.isPending}
-          >
-            <HardDrive className="mr-2 h-4 w-4" />
-            Backup erstellen
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mutation.mutate("run_drill")}
-            disabled={mutation.isPending || manifests.length === 0}
-          >
-            <PlayCircle className="mr-2 h-4 w-4" />
-            Restore-Drill
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mutation.mutate("restore")}
-            disabled={mutation.isPending || manifests.length === 0}
-          >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Restore (Sim)
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Aktualisieren
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          Aktualisieren
+        </Button>
       </div>
 
-      {actionResult && (
-        <div className="rounded-md border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] p-3 text-sm text-[color:var(--ds-info-text)]">
-          {actionResult}
+      {isError && (
+        <div className="rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-sm text-[color:var(--ds-danger-text)]">
+          DR-Status nicht abrufbar.
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {status && !status.configured && (
+        <div className="rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-sm text-[color:var(--ds-warning-text)]">
+          Kein Backup-Status angebunden (BACKUP_STATUS_FILE fehlt) — es ist nicht nachweisbar, dass
+          gesichert wird.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Database className="h-8 w-8 text-[color:var(--ds-info-text)]" />
+            {status?.backup_ok ? (
+              <CheckCircle2 className="h-8 w-8 text-[color:var(--ds-success-text)]" />
+            ) : (
+              <AlertTriangle className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
+            )}
             <div>
-              <p className="text-2xl font-bold">{status?.total_manifests ?? "—"}</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Backups</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <PlayCircle className="h-8 w-8 text-[color:var(--ds-category-violet-text)]" />
-            <div>
-              <p className="text-2xl font-bold">{status?.total_drills ?? "—"}</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Drills</p>
+              <p className="text-lg font-bold">{formatDate(status?.last_backup_at ?? null)}</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">Letzte Sicherung</p>
+              {status?.backup_detail && (
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                  {status.backup_detail}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -228,29 +138,47 @@ export default function DRPage() {
               <ShieldCheck className="h-8 w-8 text-[color:var(--ds-text-muted)]" />
             )}
             <div>
-              <p className="text-2xl font-bold">
+              <p className="text-lg font-bold">
                 {status?.last_drill_passed === true
-                  ? "PASS"
+                  ? "bestanden"
                   : status?.last_drill_passed === false
-                    ? "FAIL"
-                    : "—"}
+                    ? "FEHLGESCHLAGEN"
+                    : "keine Angabe"}
               </p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Letzter Drill</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Restore-Prüfung · {formatDate(status?.last_drill_at ?? null)}
+                {status?.last_drill_pages != null ? ` · ${status.last_drill_pages} Seiten` : ""}
+              </p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Server className="h-8 w-8 text-[color:var(--ds-warning-text)]" />
+            <HardDrive className="h-8 w-8 text-[color:var(--ds-info-text)]" />
             <div>
-              <p className="text-2xl font-bold">{status?.critical_targets ?? "—"}</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Kritische Targets</p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="default">
+                  {status?.backup_offsite === true
+                    ? "Offsite"
+                    : status?.backup_offsite === false
+                      ? "nur lokal"
+                      : "Offsite unbekannt"}
+                </Badge>
+                <Badge variant="default">
+                  Dateien: {status?.backup_files ? (FILES_LABEL[status.backup_files] ?? "—") : "—"}
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">Abdeckung</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Backup Targets */}
+      <p className="text-xs text-[color:var(--ds-text-muted)]">
+        Sicherung (täglich), Restore-Prüfung (wöchentlich) und Wiederherstellung laufen im
+        Backup-Container auf dem Server. Diese Seite zeigt deren Ergebnisse; sie löst nichts aus.
+      </p>
+
       <Card>
         <CardContent className="p-4">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
@@ -258,30 +186,35 @@ export default function DRPage() {
             Backup-Targets
           </h3>
           <div className="space-y-2">
-            {targets.map((t) => (
-              <div key={t.type} className="flex items-center justify-between rounded-md border p-3">
+            {targets.map((target) => (
+              <div
+                key={target.type}
+                className="flex items-center justify-between rounded-md border p-3"
+              >
                 <div className="flex items-center gap-3">
-                  {t.critical ? (
+                  {target.critical ? (
                     <AlertTriangle className="h-4 w-4 text-[color:var(--ds-warning-text)]" />
                   ) : (
                     <Database className="h-4 w-4 text-[color:var(--ds-info-text)]" />
                   )}
                   <div>
-                    <p className="text-sm font-medium">{t.name}</p>
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">{t.description}</p>
+                    <p className="text-sm font-medium">{target.name}</p>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {target.description}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="text-center">
                     <p className="text-[color:var(--ds-text-muted)]">RPO</p>
-                    <p className="font-mono font-medium">{t.rpo_hours}h</p>
+                    <p className="font-mono font-medium">{target.rpo_hours}h</p>
                   </div>
                   <div className="text-center">
                     <p className="text-[color:var(--ds-text-muted)]">RTO</p>
-                    <p className="font-mono font-medium">{t.rto_hours}h</p>
+                    <p className="font-mono font-medium">{target.rto_hours}h</p>
                   </div>
-                  <Badge variant="default">{t.tool}</Badge>
-                  {t.critical && (
+                  <Badge variant="default">{target.tool}</Badge>
+                  {target.critical && (
                     <Badge className="bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]">
                       Kritisch
                     </Badge>
@@ -290,123 +223,6 @@ export default function DRPage() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Manifests */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <HardDrive className="h-4 w-4" />
-            Letzte Backups
-          </h3>
-          {manifests.length === 0 ? (
-            <p className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Noch keine Backups erstellt. Klicken Sie auf &ldquo;Backup erstellen&rdquo;, um ein
-              Simulations-Backup zu erzeugen.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {manifests
-                .slice(-5)
-                .reverse()
-                .map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
-                      <div>
-                        <p className="text-sm font-medium">{formatDate(m.created_at)}</p>
-                        <p className="text-xs text-[color:var(--ds-text-muted)]">
-                          {m.entries.length} Targets · {formatBytes(m.total_size_bytes)} · von{" "}
-                          {m.created_by}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {m.rpo_met ? (
-                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
-                          RPO ✓
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
-                          RPO ✗
-                        </Badge>
-                      )}
-                      {m.rto_met ? (
-                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
-                          RTO ✓
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
-                          RTO ✗
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Drills */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <PlayCircle className="h-4 w-4" />
-            Letzte Restore-Drills
-          </h3>
-          {drills.length === 0 ? (
-            <p className="py-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Noch keine Drills durchgeführt. Klicken Sie auf &ldquo;Restore-Drill&rdquo;, um einen
-              Simulations-Drill zu starten.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {drills
-                .slice(-5)
-                .reverse()
-                .map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      {d.overall_passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-[color:var(--ds-success-text)]" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-[color:var(--ds-danger-text)]" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{formatDate(d.completed_at)}</p>
-                        <p className="text-xs text-[color:var(--ds-text-muted)]">
-                          {d.targets_passed}/{d.targets_tested} Targets bestanden ·{" "}
-                          {(d.duration_ms / 1000).toFixed(1)}s
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-xs">
-                        <Clock className="h-3 w-3" />
-                        <span className="font-mono">RTO: {d.rto_actual_hours.toFixed(2)}h</span>
-                      </div>
-                      {d.overall_passed ? (
-                        <Badge className="bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]">
-                          PASS
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]">
-                          FAIL
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
