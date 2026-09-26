@@ -9,14 +9,17 @@ import {
   ID_COPY_DOC_TYPE,
   KYC_RECORD_TYPE,
   KYC_TAG,
+  PERSONAL_CALENDAR_PREFIX,
   PRIVATE_CHAT_PREFIX,
   callerMatterAccess,
+  personalCalendarDenies,
   privateChatDenies,
   scopeForCaller,
   staffOnlyDenies,
   withDeniedMatters,
   type MatterAccessRow,
   type MatterAccessUser,
+  type PersonalCalendarMirror,
   type MatterScope,
 } from "./matter-access.ts";
 
@@ -54,6 +57,8 @@ export interface SourceMatterAccess {
    * trash does not reopen them.
    */
   staffOnlySlugs: string[];
+  /** Personal calendar mirrors with their owner (see personalCalendarDenies). */
+  personalCalendar: PersonalCalendarMirror[];
 }
 
 /** The access rules of every matter in `sourceId` that has any. */
@@ -97,6 +102,14 @@ export async function loadSourceMatterAccess(
     staffOnly.add(r.slug);
     if (typeof r.id_copy === "string" && r.id_copy) staffOnly.add(r.id_copy);
   }
+  const mirrors = await engine.executeRaw<{ slug: string; owner: string | null }>(
+    `SELECT slug, frontmatter->>'owner_user_id' AS owner
+       FROM pages
+      WHERE source_id = $1
+        AND (slug LIKE $2
+             OR (type = 'calendar_event' AND frontmatter ? 'owner_user_id'))`,
+    [sourceId, `${PERSONAL_CALENDAR_PREFIX}%`]
+  );
   return {
     rows: raw.map((r) => ({
       slug: r.slug,
@@ -106,6 +119,10 @@ export async function loadSourceMatterAccess(
     })),
     chatOwners: owners.map((o) => o.owner),
     staffOnlySlugs: [...staffOnly],
+    personalCalendar: mirrors.map((m) => ({
+      slug: m.slug,
+      owner: typeof m.owner === "string" && m.owner ? m.owner : null,
+    })),
   };
 }
 
@@ -114,7 +131,8 @@ export async function loadSourceMatterAccess(
  * `base` (the scope a signed token already carried; "all" otherwise).
  * Walls, restricted matters and grants apply to every role, admins included;
  * other people's private conversations are always hidden, and firm-internal
- * records (KYC) from everyone who is not firm staff.
+ * records (KYC) from everyone who is not firm staff, and personal calendar
+ * mirrors from everyone but their owner.
  */
 export function callerMatterScope(
   base: MatterScope,
@@ -128,6 +146,8 @@ export function callerMatterScope(
       // KYC records and ID copies are for firm staff only (AML tipping-off
       // ban) — client accounts never reach them, not even on their matter.
       ...staffOnlyDenies(user.role, known.staffOnlySlugs ?? []),
+      // Colleagues' personal calendar mirrors are theirs alone.
+      ...personalCalendarDenies(known.personalCalendar ?? [], user.userId),
     ]),
     readOnly: access.readOnly,
   };

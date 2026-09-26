@@ -424,6 +424,51 @@ export function staffOnlyDenies(role: string | undefined, recordSlugs: string[])
 }
 
 /**
+ * Personal calendar mirrors: appointments pulled from one lawyer's own
+ * Outlook (`calendar/outlook/<mailbox>/<event>`, type calendar_event,
+ * frontmatter owner_user_id) belong to that lawyer alone. Everyone else's
+ * scope denies them; a mirror whose owner is not recorded is denied to all
+ * (fail-closed) until the next sync stamps the owner.
+ */
+export const PERSONAL_CALENDAR_PREFIX = "calendar/outlook/";
+
+export interface PersonalCalendarMirror {
+  slug: string;
+  /** owner_user_id, or null when the mirror does not record it. */
+  owner: string | null;
+}
+
+/** Deny entries (plain slugs/prefixes) for the mirrors `userId` does not own. */
+export function personalCalendarDenies(
+  mirrors: PersonalCalendarMirror[],
+  userId: string
+): string[] {
+  const groups = new Map<string, PersonalCalendarMirror[]>();
+  const loose: PersonalCalendarMirror[] = [];
+  for (const m of mirrors) {
+    if (m.slug.startsWith(PERSONAL_CALENDAR_PREFIX)) {
+      const mailbox = m.slug.slice(PERSONAL_CALENDAR_PREFIX.length).split("/")[0];
+      if (mailbox) {
+        const prefix = `${PERSONAL_CALENDAR_PREFIX}${mailbox}`;
+        const list = groups.get(prefix) ?? [];
+        list.push(m);
+        groups.set(prefix, list);
+        continue;
+      }
+    }
+    loose.push(m);
+  }
+  const denies: string[] = [];
+  for (const [prefix, list] of groups) {
+    // A whole mailbox of someone else: one prefix entry instead of one per event.
+    if (list.every((m) => m.owner !== null && m.owner !== userId)) denies.push(prefix);
+    else for (const m of list) if (m.owner !== userId) denies.push(m.slug);
+  }
+  for (const m of loose) if (m.owner !== userId) denies.push(m.slug);
+  return denies;
+}
+
+/**
  * Where the pages an agent run writes may go.
  *
  *   free     no stamp at all (CLI, operator cron): unchanged behaviour.

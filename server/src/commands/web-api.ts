@@ -43,6 +43,7 @@ import { FRONTMATTER_FILTER_KEY_RE, FRONTMATTER_FILTER_MAX } from "../core/types
 import { executeRawJsonb } from "../core/sql-query.ts";
 import { publicErrorMessage, redactErrorResponseBody } from "../core/public-error-message.ts";
 import {
+  PERSONAL_CALENDAR_PREFIX,
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
   isFirmStaffRole,
@@ -5457,7 +5458,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       );
       if (
         (frontmatter.type ?? storedType) === "legal_case" ||
-        slug.startsWith(PRIVATE_CHAT_PREFIX)
+        slug.startsWith(PRIVATE_CHAT_PREFIX) ||
+        // A new personal calendar mirror must be hidden from colleagues at once.
+        slug.startsWith(PERSONAL_CALENDAR_PREFIX) ||
+        (typeof frontmatter.owner_user_id === "string" &&
+          (frontmatter.type ?? storedType) === "calendar_event")
       ) {
         notifyMatterAccessChanged(sourceId);
       }
