@@ -3342,7 +3342,16 @@ export const api = {
                   (xhr.status === 413
                     ? "Datei zu groß für den aktuellen Upload-Kanal. Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                     : `HTTP ${xhr.status}`);
-                reject(new Error(message));
+                // Status + code stay readable for callers (e.g. a 409
+                // "duplicate_file" is "already there", not a failure).
+                reject(
+                  new ApiRequestError(
+                    message,
+                    xhr.status,
+                    typeof errBody.error === "string" ? errBody.error : undefined,
+                    errBody
+                  )
+                );
               } catch {
                 reject(
                   new Error(

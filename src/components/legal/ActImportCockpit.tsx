@@ -17,7 +17,7 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { sha256HexBytes } from "@/lib/gobd";
 import { runUploadPool } from "@/lib/upload-queue";
-import type { ActImportItem, ActImportMetrics } from "@/lib/act-import";
+import { uploadFailureRecord, type ActImportItem, type ActImportMetrics } from "@/lib/act-import";
 import { isSupportedUploadName } from "@/lib/upload-formats";
 
 interface ImportSummary {
@@ -55,6 +55,7 @@ const IMPORT_STATUS_LABELS: Record<string, string> = {
   partial: "Teilweise",
   review: "Zu prüfen",
   ready: "Bereit",
+  duplicate: "Übersprungen – bereits vorhanden",
   failed: "Fehlgeschlagen",
   finalized: "Analysiert",
   completed: "Abgeschlossen",
@@ -171,13 +172,8 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
               attempts: 1,
             });
           } catch (error) {
-            await writeItem(created.id, {
-              ...base,
-              status: "failed",
-              error_code: "upload_failed",
-              error: error instanceof Error ? error.message : String(error),
-              attempts: 1,
-            });
+            // A file already in the matter is skipped, not failed.
+            await writeItem(created.id, { ...base, ...uploadFailureRecord(error), attempts: 1 });
           }
         },
         { smallParallel: 4, largeParallel: 1 }
@@ -279,9 +275,7 @@ export function ActImportCockpit({ caseSlug }: { caseSlug: string }) {
           } catch (error) {
             await writeItem(sessionId, {
               ...base,
-              status: "failed",
-              error_code: "upload_failed",
-              error: error instanceof Error ? error.message : String(error),
+              ...uploadFailureRecord(error),
               attempts: (existingItem?.attempts ?? 0) + 1,
             });
           }
