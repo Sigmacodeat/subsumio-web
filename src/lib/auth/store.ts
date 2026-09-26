@@ -157,6 +157,14 @@ export interface Org {
    */
   workosOrganizationId?: string | null;
   /**
+   * The WorkOS Directory Sync directory (directory_…) of THIS firm. Set by the
+   * platform operator when the firm's directory is connected. Without it the
+   * firm cannot pull a directory (see syncFromWorkOS in src/lib/scim.ts).
+   */
+  workosDirectoryId?: string | null;
+  /** Result of this firm's last manual directory sync (SCIM settings page). */
+  scimLastSync?: { at: string; result: unknown } | null;
+  /**
    * Per-email cutoff for org invites: when a member is removed (or leaves),
    * invites minted before this timestamp must not be usable to (re-)join —
    * invite tokens are stateless, so removal alone would not stop a still-

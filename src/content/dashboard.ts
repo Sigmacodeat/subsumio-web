@@ -8582,12 +8582,12 @@ export const D = {
   "scim.breadcrumb_settings": { de: "Einstellungen", en: "Settings" },
   "scim.breadcrumb_scim": { de: "SCIM", en: "SCIM" },
   "scim.configured": {
-    de: "WORKOS_API_KEY und WORKOS_DIRECTORY_ID konfiguriert",
-    en: "WORKOS_API_KEY and WORKOS_DIRECTORY_ID configured",
+    de: "Verzeichnis dieser Kanzlei verbunden",
+    en: "This firm's directory is connected",
   },
   "scim.not_configured": {
-    de: "Setzen Sie WORKOS_API_KEY und WORKOS_DIRECTORY_ID für die automatische Synchronisation",
-    en: "Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID for automatic synchronization",
+    de: "Für diese Kanzlei ist noch kein Verzeichnis verbunden — bitte beim Subsumio-Support einrichten lassen",
+    en: "No directory is connected for this firm yet — ask Subsumio support to set it up",
   },
   "scim.feature_auto_update": {
     de: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
