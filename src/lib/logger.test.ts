@@ -154,3 +154,41 @@ describe("normalizeLogArgs (console-compatible arguments)", () => {
     expect(normalizeLogArgs("x", [1, "y"])).toEqual({ msg: "x", meta: { details: [1, "y"] } });
   });
 });
+
+describe("redaction", () => {
+  test("secret-named string fields, credentials and e-mails never reach the log line", () => {
+    const log = logger("test");
+    const spy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    log.info("mail to alice-example@example.at failed", {
+      password: "hunter2",
+      apiKey: "sk-live-123",
+      headers: { Authorization: "Bearer abc.def", cookie: "sb_session=s" },
+      note: "Authorization: Bearer xyz.123",
+      inputTokens: 1234,
+      caseSlug: "legal/case-1",
+    });
+    const line = spy.mock.calls[0][0] as string;
+    spy.mockRestore();
+    expect(line).not.toContain("hunter2");
+    expect(line).not.toContain("sk-live-123");
+    expect(line).not.toContain("abc.def");
+    expect(line).not.toContain("xyz.123");
+    expect(line).not.toContain("sb_session=s");
+    expect(line).not.toContain("alice-example@");
+    const entry = JSON.parse(line);
+    expect(entry.msg).toBe("mail to a***@example.at failed");
+    expect(entry.password).toBe("[redacted]");
+    expect(entry.inputTokens).toBe(1234); // counts stay
+    expect(entry.caseSlug).toBe("legal/case-1");
+  });
+
+  test("error stacks stay readable", async () => {
+    const { redactLogValue } = await import("./logger");
+    const out = redactLogValue({
+      error: { message: "x", stack: "Error: x\n    at f (/app/a.ts:1:1)" },
+    }) as {
+      error: { stack: string };
+    };
+    expect(out.error.stack).toContain("/app/a.ts:1:1");
+  });
+});
