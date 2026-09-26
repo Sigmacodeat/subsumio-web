@@ -288,7 +288,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       try {
         const identities = await identityStore.listByOrg(orgId);
         for (const id of identities) {
-          if (id.phone && id.userId) {
+          // Only a number an administrator linked to this very person (and
+          // still active) — older identities recorded whoever registered
+          // the number, not its owner.
+          if (id.phone && id.userId && id.userLinked === true && id.status === "active") {
             allIdentities.push({ userId: id.userId, phone: id.phone });
           }
         }
