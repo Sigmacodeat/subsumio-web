@@ -179,6 +179,36 @@ describe("DocuSign Connect webhook", () => {
     });
   });
 
+  it("a failed download is not marked processed (500); the retry stores the document", async () => {
+    const docusign = await import("@/lib/docusign");
+    vi.mocked(docusign.downloadEnvelopeDocuments).mockRejectedValueOnce(new Error("HTTP 502"));
+    const first = await deliver("completed");
+    expect(first.status).toBe(500);
+    expect(processed.size).toBe(0);
+    expect(uploads).toHaveLength(0);
+    const second = await deliver("completed");
+    expect(second.status).toBe(200);
+    expect(second.json).toMatchObject({ documentStored: true });
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("a download that is not a PDF is not filed", async () => {
+    const docusign = await import("@/lib/docusign");
+    vi.mocked(docusign.downloadEnvelopeDocuments).mockResolvedValueOnce(
+      Buffer.from("<html>error</html>")
+    );
+    expect((await deliver("completed")).status).toBe(500);
+    expect(uploads).toHaveLength(0);
+  });
+
+  it("a failed status update is retried by DocuSign (500, not processed)", async () => {
+    const engine = await import("@/lib/engine");
+    vi.mocked(engine.enginePatchPage).mockResolvedValueOnce(new Response("", { status: 503 }));
+    const res = await deliver("sent");
+    expect(res.status).toBe(500);
+    expect(processed.size).toBe(0);
+  });
+
   it("rejects an invalid signature", async () => {
     const { POST } = await import("./route");
     const res = await POST(
