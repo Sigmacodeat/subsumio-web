@@ -128,11 +128,14 @@ Was mit dem Schalter passiert — immer **Ablehnung vor dem Request**, nie still
 Die gespeicherten Vektoren gehören zu einem Modell (`openrouter:openai/text-embedding-3-small`,
 1536 Dimensionen). Ein anderes Modell heißt: ganzer Korpus neu einbetten. Deshalb:
 
-- `SUBSUMIO_EU_ONLY=1` allein sperrt Embeddings **nicht** (einmalige Warnung im Log).
-- `SUBSUMIO_EU_ONLY_EMBEDDINGS=1` zusätzlich: dokumentseitige Embeddings (neue Aufnahme) über
-  einen Nicht-EU-Anbieter werden abgelehnt; Such-Embeddings bleiben erlaubt, damit die Suche
-  gegen den bestehenden Index weiter funktioniert. Korpus-Läufe mit öffentlichem Gesetzestext
-  können den Schalter in ihrer Umgebung auf `0` setzen.
+- `SUBSUMIO_EU_ONLY=1` schließt Embeddings **ein**: Dokument- und Such-Embeddings über einen
+  Nicht-EU-Anbieter werden abgelehnt (`EuResidencyError`, der Hinweis nennt die EU-Optionen:
+  `mistral:mistral-embed`, selbst gehostet mit `SUBSUMIO_SELF_HOSTED_RESIDENCY=eu`, Bedrock in
+  eu-central-1). Suchtext ist ebenso Mandantendaten wie Dokumenttext.
+- `SUBSUMIO_EU_ONLY_EMBEDDINGS=0` ist der **ausdrückliche Opt-out** für die Zeit bis zur
+  Neu-Einbettung: der konfigurierte Anbieter bleibt für beide Seiten nutzbar, einmalige Warnung
+  im Log, der Deploy-Preflight warnt ebenfalls. Leer oder `1` ändert nichts an der Sperre.
+  Korpus-Läufe mit öffentlichem Gesetzestext können den Opt-out in ihrer Umgebung setzen.
 
 Migrationsoptionen (nicht umgesetzt):
 

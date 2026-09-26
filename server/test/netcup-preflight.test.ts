@@ -201,12 +201,44 @@ describe("preflight: EU processing (bedrock-eu, SUBSUMIO_EU_ONLY)", () => {
     });
     expect(leftoverKey.out).toContain("ANTHROPIC_API_KEY unter SUBSUMIO_EU_ONLY=1 entfernen");
     expect(leftoverKey.code).toBe(1);
-    const ok = run({
+    // Embeddings are part of EU_ONLY: a non-EU embedding model without the
+    // explicit opt-out would make the engine refuse every embedding call.
+    const nonEuEmbedding = run({
       ...bedrock,
       SUBSUMIO_EU_ONLY: "1",
       SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
     });
-    expect(ok.out).toContain("Embeddings laufen weiter");
-    expect(ok.code).toBe(0);
+    expect(nonEuEmbedding.out).toContain("schließt Embeddings ein");
+    expect(nonEuEmbedding.code).toBe(1);
+    const optOut = run({
+      ...bedrock,
+      SUBSUMIO_EU_ONLY: "1",
+      SUBSUMIO_EU_ONLY_EMBEDDINGS: "0",
+      SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
+    });
+    expect(optOut.out).toContain("per Opt-out");
+    expect(optOut.code).toBe(0);
+    const euEmbedding = run({
+      ...bedrock,
+      SUBSUMIO_EU_ONLY: "1",
+      SUBSUMIO_EMBEDDING_MODEL: "mistral:mistral-embed",
+      SUBSUMIO_EMBEDDING_DIMENSIONS: "1024",
+      MISTRAL_API_KEY: "m",
+      SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
+    });
+    expect(euEmbedding.out).not.toContain("schließt Embeddings ein");
+    expect(euEmbedding.out).not.toContain("per Opt-out");
+    expect(euEmbedding.code).toBe(0);
+    const selfHostedEnv = {
+      ...bedrock,
+      SUBSUMIO_EU_ONLY: "1",
+      SUBSUMIO_EMBEDDING_MODEL: "llama-server:qwen3-embedding-8b",
+      SUBSUMIO_EMBEDDING_DIMENSIONS: "4096",
+      SUBSUMIO_ENSEMBLE_CRITIC_MODELS: "bedrock:eu.anthropic.claude-sonnet-5",
+    };
+    const selfHosted = run(selfHostedEnv);
+    expect(selfHosted.out).toContain("SUBSUMIO_SELF_HOSTED_RESIDENCY=eu");
+    expect(selfHosted.code).toBe(1);
+    expect(run({ ...selfHostedEnv, SUBSUMIO_SELF_HOSTED_RESIDENCY: "eu" }).code).toBe(0);
   });
 });

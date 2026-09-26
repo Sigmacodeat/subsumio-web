@@ -177,9 +177,14 @@ describe("switch parsing", () => {
       expect(isEuOnly({ SUBSUMIO_EU_ONLY: v })).toBe(false);
   });
 
-  test("embedding sub-switch needs both switches", () => {
+  test("embedding gate is part of EU_ONLY; only an explicit =0 opts out", () => {
     expect(isEuOnlyEmbeddings({ SUBSUMIO_EU_ONLY_EMBEDDINGS: "1" })).toBe(false);
+    expect(isEuOnlyEmbeddings(EU)).toBe(true);
     expect(isEuOnlyEmbeddings(EU_EMB)).toBe(true);
+    expect(isEuOnlyEmbeddings({ ...EU, SUBSUMIO_EU_ONLY_EMBEDDINGS: "0" })).toBe(false);
+    expect(isEuOnlyEmbeddings({ ...EU, SUBSUMIO_EU_ONLY_EMBEDDINGS: "false" })).toBe(false);
+    expect(isEuOnlyEmbeddings({ ...EU, SUBSUMIO_EU_ONLY_EMBEDDINGS: "" })).toBe(true);
+    expect(isEuOnlyEmbeddings({ ...EU, SUBSUMIO_EU_ONLY_EMBEDDINGS: "maybe" })).toBe(true);
   });
 
   test("switch off → everything allowed", () => {
@@ -295,7 +300,7 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
     );
   });
 
-  test("embeddings: EU_ONLY alone keeps the existing (non-EU) index usable", async () => {
+  test("embeddings: EU_ONLY alone refuses a non-EU provider for documents AND queries", async () => {
     const seen: number[] = [];
     __setEmbedTransportForTests((async ({ values }: { values: string[] }) => {
       seen.push(values.length);
@@ -306,12 +311,18 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
       embedding_dimensions: 1536,
       env: { ...EU, OPENROUTER_API_KEY: "sk-or" },
     });
-    await embed(["Mandantenschreiben"]);
-    await embedQuery("Frage");
-    expect(seen).toEqual([1, 1]);
+    await expect(embed(["Mandantenschreiben"])).rejects.toBeInstanceOf(EuResidencyError);
+    await expect(embedQuery("Frage")).rejects.toBeInstanceOf(EuResidencyError);
+    expect(seen).toEqual([]);
+    // The refusal tells the operator how to get an EU embedding (or opt out).
+    const err = await embed(["x"]).catch((e) => e as EuResidencyError);
+    expect(err).toBeInstanceOf(EuResidencyError);
+    const fix = String((err as EuResidencyError).fix);
+    expect(fix).toMatch(/SUBSUMIO_EMBEDDING_MODEL/);
+    expect(fix).toMatch(/SUBSUMIO_EU_ONLY_EMBEDDINGS=0/);
   });
 
-  test("embeddings: EU_ONLY_EMBEDDINGS refuses document-side, allows query-side", async () => {
+  test("embeddings: EU_ONLY_EMBEDDINGS=1 is the same as the default (both sides refused)", async () => {
     const seen: number[] = [];
     __setEmbedTransportForTests((async ({ values }: { values: string[] }) => {
       seen.push(values.length);
@@ -323,8 +334,30 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
       env: { ...EU_EMB, OPENROUTER_API_KEY: "sk-or" },
     });
     await expect(embed(["Mandantenschreiben"])).rejects.toBeInstanceOf(EuResidencyError);
+    await expect(embedQuery("Frage")).rejects.toBeInstanceOf(EuResidencyError);
+    expect(seen).toEqual([]);
+  });
+
+  test("embeddings: explicit opt-out SUBSUMIO_EU_ONLY_EMBEDDINGS=0 keeps the existing index usable", async () => {
+    const seen: number[] = [];
+    __setEmbedTransportForTests((async ({ values }: { values: string[] }) => {
+      seen.push(values.length);
+      return { embeddings: values.map(() => new Array(1536).fill(0.1)), usage: { tokens: 1 } };
+    }) as never);
+    configureGateway({
+      embedding_model: "openrouter:openai/text-embedding-3-small",
+      embedding_dimensions: 1536,
+      env: { ...EU, SUBSUMIO_EU_ONLY_EMBEDDINGS: "0", OPENROUTER_API_KEY: "sk-or" },
+    });
+    await embed(["Mandantenschreiben"]);
     await embedQuery("Frage");
-    expect(seen).toEqual([1]);
+    expect(seen).toEqual([1, 1]);
+  });
+
+  test("embeddings: an EU provider passes without any opt-out", () => {
+    expect(() =>
+      assertEuResidency("mistral:mistral-embed", "embedding", EU)
+    ).not.toThrow();
   });
 
   test("multimodal embeddings: document-side refused under EU_ONLY_EMBEDDINGS", async () => {
