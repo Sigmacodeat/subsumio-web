@@ -160,6 +160,46 @@ describe("Anderkonten (GELD-7)", () => {
   });
 });
 
+describe("Webhooks (R8-2)", () => {
+  it.each(["lawyer", "assistant", "admin"])(
+    "%s cannot create a webhook through the page API (type or slug)",
+    async (role) => {
+      user.role = role;
+      const byType = await post({
+        slug: "notes/x",
+        title: "Webhook",
+        type: "webhook_config",
+        frontmatter: { url: "https://evil.example/h", events: ["intake.new"], secret: "s" },
+      });
+      expect(byType.status).toBe(403);
+      expect((await byType.json()).error).toBe("protected_page");
+      const bySlug = await post({
+        slug: "settings/webhooks/wh-1",
+        title: "Webhook",
+        frontmatter: { url: "https://evil.example/h", events: ["intake.new"] },
+      });
+      expect(bySlug.status).toBe(403);
+      expect(writes).toHaveLength(0);
+    }
+  );
+
+  it("an existing webhook cannot be redirected by a merge", async () => {
+    user.role = "lawyer";
+    stored = {
+      slug: "notes/hook",
+      type: "webhook_config",
+      frontmatter: { url: "https://a.example/h", secret_enc: "x" },
+    };
+    const res = await post({
+      slug: "notes/hook",
+      merge: true,
+      frontmatter: { url: "https://evil.example/h" },
+    });
+    expect(res.status).toBe(403);
+    expect(writes).toHaveLength(0);
+  });
+});
+
 describe("Freigaben (OPS-13)", () => {
   it("a submitted approval is stored pending with the server-stamped submitter", async () => {
     const res = await post({

@@ -86,6 +86,18 @@ describe("webhook dispatch", () => {
     vi.unstubAllGlobals();
   });
 
+  it("does not deliver an entry that only holds a plaintext secret", async () => {
+    m.list.mockResolvedValue([
+      hook("wh-plain", { url: "https://a.example/plain", secret: "klartext-geheim-123" }),
+    ]);
+    const fetchMock = vi.fn(async () => new Response("ok"));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await getRegisteredWebhooks("firm-a")).toEqual([]);
+    const result = await dispatchWebhookEvent("firm-a", "intake.new", {});
+    expect(result).toEqual({ dispatched: 0, failed: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("sends nothing without a brain", async () => {
     const result = await dispatchWebhookEvent("", "intake.new", {});
     expect(result).toEqual({ dispatched: 0, failed: 0 });

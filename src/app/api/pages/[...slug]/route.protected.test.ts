@@ -137,6 +137,26 @@ describe("PATCH bypasses (AKT-8, OPS-7, GELD-7)", () => {
   });
 });
 
+describe("Webhooks (R8-2)", () => {
+  it("a webhook entry is neither patched nor deleted through the page API", async () => {
+    user.role = "lawyer";
+    pages["settings/webhooks/wh-1"] = {
+      slug: "settings/webhooks/wh-1",
+      type: "webhook_config",
+      frontmatter: { url: "https://a.example/h", secret_enc: "x" },
+    };
+    expect(
+      (
+        await call("PATCH", "settings/webhooks/wh-1", {
+          frontmatter: { url: "https://evil.example/h" },
+        })
+      ).status
+    ).toBe(403);
+    expect((await call("DELETE", "settings/webhooks/wh-1")).status).toBe(403);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+});
+
 describe("DELETE (AKT-8, GELD-7, OPS-7)", () => {
   it("fails closed (503) when the matter's Legal Hold cannot be checked", async () => {
     user.role = "lawyer";

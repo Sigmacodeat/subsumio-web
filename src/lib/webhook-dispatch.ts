@@ -69,13 +69,13 @@ async function loadRegisteredWebhooks(brainId: string): Promise<RegisteredWebhoo
   const hooks = await Promise.all(
     pages.map(async (p) => {
       const fm = p.frontmatter ?? {};
-      // Secrets are stored encrypted (secret_enc); older entries hold `secret`.
+      // Only entries written by the registration route (encrypted secret_enc)
+      // are delivered; a plaintext `secret` did not come from that route and
+      // must be registered again.
       const secret =
         typeof fm.secret_enc === "string"
           ? ((await decrypt(fm.secret_enc).catch(() => null)) ?? "")
-          : typeof fm.secret === "string"
-            ? fm.secret
-            : "";
+          : "";
       return {
         id: String(fm.id ?? p.slug),
         url: String(fm.url ?? ""),

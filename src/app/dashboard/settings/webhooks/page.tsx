@@ -39,6 +39,7 @@ export default function WebhooksPage() {
       events: string[];
       status: string;
       created_at: string;
+      needs_reregistration?: boolean;
       delivery?: {
         pending: number;
         exhausted: number;
@@ -293,6 +294,14 @@ export default function WebhooksPage() {
                 <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   {t("webhooks.created")} {formatDateTime(wh.created_at)}
                 </div>
+                {wh.needs_reregistration && (
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
+                    {L(
+                      "Wird nicht beliefert: bitte löschen und mit neuem Signaturschlüssel neu anlegen.",
+                      "Not delivered: please delete and register again with a new signing secret."
+                    )}
+                  </p>
+                )}
                 {wh.delivery && (wh.delivery.pending > 0 || wh.delivery.exhausted > 0) && (
                   <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
                     {wh.delivery.exhausted > 0

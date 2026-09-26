@@ -533,6 +533,7 @@ function pageTypes(
   if (slug === KANZLEI_SETTINGS_PAGE_SLUG) types.add("kanzlei_settings");
   if (slug.startsWith("legal/kyc/")) types.add("kyc_verification");
   if (slug.startsWith("trust-accounts/")) types.add("trust_account");
+  if (slug.startsWith("settings/webhooks/")) types.add("webhook_config");
   return types;
 }
 
@@ -676,6 +677,16 @@ export function guardProtectedPageWrite(input: {
     return {
       reject: forbiddenPage(
         "Identitätsprüfungen werden nur über die Identitätsprüfung (KYC) angelegt und geändert."
+      ),
+    };
+  }
+
+  // Outgoing webhooks send firm data to external systems: registered and
+  // removed only through /api/webhooks/outgoing (admin, address check, audit).
+  if (types.has("webhook_config")) {
+    return {
+      reject: forbiddenPage(
+        "Webhooks werden nur unter Einstellungen → Webhooks angelegt und geändert."
       ),
     };
   }

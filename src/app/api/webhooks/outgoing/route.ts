@@ -112,6 +112,8 @@ export const GET = createHandler(
         status: w.frontmatter.status,
         created_at: w.frontmatter.created_at,
         delivery: delivery[String(w.frontmatter.id ?? "")] ?? null,
+        // Entries without an encrypted secret are not delivered until re-registered.
+        needs_reregistration: typeof w.frontmatter.secret_enc !== "string",
       })),
     });
   }
