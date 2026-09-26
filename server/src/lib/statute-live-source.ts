@@ -367,14 +367,25 @@ export async function fetchLiveStatuteVersion(
  */
 export async function fetchLiveStatuteVersions(
   jurisdiction: "at" | "de" | "ch",
-  statuteAbbrs: string[]
+  statuteAbbrs: string[],
+  opts: { sleep?: (ms: number) => Promise<void> } = {}
 ): Promise<LiveStatuteVersion[]> {
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const results: LiveStatuteVersion[] = [];
-  for (const abbr of statuteAbbrs) {
+  for (const [i, abbr] of statuteAbbrs.entries()) {
+    if (i > 0) await sleep(livePauseMs(jurisdiction));
     const result = await fetchLiveStatuteVersion(jurisdiction, abbr);
     if (result) results.push(result);
-    // Small delay between requests
-    await new Promise((r) => setTimeout(r, 200));
   }
   return results;
+}
+
+/**
+ * Pause between two live lookups. Austrian lookups go to RIS, whose terms
+ * allow at most 0.5 requests per second — the same pace as the corpus
+ * scripts (server/scripts/ris-pace.ts). Other sources: a small courtesy gap.
+ */
+export const RIS_LIVE_PAUSE_MS = 2_000;
+export function livePauseMs(jurisdiction: "at" | "de" | "ch"): number {
+  return jurisdiction === "at" ? RIS_LIVE_PAUSE_MS : 200;
 }

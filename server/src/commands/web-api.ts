@@ -10076,7 +10076,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ...agentMatterStamp(req),
             ...jobOwnerStamp(req.userId),
           } as Record<string, unknown>,
-          { timeout_ms: 300_000, max_attempts: 1 }
+          // RIS lookups run at the RIS pace (2 s apart): a firm with many
+          // open matters needs longer than the former 5 minutes.
+          { timeout_ms: 30 * 60_000, max_attempts: 1 }
         );
         res.json({ success: true, job_id: job.id, status: "queued" });
       } catch (e) {
