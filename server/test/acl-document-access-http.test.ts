@@ -16,6 +16,7 @@ import { importFromContent } from "../src/core/import-file.ts";
 import { mountWebApi } from "../src/commands/web-api.ts";
 import { createIdentityToken } from "../src/core/identity-token.ts";
 import {
+  aclFilterClause,
   addGroupMember,
   createAccessGroup,
   filterPagesByACL,
@@ -31,6 +32,7 @@ let base = "";
 let releaseEnv: (() => void) | undefined;
 let restrictedId = 0;
 let openId = 0;
+let memberGroupId = "";
 
 function headers(userId: string, role: string) {
   return {
@@ -85,6 +87,7 @@ beforeAll(async () => {
   const g = await createAccessGroup(engine, SOURCE, "Partner");
   const h = await createAccessGroup(engine, SOURCE, "Sekretariat");
   await addGroupMember(engine, g.id, "u-member", SOURCE);
+  memberGroupId = g.id;
   await addGroupMember(engine, h.id, "u-other", SOURCE);
   await setPagePermission(engine, restrictedId, g.id, "read", SOURCE);
 
@@ -110,6 +113,21 @@ describe("acl.ts: an empty group list means open pages only", () => {
       restrictedId,
       openId,
     ]);
+  });
+
+  test("aclFilterClause binds the raw group list and filters an empty list", async () => {
+    const run = async (groups: string[]) => {
+      const c = aclFilterClause(groups, 2)!;
+      const rows = await engine.executeRaw<{ id: number }>(
+        `SELECT p.id FROM pages p WHERE p.id = ANY($1::int[]) ${c.clause} ORDER BY p.id`,
+        [[restrictedId, openId], ...c.params]
+      );
+      return rows.map((r) => Number(r.id));
+    };
+    expect(aclFilterClause("all", 1)).toBeNull();
+    expect(aclFilterClause(undefined, 1)).toBeNull();
+    expect(await run([])).toEqual([openId]);
+    expect(await run([memberGroupId])).toEqual([restrictedId, openId].sort((a, b) => a - b));
   });
 });
 
