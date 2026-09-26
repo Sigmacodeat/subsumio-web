@@ -20,26 +20,12 @@
  * wie mail-filing).
  */
 
-import { detectDeadlines } from "@/lib/ai-deadline-detect";
-import { berechneFristArtDE, zustellungBea, type Bundesland } from "@/lib/legal/frist-engine-de";
+import { detectDeadlines, enrichDetectedDeadline } from "@/lib/ai-deadline-detect";
+import { zustellungBea, type Bundesland } from "@/lib/legal/frist-engine-de";
 import type { SuggestedDeadline } from "@/lib/matter-detail-types";
 
-/**
- * `suggestedTemplate` der Erkennungsregeln → `FRISTEN_REGISTRY_DE`-Key.
- * Die Regexes feuert auf generische/AT-Begriffe ("Klageerwiderung",
- * "Berufung"); für den DE-Kanal beA wird auf die DE-Fristart gemappt.
- * AT-spezifische Templates (rekurs→Beschwerde als bestmögliches
- * Äquivalent; VwGH/VfGH/AVG bewusst ohne Mapping — kein DE-Pendant).
- */
-const DE_TEMPLATE_MAP: Record<string, string> = {
-  klagebeantwortung: "klageerwiderung_de",
-  berufung: "berufung_de",
-  revision: "revision_de",
-  wiedereinsetzung: "wiedereinsetzung_de",
-  einspruch_zahlungsbefehl: "widerspruch_mahnbescheid_de",
-  beschwerde_stpo: "sofortige_beschwerde_stpo_de",
-  rekurs: "sofortige_beschwerde_de",
-};
+// Die AT→DE-Zuordnung der Fristarten (DE_TEMPLATE_MAP) und die Berechnung
+// liegen in ai-deadline-detect.ts (enrichDetectedDeadline, rechtsraum "DE").
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -81,35 +67,24 @@ export function beaDeadlineSuggestions(input: {
   const zustellung = eebZustellungsdatum(input.receivedDate, input.bundesland);
   const out: SuggestedDeadline[] = [];
 
-  for (const dd of detected) {
-    let due: string | undefined;
-    let deterministic = false;
-
-    const deKey = dd.suggestedTemplate ? DE_TEMPLATE_MAP[dd.suggestedTemplate] : undefined;
-    if (deKey && zustellung) {
-      try {
-        due = berechneFristArtDE(deKey, zustellung, input.bundesland).fristende;
-        deterministic = true;
-      } catch {
-        // Fristart nicht berechenbar → Fallback-Pfade unten.
-      }
-    }
-
-    // Relative Frist ohne Registry-Mapping ("binnen zwei Wochen"):
-    // auf den eEB-Zustelltag verankern, wenn vorhanden.
-    if (!due && zustellung && !dd.date && dd.daysFromNow) {
-      const end = new Date(`${zustellung}T00:00:00Z`);
-      if (!Number.isNaN(end.getTime())) {
-        end.setUTCDate(end.getUTCDate() + dd.daysFromNow);
-        due = end.toISOString().slice(0, 10);
-      }
-    }
-
-    // Letzter Fallback: das im Text erkannte absolute Datum.
-    if (!due) due = dd.date;
+  for (const raw of detected) {
+    // Fristart + frei formulierte Fristen laufen über die DE-Engine (§§ 187 ff.
+    // BGB, Endtag-Verschiebung), verankert auf dem eEB-Zustelltag. Ohne
+    // eEB-Tag bleibt nur ein im Text genanntes absolutes Datum.
+    const dd = zustellung
+      ? enrichDetectedDeadline(
+          { ...raw, zustellungsdatum: zustellung, zustellungsart: "standard" },
+          input.text,
+          { rechtsraum: "DE", bundesland: input.bundesland }
+        )
+      : raw;
+    const deterministic = Boolean(dd.berechnung);
+    const due = dd.date;
     if (!due || !/^\d{4}-\d{2}-\d{2}/.test(due)) continue;
 
     out.push({
+      // DE-Berechnung trägt die DE-Bezeichnung und -Rechtsgrundlage, nie
+      // den AT-Paragrafen der Erkennungsregel.
       title: dd.description || dd.type,
       due_date: due.slice(0, 10),
       urgency: deterministic || dd.confidence === "high" ? "high" : "medium",
