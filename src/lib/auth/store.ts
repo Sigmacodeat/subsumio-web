@@ -155,6 +155,20 @@ export interface Org {
   /** Members the suspension deactivated — reactivation restores exactly these. */
   suspendedMemberIds?: string[] | null;
   /**
+   * Deletion of the firm's data after the contract ended (AVV § 9), set by
+   * the platform operator: the brain is purged by the trash-purge cron once
+   * this date has passed (legal holds, retention and open matters are checked
+   * again then). See src/lib/firm-deletion.ts.
+   */
+  deletionScheduledFor?: string | null;
+  deletionRequestedAt?: string | null;
+  deletionRequestedBy?: string | null;
+  deletionReason?: string | null;
+  /** Members the scheduling deactivated — a cancellation restores exactly these. */
+  deletionDeactivatedMemberIds?: string[] | null;
+  /** Set once the firm's data was purged; the record stays for the audit trail. */
+  dataDeletedAt?: string | null;
+  /**
    * The WorkOS organization (org_…) that is this firm's SSO tenant. When set,
    * a WorkOS login only signs into an existing member account if WorkOS
    * authenticated the user within THIS organization (see

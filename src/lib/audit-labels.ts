@@ -181,6 +181,9 @@ export type AuditAction =
   | "automation.delete"
   | "admin.tenant_role_change"
   | "admin.tenant_owner_transfer"
+  | "admin.tenant_deletion_scheduled"
+  | "admin.tenant_deletion_cancelled"
+  | "admin.tenant_data_deleted"
   | "admin.user_deactivate"
   | "admin.data_delete"
   | "admin.data_export"
@@ -516,6 +519,9 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.tenant_reactivate": "Betreiber: Kanzlei entsperrt",
   "admin.tenant_role_change": "Betreiber: Rolle in Kanzlei geändert",
   "admin.tenant_owner_transfer": "Betreiber: Kanzlei-Inhaber gewechselt",
+  "admin.tenant_deletion_scheduled": "Betreiber: Löschung der Kanzleidaten angesetzt",
+  "admin.tenant_deletion_cancelled": "Betreiber: Löschung der Kanzleidaten abgebrochen",
+  "admin.tenant_data_deleted": "Kanzleidaten nach Vertragsende gelöscht",
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
   "admin.data_delete": "Admin: Benutzerdaten gelöscht",
   "admin.data_export": "Admin: Benutzerdaten exportiert",

@@ -10,6 +10,7 @@ import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { purgeExpiredSoftDeletedUsers } from "@/lib/user-purge";
+import { purgeScheduledFirmDeletions } from "@/lib/firm-deletion";
 import { purgeOldTrackingEvents } from "@/lib/email/tracking";
 import { retentionUntil } from "@/lib/gobd";
 import { caseRetentionState } from "@/lib/case-retention";
@@ -458,6 +459,7 @@ export const GET = createCronHandler(async () => {
   // checkFirmLegalHolds() admin/data-delete used at the initial request.
   let usersPurged = 0;
   let trackingEventsPurged = 0;
+  let firmsPurged = 0;
   const pgPool = getSharedPgPool();
   if (pgPool) {
     try {
@@ -465,6 +467,13 @@ export const GET = createCronHandler(async () => {
     } catch (err) {
       report.failed++;
       report.errors.push(`user purge: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    try {
+      // Team firms whose data deletion (contract end) is due — re-checked.
+      firmsPurged = await purgeScheduledFirmDeletions(report);
+    } catch (err) {
+      report.failed++;
+      report.errors.push(`firm purge: ${err instanceof Error ? err.message : String(err)}`);
     }
     try {
       trackingEventsPurged = await purgeOldTrackingEvents(EMAIL_TRACKING_RETENTION_DAYS);
@@ -480,7 +489,13 @@ export const GET = createCronHandler(async () => {
   const ok = report.errors.length === 0;
   if (!ok) log.error("[trash-purge] completed with errors", { errors: report.errors });
   return NextResponse.json(
-    { ok, ...report, users_purged: usersPurged, tracking_events_purged: trackingEventsPurged },
+    {
+      ok,
+      ...report,
+      users_purged: usersPurged,
+      firms_purged: firmsPurged,
+      tracking_events_purged: trackingEventsPurged,
+    },
     { status: ok ? 200 : 500 }
   );
 });
