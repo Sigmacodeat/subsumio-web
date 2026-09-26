@@ -67,6 +67,8 @@ interface PortalDocumentRequest {
   slug: string;
   frontmatter: {
     status: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+    /** Last reminder the firm sent for this request (ISO), if any. */
+    last_reminder_at?: string | null;
     items: Array<{
       key: string;
       label: string;
@@ -1089,6 +1091,25 @@ export default function PortalPage() {
             {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (
               <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
                 <h3 className="text-sm font-semibold">{t("portal.doc_requests_title")}</h3>
+                {(() => {
+                  const reminded = documentRequests
+                    .filter((r) => r.frontmatter.status !== "fulfilled")
+                    .map((r) => r.frontmatter.last_reminder_at)
+                    .filter((d): d is string => typeof d === "string" && d.length > 0)
+                    .sort()
+                    .at(-1);
+                  return reminded ? (
+                    <p role="status" className="text-xs [color:var(--mk-text-subtle)]">
+                      Erinnerung der Kanzlei vom{" "}
+                      {new Date(reminded).toLocaleDateString("de-AT", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}{" "}
+                      — bitte laden Sie die offenen Unterlagen hier hoch.
+                    </p>
+                  ) : null;
+                })()}
                 <div className="space-y-2">
                   {documentRequests
                     .filter((request) => request.frontmatter.status !== "fulfilled")

@@ -173,6 +173,9 @@ export function toPortalRequest(request: ParsedRequest) {
     frontmatter: {
       status: request.frontmatter.status,
       created_at: request.frontmatter.created_at,
+      // The client sees in the portal that the firm reminded them (not only on
+      // the reminder channel itself).
+      last_reminder_at: request.frontmatter.reminder_sent_at ?? null,
       items: (request.frontmatter.items ?? []).map((item) => ({
         key: item.key,
         label: item.label,

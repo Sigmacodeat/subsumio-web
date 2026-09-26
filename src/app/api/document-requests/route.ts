@@ -47,6 +47,8 @@ const docRequestPostSchema = z.object({
     .string()
     .regex(/^\+[1-9]\d{6,14}$/, "recipient_phone_e164")
     .optional(),
+  /** The client's e-mail address for reminders. */
+  recipient_email: z.string().email().max(320).optional(),
   status: z.enum(["draft", "sent", "partially_fulfilled", "fulfilled", "expired"]).default("draft"),
   source_event_slug: z.string().optional(),
   message_draft: z.string().max(5_000).optional(),
@@ -59,6 +61,8 @@ const docRequestPatchSchema = z.object({
   items: z.array(itemSchema).optional(),
   message_draft: z.string().max(5_000).optional(),
   sent_at: z.string().optional(),
+  /** Set when the request goes out by e-mail — reminders follow on that channel. */
+  recipient_email: z.string().email().max(320).optional(),
 });
 
 /** Upper bound for the firm-wide scan of document requests. */
@@ -132,6 +136,7 @@ export const POST = createHandler(
       messageDraft: body.message_draft,
       includePortalLink: body.include_portal_link,
       recipientPhone: body.recipient_phone,
+      recipientEmail: body.recipient_email,
     });
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
@@ -207,6 +212,7 @@ export const PATCH = createHandler(
       ),
       message_draft: body.message_draft,
       sent_at: body.sent_at,
+      recipient_email: body.recipient_email,
       updated_at: new Date().toISOString(),
     };
     Object.keys(patch).forEach((key) => {

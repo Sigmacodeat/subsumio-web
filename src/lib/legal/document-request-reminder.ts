@@ -5,6 +5,8 @@
  * Erinnerung, höchstens 3 Erinnerungen, nur solange Unterlagen offen sind.
  */
 
+import { escapeHtml } from "@/lib/mail";
+
 export const REMINDER_INTERVAL_DAYS = 7;
 export const MAX_REMINDERS = 3;
 
@@ -62,4 +64,26 @@ export function reminderDecision(input: ReminderInput, now: Date): ReminderDecis
   }
   if (openItemCount === 0) return no("no_open_items", daysSinceSent);
   return { shouldRemind: true, reason: "ok", daysSinceSent, openItemCount };
+}
+
+/** Reminder e-mail for open documents (plain text + HTML, no internal data). */
+export function buildReminderMail(input: {
+  items: string[];
+  portalLink: string | null;
+  firmName: string;
+}): { subject: string; text: string; html: string } {
+  const list = input.items.map((label) => `• ${label}`).join("\n");
+  const sign = input.firmName ? `\n\nMit freundlichen Grüßen\n${input.firmName}` : "";
+  const text = `Sehr geehrte Damen und Herren,\n\nwir erinnern freundlich an folgende noch offene Unterlagen:\n${list}${
+    input.portalLink
+      ? `\n\nSie können die Unterlagen bequem über Ihr Mandantenportal hochladen:\n${input.portalLink}`
+      : ""
+  }${sign}`;
+  const htmlItems = input.items.map((label) => `<li>${escapeHtml(label)}</li>`).join("");
+  const html = `<p>Sehr geehrte Damen und Herren,</p><p>wir erinnern freundlich an folgende noch offene Unterlagen:</p><ul>${htmlItems}</ul>${
+    input.portalLink
+      ? `<p>Sie können die Unterlagen über Ihr Mandantenportal hochladen:<br><a href="${escapeHtml(input.portalLink)}">${escapeHtml(input.portalLink)}</a></p>`
+      : ""
+  }${input.firmName ? `<p>Mit freundlichen Grüßen<br>${escapeHtml(input.firmName)}</p>` : ""}`;
+  return { subject: "Erinnerung: Offene Unterlagen", text, html };
 }
