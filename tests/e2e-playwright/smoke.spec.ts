@@ -211,12 +211,30 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     const h1Text = await page.locator("h1").first().textContent();
     expect(h1Text).toMatch(/Guten (Morgen|Tag|Abend)|Good (morning|afternoon|evening)/i);
 
-    // HeutePanel and widget sections should be visible
-    await expect(page.getByText(/Heute|Today/i).first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
+    // HeutePanel and widget sections should be visible. Only visible matches
+    // count: the closed copilot panel holds example questions with the same words.
+    await expect(
+      page
+        .getByText(/Heute|Today/i)
+        .filter({ visible: true })
+        .first()
+    ).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      page
+        .getByText(/Inbox|Eingang/i)
+        .filter({ visible: true })
+        .first()
+    ).toBeVisible();
     // Attention list: the Freigaben entry when something awaits a decision,
     // otherwise the "Nichts offen — Eingänge, Freigaben …" empty state.
-    await expect(page.getByText(/Freigaben/).first()).toBeVisible({
+    await expect(
+      page
+        .getByText(/Freigaben/)
+        .filter({ visible: true })
+        .first()
+    ).toBeVisible({
       timeout: 30_000,
     });
 
