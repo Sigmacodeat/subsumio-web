@@ -83,6 +83,7 @@ beforeAll(async () => {
     );
   }
   await engine.writeContradictionsRun({
+    source_id: SOURCE,
     run_id: "run-walls",
     judge_model: "anthropic:claude-haiku-4-5",
     prompt_version: "1",

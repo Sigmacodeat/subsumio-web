@@ -88,11 +88,16 @@ describe("job matter stamp", () => {
   });
 
   test("children inherit the stamp (re-validated) together with the source", () => {
+    // A firm job without an ACL stamp is fail-closed to open pages ([]).
     expect(supervisorChildStamps({ _source_id: "firm-a", _matter_scope: WALLED })).toEqual({
       _source_id: "firm-a",
       _matter_scope: WALLED,
+      _acl_groups: [],
     });
-    expect(supervisorChildStamps({ _source_id: "firm-a" })).toEqual({ _source_id: "firm-a" });
+    expect(supervisorChildStamps({ _source_id: "firm-a" })).toEqual({
+      _source_id: "firm-a",
+      _acl_groups: [],
+    });
     expect(inheritedJobMatterStamp({ _matter_scope: "bogus" })).toEqual({ _matter_scope: [] });
   });
 });

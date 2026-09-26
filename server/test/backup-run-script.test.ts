@@ -22,6 +22,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const RUN = join(import.meta.dir, "..", "deploy", "netcup", "backup", "run.sh");
+// The image runs the script under busybox ash, which knows `set -o pipefail`.
+// Debian/Ubuntu's /bin/sh (dash) does not, so the test runs it under bash.
+const RUN_SHELL = "bash";
 let root = "";
 
 function stub(dir: string, name: string, body: string) {
@@ -77,14 +80,14 @@ afterAll(() => rmSync(root, { recursive: true, force: true }));
 describe("backup/run.sh", () => {
   test("a failing database export inside a pipe fails the run, no success status", () => {
     const { env } = setup(true);
-    const r = spawnSync("sh", [RUN], { env, encoding: "utf8" });
+    const r = spawnSync(RUN_SHELL, [RUN], { env, encoding: "utf8" });
     expect(r.status).not.toBe(0);
     expect(existsSync(env.BACKUP_STATUS_FILE)).toBe(false);
   });
 
   test("without offsite repo: local archive holds the files, status is honest", () => {
     const { env } = setup(false);
-    const r = spawnSync("sh", [RUN], { env, encoding: "utf8" });
+    const r = spawnSync(RUN_SHELL, [RUN], { env, encoding: "utf8" });
     expect(r.status).toBe(0);
     const status = JSON.parse(readFileSync(env.BACKUP_STATUS_FILE, "utf8"));
     expect(status).toMatchObject({ offsite: false, files: "local" });

@@ -88,6 +88,8 @@ jobs:
       # vi.setSystemTime (docs/TESTING.md).
       - name: Unit tests with the clock moved forward
         run: bun run test:unit:future-clock
+
+  deploy-script:
     name: Deploy script guards
     runs-on: ubuntu-latest
     steps:

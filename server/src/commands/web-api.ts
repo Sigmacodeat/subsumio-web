@@ -3414,7 +3414,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       console.error(
         `[web-api] EU policy lookup failed: ${e instanceof Error ? e.message : String(e)}`
       );
-      res.status(503).json({ error: "policy_unavailable" });
+      apiError(
+        res,
+        503,
+        "policy_unavailable",
+        "Die KI-Richtlinie der Kanzlei ist gerade nicht lesbar."
+      );
       return;
     }
     if (euOnly) {
