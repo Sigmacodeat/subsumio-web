@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { createHandler, apiError, apiSuccess, type RouteContext } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { logAudit } from "@/lib/audit";
 import { getDataRoomStore } from "@/lib/data-rooms";
 import { roomRole } from "@/lib/data-room-access";
+import { roomMatterOpen, servableRoomDocument } from "@/lib/data-room-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,26 @@ export const GET = createHandler(
       documents: shared.map((d) => ({ slug: d.docSlug, title: d.title, added_at: d.addedAt })),
     };
     if (role.kind === "guest") {
-      return apiSuccess({ ...base, expires_at: role.member.expiresAt });
+      // Guests see only what is still shared in substance: nothing once the
+      // matter is archived or deleted, and no document the firm deleted.
+      const hostHeaders = engineHeadersForBrain(room.hostBrainId);
+      let documents: typeof base.documents = [];
+      if (await roomMatterOpen(room.caseSlug, hostHeaders)) {
+        try {
+          const active = new Set(
+            (await listEnginePages(hostHeaders, "document", 50_000, { strict: true }))
+              .filter(
+                (p) =>
+                  p.frontmatter?.case_slug === room.caseSlug && servableRoomDocument(p, "guest")
+              )
+              .map((p) => p.slug)
+          );
+          documents = base.documents.filter((d) => active.has(d.slug));
+        } catch {
+          return apiError("engine_unreachable", "Datenraum derzeit nicht verfügbar", 503);
+        }
+      }
+      return apiSuccess({ ...base, documents, expires_at: role.member.expiresAt });
     }
 
     const members = await store.members(room.id);

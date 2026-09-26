@@ -1992,8 +1992,18 @@ export async function registerBuiltinHandlers(
     let pagesPurged = 0;
     let sourcesPurged: string[] = [];
     if (scope === "pages" || scope === "all") {
-      const result = await engine.purgeDeletedPages(olderThanHours);
+      const { purgeDeletedPagesWithFiles } = await import("../core/file-store.ts");
+      const result = await purgeDeletedPagesWithFiles(
+        engine,
+        olderThanHours,
+        loadConfig()?.storage
+      );
       pagesPurged = result.count;
+      if (result.fileErrors.length > 0) {
+        throw new Error(
+          `purged ${result.count} page(s) but ${result.fileErrors.length} original file(s) could not be removed from storage`
+        );
+      }
     }
     if (scope === "sources" || scope === "all") {
       const { purgeExpiredSources } = await import("../core/destructive-guard.ts");

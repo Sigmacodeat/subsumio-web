@@ -21,6 +21,8 @@ type Doc = { slug: string; title: string; frontmatter: Record<string, unknown> }
 function engineWith(docs: Doc[], failAtPage?: number) {
   fetchMock.mockImplementation(async (url: string) => {
     const u = new URL(url);
+    // Only documents in these fixtures; every other matter type is empty.
+    if (u.searchParams.get("type") !== "document") return new Response("[]", { status: 200 });
     const start = Number(u.searchParams.get("cursor") ?? "0");
     const page = start / 100 + 1;
     if (failAtPage && page === failAtPage) return new Response("{}", { status: 500 });
@@ -121,5 +123,63 @@ describe("case cascade", () => {
     expect(canRestoreCase("admin")).toBe(true);
     expect(canRestoreCase("assistant")).toBe(false);
     expect(canRestoreCase(undefined)).toBe(false);
+  });
+});
+
+describe("case cascade — every page of the matter, not only documents", () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    patchMock.mockClear();
+  });
+
+  function engineByType(byType: Record<string, Doc[]>) {
+    fetchMock.mockImplementation(async (url: string) => {
+      const type = new URL(url).searchParams.get("type") ?? "";
+      return new Response(JSON.stringify(byType[type] ?? []), { status: 200 });
+    });
+  }
+
+  test("archiving hides notes, deadlines and chats of the matter with it", async () => {
+    engineByType({
+      legal_note: [{ slug: "notes/n1", title: "Notiz", frontmatter: { case_slug: CASE } }],
+      legal_deadline: [
+        { slug: "legal/deadlines/f1", title: "Frist", frontmatter: { case_slug: CASE } },
+      ],
+      chat_session: [{ slug: "chat/u1/c1", title: "Chat", frontmatter: { case_slug: CASE } }],
+      document_request: [
+        { slug: "requests/r1", title: "Anfrage", frontmatter: { case_slug: "legal/cases/x" } },
+      ],
+    });
+    const result = await archiveCaseDocuments({}, new Set([CASE]), "a@b.at");
+    expect(result).toMatchObject({ matched: 3, succeeded: 3, failed: [], skipped: 0 });
+    const slugs = patchMock.mock.calls.map((c) => (c[1] as { slug: string }).slug).sort();
+    expect(slugs).toEqual(["chat/u1/c1", "legal/deadlines/f1", "notes/n1"]);
+    for (const c of patchMock.mock.calls) {
+      expect((c[1] as { frontmatter: Record<string, unknown> }).frontmatter).toMatchObject({
+        tombstone_reason: "case_archived",
+      });
+    }
+  });
+
+  test("never hides a live Notfrist, a billed time entry or a page under legal hold", async () => {
+    engineByType({
+      legal_deadline: [
+        {
+          slug: "legal/deadlines/notfrist",
+          title: "Berufung",
+          frontmatter: { case_slug: CASE, is_notfrist: true, status: "pending" },
+        },
+      ],
+      time_entry: [
+        { slug: "time/t1", title: "Zeit", frontmatter: { case_slug: CASE, billed: true } },
+        { slug: "time/t2", title: "Zeit offen", frontmatter: { case_slug: CASE } },
+      ],
+      legal_note: [
+        { slug: "notes/held", title: "Hold", frontmatter: { case_slug: CASE, legal_hold: true } },
+      ],
+    });
+    const result = await archiveCaseDocuments({}, new Set([CASE]), "a@b.at");
+    expect(result).toMatchObject({ matched: 1, succeeded: 1, skipped: 3 });
+    expect((patchMock.mock.calls[0]![1] as { slug: string }).slug).toBe("time/t2");
   });
 });

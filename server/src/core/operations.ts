@@ -1964,8 +1964,19 @@ const purge_deleted_pages: Operation = {
     const olderThanHours = (p.older_than_hours as number | undefined) ?? 72;
     if (ctx.dryRun)
       return { dry_run: true, action: "purge_deleted_pages", older_than_hours: olderThanHours };
-    const result = await ctx.engine.purgeDeletedPages(olderThanHours);
-    return { status: "purged", count: result.count, slugs: result.slugs };
+    const { purgeDeletedPagesWithFiles } = await import("./file-store.ts");
+    const result = await purgeDeletedPagesWithFiles(
+      ctx.engine,
+      olderThanHours,
+      ctx.config?.storage
+    );
+    return {
+      status: "purged",
+      count: result.count,
+      slugs: result.slugs,
+      files_deleted: result.filesDeleted,
+      file_errors: result.fileErrors,
+    };
   },
   cliHints: { name: "purge-deleted" },
 };

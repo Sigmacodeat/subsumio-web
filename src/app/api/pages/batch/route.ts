@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
+import { mayReceiveRecord } from "@/lib/staff-only-records";
 
 const batchSchema = z.object({
   slugs: z.array(z.string().min(1).max(512)).min(1).max(100),
@@ -35,7 +36,9 @@ export const POST = createHandler(
               signal: AbortSignal.timeout(10_000),
             });
             if (res.ok) {
-              results[slug] = redactPageSecrets(await res.json());
+              const page = (await res.json()) as Record<string, unknown>;
+              // Firm-internal AML records are left out for client accounts.
+              if (mayReceiveRecord(ctx.user.role, page)) results[slug] = redactPageSecrets(page);
             } else if (res.status !== 404) {
               errors.push(slug);
             }

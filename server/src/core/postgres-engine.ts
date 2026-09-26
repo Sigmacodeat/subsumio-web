@@ -28,6 +28,7 @@ import type {
   FactListOpts,
   FactsHealth,
   SourceRow,
+  PurgeDeletedPagesResult,
 } from "./engine.ts";
 import {
   withRetry,
@@ -1277,19 +1278,40 @@ export class PostgresEngine implements BrainEngine {
     return rows.length > 0;
   }
 
-  async purgeDeletedPages(olderThanHours: number): Promise<{ slugs: string[]; count: number }> {
-    const sql = this.sql;
+  async purgeDeletedPages(olderThanHours: number): Promise<PurgeDeletedPagesResult> {
     // Clamp to non-negative integer; runaway purge protection. The DELETE
     // cascades through content_chunks, page_links, chunk_relations via FKs.
+    // The page's `files` rows go in the same transaction (the FK would only
+    // null their page_id and leave the original reachable by slug); the
+    // storage objects they point to are returned for the caller to delete.
     const hours = Math.max(0, Math.floor(olderThanHours));
-    const rows = await sql`
-      DELETE FROM pages
-      WHERE deleted_at IS NOT NULL
-        AND deleted_at < now() - (${hours} || ' hours')::interval
-      RETURNING slug
-    `;
-    const slugs = rows.map((r) => r.slug as string);
-    return { slugs, count: slugs.length };
+    return this.sql.begin(async (tx) => {
+      const fileRows = await tx`
+        DELETE FROM files f
+        USING pages p
+        WHERE p.deleted_at IS NOT NULL
+          AND p.deleted_at < now() - (${hours} || ' hours')::interval
+          AND f.source_id = p.source_id
+          AND (f.page_id = p.id OR f.page_slug = p.slug)
+        RETURNING f.source_id, f.page_slug, f.storage_path
+      `;
+      const rows = await tx`
+        DELETE FROM pages
+        WHERE deleted_at IS NOT NULL
+          AND deleted_at < now() - (${hours} || ' hours')::interval
+        RETURNING slug
+      `;
+      const slugs = rows.map((r) => r.slug as string);
+      return {
+        slugs,
+        count: slugs.length,
+        files: fileRows.map((r) => ({
+          sourceId: r.source_id as string,
+          pageSlug: (r.page_slug as string | null) ?? null,
+          storagePath: r.storage_path as string,
+        })),
+      };
+    }) as Promise<PurgeDeletedPagesResult>;
   }
 
   /**

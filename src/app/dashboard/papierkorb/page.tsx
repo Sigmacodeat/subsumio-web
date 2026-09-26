@@ -70,12 +70,20 @@ const TYPE_LABEL: Record<string, string> = {
   note: "Notiz",
   time_entry: "Zeiteintrag",
   task: "Aufgabe",
+  legal_note: "Aktennotiz",
+  legal_phone_note: "Telefonnotiz",
+  expense: "Auslage",
+  chat_session: "Unterhaltung",
+  document_request: "Dokumentanfrage",
+  shared_item: "Freigabe",
+  calendar_event: "Termin",
+  kyc_verification: "Identitätsprüfung",
 };
 
 const REASON_LABEL: Record<string, string> = {
-  archived: "Akte archiviert",
-  case_archived: "Mit Akte archiviert",
+  case_deleted: "Mit Akte gelöscht",
   manual_delete: "Manuell gelöscht",
+  retention_expired: "Aufbewahrungsfrist abgelaufen",
 };
 
 function reasonLabel(item: TrashItem): string {
@@ -194,7 +202,7 @@ function PapierkorbInner() {
             code?: string;
           } | null;
           if (body?.code === "parent_archived") {
-            return { outcome: "parent_archived", cascaded: 0 };
+            return { outcome: "parent_archived", cascaded: 0, message: body.error };
           }
           return {
             outcome: res.status === 404 ? "not_found" : "error",
@@ -234,7 +242,7 @@ function PapierkorbInner() {
       if (item.kind === "case") {
         const ok = await confirm({
           title: "Akte wiederherstellen",
-          message: `Akte „${item.title}" wiederherstellen? Die mit der Akte archivierten Dokumente werden ebenfalls reaktiviert.`,
+          message: `Akte „${item.title}" wiederherstellen? Die mit der Akte gelöschten Einträge werden ebenfalls wiederhergestellt.`,
           confirmLabel: "Wiederherstellen",
           cancelLabel: "Abbrechen",
           variant: "primary",
@@ -253,7 +261,8 @@ function PapierkorbInner() {
                 : "Wiederherstellung fehlgeschlagen",
           description:
             outcome === "parent_archived"
-              ? "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her."
+              ? (message ??
+                "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her.")
               : message,
         });
         return;
@@ -329,7 +338,7 @@ function PapierkorbInner() {
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Papierkorb"
-        description="Gelöschte Elemente und archivierte Akten wiederherstellen."
+        description="Gelöschte Elemente wiederherstellen. Archivierte Akten liegen nicht hier, sondern in der Aktenliste (Filter „Archiviert“) — sie werden für die Aufbewahrungsfrist aufbewahrt."
         breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Papierkorb" }]}
       />
 
@@ -402,7 +411,7 @@ function PapierkorbInner() {
           title={items.length === 0 ? "Papierkorb ist leer" : "Keine Treffer"}
           description={
             items.length === 0
-              ? "Gelöschte Dokumente und archivierte Akten erscheinen hier und können wiederhergestellt werden."
+              ? "Gelöschte Einträge erscheinen hier und können bis zum Ablauf der Papierkorbfrist wiederhergestellt werden."
               : "Passen Sie Suche oder Typfilter an."
           }
         />

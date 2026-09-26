@@ -123,6 +123,9 @@ export interface KYCVerification {
   mandate_ended_at?: string;
   /** § 12 Abs. 3 */
   retain_until?: string;
+  /** Same date under the field the retention job reads (cron/trash-purge);
+   *  the record — and the ID copy filed with it — is deleted when it passes. */
+  retention_until?: string;
   expires_at?: string;
   notes?: string;
   history?: KYCHistoryEntry[];

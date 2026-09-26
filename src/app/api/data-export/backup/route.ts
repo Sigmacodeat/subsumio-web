@@ -19,6 +19,13 @@ export const GET = createHandler(
   {
     action: "admin.*",
     rateTier: "heavy",
+    // The whole firm's records leave the system: always in the audit trail.
+    audit: (ctx) => ({
+      action: "admin.data_export" as const,
+      entityType: "brain",
+      entityId: ctx.brainId,
+      details: { scope: "full_backup" },
+    }),
   },
   async (ctx, _body, _query, _req) => {
     try {

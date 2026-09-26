@@ -2,8 +2,10 @@
 
 // Settings → Privatsphäre und Daten (DSGVO). Self-service für Art. 15/20
 // (Datenexport) und Art. 17 (Kontolöschung). Die Löschung läuft über
-// /api/settings/gdpr/data-deletion, das die Server-Seite hinter dem Literal
-// "DELETE_MY_ACCOUNT" absichert — der Dialog verlangt dasselbe Eintippen.
+// /api/settings/gdpr/data-deletion: Bestätigungstext "DELETE_MY_ACCOUNT" plus
+// erneute Anmeldung (Passwort, bei aktiver 2FA zusätzlich der Code). Der
+// Server verweigert die Löschung bei Legal Hold oder laufender
+// Aufbewahrungsfrist und nennt den Grund.
 
 import { useState } from "react";
 import {
@@ -29,6 +31,7 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
+import { useMe } from "@/lib/queries/auth";
 
 const CONFIRM_PHRASE = "DELETE_MY_ACCOUNT";
 
@@ -38,6 +41,12 @@ export default function PrivacySettingsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmInput, setConfirmInput] = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const { data: me } = useMe();
+  const twoFactorEnabled = Boolean(
+    (me as { twoFactorEnabled?: boolean } | undefined)?.twoFactorEnabled
+  );
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [avvPdfLoading, setAvvPdfLoading] = useState(false);
@@ -87,7 +96,11 @@ export default function PrivacySettingsPage() {
       const res = await csrfFetch("/api/settings/gdpr/data-deletion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: CONFIRM_PHRASE }),
+        body: JSON.stringify({
+          confirm: CONFIRM_PHRASE,
+          ...(password ? { password } : {}),
+          ...(code.trim() ? { code: code.trim() } : {}),
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -218,8 +231,8 @@ export default function PrivacySettingsPage() {
         </div>
         <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
           {L(
-            "Ihr Konto wird unwiderruflich anonymisiert: Anmeldung, API-Schlüssel und persönliche Daten werden gelöscht. Akten und Dokumente Ihrer Kanzlei bleiben bei der Kanzlei. Gesetzlich aufzubewahrende Aufzeichnungen (z. B. Rechnungen, Änderungsprotokoll) bleiben in anonymisierter Form bestehen.",
-            "Your account is irreversibly anonymised: sign-in, API keys and personal data are deleted. Your firm's matters and documents remain with the firm. Records required by law (e.g. invoices, activity log) are kept in anonymised form."
+            "Ihr Konto wird sofort gesperrt und anonymisiert: Anmeldung, API-Schlüssel, MCP-, WebDAV- und Kalender-Zugänge enden, die Kanzleimitgliedschaft endet. Akten und Dokumente einer Kanzlei bleiben bei der Kanzlei. Arbeiten Sie allein (ohne Team), wird Ihr Datenbestand nach 30 Tagen endgültig gelöscht — das ist nur möglich, wenn keine Akte mehr offen ist, keine unter Legal Hold steht und keine abgeschlossene Akte oder kein Beleg mehr der gesetzlichen Aufbewahrungspflicht unterliegt (§ 12 RAO, § 132 BAO). Laden Sie vorher einen Export herunter.",
+            "Your account is locked and anonymised at once: sign-in, API keys, MCP, WebDAV and calendar access end, and your firm membership ends. A firm's matters and documents remain with the firm. If you work alone (no team), your data is permanently deleted after 30 days — only possible if no matter is still open, none is under legal hold and no closed matter or receipt is still subject to statutory retention. Download an export first."
           )}
         </p>
         <div>
@@ -252,6 +265,8 @@ export default function PrivacySettingsPage() {
             setDialogOpen(v);
             if (!v) {
               setConfirmInput("");
+              setPassword("");
+              setCode("");
               setDeleteError(null);
             }
           }
@@ -282,6 +297,29 @@ export default function PrivacySettingsPage() {
               disabled={deleting}
               aria-label={L("Bestätigungstext", "Confirmation text")}
             />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={L("Ihr Passwort", "Your password")}
+              autoComplete="current-password"
+              disabled={deleting}
+              aria-label={L("Passwort", "Password")}
+            />
+            {twoFactorEnabled && (
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder={L(
+                  "Code aus der Authenticator-App",
+                  "Code from your authenticator app"
+                )}
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                disabled={deleting}
+                aria-label={L("Zwei-Faktor-Code", "Two-factor code")}
+              />
+            )}
             {deleteError && (
               <p role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
                 {deleteError}

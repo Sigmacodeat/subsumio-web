@@ -70,6 +70,14 @@ export interface User {
   scimExternalId?: string | null;
   /** ISO timestamp when user was deactivated via SCIM (null = active). Not deleted for audit-trail. */
   deactivatedAt?: string | null;
+  /** Soft-delete (DSGVO): set by the self-service or operator deletion; the
+   *  row is hard-deleted after the grace period (src/lib/user-purge.ts). */
+  deletedAt?: string | null;
+  /** Self-deletion of a single-lawyer firm: the brain's data is purged with
+   *  the account after the grace period (holds and retention re-checked). */
+  purgeBrainOnDelete?: boolean;
+  /** Firm the account belonged to when it was deleted (legal-hold re-check). */
+  deletedFromOrgId?: string | null;
   /** API keys (server-persisted, encrypt-at-rest in production). */
   openaiKey?: string | null;
   anthropicKey?: string | null;
@@ -146,6 +154,20 @@ export interface Org {
   suspendedBy?: string | null;
   /** Members the suspension deactivated — reactivation restores exactly these. */
   suspendedMemberIds?: string[] | null;
+  /**
+   * Deletion of the firm's data after the contract ended (AVV § 9), set by
+   * the platform operator: the brain is purged by the trash-purge cron once
+   * this date has passed (legal holds, retention and open matters are checked
+   * again then). See src/lib/firm-deletion.ts.
+   */
+  deletionScheduledFor?: string | null;
+  deletionRequestedAt?: string | null;
+  deletionRequestedBy?: string | null;
+  deletionReason?: string | null;
+  /** Members the scheduling deactivated — a cancellation restores exactly these. */
+  deletionDeactivatedMemberIds?: string[] | null;
+  /** Set once the firm's data was purged; the record stays for the audit trail. */
+  dataDeletedAt?: string | null;
   /**
    * The WorkOS organization (org_…) that is this firm's SSO tenant. When set,
    * a WorkOS login only signs into an existing member account if WorkOS

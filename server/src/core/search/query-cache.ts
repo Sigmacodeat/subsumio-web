@@ -342,6 +342,36 @@ function clampThreshold(v: number | undefined): number {
   return Math.max(0.5, Math.min(0.999, v));
 }
 
+/**
+ * Drop every cached result set that contains one of `slugs` — called when
+ * pages are permanently deleted: the cache stores the matched chunk texts, so
+ * a purged page must not live on in it. Best-effort (missing table → 0).
+ */
+export async function deleteCachedResultsForSlugs(
+  engine: Pick<BrainEngine, "executeRaw">,
+  slugs: string[]
+): Promise<number> {
+  if (slugs.length === 0) return 0;
+  try {
+    const rows = await engine.executeRaw<{ n: number }>(
+      `WITH deleted AS (
+         DELETE FROM query_cache q
+         WHERE jsonb_typeof(q.results) = 'array'
+           AND EXISTS (
+             SELECT 1 FROM jsonb_array_elements(q.results) AS e
+             WHERE e->>'slug' = ANY($1::text[])
+           )
+         RETURNING 1
+       )
+       SELECT COUNT(*)::int AS n FROM deleted`,
+      [slugs]
+    );
+    return rows[0]?.n ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 function clampTtl(v: number | undefined): number {
   if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) return DEFAULT_TTL_SECONDS;
   // Cap at 30 days to avoid runaway TTLs.

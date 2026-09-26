@@ -32,5 +32,5 @@ export function classifyRetention(
 /** A matter the retention check looks at: closed, and not under legal hold. */
 export function isRetentionCandidate(fm: Record<string, unknown> | undefined | null): boolean {
   if (!fm || fm.legal_hold === true) return false;
-  return Boolean(fm.closed_at) || fm.status === "closed";
+  return Boolean(fm.closed_at) || fm.status === "closed" || Boolean(fm.archived_at);
 }

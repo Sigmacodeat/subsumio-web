@@ -13,7 +13,9 @@ export type TenantAdminError =
   | "member_deactivated"
   | "last_admin"
   | "owner_must_stay_admin"
-  | "solo_practice";
+  | "solo_practice"
+  | "deletion_scheduled"
+  | "data_deleted";
 
 export class TenantAdminFailure extends Error {
   constructor(readonly code: TenantAdminError) {
@@ -29,6 +31,10 @@ const MESSAGES: Record<TenantAdminError, string> = {
   last_admin: "Die Kanzlei braucht mindestens einen aktiven Admin.",
   owner_must_stay_admin: "Der Inhaber muss Admin bleiben. Wechseln Sie zuerst den Inhaber.",
   solo_practice: "Eine Einzelkanzlei hat nur ein Konto.",
+  deletion_scheduled:
+    "Für diese Kanzlei ist die Löschung der Daten angesetzt. Brechen Sie zuerst die Löschung ab (cancel_deletion).",
+  data_deleted:
+    "Die Daten dieser Kanzlei sind gelöscht — sie kann nicht wieder freigeschaltet werden.",
 };
 
 export function tenantAdminMessage(code: TenantAdminError): string {
@@ -95,6 +101,10 @@ export async function reactivateTenant(tenant: Tenant): Promise<{ restored: numb
     return { restored: 1 };
   }
   const org = tenant.org;
+  // A firm whose data deletion is scheduled or done stays closed: members
+  // come back only through cancel_deletion (before the purge), never here.
+  if (org?.dataDeletedAt) throw new TenantAdminFailure("data_deleted");
+  if (org?.deletionScheduledFor) throw new TenantAdminFailure("deletion_scheduled");
   if (!org?.suspendedAt) throw new TenantAdminFailure("not_suspended");
   // Only the accounts the suspension switched off. Someone the firm itself had
   // deactivated before stays deactivated.

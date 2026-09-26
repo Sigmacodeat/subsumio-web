@@ -1,3 +1,4 @@
+import { caseRetentionState } from "@/lib/case-retention";
 import type {
   EvidenceEntry,
   StrategyInfo,
@@ -105,6 +106,8 @@ export interface CaseDetail {
   auditLog?: AuditLogEntry[];
   archivedAt?: string;
   archivedBy?: string;
+  /** Aufbewahrungsende einer abgeschlossenen Akte ("YYYY-MM-DD", § 12 RAO / § 132 BAO). */
+  retentionUntil?: string;
   mandateAcceptance?: CaseMandateAcceptance;
   version: number;
 }
@@ -218,6 +221,7 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     auditLog: (fm.audit_log as AuditLogEntry[]) || [],
     archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
     archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
+    retentionUntil: caseRetentionState(fm).until ?? undefined,
     mandateAcceptance:
       typeof fm.mandate_acceptance === "object" && fm.mandate_acceptance !== null
         ? (fm.mandate_acceptance as CaseMandateAcceptance)

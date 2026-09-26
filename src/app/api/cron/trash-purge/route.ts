@@ -4,14 +4,16 @@ import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine
 import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
 import { TRASH_TYPES, toTrashItem, isTrashExpired, type TrashItem } from "@/lib/trash";
 import { isTombstoned } from "@/lib/tombstone";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { CRON_FULL_READ_CAP, getRecipientsByBrain } from "@/lib/cron-utils";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
 import { logAudit } from "@/lib/audit";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { purgeExpiredSoftDeletedUsers } from "@/lib/user-purge";
+import { purgeScheduledFirmDeletions } from "@/lib/firm-deletion";
 import { purgeOldTrackingEvents } from "@/lib/email/tracking";
 import { retentionUntil } from "@/lib/gobd";
+import { caseRetentionState } from "@/lib/case-retention";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/trash-purge");
@@ -42,7 +44,7 @@ const EMAIL_TRACKING_RETENTION_DAYS = 90;
  * tombstoned (Papierkorb mit `tombstone_reason: "retention_expired"`) — die
  * normale Papierkorb-Frist und der Purge unten bleiben das Recovery-Fenster.
  */
-const RETENTION_ITEM_TYPES = ["document", "note"] as const;
+const RETENTION_ITEM_TYPES = ["document", "note", "kyc_verification"] as const;
 
 /**
  * Ablaufzeitpunkt einer Per-Item-Retention. Gibt den Ablauf zurück, wenn er
@@ -55,7 +57,12 @@ function configuredRetentionExpiry(
   now: Date
 ): { expiresAt: Date } | { invalid: string } | null {
   const fm = page.frontmatter ?? {};
-  const until = fm.retention_until;
+  // AML records written before the field was unified carry only `retain_until`.
+  const until =
+    fm.retention_until ??
+    (page.type === "kyc_verification" || page.slug.startsWith("legal/kyc/")
+      ? fm.retain_until
+      : undefined);
   if (until !== undefined && until !== null && String(until).trim() !== "") {
     // YAML-Frontmatter kann Datumsangaben als Date-Objekt oder Zahl
     // (Epoch-ms) liefern — beides akzeptieren, sonst als String parsen.
@@ -143,6 +150,9 @@ function retentionExpiredAt(
  *  - Settings unlesbar → Brain wird übersprungen (nie mit Defaults löschen).
  *  - `trashAutoPurge: false` → Brain wird übersprungen.
  *  - `legal_hold` auf dem Eintrag ODER seiner Akte → nie gelöscht.
+ *  - Abgeschlossene/archivierte Akten und ihre Seiten → nie vor Ende der
+ *    Aufbewahrungsfrist gelöscht (src/lib/case-retention.ts). Archivierte
+ *    Akten liegen gar nicht im Papierkorb (src/lib/trash.ts).
  *  - Eintrag ohne `deleted_at`/`tombstoned_at` → nie gelöscht.
  *  - Einzelner Purge schlägt fehl → geht in errors[], Run antwortet 500.
  */
@@ -155,6 +165,8 @@ export const GET = createCronHandler(async () => {
     retentionTombstoned: 0,
     retentionInvalid: 0,
     retentionGobdFloored: 0,
+    /** Trash entries kept because their matter's retention period still runs. */
+    retentionCaseFloored: 0,
     failed: 0,
     errors: [] as string[],
   };
@@ -186,12 +198,17 @@ export const GET = createCronHandler(async () => {
     const expired: TrashItem[] = [];
     try {
       for (const type of TRASH_TYPES) {
-        const pages = await listEnginePages(headers, type, 5000, {
+        // Expired entries are the OLD ones — read the whole type, never the
+        // newest N; a truncated read aborts the brain instead of passing.
+        const pages = await listEnginePages(headers, type, CRON_FULL_READ_CAP, {
           includeTombstoned: true,
           strict: true,
         });
+        if (pages.length >= CRON_FULL_READ_CAP) {
+          throw new Error(`${type} list truncated at ${CRON_FULL_READ_CAP}`);
+        }
         for (const page of pages) {
-          const item = toTrashItem(page);
+          const item = toTrashItem(page, now);
           if (item && isTrashExpired(item, retentionDays, now)) expired.push(item);
         }
       }
@@ -206,11 +223,16 @@ export const GET = createCronHandler(async () => {
     // case must protect everything in it (mirrors the DELETE guard in
     // api/pages/[...slug]). Case lookups are cached per brain; the retention
     // phase below uses the same check.
-    const caseHold = new Map<string, boolean>();
-    const caseIsHeld = async (caseSlug: string): Promise<boolean> => {
-      const cached = caseHold.get(caseSlug);
+    // The same read also yields the matter's retention period: pages of a
+    // closed/archived matter are part of the Handakte and are not purged
+    // while it runs (§ 12 RAO, § 132 BAO).
+    const caseState = new Map<string, { held: boolean; retentionRunning: boolean }>();
+    const readCase = async (
+      caseSlug: string
+    ): Promise<{ held: boolean; retentionRunning: boolean }> => {
+      const cached = caseState.get(caseSlug);
       if (cached !== undefined) return cached;
-      let held = false;
+      let state = { held: false, retentionRunning: false };
       try {
         const res = await fetch(
           `${ENGINE_URL}/api/pages/${caseSlug.split("/").map(encodeURIComponent).join("/")}`,
@@ -218,20 +240,25 @@ export const GET = createCronHandler(async () => {
         );
         if (res.ok) {
           const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-          held = page.frontmatter?.legal_hold === true;
+          state = {
+            held: page.frontmatter?.legal_hold === true,
+            retentionRunning: caseRetentionState(page.frontmatter, now).running,
+          };
         } else {
           // 404/403/5xx: die Akte ist gerade nicht lesbar (oder weg) — dann
           // ist ihr Hold unbekannt. Fail-closed wie beim geworfenen Fehler:
           // nie auf Verdacht löschen; der nächste Lauf prüft erneut.
-          held = true;
+          state = { held: true, retentionRunning: false };
         }
       } catch {
         // Unreadable parent → treat as held (fail-closed, never purge on doubt).
-        held = true;
+        state = { held: true, retentionRunning: false };
       }
-      caseHold.set(caseSlug, held);
-      return held;
+      caseState.set(caseSlug, state);
+      return state;
     };
+    const caseIsHeld = async (caseSlug: string): Promise<boolean> =>
+      (await readCase(caseSlug)).held;
 
     // Per-Item-Retention: aktive Dokumente/Notizen mit abgelaufener eigenen
     // Frist in den Papierkorb verschieben. Die Seiten bekommen ein frisches
@@ -240,7 +267,10 @@ export const GET = createCronHandler(async () => {
     // wie ein manuelles Löschen).
     try {
       for (const type of RETENTION_ITEM_TYPES) {
-        const pages = await listEnginePages(headers, type, 5000, { strict: true });
+        const pages = await listEnginePages(headers, type, CRON_FULL_READ_CAP, { strict: true });
+        if (pages.length >= CRON_FULL_READ_CAP) {
+          throw new Error(`${type} list truncated at ${CRON_FULL_READ_CAP}`);
+        }
         for (const page of pages) {
           if (isTombstoned(page)) continue;
           const fm = page.frontmatter ?? {};
@@ -283,6 +313,29 @@ export const GET = createCronHandler(async () => {
             }
             if (res.status === 404) continue;
             report.retentionTombstoned++;
+            // The ID copy filed with an AML record goes with it (older
+            // records carry no date on the copy itself).
+            const idCopy = (fm.identification as { document_file_slug?: unknown } | undefined)
+              ?.document_file_slug;
+            if (type === "kyc_verification" && typeof idCopy === "string" && idCopy) {
+              const copyRes = await enginePatchPage(
+                headers,
+                {
+                  slug: idCopy,
+                  frontmatter: {
+                    status: "tombstoned",
+                    tombstoned_at: now.toISOString(),
+                    tombstoned_by: "cron:retention",
+                    tombstone_reason: "retention_expired",
+                  },
+                },
+                { timeoutMs: 15_000 }
+              );
+              if (!copyRes.ok && copyRes.status !== 404) {
+                throw new Error(`ID copy ${idCopy}: HTTP ${copyRes.status}`);
+              }
+              if (copyRes.ok) report.retentionTombstoned++;
+            }
             void logAudit("data.delete", "page", {
               entityId: page.slug,
               brainId,
@@ -312,12 +365,29 @@ export const GET = createCronHandler(async () => {
 
     if (expired.length === 0) continue;
 
+    // Matters last: their pages are checked against the matter first, and a
+    // purged matter can no longer be read (fail-closed → "held").
+    expired.sort((a, b) => Number(a.type === "legal_case") - Number(b.type === "legal_case"));
+
     for (const item of expired) {
       try {
-        const held =
-          item.legal_hold === true || (item.case_slug ? await caseIsHeld(item.case_slug) : false);
+        const parent = item.case_slug ? await readCase(item.case_slug) : null;
+        const held = item.legal_hold === true || parent?.held === true;
         if (held) {
           report.skippedHold++;
+          continue;
+        }
+        // Aufbewahrungsfrist: a matter (or a page of a matter) that was closed
+        // is never purged before the period has run — whatever the trash
+        // window says. Undeterminable period → kept (fail-closed).
+        // A page whose OWN statutory deletion date has passed (reason
+        // "retention_expired", e.g. AML records and ID copies after five
+        // years) is deleted even while its matter is still kept.
+        if (
+          (item.type === "legal_case" && item.retention?.running !== false) ||
+          (parent?.retentionRunning === true && item.reason !== "retention_expired")
+        ) {
+          report.retentionCaseFloored++;
           continue;
         }
 
@@ -352,9 +422,12 @@ export const GET = createCronHandler(async () => {
         // legal/doc-versions/<slug>/ weiter.
         if (item.type === "document") {
           try {
-            const versions = await listEnginePages(headers, "document_version", 200, {
-              slugPrefix: `legal/doc-versions/${item.slug}/`,
-            });
+            const versions = await listEnginePages(
+              headers,
+              "document_version",
+              CRON_FULL_READ_CAP,
+              { slugPrefix: `legal/doc-versions/${item.slug}/`, strict: true }
+            );
             for (const v of versions) {
               const vPath = v.slug.split("/").map(encodeURIComponent).join("/");
               const vRes = await fetch(`${ENGINE_URL}/api/pages/${vPath}`, {
@@ -386,6 +459,7 @@ export const GET = createCronHandler(async () => {
   // checkFirmLegalHolds() admin/data-delete used at the initial request.
   let usersPurged = 0;
   let trackingEventsPurged = 0;
+  let firmsPurged = 0;
   const pgPool = getSharedPgPool();
   if (pgPool) {
     try {
@@ -393,6 +467,13 @@ export const GET = createCronHandler(async () => {
     } catch (err) {
       report.failed++;
       report.errors.push(`user purge: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    try {
+      // Team firms whose data deletion (contract end) is due — re-checked.
+      firmsPurged = await purgeScheduledFirmDeletions(report);
+    } catch (err) {
+      report.failed++;
+      report.errors.push(`firm purge: ${err instanceof Error ? err.message : String(err)}`);
     }
     try {
       trackingEventsPurged = await purgeOldTrackingEvents(EMAIL_TRACKING_RETENTION_DAYS);
@@ -408,7 +489,13 @@ export const GET = createCronHandler(async () => {
   const ok = report.errors.length === 0;
   if (!ok) log.error("[trash-purge] completed with errors", { errors: report.errors });
   return NextResponse.json(
-    { ok, ...report, users_purged: usersPurged, tracking_events_purged: trackingEventsPurged },
+    {
+      ok,
+      ...report,
+      users_purged: usersPurged,
+      firms_purged: firmsPurged,
+      tracking_events_purged: trackingEventsPurged,
+    },
     { status: ok ? 200 : 500 }
   );
 });

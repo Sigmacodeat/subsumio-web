@@ -1308,9 +1308,12 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         (total as any).count > 0
           ? (((errors as any).count / (total as any).count) * 100).toFixed(1)
           : "0";
+      const { storageEncryptionWarning } = await import("../core/file-encryption.ts");
       res.json({
         expiring_soon: (expiring as any).count,
         error_rate: `${errorRate}%`,
+        // Admin-only: at-rest encryption of originals (never on the public /health).
+        storage_encryption: storageEncryptionWarning(process.env) ? "off" : "on",
       });
     } catch {
       res.status(503).json({ error: "service_unavailable" });

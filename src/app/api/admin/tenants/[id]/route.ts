@@ -10,6 +10,7 @@ import {
   tenantAdminMessage,
   transferOwnership,
 } from "@/lib/tenant-admin";
+import { cancelFirmDeletion, FirmDeletionRefused, scheduleFirmDeletion } from "@/lib/firm-deletion";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,15 @@ const bodySchema = z.discriminatedUnion("action", [
     role: z.enum(["admin", "lawyer", "assistant", "client_viewer"]),
   }),
   z.object({ action: z.literal("transfer_owner"), userId: z.string().min(1) }),
+  z.object({
+    action: z.literal("schedule_deletion"),
+    reason: z
+      .string()
+      .trim()
+      .min(10, "Bitte einen aussagekräftigen Grund angeben (mind. 10 Zeichen).")
+      .max(500),
+  }),
+  z.object({ action: z.literal("cancel_deletion") }),
 ]);
 
 const AUDIT_ACTION = {
@@ -36,6 +46,8 @@ const AUDIT_ACTION = {
   reactivate: "admin.tenant_reactivate",
   set_role: "admin.tenant_role_change",
   transfer_owner: "admin.tenant_owner_transfer",
+  schedule_deletion: "admin.tenant_deletion_scheduled",
+  cancel_deletion: "admin.tenant_deletion_cancelled",
 } as const;
 
 /**
@@ -65,9 +77,18 @@ export const PATCH = createHandler(
       } else if (body.action === "set_role") {
         const user = await setMemberRole(tenant, body.userId, body.role);
         result = { userId: user.id, role: user.role };
-      } else {
+      } else if (body.action === "transfer_owner") {
         await transferOwnership(tenant, body.userId);
         result = { ownerId: body.userId };
+      } else if (body.action === "schedule_deletion") {
+        // Contract ended: data deletion after the grace period (holds,
+        // retention and open matters checked now and again at the purge).
+        result = await scheduleFirmDeletion(tenant, {
+          reason: body.reason,
+          operatorEmail: ctx.user.email,
+        });
+      } else {
+        result = await cancelFirmDeletion(tenant);
       }
 
       void logAudit(AUDIT_ACTION[body.action], "org", {
@@ -81,6 +102,9 @@ export const PATCH = createHandler(
     } catch (err) {
       if (err instanceof TenantAdminFailure) {
         return apiError(err.code, tenantAdminMessage(err.code), 409);
+      }
+      if (err instanceof FirmDeletionRefused) {
+        return apiError(err.code, err.message, err.status);
       }
       throw err;
     }

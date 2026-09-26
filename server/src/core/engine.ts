@@ -89,6 +89,18 @@ export interface TraverseGraphOpts {
   frontierCap?: number;
 }
 
+/**
+ * Result of `purgeDeletedPages`: the purged slugs plus the original files
+ * whose `files` rows went with them. The caller deletes the storage objects
+ * (the engine does not hold the storage config) — see
+ * `purgeDeletedPagesWithFiles` in file-store.ts.
+ */
+export interface PurgeDeletedPagesResult {
+  slugs: string[];
+  count: number;
+  files?: Array<{ sourceId: string; pageSlug: string | null; storagePath: string }>;
+}
+
 export interface FileRow {
   id: number;
   source_id: string;
@@ -880,7 +892,7 @@ export interface BrainEngine {
    * Called by the autopilot purge phase and by the `gbrain pages purge-deleted`
    * CLI escape hatch. Cascades through existing FKs.
    */
-  purgeDeletedPages(olderThanHours: number): Promise<{ slugs: string[]; count: number }>;
+  purgeDeletedPages(olderThanHours: number): Promise<PurgeDeletedPagesResult>;
 
   /**
    * Atomically append `items` to a top-level array field of a page's

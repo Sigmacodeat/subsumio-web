@@ -34,7 +34,7 @@ vi.mock("@/lib/cron-utils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/cron-utils")>();
   return {
     ...actual,
-    fetchPages: vi.fn(async () => m.cases),
+    fetchAllPagesStrict: vi.fn(async () => m.cases),
     getRecipientsByBrain: vi.fn(async () => new Map([["brain-a", m.users]])),
     createDailyDedup: () => async () => false,
   };
@@ -99,5 +99,41 @@ describe("cron retention — recipients", () => {
     m.cases = [closed("legal/cases/walled", { blocked_users: ["walled"] })];
     await run();
     expect(m.mails.map((x) => x.to)).not.toContain("walled@firm.test");
+  });
+});
+
+describe("retention digest reads every matter (R12-9)", () => {
+  it("the oldest of 600 matters, closed 11 years ago, is in the digest", async () => {
+    const many = Array.from({ length: 599 }, (_, i) => ({
+      slug: `legal/cases/new-${i}`,
+      title: `Neu ${i}`,
+      frontmatter: { status: "open" },
+    }));
+    m.cases = [...many, { ...closed("legal/cases/very-old"), title: "Sehr alt" }];
+    m.cases[599]!.frontmatter = { closed_at: "2015-01-01", status: "closed" };
+    const res = await run();
+    expect(res.status).toBe(200);
+    expect(m.mails.some((mail) => mail.text.includes("Sehr alt"))).toBe(true);
+    const { fetchAllPagesStrict } = await import("@/lib/cron-utils");
+    expect(fetchAllPagesStrict).toHaveBeenCalledWith("brain-a", "legal_case");
+  });
+
+  it("an archived matter without closed_at counts from its archive date", async () => {
+    m.cases = [
+      {
+        slug: "legal/cases/arch",
+        title: "Archiviert",
+        frontmatter: { status: "archived", archived_at: "2012-03-01" },
+      },
+    ];
+    await run();
+    expect(m.mails.some((mail) => mail.text.includes("Archiviert"))).toBe(true);
+  });
+
+  it("a failed read is a failed run, not ok", async () => {
+    const { fetchAllPagesStrict } = await import("@/lib/cron-utils");
+    vi.mocked(fetchAllPagesStrict).mockRejectedValueOnce(new Error("HTTP 500"));
+    const res = await run();
+    expect(res.status).toBe(500);
   });
 });

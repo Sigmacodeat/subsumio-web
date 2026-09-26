@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isStaffRole } from "@/lib/team-visibility";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
@@ -82,6 +83,11 @@ const querySchema = z.object({
 export const GET = createHandler(
   { action: "brain.read", rateTier: "standard", query: querySchema },
   async (ctx, _body, query) => {
+    // AML file (risk rating, screening, refusal reasons) is firm-internal —
+    // never for client accounts, not even for their own matter.
+    if (!isStaffRole(ctx.user.role)) {
+      return apiError("forbidden", "Identitätsprüfungen sind nur für die Kanzlei einsehbar.", 403);
+    }
     // Every record, paged past the engine's per-request cap, without deleted
     // ones — expiring IDs must not drop out of the list silently.
     let pages: Array<{ frontmatter?: KYCVerification }>;

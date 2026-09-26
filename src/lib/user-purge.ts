@@ -13,8 +13,9 @@
 
 import type { Pool } from "pg";
 import { getOrgStore, getStore } from "./auth/store";
-import { engineHeadersForBrain } from "./engine";
+import { ENGINE_URL, engineHeadersForBrain } from "./engine";
 import { checkFirmLegalHolds, type LegalHoldCheckResult } from "./legal-hold-check";
+import { checkFirmRetention, type FirmRetentionResult } from "./firm-retention-check";
 import { logAudit } from "./audit";
 
 export const USER_SOFT_DELETE_GRACE_DAYS = 30;
@@ -30,6 +31,25 @@ export interface UserPurgeDeps {
   checkHolds?: (headers: Record<string, string>) => Promise<LegalHoldCheckResult>;
   /** Injectable for tests; defaults to resolving via the real org store. */
   resolveBrainId?: (orgId: string | null, userBrainId: string) => Promise<string>;
+  /** Injectable for tests; defaults to the real retention scan. */
+  checkRetention?: (headers: Record<string, string>) => Promise<FirmRetentionResult>;
+  /** Injectable for tests: is this brain some firm's brain? */
+  isFirmBrain?: (brainId: string) => Promise<boolean>;
+  /** Injectable for tests: purge one brain's data on the engine. */
+  purgeBrain?: (brainId: string) => Promise<void>;
+}
+
+async function defaultIsFirmBrain(brainId: string): Promise<boolean> {
+  return (await getOrgStore().list()).some((o) => o.brainId === brainId);
+}
+
+async function defaultPurgeBrain(brainId: string): Promise<void> {
+  const res = await fetch(`${ENGINE_URL}/api/source-data`, {
+    method: "DELETE",
+    headers: engineHeadersForBrain(brainId),
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (!res.ok) throw new Error(`source data purge returned HTTP ${res.status}`);
 }
 
 async function defaultResolveBrainId(orgId: string | null, userBrainId: string): Promise<string> {
@@ -71,10 +91,20 @@ export async function purgeExpiredSoftDeletedUsers(
   const checkHolds = deps.checkHolds ?? checkFirmLegalHolds;
   const resolveBrainId = deps.resolveBrainId ?? defaultResolveBrainId;
 
-  const { rows } = await pool.query<{ id: string; brain_id: string; org_id: string | null }>(
+  const checkRetention = deps.checkRetention ?? checkFirmRetention;
+  const isFirmBrain = deps.isFirmBrain ?? defaultIsFirmBrain;
+  const purgeBrain = deps.purgeBrain ?? defaultPurgeBrain;
+
+  const { rows } = await pool.query<{
+    id: string;
+    brain_id: string;
+    org_id: string | null;
+    purge_brain: string | null;
+  }>(
     `SELECT id,
             data->>'brainId' AS brain_id,
-            data->>'orgId' AS org_id
+            COALESCE(data->>'orgId', data->>'deletedFromOrgId') AS org_id,
+            data->>'purgeBrainOnDelete' AS purge_brain
        FROM subsumio_users
       WHERE data->>'deletedAt' IS NOT NULL
         AND (data->>'deletedAt')::timestamptz < now() - interval '${USER_SOFT_DELETE_GRACE_DAYS} days'`
@@ -97,6 +127,28 @@ export async function purgeExpiredSoftDeletedUsers(
         // "held" AND "unknown" both skip — never purge on unproven ground.
         report.skippedHold++;
         continue;
+      }
+
+      // Self-deleted single-lawyer firm: the brain's data goes with the
+      // account — only if it is nobody's firm brain and nothing in it must
+      // still be kept. Otherwise the account stays soft-deleted (retried
+      // next run); the data is never destroyed on doubt.
+      if (row.purge_brain === "true" && !row.org_id) {
+        if (await isFirmBrain(brainId)) {
+          report.skippedHold++;
+          continue;
+        }
+        const retention = await checkRetention(engineHeadersForBrain(brainId));
+        if (retention.status !== "clear") {
+          report.skippedHold++;
+          continue;
+        }
+        await purgeBrain(brainId);
+        void logAudit("data.delete", "brain", {
+          brainId,
+          entityId: brainId,
+          details: { reason: "account_deleted", userId: row.id },
+        });
       }
 
       await pool

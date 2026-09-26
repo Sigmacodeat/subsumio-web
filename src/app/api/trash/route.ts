@@ -7,6 +7,7 @@ import { getAuditExtra, setAuditExtra } from "@/lib/audit-context";
 import { canRestoreCase, restoreCaseDocuments } from "@/lib/case-cascade";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { withoutStaffOnlyRecords } from "@/lib/staff-only-records";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/trash");
@@ -17,10 +18,12 @@ export const dynamic = "force-dynamic";
  * Papierkorb — the product surface for the web app's soft-delete model.
  *
  * Deletion in this codebase is frontmatter-based (see
- * src/app/api/pages/[...slug]/route.ts DELETE):
- *  - legal_case pages become `status: "archived"` (+ archived_at/archived_by)
- *    and their documents are cascade-tombstoned with
- *    `tombstone_reason: "case_archived"`.
+ * src/app/api/pages/[...slug]/route.ts DELETE and src/lib/trash.ts):
+ *  - Archived matters (Aktenabschluss) and the pages archived with them are
+ *    NOT listed here — they are retained records. POST still restores
+ *    (reopens) an archived matter, as the matter page does.
+ *  - A matter deleted with `?mode=trash` becomes `status: "tombstoned"`, its
+ *    pages `tombstone_reason: "case_deleted"`.
  *  - every other page becomes `status: "tombstoned"`
  *    (+ tombstoned_at, tombstone_reason, assignment_status reset).
  *
@@ -72,7 +75,8 @@ export const GET = createHandler(
           if (item) seen.set(page.slug, item);
         }
       }
-      const items = [...seen.values()].sort((a, b) =>
+      // AML records never reach client accounts, not even from the trash.
+      const items = withoutStaffOnlyRecords(ctx.user.role, [...seen.values()]).sort((a, b) =>
         (b.deleted_at ?? "").localeCompare(a.deleted_at ?? "")
       );
       return apiSuccess({
@@ -140,6 +144,7 @@ export const POST = createHandler(
     const pageType = page.type ?? (fm.type as string | undefined);
     const isArchivedCase = pageType === "legal_case" && fm.status === "archived";
     const isTombstonedPage = fm.status === "tombstoned";
+    const isDeletedCase = pageType === "legal_case" && isTombstonedPage;
     if (!isArchivedCase && !isTombstonedPage) {
       return apiError("not_deleted", "Dieses Element befindet sich nicht im Papierkorb", 409);
     }
@@ -155,10 +160,13 @@ export const POST = createHandler(
         });
         if (caseRes.ok) {
           const casePage = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
-          if ((casePage.frontmatter ?? {}).status === "archived") {
+          const parentStatus = (casePage.frontmatter ?? {}).status;
+          if (parentStatus === "archived" || parentStatus === "tombstoned") {
             return apiError(
               "parent_archived",
-              "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her.",
+              parentStatus === "archived"
+                ? "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her."
+                : "Die zugehörige Akte liegt im Papierkorb. Stellen Sie zuerst die Akte wieder her.",
               409
             );
           }
@@ -171,27 +179,45 @@ export const POST = createHandler(
     const now = new Date().toISOString();
     const targetStatus = body.status ?? "open";
     // Merge semantics: a `null` value removes the frontmatter key.
-    const frontmatter: Record<string, unknown> = isArchivedCase
+    // A matter restored from the Papierkorb returns to the status it had
+    // (an archived matter back into the archive, with its pages).
+    const statusBeforeDelete =
+      typeof fm.status_before_delete === "string" &&
+      fm.status_before_delete &&
+      fm.status_before_delete !== "tombstoned"
+        ? fm.status_before_delete
+        : "open";
+    const frontmatter: Record<string, unknown> = isDeletedCase
       ? {
-          status: targetStatus,
-          restored_at: now,
-          restored_by: ctx.user.email,
-          archived_at: null,
-          archived_by: null,
-        }
-      : {
-          status: null,
+          status: body.status ?? statusBeforeDelete,
+          status_before_delete: null,
           restored_at: now,
           restored_by: ctx.user.email,
           tombstoned_at: null,
           tombstoned_by: null,
           tombstone_reason: null,
-          assignment_status: caseSlug
-            ? "assigned"
-            : fm.tombstone_reason === "manual_delete"
-              ? "pending_assignment"
-              : fm.assignment_status,
-        };
+        }
+      : isArchivedCase
+        ? {
+            status: targetStatus,
+            restored_at: now,
+            restored_by: ctx.user.email,
+            archived_at: null,
+            archived_by: null,
+          }
+        : {
+            status: null,
+            restored_at: now,
+            restored_by: ctx.user.email,
+            tombstoned_at: null,
+            tombstoned_by: null,
+            tombstone_reason: null,
+            assignment_status: caseSlug
+              ? "assigned"
+              : fm.tombstone_reason === "manual_delete"
+                ? "pending_assignment"
+                : fm.assignment_status,
+          };
 
     const patchRes = await enginePatchPage(
       ctx.headers,
@@ -231,9 +257,17 @@ export const POST = createHandler(
     // documents stay deleted — restoring them is a separate, deliberate act.
     let cascaded = 0;
     let cascadeFailed = 0;
-    if (isArchivedCase) {
+    if (isArchivedCase || isDeletedCase) {
       const slugForms = new Set([page.slug, body.slug, path].filter((s): s is string => !!s));
-      const cascade = await restoreCaseDocuments(ctx.headers, slugForms, ctx.user.email, now);
+      const cascade = await restoreCaseDocuments(
+        ctx.headers,
+        slugForms,
+        ctx.user.email,
+        now,
+        isDeletedCase
+          ? { fromReason: "case_deleted", backToArchive: frontmatter.status === "archived" }
+          : {}
+      );
       cascaded = cascade.succeeded;
       cascadeFailed = cascade.failed.length;
       if (cascadeFailed > 0) {
@@ -251,7 +285,7 @@ export const POST = createHandler(
 
     return apiSuccess({
       slug: body.slug,
-      status: isArchivedCase ? targetStatus : "active",
+      status: isArchivedCase ? targetStatus : isDeletedCase ? frontmatter.status : "active",
       cascaded,
       cascadeFailed,
     });

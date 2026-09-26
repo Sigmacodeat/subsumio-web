@@ -329,3 +329,73 @@ describe("search visibility (soft-deleted pages hidden from searchKeyword)", () 
     expect(after.length).toBe(0);
   });
 });
+
+describe("purgeDeletedPages takes the uploaded originals along", () => {
+  let engine: PGLiteEngine;
+
+  beforeAll(async () => {
+    engine = await setupBrain();
+  }, 30000);
+
+  afterAll(async () => {
+    await engine.disconnect();
+  });
+
+  test("files rows of purged pages are removed and returned; other pages keep theirs", async () => {
+    await seedPage(engine, "docs/purge-me");
+    await seedPage(engine, "docs/keep-me");
+    await engine.executeRaw(
+      `INSERT INTO files (source_id, page_slug, filename, storage_path, content_hash)
+       VALUES ('default', 'docs/purge-me', 'a.pdf', 'clean/t/docs/purge-me/a.pdf', 'h1'),
+              ('default', 'docs/keep-me', 'b.pdf', 'clean/t/docs/keep-me/b.pdf', 'h2')`
+    );
+    await engine.softDeletePage("docs/purge-me");
+    await engine.executeRaw(
+      `UPDATE pages SET deleted_at = now() - INTERVAL '73 hours' WHERE slug = $1`,
+      ["docs/purge-me"]
+    );
+    const result = await engine.purgeDeletedPages(72);
+    expect(result.slugs).toEqual(["docs/purge-me"]);
+    expect(result.files).toEqual([
+      {
+        sourceId: "default",
+        pageSlug: "docs/purge-me",
+        storagePath: "clean/t/docs/purge-me/a.pdf",
+      },
+    ]);
+    const rows = await engine.executeRaw<{ page_slug: string }>(`SELECT page_slug FROM files`);
+    expect(rows.map((r) => r.page_slug)).toEqual(["docs/keep-me"]);
+  });
+
+  test("purgeDeletedPagesWithFiles deletes the storage object of a purged page", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, existsSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join, dirname } = await import("path");
+    const { purgeDeletedPagesWithFiles } = await import("../src/core/file-store.ts");
+    const base = mkdtempSync(join(tmpdir(), "purge-files-"));
+    const storagePath = "clean/t/docs/original/c.pdf";
+    mkdirSync(dirname(join(base, storagePath)), { recursive: true });
+    writeFileSync(join(base, storagePath), "PDF");
+
+    await seedPage(engine, "docs/original");
+    await engine.executeRaw(
+      `INSERT INTO files (source_id, page_slug, filename, storage_path, content_hash)
+       VALUES ('default', 'docs/original', 'c.pdf', $1, 'h3')`,
+      [storagePath]
+    );
+    await engine.softDeletePage("docs/original");
+    await engine.executeRaw(
+      `UPDATE pages SET deleted_at = now() - INTERVAL '73 hours' WHERE slug = $1`,
+      ["docs/original"]
+    );
+    const result = await purgeDeletedPagesWithFiles(engine, 72, {
+      backend: "local",
+      bucket: "brain-files",
+      localPath: base,
+    });
+    expect(result.slugs).toContain("docs/original");
+    expect(result.filesDeleted).toBe(1);
+    expect(result.fileErrors).toEqual([]);
+    expect(existsSync(join(base, storagePath))).toBe(false);
+  });
+});
