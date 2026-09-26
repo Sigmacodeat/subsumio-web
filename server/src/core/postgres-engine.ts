@@ -43,6 +43,12 @@ import {
 } from "./audit/batch-retry-audit.ts";
 import type { DomainBankSampleOpts, CorpusSampleOpts, DomainBankRow } from "./types.ts";
 import { MAX_SEARCH_LIMIT, clampSearchLimit, sourceScopeList } from "./engine.ts";
+import {
+  buildCountByStatusSql,
+  normalizeCountRows,
+  type PageStatusCount,
+  type PageStatusCountOpts,
+} from "./page-status-counts.ts";
 import { deriveResolutionTuple, finalizeScorecard } from "./takes-resolution.ts";
 import { normalizeWeightForStorage } from "./takes-fence.ts";
 import { executeRawJsonb } from "./sql-query.ts";
@@ -3616,6 +3622,11 @@ export class PostgresEngine implements BrainEngine {
       ORDER BY l.valid_from DESC
     `;
     return rows as unknown as Link[];
+  }
+
+  async countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]> {
+    const { sql, params } = buildCountByStatusSql(opts);
+    return normalizeCountRows(await this.executeRaw<Record<string, unknown>>(sql, params));
   }
 
   async listLinkSources(opts?: {

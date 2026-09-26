@@ -1,3 +1,4 @@
+import type { PageStatusCount, PageStatusCountOpts } from "./page-status-counts.ts";
 import type {
   Page,
   PageInput,
@@ -1335,6 +1336,15 @@ export interface BrainEngine {
    * applied to the to-page side of the join.
    */
   getBacklinks(slug: string, opts?: { sourceId?: string }): Promise<Link[]>;
+  /**
+   * Pages per type and status (a frontmatter field), counted in SQL for
+   * dashboard badges — see core/page-status-counts.ts. Scoped by
+   * `sourceId`/`sourceIds` and the document ACL (`aclGroups`); deleted and
+   * tombstoned pages are never counted. Matter scope is applied by the
+   * `count_pages_by_status` operation, not here.
+   */
+  countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]>;
+
   /**
    * v114 (#1941): distinct link_source provenances with edge counts, for
    * `gbrain link-sources`. Source-scoped via `{sourceId?, sourceIds?}` (both

@@ -35,6 +35,12 @@ import type {
 } from "./engine.ts";
 import { MAX_SEARCH_LIMIT, clampSearchLimit, sourceScopeList } from "./engine.ts";
 import {
+  buildCountByStatusSql,
+  normalizeCountRows,
+  type PageStatusCount,
+  type PageStatusCountOpts,
+} from "./page-status-counts.ts";
+import {
   withRetry,
   BULK_RETRY_OPTS,
   resolveBulkRetryOpts,
@@ -3316,6 +3322,11 @@ export class PGLiteEngine implements BrainEngine {
       [from, fromSrc, to, toSrc, linkType]
     );
     return rows as unknown as Link[];
+  }
+
+  async countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]> {
+    const { sql, params } = buildCountByStatusSql(opts);
+    return normalizeCountRows(await this.executeRaw<Record<string, unknown>>(sql, params));
   }
 
   async listLinkSources(opts?: {

@@ -4703,6 +4703,83 @@ const find_anomalies: Operation = {
   cliHints: { name: "anomalies" },
 };
 
+/** Row cap of the matter-restricted count path (one small row per page). */
+const COUNT_ROWS_CAP = 200_000;
+
+/**
+ * Pages per type and status for dashboard badges: counted in SQL instead of
+ * listing every page. Source scope (sourceScopeOpts), document ACL
+ * (ctx.aclGroups) and matter scope (ctx.matterScope, every frontmatter
+ * binding resolved) apply; deleted and tombstoned pages are not counted.
+ * `complete: false` when the matter-restricted path hit its row cap.
+ */
+const count_pages_by_status: Operation = {
+  name: "count_pages_by_status",
+  description:
+    "Count pages per type and status (a frontmatter field), optionally with how many are dated on or before a day. For badge counters.",
+  scope: "read",
+  localOnly: true,
+  params: {
+    types: {
+      type: "array",
+      items: { type: "string" },
+      required: true,
+      description: "Page types to count (max 10).",
+    },
+    status_field: {
+      type: "string",
+      description: "Frontmatter field to group by (default: status).",
+    },
+    date_fields: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Frontmatter date fields, first non-empty wins (creation day as fallback). Max 3.",
+    },
+    date_before: {
+      type: "string",
+      description: "YYYY-MM-DD: also count per group the pages dated on or before this day.",
+    },
+  },
+  handler: async (ctx, p) => {
+    const { validateCountOpts, buildCountRowsSql, aggregateCountRows } =
+      await import("./page-status-counts.ts");
+    const opts = {
+      types: Array.isArray(p.types) ? (p.types as string[]) : [],
+      ...(typeof p.status_field === "string" ? { statusField: p.status_field } : {}),
+      ...(Array.isArray(p.date_fields) ? { dateFields: p.date_fields as string[] } : {}),
+      ...(typeof p.date_before === "string" ? { dateBefore: p.date_before } : {}),
+      ...sourceScopeOpts(ctx),
+      ...(ctx.aclGroups !== undefined ? { aclGroups: ctx.aclGroups } : {}),
+    };
+    const invalid = validateCountOpts(opts);
+    if (invalid) throw new OperationError("invalid_params", invalid);
+    const scope = ctx.matterScope;
+    if (scope === undefined || scope === "all") {
+      return { counts: await ctx.engine.countPagesByStatus(opts), complete: true };
+    }
+    if (scope.length === 0) return { counts: [], complete: true };
+    const { matterBindingSelectSql } = await import("./matter-binding.ts");
+    const { sql, params } = buildCountRowsSql(
+      opts,
+      matterBindingSelectSql("p.frontmatter"),
+      COUNT_ROWS_CAP
+    );
+    const rows = await ctx.engine.executeRaw<{
+      page_id: number;
+      slug: string;
+      source_id: string;
+      type: string;
+      frontmatter: unknown;
+      status: string;
+      before: unknown;
+    }>(sql, params);
+    const complete = rows.length <= COUNT_ROWS_CAP;
+    const kept = await matterScopeFilterResolved(rows.slice(0, COUNT_ROWS_CAP), ctx);
+    return { counts: aggregateCountRows(kept), complete };
+  },
+};
+
 // v0.33: expertise + relationship-proximity routing. CLI: gbrain whoknows.
 const find_experts: Operation = {
   name: "find_experts",
@@ -8281,6 +8358,7 @@ export const operations: Operation[] = [
   // v0.29: Salience + anomalies + recent transcripts
   get_recent_salience,
   find_anomalies,
+  count_pages_by_status,
   get_recent_transcripts,
   // v0.31: hot memory (facts table)
   extract_facts,

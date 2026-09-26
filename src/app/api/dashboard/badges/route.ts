@@ -1,10 +1,24 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { loadApprovalSummary, type ApprovalCategoryKey } from "@/lib/approval-summary";
 import { listEnginePagesDetailed } from "@/lib/engine-pages";
+import {
+  fetchPageStatusCounts,
+  sumCounts,
+  type PageStatusCounts,
+} from "@/lib/engine-page-counts";
+import { addDaysToIsoDate, firmToday } from "@/lib/datetime";
 import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
 
-/** Safety stop for the full deadline read — far beyond any real firm. */
-const DEADLINE_BADGE_READ_CAP = 100_000;
+/** Deadlines due within this many days (or overdue) raise the badge. */
+const DEADLINE_CRITICAL_DAYS = 3;
+/** Types whose badge is a status count (engine-side, one query). */
+const COUNTED_TYPES = ["legal_deadline", "intake_request", "signature_request", "invoice"];
+const COUNTED_HREFS = [
+  "/dashboard/deadlines",
+  "/dashboard/intake",
+  "/dashboard/signature",
+  "/dashboard/invoicing",
+];
 
 interface BadgeCounts {
   [href: string]: {
@@ -38,22 +52,6 @@ function isOpenStatus(status: unknown): boolean {
   return !CLOSED_STATUSES.has(String(status ?? "").toLowerCase());
 }
 
-function dateFrom(value: unknown): Date | null {
-  if (typeof value !== "string" && typeof value !== "number") return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function daysUntil(date: Date): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
-}
-
-/** Safety stop for the other badge lists (open items of one kind). */
-const BADGE_LIST_CAP = 10_000;
 /** Vault badge: new uploads sit at the top of the newest-first list. */
 const VAULT_WINDOW = 2_000;
 
@@ -99,45 +97,32 @@ async function computeBadges(ctx: {
 }): Promise<BadgeResult> {
   const degraded = new Set<string>();
   const approvalsPromise = loadApprovalSummary(ctx.headers, ctx.user.email).catch(() => null);
-  const [deadlinesR, intakeR, signaturesR, docsR, legalDocsR, invoicesR] = await Promise.all([
-    // Every deadline, not the 100 most recently edited: the listing is
-    // sorted by last update, so a fixed cap hid exactly the long-standing
-    // deadlines that are now falling due.
-    listForBadge(ctx.headers, "legal_deadline", DEADLINE_BADGE_READ_CAP),
-    listForBadge(ctx.headers, "intake_request", BADGE_LIST_CAP),
-    listForBadge(ctx.headers, "signature_request", BADGE_LIST_CAP),
+  // Deadlines, intake, signatures and invoices are counted by the engine in
+  // one query per status (no page listing); a failed or partial count marks
+  // the badges degraded instead of showing a too-low number.
+  const countsPromise: Promise<PageStatusCounts | null> = fetchPageStatusCounts(ctx.headers, {
+    types: COUNTED_TYPES,
+    dateFields: ["due_date", "date"],
+    dateBefore: addDaysToIsoDate(firmToday(), DEADLINE_CRITICAL_DAYS),
+  }).catch(() => null);
+  const [counted, docsR, legalDocsR] = await Promise.all([
+    countsPromise,
     listForBadge(ctx.headers, "document", VAULT_WINDOW),
     listForBadge(ctx.headers, "legal_document", VAULT_WINDOW),
-    listForBadge(ctx.headers, "invoice", BADGE_LIST_CAP),
   ]);
-  if (deadlinesR.incomplete) degraded.add("/dashboard/deadlines");
-  if (intakeR.incomplete) degraded.add("/dashboard/intake");
-  if (signaturesR.incomplete) degraded.add("/dashboard/signature");
+  if (!counted || !counted.complete) for (const href of COUNTED_HREFS) degraded.add(href);
   if (docsR.incomplete || legalDocsR.incomplete) degraded.add("/dashboard/vault");
-  if (invoicesR.incomplete) degraded.add("/dashboard/invoicing");
-  const deadlines = deadlinesR.pages;
-  const intake = intakeR.pages;
-  const signatures = signaturesR.pages;
+  const counts = counted?.counts ?? [];
+  const openOf = (type: string, field: "count" | "before_count" = "count") =>
+    sumCounts(counts, (c) => c.type === type && isOpenStatus(c.status), field);
   const docs = docsR.pages;
   const legalDocs = legalDocsR.pages;
-  const invoices = invoicesR.pages;
   const approvals = await approvalsPromise;
 
   const badges: BadgeCounts = {};
 
-  // Deadlines — critical (≤3 days) = danger, overdue = danger
-  const deadlineItems = deadlines
-    .map((p) => {
-      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      const due = dateFrom(fm.due_date ?? fm.date ?? p.created_at);
-      if (!due) return null;
-      const delta = daysUntil(due);
-      const open = isOpenStatus(fm.status);
-      return { delta, overdue: delta < 0 && open, critical: delta >= 0 && delta <= 3 && open };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
-
-  const criticalCount = deadlineItems.filter((d) => d.overdue || d.critical).length;
+  // Deadlines — open and due within DEADLINE_CRITICAL_DAYS or overdue = danger
+  const criticalCount = openOf("legal_deadline", "before_count");
   if (criticalCount > 0) {
     badges["/dashboard/deadlines"] = { count: criticalCount, variant: "danger" };
   }
@@ -146,13 +131,12 @@ async function computeBadges(ctx: {
   // the badge must not promise items its page does not show, and the intake
   // list only renders intake_request records (the beA dashboard is retired;
   // imported bea_message rows live under /dashboard/communications).
-  // Only requests still waiting for the firm (deleted ones are already
-  // filtered by the listing).
-  const inboxCount = intake.filter((p) =>
-    OPEN_INTAKE_STATUSES.has(
-      String(((p.frontmatter ?? {}) as Record<string, unknown>).status ?? "").toLowerCase()
-    )
-  ).length;
+  // Only requests still waiting for the firm (deleted ones are never
+  // counted by the engine).
+  const inboxCount = sumCounts(
+    counts,
+    (c) => c.type === "intake_request" && OPEN_INTAKE_STATUSES.has(c.status)
+  );
   if (inboxCount > 0) {
     badges["/dashboard/intake"] = { count: inboxCount, variant: "info" };
   }
@@ -197,9 +181,7 @@ async function computeBadges(ctx: {
   }
 
   // Signatures — pending
-  const sigCount = signatures.filter((p) =>
-    isOpenStatus(((p.frontmatter ?? {}) as Record<string, unknown>).status)
-  ).length;
+  const sigCount = openOf("signature_request");
   if (sigCount > 0) {
     badges["/dashboard/signature"] = { count: sigCount, variant: "warning" };
   }
@@ -231,9 +213,7 @@ async function computeBadges(ctx: {
   }
 
   // Invoices — open
-  const invoiceCount = invoices.filter((p) =>
-    isOpenStatus(((p.frontmatter ?? {}) as Record<string, unknown>).status)
-  ).length;
+  const invoiceCount = openOf("invoice");
   if (invoiceCount > 0) {
     badges["/dashboard/invoicing"] = { count: invoiceCount, variant: "warning" };
   }

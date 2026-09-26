@@ -926,4 +926,43 @@ describeBoth("Engine parity — page array ops", () => {
     expect(pg.anomalySlugs.every((x) => x.includes("parity-scope-a"))).toBe(true);
     expect(await read(pgliteEngine)).toEqual(pg);
   });
+
+  test("countPagesByStatus: same grouped counts on both engines", async () => {
+    const src = "parity-counts";
+    const seed = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [src]
+      );
+      const rows: Array<[string, Record<string, unknown>]> = [
+        ["pc/a", { status: "open", due_date: "2030-01-10" }],
+        ["pc/b", { status: "Open", date: "2030-02-10" }],
+        ["pc/c", { status: "done", due_date: "2030-01-01" }],
+        ["pc/d", { status: "tombstoned", due_date: "2030-01-01" }],
+        ["pc/e", {}],
+      ];
+      for (const [slug, fm] of rows) {
+        await eng.putPage(
+          slug,
+          { type: "note", title: slug, compiled_truth: "c", timeline: "", frontmatter: fm },
+          { sourceId: src }
+        );
+      }
+    };
+    const read = async (eng: BrainEngine) =>
+      (
+        await eng.countPagesByStatus({
+          types: ["note"],
+          dateFields: ["due_date", "date"],
+          dateBefore: "2030-01-31",
+          sourceId: src,
+        })
+      ).sort((x, y) => (x.status < y.status ? -1 : 1));
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    const pg = await read(pgEngine);
+    expect(pg.find((r) => r.status === "open")).toMatchObject({ count: 2, before_count: 1 });
+    expect(pg.find((r) => r.status === "tombstoned")).toBeUndefined();
+    expect(await read(pgliteEngine)).toEqual(pg);
+  });
 });

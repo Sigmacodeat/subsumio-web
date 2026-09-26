@@ -4801,6 +4801,50 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
+  // Pages per type and status for the dashboard badges: counted in SQL,
+  // scoped to the caller's source, document ACL and matter access. Tombstoned
+  // and deleted pages are not counted. `complete: false` = lower bound.
+  app.get("/api/page-status-counts", async (req: Request, res: Response) => {
+    const list = (v: unknown): string[] =>
+      typeof v === "string" && v.length > 0
+        ? v
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : [];
+    try {
+      const result = await invokeOp(
+        engine,
+        "count_pages_by_status",
+        {
+          types: list(req.query.types),
+          ...(typeof req.query.status_field === "string"
+            ? { status_field: req.query.status_field }
+            : {}),
+          ...(typeof req.query.date_fields === "string"
+            ? { date_fields: list(req.query.date_fields) }
+            : {}),
+          ...(typeof req.query.date_before === "string"
+            ? { date_before: req.query.date_before }
+            : {}),
+        },
+        requestSourceId(req),
+        undefined,
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all",
+        req.userId
+      );
+      res.json(result);
+    } catch (e) {
+      if (e instanceof OperationError && e.code === "invalid_params") {
+        apiError(res, 400, "invalid_params", e.message);
+        return;
+      }
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "page_status_counts_failed", message: msg });
+    }
+  });
+
   app.get("/api/pages", async (req: Request, res: Response) => {
     try {
       // Single hard cap, identical to the op's clamp (100). The previous
