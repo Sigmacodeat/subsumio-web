@@ -7,14 +7,26 @@
  *
  * Pure and framework-agnostic so it is unit-testable.
  */
+import {
+  findeGeschaeftszahlen,
+  gleicheGeschaeftszahl,
+  parseGeschaeftszahl,
+} from "@/lib/legal/geschaeftszahl";
 
 export interface RoutingSuggestion {
   /** Detected document type (German Kanzlei taxonomy), if any. */
   docType?: string;
-  /** Detected German Aktenzeichen (e.g. "12 C 345/24"), if any. */
+  /** Detected Geschäftszahl/Aktenzeichen, canonical form (e.g. "12 Cg 34/25x"). */
   aktenzeichen?: string;
-  /** Slug of an existing case the filename appears to reference, if matched. */
+  /**
+   * The ONE existing matter whose case number the filename names. Advisory
+   * only — it never replaces the matter the user chose for the upload.
+   */
   matchedCaseSlug?: string;
+  /** Several matters carry the named number — the user must decide. */
+  ambiguousCaseSlugs?: string[];
+  /** A matter whose title appears in the filename — a weak hint, never an assignment. */
+  titleMatchCaseSlug?: string;
   /** Short human-readable hint for the UI (de). */
   hint?: string;
 }
@@ -36,12 +48,6 @@ export function uploadTargetCases<T extends { frontmatter?: Record<string, unkno
   });
 }
 
-// German court Aktenzeichen: "<n> <Registerzeichen> <lfd>/<Jahr>",
-// e.g. "12 C 345/24", "4 O 1234/2023", "5 Ca 67/22". Filenames can't contain "/",
-// so the year separator may appear as "/", "-" or "_". Matched on the raw stem
-// (separators intact), then rebuilt to the canonical "<n> <Reg> <lfd>/<Jahr>".
-const AKTENZEICHEN_RE = /(\d{1,4})\s*([A-Za-z]{1,3})\s*(\d{1,5})[/_-](\d{2,4})(?!\d)/;
-
 // Document-type keywords → canonical Kanzlei doc type. No word boundaries: German
 // compounds ("Mietvertrag", "Honorarrechnung", "Mahnbescheid") must still match.
 // Order matters — more specific terms first.
@@ -57,10 +63,6 @@ const DOC_TYPE_KEYWORDS: { re: RegExp; type: string }[] = [
   { re: /mahnung|mahnbescheid/i, type: "mahnung" },
   { re: /protokoll/i, type: "protokoll" },
 ];
-
-function normalizeAz(az: string): string {
-  return az.replace(/\s+/g, "").toLowerCase();
-}
 
 /**
  * Derive a routing suggestion from a filename (basename or relative path).
@@ -78,13 +80,17 @@ export function inferUploadRouting(
 
   const suggestion: RoutingSuggestion = {};
 
-  const azMatch = stem.match(AKTENZEICHEN_RE);
-  if (azMatch) {
-    const [, num, reg, lfd, year] = azMatch;
-    suggestion.aktenzeichen = `${num} ${reg.toUpperCase()} ${lfd}/${year}`;
-    const target = normalizeAz(suggestion.aktenzeichen);
-    const byAz = cases.find((c) => c.aktenzeichen && normalizeAz(c.aktenzeichen) === target);
-    if (byAz) suggestion.matchedCaseSlug = byAz.slug;
+  // Geschäftszahl: shared normalisation (Prüfbuchstabe kept, spacing and
+  // case tolerant; file names use "-" or "_" for the slash).
+  const gz = findeGeschaeftszahlen(stem)[0];
+  if (gz) {
+    suggestion.aktenzeichen = gz.formatted;
+    const byAz = cases.filter((c) => {
+      const stored = parseGeschaeftszahl(c.aktenzeichen);
+      return stored ? gleicheGeschaeftszahl(stored, gz) : false;
+    });
+    if (byAz.length === 1) suggestion.matchedCaseSlug = byAz[0]!.slug;
+    else if (byAz.length > 1) suggestion.ambiguousCaseSlugs = byAz.map((c) => c.slug);
   }
 
   for (const { re, type } of DOC_TYPE_KEYWORDS) {
@@ -94,20 +100,36 @@ export function inferUploadRouting(
     }
   }
 
-  // Fallback case match: filename contains a case title (loose, case-insensitive).
-  if (!suggestion.matchedCaseSlug) {
+  // Weak hint: filename contains a matter title. Shown, never applied.
+  if (!suggestion.matchedCaseSlug && !suggestion.ambiguousCaseSlugs) {
     const lowerHay = haystack.toLowerCase();
-    const byTitle = cases.find(
+    const byTitle = cases.filter(
       (c) => c.title && c.title.length >= 4 && lowerHay.includes(c.title.toLowerCase())
     );
-    if (byTitle) suggestion.matchedCaseSlug = byTitle.slug;
+    if (byTitle.length === 1) suggestion.titleMatchCaseSlug = byTitle[0]!.slug;
   }
 
   const parts: string[] = [];
   if (suggestion.docType) parts.push(suggestion.docType);
   if (suggestion.aktenzeichen) parts.push(`Az. ${suggestion.aktenzeichen}`);
-  if (suggestion.matchedCaseSlug) parts.push("→ Akte erkannt");
+  if (suggestion.matchedCaseSlug) parts.push("passt zu einer Akte");
+  else if (suggestion.ambiguousCaseSlugs) parts.push("mehrere Akten mit dieser Zahl");
+  else if (suggestion.titleMatchCaseSlug) parts.push("Titel ähnelt einer Akte");
   if (parts.length > 0) suggestion.hint = parts.join(" · ");
 
   return suggestion;
+}
+
+/**
+ * A filename suggestion that points at a matter OTHER than the one the user
+ * chose for this file (or the batch). The upload still goes to the chosen
+ * matter; the UI only offers to switch.
+ */
+export function divergentRoutingSlug(
+  routing: Pick<RoutingSuggestion, "matchedCaseSlug" | "titleMatchCaseSlug">,
+  chosenCaseSlug: string | undefined
+): string | undefined {
+  const suggested = routing.matchedCaseSlug ?? routing.titleMatchCaseSlug;
+  if (!suggested || !chosenCaseSlug) return suggested;
+  return suggested === chosenCaseSlug ? undefined : suggested;
 }
