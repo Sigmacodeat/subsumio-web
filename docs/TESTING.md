@@ -10,6 +10,7 @@ für die Next.js-App (`src/`, `tests/`).
 | `npm run test:unit`              | Vitest-Unit-Suite (`vitest.config.ts`)                                   |
 | `npm run test:unit:future-clock` | dieselbe Suite mit um 400 Tage vorgestellter Uhr, Zeitzone Wien          |
 | `npm run test:e2e`               | Playwright gegen `next start` + Mock-Engine (`tests/e2e-mock-engine.ts`) |
+| `npm run test:e2e:functional`    | nur die funktionalen Kernabläufe (Liste in `package.json`)               |
 | `npm run test:workflow`          | Selbsttest der Workflow-Mock-Engine (keine Produktroute)                 |
 
 Ausgaben immer in eine Datei umleiten und den Exit-Code getrennt lesen
@@ -47,6 +48,14 @@ Playwright-Specs erzeugen Fälligkeiten relativ zum Laufzeitpunkt (`daysFromNow(
 
 ## Playwright und Mock-Engine
 
-Die Mock-Engine muss das Antwortformat der echten Engine liefern. Vertragstests in
-`tests/e2e-mock-engine.contract.test.ts` schicken ihre Antworten durch die Produkt-Parser
-(z. B. `requestConflictCheck`) — ändert sich ein Engine-Format, wird dort nachgezogen.
+Die Mock-Engine muss das Antwortformat der echten Engine liefern. Das gemeinsame Verhalten
+beider Mock-Engines (Kollisionsprüfung = echter Engine-Prüfer, `if_absent` → 409
+`page_exists`, Listen mit max. 100 Zeilen und Cursor, atomare Array-Operationen) steht in
+`tests/e2e-mock-shared.ts`. Der Vertragstest `src/test/e2e-mock-contract.test.ts` startet die
+Mock-Engines im Prozess und schickt ihre Antworten durch die Produkt-Parser
+(`requestConflictCheck`, `engineCaseCreateDeps`, `listEnginePages`, `reserveInvoiceEntries`)
+— ändert sich ein Engine-Format, schlägt er fehl und die Mocks werden nachgezogen.
+
+`npm run test:e2e:functional` führt die Kernabläufe aus (Akte inkl. Kollision, Fristen,
+Rechnung → Ausstellen → Storno, Upload, Portal, Login-Sperre/2FA); die CI fährt sie im Job
+`playwright-functional`. Nicht abgedeckt: der E-Mail-Versand von Rechnungen (braucht SMTP).

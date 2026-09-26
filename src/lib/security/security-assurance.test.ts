@@ -168,10 +168,11 @@ describe("Security Assurance: SAST/DAST", () => {
     expect(ci).toContain("a11y");
   });
 
-  it("CI runs workflow simulation (42-step E2E)", () => {
+  it("CI runs the functional E2E workflows and the workflow mock self-test", () => {
     const ci = readFile(".github/workflows/ci.yml");
+    expect(ci).toContain("playwright-functional");
+    expect(ci).toContain("test:e2e:functional");
     expect(ci).toContain("workflow-simulation");
-    expect(ci).toContain("42-step");
   });
 
   it("threat model documents pentest backlog", () => {
