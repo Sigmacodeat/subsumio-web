@@ -47,6 +47,13 @@ jobs:
         run: bun test test/e2e/mechanical.test.ts test/e2e/mcp.test.ts
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+      # PGLite and Postgres must answer identically (CLAUDE.md: engine parity).
+      # Without a database the parity suite skips, so it runs here against the
+      # job's Postgres service.
+      - name: Engine parity (PGLite vs Postgres)
+        run: bun test test/e2e/engine-parity.test.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
 
   tier2:
     name: Tier 2 (LLM Skills)
