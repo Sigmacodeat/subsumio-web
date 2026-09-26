@@ -6,12 +6,16 @@ vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
 vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
+const handlerOpts = vi.hoisted(() => ({ value: null as null | Record<string, unknown> }));
 vi.mock("@/lib/api-handler", () => ({
-  createHandler: (_opts: unknown, handler: (ctx: unknown) => Promise<Response>) => async () =>
-    handler({
-      headers: { "x-subsumio-source": "b1" },
-      user: { id: "u1", email: "admin@test" },
-    }),
+  createHandler: (opts: Record<string, unknown>, handler: (ctx: unknown) => Promise<Response>) => {
+    handlerOpts.value = opts;
+    return async () =>
+      handler({
+        headers: { "x-subsumio-source": "b1" },
+        user: { id: "u1", email: "admin@test" },
+      });
+  },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: message, code }, { status }),
 }));
@@ -119,6 +123,19 @@ describe("GET /api/data-export/backup (AKT-28)", () => {
     // Other pages are exported unchanged.
     expect((out.data[1] as { frontmatter: Record<string, unknown> }).frontmatter).toEqual({
       smtpPassword: "not-a-settings-page",
+    });
+  });
+});
+
+describe("GET /api/data-export/backup — audit (R12-13)", () => {
+  it("a full backup is recorded in the firm's audit trail", () => {
+    const audit = handlerOpts.value?.audit as (ctx: unknown) => Record<string, unknown>;
+    expect(typeof audit).toBe("function");
+    expect(audit({ brainId: "b1", user: { id: "u1" } })).toMatchObject({
+      action: "admin.data_export",
+      entityType: "brain",
+      entityId: "b1",
+      details: { scope: "full_backup" },
     });
   });
 });
