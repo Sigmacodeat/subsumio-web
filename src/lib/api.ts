@@ -852,7 +852,14 @@ export const api = {
   },
 
   legal: {
-    fristen(params?: { case?: string; status?: string; heute?: string }): Promise<{
+    fristen(params?: {
+      case?: string;
+      status?: string;
+      heute?: string;
+      /** "warnings": only open deadlines due within a few days (topbar),
+       *  served from a short server-side cache. */
+      view?: "warnings";
+    }): Promise<{
       fristen: Array<{
         id: string;
         case_slug?: string;
@@ -903,6 +910,7 @@ export const api = {
       if (params?.case) qs.set("case", params.case);
       if (params?.status) qs.set("status", params.status);
       if (params?.heute) qs.set("heute", params.heute);
+      if (params?.view) qs.set("view", params.view);
       return request(`/api/legal/fristen${qs.toString() ? `?${qs}` : ""}`);
     },
 

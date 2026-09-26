@@ -8,6 +8,8 @@ export interface SidebarBadge {
   variant: "danger" | "warning" | "info";
   /** Optionaler Tooltip-Text (z. B. „ältester Konflikt seit 3d"). */
   label?: string;
+  /** Die Zahl beruht auf einem unvollständigen Lesevorgang (Untergrenze). */
+  degraded?: boolean;
 }
 
 export type SidebarBadges = Record<string, SidebarBadge>;

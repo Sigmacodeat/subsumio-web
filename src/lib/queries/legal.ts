@@ -7,6 +7,7 @@ export function useFristen(params?: {
   case?: string;
   status?: string;
   heute?: string;
+  view?: "warnings";
   enabled?: boolean;
 }) {
   return useQuery({

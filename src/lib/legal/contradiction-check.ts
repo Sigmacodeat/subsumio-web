@@ -7,6 +7,7 @@
  */
 import { enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { headersCacheKey } from "@/lib/server-ttl-cache";
 
 interface DocumentAnalysis {
   slug: string;
@@ -68,8 +69,8 @@ export function checkCaseContradictions(
   headers: Record<string, string>,
   caseSlug: string
 ): Promise<ContradictionCheckResult> {
-  // Keyed by the full header set: only calls with the same access coalesce.
-  const key = `${JSON.stringify(Object.entries(headers).sort())}\u0000${caseSlug}`;
+  // Keyed by brain + access: only calls with the same access coalesce.
+  const key = `${headersCacheKey(headers)}\u0000${caseSlug}`;
   const current = running.get(key);
   if (current) {
     current.rerun = true;
