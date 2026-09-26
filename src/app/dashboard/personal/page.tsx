@@ -136,7 +136,9 @@ export default function PersonalPage() {
         setFormError(
           res.status === 400
             ? "Bitte prüfen Sie die Eingaben (Name, E-Mail, Datumsfelder im Format JJJJ-MM-TT)."
-            : "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
+            : res.status === 403
+              ? "Personalakten kann nur die Kanzleiverwaltung (Admin) ändern."
+              : "Speichern fehlgeschlagen. Bitte versuchen Sie es erneut."
         );
         return;
       }

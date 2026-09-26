@@ -132,6 +132,8 @@ export type RouteAction =
   | "admin.audit_export" // nur admin
   | "platform.operator" // Subsumio-Betreiber (ops.subsum.io), nie über KanzleiRole
   | "platform.support_session" // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
+  | "staff.read" // GET /api/staff — Personalstamm + Urlaubskonten (HR-Daten, ohne Mandantenzugang)
+  | "staff.write" // POST/PATCH /api/staff — Personalstamm ändern: nur admin
   | "notifications.write"; // POST/PATCH/DELETE /api/notifications — nur eigene Benachrichtigungen, alle Rollen
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
@@ -231,6 +233,10 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
   // Wirkt ausschließlich auf die eigenen Benachrichtigungen (userId-Scope in der Route).
   "notifications.write": ["admin", "lawyer", "assistant", "client_viewer"],
+  // HR-Stammdaten (Urlaubsanspruch, Vertragsende, Notizen): lesen intern,
+  // ändern nur die Kanzleiverwaltung — niemand erhöht den eigenen Anspruch.
+  "staff.read": ["admin", "lawyer", "assistant"],
+  "staff.write": ["admin"],
   "profile.update": ["admin", "lawyer", "assistant", "client_viewer"],
 };
 
@@ -352,6 +358,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "platform.operator": "settings.update",
     "platform.support_session": "support.session_end",
     "notifications.write": "settings.update",
+    "staff.read": "settings.update",
+    "staff.write": "settings.update",
   };
   return map[routeAction] ?? "settings.update";
 }
