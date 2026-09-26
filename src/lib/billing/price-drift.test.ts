@@ -116,3 +116,34 @@ describe("validity of purchased credits is disclosed where it is sold", () => {
     expect(read("src/lib/billing/credits.ts")).not.toMatch(/365 \* 24 \* 60 \* 60 \* 1000/);
   });
 });
+
+describe("every plan price on any public page is a real plan price", () => {
+  test("3–4 digit euro amounts in marketing sources, pages and the chat knowledge", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const out = execFileSync(
+      "grep",
+      [
+        "-rnoE",
+        "(^|[^0-9.,])([0-9]{3}|[0-9]\\.[0-9]{3}) ?€",
+        "src/content",
+        "src/components/marketing",
+        "src/app/at",
+        "src/app/de",
+        "src/lib/concierge",
+        "src/app/layout.tsx",
+      ],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    const allowed = new Set([solo, kanzlei]);
+    const hits = out
+      .split("\n")
+      .filter(
+        (l) => l && !l.includes(".test.") && !l.includes("dashboard.ts") && !l.includes("handbook")
+      );
+    expect(hits.length).toBeGreaterThan(5);
+    for (const line of hits) {
+      const amount = line.match(/(\d\.\d{3}|\d{3}) ?€/)![0].replace(/(\d) ?€/, "$1 €");
+      expect(allowed, line).toContain(amount);
+    }
+  });
+});
