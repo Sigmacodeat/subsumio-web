@@ -899,6 +899,8 @@ export const RATE_LIMIT_JITTER = 0.3;
 
 export interface EmbedBatchWithBackoffOpts {
   abortSignal?: AbortSignal;
+  /** Source of the texts — decides the EU-only rule (gateway EmbedOpts.sourceId). */
+  sourceId?: string;
 }
 
 /**
@@ -975,7 +977,11 @@ export async function embedBatchWithBackoff(
       // D4a + D8: maxRetries:0 disables the SDK's stacked retries (so this
       // wrapper is the single source of truth) and abortSignal threads
       // through to the gateway so an in-flight HTTP request cancels mid-fetch.
-      return await embedBatch(texts, { maxRetries: 0, ...(signal && { abortSignal: signal }) });
+      return await embedBatch(texts, {
+        maxRetries: 0,
+        ...(signal && { abortSignal: signal }),
+        ...(opts.sourceId !== undefined && { sourceId: opts.sourceId }),
+      });
     } catch (e: unknown) {
       // If the budget fired we may have been aborted mid-fetch; bubble out.
       if (signal?.aborted) throw e;

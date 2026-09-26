@@ -295,7 +295,7 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
     );
   });
 
-  test("embeddings: EU_ONLY alone keeps the existing (non-EU) index usable", async () => {
+  test("embeddings: EU_ONLY alone keeps the public-corpus index usable; client text refused", async () => {
     const seen: number[] = [];
     __setEmbedTransportForTests((async ({ values }: { values: string[] }) => {
       seen.push(values.length);
@@ -306,12 +306,18 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
       embedding_dimensions: 1536,
       env: { ...EU, OPENROUTER_API_KEY: "sk-or" },
     });
-    await embed(["Mandantenschreiben"]);
-    await embedQuery("Frage");
+    // Unlabelled bulk run (corpus) and an explicit law-* source pass.
+    await embed(["§ 1295 ABGB"]);
+    await embed(["§ 1296 ABGB"], { sourceId: "law-at" });
+    // A firm's document and any search query are client data.
+    await expect(embed(["Mandantenschreiben"], { sourceId: "kanzlei-a" })).rejects.toBeInstanceOf(
+      EuResidencyError
+    );
+    await expect(embedQuery("Frage")).rejects.toBeInstanceOf(EuResidencyError);
     expect(seen).toEqual([1, 1]);
   });
 
-  test("embeddings: EU_ONLY_EMBEDDINGS refuses document-side, allows query-side", async () => {
+  test("embeddings: EU_ONLY_EMBEDDINGS also refuses the corpus (document-side)", async () => {
     const seen: number[] = [];
     __setEmbedTransportForTests((async ({ values }: { values: string[] }) => {
       seen.push(values.length);
@@ -322,9 +328,12 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
       embedding_dimensions: 1536,
       env: { ...EU_EMB, OPENROUTER_API_KEY: "sk-or" },
     });
-    await expect(embed(["Mandantenschreiben"])).rejects.toBeInstanceOf(EuResidencyError);
-    await embedQuery("Frage");
-    expect(seen).toEqual([1]);
+    await expect(embed(["§ 1295 ABGB"])).rejects.toBeInstanceOf(EuResidencyError);
+    await expect(embed(["§ 1295 ABGB"], { sourceId: "law-at" })).rejects.toBeInstanceOf(
+      EuResidencyError
+    );
+    await expect(embedQuery("Frage")).rejects.toBeInstanceOf(EuResidencyError);
+    expect(seen).toEqual([]);
   });
 
   test("multimodal embeddings: document-side refused under EU_ONLY_EMBEDDINGS", async () => {

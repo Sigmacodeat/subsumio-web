@@ -858,7 +858,12 @@ export async function splitAndImportLargeDocument(
     sourceId: string;
     filename: string;
   }
-): Promise<{ parentSlug: string; partSlugs: string[] }> {
+): Promise<{ parentSlug: string; partSlugs: string[]; euBlockedSlugs: string[] }> {
+  // Slugs whose vectors EU-only refused (keyword-only, marked blocked_eu_only).
+  const euBlockedSlugs: string[] = [];
+  const noteEuBlocked = (r: { slug: string; embedding_blocked?: "eu_only" }) => {
+    if (r.embedding_blocked === "eu_only") euBlockedSlugs.push(r.slug);
+  };
   // Extract body from markdown (strip frontmatter)
   const closeIdx = markdown.indexOf("\n---", 3);
   let extractedFrontmatter: Record<string, unknown> = {};
@@ -880,14 +885,16 @@ export async function splitAndImportLargeDocument(
   const parts = splitExtractedText(body, slug, title);
   if (parts.length === 0) {
     // Not large enough to split — import as single page
-    await importFromContent(engine, slug, markdown, {
-      noEmbed: opts.noEmbed,
-      sourceId: opts.sourceId,
-      filename: opts.filename,
-      source_kind: "web_upload",
-      source_uri: `subsumio-upload:${slug}`,
-    });
-    return { parentSlug: slug, partSlugs: [] };
+    noteEuBlocked(
+      await importFromContent(engine, slug, markdown, {
+        noEmbed: opts.noEmbed,
+        sourceId: opts.sourceId,
+        filename: opts.filename,
+        source_kind: "web_upload",
+        source_uri: `subsumio-upload:${slug}`,
+      })
+    );
+    return { parentSlug: slug, partSlugs: [], euBlockedSlugs };
   }
 
   const partSlugs: string[] = [];
@@ -901,13 +908,15 @@ export async function splitAndImportLargeDocument(
       part_total: part.partTotal,
     };
     const partMarkdown = await withUploadFrontmatter(part.body, partFrontmatter);
-    await importFromContent(engine, part.slug, partMarkdown, {
-      noEmbed: opts.noEmbed,
-      sourceId: opts.sourceId,
-      filename: opts.filename,
-      source_kind: "web_upload",
-      source_uri: `subsumio-upload:${part.slug}`,
-    });
+    noteEuBlocked(
+      await importFromContent(engine, part.slug, partMarkdown, {
+        noEmbed: opts.noEmbed,
+        sourceId: opts.sourceId,
+        filename: opts.filename,
+        source_kind: "web_upload",
+        source_uri: `subsumio-upload:${part.slug}`,
+      })
+    );
     partSlugs.push(part.slug);
   }
 
@@ -924,15 +933,17 @@ export async function splitAndImportLargeDocument(
     `> 📄 Dieses Dokument wurde in ${parts.length} Teile aufgeteilt für optimale Durchsuchbarkeit.\n\n${indexBody}\n`,
     parentFrontmatter
   );
-  await importFromContent(engine, slug, parentMarkdown, {
-    noEmbed: opts.noEmbed,
-    sourceId: opts.sourceId,
-    filename: opts.filename,
-    source_kind: "web_upload",
-    source_uri: `subsumio-upload:${slug}`,
-  });
+  noteEuBlocked(
+    await importFromContent(engine, slug, parentMarkdown, {
+      noEmbed: opts.noEmbed,
+      sourceId: opts.sourceId,
+      filename: opts.filename,
+      source_kind: "web_upload",
+      source_uri: `subsumio-upload:${slug}`,
+    })
+  );
 
-  return { parentSlug: slug, partSlugs };
+  return { parentSlug: slug, partSlugs, euBlockedSlugs };
 }
 
 /**
@@ -1108,7 +1119,7 @@ export async function runExtractionAndImport(
     })
   );
 
-  const { partSlugs } = await splitAndImportLargeDocument(
+  const { partSlugs, euBlockedSlugs } = await splitAndImportLargeDocument(
     engine,
     slug,
     title ?? filename.replace(/\.[^.]+$/, ""),
@@ -1189,18 +1200,23 @@ export async function runExtractionAndImport(
   // "ready" reflects reality. (A page with zero chunkable content embeds nothing
   // and is trivially "ready" — nothing to retrieve.)
   // G6 fix: parallelize embedding status stamping across all parts.
+  // Pages whose vectors EU-only refused keep their blocked_eu_only mark
+  // (set at import) — stamping them "ready" would hide the missing vectors.
   const embedStampTime = new Date().toISOString();
+  const euBlocked = new Set(euBlockedSlugs);
   await Promise.all(
-    [slug, ...partSlugs].map((s) =>
-      patchPageFrontmatter(engine, s, tenantSource, {
-        embedding_status: noEmbed ? "pending" : "ready",
-        ...(noEmbed
-          ? { embedding_pending_since: embedStampTime }
-          : { embedding_completed_at: embedStampTime }),
-      }).catch(() => {
-        /* best-effort — embedding status is not critical for pipeline */
-      })
-    )
+    [slug, ...partSlugs]
+      .filter((s) => !euBlocked.has(s))
+      .map((s) =>
+        patchPageFrontmatter(engine, s, tenantSource, {
+          embedding_status: noEmbed ? "pending" : "ready",
+          ...(noEmbed
+            ? { embedding_pending_since: embedStampTime }
+            : { embedding_completed_at: embedStampTime }),
+        }).catch(() => {
+          /* best-effort — embedding status is not critical for pipeline */
+        })
+      )
   );
 
   if (noEmbed) {
@@ -3741,6 +3757,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "unknown";
+      // The firm's EU-only policy refused a non-EU embedding provider
+      // (nothing sent): a policy answer, not a server fault.
+      const { EuResidencyError } = await import("../core/ai/eu-policy.ts");
+      if (e instanceof EuResidencyError) {
+        res.status(403).json({ error: "eu_only_refused", message: msg });
+        return;
+      }
       res.status(500).json({ error: "embed_failed", message: msg });
     }
   });

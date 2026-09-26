@@ -59,6 +59,8 @@ export interface EmbedBackfillResult {
   spentUsd: number;
   /** Set when status === 'budget_exhausted'. */
   budgetCapUsd?: number;
+  /** Pages left keyword-only because EU-only refused the embedding provider. */
+  blockedEuOnly?: number;
 }
 
 /** Compose the lock id for embed-backfill, namespaced like sync's. */
@@ -152,6 +154,7 @@ export function makeEmbedBackfillHandler(engine: BrainEngine) {
         chunksProcessed: result.chunksProcessed,
         pagesProcessed: result.pagesProcessed,
         spentUsd: tracker.totalSpent,
+        ...(result.blockedEuOnly > 0 ? { blockedEuOnly: result.blockedEuOnly } : {}),
       };
     } catch (err) {
       if (err instanceof BudgetExhausted) {

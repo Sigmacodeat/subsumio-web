@@ -28,6 +28,8 @@ import {
 import { findChunkForOffset } from "./chunkers/edge-extractor.ts";
 import { extractCodeRefs, imageOfCandidates } from "./link-extraction.ts";
 import { embedBatch, embedMultimodal, currentEmbeddingSignature } from "./embedding.ts";
+import { EMBEDDING_STATUS_BLOCKED_EU_ONLY, EuResidencyError } from "./ai/eu-policy.ts";
+import { runEuScopedForSource } from "./ai/request-eu-policy.ts";
 import { slugifyPath, slugifyCodePath, isCodeFilePath } from "./sync.ts";
 import {
   isDocumentFilePath,
@@ -440,6 +442,9 @@ export interface ImportResult {
   flagged?: boolean;
   /** Which flag tier fired, when `flagged`. */
   flag_reason?: "markup_heavy" | "oversized";
+  /** Set when EU-only refused the embedding provider: the page landed
+   *  keyword-searchable without vectors (`embedding_status: blocked_eu_only`). */
+  embedding_blocked?: "eu_only";
 }
 
 export const MAX_FILE_SIZE = 50_000_000; // 50MB — supports large legal document extractions
@@ -1093,6 +1098,7 @@ export async function importFromContent(
     effectiveCRMode = resolution.mode === "per_chunk_synopsis" ? "title" : resolution.mode;
   }
 
+  let embedBlockedEu: EuResidencyError | null = null;
   if (!opts.noEmbed && chunks.length > 0) {
     const safeTitle = sanitizeTitle(parsed.title);
     const legalPage =
@@ -1114,14 +1120,31 @@ export async function importFromContent(
         : c.chunk_text;
       return c.embedding_context ? `${c.embedding_context}\n\n${pageWrapped}` : pageWrapped;
     });
-    const embeddings = await embedBatch(wrappedTexts);
-    for (let i = 0; i < chunks.length; i++) {
-      chunks[i].embedding = embeddings[i];
-      // token_count tracks the wrapped string length so cost reporting
-      // reflects what we actually sent to the embedder.
-      chunks[i].token_count = Math.ceil(wrappedTexts[i].length / 4);
+    // A firm's "Nur EU" follows its documents (sync, connectors, CLI run
+    // outside the firm's request). EU-only refusing the embedding provider is
+    // not an import failure: the page lands keyword-searchable, marked
+    // blocked_eu_only, and a later EU-model run embeds its NULL chunks.
+    const embedSource = sourceId ?? "default";
+    try {
+      const embeddings = await runEuScopedForSource(engine, embedSource, () =>
+        embedBatch(wrappedTexts, { sourceId: embedSource })
+      );
+      for (let i = 0; i < chunks.length; i++) {
+        chunks[i].embedding = embeddings[i];
+        // token_count tracks the wrapped string length so cost reporting
+        // reflects what we actually sent to the embedder.
+        chunks[i].token_count = Math.ceil(wrappedTexts[i].length / 4);
+      }
+    } catch (e) {
+      if (!(e instanceof EuResidencyError)) throw e;
+      embedBlockedEu = e;
+      console.warn(
+        `[import] ${embedSource}/${slug}: not embedded — EU-only policy refused "${e.target}" ` +
+          `(keyword search only)`
+      );
     }
   }
+  const embedded = !opts.noEmbed && !embedBlockedEu;
 
   // v0.40.3.0: corpus_generation hash for D27 P1-5 cache invalidation.
   // Only set when we actually applied a wrapper; 'none' tier writes NULL
@@ -1166,7 +1189,13 @@ export async function importFromContent(
         title: parsed.title,
         compiled_truth: parsed.compiled_truth,
         timeline: parsed.timeline || "",
-        frontmatter: parsed.frontmatter,
+        frontmatter: embedBlockedEu
+          ? {
+              ...parsed.frontmatter,
+              embedding_status: EMBEDDING_STATUS_BLOCKED_EU_ONLY,
+              embedding_error: `eu_only_policy: ${embedBlockedEu.target} is not an EU embedding provider`,
+            }
+          : parsed.frontmatter,
         content_hash: hash,
         effective_date: effectiveDate,
         effective_date_source: effectiveDateSource,
@@ -1204,7 +1233,7 @@ export async function importFromContent(
     // UPDATE that runs after putPage's INSERT/UPDATE so the row exists.
     // For opts.noEmbed callers, we skip stamping — the next embed pass
     // (gbrain embed --stale or contextual reindex Minion) will set it.
-    if (!opts.noEmbed) {
+    if (embedded) {
       await tx.updatePageContextualRetrievalState(
         slug,
         sourceId ?? "default",
@@ -1242,7 +1271,7 @@ export async function importFromContent(
       // embedded (not --no-embed), so a later model/dims swap is detectable
       // as stale via embed --stale. The deferred/backfill + per-slug embed
       // paths stamp too; this covers the inline import/sync path.
-      if (!opts.noEmbed) {
+      if (embedded) {
         await tx.setPageEmbeddingSignature(slug, {
           sourceId,
           signature: currentEmbeddingSignature(),
@@ -1341,6 +1370,7 @@ export async function importFromContent(
     parsedPage,
     ...(pageQuarantined ? { quarantined: true } : {}),
     ...(pageFlagged ? { flagged: true, flag_reason: pageFlagReason } : {}),
+    ...(embedBlockedEu ? { embedding_blocked: "eu_only" as const } : {}),
   };
 }
 
@@ -1662,7 +1692,10 @@ export async function importCodeFile(
   if (!opts.noEmbed && needsEmbedIndexes.length > 0) {
     try {
       const textsToEmbed = needsEmbedIndexes.map((i) => chunks[i]!.chunk_text);
-      const embeddings = await embedBatch(textsToEmbed);
+      const codeSource = sourceId ?? "default";
+      const embeddings = await runEuScopedForSource(engine, codeSource, () =>
+        embedBatch(textsToEmbed, { sourceId: codeSource })
+      );
       for (let j = 0; j < needsEmbedIndexes.length; j++) {
         const i = needsEmbedIndexes[j]!;
         chunks[i]!.embedding = embeddings[j]!;
@@ -2187,9 +2220,13 @@ export async function importImageFile(
   let embedding: Float32Array | null = null;
   if (!opts.noEmbed) {
     try {
-      const [vec] = await embedMultimodal([
-        { kind: "image_base64", data: decoded.buf.toString("base64"), mime: decoded.mime },
-      ]);
+      const imageSource = opts.sourceId ?? "default";
+      const [vec] = await runEuScopedForSource(engine, imageSource, () =>
+        embedMultimodal(
+          [{ kind: "image_base64", data: decoded.buf.toString("base64"), mime: decoded.mime }],
+          { sourceId: imageSource }
+        )
+      );
       embedding = vec;
     } catch (err) {
       return {

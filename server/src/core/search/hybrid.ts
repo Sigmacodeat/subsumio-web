@@ -43,7 +43,7 @@ import { foreignStatutePrefixes } from "./source-boost.ts";
 import { expandLegalQuery } from "../think/legal-query-expand.ts";
 import { expandConceptQuery, extractSectionNumbers } from "../legal/concept-map.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
-import { isAllowedUnderEuPolicy, isEuOnly } from "../ai/eu-policy.ts";
+import { EuResidencyError, isAllowedUnderEuPolicy, isEuOnly } from "../ai/eu-policy.ts";
 import { withRequestEuPolicy } from "../ai/request-eu-policy.ts";
 
 export const RRF_K = 60;
@@ -2906,6 +2906,7 @@ export async function hybridSearch(
   //   - 'image': embedQueryMultimodal + searchVector(embedding_image), skip keyword
   //   - 'both': text + image vector searches in parallel; merged via weighted RRF
   let vectorLists: SearchResult[][] = [];
+  let vectorSkippedEuOnly = false;
   let queryEmbedding: Float32Array | null = null;
   let imageVectorList: SearchResult[] | null = null;
   let crossModalFellOpen = false;
@@ -3025,8 +3026,18 @@ export async function hybridSearch(
         vectorLists = [...vectorLists, imageVectorList];
       }
     } catch (vecErr: any) {
-      // Embedding failure is non-fatal, fall back to keyword-only
-      console.error("[hybridSearch] vector search failed:", vecErr?.message ?? vecErr);
+      if (vecErr instanceof EuResidencyError) {
+        // EU-only: the query text (client data) must not reach the non-EU
+        // embedding provider. Nothing was sent; run keyword-only and say so
+        // in the meta and on every result.
+        vectorSkippedEuOnly = true;
+        console.warn(
+          `[hybridSearch] vector search skipped: EU-only policy refused "${vecErr.target}" — keyword-only`
+        );
+      } else {
+        // Embedding failure is non-fatal, fall back to keyword-only
+        console.error("[hybridSearch] vector search failed:", vecErr?.message ?? vecErr);
+      }
     }
   }
 
@@ -3073,10 +3084,14 @@ export async function hybridSearch(
       resolvedMode.tokenBudget
     );
     await stampContentFlags(engine, kwBudgeted);
+    if (vectorSkippedEuOnly) {
+      for (const r of kwBudgeted) r.retrieval_limited = "eu_only_keyword_only";
+    }
     lastResultsCount = kwBudgeted.length;
     lastRank1Score = kwBudgeted[0] ? (kwBudgeted[0].base_score ?? kwBudgeted[0].score) : undefined;
     emitMeta({
       vector_enabled: false,
+      ...(vectorSkippedEuOnly ? { vector_skipped_reason: "eu_only" as const } : {}),
       detail_resolved: detailResolved,
       expansion_applied: expansionApplied,
       intent: suggestions.intent,
@@ -3594,6 +3609,9 @@ export async function hybridSearchCached(
   // too (same drop class).
   const finalMeta: HybridSearchMeta = {
     vector_enabled: innerMeta?.vector_enabled ?? false,
+    ...(innerMeta?.vector_skipped_reason
+      ? { vector_skipped_reason: innerMeta.vector_skipped_reason }
+      : {}),
     detail_resolved: innerMeta?.detail_resolved ?? null,
     expansion_applied: innerMeta?.expansion_applied ?? false,
     intent: innerMeta?.intent,

@@ -11,6 +11,7 @@
  */
 
 import { parseArgs } from "util";
+import { embeddingOriginOfSource } from "../src/core/ai/eu-policy.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -261,7 +262,15 @@ async function main() {
   console.log(`Duration:         ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
   console.log(`Avg chunks/page:  ${(totalNewChunks / processed).toFixed(1)}`);
   console.log("");
-  console.log(`Next: Run embed-worker-standalone.ts to embed the ${totalNewChunks} new chunks.`);
+  // Name the source: the worker embeds only the public corpus by default, and
+  // a firm's source only on explicit request (its text is client data, the
+  // firm's EU-only policy applies).
+  const firmFlag =
+    embeddingOriginOfSource(SOURCE_ID) === "public_corpus" ? "" : " --allow-firm-source";
+  console.log(
+    `Next: embed the ${totalNewChunks} new chunks — ` +
+      `bun run server/scripts/embed-worker-standalone.ts --source ${SOURCE_ID}${firmFlag}`
+  );
 
   await engine.disconnect();
 }

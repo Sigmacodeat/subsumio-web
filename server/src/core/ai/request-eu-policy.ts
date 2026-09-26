@@ -124,6 +124,31 @@ export async function jobRunsEuOnly(engine: ConfigStore, data: unknown): Promise
   return (await loadSources(engine)).has(source);
 }
 
+/** True when the source (tenant) demanded EU-only. */
+export async function sourceDemandsEuOnly(
+  engine: ConfigStore,
+  sourceId: string | null | undefined
+): Promise<boolean> {
+  if (typeof sourceId !== "string" || !sourceId) return false;
+  return (await loadSources(engine)).has(sourceId);
+}
+
+/**
+ * Run `fn` under the EU-only scope when the source demanded it. For work on
+ * a firm's own documents that can run outside the firm's request (sync,
+ * embed backfill, CLI): the demand follows the data, not the caller.
+ */
+export async function runEuScopedForSource<T>(
+  engine: ConfigStore,
+  sourceId: string | null | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
+  if (!isRequestEuOnly() && (await sourceDemandsEuOnly(engine, sourceId))) {
+    return runWithRequestEuOnly(fn);
+  }
+  return fn();
+}
+
 /** Test-only: forget the cached registry. */
 export function __resetEuSourceCacheForTests(): void {
   cache = null;
