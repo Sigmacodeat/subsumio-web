@@ -388,12 +388,31 @@ async function storedDuplicateByHash(
   return findStoredDocumentReferenceByHash(hash, sourceId, caseSlug);
 }
 
-async function versionUploadSlug(slug: string, data: Buffer, sourceId: string): Promise<string> {
+/**
+ * The slug an upload is written to: `slug` while nothing lives there yet,
+ * otherwise `slug-<content hash>` — an upload never overwrites an existing
+ * page (any state), whether or not that page has a stored original.
+ */
+export async function versionedUploadSlug(
+  engine: BrainEngine,
+  slug: string,
+  contentHash: string,
+  sourceId: string
+): Promise<string> {
+  const versioned = `${slug}-${contentHash.slice(0, 10)}`;
+  if (await engine.getPage(slug, { sourceId, includeDeleted: true })) return versioned;
   const { findStoredUploadForPage } = await import("../core/file-store.ts");
-  const existing = await findStoredUploadForPage(slug, sourceId);
-  if (!existing) return slug;
-  const hash = createHash("sha256").update(data).digest("hex").slice(0, 10);
-  return `${slug}-${hash}`;
+  return (await findStoredUploadForPage(slug, sourceId)) ? versioned : slug;
+}
+
+async function versionUploadSlug(
+  engine: BrainEngine,
+  slug: string,
+  data: Buffer,
+  sourceId: string
+): Promise<string> {
+  const hash = createHash("sha256").update(data).digest("hex");
+  return versionedUploadSlug(engine, slug, hash, sourceId);
 }
 
 interface ParsedMultipart {
@@ -2942,7 +2961,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               let beaSlug =
                 String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
                 slugFromUpload(source, file.filename, title);
-              beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
+              beaSlug = await versionUploadSlug(engine, beaSlug, file.data, tenantSource);
               await importFromContent(engine, beaSlug, event.content, {
                 noEmbed,
                 sourceId: tenantSource,
@@ -3046,7 +3065,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         let slug = slugFromUpload(source, file.filename, title);
-        slug = await versionUploadSlug(slug, file.data, tenantSource);
+        slug = await versionUploadSlug(engine, slug, file.data, tenantSource);
         const caseSlug = payload.case_slug?.trim();
 
         const uploadFrontmatter: Record<string, unknown> = {
@@ -6224,7 +6243,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             let beaSlug =
               String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
               slugFromUpload(source, file.filename, title);
-            beaSlug = await versionUploadSlug(beaSlug, getFileData(), tenantSource);
+            beaSlug = await versionUploadSlug(engine, beaSlug, getFileData(), tenantSource);
             // The target page itself must be in the caller's scope before it
             // is written (not after).
             await assertSlugMatterScope(engine, req, beaSlug);
@@ -6313,7 +6332,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       let slug = slugFromUpload(source, file.filename, title);
-      slug = await versionUploadSlug(slug, getFileData(), tenantSource);
+      slug = await versionUploadSlug(engine, slug, getFileData(), tenantSource);
       // G18 fix: validate matter scope against the document slug BEFORE
       // persistence. Pre-fix, this check was after runExtractionAndImport,
       // so a matter-scoped caller could persist a document on the wrong
@@ -7376,9 +7395,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           pending.title
         );
         // Version check uses hash, not full buffer
-        const { findStoredUploadForPage } = await import("../core/file-store.ts");
-        const existingPage = await findStoredUploadForPage(slug, pending.sourceId);
-        const versionedSlug = existingPage ? `${slug}-${contentHash.slice(0, 10)}` : slug;
+        const versionedSlug = await versionedUploadSlug(
+          engine,
+          slug,
+          contentHash,
+          pending.sourceId
+        );
 
         const uploadFrontmatter: Record<string, unknown> = {
           source: "upload",

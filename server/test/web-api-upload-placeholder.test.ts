@@ -58,3 +58,23 @@ describe("upload routes", () => {
     expect(src).not.toMatch(/"put_page",\s*\{\s*slug[^}]*?frontmatter:/s);
   });
 });
+
+describe("versionedUploadSlug", () => {
+  test("an upload never overwrites an existing page without a stored original", async () => {
+    const { versionedUploadSlug } = await import("../src/commands/web-api.ts");
+    const { importFromContent } = await import("../src/core/import-file.ts");
+    await importFromContent(
+      engine,
+      "wiki/vertragsmuster",
+      "---\ntitle: Vertragsmuster\n---\n\nIm Editor angelegt.\n",
+      { sourceId: "firm-up", noEmbed: true }
+    );
+    const slug = await versionedUploadSlug(
+      engine,
+      "wiki/vertragsmuster",
+      "abcdef0123456789",
+      "firm-up"
+    );
+    expect(slug).toBe("wiki/vertragsmuster-abcdef0123");
+  });
+});
