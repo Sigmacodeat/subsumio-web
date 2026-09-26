@@ -23,6 +23,7 @@ import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
 import { recordFetchOutcome } from "./ris-fetch-outcomes";
+import { claimSingleInstance } from "./single-instance";
 
 function arg(name: string, fb?: string) {
   const i = process.argv.indexOf(`--${name}`);
@@ -365,6 +366,7 @@ function loadValidatedNor(root: string): Set<string> {
 const validatedNor = loadValidatedNor(join(OUT_ROOT, "..", "_normalized", "at-normen"));
 
 async function main() {
+  if (!FROM_XML && !claimSingleInstance("ris-xml-fetch-normen")) process.exit(0);
   if (!FROM_XML) await acquireRisLock();
   console.log(`${validatedNor.size} Normen bereits geprüft vorhanden (_normalized).`);
   console.log(`Lade Normliste aus ${RIS_FILE} …`);
