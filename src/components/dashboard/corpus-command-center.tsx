@@ -602,6 +602,11 @@ export function SyncStatusSection({
                             {fmt(r.missingUnreachable)} bei RIS ohne Text
                           </span>
                         )}
+                        {r.dbAwaitingFile > 0 && (
+                          <span title="Geltendes Recht, in der Datenbank vorhanden — die Datei auf dem Server wird gerade neu abgerufen">
+                            {fmt(r.dbAwaitingFile)} Datei wird neu geholt
+                          </span>
+                        )}
                         {r.dbHistorical > 0 && (
                           <span title="Ältere Fassungen mit Enddatum — Rechtsgeschichte, bewusst in der Datenbank behalten">
                             {fmt(r.dbHistorical)} ältere Fassungen

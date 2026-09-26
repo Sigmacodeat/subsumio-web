@@ -31,6 +31,7 @@ function src(over: Partial<SyncInventorySource>): SyncInventorySource {
     diskNotInDb: 0,
     dbNotOnDisk: 0,
     dbHistorical: 0,
+    dbAwaitingFile: 0,
     notInRisSoll: null,
     aboveSoll: 0,
     ...over,
@@ -129,6 +130,19 @@ describe("toSyncRow", () => {
     expect(toSyncRow(src({ corpus: "ch", inScope: false }), "CH", undefined).status).toBe(
       "out_of_scope"
     );
+  });
+});
+
+describe("Datei wird neu geholt", () => {
+  it("geltendes Recht ohne Datei ist kein Altbestand und blockiert den Status nicht", () => {
+    const row = toSyncRow(
+      src({ risSoll: 10, risSollKind: "index", diskDocs: 10, dbDocs: 10, dbAwaitingFile: 3 }),
+      "x",
+      undefined
+    );
+    expect(row.dbAwaitingFile).toBe(3);
+    expect(row.dbExtra).toBe(0);
+    expect(row.status).toBe("complete");
   });
 });
 

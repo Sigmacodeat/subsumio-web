@@ -155,6 +155,8 @@ export interface SyncInventorySource {
   dbNotOnDisk: number;
   /** Live DB page not on disk but dated (in_force_to): an older version kept on purpose. */
   dbHistorical: number;
+  /** Live DB page in the RIS Soll whose file is not on disk (yet): the fetch rewrites it. */
+  dbAwaitingFile: number;
   /** On disk but not in the RIS in-force index: repealed or superseded (index sources only). */
   notInRisSoll: number | null;
   /** RIS lists fewer than we hold (courts: diskDocs − Soll when positive). */
@@ -324,15 +326,24 @@ export async function measure(
       lastId = Number(batch[batch.length - 1]!.id);
     }
 
+    const indexFile = INDEX_OF[corpus];
+    const indexPath = indexFile ? join(STATE, indexFile) : null;
+    const sollIds = indexPath && existsSync(indexPath) ? loadIndexIds(indexPath) : null;
+
     let diskNotInDb = 0;
     for (const id of diskIds.keys()) if (!dbIds.has(id)) diskNotInDb++;
     let dbNotOnDisk = 0;
     let dbHistorical = 0;
+    let dbAwaitingFile = 0;
     // Out-of-scope sources have no normalized tree to compare against.
     if (inScope)
       for (const id of dbIds) {
         if (diskIds.has(id)) continue;
-        if (datedIds.has(id)) dbHistorical++;
+        // In the RIS Soll: the page is current law whose file the targeted
+        // fetch is (re)writing — not a leftover. Seen live on 2026-09-25,
+        // when 5,319 such pages showed up as "nur in DB" mid-fetch.
+        if (sollIds?.has(id)) dbAwaitingFile++;
+        else if (datedIds.has(id)) dbHistorical++;
         else dbNotOnDisk++;
       }
 
@@ -349,10 +360,8 @@ export async function measure(
       failed: 0,
     };
 
-    const indexFile = INDEX_OF[corpus];
-    const indexPath = indexFile ? join(STATE, indexFile) : null;
-    if (indexPath && existsSync(indexPath)) {
-      const soll = loadIndexIds(indexPath);
+    if (indexPath && sollIds) {
+      const soll = sollIds;
       risSoll = soll.size;
       risSollKind = "index";
       risSollAt = new Date(statSync(indexPath).mtimeMs).toISOString();
@@ -395,6 +404,7 @@ export async function measure(
       diskNotInDb,
       dbNotOnDisk,
       dbHistorical,
+      dbAwaitingFile,
       notInRisSoll,
       aboveSoll,
     });

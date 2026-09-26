@@ -46,6 +46,7 @@ import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { landOfDocId } from "./normalize/normalize-corpus";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
 import { recordFetchOutcome } from "./ris-fetch-outcomes";
+import { claimSingleInstance } from "./single-instance";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
 /** Vorhandene Dateien überschreiben — nötig nach jeder Extraktor-Korrektur. */
@@ -342,6 +343,7 @@ function loadValidatedIds(root: string): Set<string> {
 }
 
 async function main() {
+  if (!claimSingleInstance("fetch-at-landesrecht-xml")) process.exit(0);
   await acquireRisLock();
   mkdirSync(OUT_DIR, { recursive: true });
   // Present = passed the normalizer. Older generations (state folders, HTML

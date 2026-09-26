@@ -41,6 +41,7 @@ export interface SyncInventorySource {
   diskNotInDb: number;
   dbNotOnDisk: number;
   dbHistorical: number;
+  dbAwaitingFile: number;
   notInRisSoll: number | null;
   aboveSoll: number;
 }
@@ -85,6 +86,8 @@ export interface CorpusSyncRow {
   dbExtra: number;
   /** In der DB, nicht auf der Platte, aber datiert: ältere Fassung, bewusst behalten. */
   dbHistorical: number;
+  /** Geltendes Recht in der DB, dessen Datei der Nachabruf gerade neu schreibt. */
+  dbAwaitingFile: number;
   /** Auf der Platte, aber nicht mehr im RIS-Soll: außer Kraft / ersetzt. */
   notInSoll: number | null;
   dbChunks: number;
@@ -172,6 +175,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
         diskNotInDb: num(s.diskNotInDb),
         dbNotOnDisk: num(s.dbNotOnDisk),
         dbHistorical: num(s.dbHistorical),
+        dbAwaitingFile: num(s.dbAwaitingFile),
         notInRisSoll: numOrNull(s.notInRisSoll),
         aboveSoll: num(s.aboveSoll),
       })),
@@ -239,6 +243,7 @@ export function toSyncRow(
     importOpen: s.diskNotInDb,
     dbExtra: s.dbNotOnDisk,
     dbHistorical: s.dbHistorical,
+    dbAwaitingFile: s.dbAwaitingFile,
     notInSoll: s.notInRisSoll,
     dbChunks,
     embeddedChunks,

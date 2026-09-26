@@ -41,6 +41,7 @@ function row(over: Record<string, unknown> = {}) {
     importOpen: 10,
     dbExtra: 0,
     dbHistorical: 0,
+    dbAwaitingFile: 0,
     notInSoll: 0,
     dbChunks: 200,
     embeddedChunks: 190,
