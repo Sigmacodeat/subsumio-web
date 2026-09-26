@@ -17,6 +17,14 @@ export interface IdempotencyStore {
   isProcessed(id: string): Promise<boolean>;
   /** Marks an event ID as processed. */
   markProcessed(id: string, ...extra: (string | null)[]): Promise<void>;
+  /**
+   * Atomic check-and-mark: true only for the one caller that marks `id`
+   * first (INSERT … ON CONFLICT DO NOTHING RETURNING). For "do this at most
+   * once" actions where a separate isProcessed/markProcessed pair would race.
+   */
+  claim(id: string): Promise<boolean>;
+  /** Drops a claim again — for when the claimed action failed and may be retried. */
+  release(id: string): Promise<void>;
 }
 
 /**
@@ -115,5 +123,45 @@ export function createIdempotencyStore(
     }
   }
 
-  return { isProcessed, markProcessed };
+  async function claim(id: string): Promise<boolean> {
+    const pool = getSharedPgPool();
+    if (pool) {
+      try {
+        await ensureSchema();
+        const result = await pool.query(
+          `INSERT INTO ${tableName} (${pkCol}) VALUES ($1)
+           ON CONFLICT (${pkCol}) DO NOTHING RETURNING ${pkCol}`,
+          [id]
+        );
+        return result.rows.length > 0;
+      } catch (err) {
+        log.error("claim failed", {
+          table: tableName,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    const now = Date.now();
+    const seen = memory.get(id);
+    if (seen && now - seen < ttlMs) return false;
+    memory.set(id, now);
+    return true;
+  }
+
+  async function release(id: string): Promise<void> {
+    memory.delete(id);
+    const pool = getSharedPgPool();
+    if (!pool) return;
+    try {
+      await ensureSchema();
+      await pool.query(`DELETE FROM ${tableName} WHERE ${pkCol} = $1`, [id]);
+    } catch (err) {
+      log.error("release failed", {
+        table: tableName,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return { isProcessed, markProcessed, claim, release };
 }
