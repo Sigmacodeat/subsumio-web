@@ -398,11 +398,12 @@ export function privateAreaPrefix(userId: string): string {
  * matter: the anti-money-laundering file (identity check, risk rating,
  * screening) and the ID copies filed with it. The web app keeps the records
  * under `legal/kyc/<id>`; ID copies are ordinary documents marked with
- * `doc_type: ausweiskopie` or linked from a record.
+ * `doc_type: ausweiskopie` (or tagged `kyc`) or linked from a record.
  */
 export const KYC_RECORD_PREFIX = "legal/kyc";
 export const KYC_RECORD_TYPE = "kyc_verification";
 export const ID_COPY_DOC_TYPE = "ausweiskopie";
+export const KYC_TAG = "kyc";
 
 const FIRM_STAFF_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer", "assistant"]);
 

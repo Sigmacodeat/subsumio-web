@@ -110,6 +110,13 @@ beforeAll(async () => {
     frontmatter: { case_slug: "cases/mandant", doc_type: "ausweiskopie" },
   });
   await putPage(admin, {
+    slug: "documents/geldwaesche-notiz",
+    type: "document",
+    title: "Notiz",
+    content: "Notiz Kormoranweg",
+    frontmatter: { case_slug: "cases/mandant", tags: ["kyc"] },
+  });
+  await putPage(admin, {
     slug: "legal/kyc/kyc-1",
     type: "kyc_verification",
     title: "Identitätsprüfung",
@@ -141,6 +148,7 @@ describe("KYC records are firm staff only", () => {
     expect(await getStatus(client, "legal/kyc/kyc-1")).toBe(404);
     expect(await getStatus(client, "documents/scan-reisepass")).toBe(404);
     expect(await getStatus(client, "documents/lichtbildausweis")).toBe(404);
+    expect(await getStatus(client, "documents/geldwaesche-notiz")).toBe(404);
     expect(await getStatus(client, "documents/vollmacht")).toBe(200);
   }, 60_000);
 

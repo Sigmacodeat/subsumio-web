@@ -8,6 +8,7 @@ import type { BrainEngine } from "./engine.ts";
 import {
   ID_COPY_DOC_TYPE,
   KYC_RECORD_TYPE,
+  KYC_TAG,
   PRIVATE_CHAT_PREFIX,
   callerMatterAccess,
   privateChatDenies,
@@ -77,27 +78,25 @@ export async function loadSourceMatterAccess(
         AND deleted_at IS NULL`,
     [sourceId, `${PRIVATE_CHAT_PREFIX}%`]
   );
+  // Same rule as the web app's staff-only records (src/lib/staff-only-records.ts):
+  // KYC records by type, ID copies by doc_type, anything tagged "kyc", and
+  // the ID copy a record links to. Containment runs on the frontmatter GIN index.
   const kyc = await engine.executeRaw<{ slug: string; id_copy: string | null }>(
     `SELECT slug, frontmatter->'identification'->>'document_file_slug' AS id_copy
        FROM pages
       WHERE source_id = $1
-        AND type = $2`,
-    [sourceId, KYC_RECORD_TYPE]
-  );
-  // Containment on the frontmatter GIN index — no per-row JSON extraction.
-  const idCopies = await engine.executeRaw<{ slug: string }>(
-    `SELECT slug
-       FROM pages
-      WHERE source_id = $1
-        AND frontmatter @> jsonb_build_object('doc_type', $2::text)`,
-    [sourceId, ID_COPY_DOC_TYPE]
+        AND (type = $2
+             OR frontmatter @> jsonb_build_object('type', $2::text)
+             OR frontmatter @> jsonb_build_object('doc_type', $3::text)
+             OR frontmatter @> jsonb_build_object('tags', jsonb_build_array($4::text))
+             OR id IN (SELECT page_id FROM tags WHERE tag = $4))`,
+    [sourceId, KYC_RECORD_TYPE, ID_COPY_DOC_TYPE, KYC_TAG]
   );
   const staffOnly = new Set<string>();
   for (const r of kyc) {
     staffOnly.add(r.slug);
     if (typeof r.id_copy === "string" && r.id_copy) staffOnly.add(r.id_copy);
   }
-  for (const r of idCopies) staffOnly.add(r.slug);
   return {
     rows: raw.map((r) => ({
       slug: r.slug,
