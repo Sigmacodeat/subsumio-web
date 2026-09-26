@@ -47,6 +47,14 @@ import {
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { forwardAlert } from "./pipeline-alert";
+import {
+  clearFailure,
+  isQuarantined,
+  loadQuarantine,
+  recordFailure,
+  saveQuarantine,
+  type DocFailure,
+} from "./ris-delta-quarantine";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import { mapRisReference } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import {
@@ -85,6 +93,7 @@ const resetIdx = args.indexOf("--reset-cursor");
 const RESET_CURSOR = resetIdx >= 0 ? args[resetIdx + 1] : null;
 
 const RIS_UA = { "User-Agent": getUserAgent() };
+const QUARANTINE_FILE = join(CORPUS_ROOT, "_state", "ris-delta-quarantine.json");
 const GAP_ALERT_THRESHOLD = 50;
 
 // ── DB Helpers (gleicher Pattern wie corpus-pipeline.ts) ───────────────
@@ -442,18 +451,23 @@ export function docFilePath(
  *   4. Auf Disk schreiben (atomic)
  *   5. markiereZumImport
  *
- * Returns true bei Erfolg, false bei Fehler.
+ * Returns true bei Erfolg, sonst den Fehler — `permanent` heißt: ein
+ * weiterer Versuch mit derselben RIS-Fassung kann nicht gelingen
+ * (→ sofort Quarantäne, siehe ris-delta-quarantine.ts).
  */
-async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promise<boolean> {
+async function processDocument(
+  app: DeltaApplikation,
+  doc: DeltaDocument
+): Promise<true | DocFailure> {
   if (!doc.xmlUrl) {
     console.warn(`  ⚠️ Keine XML-URL für ${doc.id} (${app.applikation}) — überspringe`);
-    return false;
+    return { permanent: true, reason: "keine XML-URL" };
   }
 
   const xml = await fetchXml(doc.xmlUrl);
   if (!xml || xml.length < 100) {
     console.warn(`  ⚠️ XML leer/fehlerhaft für ${doc.id} — überspringe`);
-    return false;
+    return { permanent: false, reason: "XML nicht abrufbar oder leer" };
   }
 
   // Markdown bauen je nach Endpoint
@@ -472,7 +486,7 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
     const validation = validateFetchedText(text);
     if (!validation.valid) {
       console.warn(`  ⚠️ Text invalid für ${doc.id}: ${validation.reason} — überspringe`);
-      return false;
+      return { permanent: true, reason: `Text ungültig: ${validation.reason}` };
     }
   }
 
@@ -484,7 +498,7 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
       console.warn(
         `  ⚠️ Content-Identity-Check fehlgeschlagen für ${doc.id} (GZ ${doc.geschaeftszahl} nicht im Text) — überspringe`
       );
-      return false;
+      return { permanent: true, reason: "Geschäftszahl nicht im Text" };
     }
   }
 
@@ -585,6 +599,9 @@ async function syncApplikation(
     let skipped = 0;
     const seenIds = new Set<string>();
     const failedChangedAt: string[] = [];
+    const quarantine = loadQuarantine(QUARANTINE_FILE);
+    const newlyQuarantined: string[] = [];
+    let quarantineChanged = false;
 
     for (const doc of result.documents) {
       // Dedup: RIS kann bei Paginierung-Overlap dasselbe Dokument mehrfach liefern
@@ -593,6 +610,12 @@ async function syncApplikation(
         continue;
       }
       seenIds.add(doc.id);
+
+      // Bereits in Quarantäne (gleiche RIS-Fassung) — nicht erneut abrufen.
+      if (isQuarantined(quarantine, doc)) {
+        skipped++;
+        continue;
+      }
 
       // In-Kraft-Filter: Normen mit Ausserkrafttretensdatum in der Vergangenheit
       // werden mit deprecated: true geschrieben (nicht gelöscht — historische Anfragen)
@@ -605,11 +628,19 @@ async function syncApplikation(
         }
       }
 
-      const ok = await processDocument(app, doc);
-      if (ok) written++;
-      else {
+      const outcome = await processDocument(app, doc);
+      if (outcome === true) {
+        written++;
+        if (quarantine[doc.id]) {
+          clearFailure(quarantine, doc.id);
+          quarantineChanged = true;
+        }
+      } else {
         failed++;
-        failedChangedAt.push(doc.changedAt);
+        quarantineChanged = true;
+        // Quarantänierte Dokumente halten den Cursor nicht mehr fest.
+        if (recordFailure(quarantine, doc, outcome)) newlyQuarantined.push(doc.id);
+        else failedChangedAt.push(doc.changedAt);
       }
 
       if (written % 50 === 0 && written > 0) {
@@ -624,6 +655,18 @@ async function syncApplikation(
         `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`
       );
 
+    if (quarantineChanged && !DRY_RUN) saveQuarantine(QUARANTINE_FILE, quarantine);
+    if (newlyQuarantined.length > 0) {
+      raiseAlert(
+        app.stateKey,
+        "delta_quarantine",
+        "error",
+        `${newlyQuarantined.length} Dokument(e) dauerhaft fehlgeschlagen und in Quarantäne ` +
+          `(${newlyQuarantined.slice(0, 10).join(", ")}${newlyQuarantined.length > 10 ? ", …" : ""}) — ` +
+          `siehe _state/ris-delta-quarantine.json`
+      );
+    }
+
     // The cursor only moves past what was fully written: on partial failure
     // it stops at the earliest failed change, so those come again next run.
     const nextCursor = nextCursorAfterBatch({
@@ -631,12 +674,15 @@ async function syncApplikation(
       complete: result.complete,
       failedChangedAt,
     });
-    if (failed === 0 && nextCursor) {
+    // Quarantined failures do not count against the batch — they are
+    // alerted separately and no longer block the cursor.
+    const openFailures = failed - newlyQuarantined.length;
+    if (openFailures === 0 && nextCursor) {
       updateCursor(app.stateKey, nextCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
       clearAlerts(app.stateKey, "delta_gap");
       appendHistory(app.stateKey, "delta", `${written} docs synced`);
-    } else if (written > 0 || (failed === 0 && !nextCursor)) {
+    } else if (written > 0 || (openFailures === 0 && !nextCursor)) {
       // Teilweise erfolgreich oder unvollständig abgerufen — Cursor nur bis
       // zur ersten Lücke, Alert
       if (nextCursor) updateCursor(app.stateKey, nextCursor);
@@ -645,7 +691,7 @@ async function syncApplikation(
         "delta_sync_partial",
         "warning",
         result.complete
-          ? `${written} synced, ${failed} failed — werden beim nächsten Lauf erneut geholt`
+          ? `${written} synced, ${openFailures} failed — werden beim nächsten Lauf erneut geholt`
           : `${written} synced, RIS-Abfrage unvollständig — Cursor bleibt stehen`
       );
       appendHistory(app.stateKey, "delta", `${written} synced, ${failed} failed`);
@@ -663,7 +709,7 @@ async function syncApplikation(
     console.log(`  ✅ ${written} geschrieben, ${failed} fehlgeschlagen, ${skipped} übersprungen`);
     console.log(`  📌 Cursor: ${nextCursor ?? `${cursor ?? "(keiner)"} (unverändert)`}`);
 
-    return { ...result, written, failed, skipped };
+    return { ...result, written, failed: openFailures, skipped };
   } catch (err) {
     raiseAlert(app.stateKey, "delta_sync_failed", "error", `Sync error: ${(err as Error).message}`);
     appendHistory(app.stateKey, "delta", `error: ${(err as Error).message}`);
