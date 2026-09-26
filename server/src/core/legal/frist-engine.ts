@@ -20,7 +20,7 @@
  *     KEIN End-Tag, der die Frist verschiebt)
  *   - Verhandlungsfreie Zeit § 222 ZPO (15.7.–17.8., 24.12.–6.1.) mit
  *     Hemmungs-Mechanik nach Abs 1 Satz 2 und Ferialsachen-Ausnahme
- *   - Zustellfiktionen: § 89a GOG (ERV — folgender Werktag, Samstag zählt
+ *   - Zustellfiktionen: § 89d Abs 2 GOG (ERV — folgender Werktag, Samstag zählt
  *     nicht), § 17 Abs 3 ZustG (Hinterlegung — erster Tag der Abholfrist),
  *     § 26 Abs 2 ZustG (Zustellung ohne Zustellnachweis — dritter Werktag)
  *   - Materiellrechtliche Fristen (Verjährung § 1489 ABGB): KEINE
@@ -146,7 +146,7 @@ export function istKarfreitag(iso: string): boolean {
 }
 
 /** Werktag = Montag–Freitag, kein gesetzlicher Feiertag. (Samstag ist NIE
- *  Werktag i.S.d. § 89a GOG bzw. § 26 Abs 2 ZustG.) */
+ *  Werktag i.S.d. § 89d Abs 2 GOG bzw. § 26 Abs 2 ZustG.) */
 export function istWerktag(iso: string): boolean {
   const wd = weekday(iso);
   return wd >= 1 && wd <= 5 && !istFeiertag(iso);
@@ -167,7 +167,7 @@ export function vorigerWerktag(iso: string): string {
 // ── Zustellfiktionen ────────────────────────────────────────
 
 /**
- * § 89a Abs 2 GOG — elektronische Zustellung im ERV:
+ * § 89d Abs 2 GOG — elektronische Zustellung im ERV (§ 89a Abs 2 GOG):
  * gilt als zugestellt am auf das Einlangen in den elektronischen
  * Verfügungsbereich folgenden Werktag; Samstag gilt dabei nicht als Werktag.
  */
@@ -794,7 +794,7 @@ export function berechneFristAuto(
   const hinweiseExtra: string[] = [];
   if (art.zustellungs_trigger === "erv") {
     ausloeser = zustellungERV(zustellungIso);
-    hinweiseExtra.push(`ERV-Zustellungsfiktion (§ 89a GOG): zugestellt am ${ausloeser}`);
+    hinweiseExtra.push(`ERV-Zustellungsfiktion (§ 89d Abs 2 GOG): zugestellt am ${ausloeser}`);
   } else if (art.zustellungs_trigger === "hinterlegung") {
     ausloeser = zustellungHinterlegung(zustellungIso);
     hinweiseExtra.push(`Hinterlegungsfiktion (§ 17 Abs 3 ZustG): zugestellt am ${ausloeser}`);

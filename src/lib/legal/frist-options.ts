@@ -142,7 +142,7 @@ export function fristOptionsFor(country?: string): FristOption[] {
  * Computes the deadline for `key` from `startIso`.
  *
  * `ervEinlangen`: the date is the day the document arrived in the ERV
- * mailbox. For Austria § 89a Abs 2 GOG moves service to the next working
+ * mailbox. For Austria § 89d Abs 2 GOG moves service to the next working
  * day (Saturday does not count); the engine applies it unless the Fristart
  * already carries its own service trigger.
  *
@@ -172,7 +172,7 @@ export function computeFrist(
     const vhfzVerlaengert = vhfzHatVerlaengert(result.hinweise);
     const hinweise = [
       ...(applyErv
-        ? [`ERV-Zustellungsfiktion (§ 89a Abs 2 GOG): zugestellt am ${zustellung}`]
+        ? [`ERV-Zustellungsfiktion (§ 89d Abs 2 GOG): zugestellt am ${zustellung}`]
         : []),
       ...result.hinweise,
       ...(vhfzVerlaengert ? [FERIALSACHE_WARNUNG] : []),

@@ -39,12 +39,12 @@ describe("computeFrist (AT)", () => {
     expect(r.notfrist).toBe(true);
   });
 
-  it("applies the § 89a GOG service fiction for an ERV arrival on a Friday", () => {
+  it("applies the § 89d Abs 2 GOG service fiction for an ERV arrival on a Friday", () => {
     // 2026-10-09 is a Friday; service is deemed on Monday 2026-10-12.
     const r = computeFrist("berufung", "2026-10-09", { country: "AT", ervEinlangen: true });
     expect(zustellungERV("2026-10-09")).toBe("2026-10-12");
     expect(r.dueDate).toBe(berechneFristAuto("berufung", "2026-10-12").fristende);
-    expect(r.hinweise[0]).toContain("§ 89a Abs 2 GOG");
+    expect(r.hinweise[0]).toContain("§ 89d Abs 2 GOG");
   });
 
   it("differs from a plain start date when the ERV fiction moves service", () => {

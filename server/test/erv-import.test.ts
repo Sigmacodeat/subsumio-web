@@ -1,5 +1,8 @@
 import { describe, it, expect } from "bun:test";
-import { ErvImportConnector } from "../src/core/ingestion/connectors/erv-import.ts";
+import {
+  ErvImportConnector,
+  parseEinlangenDatum,
+} from "../src/core/ingestion/connectors/erv-import.ts";
 
 const ERV_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <Erledigung>
@@ -27,7 +30,7 @@ describe("ErvImportConnector.parseErvXmlContent", () => {
     expect(msg!.einlangenDatum).toBe("2026-07-03");
   });
 
-  it("computes the Zustellfiktion § 89a Abs 2 GOG (Fr → Mo)", () => {
+  it("computes the Zustellfiktion § 89d Abs 2 GOG (Fr → Mo)", () => {
     const msg = connector().parseErvXmlContent(ERV_XML, "/x/e.xml");
     // Einlangen Freitag 3.7.2026 → zugestellt Montag 6.7.2026
     expect(msg!.zustellDatum).toBe("2026-07-06");
@@ -66,7 +69,7 @@ describe("ErvImportConnector.toIngestionEvent", () => {
     const event = await c.toIngestionEvent(msg);
     expect(event.content).toContain("zustell_datum: '2026-07-06'");
     expect(event.content).toContain("fristausloeser: true");
-    expect(event.content).toContain("§ 89a Abs 2 GOG");
+    expect(event.content).toContain("§ 89d Abs 2 GOG");
     expect(String(event.metadata?.slug)).toBe("legal/erv/2026-07-03-erv-2026-000123");
   });
 
@@ -82,5 +85,74 @@ describe("ErvImportConnector.toIngestionEvent", () => {
     // stay inside the string, they don't become frontmatter keys.
     const fmBlock = event.content.split("---")[1]!;
     expect(fmBlock).not.toMatch(/^malicious: true$/m);
+  });
+});
+
+// § 89d Abs 2 GOG (RIS, Fassung ab 1.5.2012): "Als Zustellungszeitpunkt …
+// gilt jeweils der auf das Einlangen in den elektronischen Verfügungsbereich
+// des Empfängers folgende Werktag, wobei Samstage nicht als Werktage gelten."
+// Sonntage und die Feiertage nach § 7 Abs 2 ARG sind ebenfalls keine
+// Werktage; Karfreitag und 24.12. stehen dort nicht und bleiben Werktage.
+describe("Zustellfiktion § 89d Abs 2 GOG", () => {
+  const at = (einlangen: string) =>
+    connector().parseErvXmlContent(ERV_XML.replace("2026-07-03", einlangen), "/x/e.xml")!;
+
+  it("Einlangen Freitag → Zustellung Montag", () => {
+    expect(at("2026-07-03").zustellDatum).toBe("2026-07-06");
+  });
+
+  it("Einlangen vor einem Feiertag: Fr 23.10.2026 → Di 27.10. (26.10. Nationalfeiertag)", () => {
+    expect(at("2026-10-23").zustellDatum).toBe("2026-10-27");
+  });
+
+  it("Einlangen 24.12.2026 (Do) → Mo 28.12. (Christtag, Stefanitag, Sonntag)", () => {
+    expect(at("2026-12-24").zustellDatum).toBe("2026-12-28");
+  });
+
+  it("Karfreitag ist Werktag: Einlangen Do 2.4.2026 → Fr 3.4.2026", () => {
+    expect(at("2026-04-02").zustellDatum).toBe("2026-04-03");
+  });
+
+  it("reads Austrian dates and the Vienna calendar day of timestamps", () => {
+    expect(parseEinlangenDatum("03.07.2026")).toBe("2026-07-03");
+    expect(parseEinlangenDatum("3.7.2026 14:05")).toBe("2026-07-03");
+    // 00:30 in Vienna is still 22:30 UTC the day before.
+    expect(parseEinlangenDatum("2026-07-03T00:30:00+02:00")).toBe("2026-07-03");
+    expect(parseEinlangenDatum("2026-07-02T22:30:00Z")).toBe("2026-07-03");
+    expect(parseEinlangenDatum("2026-07-03T09:00:00")).toBe("2026-07-03");
+    expect(parseEinlangenDatum("31.02.2026")).toBeNull();
+    expect(parseEinlangenDatum("irgendwann")).toBeNull();
+    expect(parseEinlangenDatum("")).toBeNull();
+  });
+});
+
+describe("missing Einlangen date", () => {
+  const NO_DATE = ERV_XML.replace("<Einlangen>2026-07-03</Einlangen>", "<Datum>2026-06-30</Datum>");
+
+  it("never assumes today: Zustelldatum unknown", () => {
+    const msg = connector().parseErvXmlContent(NO_DATE, "/x/e.xml")!;
+    expect(msg.einlangenDatum).toBeNull();
+    expect(msg.zustellDatum).toBeNull();
+  });
+
+  it("the page asks for the Zustelldatum and marks deadlines as suggestions", async () => {
+    const c = connector();
+    const event = await c.toIngestionEvent(c.parseErvXmlContent(NO_DATE, "/x/e.xml")!);
+    expect(event.content).toContain("zustell_datum: null");
+    expect(event.content).toContain("zustelldatum_unbekannt: true");
+    expect(event.content).toContain("frist_nur_vorschlag: true");
+    expect(event.content).toContain("Zustelldatum muss manuell eingetragen werden");
+    expect(String(event.metadata?.slug)).toBe("legal/erv/undatiert-erv-2026-000123");
+  });
+});
+
+describe("ERV vs beA detection", () => {
+  it("recognises ERV-Rückverkehr and leaves a beA export alone", () => {
+    const c = connector();
+    expect(c.isErvXml(ERV_XML)).toBe(true);
+    const bea = `<nachricht><nachrichtenID>bea-1</nachrichtenID><absender>LG Berlin</absender>
+      <aktenzeichen>12 O 34/26</aktenzeichen><betreff>Ladung</betreff></nachricht>`;
+    expect(c.isErvXml(bea)).toBe(false);
+    expect(c.isErvXml("<<kaputt")).toBe(false);
   });
 });

@@ -2957,15 +2957,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        // beA-Export (XML)
+        // beA-Export (XML); an Austrian ERV export goes to the ERV parser.
         if (file.filename.toLowerCase().endsWith(".xml")) {
           try {
-            const { BeaImportConnector } =
-              await import("../core/ingestion/connectors/bea-import.ts");
-            const connector = new BeaImportConnector({});
-            const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
+            const { parseMessageXmlUpload } =
+              await import("../core/ingestion/connectors/message-xml-upload.ts");
+            const item = await parseMessageXmlUpload(file.data.toString("utf8"), file.filename);
             if (item) {
-              const event = await connector.toIngestionEvent(item);
+              const event = item.event;
               let beaSlug =
                 String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
                 slugFromUpload(source, file.filename, title);
@@ -6312,13 +6311,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // becomes a structured bea_message page (sender, recipient, subject,
       // Aktenzeichen) in the TENANT's source — the directory-watcher
       // connector is install-global and unusable per tenant in SaaS mode.
+      // An Austrian ERV export (webERV-Rückverkehr) is recognised first and
+      // becomes an erv_message page (Zustellfiktion § 89d Abs 2 GOG).
       if (file.filename.toLowerCase().endsWith(".xml")) {
         try {
-          const { BeaImportConnector } = await import("../core/ingestion/connectors/bea-import.ts");
-          const connector = new BeaImportConnector({});
-          const item = connector.parseBeaXmlContent(getFileData().toString("utf8"), file.filename);
+          const { parseMessageXmlUpload } =
+            await import("../core/ingestion/connectors/message-xml-upload.ts");
+          const item = await parseMessageXmlUpload(getFileData().toString("utf8"), file.filename);
           if (item) {
-            const event = await connector.toIngestionEvent(item);
+            const event = item.event;
             let beaSlug =
               String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
               slugFromUpload(source, file.filename, title);
