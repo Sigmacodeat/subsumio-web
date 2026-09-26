@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions";
 import {
   GUARD_READ_FAILED,
   SECOND_CHECK_FIELDS,
+  checkClientReleaseArrayOp,
   checkProtectedArrayWrite,
   guardSecondCheckWrite,
   readCurrentPage,
@@ -72,6 +73,13 @@ export const POST = createHandler(
       }
     );
     if (rejected) return rejectionResponse(rejected);
+    // Client releases (portal switch/summary, document release) only through
+    // a matter write, where they are role-checked and stamped.
+    const releaseRejection = checkClientReleaseArrayOp(body.field, {
+      set: body.set,
+      unset: body.unset,
+    });
+    if (releaseRejection) return rejectionResponse(releaseRejection);
 
     if (body.field === "deadlines") return mutateDeadlines(ctx, body);
 

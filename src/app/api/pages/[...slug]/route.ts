@@ -41,6 +41,7 @@ import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei
 import { isForeignPersonalEvent } from "@/lib/calendar/personal-events";
 import { can } from "@/lib/permissions";
 import { mayReceiveRecord } from "@/lib/staff-only-records";
+import { logClientReleaseChanges } from "@/lib/client-release-audit";
 import {
   applyDeadlineWritePolicy,
   checkDeadlinePageDelete,
@@ -209,7 +210,11 @@ export const PATCH = createHandler(
     const protectedWrite = guardProtectedPageWrite({
       slug: rawSlug,
       current: currentPage,
-      actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+      actor: {
+        email: ctx.user.email,
+        canWriteSettings: can(ctx.user, "settings.write"),
+        role: ctx.user.role,
+      },
       mode: "merge",
       type: body.type,
       frontmatter: bodyFrontmatter,
@@ -217,22 +222,9 @@ export const PATCH = createHandler(
     });
     if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
     if (protectedWrite.frontmatter) patchBody.frontmatter = protectedWrite.frontmatter;
-
-    // The portal summary is the only case text a client sees — releasing or
-    // changing it is a lawyer/admin decision.
-    if (
-      bodyFrontmatter &&
-      "portal_summary" in bodyFrontmatter &&
-      (bodyFrontmatter.portal_summary ?? "") !== (curFm.portal_summary ?? "") &&
-      ctx.user.role !== "admin" &&
-      ctx.user.role !== "lawyer"
-    ) {
-      return apiError(
-        "portal_summary_forbidden",
-        "Nur Anwältinnen/Anwälte und Admins dürfen die Portal-Zusammenfassung freigeben.",
-        403
-      );
-    }
+    // Portal switch, released summary and document releases: lawyer/admin
+    // only, stamped and audited (guardClientReleaseWrite).
+    const releaseChanges = protectedWrite.releaseChanges;
     if (isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter)) {
       patchBody.frontmatter = await sealKanzleiSettingsFrontmatter(
         (patchBody.frontmatter as Record<string, unknown> | undefined) ?? {},
@@ -408,6 +400,7 @@ export const PATCH = createHandler(
       }
       const result = await res.json();
       await logDeadlineEvents(ctx, deadlineEvents);
+      await logClientReleaseChanges(ctx, rawSlug, releaseChanges);
 
       // Restore cascade: if the PATCH sets status to a non-archived value
       // and includes restored_at, un-tombstone all linked documents.
@@ -541,7 +534,11 @@ export const DELETE = createHandler(
       const protectedDelete = guardProtectedPageWrite({
         slug: decodedSlug,
         current: casePage,
-        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        actor: {
+          email: ctx.user.email,
+          canWriteSettings: can(ctx.user, "settings.write"),
+          role: ctx.user.role,
+        },
         mode: "delete",
       });
       if ("reject" in protectedDelete) return rejectionResponse(protectedDelete.reject);

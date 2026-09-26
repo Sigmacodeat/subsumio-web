@@ -4,6 +4,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { can } from "@/lib/permissions";
 import {
   GUARD_READ_FAILED,
+  checkClientReleaseArrayOp,
   checkProtectedArrayWrite,
   guardSecondCheckWrite,
   readCurrentPage,
@@ -55,6 +56,10 @@ export const POST = createHandler(
       }
     );
     if (rejected) return rejectionResponse(rejected);
+    // Client releases (portal switch/summary, document release) only through
+    // a matter write, where they are role-checked and stamped.
+    const releaseRejection = checkClientReleaseArrayOp(body.field, { items: body.items });
+    if (releaseRejection) return rejectionResponse(releaseRejection);
 
     const billingRejection = checkBillingArrayAppend(body.field, body.items);
     if (billingRejection) return rejectionResponse(billingRejection);

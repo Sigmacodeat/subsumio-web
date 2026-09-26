@@ -365,6 +365,172 @@ export function checkSignedDocumentWrite(
   return null;
 }
 
+// ── Freigabe an den Mandanten ───────────────────────────────────────────
+//
+// What a client sees in the portal (and the client view) is released by a
+// lawyer: the portal switch, the released summary and each document's
+// `portal_visible`. A privileged document is never released. Who released a
+// document is stamped here (`portal_released_by`/`_at`), never taken from the
+// client.
+
+/** Roles that may release matter content to the client. */
+export const CLIENT_RELEASE_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer"]);
+
+/** Matter fields that decide what the client sees. */
+export const CLIENT_RELEASE_FIELDS = ["portal_enabled", "portal_summary"] as const;
+
+/** Per-document release fields. */
+const DOC_RELEASE_FIELDS = ["portal_visible", "privileged"] as const;
+const DOC_RELEASE_STAMPS = ["portal_released_by", "portal_released_at"] as const;
+
+function docKey(d: Record<string, unknown>): string | null {
+  if (typeof d.id === "string" && d.id) return `id:${d.id}`;
+  if (typeof d.slug === "string" && d.slug) return `slug:${d.slug}`;
+  if (typeof d.url === "string" && d.url) return `url:${d.url}`;
+  return null;
+}
+
+function releaseForbidden(what: string): GuardRejection {
+  return {
+    status: 403,
+    error: "client_release_forbidden",
+    message: `${what} — nur Anwältinnen/Anwälte und Administratoren geben Inhalte für den Mandanten frei.`,
+  };
+}
+
+const PRIVILEGED_RELEASE: GuardRejection = {
+  status: 422,
+  error: "privileged_not_releasable",
+  message:
+    "Ein als vertraulich (privileged) markiertes Dokument wird nie für den Mandanten freigegeben.",
+};
+
+export interface ClientReleaseChange {
+  slug?: string;
+  name?: string;
+  released: boolean;
+}
+
+/**
+ * Judge the client-release fields of a matter write. Returns the frontmatter
+ * to forward (release stamps set server-side) plus the release changes for the
+ * audit log, or a rejection. `current` null = a new page: the creator's
+ * portal settings are taken as the initial state (the matter form offers
+ * them), only a privileged document is never released.
+ */
+export function guardClientReleaseWrite(input: {
+  current: CurrentPageLike | null;
+  actor: WriteActor;
+  frontmatter: Record<string, unknown> | undefined;
+  now?: string;
+}):
+  | { frontmatter?: Record<string, unknown>; changes: ClientReleaseChange[] }
+  | { reject: GuardRejection } {
+  const incoming = input.frontmatter;
+  if (!incoming) return { changes: [] };
+  const stored = (input.current?.frontmatter ?? {}) as Record<string, unknown>;
+  const mayRelease = CLIENT_RELEASE_ROLES.has(String(input.actor.role ?? ""));
+  const isUpdate = input.current !== null;
+
+  if (isUpdate && !mayRelease) {
+    const changed = changedKeys(CLIENT_RELEASE_FIELDS, incoming, stored, "merge", undefined);
+    if (changed.length > 0) {
+      return {
+        reject: releaseForbidden(
+          changed.includes("portal_summary")
+            ? "Portal-Zusammenfassung ändern"
+            : "Mandantenportal ein- oder ausschalten"
+        ),
+      };
+    }
+  }
+
+  if (!Array.isArray(incoming.documents)) return { frontmatter: incoming, changes: [] };
+
+  const storedDocs = new Map<string, Record<string, unknown>>();
+  for (const d of Array.isArray(stored.documents) ? (stored.documents as unknown[]) : []) {
+    if (d && typeof d === "object") {
+      const key = docKey(d as Record<string, unknown>);
+      if (key) storedDocs.set(key, d as Record<string, unknown>);
+    }
+  }
+  const now = input.now ?? new Date().toISOString();
+  const changes: ClientReleaseChange[] = [];
+  const docs: unknown[] = [];
+  for (const raw of incoming.documents as unknown[]) {
+    if (!raw || typeof raw !== "object") {
+      docs.push(raw);
+      continue;
+    }
+    const doc = { ...(raw as Record<string, unknown>) };
+    const key = docKey(doc);
+    const prev = key ? (storedDocs.get(key) ?? null) : null;
+    // Release stamps are server-owned: keep the stored ones.
+    for (const f of DOC_RELEASE_STAMPS) {
+      delete doc[f];
+      if (prev && prev[f] !== undefined && prev[f] !== null) doc[f] = prev[f];
+    }
+    const wasVisible = prev?.portal_visible === true;
+    const isVisible = doc.portal_visible === true;
+    if (isVisible && doc.privileged === true && !(wasVisible && prev?.privileged === true)) {
+      return { reject: PRIVILEGED_RELEASE };
+    }
+    const releaseChanged =
+      isUpdate &&
+      DOC_RELEASE_FIELDS.some((f) => (doc[f] === true) !== (prev?.[f] === true)) &&
+      (prev !== null || isVisible);
+    if (releaseChanged && !mayRelease) {
+      return {
+        reject: releaseForbidden(
+          `Dokument „${String(doc.name ?? doc.slug ?? "")}“ für den Mandanten freigeben oder sperren`
+        ),
+      };
+    }
+    if (isVisible !== wasVisible && (isUpdate || isVisible)) {
+      if (isVisible) {
+        doc.portal_released_by = input.actor.email;
+        doc.portal_released_at = now;
+      } else {
+        delete doc.portal_released_by;
+        delete doc.portal_released_at;
+      }
+      changes.push({
+        slug: typeof doc.slug === "string" ? doc.slug : undefined,
+        name: typeof doc.name === "string" ? doc.name : undefined,
+        released: isVisible,
+      });
+    }
+    docs.push(doc);
+  }
+  return { frontmatter: { ...incoming, documents: docs }, changes };
+}
+
+/**
+ * Atomic array ops (/api/pages/array-append, -mutate): the client-release
+ * fields are changed only through a matter write, where the rules above
+ * apply and the release is stamped.
+ */
+export function checkClientReleaseArrayOp(
+  field: string,
+  op: { items?: unknown[]; set?: Record<string, unknown>; unset?: string[] }
+): GuardRejection | null {
+  if ((CLIENT_RELEASE_FIELDS as readonly string[]).includes(field)) {
+    return releaseForbidden("Freigabe an den Mandanten über eine Listenoperation");
+  }
+  if (field !== "documents") return null;
+  const keys = [...DOC_RELEASE_FIELDS, ...DOC_RELEASE_STAMPS] as readonly string[];
+  // Appended documents: never already released (or stamped as released).
+  const touches =
+    (op.items ?? []).some((it) => {
+      if (!it || typeof it !== "object") return false;
+      const d = it as Record<string, unknown>;
+      return d.portal_visible === true || DOC_RELEASE_STAMPS.some((k) => d[k] !== undefined);
+    }) ||
+    Object.keys(op.set ?? {}).some((k) => keys.includes(k)) ||
+    (op.unset ?? []).some((k) => keys.includes(k));
+  return touches ? releaseForbidden("Freigabe an den Mandanten über eine Listenoperation") : null;
+}
+
 // ── Reading the current page (fail closed) ──────────────────────────────
 
 export type CurrentPageRead =
@@ -506,6 +672,8 @@ export interface WriteActor {
   email: string;
   /** `settings.write` (admin) — Kanzlei-Einstellungen. */
   canWriteSettings: boolean;
+  /** Kanzlei role; missing = not allowed to release anything to the client. */
+  role?: string;
 }
 
 export type ProtectedWriteMode = "merge" | "replace" | "delete" | "array";
@@ -652,7 +820,9 @@ export function guardProtectedPageWrite(input: {
   /** Array ops: the top-level frontmatter field being mutated. */
   field?: string;
   restore?: boolean;
-}): { frontmatter?: Record<string, unknown> } | { reject: GuardRejection } {
+}):
+  | { frontmatter?: Record<string, unknown>; releaseChanges?: ClientReleaseChange[] }
+  | { reject: GuardRejection } {
   const { slug, current, actor, mode, field } = input;
   const incoming = input.frontmatter;
   const stored = (current?.frontmatter ?? {}) as Record<string, unknown>;
@@ -789,6 +959,14 @@ export function guardProtectedPageWrite(input: {
     }
   }
 
+  if (mode === "merge" || mode === "replace") {
+    const release = guardClientReleaseWrite({ current, actor, frontmatter: incoming });
+    if ("reject" in release) return release;
+    return {
+      ...(release.frontmatter ? { frontmatter: release.frontmatter } : {}),
+      ...(release.changes.length > 0 ? { releaseChanges: release.changes } : {}),
+    };
+  }
   return incoming ? { frontmatter: incoming } : {};
 }
 
