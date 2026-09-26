@@ -11,7 +11,8 @@ import { z } from "zod";
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    // Own notifications only (userId scope below) — every role.
+    action: "account.read",
     rateTier: "standard",
     query: z.object({
       unread: z.string().optional(),
