@@ -94,9 +94,13 @@ export const POST = createHandler(
     // here (before any credit is charged).
     let documents: DocumentAnalysis[] = [];
     try {
+      // Only this matter's documents (engine-side case_slug filter);
+      // truncation counts as a failed read.
       const docData = await listEnginePages(ctx.headers, "document", 10_000, {
         timeoutMs: 30_000,
         strict: true,
+        failOnTruncate: true,
+        frontmatter: { case_slug: body.case_slug },
       });
       documents = docData
         .filter((p) => {

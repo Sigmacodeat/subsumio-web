@@ -1398,13 +1398,34 @@ function NavBadge({
   variant,
   collapsed,
   label,
+  degraded,
 }: {
   count: number;
   variant: "danger" | "warning" | "info";
   collapsed: boolean;
   label?: string;
+  /** Count from an incomplete read: shown as a lower bound ("12+", or "?"). */
+  degraded?: boolean;
 }) {
-  if (count <= 0) return null;
+  if (count <= 0 && !degraded) return null;
+  if (degraded) {
+    const text = count > 0 ? `${count > 99 ? 99 : count}+` : "?";
+    return (
+      <span
+        className={cn(
+          collapsed
+            ? "absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold"
+            : "ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] leading-none font-bold",
+          badgeVariantClasses[variant]
+        )}
+        aria-label={`${text} — ${label ?? "unvollständig"}`}
+        title={label}
+        data-degraded="true"
+      >
+        {text}
+      </span>
+    );
+  }
   if (collapsed) {
     return (
       <span
@@ -2063,6 +2084,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         variant={badges[item.href].variant}
                         collapsed={false}
                         label={badges[item.href].label}
+                        degraded={badges[item.href].degraded}
                       />
                     )}
                     {collapsed && badges[item.href] && (
@@ -2071,6 +2093,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         variant={badges[item.href].variant}
                         collapsed={true}
                         label={t(item.labelKey)}
+                        degraded={badges[item.href].degraded}
                       />
                     )}
                   </Link>
@@ -2168,6 +2191,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 variant={badges[item.href].variant}
                                 collapsed={true}
                                 label={t(item.labelKey)}
+                                degraded={badges[item.href].degraded}
                               />
                             )}
                           </Link>
@@ -2336,6 +2360,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                         variant={badges[item.href].variant}
                                         collapsed={false}
                                         label={badges[item.href].label}
+                                        degraded={badges[item.href].degraded}
                                       />
                                     )}
                                   </Link>

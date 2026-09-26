@@ -158,7 +158,10 @@ export function Topbar({
   const statsQuery = useBrainStats();
   // Unified Fristen read model: complete (not just the 20 last-edited
   // deadline pages), without cancelled/rejected entries, linked to the matter.
-  const fristenQuery = useFristen();
+  // Only the near-due open deadlines (view=warnings) — the server answers
+  // from a short per-caller cache instead of rebuilding the whole read
+  // model for every tab every minute.
+  const fristenQuery = useFristen({ view: "warnings" });
   const deadlineWarnings = useMemo(
     () => (fristenQuery.data ? topbarDeadlineWarnings(fristenQuery.data.fristen) : null),
     [fristenQuery.data]

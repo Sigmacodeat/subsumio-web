@@ -115,6 +115,7 @@ import { stripNul, buildLinkRows, buildTimelineRows, buildTakeRows } from "./bat
 import {
   GBrainError,
   PAGE_SORT_SQL,
+  normalizeFrontmatterFilter,
   ENRICH_ORDER_SQL,
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
@@ -1500,6 +1501,16 @@ export class PGLiteEngine implements BrainEngine {
     // v0.26.5: hide soft-deleted pages by default; opt in via filters.includeDeleted.
     if (filters?.includeDeleted !== true) {
       where.push("p.deleted_at IS NULL");
+    }
+    // Frontmatter equality (OR over the pairs). Keys are validated
+    // identifiers spliced as literals so the expression index applies.
+    const fmPairs = normalizeFrontmatterFilter(filters?.frontmatterAny);
+    if (fmPairs.length > 0) {
+      const ors = fmPairs.map(([key, value]) => {
+        params.push(value);
+        return `p.frontmatter->>'${key}' = $${params.length}`;
+      });
+      where.push(`(${ors.join(" OR ")})`);
     }
 
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).

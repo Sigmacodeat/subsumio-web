@@ -67,6 +67,24 @@ describe("DAV document routes require the documents scope", () => {
     expect(resolveFeedToken).toHaveBeenCalledWith("u1.cal", "calendar");
     expect(res.status).toBe(200);
   });
+
+  it("a listing cut at the drive limit says so instead of looking complete (R11-8)", async () => {
+    resolveFeedToken.mockResolvedValue({
+      ok: true,
+      userId: "u1",
+      kind: "dav",
+      headers: { "x-subsumio-source": "b1" },
+    });
+    let n = 0;
+    fetchMock.mockImplementation(async () => {
+      const rows = Array.from({ length: 100 }, () => ({ slug: `docs/${n++}`, frontmatter: {} }));
+      return new Response(JSON.stringify(rows), { headers: { "x-next-cursor": `c|${n}` } });
+    });
+    const res = await listDocuments(new Request("http://x"), params({ token: "u1.dav" }));
+    const body = (await res.json()) as { documents: unknown[]; truncated?: boolean };
+    expect(body.documents.length).toBeGreaterThan(200);
+    expect(body.truncated).toBe(true);
+  });
 });
 
 describe("DAV document routes — slug, type and completeness (R8-20)", () => {

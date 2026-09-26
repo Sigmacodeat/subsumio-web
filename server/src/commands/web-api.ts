@@ -39,6 +39,7 @@ import { splitStatute } from "../core/legal/split-statute.ts";
 import { DE_LAW_SOURCES_STATUTES, scopedReadSources } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
+import { FRONTMATTER_FILTER_KEY_RE, FRONTMATTER_FILTER_MAX } from "../core/types.ts";
 import { executeRawJsonb } from "../core/sql-query.ts";
 import { publicErrorMessage, redactErrorResponseBody } from "../core/public-error-message.ts";
 import {
@@ -4794,6 +4795,23 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugPrefix = req.query.slug_prefix ? String(req.query.slug_prefix) : undefined;
       // Keyset cursor wins over offset (they don't compose meaningfully).
       const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
+      // Frontmatter equality filter: `fm.<key>=<value>` (any pair matches),
+      // e.g. `fm.case_slug=legal/cases/x` — one matter's pages in SQL
+      // instead of the caller scanning the whole type.
+      const frontmatterAny: Record<string, string> = {};
+      for (const [key, value] of Object.entries(req.query)) {
+        if (!key.startsWith("fm.")) continue;
+        const field = key.slice(3);
+        if (!FRONTMATTER_FILTER_KEY_RE.test(field) || typeof value !== "string") {
+          apiError(res, 400, "invalid_frontmatter_filter");
+          return;
+        }
+        frontmatterAny[field] = value;
+      }
+      if (Object.keys(frontmatterAny).length > FRONTMATTER_FILTER_MAX) {
+        apiError(res, 400, "invalid_frontmatter_filter");
+        return;
+      }
       const raw = await invokeOp(
         engine,
         "list_pages",
@@ -4803,6 +4821,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(type ? { type } : {}),
           ...(tag ? { tag } : {}),
           ...(slugPrefix ? { slug_prefix: slugPrefix } : {}),
+          ...(Object.keys(frontmatterAny).length > 0 ? { frontmatter_any: frontmatterAny } : {}),
           sort: "updated_desc",
           include_frontmatter: true,
           envelope: true,

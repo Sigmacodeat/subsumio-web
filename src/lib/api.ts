@@ -352,7 +352,11 @@ function brainListPagesRaw(options?: {
  * One list page plus the relayed keyset cursor. Internal — used by
  * listAllPages so it can continue past matter-scope/ACL-filtered batches.
  */
-function brainListPageWithCursor(options: Parameters<typeof brainListPagesRaw>[0]): Promise<{
+function brainListPageWithCursor(
+  options: Parameters<typeof brainListPagesRaw>[0],
+  /** Engine-side frontmatter equality filter (`fm.<key>`), any pair matches. */
+  frontmatter?: Record<string, string>
+): Promise<{
   items: BrainPage[];
   nextCursor: string | null;
 }> {
@@ -366,6 +370,7 @@ function brainListPageWithCursor(options: Parameters<typeof brainListPagesRaw>[0
   if (options?.cursor) params.set("cursor", options.cursor);
   if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
   if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+  for (const [k, v] of Object.entries(frontmatter ?? {})) params.set(`fm.${k}`, v);
   return request<BrainPage[] | { items: BrainPage[]; nextCursor?: string | null }>(
     `/api/pages?${params.toString()}`
   ).then((raw) =>
@@ -375,14 +380,34 @@ function brainListPageWithCursor(options: Parameters<typeof brainListPagesRaw>[0
   );
 }
 
-/** Bound for matter selection lists (`api.cases.list`). */
-const CASE_PICKER_MAX = 10_000;
+/** Bound for matter selection lists (`api.cases.list` and matter pickers). */
+export const CASE_PICKER_MAX = 10_000;
 
 export const api = {
   search(query: string, limit = 10, type?: string): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: query, limit: String(limit) });
     if (type) params.set("type", type);
     return request(`/api/search?${params.toString()}`);
+  },
+
+  /**
+   * The command palette's federated search — one request (one quota unit)
+   * for every section. Pass a signal so a superseded query is cancelled.
+   */
+  searchPalette(
+    query: string,
+    signal?: AbortSignal
+  ): Promise<{
+    results: SearchResult[];
+    cases: SearchResult[];
+    contacts: SearchResult[];
+    deadlines: SearchResult[];
+    documents: SearchResult[];
+    failed: string[];
+  }> {
+    return requestUncached(`/api/search/palette?q=${encodeURIComponent(query)}`, {
+      ...(signal ? { signal } : {}),
+    });
   },
 
   get<T>(path: string): Promise<T> {
@@ -454,37 +479,65 @@ export const api = {
      * (matter scope, tombstones) no longer looks like the end of the list.
      */
     async listAllPages(
-      options: { type?: string; max?: number } & Record<string, unknown>
+      options: {
+        type?: string;
+        max?: number;
+        /** Engine-side frontmatter equality filter, any pair matches. */
+        frontmatter?: Record<string, string>;
+      } & Record<string, unknown>
     ): Promise<BrainPage[]> {
+      return (await api.brain.listAllPagesDetailed(options)).pages;
+    },
+
+    /**
+     * listAllPages plus `capped`: true when `max` was reached while more
+     * pages existed — the caller must say the list is incomplete
+     * (CappedResultsNotice), never present it as all there is.
+     */
+    async listAllPagesDetailed(
+      options: {
+        type?: string;
+        max?: number;
+        frontmatter?: Record<string, string>;
+      } & Record<string, unknown>
+    ): Promise<{ pages: BrainPage[]; capped: boolean }> {
       const max = options.max ?? 10_000;
       const seen = new Map<string, BrainPage>();
       let fetched = 0;
       let cursor: string | undefined;
       let iterations = 0;
+      let more = false;
       for (;;) {
         if (++iterations > 1000) break;
         const want = Math.min(100, max - fetched);
         if (want <= 0) break;
-        const { items, nextCursor: next } = await brainListPageWithCursor({
-          type: options.type,
-          limit: want,
-          ...(cursor ? { cursor } : { offset: fetched }),
-          includeTombstoned: true,
-        });
+        const { items, nextCursor: next } = await brainListPageWithCursor(
+          {
+            type: options.type,
+            limit: want,
+            ...(cursor ? { cursor } : { offset: fetched }),
+            includeTombstoned: true,
+          },
+          options.frontmatter
+        );
         fetched += items.length;
         for (const page of items) if (page?.slug) seen.set(page.slug, page);
         if (next && next !== cursor) {
           cursor = next;
+          more = true;
           continue;
         }
+        more = false;
         // Reaching here means the engine reported no further cursor (or a
         // repeated one). Once a cursor was seen the engine is cursor-aware,
         // so a missing/stuck cursor means "done" — not "fall back to offset".
         if (cursor || items.length < want) break;
+        more = true;
       }
-      return [...seen.values()].filter(
+      const pages = [...seen.values()].filter(
         (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "tombstoned"
       );
+      return { pages, capped: more };
     },
 
     /**
@@ -860,7 +913,14 @@ export const api = {
   },
 
   legal: {
-    fristen(params?: { case?: string; status?: string; heute?: string }): Promise<{
+    fristen(params?: {
+      case?: string;
+      status?: string;
+      heute?: string;
+      /** "warnings": only open deadlines due within a few days (topbar),
+       *  served from a short server-side cache. */
+      view?: "warnings";
+    }): Promise<{
       fristen: Array<{
         id: string;
         case_slug?: string;
@@ -911,6 +971,7 @@ export const api = {
       if (params?.case) qs.set("case", params.case);
       if (params?.status) qs.set("status", params.status);
       if (params?.heute) qs.set("heute", params.heute);
+      if (params?.view) qs.set("view", params.view);
       return request(`/api/legal/fristen${qs.toString() ? `?${qs}` : ""}`);
     },
 

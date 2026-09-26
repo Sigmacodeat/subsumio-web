@@ -98,6 +98,7 @@ import type {
 import {
   GBrainError,
   PAGE_SORT_SQL,
+  normalizeFrontmatterFilter,
   ENRICH_ORDER_SQL,
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
@@ -1601,6 +1602,19 @@ export class PostgresEngine implements BrainEngine {
     // v0.26.5: hide soft-deleted by default; opt in via filters.includeDeleted.
     const deletedCondition =
       filters?.includeDeleted === true ? sql`` : sql`AND p.deleted_at IS NULL`;
+    // Frontmatter equality (OR over the pairs). Keys are validated
+    // identifiers spliced as literals so the expression index applies;
+    // values are bound. Parity with PGLiteEngine.listPages.
+    const fmPairs = normalizeFrontmatterFilter(filters?.frontmatterAny);
+    let fmCondition = sql``;
+    fmPairs.forEach(([key, value], i) => {
+      const term = sql`${sql.unsafe(`p.frontmatter->>'${key}'`)} = ${value}`;
+      fmCondition =
+        i === 0
+          ? sql`AND (${term}`
+          : sql`${fmCondition} OR ${term}`;
+    });
+    if (fmPairs.length > 0) fmCondition = sql`${fmCondition})`;
 
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
     // postgres.js sql.unsafe lets us splice the literal fragment safely.
@@ -1621,7 +1635,7 @@ export class PostgresEngine implements BrainEngine {
     const rows = await sql`
       SELECT p.* FROM pages p
       ${tagJoin}
-      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition} ${cursorCondition}
+      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition} ${fmCondition} ${cursorCondition}
       ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}
     `;
 

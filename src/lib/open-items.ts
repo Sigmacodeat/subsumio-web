@@ -30,9 +30,35 @@ interface InvoiceFrontmatterLike {
 
 const WRITE_TIMEOUT = 10_000;
 
-/** Alle OPs eines Brains (paginiert — die Engine kappt Einzelrequests auf 100). */
+/** Sicherheitsstopp für die Gesamtliste — weit über jeder realen Kanzlei. */
+const OPEN_ITEMS_LIST_MAX = 100_000;
+
+/**
+ * Alle OPs eines Brains (paginiert — die Engine kappt Einzelrequests auf 100).
+ * Vollständig oder Fehler: eine abgeschnittene Liste würde gerade die ältesten,
+ * am längsten überfälligen Posten verschweigen.
+ */
 export async function listOpenItems(headers: Record<string, string>): Promise<OpenItem[]> {
-  const pages = await listEnginePages(headers, "open_item", 10_000, { strict: true });
+  const pages = await listEnginePages(headers, "open_item", OPEN_ITEMS_LIST_MAX, {
+    strict: true,
+    failOnTruncate: true,
+  });
+  return pages.map((p) => p.frontmatter as unknown as OpenItem);
+}
+
+/**
+ * Die OPs einer Rechnung — gezielt per Engine-Filter (frontmatter invoice_id)
+ * statt über die Liste aller OPs. Vollständig oder Fehler.
+ */
+async function openItemsOfInvoice(
+  headers: Record<string, string>,
+  invoiceSlug: string
+): Promise<OpenItem[]> {
+  const pages = await listEnginePages(headers, "open_item", 1_000, {
+    strict: true,
+    failOnTruncate: true,
+    frontmatter: { invoice_id: invoiceSlug },
+  });
   return pages.map((p) => p.frontmatter as unknown as OpenItem);
 }
 
@@ -64,7 +90,7 @@ export async function createOpenItemForInvoice(
   invoiceSlug: string,
   fm: InvoiceFrontmatterLike
 ): Promise<{ created: boolean; item?: OpenItem }> {
-  const items = await listOpenItems(headers);
+  const items = await openItemsOfInvoice(headers, invoiceSlug);
   const existing = findByInvoice(items, invoiceSlug);
   if (existing && existing.status !== "written_off") return { created: false, item: existing };
 
@@ -122,7 +148,7 @@ export async function findOpenItemForInvoice(
   headers: Record<string, string>,
   invoiceSlug: string
 ): Promise<OpenItem | undefined> {
-  return findByInvoice(await listOpenItems(headers), invoiceSlug);
+  return findByInvoice(await openItemsOfInvoice(headers, invoiceSlug), invoiceSlug);
 }
 
 export interface DunningStepPlan {
@@ -170,7 +196,7 @@ export async function applyDunningStep(
   invoiceSlug: string,
   plan: DunningStepPlan
 ): Promise<boolean> {
-  const items = await listOpenItems(headers);
+  const items = await openItemsOfInvoice(headers, invoiceSlug);
   const item = findByInvoice(items, invoiceSlug);
   if (!item || item.status === "paid" || item.status === "written_off") return false;
   const add = toCents(plan.feeAdded);
@@ -193,7 +219,7 @@ export async function applyOpenItemFee(
   invoiceSlug: string,
   feeDelta: number
 ): Promise<boolean> {
-  const items = await listOpenItems(headers);
+  const items = await openItemsOfInvoice(headers, invoiceSlug);
   const item = findByInvoice(items, invoiceSlug);
   if (!item || item.status === "paid" || item.status === "written_off") return false;
   const fee = toCents(feeDelta);
@@ -218,7 +244,7 @@ export async function closeOpenItemForInvoice(
   outcome: "paid" | "written_off",
   note?: string
 ): Promise<boolean> {
-  const items = await listOpenItems(headers);
+  const items = await openItemsOfInvoice(headers, invoiceSlug);
   const item = findByInvoice(items, invoiceSlug);
   if (!item || item.status === "paid" || item.status === "written_off") return false;
 

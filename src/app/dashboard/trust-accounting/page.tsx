@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -174,9 +175,14 @@ export default function TrustAccountingPage() {
     loadAccounts();
   }, [loadAccounts]);
 
+  const [listCapped, setListCapped] = useState(false);
   useEffect(() => {
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then(setCases)
       .catch(() => setCases([]));
   }, []);
@@ -413,6 +419,7 @@ export default function TrustAccountingPage() {
           </PrimaryAction>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {error && (
         <div

@@ -18,6 +18,9 @@ import {
 import { logger } from "@/lib/logger";
 const log = logger("api/absences");
 
+/** Safety stop per type for the forwarded-deadline count. */
+const ABSENCE_SCAN_MAX = 100_000;
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const createAbsenceSchema = z
@@ -55,7 +58,10 @@ const createAbsenceSchema = z
 
 /** Every absence record, strictly read (a partial list would miss a clash). */
 async function listAbsences(headers: Record<string, string>): Promise<AbsenceRecord[]> {
-  const pages = await listEnginePages(headers, "absence_record", 10_000, { strict: true });
+  const pages = await listEnginePages(headers, "absence_record", ABSENCE_SCAN_MAX, {
+    strict: true,
+    failOnTruncate: true,
+  });
   return pages
     .map((p) => p.frontmatter as unknown as AbsenceRecord | undefined)
     .filter((a): a is AbsenceRecord => Boolean(a));
@@ -79,10 +85,13 @@ async function forwardedDeadlinesFor(
   absence: AbsenceRecord
 ): Promise<string[]> {
   try {
+    // Complete lists or no count at all: a cut list (newest first) would
+    // report too few forwarded deadlines without saying so.
+    const complete = { strict: true, failOnTruncate: true } as const;
     const [deadlinePages, followUpPages, casePages] = await Promise.all([
-      listEnginePages(headers, "legal_deadline", 5000),
-      listEnginePages(headers, "legal_follow_up", 5000),
-      listEnginePages(headers, "legal_case", 2000),
+      listEnginePages(headers, "legal_deadline", ABSENCE_SCAN_MAX, complete),
+      listEnginePages(headers, "legal_follow_up", ABSENCE_SCAN_MAX, complete),
+      listEnginePages(headers, "legal_case", ABSENCE_SCAN_MAX, complete),
     ]);
     const responsibleByCase = new Map<string, string>();
     for (const c of casePages) {

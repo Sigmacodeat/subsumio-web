@@ -218,6 +218,49 @@ describe("findUnbillBlockers (GELD-5)", () => {
     expect(list).not.toHaveBeenCalled();
   });
 
+  it("default lookup finds an old sent invoice via the engine filter (R11-3)", async () => {
+    // 5,001 invoices; the one sought is the oldest. The engine answers the
+    // targeted fm.invoice_number / fm.parent_invoice_id lookups in SQL.
+    const all = Array.from({ length: 5001 }, (_, i) =>
+      inv(`invoice/r${i}`, { invoice_number: `R-${i}`, status: i === 5000 ? "sent" : "paid" })
+    );
+    const fetchMock = vi.fn(async (url: string) => {
+      const u = new URL(url);
+      const n = u.searchParams.get("fm.invoice_number");
+      const parent = u.searchParams.get("fm.parent_invoice_id");
+      if (n === null && parent === null) {
+        // An unfiltered list would only ever see the newest 100.
+        return Response.json(all.slice(0, 100), { headers: { "x-next-cursor": "c|1" } });
+      }
+      return Response.json(
+        all.filter((p) =>
+          n !== null ? p.frontmatter?.invoice_number === n : p.frontmatter?.parent_invoice_id === parent
+        )
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const b = await findUnbillBlockers({}, [{ id: "te-1", invoice_number: "R-5000" }]);
+      expect(b).toEqual([{ id: "te-1", invoice_number: "R-5000", status: "sent" }]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("default lookup refuses (throws) when the engine read fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("busy", { status: 503 }))
+    );
+    try {
+      await expect(
+        findUnbillBlockers({}, [{ id: "te-1", invoice_number: "R-1" }])
+      ).rejects.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("propagates a failed listing (caller fails closed)", async () => {
     const list = async () => {
       throw new Error("down");

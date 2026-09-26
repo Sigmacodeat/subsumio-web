@@ -13,6 +13,11 @@ import {
   type InboundChannel,
 } from "@/lib/inbound-register";
 
+/** Safety stop for the Aktenzeichen lookup over every matter. */
+const CASE_LOOKUP_MAX = 100_000;
+/** Matters considered for the automatic assignment suggestion. */
+const SUGGESTION_SCAN_MAX = 2_000;
+
 export const dynamic = "force-dynamic";
 
 const createSchema = z.object({
@@ -44,16 +49,36 @@ export const POST = createHandler(
       // must resolve to an existing matter — never stored as a free-text link.
       let resolved: string | null = null;
       try {
-        const casePages = await listEnginePages(ctx.headers, "legal_case", 5000, { strict: true });
         const wanted = caseSlug.toLowerCase();
-        const hit =
-          casePages.find((p) => p.slug === caseSlug) ??
-          casePages.find((p) => {
-            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-            return [fm.aktenzeichen, fm.case_number].some(
-              (v) => typeof v === "string" && v.trim().toLowerCase() === wanted
-            );
+        const matches = (p: { slug: string; frontmatter?: Record<string, unknown> }) => {
+          if (p.slug === caseSlug) return true;
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          return [fm.aktenzeichen, fm.case_number].some(
+            (v) => typeof v === "string" && v.trim().toLowerCase() === wanted
+          );
+        };
+        // 1) Targeted: the engine selects matters whose Aktenzeichen equals
+        //    the input exactly (or the matter at that slug).
+        const exact = [
+          ...(await listEnginePages(ctx.headers, "legal_case", 100, {
+            strict: true,
+            frontmatter: { aktenzeichen: caseSlug, case_number: caseSlug },
+          })),
+          ...(await listEnginePages(ctx.headers, "legal_case", 100, {
+            strict: true,
+            slugPrefix: caseSlug,
+          })),
+        ];
+        let hit = exact.find((p) => p.slug === caseSlug) ?? exact.find(matches);
+        // 2) Otherwise every matter (spelling differences in upper/lower
+        //    case), complete or an error — never a newest-N window.
+        if (!hit) {
+          const casePages = await listEnginePages(ctx.headers, "legal_case", CASE_LOOKUP_MAX, {
+            strict: true,
+            failOnTruncate: true,
           });
+          hit = casePages.find((p) => p.slug === caseSlug) ?? casePages.find(matches);
+        }
         resolved = hit?.slug ?? null;
       } catch {
         return apiError("engine_error", "Akten konnten nicht geladen werden", 502);
@@ -67,7 +92,9 @@ export const POST = createHandler(
       // (Aktenzeichen > Parteinamen > Titel-Tokens). Nur ein Vorschlag —
       // die Zuordnung bleibt in der UI als solche markiert.
       try {
-        const casePages = await listEnginePages(ctx.headers, "legal_case", 500);
+        // A suggestion only (marked as such in the UI): the most recently
+        // edited matters are the likely targets of new mail.
+        const casePages = await listEnginePages(ctx.headers, "legal_case", SUGGESTION_SCAN_MAX);
         const candidates: InboundCaseCandidate[] = casePages.map((p) => {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
           return {

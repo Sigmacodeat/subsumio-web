@@ -412,6 +412,33 @@ describe("POST /api/pages — server-side write guards", () => {
   });
 });
 
+describe("GET /api/pages — frontmatter filter relay (R11-9)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+  });
+
+  it("relays fm.<key> to the engine and refuses malformed keys", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        urls.push(url);
+        return Response.json([]);
+      })
+    );
+    const ok = await GET(
+      new NextRequest("http://localhost:3000/api/pages?type=legal_case&fm.portal_enabled=true")
+    );
+    expect(ok.status).toBe(200);
+    expect(new URL(urls[0]).searchParams.get("fm.portal_enabled")).toBe("true");
+    const bad = await GET(
+      new NextRequest("http://localhost:3000/api/pages?type=legal_case&fm.Bad-Key=1")
+    );
+    expect(bad.status).toBe(400);
+  });
+});
+
 describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
   const deadlines = Array.from({ length: 250 }, (_, i) => ({
     slug: `legal/deadlines/d-${i}`,
@@ -456,6 +483,35 @@ describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
         "legal/deadlines/d-7",
       ].sort()
     );
+  });
+
+  it("lets the engine filter by case_slug: one call even with 15,000 deadlines firm-wide", async () => {
+    const calls: URL[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        calls.push(u);
+        // Engine honours fm.case_slug: only the matter's 3 rows come back.
+        const want = u.searchParams.get("fm.case_slug");
+        return Response.json(
+          want === "legal/cases/akte-1"
+            ? [0, 1, 2].map((i) => ({
+                slug: `legal/deadlines/m-${i}`,
+                title: "Frist",
+                frontmatter: { case_slug: want },
+              }))
+            : Array.from({ length: 100 }, (_, i) => ({ slug: `x/${i}`, title: "x", frontmatter: {} }))
+        );
+      })
+    );
+    const res = await GET(
+      new NextRequest(
+        "http://localhost:3000/api/pages?type=legal_deadline&case_slug=legal/cases/akte-1"
+      )
+    );
+    expect(((await res.json()) as unknown[]).length).toBe(3);
+    expect(calls).toHaveLength(1);
   });
 
   it("requires a type for a matter filter", async () => {

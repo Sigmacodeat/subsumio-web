@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
 
-import { ENGINE_LIST_MAX, listEnginePages } from "./engine-pages";
+import {
+  ENGINE_LIST_MAX,
+  EnginePagesTruncatedError,
+  listEnginePages,
+  listEnginePagesDetailed,
+} from "./engine-pages";
 
 const fetchMock = vi.fn();
 
@@ -120,5 +125,35 @@ describe("listEnginePages", () => {
     expect(visible.map((p) => p.slug)).toEqual(["legal/a"]);
     const all = await listEnginePages({}, "legal_deadline", 100, { includeTombstoned: true });
     expect(all).toHaveLength(2);
+  });
+
+  test("reaching the limit while more rows exist is reported as truncated", async () => {
+    engineWith(10_050);
+    const r = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(r.pages).toHaveLength(10_000);
+    expect(r.truncated).toBe(true);
+    expect(r.failed).toBe(false);
+    await expect(
+      listEnginePages({}, "legal_deadline", 10_000, { failOnTruncate: true })
+    ).rejects.toBeInstanceOf(EnginePagesTruncatedError);
+  });
+
+  test("a complete read is not truncated; a failed batch is flagged", async () => {
+    engineWith(250);
+    const full = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(full).toMatchObject({ truncated: false, failed: false });
+    expect(full.pages).toHaveLength(250);
+    engineWith(1000, 300);
+    const part = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(part).toMatchObject({ truncated: false, failed: true });
+  });
+
+  test("passes the frontmatter filter to the engine", async () => {
+    engineWith(3);
+    await listEnginePages({}, "legal_deadline", 100, {
+      frontmatter: { case_slug: "legal/cases/a b" },
+    });
+    const u = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(u.searchParams.get("fm.case_slug")).toBe("legal/cases/a b");
   });
 });

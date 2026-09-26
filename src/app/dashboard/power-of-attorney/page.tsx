@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { usePortalVisitEvents } from "@/lib/use-portal-visit-events";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { csrfFetch } from "@/lib/csrf";
 import type { PowerOfAttorney } from "@/lib/power-of-attorney";
 import {
@@ -66,10 +67,15 @@ export default function PowerOfAttorneyPage() {
     }
   }, [searchParams]);
 
+  const [listCapped, setListCapped] = useState(false);
   const load = useCallback(async () => {
     setLoadError(false);
     try {
-      const pages = await api.brain.listAllPages({ type: "power_of_attorney", max: 2000 });
+      const { pages, capped } = await api.brain.listAllPagesDetailed({
+        type: "power_of_attorney",
+        max: CASE_PICKER_MAX,
+      });
+      if (capped) setListCapped(true);
       setPoas(pages.map((p) => p.frontmatter as unknown as PowerOfAttorney));
     } catch {
       setLoadError(true);
@@ -83,7 +89,11 @@ export default function PowerOfAttorneyPage() {
     void load();
     // Akten for the picker and to show titles instead of internal identifiers.
     api.brain
-      .listAllPages({ type: "legal_case", max: 2000 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);
@@ -188,6 +198,7 @@ export default function PowerOfAttorneyPage() {
           </PrimaryAction>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {expiringCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">

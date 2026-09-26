@@ -9,8 +9,30 @@ const mockListEnginePages = vi.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
+// Matter lookups (frontmatter / slug filters, full scan) are answered from
+// ONE fixture list per test, filtered like the engine filters.
+let caseUniverse: Array<{ slug: string; frontmatter?: Record<string, unknown> }> | undefined;
 vi.mock("@/lib/engine-pages", () => ({
-  listEnginePages: (...args: unknown[]) => mockListEnginePages(...args),
+  listEnginePages: async (...args: unknown[]) => {
+    const [, type, , opts] = args as [
+      unknown,
+      string,
+      number,
+      { frontmatter?: Record<string, string>; slugPrefix?: string; failOnTruncate?: boolean }?,
+    ];
+    if (type === "legal_case" && (opts?.frontmatter || opts?.slugPrefix || opts?.failOnTruncate)) {
+      caseUniverse ??= await mockListEnginePages(...args);
+      const rows = caseUniverse ?? [];
+      if (opts.frontmatter) {
+        return rows.filter((r) =>
+          Object.entries(opts.frontmatter!).some(([k, v]) => r.frontmatter?.[k] === v)
+        );
+      }
+      if (opts.slugPrefix) return rows.filter((r) => r.slug.startsWith(opts.slugPrefix!));
+      return rows;
+    }
+    return mockListEnginePages(...args);
+  },
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -63,7 +85,12 @@ function post(body: unknown) {
 }
 
 describe("POST /api/inbound-register", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListEnginePages.mockReset();
+    mockFetch.mockReset();
+    caseUniverse = undefined;
+  });
 
   test("rejects a missing subject before touching the engine", async () => {
     const res = await post({ channel: "scan" });
@@ -160,6 +187,26 @@ describe("POST /api/inbound-register", () => {
     const res = await post({ channel: "scan", subject: "Brief", case_slug: "irgendwas" });
     expect(res.status).toBe(422);
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("accepts the Aktenzeichen of the oldest of 6,000 matters (R11-8)", async () => {
+    mockListEnginePages.mockResolvedValueOnce(
+      Array.from({ length: 6000 }, (_, i) => ({
+        slug: `legal/cases/c-${i}`,
+        title: `Akte ${i}`,
+        frontmatter: { aktenzeichen: `AZ-${i}` },
+      }))
+    );
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
+    const res = await post({ channel: "scan", subject: "Brief", case_slug: "AZ-5999" });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.entry.case_slug).toBe("legal/cases/c-5999");
+  });
+
+  test("an incomplete matter list refuses instead of rejecting the Aktenzeichen", async () => {
+    mockListEnginePages.mockRejectedValueOnce(new Error("list legal_case truncated at 100000"));
+    const res = await post({ channel: "scan", subject: "Brief", case_slug: "az-1" });
+    expect(res.status).toBe(502);
   });
 
   test("returns 502 when the engine write fails", async () => {

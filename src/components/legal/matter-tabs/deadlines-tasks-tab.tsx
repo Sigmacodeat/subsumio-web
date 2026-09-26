@@ -311,6 +311,15 @@ export function DeadlinesTasksTab() {
 
   return (
     <div className="space-y-4">
+      {ctx.standaloneDeadlinesFailed && (
+        <div
+          role="alert"
+          className="max-w-3xl rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+        >
+          Die eigenständigen Fristen dieser Akte konnten nicht geladen werden — die Liste ist
+          unvollständig. Bitte die Seite neu laden.
+        </div>
+      )}
       {/* Deadline Form — collapsed by default (Progressive Disclosure) */}
       <div className="max-w-3xl space-y-4">
         {!showDeadlineForm ? (

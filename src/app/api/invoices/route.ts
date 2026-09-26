@@ -21,6 +21,7 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { findInvoicesByNumber } from "@/lib/invoice-lookup";
 import { createHandler, apiError, apiSuccess, recordQuota } from "@/lib/api-handler";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -98,7 +99,12 @@ async function loadBilledTimeRecords(
   );
   let agreementRate: number | null = null;
   if (rules) {
-    const pages = await listEnginePages(headers, "fee_agreement", 10_000, { strict: true });
+    // Only this matter's agreements (engine-side filter), complete or refused.
+    const pages = await listEnginePages(headers, "fee_agreement", 10_000, {
+      strict: true,
+      failOnTruncate: true,
+      frontmatter: { case_slug: caseSlug },
+    });
     agreementRate = feeAgreementRate(
       pages.map((p) => p.frontmatter as unknown as FeeAgreementLike),
       caseSlug
@@ -226,16 +232,15 @@ export const POST = createHandler(
 
     // An invoice number belongs to exactly one invoice — and the rollback of a
     // failed reservation relies on that.
-    let invoices;
+    // Targeted lookup over every invoice of the firm (engine-side filter);
+    // a failed or truncated read refuses the create.
+    let sameNumber;
     try {
-      invoices = await listEnginePages(ctx.headers, "invoice", 5000, {
-        includeTombstoned: true,
-        strict: true,
-      });
+      sameNumber = await findInvoicesByNumber(ctx.headers, invoiceNumber);
     } catch {
       return rejectionResponse(GUARD_READ_FAILED);
     }
-    if (invoices.some((p) => String(p.frontmatter?.invoice_number ?? "") === invoiceNumber)) {
+    if (sameNumber.length > 0) {
       return apiError(
         "invoice_number_taken",
         `Die Rechnungsnummer ${invoiceNumber} ist bereits vergeben.`,

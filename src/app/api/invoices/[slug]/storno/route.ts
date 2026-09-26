@@ -23,7 +23,9 @@ import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
-import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { reserveInvoiceNumber } from "@/lib/invoice-numbering";
+import { findInvoicesByParent } from "@/lib/invoice-lookup";
+import { isTombstoned } from "@/lib/tombstone";
 import { closeOpenItemForInvoice } from "@/lib/open-items";
 import { logAudit } from "@/lib/audit";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
@@ -110,12 +112,22 @@ async function stornoInvoice(
     return apiError("already_storno", "Eine Storno-Note kann nicht selbst storniert werden.", 409);
   }
 
-  // Refuse a second storno of the same invoice — check every invoice page
-  // for one that already points back here as parent_invoice_id. Strict:
-  // a partial list could miss an existing storno and allow a duplicate.
-  const allInvoices = await listEnginePages(ctx.headers, "invoice", 5000, { strict: true });
-  const existingStorno = allInvoices.find(
-    (p) => p.frontmatter?.parent_invoice_id === slug && p.frontmatter?.invoice_type === "storno"
+  // Refuse a second storno of the same invoice — the engine selects every
+  // invoice page pointing back here as parent_invoice_id (frontmatter
+  // filter, all of the firm's invoices). Strict and complete: a failed or
+  // truncated read throws and the storno is refused.
+  let children;
+  try {
+    children = await findInvoicesByParent(ctx.headers, slug);
+  } catch {
+    return apiError(
+      "engine_unreachable",
+      "Bestehende Storno-Noten konnten nicht vollständig geprüft werden — bitte erneut versuchen.",
+      503
+    );
+  }
+  const existingStorno = children.find(
+    (p) => p.frontmatter?.invoice_type === "storno" && !isTombstoned(p)
   );
   if (existingStorno) {
     return apiError(
@@ -129,12 +141,16 @@ async function stornoInvoice(
   // to the new year's number range and date.
   const now = new Date();
   const year = firmYear(now);
-  const existingNumbers = allInvoices.map((p) => String(p.frontmatter?.invoice_number ?? ""));
-  const number = await allocateInvoiceNumber(
-    ctx.brainId,
-    year,
-    highestInvoiceNumber(existingNumbers, year)
-  );
+  // The existing numbers only seed the year's counter the first time; the
+  // counter alone carries the sequence afterwards.
+  const number = await reserveInvoiceNumber(ctx.brainId, year, async () => {
+    const pages = await listEnginePages(ctx.headers, "invoice", 100_000, {
+      includeTombstoned: true,
+      strict: true,
+      failOnTruncate: true,
+    });
+    return pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+  });
 
   const originalItems = Array.isArray(fm.items) ? (fm.items as InvoiceItem[]) : [];
   const originalExpenses = Array.isArray(fm.expenses) ? (fm.expenses as ExpenseItem[]) : [];

@@ -284,4 +284,35 @@ describe("GET /api/legal/fristen", () => {
       due_date: "2026-11-02",
     });
   });
+
+  it("view=warnings: only near-due open deadlines, one read-model build for parallel tabs (R11-2)", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      ...ctx,
+      headers: { "x-subsumio-source": "brain_warn" },
+    } as any);
+    let fristenbuchCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/legal/fristenbuch") {
+          fristenbuchCalls++;
+          return Response.json({
+            eintraege: [
+              { case_slug: "cases/a", datum: "2026-09-16", frist: "Bald", status: "ok" },
+              { case_slug: "cases/b", datum: "2026-12-01", frist: "Später", status: "ok" },
+            ],
+          });
+        }
+        return Response.json([]);
+      })
+    );
+    const req = () =>
+      GET(new NextRequest("http://localhost:3000/api/legal/fristen?view=warnings"));
+    const [a, b] = await Promise.all([req(), req()]);
+    const body = (await a.json()) as { fristen: Array<{ title: string }> };
+    await b.json();
+    expect(body.fristen.map((f) => f.title)).toEqual(["Bald"]);
+    expect(fristenbuchCalls).toBe(1);
+  });
 });

@@ -24,6 +24,47 @@ beforeEach(() => {
   csrfFetchMock.mockReset();
 });
 
+describe("api.brain.listAllPagesDetailed (R11-9)", () => {
+  test("a list stopped at max while more pages exist is reported as capped", async () => {
+    let n = 0;
+    csrfFetchMock.mockImplementation(async () =>
+      Response.json({
+        items: Array.from({ length: 100 }, () => page(`p${n++}`)),
+        nextCursor: `c${n}`,
+      })
+    );
+    const r = await api.brain.listAllPagesDetailed({ type: "legal_case", max: 300 });
+    expect(r.pages).toHaveLength(300);
+    expect(r.capped).toBe(true);
+  });
+
+  test("a complete list is not capped; the signature request at position 150 is there", async () => {
+    csrfFetchMock.mockImplementation(async (url: string) => {
+      const cursor = new URL(url, "http://app.test").searchParams.get("cursor");
+      const start = cursor ? Number(cursor) : 0;
+      const rows = Array.from({ length: Math.min(100, 250 - start) }, (_, i) =>
+        page(`sig-${start + i}`)
+      );
+      return Response.json(
+        start + 100 < 250 ? { items: rows, nextCursor: String(start + 100) } : { items: rows }
+      );
+    });
+    const r = await api.brain.listAllPagesDetailed({ type: "signature_request", max: 10_000 });
+    expect(r.capped).toBe(false);
+    expect(r.pages.some((p) => p.slug === "sig-150")).toBe(true);
+  });
+
+  test("relays the frontmatter filter as fm.<key>", async () => {
+    csrfFetchMock.mockImplementation(async () => Response.json([]));
+    await api.brain.listAllPagesDetailed({
+      type: "legal_case",
+      frontmatter: { portal_enabled: "true" },
+    });
+    const u = new URL(String(csrfFetchMock.mock.calls[0][0]), "http://app.test");
+    expect(u.searchParams.get("fm.portal_enabled")).toBe("true");
+  });
+});
+
 describe("api.brain.listAllPages", () => {
   test("follows nextCursor across batches, including an empty filtered batch", async () => {
     csrfFetchMock.mockImplementation(async (url: string) => {

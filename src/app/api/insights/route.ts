@@ -46,7 +46,19 @@ export const GET = createHandler(
       // One matter: read exactly that matter, not the most recently edited
       // matters of the firm filtered afterwards.
       const loadCases = async (): Promise<BrainPage[]> => {
-        if (!query.caseSlug) return (await strictList("legal_case", 5_000)) as BrainPage[];
+        if (!query.caseSlug) {
+          // Every matter, complete — a list cut at a fixed bound drops the
+          // oldest matters; reaching the safety stop marks the answer partial.
+          try {
+            return (await listEnginePages(ctx.headers, "legal_case", 100_000, {
+              strict: true,
+              failOnTruncate: true,
+            })) as unknown as BrainPage[];
+          } catch {
+            partial = true;
+            return [];
+          }
+        }
         try {
           const page = await getEnginePage(ctx.headers, query.caseSlug);
           return page ? [page] : [];

@@ -348,6 +348,41 @@ export interface PageFilters {
    * shift and skip/dup rows). Ignored for other sort orders.
    */
   cursor?: string;
+  /**
+   * Frontmatter equality filter, OR-combined: a page matches when
+   * `frontmatter->>key = value` for ANY of the pairs. Lets callers list the
+   * pages of one matter (case_slug / case_title / case_number) or look up one
+   * record by a business key (invoice_number, …) in SQL instead of reading the
+   * whole type. Keys must match FRONTMATTER_FILTER_KEY_RE (they are spliced
+   * as SQL literals so expression indexes apply); values are bound. At most
+   * FRONTMATTER_FILTER_MAX pairs. `case_slug` is backed by
+   * `pages_list_case_slug_keyset_idx` (migration v151).
+   */
+  frontmatterAny?: Array<[string, string]>;
+}
+
+/** Allowed frontmatter filter keys (plain snake_case identifiers). */
+export const FRONTMATTER_FILTER_KEY_RE = /^[a-z][a-z0-9_]{0,62}$/;
+export const FRONTMATTER_FILTER_MAX = 5;
+
+/**
+ * Validate a frontmatter filter. Returns the pairs to apply, or throws on an
+ * invalid key — a key that cannot be applied must never widen the result to
+ * the whole type.
+ */
+export function normalizeFrontmatterFilter(
+  pairs: Array<[string, string]> | undefined
+): Array<[string, string]> {
+  if (!pairs || pairs.length === 0) return [];
+  if (pairs.length > FRONTMATTER_FILTER_MAX) {
+    throw new Error(`frontmatter filter: at most ${FRONTMATTER_FILTER_MAX} pairs`);
+  }
+  return pairs.map(([key, value]) => {
+    if (typeof key !== "string" || !FRONTMATTER_FILTER_KEY_RE.test(key)) {
+      throw new Error(`frontmatter filter: invalid key`);
+    }
+    return [key, String(value)] as [string, string];
+  });
 }
 
 /** v0.26.5 — opts for getPage / softDeletePage / restorePage. */

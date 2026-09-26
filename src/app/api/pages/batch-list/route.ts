@@ -4,11 +4,24 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
 
-const batchListSchema = z.object({
-  types: z.array(z.string().min(1).max(64)).min(1).max(20),
-  /** Read in batches of 100; the engine returns no more per request. */
-  limit: z.number().int().min(1).max(50_000).default(100),
-});
+/**
+ * Total rows one request may make the server read (types × limit). Each 100
+ * rows are one engine call, so this bounds a single request to ~600 engine
+ * calls — enough for the largest real list (all invoices, contacts +
+ * matters) without letting one request fan out into thousands.
+ */
+const BATCH_LIST_ROW_BUDGET = 60_000;
+
+const batchListSchema = z
+  .object({
+    types: z.array(z.string().min(1).max(64)).min(1).max(8),
+    /** Read in batches of 100; the engine returns no more per request. */
+    limit: z.number().int().min(1).max(50_000).default(100),
+  })
+  .refine((b) => b.types.length * b.limit <= BATCH_LIST_ROW_BUDGET, {
+    message: "batch_list_too_large",
+    path: ["limit"],
+  });
 
 export const POST = createHandler(
   {

@@ -20,7 +20,8 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -78,9 +79,14 @@ export default function ProcessStrategyPage() {
   const [saving, setSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
+  const [listCapped, setListCapped] = useState(false);
   useEffect(() => {
     api.brain
-      .listAllPages({ type: "legal_case", max: 2000 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then((pages) => {
         const mapped = pages.map((p) => {
           const fm = caseFrontmatter(p);
@@ -316,6 +322,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
           { label: t("strategy.breadcrumb") },
         ]}
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {/* Stepper */}
       <div className="flex items-center gap-2 overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">

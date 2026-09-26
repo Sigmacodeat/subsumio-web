@@ -154,6 +154,12 @@ export interface EngineContext {
     questionsCap: number;
     ingested: boolean;
   };
+  /**
+   * Quota unit already booked by the request guard (checkQuota reserves one
+   * unit atomically with the check). recordQuota consumes it first, so a
+   * request that is checked AND recorded counts once, not twice.
+   */
+  quotaReservation?: { field: QuotaType; remaining: number };
 }
 
 /**
@@ -722,6 +728,7 @@ export async function applyUsageGuards(
     if (!quota.ok) {
       return quotaExceeded(quotaField, quota.used, quota.limit);
     }
+    if (quota.reserved) ctx.quotaReservation = { field: quotaField, remaining: 1 };
   }
 
   return null;
@@ -737,7 +744,15 @@ export async function recordQuota(
   amount = 1
 ): Promise<void> {
   if (ctx.demo) return;
-  await incQuota(ctx.brainId, field, amount);
+  let book = amount;
+  // The unit reserved by the request guard is this request's first unit.
+  const reservation = ctx.quotaReservation;
+  if (reservation && reservation.field === field && reservation.remaining > 0 && book > 0) {
+    const used = Math.min(reservation.remaining, book);
+    reservation.remaining -= used;
+    book -= used;
+  }
+  if (book > 0) await incQuota(ctx.brainId, field, book);
 }
 
 /**

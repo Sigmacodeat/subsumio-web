@@ -7,6 +7,7 @@
  */
 import { enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { headersCacheKey } from "@/lib/server-ttl-cache";
 
 interface DocumentAnalysis {
   slug: string;
@@ -44,20 +45,66 @@ export type ContradictionCheckResult =
       message: string;
     };
 
+/** Safety stop for one matter's documents (engine-filtered by case_slug). */
+const MATTER_DOCUMENTS_MAX = 10_000;
+
+/**
+ * Per matter and caller, at most one check runs at a time; calls arriving
+ * meanwhile share it and schedule exactly one follow-up run that sees every
+ * document uploaded in between. A batch upload of 300 documents runs the
+ * check a handful of times, not 300 times in parallel.
+ */
+const running = new Map<
+  string,
+  { rerun: boolean; promise: Promise<ContradictionCheckResult> }
+>();
+
 /**
  * Run the check for one matter with the given engine headers (they decide
  * the brain and the caller's access). Throws when the documents cannot be
- * read; persisting the findings on the matter is best effort.
+ * read completely — then nothing is persisted, so earlier findings on the
+ * matter stay; persisting the findings is otherwise best effort.
  */
-export async function checkCaseContradictions(
+export function checkCaseContradictions(
   headers: Record<string, string>,
   caseSlug: string
 ): Promise<ContradictionCheckResult> {
-  // Cursor-paginated: a bare /api/pages call is capped at 100 rows, which
-  // silently dropped documents of larger matters.
-  const data = await listEnginePages(headers, "document", 10_000, {
+  // Keyed by brain + access: only calls with the same access coalesce.
+  const key = `${headersCacheKey(headers)}\u0000${caseSlug}`;
+  const current = running.get(key);
+  if (current) {
+    current.rerun = true;
+    return current.promise;
+  }
+  const state = { rerun: false, promise: undefined as unknown as Promise<ContradictionCheckResult> };
+  state.promise = (async () => {
+    try {
+      let result: ContradictionCheckResult;
+      do {
+        state.rerun = false;
+        result = await runContradictionCheck(headers, caseSlug);
+      } while (state.rerun);
+      return result;
+    } finally {
+      running.delete(key);
+    }
+  })();
+  running.set(key, state);
+  return state.promise;
+}
+
+async function runContradictionCheck(
+  headers: Record<string, string>,
+  caseSlug: string
+): Promise<ContradictionCheckResult> {
+  // Only this matter's documents — selected by the engine (frontmatter
+  // case_slug), complete or an error: a partial basis could report "no
+  // contradictions" and overwrite earlier findings.
+  const data = await listEnginePages(headers, "document", MATTER_DOCUMENTS_MAX, {
     strict: true,
+    failOnTruncate: true,
     timeoutMs: 30_000,
+    frontmatter: { case_slug: caseSlug },
   });
 
   const caseDocs: DocumentAnalysis[] = data

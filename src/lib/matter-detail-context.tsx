@@ -144,6 +144,9 @@ interface MatterDetailContextValue {
   // Deadlines
   deadlinesList: DeadlineEntry[];
   setDeadlinesList: React.Dispatch<React.SetStateAction<DeadlineEntry[]>>;
+  /** The matter's standalone deadline pages could not be loaded — the list
+   *  shows only the deadlines stored in the matter itself (incomplete). */
+  standaloneDeadlinesFailed: boolean;
   editingDeadlineIndex: number | null;
   setEditingDeadlineIndex: (v: number | null) => void;
   deadlineRuleKey: string;
@@ -425,6 +428,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
 
   const [deadlinesList, setDeadlinesList] = useState<DeadlineEntry[]>([]);
+  const [standaloneDeadlinesFailed, setStandaloneDeadlinesFailed] = useState(false);
   const [editingDeadlineIndex, setEditingDeadlineIndex] = useState<number | null>(null);
   // No preselected Fristart: the tab offers the Rechtsraum's own list (AT
   // engine for Austrian matters) and the user must choose explicitly.
@@ -544,10 +548,16 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         const allContacts = batch["legal_contact"] ?? [];
         const detail = parseCaseDetail(page);
         // This matter's deadlines, complete (server-side filter over all pages).
+        let deadlinesFailed = false;
         const matterDeadlinePages = await api.brain
           .listPages(matterDeadlineQuery(detail))
-          .catch(() => [] as BrainPage[]);
+          .catch(() => {
+            // Shown in the deadlines tab — never passed off as "no deadlines".
+            deadlinesFailed = true;
+            return [] as BrainPage[];
+          });
         if (!cancelled) {
+          setStandaloneDeadlinesFailed(deadlinesFailed);
           const mergedDeadlines = mergeCaseDeadlines(detail, matterDeadlinePages);
           setCaseData(detail);
           setTasks(detail.tasks);
@@ -606,9 +616,14 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     try {
       const page = await api.brain.getPage(slug);
       const detail = parseCaseDetail(page);
+      let deadlinesFailed = false;
       const deadlinePages = await api.brain
         .listPages(matterDeadlineQuery(detail))
-        .catch(() => [] as BrainPage[]);
+        .catch(() => {
+          deadlinesFailed = true;
+          return [] as BrainPage[];
+        });
+      setStandaloneDeadlinesFailed(deadlinesFailed);
       setCaseData(detail);
       setTasks(detail.tasks);
       setTimeEntries(detail.timeEntries);
@@ -1674,6 +1689,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     setEvidenceSourceMode,
     deadlinesList,
     setDeadlinesList,
+    standaloneDeadlinesFailed,
     editingDeadlineIndex,
     setEditingDeadlineIndex,
     deadlineRuleKey,

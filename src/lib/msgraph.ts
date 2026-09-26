@@ -16,8 +16,12 @@
  *   MS365_CALENDAR_NAME (optional, default: calendar)
  */
 
+import { externalFetchTimeout } from "@/lib/retry";
+
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
+/** Graph data calls (delta pages can be large) — bounded, but not tight. */
+export const GRAPH_FETCH_TIMEOUT_MS = 30_000;
 
 const MS365_CLIENT_ID = process.env.MS365_CLIENT_ID || "";
 const MS365_CLIENT_SECRET = process.env.MS365_CLIENT_SECRET || "";
@@ -110,6 +114,8 @@ export async function getGraphToken(): Promise<string> {
         scope: GRAPH_SCOPE,
         grant_type: "client_credentials",
       }),
+      // A hanging sign-in call must not hold the sync run forever.
+      signal: externalFetchTimeout(),
     }
   );
 
@@ -130,6 +136,8 @@ async function graphFetch(path: string, options?: RequestInit): Promise<Response
   const token = await getGraphToken();
   return fetch(`${GRAPH_BASE}${path}`, {
     ...options,
+    // Bounded like every external call; a caller's own signal wins.
+    signal: options?.signal ?? externalFetchTimeout(GRAPH_FETCH_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

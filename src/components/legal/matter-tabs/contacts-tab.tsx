@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import {
@@ -17,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
+import { api } from "@/lib/api";
 import {
   ContactCreateDialog,
   type ContactCreateResult,
@@ -57,9 +59,64 @@ const ROLE_COLORS: Record<string, string> = {
   other: "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]",
 };
 
+/** Slugs of the contacts a matter links to (client, opponents, court, own lawyer). */
+function linkedContactSlugs(caseData: CaseDetail | null | undefined): string[] {
+  if (!caseData) return [];
+  const slugs = new Set<string>();
+  if (caseData.clientSlug) slugs.add(caseData.clientSlug);
+  caseData.opponentSlugs?.forEach((s) => slugs.add(s));
+  if (caseData.courtSlug) slugs.add(caseData.courtSlug);
+  if (caseData.ownLawyerSlug) slugs.add(caseData.ownLawyerSlug);
+  return [...slugs];
+}
+
 export function ContactsTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const [linkedLoadFailed, setLinkedLoadFailed] = useState(false);
+
+  // The matter's own contacts are loaded by slug — the firm-wide contact list
+  // in the context is only the most recently edited ones, so the client,
+  // opponent or court of an older matter may be missing from it.
+  const linkedKey = linkedContactSlugs(ctx.caseData).join("\u0000");
+  const { contacts, contactsLoading, setContactsList } = ctx;
+  useEffect(() => {
+    if (contactsLoading || !linkedKey) return;
+    const known = new Set(contacts.map((c) => c.slug));
+    const missing = linkedKey.split("\u0000").filter((s) => !known.has(s));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    api.brain
+      .getPages(missing)
+      .then((pages) => {
+        if (cancelled) return;
+        setLinkedLoadFailed(false);
+        const loaded = Object.values(pages ?? {})
+          .filter((p) => p?.slug)
+          .map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              slug: p.slug,
+              name: String(fm.name ?? p.title ?? ""),
+              role: String(fm.role ?? "other"),
+              email: fm.email as string | undefined,
+              phone: fm.phone as string | undefined,
+            };
+          });
+        if (loaded.length === 0) return;
+        setContactsList((prev) => {
+          const have = new Set(prev.map((c) => c.slug));
+          return [...prev, ...loaded.filter((c) => !have.has(c.slug))];
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setLinkedLoadFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [linkedKey, contacts, contactsLoading, setContactsList]);
+
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
   const isArchived = caseData.status === "archived";
@@ -235,6 +292,17 @@ export function ContactsTab() {
           clientContact={clientContact}
           disabled={isArchived}
         />
+
+        {linkedLoadFailed && (
+          <div
+            role="alert"
+            className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+          >
+            {lang === "en"
+              ? "Some contacts linked to this matter could not be loaded."
+              : "Einige mit der Akte verknüpfte Kontakte konnten nicht geladen werden."}
+          </div>
+        )}
 
         {/* Loading State */}
         {ctx.contactsLoading && (

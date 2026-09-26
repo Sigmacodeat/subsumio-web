@@ -13,7 +13,13 @@ const t = (k: string) => k;
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t, lang: "de" }) }));
 vi.mock("@/lib/api", async (orig) => ({
   ...(await orig<typeof import("@/lib/api")>()),
-  api: { brain: { listAllPages: vi.fn(async () => []) } },
+  CASE_PICKER_MAX: 10_000,
+  api: {
+    brain: {
+      listAllPages: vi.fn(async () => []),
+      listAllPagesDetailed: vi.fn(async () => ({ pages: [], capped: false })),
+    },
+  },
 }));
 
 function list(items: unknown[]) {

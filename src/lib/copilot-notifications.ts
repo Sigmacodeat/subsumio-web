@@ -20,6 +20,8 @@ import { listEnginePages } from "@/lib/engine-pages";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { persistNotificationUpsert, type Notification } from "@/lib/comments";
+import { loadFristenReadModelCached, type Frist } from "@/lib/fristen-read-model";
+import { firmToday } from "@/lib/datetime";
 
 export type CopilotNotificationType =
   | "stale_case"
@@ -345,6 +347,56 @@ function generateNotificationsFromScan(
   return notifications;
 }
 
+/**
+ * `critical_deadline` alerts from the unified deadline read model (all
+ * sources, all matters the caller may see; shared short cache with the
+ * topbar). Matters that already carry a critical alert from the case scan
+ * are skipped. A read-model failure adds nothing (the scan alerts remain).
+ */
+async function criticalDeadlineNotifications(
+  headers: Record<string, string>,
+  existing: CopilotNotification[],
+  isEn: boolean
+): Promise<CopilotNotification[]> {
+  let fristen: Frist[];
+  try {
+    fristen = (await loadFristenReadModelCached(headers, { heute: firmToday() })).fristen;
+  } catch {
+    return [];
+  }
+  const already = new Set(
+    existing.filter((n) => n.type === "critical_deadline").map((n) => n.caseSlug)
+  );
+  const byCase = new Map<string, { title: string; count: number }>();
+  for (const f of fristen) {
+    if (!f.case_slug || already.has(f.case_slug)) continue;
+    if (f.status === "done" || f.review_status === "rejected") continue;
+    const days = daysUntil(f.due_date);
+    if (days < 0 || days > 3) continue;
+    const entry = byCase.get(f.case_slug) ?? { title: f.case_title || f.case_slug, count: 0 };
+    entry.count += 1;
+    byCase.set(f.case_slug, entry);
+  }
+  const now = new Date().toISOString();
+  return [...byCase].map(([slug, c]) => ({
+    id: `copilot_critical_${slug}`,
+    type: "critical_deadline" as const,
+    severity: "urgent" as const,
+    caseSlug: slug,
+    caseTitle: c.title,
+    title: isEn
+      ? `${c.count} critical deadline(s) in ${c.title}`
+      : `${c.count} kritische Frist(en) in ${c.title}`,
+    body: isEn
+      ? `Deadline within 3 days. Immediate action required.`
+      : `Frist innerhalb von 3 Tagen. Sofortige Handlung erforderlich.`,
+    actionHref: `/dashboard/cases/${slug.split("/").map(encodeURIComponent).join("/")}`,
+    actionLabel: isEn ? "View case" : "Akte ansehen",
+    createdAt: now,
+    dismissed: false,
+  }));
+}
+
 export async function generateCopilotNotifications(
   headers: Record<string, string>,
   brainId: string,
@@ -353,6 +405,11 @@ export async function generateCopilotNotifications(
 ): Promise<CopilotNotification[]> {
   const scan = await scanCases(headers);
   const notifications = generateNotificationsFromScan(scan, isEn);
+  // Critical deadlines of EVERY matter — also older ones outside the recent
+  // scan and standalone deadline pages — from the deadline read model.
+  notifications.push(
+    ...(await criticalDeadlineNotifications(headers, notifications, isEn))
+  );
 
   // Persist as in-app notifications
   for (const notif of notifications) {

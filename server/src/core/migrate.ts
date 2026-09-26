@@ -6748,6 +6748,46 @@ export const MIGRATIONS: Migration[] = [
     },
     transaction: false,
   },
+  {
+    version: 151,
+    name: "pages_list_case_slug_keyset_idx",
+    // Matter-scoped lists (a matter's deadlines, notes, documents) filter
+    // list_pages by frontmatter case_slug. This index serves that filter per
+    // (source, type) already in keyset order, so a matter's list reads only
+    // its own rows instead of the firm's whole type. Same build rules as
+    // v150: CONCURRENTLY on Postgres after dropping an invalid remnant,
+    // plain CREATE on PGLite.
+    sql: "",
+    handler: async (engine) => {
+      const cols = `(source_id, type, (frontmatter->>'case_slug'), (date_trunc('milliseconds', updated_at AT TIME ZONE 'UTC')) DESC, id DESC)`;
+      const where = `WHERE deleted_at IS NULL`;
+      if (engine.kind === "postgres") {
+        await engine.runMigration(
+          151,
+          `DO $$ BEGIN
+             IF EXISTS (
+               SELECT 1 FROM pg_index i
+               JOIN pg_class c ON c.oid = i.indexrelid
+               WHERE c.relname = 'pages_list_case_slug_keyset_idx' AND NOT i.indisvalid
+             ) THEN
+               EXECUTE 'DROP INDEX CONCURRENTLY IF EXISTS pages_list_case_slug_keyset_idx';
+             END IF;
+           END $$;`
+        );
+        await engine.runMigration(
+          151,
+          `CREATE INDEX CONCURRENTLY IF NOT EXISTS pages_list_case_slug_keyset_idx
+             ON pages ${cols} ${where};`
+        );
+      } else {
+        await engine.runMigration(
+          151,
+          `CREATE INDEX IF NOT EXISTS pages_list_case_slug_keyset_idx ON pages ${cols} ${where};`
+        );
+      }
+    },
+    transaction: false,
+  },
 ];
 
 export const LATEST_VERSION =

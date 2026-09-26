@@ -1,4 +1,4 @@
-import { listEnginePages } from "@/lib/engine-pages";
+import { listEnginePagesDetailed } from "@/lib/engine-pages";
 import { resolveFeedToken } from "@/lib/feed-auth";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +29,14 @@ export async function GET(_req: Request, context: { params: Promise<{ token: str
 
   try {
     // Every document the token owner may see — paged (one engine request
-    // returns 100); a mounted drive must not silently stop at a cut-off.
-    const pages = await listEnginePages(auth.headers, "document", DAV_DOCUMENTS_MAX, {
-      strict: true,
-      timeoutMs: 15_000,
-    });
+    // returns 100); a mounted drive must not silently stop at a cut-off. If
+    // the safety bound is ever reached, the answer says so (`truncated`).
+    const { pages, truncated } = await listEnginePagesDetailed(
+      auth.headers,
+      "document",
+      DAV_DOCUMENTS_MAX,
+      { strict: true, timeoutMs: 15_000 }
+    );
 
     const documents = pages.map((p) => {
       const page = p as {
@@ -56,7 +59,7 @@ export async function GET(_req: Request, context: { params: Promise<{ token: str
     });
 
     return Response.json(
-      { documents },
+      { documents, ...(truncated ? { truncated: true, limit: DAV_DOCUMENTS_MAX } : {}) },
       { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } }
     );
   } catch {

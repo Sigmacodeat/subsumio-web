@@ -50,9 +50,11 @@ function Harness({
   deadlines = [],
   jurisdiction,
   detected = [],
+  standaloneFailed = false,
 }: {
   deadlines?: DeadlineEntry[];
   jurisdiction?: string;
+  standaloneFailed?: boolean;
   detected?: Array<{ title: string; date: string; type: string; confidence: number }>;
 }) {
   const deadlineForm = useForm<DeadlineFormData>({
@@ -75,6 +77,7 @@ function Harness({
     setDeadlineStartDate: setStartDate,
     deadlinesList: list,
     setDeadlinesList: setList,
+    standaloneDeadlinesFailed: standaloneFailed,
     saveCaseUpdate,
     onDeadlineSubmit: vi.fn(),
     tasks: [],
@@ -268,5 +271,17 @@ describe("Akten-Tab — Löschen, KI-Erkennung, KI-Vorschläge (UIS-3-3)", () =>
     );
     expect(screen.getByText(formatDate("2026-03-30"))).toBeTruthy();
     expect(screen.queryByText(/^2026-03-30/)).toBeNull();
+  });
+});
+
+describe("Akten-Tab Fristen — unvollständige Liste (R11-4)", () => {
+  it("says so when the matter's standalone deadlines could not be loaded", () => {
+    render(<Harness standaloneFailed />);
+    expect(screen.getByRole("alert").textContent).toContain("unvollständig");
+  });
+
+  it("shows no warning when they loaded", () => {
+    render(<Harness />);
+    expect(screen.queryByText(/eigenständigen Fristen dieser Akte/)).toBeNull();
   });
 });

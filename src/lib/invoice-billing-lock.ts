@@ -20,8 +20,9 @@
  */
 
 import { ENGINE_URL } from "@/lib/engine";
-import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
+import type { ListedPage } from "@/lib/engine-pages";
 import { isTombstoned } from "@/lib/tombstone";
+import { findInvoicesByNumber, findInvoicesByParent } from "@/lib/invoice-lookup";
 import {
   STANDALONE_ENTRY_PREFIX,
   unbillTimeEntries,
@@ -282,10 +283,30 @@ export interface UnbillBlocker {
   status: string;
 }
 
-export type InvoiceLister = (headers: Record<string, string>) => Promise<ListedPage[]>;
+/**
+ * Lists the invoices relevant to these invoice numbers: every invoice page
+ * carrying one of them plus the Storno-Notes pointing at those pages.
+ */
+export type InvoiceLister = (
+  headers: Record<string, string>,
+  invoiceNumbers: string[]
+) => Promise<ListedPage[]>;
 
-const listAllInvoices: InvoiceLister = (headers) =>
-  listEnginePages(headers, "invoice", 5000, { includeTombstoned: true, strict: true });
+/**
+ * Targeted lookups (engine-side frontmatter filter) instead of a list of the
+ * newest N invoices — an old issued invoice must bind its work just the same.
+ * Strict and complete: any failed or truncated read throws.
+ */
+const listInvoicesForNumbers: InvoiceLister = async (headers, invoiceNumbers) => {
+  const out = new Map<string, ListedPage>();
+  for (const n of new Set(invoiceNumbers)) {
+    for (const inv of await findInvoicesByNumber(headers, n)) {
+      out.set(inv.slug, inv);
+      for (const child of await findInvoicesByParent(headers, inv.slug)) out.set(child.slug, child);
+    }
+  }
+  return [...out.values()];
+};
 
 /**
  * Entries that may NOT be unbilled because their invoice is issued and still
@@ -295,13 +316,16 @@ const listAllInvoices: InvoiceLister = (headers) =>
 export async function findUnbillBlockers(
   headers: Record<string, string>,
   entries: Array<{ id: string; invoice_number?: unknown }>,
-  listInvoices: InvoiceLister = listAllInvoices
+  listInvoices: InvoiceLister = listInvoicesForNumbers
 ): Promise<UnbillBlocker[]> {
   const withNumber = entries
     .map((e) => ({ id: e.id, invoice_number: String(e.invoice_number ?? "") }))
     .filter((e) => e.invoice_number !== "");
   if (withNumber.length === 0) return [];
-  const invoices = await listInvoices(headers);
+  const invoices = await listInvoices(
+    headers,
+    withNumber.map((e) => e.invoice_number)
+  );
   const blockers: UnbillBlocker[] = [];
   for (const e of withNumber) {
     const inv = bindingInvoice(e.invoice_number, invoices);
