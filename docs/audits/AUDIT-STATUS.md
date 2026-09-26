@@ -40,6 +40,10 @@ Pakete → Tests → Self-Audit → Edge-Case-Stress → DoD-Gate → PR → Mer
 | 12h | Folgearbeiten Audit        | —   | —            | ⏳ PR   | DMS pro Kanzlei mit geprüftem Ausgangsverkehr, alle Benachrichtigungen aktenbewusst, WhatsApp-Einwilligung pro Kanzlei, Alt-Geheimnisse versiegelt, Anlegen ersetzt nie          |
 | 12i | Pakete D0–D6 (Qualität)    | —   | —            | ⏳ PR   | Listen vollständig (Cursor-Paging), Schreibfehler nie als Erfolg, CSRF überall, Geld/Kalender/KI/Kommunikation/Kanzleibetrieb/Auth laut Audit-Paketen überarbeitet               |
 | 12j | Abschluss Megaaudit        | —   | —            | ⏳ PR   | Restpunkte (Webhooks, WhatsApp-Rechnung, Portal-Links, JSONB-Altdaten), Code-Gesundheit, Abrechnungstakt (opt-in), Akten-Scan nur auf Abruf, nächtlicher Judikatur-Wächter       |
+| 13a | Runde 2 — Zugriff & Portal | —   | —            | ⏳ PR   | Portal zeigt nur Freigegebenes, Dokument-ACL streng, Chinese Wall beim Ersetzen, keine Metadaten über den Inhalt, Offline-Speicher je Nutzer                                     |
+| 13b | Runde 2 — Betrieb          | —   | —            | ⏳ PR   | Engine ohne root, keine Secrets im Image, Cron-Alarmierung, Sperren ohne Pool-Erschöpfung, Support-Sitzungen lesend, Backups ehrlich                                             |
+| 13c | Runde 2 — Recht & Website  | —   | —            | ⏳ PR   | Werbeaussagen = Realität, AGB/AVV beim Signup, Datenschutz in öffentlichen Formularen                                                                                            |
+| 13d | Runde 2 — Pipeline & Tests | —   | —            | ⏳ PR   | AT-Zitierformen, aufgehobene Normen, RIS-Delta-Pfade, Outbox-Claims, zeitfeste Tests, E2E in CI, Mobile & Add-ins                                                                |
 
 ## Offene proaktive Vorschläge (über Domänen hinweg)
 
