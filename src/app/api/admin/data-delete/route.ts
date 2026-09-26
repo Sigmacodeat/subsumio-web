@@ -102,19 +102,11 @@ export const POST = createHandler(
       log.error(`[data-delete] session revocation failed: ${err}`);
     }
 
-    // 2. Remove from ACL groups (via org data)
-    try {
-      await pool.query(
-        `UPDATE subsumio_orgs
-         SET data = data - 'members',
-             updated_at = now()
-         WHERE owner_id = $1 OR (data->>'members')::jsonb ? $1`,
-        [userId]
-      );
-      actionsTaken.push("acl_groups_removed");
-    } catch {
-      // Non-critical
-    }
+    // 2. Firm membership needs no separate step: it is the user's own
+    // `orgId` (orgs carry no member list), so it ends with the soft- or
+    // hard-delete of the profile below. The soft-deleted row keeps `orgId`
+    // on purpose — the 30-day purge re-checks legal holds in that firm.
+    // Nothing is reported here because nothing is changed here.
 
     // 3. Delete comments
     try {

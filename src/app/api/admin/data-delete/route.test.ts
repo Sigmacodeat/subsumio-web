@@ -147,3 +147,16 @@ describe("POST /api/admin/data-delete — legal hold gate", () => {
     expect(pool.query).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /api/admin/data-delete — reported actions", () => {
+  it("reports only steps that change data (no firm-membership step that does nothing)", async () => {
+    checkFirmLegalHolds.mockResolvedValue({ status: "clear" });
+    const res = await post(REQUEST_BODY);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.actions_taken).not.toContain("acl_groups_removed");
+    const sql = pool.query.mock.calls.map((c: unknown[]) => String(c[0])).join("\n");
+    expect(sql).not.toMatch(/subsumio_orgs/);
+    expect(sql).not.toMatch(/'members'/);
+  });
+});
