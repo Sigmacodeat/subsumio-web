@@ -2090,6 +2090,17 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       // Thread userId for ethical wall engine-layer enforcement
       req.userId = payload.userId;
       req.userRole = typeof payload.role === "string" ? payload.role : undefined;
+      // A client account never reads the firm's brain directly: it sees only
+      // the released client view (documents, invoices, summary, reviewed
+      // deadlines), which the web app builds from the firm's own read. Every
+      // request signed for a client account is refused here, whatever route.
+      if (payload.role === "client_viewer") {
+        res.status(403).json({
+          error: "client_account_portal_only",
+          message: "Mandantenkonten sehen nur die freigegebene Mandantenansicht.",
+        });
+        return;
+      }
       // Matter access (walls, restricted matters, grants) applies to every
       // role, admins included — see core/matter-access.ts.
       // Other people's private Copilot conversations are hidden from everyone.

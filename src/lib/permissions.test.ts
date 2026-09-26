@@ -102,13 +102,17 @@ describe("can (RBAC matrix)", () => {
     expect(can(user, "brain.delete")).toBe(false);
   });
 
-  test("client_viewer can only read brain and settings", () => {
+  test("client_viewer reads only the released client view and its own account", () => {
     const user = mockUser("client_viewer");
-    expect(can(user, "brain.read")).toBe(true);
+    expect(can(user, "client.read")).toBe(true);
+    expect(can(user, "account.read")).toBe(true);
+    expect(can(user, "brain.read")).toBe(false);
     expect(can(user, "brain.write")).toBe(false);
     expect(can(user, "brain.delete")).toBe(false);
-    expect(can(user, "settings.read")).toBe(true);
+    expect(can(user, "settings.read")).toBe(false);
     expect(can(user, "settings.write")).toBe(false);
+    // Staff never use the client view.
+    expect(can(mockUser("lawyer"), "client.read")).toBe(false);
   });
 
   test("auth.sessions — every account manages its own sessions, client accounts too", () => {

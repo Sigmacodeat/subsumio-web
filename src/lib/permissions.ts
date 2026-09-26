@@ -51,7 +51,9 @@ export type RouteAction =
   | "auth.sso" // GET /api/auth/sso/*
   | "auth.sessions" // GET+POST /api/auth/sessions/*
   | "auth.email_change" // POST /api/auth/email/*
-  | "brain.read" // GET /api/stats, /api/pages, /api/search, /api/graph
+  | "brain.read" // GET /api/stats, /api/pages, /api/search, /api/graph — firm staff only
+  | "client.read" // GET /api/client/* — the released client view, client accounts only
+  | "account.read" // GET own account data (profile, own team entry, own data export) — all roles
   | "brain.write" // POST /api/pages, /api/upload
   | "brain.delete" // DELETE /api/pages/:slug
   | "query.submit" // POST /api/think, /api/search
@@ -151,7 +153,11 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   // sign out a lost device too.
   "auth.sessions": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.email_change": ["admin", "lawyer", "assistant"],
-  "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
+  // A client account never reads the brain: only the released client view
+  // (client.read), the same allowlist as the token portal.
+  "brain.read": ["admin", "lawyer", "assistant"],
+  "client.read": ["client_viewer"],
+  "account.read": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.write": ["admin", "lawyer", "assistant"],
   "brain.delete": ["admin", "lawyer"],
   "query.submit": ["admin", "lawyer", "assistant"],
@@ -161,7 +167,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "agent.inbox": ["admin", "lawyer", "assistant"],
   "connector.read": ["admin"],
   "connector.write": ["admin"],
-  "settings.read": ["admin", "lawyer", "assistant", "client_viewer"],
+  "settings.read": ["admin", "lawyer", "assistant"],
   "settings.write": ["admin"],
   "invoice.read": ["admin", "lawyer", "assistant"],
   "invoice.write": ["admin", "lawyer", "assistant"],
@@ -204,8 +210,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "push.register": ["admin", "lawyer", "assistant", "client_viewer"],
   "push.unregister": ["admin", "lawyer", "assistant", "client_viewer"],
   "share.receive": ["admin", "lawyer", "assistant", "client_viewer"],
-  "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
-  "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
+  "presence.update": ["admin", "lawyer", "assistant"],
+  "presence.list": ["admin", "lawyer", "assistant"],
   "audit.read": ["admin"],
   "mail.read": ["admin", "lawyer", "assistant"],
   "admin.*": ["admin"],
@@ -281,6 +287,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "auth.sessions": "user.session_revoked",
     "auth.email_change": "user.email_change_requested",
     "brain.read": "case.view",
+    "client.read": "case.view",
+    "account.read": "settings.update",
     "brain.write": "case.create",
     "brain.delete": "document.delete",
     "query.submit": "query.submit",
