@@ -616,29 +616,8 @@ export function InvoiceQuickCreateDialog({
               // "zugferd" needs the PDF bytes of an existing invoice; the
               // dialog has none, so it asks the server to build the PDF.
               format: eInvoiceFormat === "zugferd" ? "zugferd_scratch" : eInvoiceFormat,
-              invoice: {
-                invoice_number: invoice.number,
-                client: invoice.client,
-                client_address: invoice.clientAddress,
-                case_number: invoice.caseNumber,
-                date: invoice.date,
-                due_date: invoice.dueDate,
-                items: invoice.items,
-                expenses: invoice.expenses,
-                subtotal: invoice.subtotal,
-                expense_total: invoice.expenseTotal,
-                advance_payment: invoice.advancePayment,
-                vat_rate: invoice.vatRate,
-                tax: invoice.tax,
-                total: invoice.total,
-                payment_terms: invoice.paymentTerms,
-                bank: invoice.bank,
-                notes: invoice.notes,
-                invoice_type: invoiceType,
-                leitweg_id: leitwegId.trim() || undefined,
-                ...(reverseCharge ? { reverse_charge: true, client_vat_id: vatId } : {}),
-              },
-              settings,
+              // The server builds the file from the stored invoice.
+              invoiceSlug: invoice.id,
               options: {
                 leitwegId: leitwegId.trim() || undefined,
               },
