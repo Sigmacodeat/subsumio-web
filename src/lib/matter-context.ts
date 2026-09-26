@@ -22,6 +22,10 @@ import {
 import { inferInitialExtractionStatus } from "@/lib/extraction-status";
 import { checkEthicalWall } from "@/lib/ethical-wall";
 import { ForbiddenError } from "@/lib/errors";
+import { listEnginePages } from "@/lib/engine-pages";
+import { isTombstoned } from "@/lib/tombstone";
+import { DEADLINE_SOURCES, loadFristenReadModel, type Frist } from "@/lib/fristen-read-model";
+import { isClosedDeadline, isDiscardedDeadline } from "@/lib/deadline-reminders";
 import type {
   MatterContextBundle,
   MatterParty,
@@ -122,12 +126,22 @@ export async function buildMatterContext(
   // 2. Build parties from frontmatter + contact lookups
   const parties = await buildParties(engineUrl, engineHeaders, fm);
 
-  // 3. Build deadline summaries
-  const deadlines = buildDeadlineSummaries(fm.deadlines ?? []);
+  // Lists that failed or hit their read budget make the bundle partial —
+  // never a silent "keine Dokumente" / "keine Fristen".
+  const reads: MatterReadTracker = { partial: false };
+
+  // 3. Build deadline summaries — the Fristen read model for this matter
+  // (Fristenbuch, deadline pages with this case_slug, embedded deadlines).
+  const deadlines = await buildMatterDeadlines(engineHeaders, normalizedSlug, fm, reads);
 
   // 4. Build document summaries — merge case.documents with case_slug-stamped pages
   const frontmatterDocs = buildDocumentSummaries(fm.documents ?? []);
-  const slugStampedDocs = await fetchCaseDocumentsBySlug(engineUrl, engineHeaders, normalizedSlug);
+  const slugStampedDocs = await fetchCaseDocumentsBySlug(
+    engineUrl,
+    engineHeaders,
+    normalizedSlug,
+    reads
+  );
   const documents = mergeDocuments(frontmatterDocs, slugStampedDocs);
 
   // 5. Build recent activity from audit log + timeline
@@ -141,9 +155,9 @@ export async function buildMatterContext(
 
   // 8. Build WhatsApp/Kanzlei OS operational summaries
   const [documentRequests, intakeRequests, conversationEvents] = await Promise.all([
-    buildDocumentRequestSummaries(engineUrl, engineHeaders, normalizedSlug),
-    buildIntakeSummaries(engineUrl, engineHeaders, normalizedSlug),
-    buildConversationEventSummaries(engineUrl, engineHeaders, normalizedSlug),
+    buildDocumentRequestSummaries(engineUrl, engineHeaders, normalizedSlug, reads),
+    buildIntakeSummaries(engineUrl, engineHeaders, normalizedSlug, reads),
+    buildConversationEventSummaries(engineUrl, engineHeaders, normalizedSlug, reads),
   ]);
 
   // 9. Build permission summary
@@ -151,6 +165,12 @@ export async function buildMatterContext(
 
   // 10. Check coverage
   const coverage = await checkCoverage(engineUrl, engineHeaders, fm, documents);
+  if (reads.partial) {
+    coverage.partial = true;
+    coverage.warnings.push(
+      "Einzelne Listen (Fristen, Dokumente, Anfragen) konnten nicht vollständig geladen werden — das Bild der Akte kann unvollständig sein."
+    );
+  }
 
   // 11. Detect gaps
   const gaps = detectGaps(
@@ -665,27 +685,86 @@ async function fetchEnginePage(
   }
 }
 
+/** Read problems while building one bundle — surfaced as `coverage.partial`. */
+export interface MatterReadTracker {
+  partial: boolean;
+}
+
+/** Per-type read budget for the kanzlei-wide lists filtered to one matter. */
+const MATTER_LIST_BUDGET = 5_000;
+
+/**
+ * Every page of a type (paged through the engine cursor; one request is
+ * clamped to 100 rows), deleted pages left out. The engine has no case_slug
+ * filter, so callers filter afterwards — which is why the list must be
+ * complete: a matter's documents are rarely among the firm's newest 100.
+ * A failed read or an exhausted budget marks the tracker partial.
+ *
+ * Reads go to the configured engine (ENGINE_URL, via listEnginePages).
+ */
 async function fetchEnginePagesByType(
-  engineUrl: string,
+  _engineUrl: string,
   headers: Record<string, string>,
   type: string,
-  limit = 200
+  reads?: MatterReadTracker,
+  limit = MATTER_LIST_BUDGET
 ): Promise<EnginePageResponse[]> {
   try {
-    const params = new URLSearchParams({ type, limit: String(limit) });
-    const res = await fetch(`${engineUrl}/api/pages?${params.toString()}`, {
-      headers,
-      signal: AbortSignal.timeout(15_000),
+    const raw = await listEnginePages(headers, type, limit + 1, {
+      strict: true,
+      includeTombstoned: true,
     });
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (Array.isArray(data)) return data as EnginePageResponse[];
-    if (Array.isArray(data?.pages)) return data.pages as EnginePageResponse[];
-    if (Array.isArray(data?.items)) return data.items as EnginePageResponse[];
-    return [];
+    if (raw.length > limit && reads) reads.partial = true;
+    return raw.slice(0, limit).filter((p) => !isTombstoned(p)) as unknown as EnginePageResponse[];
   } catch {
+    if (reads) reads.partial = true;
     return [];
   }
+}
+
+/** Read-model deadlines → the entries buildDeadlineSummaries understands. */
+function fristToDeadlineEntry(f: Frist): DeadlineEntry {
+  return {
+    id: f.id,
+    title: f.title,
+    description: f.description,
+    due_date: f.due_date,
+    status: f.status === "done" ? "done" : "open",
+    source: f.source,
+    court: f.court,
+  } as DeadlineEntry;
+}
+
+/**
+ * The matter's deadlines from the Fristen read model. When a deadline source
+ * failed, the matter's own embedded deadlines are added back (they are in
+ * hand already) and the bundle is marked partial.
+ */
+async function buildMatterDeadlines(
+  headers: Record<string, string>,
+  caseSlug: string,
+  fm: CaseFrontmatter,
+  reads: MatterReadTracker
+): Promise<MatterDeadlineSummary[]> {
+  let model: Awaited<ReturnType<typeof loadFristenReadModel>>;
+  try {
+    model = await loadFristenReadModel(headers, { caseFilter: caseSlug });
+  } catch {
+    reads.partial = true;
+    return buildDeadlineSummaries(fm.deadlines ?? []);
+  }
+  const entries = model.fristen
+    // Timeline events are not deadlines here (they have their own section).
+    .filter((f) => f.case_slug === caseSlug && f.source !== "timeline")
+    .map(fristToDeadlineEntry);
+  if (model.failedSources.some((src) => DEADLINE_SOURCES.includes(src))) {
+    reads.partial = true;
+    const seen = new Set(entries.map((e) => `${e.due_date}|${e.title}`));
+    for (const d of fm.deadlines ?? []) {
+      if (!seen.has(`${d.due_date}|${d.title ?? d.description ?? "Frist"}`)) entries.push(d);
+    }
+  }
+  return buildDeadlineSummaries(entries);
 }
 
 /**
@@ -699,7 +778,8 @@ async function fetchEnginePagesByType(
 async function fetchCaseDocumentsBySlug(
   engineUrl: string,
   headers: Record<string, string>,
-  caseSlug: string
+  caseSlug: string,
+  reads?: MatterReadTracker
 ): Promise<MatterDocumentSummary[]> {
   try {
     const documentTypes = [
@@ -712,7 +792,7 @@ async function fetchCaseDocumentsBySlug(
     ];
     const pages = (
       await Promise.all(
-        documentTypes.map((type) => fetchEnginePagesByType(engineUrl, headers, type, 200))
+        documentTypes.map((type) => fetchEnginePagesByType(engineUrl, headers, type, reads))
       )
     ).flat();
     const matched = pages.filter((p) => {
@@ -947,36 +1027,40 @@ async function fetchContact(
 
 export function buildDeadlineSummaries(deadlines: DeadlineEntry[]): MatterDeadlineSummary[] {
   const now = new Date();
-  return deadlines
-    .filter((d) => d.due_date)
-    .map((d) => {
-      const dateStr = d.due_date ?? "";
-      const date = new Date(dateStr);
-      const diffMs = date.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return (
+    deadlines
+      // Cancelled, deleted or discarded AI suggestions are not deadlines.
+      .filter((d) => d.due_date && !isDiscardedDeadline(d))
+      .map((d) => {
+        const dateStr = d.due_date ?? "";
+        const date = new Date(dateStr);
+        const diffMs = date.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-      let urgency: MatterDeadlineSummary["urgency"] = "normal";
-      if (d.status === "done") {
-        urgency = "done";
-      } else if (diffDays < 0) {
-        urgency = "overdue";
-      } else if (diffDays <= 3) {
-        urgency = "critical";
-      } else if (diffDays <= 14) {
-        urgency = "upcoming";
-      }
+        let urgency: MatterDeadlineSummary["urgency"] = "normal";
+        // Central closed set: erledigt/completed/… are done, never "overdue".
+        if (isClosedDeadline(d)) {
+          urgency = "done";
+        } else if (diffDays < 0) {
+          urgency = "overdue";
+        } else if (diffDays <= 3) {
+          urgency = "critical";
+        } else if (diffDays <= 14) {
+          urgency = "upcoming";
+        }
 
-      return {
-        id: d.id,
-        title: d.title ?? d.description ?? "Unbenannte Frist",
-        date: dateStr,
-        status: d.status ?? "open",
-        urgency,
-        source: d.source ?? "manual",
-        court: d.court,
-      };
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return {
+          id: d.id,
+          title: d.title ?? d.description ?? "Unbenannte Frist",
+          date: dateStr,
+          status: d.status ?? "open",
+          urgency,
+          source: d.source ?? "manual",
+          court: d.court,
+        };
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  );
 }
 
 export function buildDocumentSummaries(documents: DocumentEntry[]): MatterDocumentSummary[] {
@@ -1029,9 +1113,10 @@ export function summarizeUploadHealth(documents: MatterDocumentSummary[]): {
 export async function buildDocumentRequestSummaries(
   engineUrl: string,
   headers: Record<string, string>,
-  caseSlug: string
+  caseSlug: string,
+  reads?: MatterReadTracker
 ): Promise<MatterDocumentRequestSummary[]> {
-  const pages = await fetchEnginePagesByType(engineUrl, headers, "document_request", 200);
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "document_request", reads);
   return pages
     .map((page): MatterDocumentRequestSummary | null => {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
@@ -1075,9 +1160,10 @@ export async function buildDocumentRequestSummaries(
 export async function buildIntakeSummaries(
   engineUrl: string,
   headers: Record<string, string>,
-  caseSlug: string
+  caseSlug: string,
+  reads?: MatterReadTracker
 ): Promise<MatterIntakeSummary[]> {
-  const pages = await fetchEnginePagesByType(engineUrl, headers, "intake_request", 200);
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "intake_request", reads);
   return pages
     .map((page): MatterIntakeSummary | null => {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
@@ -1116,9 +1202,10 @@ export async function buildIntakeSummaries(
 export async function buildConversationEventSummaries(
   engineUrl: string,
   headers: Record<string, string>,
-  caseSlug: string
+  caseSlug: string,
+  reads?: MatterReadTracker
 ): Promise<MatterConversationEventSummary[]> {
-  const pages = await fetchEnginePagesByType(engineUrl, headers, "conversation_event", 200);
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "conversation_event", reads);
   return pages
     .map((page): MatterConversationEventSummary | null => {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
