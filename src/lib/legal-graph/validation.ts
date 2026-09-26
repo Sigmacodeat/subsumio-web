@@ -416,7 +416,8 @@ export async function aggregateTreatments(
     }
   }
 
-  const overallStatus = overallTreatmentStatus(counts, atRiskReasons.length, result.rows.length);
+  const total = result.rows.length;
+  const overallStatus = overallTreatmentStatus(counts, atRiskReasons.length, total);
 
   const aggregation: TreatmentAggregation = {
     judgement_id: judgementId,

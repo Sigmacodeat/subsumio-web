@@ -34,8 +34,8 @@ beforeEach(() => {
 const u = (name: string) => `${prefix}${name}`;
 
 /** Product createSession; the version is read back from the signed token. */
-async function createSession(userId: string, email: string, role: "user" | "admin" | "lawyer") {
-  const { token } = await createProductSession(userId, email, role as never);
+async function createSession(userId: string, email: string, role: "admin" | "lawyer") {
+  const { token } = await createProductSession(userId, email, role);
   const payload = await verifySessionCore(token, AUTH_SECRET);
   return { token, version: payload?.v ?? 0 };
 }
@@ -66,27 +66,27 @@ describe("Revocation: Basic Version Increment", () => {
 
 describe("Revocation: Session Invalidation", () => {
   it("session before revocation is valid", async () => {
-    const session = await createSession(u("user-revoke"), "test@test.com", "user");
+    const session = await createSession(u("user-revoke"), "test@test.com", "lawyer");
     expect(await verifySession(session.token)).not.toBeNull();
   });
 
   it("session after revocation is invalid", async () => {
-    const session = await createSession(u("user-revoke"), "test@test.com", "user");
+    const session = await createSession(u("user-revoke"), "test@test.com", "lawyer");
     await revokeAllSessions(u("user-revoke"));
     expect(await verifySession(session.token)).toBeNull();
   });
 
   it("new session after revocation is valid", async () => {
-    const _session1 = await createSession(u("user-revoke"), "test@test.com", "user");
+    const _session1 = await createSession(u("user-revoke"), "test@test.com", "lawyer");
     await revokeAllSessions(u("user-revoke"));
-    const session2 = await createSession(u("user-revoke"), "test@test.com", "user");
+    const session2 = await createSession(u("user-revoke"), "test@test.com", "lawyer");
     expect(await verifySession(session2.token)).not.toBeNull();
   });
 
   it("old and new sessions coexist — only new is valid", async () => {
-    const session1 = await createSession(u("user-revoke"), "test@test.com", "user");
+    const session1 = await createSession(u("user-revoke"), "test@test.com", "lawyer");
     await revokeAllSessions(u("user-revoke"));
-    const session2 = await createSession(u("user-revoke"), "test@test.com", "user");
+    const session2 = await createSession(u("user-revoke"), "test@test.com", "lawyer");
 
     expect(await verifySession(session1.token)).toBeNull();
     expect(await verifySession(session2.token)).not.toBeNull();
@@ -95,9 +95,9 @@ describe("Revocation: Session Invalidation", () => {
 
 describe("Revocation: Concurrent Sessions", () => {
   it("multiple sessions for same user — revocation invalidates all", async () => {
-    const s1 = await createSession(u("user-concurrent"), "test@test.com", "user");
-    const s2 = await createSession(u("user-concurrent"), "test@test.com", "user");
-    const s3 = await createSession(u("user-concurrent"), "test@test.com", "user");
+    const s1 = await createSession(u("user-concurrent"), "test@test.com", "lawyer");
+    const s2 = await createSession(u("user-concurrent"), "test@test.com", "lawyer");
+    const s3 = await createSession(u("user-concurrent"), "test@test.com", "lawyer");
 
     // All valid before revocation
     expect(await verifySession(s1.token)).not.toBeNull();
@@ -113,8 +113,8 @@ describe("Revocation: Concurrent Sessions", () => {
   });
 
   it("revocation does not affect other users' sessions", async () => {
-    const s1 = await createSession(u("user-a"), "a@test.com", "user");
-    const s2 = await createSession(u("user-b"), "b@test.com", "user");
+    const s1 = await createSession(u("user-a"), "a@test.com", "lawyer");
+    const s2 = await createSession(u("user-b"), "b@test.com", "lawyer");
 
     await revokeAllSessions(u("user-a"));
 
@@ -127,7 +127,7 @@ describe("Revocation: Edge Cases", () => {
   it("session with version 0 is valid when no revocation", async () => {
     // Simulate a legacy session without version
     const token = await signSession(
-      { uid: u("user-edge"), email: "test@test.com", role: "user" },
+      { uid: u("user-edge"), email: "test@test.com", role: "lawyer" },
       AUTH_SECRET,
       3600,
       0
@@ -146,7 +146,7 @@ describe("Revocation: Edge Cases", () => {
   it("expired session is invalid regardless of revocation", async () => {
     // Create session with 1 second TTL
     const token = await signSession(
-      { uid: u("user-expired"), email: "test@test.com", role: "user" },
+      { uid: u("user-expired"), email: "test@test.com", role: "lawyer" },
       AUTH_SECRET,
       -1,
       1
@@ -162,7 +162,7 @@ describe("Revocation: Edge Cases", () => {
   });
 
   it("tampered token is rejected", async () => {
-    const session = await createSession(u("user-tamper"), "test@test.com", "user");
+    const session = await createSession(u("user-tamper"), "test@test.com", "lawyer");
     // Tamper with the token
     const tampered = session.token.slice(0, -5) + "XXXXX";
     expect(await verifySession(tampered)).toBeNull();
@@ -171,23 +171,23 @@ describe("Revocation: Edge Cases", () => {
 
 describe("Revocation: Version Number Correctness", () => {
   it("first session gets version 1", async () => {
-    const session = await createSession(u("user-ver"), "test@test.com", "user");
+    const session = await createSession(u("user-ver"), "test@test.com", "lawyer");
     expect(session.version).toBe(1);
   });
 
   it("session after 1 revocation gets version 2", async () => {
-    await createSession(u("user-ver"), "test@test.com", "user");
+    await createSession(u("user-ver"), "test@test.com", "lawyer");
     await revokeAllSessions(u("user-ver"));
-    const session = await createSession(u("user-ver"), "test@test.com", "user");
+    const session = await createSession(u("user-ver"), "test@test.com", "lawyer");
     expect(session.version).toBe(2);
   });
 
   it("session after 3 revocations gets version 4", async () => {
-    await createSession(u("user-ver"), "test@test.com", "user");
+    await createSession(u("user-ver"), "test@test.com", "lawyer");
     await revokeAllSessions(u("user-ver"));
     await revokeAllSessions(u("user-ver"));
     await revokeAllSessions(u("user-ver"));
-    const session = await createSession(u("user-ver"), "test@test.com", "user");
+    const session = await createSession(u("user-ver"), "test@test.com", "lawyer");
     expect(session.version).toBe(4);
   });
 });
