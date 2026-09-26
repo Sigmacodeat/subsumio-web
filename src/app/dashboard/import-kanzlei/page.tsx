@@ -37,6 +37,13 @@ import {
   type ColumnMapping,
   type ImportKind,
 } from "@/lib/kanzlei-import/fields";
+import {
+  applyImportPreset,
+  deleteImportPreset,
+  listImportPresets,
+  saveImportPreset,
+  type ImportPreset,
+} from "@/lib/kanzlei-import/presets";
 import { readImportFile, type ImportTable } from "@/lib/kanzlei-import/parse";
 import {
   planImport,
@@ -191,9 +198,25 @@ export default function ImportKanzleiPage() {
   const [rollback, setRollback] = useState<RollbackResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [presets, setPresets] = useState<ImportPreset[]>([]);
+  const [presetBusy, setPresetBusy] = useState(false);
+  const [presetError, setPresetError] = useState<string | null>(null);
 
   const def = IMPORT_KINDS[kind];
   const missing = table ? missingMappings(kind, mapping) : [];
+
+  const loadPresets = useCallback(async (forKind: ImportKind) => {
+    try {
+      setPresets(await listImportPresets(forKind));
+    } catch {
+      // Presets are a convenience; mapping still works via guessMapping.
+      setPresets([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPresets(kind);
+  }, [kind, loadPresets]);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -255,6 +278,50 @@ export default function ImportKanzleiPage() {
       setError(friendlyReadError(err));
     } finally {
       setBusy(null);
+    }
+  }
+
+  function applyPreset(slug: string) {
+    const preset = presets.find((p) => p.slug === slug);
+    if (!preset || !table) return;
+    setMapping(applyImportPreset(preset, table.headers));
+    resetPlan();
+  }
+
+  async function saveCurrentMappingAsPreset() {
+    if (!table) return;
+    const name = window.prompt("Name der Import-Vorlage (z. B. der Name der Quellsoftware):");
+    if (!name || !name.trim()) return;
+    setPresetError(null);
+    setPresetBusy(true);
+    try {
+      await saveImportPreset(kind, name, table.headers, mapping);
+      await loadPresets(kind);
+    } catch (err) {
+      setPresetError(
+        err instanceof Error ? err.message : "Vorlage konnte nicht gespeichert werden."
+      );
+    } finally {
+      setPresetBusy(false);
+    }
+  }
+
+  async function removePreset(slug: string, name: string) {
+    const ok = await confirm({
+      title: "Import-Vorlage löschen?",
+      message: `„${name}“ wird entfernt — betrifft nur die Vorlage, keine bereits importierten Daten.`,
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setPresetBusy(true);
+    try {
+      await deleteImportPreset(slug);
+      await loadPresets(kind);
+    } catch (err) {
+      setPresetError(err instanceof Error ? err.message : "Vorlage konnte nicht gelöscht werden.");
+    } finally {
+      setPresetBusy(false);
     }
   }
 
@@ -578,6 +645,70 @@ export default function ImportKanzleiPage() {
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
               Spalten zuordnen: {def.label}
             </h2>
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2.5">
+              <label
+                htmlFor="import-preset-select"
+                className="text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Import-Vorlage
+              </label>
+              <select
+                id="import-preset-select"
+                disabled={presetBusy || busy !== null || presets.length === 0}
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) applyPreset(e.target.value);
+                  e.target.value = "";
+                }}
+                className="min-w-[160px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              >
+                <option value="" disabled>
+                  {presets.length === 0 ? "Keine gespeicherten Vorlagen" : "Vorlage anwenden …"}
+                </option>
+                {presets.map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={presetBusy || busy !== null}
+                onClick={() => void saveCurrentMappingAsPreset()}
+                className="text-xs"
+              >
+                Aktuelle Zuordnung als Vorlage speichern
+              </Button>
+              {presets.length > 0 && (
+                <select
+                  aria-label="Vorlage löschen"
+                  disabled={presetBusy}
+                  defaultValue=""
+                  onChange={(e) => {
+                    const p = presets.find((x) => x.slug === e.target.value);
+                    e.target.value = "";
+                    if (p) void removePreset(p.slug, p.name);
+                  }}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-danger-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                >
+                  <option value="" disabled>
+                    Vorlage löschen …
+                  </option>
+                  {presets.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {presetError && (
+              <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                {presetError}
+              </p>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               {def.fields.map((f) => (
                 <div key={f.key} className="flex items-center gap-2">
