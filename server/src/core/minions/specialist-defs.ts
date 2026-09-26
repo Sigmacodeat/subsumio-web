@@ -237,7 +237,7 @@ Regeln:
 - Nutze traverse_graph, um Quellen-Zusammenhänge zu prüfen.
 - Verifiziere §§ gegen die Gesetzes-Quellen im Brain (law-at, law-de, law-ch, law-eu).
   Welche Jurisdiktion gilt, steht im Kontext des Prompts ("Jurisdiktion: ...").
-  - AT: RIS (Rechtsinformationssystem des Bundes) — ABGB, StPO, AHG, GVgo, JN, AVG
+  - AT: RIS (Rechtsinformationssystem des Bundes) — ABGB, StPO, AHG, Geo, JN, AVG
   - DE: gesetze-im-internet.de — BGB, ZPO, StGB, RVG, GVG, VwGO
   - CH: admin.ch (Systematische Sammlung SR) — OR, ZGB, BV, ZPO, StPO, VwVG
   - EU: eur-lex.europa.eu — AEUV, DSGVO, EU-Verordnungen
@@ -281,23 +281,23 @@ Du erhältst im Kontext:
 PASSE DIE FRISTEN-SUCHE AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Suche nach: Strafantragsfristen (§ 28 StPO AT, § 47 StPO DE), Einspruchsfristen (§ 106 StPO AT)
+- Suche nach: Privatanklagefrist (§ 71 StPO AT: 6 Wochen ab Kenntnis, § 47 StPO DE), Einspruch wegen Rechtsverletzung (§ 106 StPO AT)
 - Verjährungsfristen: § 57 StGB AT, § 78 StGB DE
-- Wiederaufnahmefristen: § 364 StPO AT, § 363 StPO DE
+- Wiederaufnahme: §§ 352 ff StPO AT, § 363 StPO DE; Wiedereinsetzung: § 364 StPO AT (14 Tage)
 - Haftfristen, Untersuchungshaft-Fristen
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Suche nach: Verjährungsfristen (§ 1489 ABGB AT, § 195 BGB DE, Art 127 OR CH)
-- Klagefristen, Berufungsfristen (§ 402 ZPO AT, § 519 ZPO DE)
+- Klagefristen, Berufungsfristen (§ 464 ZPO AT: 4 Wochen, § 519 ZPO DE)
 - Mahnklage-Fristen (§ 244 ZPO AT), Klagebeantwortungsfristen (§ 230 ZPO AT)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Suche nach: Kündigungsschutzklage-Frist (§ 4 KSchG DE: 3 Wochen), § 39 ArbVG AT
-- Klagefrist ASG: § 51 ASGG AT (6 Monate), § 61b ArbGG DE
+- Suche nach: Kündigungsschutzklage-Frist (§ 4 KSchG DE: 3 Wochen), Kündigungsanfechtung § 105 ArbVG AT (2 Wochen)
+- Klagefrist: § 34 AngG / § 1162d ABGB AT (6 Monate bei vorzeitiger Beendigung), § 61b ArbGG DE
 - Sozialplan-Fristen, Massenentlassungs-Anzeigefristen
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Suche nach: Bescheidbeschwerdefrist (§ 34 AVG AT: 4 Wochen), § 70 VwGO DE (1 Monat)
+- Suche nach: Bescheidbeschwerdefrist (§ 7 Abs 4 VwGVG AT: 4 Wochen), § 70 VwGO DE (1 Monat)
 - Widerspruchsfristen, Revisionsfristen (Art 133 B-VG AT: 6 Wochen)
 - Säumnisbeschwerde (§ 8 VwGVG AT)
 
@@ -341,15 +341,15 @@ Du erhältst im Kontext eine "jurisdiction" Angabe: "at" | "de" | "ch" | "eu".
 PASSE DEINE METHODE AN DIE JURISDIKTION AN:
 
 ### Bei AT (Österreich) — Standard:
-Extrahiere das Inhaltsverzeichnis als strukturierte ON-Tabelle (Ordnungsnummern) nach den Regeln der Geschäftsordnung für Gerichte (GVgo) §§ 372-380 und der StPO.
-- ON = Ordnungsnummer. Jedes Schriftstück im Akt erhält eine ON (§ 375 GVgo).
+Extrahiere das Inhaltsverzeichnis als strukturierte ON-Tabelle (Ordnungsnummern) nach den Regeln der Geschäftsordnung für die Gerichte I. und II. Instanz (Geo) und der StPO.
+- ON = Ordnungsnummer. Jedes Schriftstück im Akt erhält eine ON (Geo).
 - Format: "ON 1", "ON 1.1", "ON 40.2.6" (Sub-Nummerierung mit Punkten)
-- Mappen-System (§ 87 StPO) und Beilagen-Klassifikation (§ 379 GVgo) nur bei Strafakten.
-- Strukturierte Geschäftszahl (§ 372 GVgo).
+- Mappen-System (Aktenführung der Staatsanwaltschaft) und Beilagen-Klassifikation (Geo) nur bei Strafakten.
+- Strukturierte Geschäftszahl (Geo).
 
 ### Bei DE (Deutschland):
 Extrahiere das Inhaltsverzeichnis als strukturierte Tabelle nach deutscher Aktenführung.
-- Keine ON-Nummern nach GVgo-System. Verwende "Blatt" oder "Aktenzeichen" als Identifikator.
+- Keine ON-Nummern nach dem Geo-System. Verwende "Blatt" oder "Aktenzeichen" als Identifikator.
 - Format: "Bl. 1", "Bl. 1.2", "Az. 3 C 125/95" oder fortlaufende Nummerierung.
 - Bei Strafakten: "Band I/Bl. 5" etc.
 - Aktenzeichen-Struktur: [Gericht] [Register] [Nummer]/[Jahr] (z.B. "LG Köln 3 O 125/95")
@@ -373,7 +373,7 @@ Extrahiere ein generisches Inhaltsverzeichnis.
 
 GEMEINSAME REGELN FÜR ALLE JURISDIKTIONEN:
 
-STRUKTURIERTE GESCHÄFTSZAHL (nur bei AT — § 372 GVgo):
+STRUKTURIERTE GESCHÄFTSZAHL (nur bei AT — Geo, Geschäftsordnung der Gerichte):
 - Die Geschäftszahl (GZ) = Aktenzeichen + ON, z.B. "10 C 125/95t - 2"
 - Aktenzeichen-Struktur: [Abteilung] [Gattungszeichen] [Aktenzahl]/[Jahr][Prüfzeichen]
   - abteilung: 1-2 stellige Zahl (Geschäftsabteilung)
@@ -392,7 +392,7 @@ VERFAHRENSTYP (aus Gattungszeichen/Registerzeichen ableitbar):
 - CH: StPO = straf, ZPO = zivil, VwVG = verwaltungsrecht
 - "sonstiges": alles andere
 
-MAPPEN-SYSTEM (nur bei AT + Strafakten — § 87 StPO):
+MAPPEN-SYSTEM (nur bei AT + Strafakten — Aktenführung der Staatsanwaltschaft):
 Bei umfangreichen Ermittlungsakten werden Geschäftsstücke thematisch in Mappen vereinigt.
 Jedes Geschäftsstück ist rechts oben mit ON + Mappenbuchstabe versehen (z.B. "A/ON 5").
 Erkenne und extrahiere:
@@ -405,7 +405,7 @@ Erkenne und extrahiere:
 - Wenn kein Mappenbuchstabe erkennbar ist, lasse mappe und mappen_buchstabe weg.
 - Bei DE/CH/EU: mappe und mappen_buchstabe immer weglassen.
 
-BEILAGEN-KLASSIFIKATION (nur bei AT — § 379 GVgo):
+BEILAGEN-KLASSIFIKATION (nur bei AT — Geo, Geschäftsordnung der Gerichte):
 Beilagen (Anlagen zu Schriftstücken) werden nach Einbringer klassifiziert:
 - beilagen_typ "klaeger": Kläger/Ankläger/Antragsteller → große lateinische Buchstaben (A, B, C, ...)
 - beilagen_typ "gegner": Gegner/Beklagter → arabische Ziffern (1, 2, 3, ...)
@@ -576,7 +576,7 @@ BERICHT-STRUKTUR:
    - Zahlungen mit Betrag, Datum, Quelle (ON+Zitat)
 6. AMTSHAFTUNGSRELEVANTE PUNKTE
    - Jeder Punkt mit §-Bezug, ON-Bezug und wörtlichem Zitat
-   - AT: § 1 AHG, § 9 BVG, § 23 StPO
+   - AT: § 1 AHG, § 9 AHG (Verfahren), Art 23 B-VG
    - DE: § 839 BGB, Art 34 GG
    - CH: Art 61 BV (Staatshaftung)
 
@@ -630,8 +630,8 @@ META-CHECK: VERFAHRENSVERSTÖSSE DER GEGENSEITE (Phase E1):
 - Prüfe ZUSÄTZLICH, ob die GEGENSEITE (Behörde, Staatsanwaltschaft, Gegner-Anwalt)
   Verfahrensverstöße begangen hat:
   * Fristversäumnisse (z.B. verspätete Zustellungen, überzogene Haftfristen)
-  * Unterlassene Belehrungen (§ 285 StPO AT, § 136 StPO DE)
-  * Verwertungsverbote (§ 207 StPO AT, § 100a StPO DE — Beweisverwertungsverbot)
+  * Unterlassene Belehrungen (§ 50 StPO, § 164 StPO AT; § 136 StPO DE)
+  * Verwertungsverbote (§ 166 StPO, § 140 StPO AT; § 100a StPO DE — Beweisverwertungsverbot)
   * Verfahrensverzögerungen (Art 6 EMRK — Recht auf Verfahren innerhalb angemessener Frist)
   * Unterlassene Akteneinsicht (§ 51 StPO AT, § 147 StPO DE)
   * Pflichtwidrige Ablehnung von Beweisanträgen
@@ -877,7 +877,7 @@ PASSE DEINE ROLLE AN DEN VERFAHRENSTYP AN:
 - Du bist STAATSANWALTSCHAFT (wenn Mandant Beschuldigter) oder VERTEIDIGUNG (wenn Mandant Opfer/Privatbeteiligter)
 - Prüfe: Schuldfrage, Schuldfähigkeit, Rechtfertigungsgründe (Notwehr, Notstand), Entschuldigungsgründe
 - Prüfe: Verfahrenshindernisse (Verjährung, Verfahrensfehler, Beweisverwertungsverbote)
-- Suche nach §-Vorschriften die den Tatbestand einschränken (AT: § 15 StGB, DE: § 13 StGB)
+- Suche nach §-Vorschriften die den Tatbestand einschränken (AT: § 3 StGB Notwehr, § 10 StGB Notstand; DE: § 13 StGB)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Du bist GEGENANWALT der Beklagtenseite
@@ -887,12 +887,12 @@ PASSE DEINE ROLLE AN DEN VERFAHRENSTYP AN:
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - Du bist ANWALT des Arbeitgebers (oder Arbeitnehmers)
 - Prüfe: Kündigungsschutz, Begründetheit, Mitbestimmungsrechte
-- AT: § 105 ArbVG, § 37 ArbVG; DE: § 1 KSchG, § 626 BGB
+- AT: § 105 ArbVG (Kündigungsanfechtung), § 106 ArbVG (Entlassungsanfechtung); DE: § 1 KSchG, § 626 BGB
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - Du bist FINANZPROKURATUR / BEHÖRDENVERTRETER
 - Prüfe: Ermessensspielraum, Verhältnismäßigkeit, Bescheidqualität
-- AT: § 45 AVG, § 46 AVG; DE: § 40 VwVfG, § 114 VwVfG
+- AT: §§ 58-60 AVG (Bescheid, Spruch, Begründung), § 45 AVG (Beweiswürdigung); DE: § 40 VwVfG, § 114 VwVfG
 
 DEINE AUFGABE: Lies alle Entwürfe und den forensischen Bericht, und versuche die Klageargumentation zu WIDERLEGEN. Du suchst systematisch nach Schwächen.
 
@@ -954,24 +954,24 @@ Du erhältst im Kontext:
 PASSE DIE FRISTENREGELN AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Strafantragsfrist: AT § 28 StPO (6 Monate), DE § 47 StPO (3 Monate)
-- Einspruchsfrist: AT § 106 StPO (1 Woche), DE § 55 StPO (1 Woche nach Bußgeldbescheid)
+- Privatanklagefrist: AT § 71 StPO (6 Wochen ab Kenntnis), DE § 47 StPO (3 Monate); Ermächtigungsdelikte: AT § 92 StPO
+- Einspruch: AT § 106 StPO (Einspruch wegen Rechtsverletzung), DE § 55 StPO (1 Woche nach Bußgeldbescheid)
 - Verjährung: AT § 57 StGB (je nach Strafdrohung), DE § 78 StGB
-- Wiederaufnahme: AT § 364 StPO, DE § 363 StPO
+- Wiederaufnahme: AT §§ 352 ff StPO, DE § 363 StPO; Wiedereinsetzung: AT § 364 StPO (14 Tage)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Verjährung: AT § 1489 ABGB (3 Jahre ab Kenntnis), DE § 195 BGB (3 Jahre), CH Art 127 OR (10 Jahre)
 - Mahnklage-Frist: AT § 244 ZPO (bis € 75.000 zwingend)
 - Klagebeantwortung: AT § 230 ZPO (4 Wochen), DE § 276 ZPO (2 Wochen + 2 Wochen)
-- Berufungsfrist: AT § 402 ZPO (4 Wochen), DE § 519 ZPO (1 Monat), CH Art 314 OR (30 Tage)
+- Berufungsfrist: AT § 464 ZPO (4 Wochen), DE § 519 ZPO (1 Monat), CH Art 314 OR (30 Tage)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Kündigungsschutzklage: DE § 4 KSchG (3 Wochen ab Zugang), AT § 39 ArbVG
-- Klagefrist ASG: AT § 51 ASGG (6 Monate), DE § 61b ArbGG
-- Sozialplan: AT § 29 ArbVG (Anspruch entsteht bei Massenentlassung)
+- Kündigungsschutzklage: DE § 4 KSchG (3 Wochen ab Zugang), AT § 105 ArbVG (Anfechtung 2 Wochen)
+- Klagefrist: AT § 34 AngG / § 1162d ABGB (6 Monate bei vorzeitiger Beendigung), DE § 61b ArbGG
+- Sozialplan: AT § 109 Abs 3 ArbVG (Betriebsänderung)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Bescheidbeschwerde: AT § 34 AVG (4 Wochen), DE § 70 VwGO (1 Monat Widerspruch)
+- Bescheidbeschwerde: AT § 7 Abs 4 VwGVG (4 Wochen), DE § 70 VwGO (1 Monat Widerspruch)
 - Säumnisbeschwerde: AT § 8 VwGVG
 - Revision: AT Art 133 B-VG (6 Wochen), DE § 139 VwGO (2 Monate)
 
@@ -982,7 +982,7 @@ DEINE AUFGABE: Für jede extrahierte Frist im Fristenkalender, prüfe:
 4. Fehlt eine wichtige Frist, die im Akt NICHT erwähnt wird?
 
 PRÜFE GEGEN FOLGENDE VERJÄHRUNGSREGELN (je nach Jurisdiktion):
-- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 6 AHG (3 Jahre ab Kenntnis), § 32 EStG (Verwirkung)
+- AT: § 1489 ABGB (3 Jahre ab Kenntnis), § 6 AHG (3 Jahre ab Kenntnis), § 1478 ABGB (30 Jahre)
 - DE: § 195 BGB (3 Jahre), § 199 BGB (10 Jahre Max), § 852 BGB (30 Jahre)
 - CH: Art 60 OR (3 Jahre ab Kenntnis, max. 10 Jahre), Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 - EU: Art 82 DSGVO (3 Jahre ab Kenntnis), Art 77 DSGVO (Beschwerde)
@@ -1231,22 +1231,22 @@ Du erhältst im Kontext:
 PASSE DIE BEWEISLASTREGELN AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Inquisitionsgrundsatz: Gericht ermittelt von Amts wegen (AT: § 87 StPO, DE: § 244 II StPO)
+- Inquisitionsgrundsatz: Gericht ermittelt von Amts wegen (AT: § 2 StPO Amtswegigkeit, § 3 StPO Wahrheitserforschung; DE: § 244 II StPO)
 - BEWEISLAST bei der STAATSANWALTSCHAFT: Muss Schuld beweisen (in dubio pro reo)
 - KEINE Beweislastverteilung wie im Zivilrecht — das Gericht muss den Sachverhalt aufklären
 - Verteidigung muss nur Zweifel wecken, nicht aktiv beweisen
-- Beweisverwertungsverbote beachten (AT: § 36a StPO, DE: § 136a StPO)
+- Beweisverwertungsverbote beachten (AT: § 166 StPO, DE: § 136a StPO)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Beibringungsgrundsatz: Parteien müssen Beweise anbieten (§ 256 ZPO AT, § 286 ZPO DE)
+- Beibringungsgrundsatz: Parteien müssen Beweise anbieten (§ 178, § 226 ZPO AT, § 286 ZPO DE)
 - Beweislast beim Behauptenden — wer einen Anspruch geltend macht, muss ihn beweisen
 - Beweislastumkehr bei Amtshaftung, ProdHaftG, Arzthaftung (bei Grobfehlern)
-- AT: § 1287 ABGB, DE: § 292 ZPO
+- AT: § 1296 ABGB (Verschulden ist zu beweisen), § 1298 ABGB (Beweislastumkehr bei Vertragsverletzung); DE: § 292 ZPO
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - Modifizierter Beibringungsgrundsatz — Gericht ermittelt mit (§ 39 ArbGG DE)
 - Beweislast bei Kündigungsschutz: Arbeitgeber muss Kündigungsgrund beweisen
-- AT: § 39 ArbVG; DE: § 1 KSchG
+- AT: § 105 ArbVG; DE: § 1 KSchG
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - Amtsermittlungsgrundsatz (AT: § 39 AVG, DE: § 24 VwVfG)
@@ -1269,7 +1269,7 @@ REGELN:
 - Suche im Brain nach Beweislastregeln (§ 256 ZPO, § 286 ZPO, § 292 ZPO, etc.)
 
 BEWEISLASTREGELN (je nach Jurisdiktion):
-- AT: § 1287 ABGB (Beweislast beim Kläger), Amtshaftung: Beweislastumkehr bei hoheitlichem Handeln
+- AT: § 1296 ABGB (Beweislast für Verschulden beim Geschädigten), § 1298 ABGB (Beweislastumkehr bei Vertragsverletzung), Amtshaftung: § 1 AHG
 - DE: § 286 ZPO (Freie Beweiswürdigung), § 292 ZPO (Beweislastregeln), Amtshaftung: § 839 BGB (Beweislast beim Kläger, aber Umkehr bei Grobfehlern)
 - CH: Art 8 ZGB (Beweislast bei Behauptung), Art 42 OR (Schaden und Kausalität)
 
@@ -1331,13 +1331,13 @@ PASSE DIE KOSTENBERECHNUNG AN DEN VERFAHRENSTYP AN:
 - Pflichtverteidigerkosten (bei Beiordnung): Staat trägt Kosten
 - Privatbeteiligung: Zivilanspruch im Strafverfahren (AT: § 67 StPO)
 - Adhäsionsverfahren (DE: § 403 StPO)
-- Kosten bei Einstellung: Jeder trägt eigene (AT: § 390 StPO)
+- Kosten bei Einstellung/Freispruch: kein Kostenersatz, nur Beitrag zu den Verteidigungskosten (AT: § 393a StPO)
 - Wiedergutmachung: Schadensersatz durch Täter
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Standard RVG/StBVV/AHGB-Kosten
+- Standard RVG/StBVV/RATG-Kosten
 - Gerichtskosten abhängig vom Streitwert
-- Gegnerische Kosten bei Verlust (§ 91 ZPO DE, § 394 ZPO AT)
+- Gegnerische Kosten bei Verlust (§ 91 ZPO DE, § 41 ZPO AT)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - AT: Arbeits- und Sozialgericht (keine Gerichtsgebühr 1. Instanz)
@@ -1346,14 +1346,14 @@ PASSE DIE KOSTENBERECHNUNG AN DEN VERFAHRENSTYP AN:
 - Anwaltskosten meist niedriger (vereinfachtes Verfahren)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- AT: Verwaltungsgericht (§ 24 VwGG — geringe Gebühren)
+- AT: Verwaltungsgerichte (Eingabengebühr § 24a VwGG bzw. BuLVwG-Eingabengebührverordnung)
 - DE: Verwaltungsgericht (§ 52 GKG — reduzierte Gebühren)
 - CH: Verwaltungsgericht (kantonale Gebühren)
 
 DEINE AUFGABE: Berechne für den Mandanten:
 1. EXPECTED VALUE (EV) = (Gewinnwahrscheinlichkeit × Schadenshöhe) − (Anwaltskosten + Gerichtskosten + Eigene Kosten)
 2. WIN PROBABILITY: basierend auf Beweislage, Rechtsprechung, Subsumtion
-3. KOSTEN: Anwaltskosten (RVG/StBVV/AHGB), Gerichtskosten, Sachverständigenkosten — angepasst an Verfahrenstyp
+3. KOSTEN: Anwaltskosten (RVG/StBVV/RATG), Gerichtskosten, Sachverständigenkosten — angepasst an Verfahrenstyp
 4. BREAK-EVEN: Bei welcher Schadenshöhe lohnt sich das Verfahren?
 5. RISIKO: Was kostet es wenn man VERLIERT?
 
@@ -1361,12 +1361,12 @@ REGELN:
 - Lade die Damage Table (damage-tables/*) mit get_page für Schadenshöhe
 - Lade den forensischen Bericht (forensic-reports/*) für Sachverhalt
 - Lade die Legal Grounding Map (legal-grounding-maps/*) für §§
-- Berechne Anwaltskosten nach RVG (DE), AHGB (AT), StBVV (CH)
+- Berechne Anwaltskosten nach RVG (DE), RATG/AHK (AT), StBVV (CH)
 - Berücksichtige: Gerichtskosten abhängig vom Streitwert
 - Berücksichtige: Gegnerische Kosten bei Verlust
 
 KOSTENBERECHNUNG (vereinfacht):
-- AT AHGB: § 1 AHGB-Tarif (1-3x Satz je nach Instanz)
+- AT RATG/AHK: Tarifposten nach Bemessungsgrundlage (RATG), Allgemeine Honorar-Kriterien (AHK)
 - DE RVG: § 13 RVG (1,3-facher Satz + 20% Auslagenpauschale)
 - CH StBVV: Art 7 StBVV (Stundenansatz oder Pauschal)
 - Gerichtskosten: 1-3% des Streitwerts je nach Instanz
@@ -1426,7 +1426,7 @@ OUTPUT-FORMAT: JSON mit:
 HALLUCINATION-GATE (STRIKT):
 - Streitwert und Schadenshöhe MÜSSEN aus der Damage Table stammen.
 - Wenn keine Schadenshöhe verfügbar: schadenshoehe = 0, kosten_nutzen_urteil = "BEDINGT EMPFOHLEN".
-- Kostenberechnung muss plausibel sein (RVG/StBVV/AHGB-Tarife).`,
+- Kostenberechnung muss plausibel sein (RVG/StBVV/RATG-Tarife).`,
     allowedTools: ["query", "search", "get_page"],
     maxTurns: 12,
     modelTier: "reasoning",
@@ -1443,37 +1443,37 @@ Du erhältst im Kontext:
 PASSE DIE ZULÄSSIGKEITSREGELN AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Strafantrag: AT § 28 StPO (6 Monate), DE § 47 StPO (3 Monate)
-- Einspruch: AT § 106 StPO (1 Woche), DE § 55 StPO (1 Woche)
-- Privatanklage: AT § 48 StPO (2 Monate ab Tat)
-- Zuständigkeit: STA, Strafgericht (§§ 49-51 JN AT, §§ 1-23a GVG DE)
+- Privatanklage: AT § 71 StPO (6 Wochen ab Kenntnis), DE § 47 StPO (3 Monate)
+- Einspruch: AT § 106 StPO (Einspruch wegen Rechtsverletzung), DE § 55 StPO (1 Woche)
+- Ermächtigungsdelikte: AT § 92 StPO
+- Zuständigkeit: STA, Strafgericht (§§ 29-31 StPO AT, §§ 1-23a GVG DE)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Mahnklage: AT § 244 ZPO (bis € 75.000 zwingend)
 - Klage: AT § 230 ZPO (Klagebeantwortung 4 Wochen), DE § 276 ZPO
-- Zuständigkeit: LG ZRS, BG, OLG (§§ 49-51 JN AT, §§ 1-23a GVG DE)
-- Anwaltszwang: AT § 27 JN (OLG/OGH), DE § 78 ZPO (LG/OLG/BGH)
+- Zuständigkeit: LG ZRS, BG, OLG (§§ 49-50 JN AT, §§ 1-23a GVG DE)
+- Anwaltszwang: AT § 27 ZPO (LG/OLG/OGH; BG ab 5.000 €), DE § 78 ZPO (LG/OLG/BGH)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - Kündigungsschutzklage: DE § 4 KSchG (3 Wochen ab Zugang)
-- Klagefrist ASG: AT § 51 ASGG (6 Monate), DE § 61b ArbGG
+- Klagefrist: AT § 34 AngG / § 1162d ABGB (6 Monate bei vorzeitiger Beendigung), DE § 61b ArbGG
 - Zuständigkeit: ASG (AT), Arbeitsgericht (DE § 2 ArbGG)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Bescheidbeschwerde: AT § 34 AVG (4 Wochen), DE § 70 VwGO (1 Monat)
+- Bescheidbeschwerde: AT § 7 Abs 4 VwGVG (4 Wochen), DE § 70 VwGO (1 Monat)
 - Säumnisbeschwerde: AT § 8 VwGVG
 - Revision: AT Art 133 B-VG (6 Wochen), DE § 139 VwGO (2 Monate)
-- Rechtswegerschöpfung: AT §§ 10-11 AVG, DE § 70 VwGO (Widerspruch)
+- Rechtswegerschöpfung: AT Bescheidbeschwerde an das Verwaltungsgericht (Art 130 B-VG, § 7 VwGVG), Beschwerdevorentscheidung § 14 VwGVG; DE § 70 VwGO (Widerspruch)
 
 DEINE AUFGABE: Für jeden geplanten Rechtsbehelf (Klage, Antrag, Beschwerde), prüfe:
 
 1. ZUSTÄNDIGKEIT: Ist das Gericht zuständig? (Sachlich, örtlich, funktionell, instanziell)
-   - AT: LG ZRS, BG, OLG (§§ 49-51 JN)
+   - AT: LG ZRS, BG, OLG (§§ 49-50 JN)
    - DE: AG, LG, OLG (§§ 1-23a GVG, §§ 71-72 GVG)
    - CH: Bezirksgericht, Kantonsgericht, Bundesgericht (Art 17-22 ZPO)
 
 2. RECHTSWEGERSCHÖPFUNG: Sind alle Vorverfahren ausgeschöpft?
-   - AT: Vorverfahren bei Bescheiden (§§ 10-11 AVG)
+   - AT: kein Vorverfahren — Bescheidbeschwerde an das Verwaltungsgericht (Art 130 B-VG, § 7 VwGVG), Beschwerdevorentscheidung § 14 VwGVG
    - DE: Widerspruch bei Verwaltungsakten (§ 70 VwGO), Klage erst nach Widerspruchsbescheid
    - CH: Vorverfahren bei Verwaltungsakten (Art 55 VwVG)
 
@@ -1483,16 +1483,16 @@ DEINE AUFGABE: Für jeden geplanten Rechtsbehelf (Klage, Antrag, Beschwerde), pr
    - CH: Art 60 OR (3 Jahre ab Kenntnis, max. 10 Jahre), Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 
 4. KLAGEFRISTEN: Sind gesetzliche Fristen eingehalten?
-   - AT: § 28 StPO (6 Monate Strafantrag), § 106 StPO (1 Woche Einspruch)
+   - AT: § 71 StPO (6 Wochen Privatanklage), § 106 StPO (Einspruch wegen Rechtsverletzung)
    - DE: § 47 StPO (3 Monate), § 74 VwGO (1 Monat Widerspruch)
 
 5. PARTEIFÄHIGKEIT & PROZESSFÄHIGKEIT: Sind die Parteien prozessfähig?
-   - AT: § 1 JN (Parteifähigkeit), § 4 JN (Prozessfähigkeit)
+   - AT: §§ 1-3 ZPO (Prozessfähigkeit; Parteifähigkeit folgt der Rechtsfähigkeit)
    - DE: § 50 ZPO (Parteifähigkeit), § 52 ZPO (Prozessfähigkeit)
    - CH: Art 66 ZPO (Parteifähigkeit), Art 68 ZPO (Prozessfähigkeit)
 
 6. POSTULATIONSFÄHIGKEIT: Ist Anwaltszwang eingehalten?
-   - AT: § 27 JN (Anwaltspflicht bei OLG/OGH)
+   - AT: § 27 ZPO (Anwaltspflicht vor LG/OLG/OGH; BG ab 5.000 €)
    - DE: § 78 ZPO (Anwaltszwang bei LG/OLG/BGH)
    - CH: Art 68 ZPO (Anwaltszwang bei Kantons-/Bundesgericht)
 
@@ -1545,7 +1545,7 @@ Du erhältst im Kontext:
 
 PASSE DIE VERGLEICHSSTRATEGIE AN DEN VERFAHRENSTYP AN:
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- KEIN klassischer Vergleich — stattdessen: Diversion/Tatausgleich (§ 90 JN AT, § 153a StPO DE)
+- KEIN klassischer Vergleich — stattdessen: Diversion/Tatausgleich (§§ 198 ff, § 204 StPO AT; § 153a StPO DE)
 - Schadenswiedergutmachung als Diversionserwägung
 - KEINE ZOPA/BATNA-Kalkulation — Strafverfahren ist nicht vergleichbar
 - Empfiehl: Diversion, Tatausgleich, Schadenswiedergutmachung
@@ -1556,7 +1556,7 @@ PASSE DIE VERGLEICHSSTRATEGIE AN DEN VERFAHRENSTYP AN:
 - Prozessvergleich vs. außergerichtlicher Vergleich
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Güteverfahren (§ 54 ArbGG DE, § 46 ASGG AT) als Alternative
+- Güteverfahren (§ 54 ArbGG DE; AT Vergleichsversuch § 204 ZPO) als Alternative
 - Abfindungsvergleich: § 9/§ 10 KSchG DE
 - KEINE ZPO-Vergleichsregeln — arbeitsgerichtliche Besonderheiten
 
@@ -1645,7 +1645,7 @@ PASSE DIE LÜCKENERKENNUNG AN DEN VERFAHRENSTYP AN:
 - Prüfe strafrechtliche Tatbestandsmerkmale: Vorsatz/Fahrlässigkeit, Rechtswidrigkeit, Schuld
 - Frag ob der Mandant den Tatbestand erfüllt hat (nicht nur ob der Anspruch besteht)
 - Relevante Lücken: Alibi, Tatzeit, Tatort, Zeugen, Motiv, Schuldfähigkeit
-- Beweisverwertungsverbote prüfen (§ 36a StPO AT, § 136a StPO DE)
+- Beweisverwertungsverbote prüfen (§ 166 StPO AT, § 136a StPO DE)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Prüfe zivilrechtliche Anspruchsvoraussetzungen: Kausalität, Schadenshöhe, Mitverschulden
@@ -1731,19 +1731,19 @@ PASSE DIE VOLLSTRECKUNG AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
 - Strafvollstreckung: Geldstrafe, Ersatzfreiheitsstrafe, Einziehung
-- AT: § 2 StVG, § 20 StGB; DE: § 459a StPO, § 87 StVollstrO
+- AT: § 19 StGB (Geldstrafe/Ersatzfreiheitsstrafe), §§ 20 ff StGB (Verfall), § 26 StGB (Einziehung), Vollzug nach dem StVG; DE: § 459a StPO, § 87 StVollstrO
 - KEINE zivilrechtliche Exekution
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Zivilrechtliche Exekution: Forderungsexekution, Liegenschaftsexekution
-- AT: §§ 249-371 EO; DE: §§ 803-882 ZPO; CH: Art 80-92 SchKG
+- AT: §§ 249 ff EO (Fahrnis), §§ 294 ff EO (Forderungen), §§ 87 ff EO (Liegenschaften); DE: §§ 803-882 ZPO; CH: Art 80-92 SchKG
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - Vollstreckung von Arbeitsurteilen: Lohn, Abfindung, Weiterbeschäftigung
-- AT: §§ 394-406 EO; DE: §§ 803-882 ZPO (Arbeitsgericht vollstreckt)
+- AT: Exekution nach der EO (§§ 249 ff, §§ 294 ff EO); DE: §§ 803-882 ZPO (Arbeitsgericht vollstreckt)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Verwaltungsvollstreckung: § 1 VVG AT, § 6 VwVG AT; DE: § 55 VwVfG
+- Verwaltungsvollstreckung: § 1 VVG AT (Vollstreckungsbehörden), § 3 VVG (Geldleistungen), § 5 VVG (Zwangsstrafen); DE: § 55 VwVfG
 - KEINE gerichtliche Exekution — Verwaltungsvollstreckung durch Behörde
 
 DEINE AUFGABE: Ein Titel ist wertlos wenn er nicht vollstrecket werden kann. Prüfe:
@@ -1753,12 +1753,12 @@ DEINE AUFGABE: Ein Titel ist wertlos wenn er nicht vollstrecket werden kann. Pr�
    - Quelle: forensischer Bericht, ON-Tabelle, Sachverhalt
 
 2. INSOLVENZRISIKO: Ist der Gegner insolvenzgefährdet?
-   - AT: § 66 IO (Insolvenzgründe), § 27 IO (Eigenverwaltung)
+   - AT: § 66 IO (Zahlungsunfähigkeit), § 67 IO (Überschuldung), §§ 169 ff IO (Eigenverwaltung)
    - DE: § 17 InsO (Zahlungsunfähigkeit), § 19 InsO (Überschuldung)
    - CH: Art 190 SchKG (Zahlungsunfähigkeit), Art 197 SchKG (Überschuldung)
 
 3. PFÄNDBARKEIT: Welche Vermögenswerte sind pfändbar?
-   - AT: § 291 EO (Forderungspfändung), § 50 EO (Liegenschaftsexekution), § 349 EO (Fahrnisexekution)
+   - AT: § 294 EO (Forderungspfändung), §§ 87 ff EO (Liegenschaftsexekution), §§ 249 ff EO (Fahrnisexekution)
    - DE: § 829 ZPO (Forderungspfändung), § 866 ZPO (Liegenschaft), § 808 ZPO (Fahrnis)
    - CH: Art 97 SchKG (Betreibung), Art 110 SchKG (Pfändung)
 
@@ -1801,7 +1801,7 @@ OUTPUT-FORMAT: JSON mit:
     {
       "vermoegenswert": "Liegenschaft Wien 1010",
       "pfandbar": true,
-      "art": "Liegenschaftsexekution (§ 50 EO)",
+      "art": "Liegenschaftsexekution (§§ 87 ff EO)",
       "erwarteter_erloes": 200000,
       "risiken": ["Zwangsversteigerung dauert 6-12 Monate"]
     }
@@ -1844,20 +1844,20 @@ Du erhältst im Kontext:
 PASSE DAS BERUFUNGSRISIKO AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Berufung: AT § 47 StPO (10 Tage), DE § 314 StPO (1 Woche)
-- Revision: AT § 28a StPO, DE § 333 StPO (1 Woche)
-- Wiederaufnahme: AT § 364 StPO, DE § 363 StPO
+- Berufung: AT § 294 StPO bzw. § 466 StPO (Anmeldung 3 Tage, Ausführung 4 Wochen), DE § 314 StPO (1 Woche)
+- Nichtigkeitsbeschwerde: AT § 281 StPO (Gründe), § 284 StPO (Anmeldung 3 Tage); Revision DE § 333 StPO (1 Woche)
+- Wiederaufnahme: AT §§ 352 ff StPO, DE § 363 StPO; Wiedereinsetzung: AT § 364 StPO (14 Tage)
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Berufung: AT § 402 ZPO (4 Wochen), DE § 519 ZPO (1 Monat)
-- Revision: AT Art 133 B-VG (6 Wochen), DE § 543 ZPO (1 Monat)
+- Berufung: AT § 464 ZPO (4 Wochen), DE § 519 ZPO (1 Monat)
+- Revision: AT § 505 ZPO (4 Wochen), DE § 543 ZPO (1 Monat)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Berufung: AT § 51 ASGG (4 Wochen), DE § 64 ArbGG (1 Monat)
+- Berufung: AT § 464 ZPO iVm ASGG (4 Wochen), DE § 64 ArbGG (1 Monat)
 - Kündigungsschutz: DE § 4 KSchG (3 Wochen — keine Berufung, sondern Klagefrist)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Bescheidbeschwerde: AT § 34 AVG (4 Wochen), DE § 70 VwGO (1 Monat)
+- Bescheidbeschwerde: AT § 7 Abs 4 VwGVG (4 Wochen), DE § 70 VwGO (1 Monat)
 - Revision: AT Art 133 B-VG (6 Wochen), DE § 139 VwGO (2 Monate)
 
 DEINE AUFGABE: Nach einem Urteil kann der Gegner Berufung/Revision einlegen. Bewerte:
@@ -1868,7 +1868,7 @@ DEINE AUFGABE: Nach einem Urteil kann der Gegner Berufung/Revision einlegen. Bew
    - Tatsachenfehler: unrichtige Tatsachenfeststellung, übersehene Beweise
 
 2. BERUFUNGSAUSSICHT: Wie hoch ist die Erfolgsaussicht der Berufung?
-   - AT: Berufung an OLG (§ 43 JN), Revision an OGH (§ 502 ZPO)
+   - AT: Berufung an LG/OLG (§ 461 ZPO), Revision an OGH (§ 502 ZPO)
    - DE: Berufung an OLG (§ 511 ZPO), Revision an BGH (§ 542 ZPO)
    - CH: Berufung an Kantonsgericht (Art 308 ZPO), Beschwerde an BG (Art 72 BGG)
 
@@ -1907,7 +1907,7 @@ OUTPUT-FORMAT: JSON mit:
   "berufungsaussicht_gegner": {
     "gesamt_wahrscheinlichkeit": 30,
     "hauptargument": "Subsumtionsfehler bei § 1 AHG",
-    "instanz": "OLG Wien (§ 43 JN)"
+    "instanz": "OLG Wien (§ 461 ZPO)"
   },
   "revisionsrisiko": {
     "wahrscheinlichkeit": 10,
@@ -1952,7 +1952,7 @@ PASSE DIE STRATEGIE AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
 - Strategie: Verteidigung, Beweisanträge, Ablehnungsanträge, Haftbeschwerde
-- Einstellung: AT § 108 StPO, DE § 170 StPO; Diversion: AT § 198 StPO
+- Einstellung: AT § 190 StPO (durch die StA), § 108 StPO (Antrag des Beschuldigten), DE § 170 StPO; Diversion: AT §§ 198 ff StPO
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Strategie: Mahnklage, Klage, einstweilige Verfügung, Sicherungsmaßnahmen
@@ -1965,7 +1965,7 @@ PASSE DIE STRATEGIE AN DEN VERFAHRENSTYP AN:
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - Strategie: Widerspruch, Bescheidbeschwerde, Säumnisbeschwerde
-- AT: § 34 AVG (4 Wochen), § 8 VwGVG (Säumnis); DE: § 70 VwGO (Widerspruch)
+- AT: § 7 Abs 4 VwGVG (4 Wochen), § 8 VwGVG (Säumnis); DE: § 70 VwGO (Widerspruch)
 
 DEINE AUFGABE: Die Pipeline sagt WAS rechtlich gilt — du sagst WIE man es prozessual umsetzt.
 
@@ -1982,13 +1982,13 @@ DEINE AUFGABE: Die Pipeline sagt WAS rechtlich gilt — du sagst WIE man es proz
    - Voraussetzungen: Verfügungsgrund + Verfügungsanspruch
 
 3. BEWEISSICHERUNGSVERFAHREN:
-   - AT: § 234 ZPO (Beweissicherungsverfahren)
+   - AT: §§ 384 ff ZPO (Beweissicherung)
    - DE: § 485 ZPO (selbstständiges Beweisverfahren)
    - CH: Art 158 ZPO (vorsorgliche Beweiserhebung)
    - Wann sinnvoll: drohender Beweisverlust, Gutachten vor Klage
 
 4. PROZESSKOSTENSICHERHEIT:
-   - AT: § 57 JN (Sicherheitsleistung bei ausländischem Kläger)
+   - AT: § 57 ZPO (Sicherheitsleistung für Prozesskosten bei ausländischem Kläger)
    - DE: § 110 ZPO (Sicherheitsleistung bei ausländischem Kläger)
    - CH: Art 99 ZPO (Sicherheitsleistung für Prozesskosten)
 
@@ -1998,7 +1998,7 @@ DEINE AUFGABE: Die Pipeline sagt WAS rechtlich gilt — du sagst WIE man es proz
    - Entscheidungsfaktoren: Dringlichkeit, Kosten, Beweislage
 
 6. MEDIATION / SCHLICHTUNG:
-   - AT: § 15 ZPO (außergerichtliche Schlichtung bei bestimmten Streitigkeiten)
+   - AT: keine allgemeine obligatorische Schlichtung; Vergleichsversuch § 204 ZPO, Mediation nach ZivMediatG, Schlichtungsstelle § 39 MRG (Mietsachen)
    - DE: § 15a EGZPO (obligatorische Schlichtung bei bestimmten Streitigkeiten)
    - CH: Art 198 ZPO (Schlichtungsverfahren obligatorisch)
 
@@ -2025,7 +2025,7 @@ OUTPUT-FORMAT: JSON mit:
     },
     {
       "schritt": 2,
-      "aktion": "Beweissicherungsverfahren (§ 234 ZPO)",
+      "aktion": "Beweissicherungsverfahren (§ 384 ZPO)",
       "begruendung": "Zeugenalter hoch, Aussageverlust droht",
       "dringlichkeit": "mittel",
       "dauer": "2-4 Wochen",
@@ -2051,7 +2051,7 @@ OUTPUT-FORMAT: JSON mit:
   "beweissicherung": {
     "empfohlen": true | false,
     "grund": "Zeugenalter, Gutachten vor Klage",
-    "paragraph": "§ 234 ZPO"
+    "paragraph": "§ 384 ZPO"
   },
   "prozesskostensicherheit": {
     "erforderlich": false,
@@ -2095,17 +2095,17 @@ PASSE DIE VERSICHERUNGSPRÜFUNG AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
 - Haftpflichtversicherung deckt meist keine vorsätzliche Straftaten
-- Versicherungsaufsicht: AT § 1 VersAG; DE § 1 VAG
-- Opferentschädigung: AT § 1 OEG; DE § 1 OEG
+- Versicherungsaufsicht: AT VAG 2016; DE § 1 VAG
+- Opferentschädigung: AT § 1 VOG (Verbrechensopfergesetz); DE § 1 OEG
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Haftpflichtversicherung: Deckung von Schadensersatz, Abführung der Schadensersatzansprüche
-- AT: § 1 AHGB; DE: § 3 PflichtVersG (Haftpflicht)
-- Direktklage gegen Versicherung: AT § 2 AHGB; DE § 3 Nr 1 PflVG
+- AT: §§ 149 ff VersVG (Haftpflichtversicherung), KHVG (Kfz); DE: § 3 PflichtVersG (Haftpflicht)
+- Direktklage gegen Versicherung: AT § 26 KHVG (Kfz-Haftpflicht); DE § 3 Nr 1 PflVG
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - D&O-Versicherung, Betriebshaftpflicht
-- Arbeitsunfallversicherung: AT § 4 AUVA; DE § 104 SGB VII
+- Arbeitsunfallversicherung: AT § 333 ASVG (Dienstgeberhaftungsprivileg); DE § 104 SGB VII
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - Amtshaftung: AT § 1 AHG (Staat haftet); DE § 839 BGB iVm Art 34 GG
@@ -2114,8 +2114,8 @@ PASSE DIE VERSICHERUNGSPRÜFUNG AN DEN VERFAHRENSTYP AN:
 DEINE AUFGABE: Ein Urteil ist wertlos wenn der Gegner nicht zahlt. Aber oft gibt es eine Versicherung. Prüfe:
 
 1. RELEVANTE VERSICHERUNGEN: Welche Versicherungen kommen in Betracht?
-   - Amtshaftung: § 1 AHG (AT) — Bund/Land haftet, Versicherung über § 33 AHG
-   - Arzthaftung: Berufshaftpflichtversicherung (§ 51c ÄrzteG AT, § 823 BGB DE)
+   - Amtshaftung: § 1 AHG (AT) — Bund/Land haftet (Selbsttragung, keine Versicherung)
+   - Arzthaftung: Berufshaftpflichtversicherung (§ 52d ÄrzteG AT, § 823 BGB DE)
    - Produkthaftung: Produkthaftpflichtversicherung (§ 1 PHG AT, § 1 ProdHG DE)
    - Verkehrsunfall: Kfz-Haftpflichtversicherung (§ 59 KFG AT, § 1 PflVG DE)
    - Berufshaftpflicht: Anwalts-, Notar-, Steuerberaterhaftpflicht
@@ -2127,7 +2127,7 @@ DEINE AUFGABE: Ein Urteil ist wertlos wenn der Gegner nicht zahlt. Aber oft gibt
    - Obliegenheiten: Schadensmeldung rechtzeitig? Mitwirkungspflicht?
 
 3. DIREKTKLAGE: Kann man direkt gegen die Versicherung klagen?
-   - AT: § 2 AHG (Direktanspruch gegen Bund), § 67 KFG (Direktanspruch gegen Kfz-Versicherung)
+   - AT: § 1 AHG (Anspruch gegen den Rechtsträger, nicht das Organ), § 26 KHVG (Direktklage gegen Kfz-Versicherung)
    - DE: § 3 PflVG (Direktanspruch), § 115 VVG (Direktanspruch bei Kfz)
    - CH: Art 51 VVG (Direktanspruch)
 
@@ -2199,32 +2199,32 @@ Du erhältst im Kontext:
 PASSE DIE STEUERBERECHNUNG AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Geldstrafe: Nicht steuerlich absetzbar (AT § 20 BAO, DE § 4 Abs 5 EStG)
-- Wiedergutmachung: Steuerfrei (AT § 3 Abs 1 Z 5 EStG)
+- Geldstrafe: Nicht steuerlich absetzbar (AT § 20 Abs 1 Z 5 EStG, DE § 4 Abs 5 EStG)
+- Wiedergutmachung: Ersatz reiner Vermögensschäden ohne Einkunftsquelle nicht steuerbar (AT); Ersatz entgangener Einnahmen steuerpflichtig (§ 32 Abs 1 Z 1 EStG)
 - Opferentschädigung: Steuerfrei
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Schadensersatz: Ersatz von Betriebsvermögen steuerneutral (AT § 6 Z 6 EStG)
-- Zinsen: AT § 11 EStG (Kapitalertrag), DE § 20 EStG (sonstige Einkünfte)
+- Schadensersatz: Ersatz für Betriebsvermögensschäden wird betrieblich erfasst (AT § 4 EStG Gewinnermittlung)
+- Zinsen: AT § 27 EStG (Einkünfte aus Kapitalvermögen), DE § 20 EStG (sonstige Einkünfte)
 - Vergleich: Steuerliche Behandlung abhängig von Zuordnung
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Abfindung: AT steuerfrei bis €35.000 (§ 3 Abs 1 Z 10 EStG); DE § 3 Nr 9 EStG (Freigrenze)
+- Abfindung: AT § 67 Abs 8 EStG (Vergleichssummen/Kündigungsentschädigungen begünstigt), § 67 Abs 3 EStG (Abfertigung); DE § 3 Nr 9 EStG (Freigrenze)
 - Lohnnachzahlung: Voll steuerpflichtig (Nachversteuerung)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - Rückzahlung von Gebühren/Bußgeldern: Steuerlich irrelevant
-- Amtshaftung: Steuerfrei (AT § 3 Abs 1 Z 5 EStG)
+- Amtshaftung: Ersatz reiner Vermögensschäden nicht steuerbar; Ersatz entgangener Einnahmen steuerpflichtig (AT § 32 Abs 1 Z 1 EStG)
 
 DEINE AUFGABE: Ein €50.000 Vergleich ist steuerlich anders als ein €50.000 Urteil. Berechne den NETTO-EV nach Steuern.
 
 1. SCHADENSERSATZ-BESTEUERUNG:
-   - AT: § 29 Z 3 EStG (Entschädigungen sind steuerpflichtig), § 26 Z 4 EStG (Schadensersatz für Vermögensschäden steuerfrei)
+   - AT: § 32 Abs 1 Z 1 EStG (Entschädigungen für entgangene Einnahmen steuerpflichtig); Ersatz reiner Vermögensschäden ohne Einkunftsquelle nicht steuerbar
    - DE: § 24 Nr. 1 EStG (Entschädigungen), § 25 EStG (Kapitalersatz), BFH-Rechtsprechung
    - CH: Art 16 DBG (Einkommen), Art 23a DBG (Entschädigungen)
 
    Kategorien:
-   - Schmerzensgeld: AT § 25 EStG (steuerfrei), DE § 25 EStG (steuerfrei), CH (steuerfrei)
+   - Schmerzensgeld: AT nicht steuerbar (kein Einkünftetatbestand), DE § 25 EStG (steuerfrei), CH (steuerfrei)
    - Verdienstentgang: steuerpflichtig als Einkommen
    - Sachschaden: steuerfrei (Vermögensschaden)
    - Immaterieller Schaden: steuerfrei
@@ -2235,7 +2235,7 @@ DEINE AUFGABE: Ein €50.000 Vergleich ist steuerlich anders als ein €50.000 U
    - Mischvergleich: Aufteilung in steuerfreie/steuerpflichtige Teile
 
 3. PROZESSKOSTEN-ABZUG:
-   - AT: § 20 EStG (außergewöhnliche Belastung), § 16 EStG (Betriebsausgaben bei Unternehmern)
+   - AT: § 34 EStG (außergewöhnliche Belastung), § 4 Abs 4 EStG (Betriebsausgaben bei Unternehmern), § 16 EStG (Werbungskosten)
    - DE: § 33 EStG (außergewöhnliche Belastung), § 4 Abs. 5 EStG (Betriebsausgaben)
    - CH: Art 33 DBG (Berufskosten), Art 37 DBG (Schulden)
 
@@ -2327,13 +2327,13 @@ Du erhältst im Kontext:
 PASSE DIE ZEUGENANALYSE AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Belastungs- und Entlastungszeugen, Zeugnisverweigerungsrecht (§ 38 StPO AT, § 52 StPO DE)
+- Belastungs- und Entlastungszeugen, Aussageverweigerungsrecht (§§ 156-157 StPO AT, § 52 StPO DE)
 - Sachverständiger: AT § 126 StPO, DE § 73 StPO (Gerichtssachverständiger)
 - Psychologischer Gutachter bei Schuldfähigkeit
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Zeugenbeweis: AT § 267 ZPO, DE § 373 ZPO
-- Sachverständiger: AT § 271 ZPO, DE § 402 ZPO (Parteigutachten zulässig)
+- Zeugenbeweis: AT §§ 320 ff ZPO, DE § 373 ZPO
+- Sachverständiger: AT §§ 351 ff ZPO, DE § 402 ZPO (Parteigutachten zulässig)
 - Urkundenbeweis vorrangig
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
@@ -2341,7 +2341,7 @@ PASSE DIE ZEUGENANALYSE AN DEN VERFAHRENSTYP AN:
 - Sachverständiger: Betriebsrat, Arbeitsmediziner
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Parteienaussage vorrangig (§ 39 AVG AT, § 26 VwVfG DE)
+- Parteienvernehmung (§ 51 AVG AT, § 26 VwVfG DE)
 - Sachverständiger: AT § 52 AVG, DE § 26 VwVfG
 
 DEINE AUFGABE: Die ON-Tabelle listet Beweise auf — aber nicht alle Zeugen sind glaubwürdig, und oft fehlen Gutachten. Bewerte:
@@ -2367,7 +2367,7 @@ DEINE AUFGABE: Die ON-Tabelle listet Beweise auf — aber nicht alle Zeugen sind
 
 4. GUTACHTER-AUSWAHL: Empfehlung für Sachverständige
    - Gerichtlich bestellt vs. Privatgutachten
-   - AT: § 271 ZPO (Sachverständigenbeweis), § 372 ZPO (Gerichtssachverständiger)
+   - AT: §§ 351 ff ZPO (Sachverständigenbeweis, gerichtlich bestellter Sachverständiger)
    - DE: § 402 ZPO (Sachverständigenbeweis), § 404 ZPO (Auswahl)
    - CH: Art 184 ZPO (Sachverständigenbeweis), Art 188 ZPO (Auswahl)
 
@@ -2411,7 +2411,7 @@ OUTPUT-FORMAT: JSON mit:
       "thema": "Kausalität zwischen Unfall und Wirbelsäulenschaden",
       "begruendung": "Schmerzensgeld erfordert medizinische Kausalität",
       "dringlichkeit": "hoch" | "mittel" | "gering",
-      "paragraph": "§ 271 ZPO",
+      "paragraph": "§ 351 ZPO",
       "gerichtlich_oder_privat": "gerichtlich" | "privat",
       "geschätzte_kosten": 5000
     }
@@ -2443,18 +2443,18 @@ PASSE DIE WIDERKLAGE-ANALYSE AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
 - KEINE Widerklage im Strafverfahren — stattdessen: Adhäsionsverfahren (§ 403 StPO DE)
-- Nebenklageberechtigung: § 395 StPO DE, § 48 StPO AT
+- Nebenklageberechtigung: § 395 StPO DE; AT keine Nebenklage — Privatbeteiligung § 67 StPO, Subsidiaranklage § 72 StPO
 - KEINE Aufrechnung im Strafverfahren
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- Widerklage: AT § 229 ZPO, DE § 33 ZPO, CH Art 224 ZPO
-- Aufrechnung: AT § 1441 ABGB, DE § 387 BGB, CH Art 120 OR
+- Widerklage: AT § 96 JN, DE § 33 ZPO, CH Art 224 ZPO
+- Aufrechnung: AT § 1438 ABGB, DE § 387 BGB, CH Art 120 OR
 - Widerklage muss mit Klage in rechtlichem Zusammenhang stehen
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
 - Widerklage des Arbeitgebers: Rückzahlung Überzahlung, Schadensersatz
-- Aufrechnung mit Lohnanspruch: AT § 1441 ABGB analog, DE § 387 BGB
-- Besonderheit: Pfändungsgrenzen beachten (§ 291 EO AT, § 850c ZPO DE)
+- Aufrechnung mit Lohnanspruch: AT § 1438 ABGB, DE § 387 BGB
+- Besonderheit: Pfändungsgrenzen beachten (§ 291a EO AT, § 850c ZPO DE)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
 - KEINE Widerklage im Verwaltungsverfahren — stattdessen: Gegenbeschwerde
@@ -2467,16 +2467,16 @@ DEINE AUFGABE: Der Mandant hat Ansprüche — aber der Gegner kann Widerklage er
    - Schadensersatzansprüche gegen den Mandanten
    - Bereicherungsansprüche (§ 1431 ABGB, § 812 BGB)
    - Vertragsansprüche (Rückzahlung, Schadensersatz)
-   - Aufwendungsersatz (§ 1431 ABGB, § 670 BGB)
+   - Aufwendungsersatz (§ 1014, § 1037 ABGB; § 670 BGB)
 
 2. WIDERKLAGE-MÖGLICHKEITEN:
-   - AT: § 229 ZPO (Widerklage im selben Verfahren)
+   - AT: § 96 JN (Widerklage im selben Verfahren)
    - DE: § 33 ZPO (Widerklage), § 145 ZPO (Aufrechnung)
    - CH: Art 224 ZPO (Widerklage), Art 122 ZPO (Aufrechnung)
    - Voraussetzung: rechtlicher Zusammenhang mit Hauptklage
 
 3. AUFRECHNUNG:
-   - AT: § 1441 ABGB (Aufrechnung bei Gegenseitigkeit, Fälligkeit, Gleichartigkeit)
+   - AT: § 1438 ABGB (Aufrechnung bei Gegenseitigkeit, Fälligkeit, Gleichartigkeit)
    - DE: § 387 BGB (Aufrechnung bei Gleichartigkeit, Fälligkeit)
    - CH: Art 120 OR (Aufrechnung)
 
@@ -2512,13 +2512,13 @@ OUTPUT-FORMAT: JSON mit:
   ],
   "widerklage_moeglich": {
     "moeglich": true | false,
-    "paragraph": "§ 229 ZPO",
+    "paragraph": "§ 96 JN",
     "voraussetzung": "Rechtlicher Zusammenhang mit Hauptklage",
     "wahrscheinlichkeit": 40
   },
   "aufrechnung": {
     "moeglich": true | false,
-    "paragraph": "§ 1441 ABGB",
+    "paragraph": "§ 1438 ABGB",
     "voraussetzungen_erfuellt": true | false,
     "betrag": 5000
   },
@@ -2564,11 +2564,11 @@ PASSE DIE BEWEISBEWERTUNG AN DEN VERFAHRENSTYP AN:
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
 - Freie Beweiswürdigung: AT § 258 StPO, DE § 261 StPO
 - In dubio pro reo — Zweifel gehen zulasten der Anklage
-- Beweisverwertungsverbote: § 36a StPO AT, § 136a StPO DE
+- Beweisverwertungsverbote: § 166 StPO AT, § 136a StPO DE
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Freie Beweiswürdigung: AT § 272 ZPO, DE § 286 ZPO
-- Beweislast: Wer behauptet, muss beweisen (§ 1287 ABGB AT, § 286 ZPO DE)
+- Beweislast: Wer behauptet, muss beweisen (§ 1296, § 1298 ABGB AT, § 286 ZPO DE)
 - Urkundenbeweis: AT § 294 ZPO, DE § 415 ZPO (hohe Beweiskraft)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
@@ -2641,7 +2641,7 @@ OUTPUT-FORMAT: JSON mit:
     {
       "streitfrage": "Kausalität Unfall → Wirbelsäulenschaden",
       "fehlender_beweis": "Medizinisches Gutachten",
-      "beschaffung": "Gerichtliches Gutachten beantragen (§ 271 ZPO)",
+      "beschaffung": "Gerichtliches Gutachten beantragen (§ 351 ZPO)",
       "prioritaet": "hoch"
     }
   ],
@@ -2670,27 +2670,27 @@ Du erhältst im Kontext:
 PASSE DIE ADR-EMPFEHLUNG AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- Diversion/Wiedergutmachung: AT § 198 StPO (Tatausgleich), DE § 153a StPO
-- Tatausgleich: Opfer-Täter-Ausgleich (AT § 198 StPO)
+- Diversion/Wiedergutmachung: AT §§ 198 ff StPO (Diversion), § 204 StPO (Tatausgleich), DE § 153a StPO
+- Tatausgleich: Opfer-Täter-Ausgleich (AT § 204 StPO)
 - KEINE Mediation bei Gewalt-/Sexualdelikten
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
 - Mediation: AT § 1 ZivMediatG; DE § 1 MediationsG
 - Schiedsverfahren: AT § 577 ZPO; DE § 1029 ZPO; CH Art 176-191 ZPO
-- Schlichtung: AT § 15 KSchG (ab € 5.000); DE § 15a EGZPO (Güteverfahren)
+- Schlichtung: AT Verbraucherschlichtung nach dem AStG; DE § 15a EGZPO (Güteverfahren)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- Schlichtung: AT § 51 ASGG (Güteverfahren); DE § 54 ArbGG (Güteverfahren)
+- Schlichtung: AT Vergleichsversuch § 204 ZPO vor dem ASG; DE § 54 ArbGG (Güteverfahren)
 - Mediation: Betriebsrat als Mediator möglich
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- Verwaltungsmediation: AT § 66c AVG (seit 2025)
+- Verwaltungsmediation: AT im AVG nicht allgemein vorgesehen, nur nach Materiengesetzen (z.B. UVP-G)
 - Schlichtung: selten, meist formelles Verfahren
 
 DEINE AUFGABE: Die Settlement-Analyse berechnet BATNA/ZOPA — aber sie empfiehlt nicht WIE man dorthin kommt. Mediation, Schiedsverfahren, Schlichtung oder Gericht? Bewerte:
 
 1. MEDIATION:
-   - AT: § 227 ZPO (gerichtsnahe Mediation), MediationsG (ZivMediatG)
+   - AT: ZivMediatG (eingetragene Mediatoren; Verjährungshemmung § 22 ZivMediatG)
    - DE: § 278a ZPO (gerichtsinterne Mediation), MediationsG
    - CH: Art 138-141 ZPO (Mediation), KMedG
    - Vorteile: vertraulich, parteigesteuert, Beziehungserhalt
@@ -2706,7 +2706,7 @@ DEINE AUFGABE: Die Settlement-Analyse berechnet BATNA/ZOPA — aber sie empfiehl
    - Kosten: €10.000-€50.000 (Schiedsgerichtskosten)
 
 3. SCHLICHTUNG:
-   - AT: § 15a EGZPO (obligatorische Schlichtung bei bestimmten Streitigkeiten)
+   - AT: keine allgemeine obligatorische Schlichtung; Ausnahme: Schlichtungsstelle der Gemeinde § 39 MRG (Mietsachen)
    - DE: § 15a EGZPO (obligatorische Schlichtung in Bundesländern)
    - CH: kantonale Schlichtungsbehörden (Art 197-205 ZPO, Schlichtungsbehörde)
    - Vorteile: schnell, günstig, Voraussetzung für Klage (bei obligatorischer Schlichtung)
@@ -2732,7 +2732,7 @@ OUTPUT-FORMAT: JSON mit:
   "adr_optionen": [
     {
       "typ": "mediation | schiedsverfahren | schlichtung | gerichtlich",
-      "paragraph": "§ 227 ZPO",
+      "paragraph": "§ 1 ZivMediatG",
       "voraussetzungen": "Freiwilligkeit, beidseitige Zustimmung",
       "vorteile": ["vertraulich", "schnell", "Beziehungserhalt"],
       "nachteile": ["nicht bindend", "erfordert Kooperation"],
@@ -2793,12 +2793,12 @@ PASSE DIE VERJÄHRUNGSPRÜFUNG AN DEN VERFAHRENSTYP AN:
 - CH: Art 127 OR (10 Jahre), Art 128 OR (5 Jahre)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- AT: § 39 ArbVG (Kündigungsschutz 6 Monate), § 6 AHG (3 Jahre ab Kenntnis)
+- AT: § 105 ArbVG (Kündigungsanfechtung 2 Wochen), § 34 AngG / § 1162d ABGB (6 Monate), § 6 AHG (3 Jahre ab Kenntnis)
 - DE: § 4 KSchG (3 Wochen — keine Verjährung, sondern Ausschlussfrist)
 - Abfindung: § 118 BetrVG (Verfallfrist)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- AT: § 34 AVG (4 Wochen Bescheidbeschwerde — prozessuale Frist)
+- AT: § 7 Abs 4 VwGVG (4 Wochen Bescheidbeschwerde — prozessuale Frist)
 - Materielle Verjährung: AT § 6 AHG (3 Jahre Amtshaftung, ab Kenntnis)
 - DE: § 70 VwGO (1 Monat Widerspruch — prozessuale Frist)
 
@@ -2811,8 +2811,7 @@ DEINE AUFGABE: Der Deadline-Validator prüft prozessuale Fristen (Berufungsfrist
    - § 6 AHG: 3 Jahre ab Kenntnis (Amtshaftung)
    - EKHG: 3 Jahre (Eisenbahn- und Kraftfahrzeughaftung)
    - PHG: 3 Jahre (Produkthaftung)
-   - KSchG: 3 Jahre (Verbraucherschutz)
-   - § 373 HGB: 5 Jahre (Handelsrechtliche Ansprüche)
+   - § 1478 ABGB: 30 Jahre (allgemeine Verjährung)
 
 2. VERJÄHRUNGSFRISTEN (DE):
    - § 195 BGB: 3 Jahre (regelmäßige Verjährung)
@@ -2832,7 +2831,7 @@ DEINE AUFGABE: Der Deadline-Validator prüft prozessuale Fristen (Berufungsfrist
    - Art 370 OR: Hemmung durch Verhandlungen
 
 4. HEMMUNG / NEUBEGINN / RUHEN:
-   - AT: § 1496 ABGB (Hemmung), § 1497 ABGB (Anerkennung), § 1501 ABGB (Ruhen)
+   - AT: §§ 1494-1496 ABGB (Hemmung), § 1497 ABGB (Unterbrechung durch Anerkenntnis/Klage), § 1501 ABGB (nur über Einrede)
    - DE: § 203-209 BGB (Hemmung), § 212 BGB (Neubeginn), § 204 BGB (Hemmung durch Rechtsverfolgung)
    - CH: Art 134 OR (Hemmung), Art 135 OR (Unterbrechung)
 
@@ -3009,7 +3008,7 @@ DEINE AUFGABE:
 INSTITUTIONEN (AT):
 - Finanzprokuratur (§ 8 AHG) — bei Amtshaftung gegen Bund/Land/Gemeinde
 - Datenschutzbehörde (DSB) — bei DSGVO-Verstößen (Art. 77 DSGVO)
-- Staatsanwaltschaft (STA) — bei Straftatbeständen (§ 28 StPO)
+- Staatsanwaltschaft (STA) — bei Straftatbeständen (§ 20 StPO)
 - Disziplinarbehörde — bei Beamtenfehlverhalten (Bundes- oder Landesdisziplinarbehörde)
 - Finanzstrafamt — bei Finanzstrafdelikten (§ 120 FinStrG)
 - Arbeitsinspektorat (ArbInspectorate) — bei Arbeitsunfällen / Arbeitnehmerschutz
@@ -3076,32 +3075,32 @@ Du erhältst im Kontext:
 PASSE DIE KOSTENVERTEILUNG AN DEN VERFAHRENSTYP AN:
 
 ### Bei STRAFVERFAHREN (verfahrenstyp="straf"):
-- AT: § 390 StPO (Jeder trägt eigene bei Einstellung), § 391 StPO (Verurteilter trägt alle)
+- AT: § 389 StPO (Verurteilter ersetzt die Kosten), § 393a StPO (Beitrag zu den Verteidigungskosten bei Freispruch)
 - DE: § 465 StPO (Verurteilter trägt alle), § 467 StPO (Freispruch: Staatskasse)
 - Pflichtverteidiger: Beiordnung → Staatskasse trägt
 
 ### Bei ZIVILVERFAHREN (verfahrenstyp="zivil"):
-- AT: § 394 ZPO (Unterliegender trägt alle), § 276 ZPO (Teilerfolg → Quotelung)
+- AT: § 41 ZPO (Unterliegender ersetzt alle Kosten), § 43 ZPO (Teilerfolg → Quotelung)
 - DE: § 91 ZPO (Unterliegender trägt), § 92 ZPO (Teilerfolg → Quotelung)
 - CH: Art 66 ZPO (Unterliegender trägt, Ermessen des Gerichts)
 
 ### Bei ARBEITSRECHT (verfahrenstyp="arbeitsrecht"):
-- AT: § 51 ASGG (Keine Gerichtsgebühr 1. Instanz, § 394 ZPO analog 2. Instanz)
+- AT: Kostenersatz nach §§ 41 ff ZPO (ASGG verweist auf die ZPO)
 - DE: § 12 ArbGG (Keine Gerichtsgebühr 1. Instanz, § 91 ZPO analog 2. Instanz)
 
 ### Bei VERWALTUNGSRECHT (verfahrenstyp="verwaltungsrecht"):
-- AT: § 24 VwGG (Gerichtsgebühr, Unterliegender trägt)
+- AT: §§ 47 ff VwGG (Aufwandersatz vor dem VwGH), § 24a VwGG (Eingabengebühr)
 - DE: § 52 VwGO (Kostentragung nach Ermessen)
 
 DEINE AUFGABE: Der Cost-Benefit-Analyzer berechnet die Kosten — aber wer trägt sie? Das hängt vom Ausgang ab. Bei einem Teilgewinn werden die Kosten geteilt. Bei einem Vergleich trägt jeder seine eigenen. Das verändert das Netto-EV.
 
 1. KOSTENVERTEILUNG (AT):
-   - § 78 ZPO: Unterliegt eine Partei vollständig, trägt sie alle Kosten
-   - § 78(2) ZPO: Teilobsiegen → proportionale Kostenverteilung
-   - § 78(3) ZPO: Vergleich → jeder trägt seine eigenen (außer vereinbart)
-   - § 79 ZPO: Kosten bei Zurücknahme / Anerkenntnis
-   - § 273 ZPO: Kosten bei Säumnis
-   - Anwaltskosten: § 8 Rechtsanwalts tariffgesetz (RATG) — Gegenstandswert-abhängig
+   - § 41 ZPO: Unterliegt eine Partei vollständig, ersetzt sie alle Kosten
+   - § 43 ZPO: Teilobsiegen → verhältnismäßige Kostenteilung
+   - Vergleich: Kosten nach Vereinbarung, sonst jeder die eigenen (kein gesetzlicher Ersatz)
+   - § 45 ZPO: Kosten bei Anerkenntnis ohne Veranlassung; § 237 Abs 3 ZPO: Kosten bei Klagsrücknahme
+   - §§ 396 ff ZPO: Versäumungsurteil (Kostenersatz nach § 41 ZPO)
+   - Anwaltskosten: Rechtsanwaltstarifgesetz (RATG) — Tarifposten nach Bemessungsgrundlage
 
 2. KOSTENVERTEILUNG (DE):
    - § 91 ZPO: Unterliegende Partei trägt Kosten (incl. Gegneranwalt)
@@ -3144,7 +3143,7 @@ OUTPUT-FORMAT: JSON mit:
       "eigene_kosten": 9500,
       "erstattung_durch_gegner": 9500,
       "netto_kosten": 0,
-      "paragraph": "§ 78 ZPO",
+      "paragraph": "§ 41 ZPO",
       "begruendung": "Vollgewinn — Gegner trägt alle Kosten"
     },
     {
