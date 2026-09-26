@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { enginePatchPage } from "@/lib/engine";
 import { actImportItemSlug, safeImportId } from "@/lib/act-import";
-import { fetchActImportItems } from "@/lib/act-import-server";
+import { fetchActImportItems, fetchEnginePage, findForeignDocument } from "@/lib/act-import-server";
+import { actImportSessionSlug } from "@/lib/act-import";
 
 const itemSchema = z.object({
   item_id: z.string().min(1),
@@ -16,7 +17,7 @@ const itemSchema = z.object({
     .regex(/^[a-f0-9]{64}$/)
     .optional(),
   document_slug: z.string().optional(),
-  part_slugs: z.array(z.string()).optional(),
+  part_slugs: z.array(z.string()).max(500).optional(),
   status: z.enum([
     "pending",
     "uploading",
@@ -85,6 +86,29 @@ export const POST = createHandler(
   async (ctx, body, _query, req) => {
     const sessionId = await routeId(req);
     const itemId = safeImportId(body.item_id);
+    // The item belongs to the session's matter, and so does every document it names.
+    const session = await fetchEnginePage(ctx.headers, actImportSessionSlug(sessionId)).catch(
+      () => undefined
+    );
+    if (session === undefined) {
+      return apiError("session_read_failed", "Aktenimport konnte nicht gelesen werden", 503);
+    }
+    if (!session) return apiError("import_not_found", "Aktenimport nicht gefunden", 404);
+    const caseSlug = String(session.frontmatter?.case_slug ?? "");
+    if (!caseSlug || body.case_slug !== caseSlug) {
+      return apiError("case_mismatch", "Dokument gehört nicht zur Akte dieses Imports", 400);
+    }
+    const docSlugs = [
+      ...(body.document_slug ? [body.document_slug] : []),
+      ...(body.part_slugs ?? []),
+    ];
+    if (docSlugs.length > 0 && (await findForeignDocument(ctx.headers, docSlugs, caseSlug))) {
+      return apiError(
+        "document_not_in_case",
+        "Ein Dokument gehört nicht zu dieser Akte oder ist nicht zugänglich.",
+        400
+      );
+    }
     const now = new Date().toISOString();
     const item = {
       id: itemId,
