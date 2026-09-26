@@ -551,10 +551,17 @@ async function tryOcrFallback(
     );
   }
 
+  // pdf2pic 3.x: without `preserveAspectRatio` the page is forced into the
+  // library's default 768x512 box (distorted), and without an explicit
+  // `responseType` every call is a `writeImage` that drops ./untitled.N.png on
+  // disk and returns no image at all — the OCR loop then reported every page
+  // as "produced no image". Request the buffer directly instead.
   const convert = fromBuffer(pdfBuf, {
     density: 300,
     format: "png",
     width: 2000,
+    height: 2000,
+    preserveAspectRatio: true,
   });
 
   // G19 fix: parallelize rasterization and OCR with bounded concurrency
@@ -571,7 +578,7 @@ async function tryOcrFallback(
       const results = await Promise.all(
         batch.map(async (pageNo) => {
           try {
-            return { pageNo, image: await convert(pageNo) };
+            return { pageNo, image: await convert(pageNo, { responseType: "buffer" }) };
           } catch {
             return null;
           }
