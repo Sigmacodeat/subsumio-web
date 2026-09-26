@@ -200,6 +200,11 @@
 # Prevents storage cost leaks from abandoned uploads.
 15 * * * *     sh /etc/cronjob.sh upload-multipart-cleanup /api/cron/upload-multipart-cleanup
 
+# ── Every 15 minutes — Full firm exports ──
+# Deletes export archives whose single-use download link expired (≤ 24 h) or
+# that were downloaded, and notifies the requesting admin once an export is ready.
+*/15 * * * *   sh /etc/cronjob.sh firm-export-cleanup /api/cron/firm-export-cleanup
+
 # ── 03:30 UTC (05:30 CEST) — Daily integrity re-verification (GoBD) ──
 # Re-hashes a batch of stored files and compares against the content_hash
 # anchored in the files table. Detects silent storage corruption/tampering.

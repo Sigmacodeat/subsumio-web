@@ -1920,8 +1920,13 @@ export async function registerBuiltinHandlers(
   const { makeDeepAnalysisHandler } = await import("../core/minions/handlers/deep-analysis.ts");
   worker.register("deep-analysis", makeDeepAnalysisHandler({ engine }));
 
+  // Full firm export (Art. 20): the web-api start route checks the admin
+  // role and stamps tenant + scope. PROTECTED via PROTECTED_JOB_NAMES.
+  const { makeFirmExportHandler } = await import("../core/minions/handlers/firm-export.ts");
+  worker.register("firm-export", makeFirmExportHandler({ engine }));
+
   process.stderr.write(
-    "[minion worker] subagent + supervisor + legal-pipeline + extract-document + tabular-review + deep-analysis handlers enabled\n"
+    "[minion worker] subagent + supervisor + legal-pipeline + extract-document + tabular-review + deep-analysis + firm-export handlers enabled\n"
   );
 
   // ============================================================

@@ -32,6 +32,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
+import { FirmExportPanel } from "@/components/settings/firm-export-panel";
 
 const CONFIRM_PHRASE = "DELETE_MY_ACCOUNT";
 
@@ -44,6 +45,7 @@ export default function PrivacySettingsPage() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const { data: me } = useMe();
+  const isAdmin = (me as { user?: { role?: string } } | undefined)?.user?.role === "admin";
   const twoFactorEnabled = Boolean(
     (me as { twoFactorEnabled?: boolean } | undefined)?.twoFactorEnabled
   );
@@ -174,6 +176,8 @@ export default function PrivacySettingsPage() {
           )}
         </p>
       </section>
+
+      {isAdmin && <FirmExportPanel />}
 
       <section className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6">
         <div className="flex items-center gap-2">

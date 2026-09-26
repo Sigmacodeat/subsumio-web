@@ -635,6 +635,45 @@ export async function createIntakeStaleNotification(opts: {
   await persistNotificationUpsert(notif);
 }
 
+/**
+ * The full firm export an admin asked for is ready (or finished with gaps).
+ * One notice per export (deterministic id); the download itself stays on the
+ * privacy settings page, behind the admin's session.
+ */
+export async function createFirmExportReadyNotification(opts: {
+  userId: string;
+  brainId: string;
+  exportId: number;
+  expiresAt?: string | null;
+  complete: boolean;
+}): Promise<void> {
+  const until = opts.expiresAt
+    ? new Date(opts.expiresAt).toLocaleString("de-AT", {
+        timeZone: "Europe/Vienna",
+        dateStyle: "short",
+        timeStyle: "short",
+      })
+    : null;
+  const notif: Notification = {
+    id: `notif_firm_export_${opts.exportId}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "system",
+    data: {
+      exportId: opts.exportId,
+      href: "/dashboard/settings/privacy",
+      message: `${
+        opts.complete
+          ? "Der vollständige Kanzlei-Export ist fertig."
+          : "Der Kanzlei-Export ist fertig, aber nicht vollständig — Details im Manifest."
+      } Download einmalig unter Einstellungen → Privatsphäre${until ? `, bis ${until}` : ""}.`,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
 export async function createRetentionNotification(opts: {
   userId: string;
   brainId: string;

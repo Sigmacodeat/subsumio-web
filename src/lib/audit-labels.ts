@@ -187,6 +187,7 @@ export type AuditAction =
   | "admin.user_deactivate"
   | "admin.data_delete"
   | "admin.data_export"
+  | "admin.data_export_download"
   | "admin.audit_export"
   | "admin.backup"
   | "admin.dr"
@@ -526,6 +527,7 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
   "admin.data_delete": "Admin: Benutzerdaten gelöscht",
   "admin.data_export": "Admin: Benutzerdaten exportiert",
+  "admin.data_export_download": "Admin: Kanzlei-Export heruntergeladen",
   "admin.audit_export": "Admin: Audit-Log exportiert",
   "admin.backup": "Admin: Backup erstellt/wiederhergestellt",
   "admin.dr": "Admin: Disaster Recovery",

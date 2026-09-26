@@ -92,6 +92,17 @@ describe("GET /api/data-export/backup (AKT-28)", () => {
     expect(out.export_metadata.count_warning).toBeTruthy();
   });
 
+  it("points a firm too large for the in-request backup to the full export (R11-7)", async () => {
+    statsTotal = 120_000;
+    const res = await GET(new Request("http://x/api/data-export/backup") as unknown as NextRequest);
+    expect(res.status).toBe(413);
+    const body = (await res.json()) as { error: string; code: string };
+    expect(body.code).toBe("use_full_export");
+    expect(body.error).toContain("Einstellungen → Privatsphäre");
+    // Nothing was listed: no silent, cut-off copy.
+    expect(listCalls).toBe(0);
+  });
+
   it("is incomplete when the total cannot be read", async () => {
     statsTotal = null;
     const out = await backup();

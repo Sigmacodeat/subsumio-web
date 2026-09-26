@@ -85,6 +85,10 @@ export const PROTECTED_JOB_NAMES: ReadonlySet<string> = new Set([
   // Only the trusted web-api start route submits it after matter-scope
   // validation — an agent caller must not queue that spend.
   "deep-analysis",
+  // Full firm export (Art. 20): reads every page and original of a tenant
+  // under the requesting admin's scope. Only the trusted web-api start route
+  // submits it after checking the admin role.
+  "firm-export",
   // v0.46 — Incremental consolidation trigger (Hindsight). Runs
   // extract_facts + consolidate for specific slugs after ingest. Current
   // v0.31 consolidate is deterministic (no LLM), but v0.32 will add Sonnet
