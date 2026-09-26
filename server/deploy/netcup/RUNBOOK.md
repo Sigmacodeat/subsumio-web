@@ -104,6 +104,40 @@ ausstehende Datenbank-Migrationen beim Start ein. Schwere Migrationen (große Ta
 vorher gestückelt von Hand einspielen, wie bei v124 (`content_chunks.source_id`, 4 Mio. Zeilen in
 Stapeln zu 100 000, danach `CREATE INDEX CONCURRENTLY`).
 
+### Nach dem Deploy: Integrationen prüfen
+
+Einmal nach jedem Deploy (sobald `web` healthy ist) im Web-Container ausführen. Das Skript liest
+die Umgebung des Containers und prüft je Dienst mit dem billigsten Aufruf ohne Nebenwirkung, ob
+Schlüssel und Konfiguration gültig sind. Es versendet keine Mail, startet keine KI-Anfrage, keine
+Transkription und keinen Push.
+
+```sh
+ssh subsumio-netcup 'docker exec subsumio-engine-web-1 bun scripts/post-deploy-smoke.js'
+ssh subsumio-netcup 'docker exec subsumio-engine-web-1 bun scripts/post-deploy-smoke.js --strict'
+```
+
+Ausgabe: Tabelle `Dienst | konfiguriert? | Ergebnis` (ok / fehlt / Fehler mit kurzer Ursache wie
+`HTTP 401 invalid_api_key`). Secrets erscheinen nie, auch nicht teilweise. Exit-Code 1, wenn ein
+Pflichtdienst (mit `*` markiert) fehlt oder scheitert; mit `--strict` auch, wenn ein eingerichteter
+optionaler Dienst scheitert.
+
+| Dienst                                           | Prüfung                                                                                                                                              |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resend \*                                        | Domainliste lesen, Absenderdomain aus `MAIL_FROM` muss `verified` sein. Ein reiner Sende-Schlüssel darf die Liste nicht lesen → Hinweis, kein Fehler |
+| Engine, Auth-Datenbank, Pflicht-Konfiguration \* | `/api/readiness` der App mit `CRON_SECRET` (Betreiberansicht)                                                                                        |
+| Speicher-Verschlüsselung \*                      | `SUBSUMIO_STORAGE_ENCRYPTION_KEY` gesetzt und 32 Byte base64 (gleiche Prüfung wie die Engine), alte Schlüssel gültiges JSON                          |
+| `CRON_SECRET`, `PORTAL_TOKEN_SECRET` \*          | gesetzt; kürzer als 32 Zeichen → Hinweis                                                                                                             |
+| Mistral, Anthropic                               | Modellliste lesen                                                                                                                                    |
+| OpenRouter (+ Ersatzschlüssel)                   | Schlüssel-Info (`/key`): aufgebrauchtes Limit → Fehler, Datenregion wird angezeigt                                                                   |
+| Microsoft 365                                    | App-Token (Client Credentials), dann nur die Metadaten des Sync-Ordners von `MS365_MAILBOX`                                                          |
+| DocuSign                                         | nur Konfiguration: Demo-Umgebung in Produktion → Fehler. Einen Schlüsseltest ohne Nutzeranmeldung gibt es nicht (Anmeldung läuft je Nutzer)          |
+| FCM                                              | Dienstkonto-Datei lesbar, Zugriffstoken holbar                                                                                                       |
+| Stripe                                           | Kontostand lesen; Testschlüssel in Produktion → Hinweis                                                                                              |
+| DMS-Freigabeliste                                | Format von `DMS_ALLOWED_BRAIN_IDS` (keine leeren/doppelten Einträge)                                                                                 |
+
+Das Skript ist im Image als `scripts/post-deploy-smoke.js` gebündelt (`Dockerfile.web`); die Quelle
+liegt in `scripts/post-deploy-smoke.ts` und `src/lib/post-deploy-smoke.ts`.
+
 ## Dauerhafter Speicher der Web-App
 
 Die Web-App schreibt Laufzeitdaten (Feature-Flags, SCIM-Status, WhatsApp-Medien, Admin-Backups, Dashboard-Widgets, Rate-Limit-Fenster ohne Upstash, Quellen-Hashes) nach `SUBSUMIO_DATA_DIR=/app/.data`. Das ist das Docker-Volume `subsumio-engine_web-data` auf der Platte dieses Servers. Es übersteht jedes Deploy (`--force-recreate`).
