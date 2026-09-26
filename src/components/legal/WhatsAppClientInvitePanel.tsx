@@ -14,7 +14,9 @@ interface WhatsAppClientInviteResponse {
   ok: boolean;
   inviteSlug: string;
   expiresAt: string;
-  message: string;
+  /** Only when the code was not delivered directly (shown to lawyer/admin). */
+  message?: string;
+  delivered?: "whatsapp_template" | null;
   identity: {
     id: string;
     role: string;
@@ -71,7 +73,9 @@ export function WhatsAppClientInvitePanel({
       addToast({
         type: "success",
         title: "WhatsApp-Einladung erstellt",
-        description: "Der Mandant kann die Nummer nun per Code bestätigen.",
+        description: data.delivered
+          ? "Der Bestätigungscode wurde dem Mandanten per WhatsApp gesendet."
+          : "Bitte senden Sie den Einladungstext an den Mandanten.",
       });
     } catch (err) {
       addToast({
@@ -157,7 +161,7 @@ export function WhatsAppClientInvitePanel({
               )}
               Einladung erstellen
             </Button>
-            {invite && (
+            {invite?.message && (
               <Button type="button" size="sm" variant="outline" onClick={() => void copyInvite()}>
                 <Copy size={14} aria-hidden="true" />
                 Text kopieren
@@ -165,7 +169,13 @@ export function WhatsAppClientInvitePanel({
             )}
           </div>
 
-          {invite && (
+          {invite && !invite.message && (
+            <p className="mt-4 text-xs text-[color:var(--ds-text-muted)]">
+              Der Code wurde über die WhatsApp-Nummer der Kanzlei zugestellt. Gültig bis{" "}
+              {new Date(invite.expiresAt).toLocaleString("de-AT")}.
+            </p>
+          )}
+          {invite?.message && (
             <div className="mt-4 grid gap-2">
               <Label htmlFor="wa-client-invite-message" className="text-xs">
                 Einladungstext für WhatsApp
@@ -178,8 +188,9 @@ export function WhatsAppClientInvitePanel({
                 className="text-xs"
               />
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Gültig bis {new Date(invite.expiresAt).toLocaleString("de-DE")}. Nach Antwort mit
-                dem Code wird die Nummer für diese Akte freigeschaltet.
+                Gültig bis {new Date(invite.expiresAt).toLocaleString("de-AT")}. Sobald der Mandant
+                den Code an die WhatsApp-Nummer der Kanzlei sendet, wird die Nummer für diese Akte
+                freigeschaltet.
               </p>
             </div>
           )}

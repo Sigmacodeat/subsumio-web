@@ -5,6 +5,14 @@ vi.mock("@/lib/engine", async (orig) => ({
   ENGINE_URL: "http://engine-test:3001",
 }));
 
+const issueLink = vi.fn(
+  async (_input: { caseSlug: string; createdBy: string }) =>
+    "https://app.test/portal/abc.def" as string | null
+);
+vi.mock("@/lib/portal-link-issue", () => ({
+  issueRegisteredPortalLink: (input: { caseSlug: string; createdBy: string }) => issueLink(input),
+}));
+
 import { ingestVerifiedClientWhatsAppSubmission } from "./client-ingest";
 import type { WhatsAppIdentity, WhatsAppTextMessage } from "./types";
 
@@ -56,6 +64,20 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
               status: "aktiv",
               portal_enabled: true,
               deadlines: [
+                {
+                  id: "d0",
+                  title: "KI-Vorschlag",
+                  due_date: "2098-01-01",
+                  status: "pending",
+                  review_status: "unreviewed",
+                },
+                {
+                  id: "d9",
+                  title: "Verworfene Frist",
+                  due_date: "2098-06-01",
+                  status: "pending",
+                  review_status: "rejected",
+                },
                 { id: "d1", title: "Klagefrist", due_date: "2099-01-15", status: "pending" },
                 { id: "d2", title: "Alte Frist", due_date: "2020-01-01", status: "pending" },
               ],
@@ -80,6 +102,9 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
     expect(result.reply).toContain("2099-01-15");
     // Only the past deadline (2020) should never win over the future one (2099).
     expect(result.reply).not.toContain("Alte Frist");
+    // W3-12: same rule as the portal — no unreviewed or rejected AI deadlines.
+    expect(result.reply).not.toContain("KI-Vorschlag");
+    expect(result.reply).not.toContain("Verworfene Frist");
     // No submission page was written for a pure status question.
     expect(writes).toHaveLength(0);
   });
@@ -92,6 +117,44 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
     expect(result.handled).toBe(true);
     expect(result.reply).toMatch(/\/portal\/[\w-]+\.[\w-]+/);
     expect(writes).toHaveLength(0);
+    // W3-17: a registered (listed, revocable) link, not a bare token.
+    expect(issueLink).toHaveBeenCalledWith(
+      expect.objectContaining({ caseSlug: "legal/cases/mueller", createdBy: "whatsapp:id-1" })
+    );
+  });
+
+  it("gives no portal link for an archived matter", async () => {
+    fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            slug: "legal/cases/mueller",
+            frontmatter: { status: "archived", portal_enabled: true },
+          }),
+          { status: 200 }
+        )
+    ) as unknown as typeof fetch;
+    issueLink.mockClear();
+    const result = await ingestVerifiedClientWhatsAppSubmission(input("Portal"), fetchImpl);
+    expect(result.reply).toContain("nicht freigeschaltet");
+    expect(issueLink).not.toHaveBeenCalled();
+  });
+
+  // W3-10: a client with several matters who names none — the message is
+  // kept for assignment (nothing to resend) and the client is asked.
+  it("keeps a message of a client with several matters and asks for the matter", async () => {
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Anbei die Unterlagen", { matterScope: ["legal/cases/mueller", "legal/cases/meier"] }),
+      fetchImpl
+    );
+    expect(result.handled).toBe(true);
+    expect(result.reason).toBe("ambiguous_scope");
+    expect(result.submissionSlug).toBeDefined();
+    const submission = writes.find((w) => w.type === "client_submission");
+    expect(submission?.frontmatter).toMatchObject({ needs_case_assignment: true });
+    expect((submission?.frontmatter as Record<string, unknown>).case_slug).toBeUndefined();
+    expect(result.reply).toContain("nichts erneut senden");
+    expect(result.reply).not.toContain("legal/cases");
   });
 
   it("recognizes an explicit request to sign online as a portal-link request", async () => {
@@ -256,7 +319,10 @@ describe("ingestVerifiedClientWhatsAppSubmission — Aktenzeichen", () => {
     expect(result.reply).toContain("11 Cg 3/25a");
     expect(result.reply).not.toContain("legal/cases");
     expect(result.reply).not.toContain("eins");
-    expect(writes).toHaveLength(0);
+    // The message is kept for assignment by the firm — no matter is touched.
+    const submission = writes.find((w) => w.type === "client_submission");
+    expect(submission?.frontmatter).toMatchObject({ needs_case_assignment: true });
+    expect(writes.every((w) => w.type !== "legal_case")).toBe(true);
   });
 
   it("the status reply names the Aktenzeichen, not the slug", async () => {

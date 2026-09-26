@@ -57,6 +57,23 @@ describe("resolveSenderIdentity", () => {
     __resetWhatsAppIdentityStoreForTests();
   });
 
+  // W3-4: an identity stored under the old normalization ("0664 …" → "+0664…")
+  // is found once for the Meta sender form and re-keyed to E.164.
+  it("finds an identity stored under the old national-format hash and re-keys it", async () => {
+    const legacyHash = phoneHash("+06641234567");
+    await getWhatsAppIdentityStore().create(
+      makeIdentity({ id: "wid-legacy", phoneHash: legacyHash })
+    );
+
+    const resolved = await resolveSenderIdentity("436641234567");
+    expect(resolved?.id).toBe("wid-legacy");
+    expect(resolved?.phoneHash).toBe(phoneHash("+436641234567"));
+
+    const rekeyed = await getWhatsAppIdentityStore().getById("wid-legacy");
+    expect(rekeyed?.phoneHash).toBe(phoneHash("+436641234567"));
+    expect(await getWhatsAppIdentityStore().getByPhoneHash(legacyHash)).toBeNull();
+  });
+
   it("resolves an active stored identity and carries the normalized phone", async () => {
     await getWhatsAppIdentityStore().create(makeIdentity());
     const resolved = await resolveSenderIdentity(PHONE);

@@ -122,6 +122,17 @@ describe("send_to_client — WhatsApp lawyer command", () => {
       })
     );
     expect(reply).toContain("gesendet");
+    // W3-11: documented in the matter's communication history.
+    const outbound = Object.values(pages).find(
+      (p) =>
+        p.type === "conversation_event" &&
+        (p.frontmatter as Record<string, unknown>).direction === "outbound"
+    );
+    expect(outbound?.frontmatter).toMatchObject({
+      channel: "whatsapp",
+      case_slug: CASE_SLUG,
+      normalized_text: "Bitte bringen Sie die Vollmacht mit.",
+    });
   });
 
   it("refuses to create a pending action when the case has no phone on file", async () => {
@@ -145,6 +156,23 @@ describe("send_to_client — WhatsApp lawyer command", () => {
     const reply = await send("ja");
     expect(reply).toMatch(/konnte nicht gesendet werden/i);
     expect(reply).toContain("window_closed_no_template");
+  });
+
+  // W3-7: a pending command expires after 30 minutes — a later "ja" must not
+  // execute yesterday's input.
+  it("an expired pending command is no longer confirmed by 'ja'", async () => {
+    sendProactive.mockResolvedValue({ sent: true, decision: { decision: "send" } });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-09-24T09:00:00.000Z"));
+      await send("sende mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit.");
+      vi.setSystemTime(new Date("2026-09-24T09:31:00.000Z"));
+      const reply = await send("ja");
+      expect(reply).toContain("Keine offene Aktion");
+      expect(sendProactive).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("never routes an out-of-scope case to a real send (matter-scope enforcement still applies)", async () => {

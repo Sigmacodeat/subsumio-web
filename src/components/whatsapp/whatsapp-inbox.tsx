@@ -10,6 +10,7 @@ import type { BrainPage } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import type { DashboardKey } from "@/content/dashboard";
+import { clientConversationMessages } from "@/lib/whatsapp/inbox-client-messages";
 
 interface ChatMessage {
   slug: string;
@@ -65,10 +66,13 @@ export function WhatsAppInbox() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [inbound, outbound] = await Promise.all([
+      const [inbound, outbound, conversations] = await Promise.all([
         api.brain.listAllPages({ type: "chat_inbox", max: 200 }),
         api.brain.listAllPages({ type: "chat_outbox", max: 200 }),
+        // Client messages are logged as conversation events, not chat_inbox.
+        api.brain.listAllPages({ type: "conversation_event", max: 200 }),
       ]);
+      const clientMessages = clientConversationMessages(conversations);
 
       const allMessages: ChatMessage[] = [
         ...inbound.map((p) => ({
@@ -92,17 +96,34 @@ export function WhatsAppInbox() {
         })),
       ];
 
+      const clientHashes = new Map(clientMessages.map((m) => [m.slug, m.senderHash]));
+      allMessages.push(
+        ...clientMessages.map((m) => ({
+          slug: m.slug,
+          direction: "inbound" as const,
+          content: m.content,
+          timestamp: m.timestamp,
+          senderName: m.senderName,
+          messageType: m.messageType,
+          status: m.status,
+          intent: m.intent,
+        }))
+      );
+
       // Group by sender hash
       const map = new Map<string, Conversation>();
       for (const msg of allMessages) {
-        const page =
-          msg.direction === "inbound"
+        const clientHash = clientHashes.get(msg.slug);
+        const page = clientHash
+          ? undefined
+          : msg.direction === "inbound"
             ? inbound.find((p) => p.slug === msg.slug)
             : outbound.find((p) => p.slug === msg.slug);
         const senderHash =
-          msg.direction === "inbound"
+          clientHash ??
+          (msg.direction === "inbound"
             ? str(fm(page!).from_phone_hash)
-            : str(fm(page!).to_phone_hash);
+            : str(fm(page!).to_phone_hash));
 
         if (!senderHash) continue;
 

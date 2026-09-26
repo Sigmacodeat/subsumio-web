@@ -7,19 +7,48 @@ import {
   extractMessageStatuses,
   type WhatsAppWebhookPayload,
   type WhatsAppMessageStatus,
+  type WhatsAppIdentity,
+  type WhatsAppIncomingMessage,
 } from "@/lib/whatsapp/types";
 import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
 import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
+import {
+  isWhatsAppStaffRole,
+  resolveStaffAccount,
+  staffAccountDeniedReply,
+} from "@/lib/whatsapp/staff-account";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import {
   getWhatsAppConsentStore,
   isConsentActive,
   whatsAppTenantKeys,
 } from "@/lib/whatsapp/consent-store";
+import {
+  CLIENT_CONSENT_SCOPES,
+  STAFF_CONSENT_SCOPES,
+  grantWhatsAppConsent,
+} from "@/lib/whatsapp/consent-grant";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
+import {
+  approvalNotificationRecipients,
+  decideWhatsAppApproval,
+  listDecidableApprovals,
+} from "@/lib/whatsapp/approval-channel";
+import { hasPendingWhatsAppChatAction } from "@/lib/legal-chat/actions";
+import { readCurrentPage } from "@/lib/page-write-guards";
+import { WhatsAppMediaRejectedError } from "@/lib/whatsapp/media";
+import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
+import { loadPublicFirm, resolvePublicFormBrainId } from "@/lib/public-firm";
+import { siteUrl } from "@/lib/mail";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import {
+  ENGINE_URL,
+  engineHeadersForBrain,
+  enginePatchPage,
+  runAsEngineCaller,
+  type EngineCaller,
+} from "@/lib/engine";
 import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import {
   createCaseSafely,
@@ -27,7 +56,6 @@ import {
   type SafeCaseCreateInput,
 } from "@/lib/safe-case-create";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
-import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
 import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { z } from "zod";
@@ -95,11 +123,25 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
 
     const sender = await resolveSenderIdentity(message.from);
     if (!sender) {
-      // Deny unknown/suspended/revoked senders. Audit by phone hash only — never log the raw number.
+      // Unknown (or blocked) number: no firm processing. Audit by phone hash
+      // only — never log the raw number. A first contact gets one friendly
+      // answer and, where a firm receives public enquiries, an intake entry.
       await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
         brainId: SYSTEM_BRAIN,
         details: { phoneHash: phoneHash(message.from), messageId: message.id },
       });
+      await handleUnknownSender(message).catch((err) =>
+        log.error(
+          "[whatsapp-webhook] unknown sender handling failed:",
+          err instanceof Error ? err.message : String(err)
+        )
+      );
+      await markMessageProcessed(
+        message.id,
+        phoneHash(message.from),
+        message.type,
+        "unknown_sender"
+      );
       results.push({ id: message.id, status: "ignored", error: "sender_not_allowed" });
       continue;
     }
@@ -111,14 +153,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     // reaktiviert sie. Läuft vor dem Orchestrator, damit ein Widerruf nie
     // in die Kanzlei-Verarbeitung rutscht.
     if (message.type === "text") {
-      const body = message.text.trim().toLowerCase();
-      if (/^(stopp?|abbestellen|unsubscribe|opt.?out)\b/.test(body)) {
+      if (isStopKeyword(message.text)) {
         await withdrawWhatsAppConsent(message.from, sender);
         await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_out");
         results.push({ id: message.id, status: "opt_out" });
         continue;
       }
-      if (/^(start|anmelden|subscribe|opt.?in)\b/.test(body)) {
+      if (isStartKeyword(message.text)) {
         await reinstateWhatsAppConsent(message.from, sender);
         await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_in");
         results.push({ id: message.id, status: "opt_in" });
@@ -154,62 +195,50 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       continue;
     }
 
-    try {
-      const result = await orchestrateWhatsAppMessage(message, sender, {
-        listPendingApprovals,
-        updateApprovalStatus,
-        approvalExecutionDeps: executionDepsForBrain(sender.brainId),
-      });
-      if (result.interactive) {
-        const sendResult = await sendWhatsAppInteractive(message.from, result.interactive);
-        if (sendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(sendResult.messageId, sender.brainId);
-        }
-      } else if (result.reply) {
-        const sendResult = await sendWhatsAppText(message.from, result.reply);
-        if (sendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(sendResult.messageId, sender.brainId);
-        }
-      }
-
-      // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
-      // If the orchestrator created a pending approval with a notification event,
-      // send a proactive WhatsApp message to the lawyer with the approval summary.
-      if (result.status === "pending_approval" && result.actionSlug) {
+    // Firm numbers act as the linked person: without an active user account
+    // of this firm there are no firm commands (fail-closed). With one, every
+    // engine call below carries that person's identity, so walls, matter
+    // teams and document ACLs apply as in the dashboard.
+    let actingSender = sender;
+    let caller: EngineCaller | undefined;
+    if (isWhatsAppStaffRole(sender.role)) {
+      const account = await resolveStaffAccount(sender);
+      if (!account.ok) {
+        await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
+          brainId: sender.brainId,
+          details: { phoneHash: phoneHash(message.from), reason: account.reason },
+        });
         try {
-          const event = result.notificationEvent;
-          const messageBody = event ? buildWhatsAppMessageBody(event) : "";
-          if (event?.recipient_phone && messageBody) {
-            await sendProactiveMessage({
-              to: event.recipient_phone,
-              brainId: sender.brainId,
-              scope: "approval_request",
-              freeform: messageBody,
-              urgent: true,
-            });
-          }
-        } catch {
-          // Non-blocking: notification dispatch is best-effort
-        }
+          await sendWhatsAppText(message.from, staffAccountDeniedReply());
+        } catch {}
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "denied");
+        results.push({ id: message.id, status: "ignored", error: account.reason });
+        continue;
       }
-
-      await markMessageProcessed(message.id, phoneHash(message.from), message.type, result.status);
-      results.push({ id: message.id, status: result.status });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      log.error("[whatsapp-webhook] message failed:", error);
-      try {
-        const errSendResult = await sendWhatsAppText(
-          message.from,
-          "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
-        );
-        if (errSendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(errSendResult.messageId, sender.brainId);
-        }
-      } catch {}
-      await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
-      results.push({ id: message.id, status: "failed" });
+      actingSender = account.sender;
+      caller = account.caller;
     }
+
+    const processMessage = () =>
+      processInboundMessage(message, actingSender, results).catch(async (err) => {
+        const error = err instanceof Error ? err.message : String(err);
+        log.error("[whatsapp-webhook] message failed:", error);
+        try {
+          const errSendResult = await sendWhatsAppText(
+            message.from,
+            // A refused file (too large, unsafe) will not work on retry — say why.
+            err instanceof WhatsAppMediaRejectedError
+              ? err.userMessage
+              : "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
+          );
+          if (errSendResult.messageId && sender.brainId) {
+            void recordOutboundMessage(errSendResult.messageId, sender.brainId);
+          }
+        } catch {}
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
+        results.push({ id: message.id, status: "failed" });
+      });
+    await (caller ? runAsEngineCaller(caller, processMessage) : processMessage());
   }
 
   return Response.json({
@@ -219,6 +248,83 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     results,
   });
 });
+
+async function processInboundMessage(
+  message: WhatsAppIncomingMessage,
+  sender: WhatsAppIdentity,
+  results: Array<{ id: string; status: string; error?: string }>
+): Promise<void> {
+  // Inside runAsEngineCaller these headers carry the firm member's identity.
+  const headers = engineHeadersForBrain(sender.brainId);
+  const result = await orchestrateWhatsAppMessage(message, sender, {
+    listPendingApprovals: (decider) => listDecidableApprovals(headers, decider),
+    decideApproval: (decider, actionSlug, status, rejectReason) =>
+      decideWhatsAppApproval({
+        headers,
+        brainId: sender.brainId,
+        actionSlug,
+        status,
+        decider,
+        rejectReason,
+      }),
+    hasPendingChatAction: hasPendingWhatsAppChatAction,
+    approvalExecutionDeps: executionDepsForBrain(sender.brainId),
+  });
+  if (result.interactive) {
+    const sendResult = await sendWhatsAppInteractive(message.from, result.interactive);
+    if (sendResult.messageId && sender.brainId) {
+      void recordOutboundMessage(sendResult.messageId, sender.brainId);
+    }
+  } else if (result.reply) {
+    const sendResult = await sendWhatsAppText(message.from, result.reply);
+    if (sendResult.messageId && sender.brainId) {
+      void recordOutboundMessage(sendResult.messageId, sender.brainId);
+    }
+  }
+
+  // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
+  // A new Freigabe is announced to the matter's responsible lawyer(s) with a
+  // linked WhatsApp number — never to the sender (Vier-Augen) and never to a
+  // client. Without a matter the dashboard queue is the place to look.
+  if (result.status === "pending_approval" && result.actionSlug) {
+    try {
+      const event = result.notificationEvent;
+      const messageBody = event ? buildWhatsAppMessageBody(event) : "";
+      const recipients = messageBody
+        ? await approvalNotificationRecipients(
+            {
+              orgId: sender.orgId,
+              caseSlug: event?.case_slug,
+              excludeUserId: isWhatsAppStaffRole(sender.role) ? sender.userId : undefined,
+            },
+            {
+              readCase: async (caseSlug) => {
+                const read = await readCurrentPage(ENGINE_URL, headers, caseSlug);
+                return read.kind === "found"
+                  ? ((read.page.frontmatter ?? {}) as Record<string, unknown>)
+                  : null;
+              },
+            }
+          )
+        : [];
+      for (const recipient of recipients) {
+        await sendProactiveMessage({
+          to: recipient.phone,
+          brainId: sender.brainId,
+          orgId: sender.orgId,
+          scope: "approval_request",
+          freeform: messageBody,
+          urgent: true,
+        }).catch(() => undefined);
+      }
+    } catch {
+      // Non-blocking: notification dispatch is best-effort
+    }
+  }
+
+  await markMessageProcessed(message.id, phoneHash(message.from), message.type, result.status);
+  results.push({ id: message.id, status: result.status });
+}
 
 /** Store outbound message status updates in the brain as chat_outbox pages. */
 async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promise<void> {
@@ -271,57 +377,6 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
       );
     }
   }
-}
-
-async function listPendingApprovals(
-  brainId: string,
-  _senderId: string
-): Promise<Array<{ action_slug: string; action_type: ActionType }>> {
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=agent_action&limit=100`, {
-    headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) return [];
-  const data = await res.json().catch(() => ({}));
-  const pages: Array<{ slug?: unknown; frontmatter?: Record<string, unknown> }> = Array.isArray(
-    data.pages
-  )
-    ? data.pages
-    : Array.isArray(data.items)
-      ? data.items
-      : [];
-  const pending: Array<{ action_slug: string; action_type: ActionType }> = [];
-  for (const page of pages) {
-    const actionSlug = typeof page.slug === "string" ? page.slug : "";
-    const actionType = page.frontmatter?.action_type as ActionType | undefined;
-    if (actionSlug && actionType && page.frontmatter?.status === "pending") {
-      pending.push({ action_slug: actionSlug, action_type: actionType });
-    }
-  }
-  return pending;
-}
-
-async function updateApprovalStatus(
-  brainId: string,
-  actionSlug: string,
-  status: "approved" | "rejected",
-  decidedBy: string,
-  rejectReason?: string
-): Promise<boolean> {
-  const res = await enginePatchPage(
-    engineHeadersForBrain(brainId),
-    {
-      slug: actionSlug,
-      frontmatter: {
-        status,
-        decided_at: new Date().toISOString(),
-        decided_by: decidedBy,
-        ...(status === "rejected" && rejectReason ? { reject_reason: rejectReason } : {}),
-      },
-    },
-    { timeoutMs: 15_000 }
-  );
-  return res.ok;
 }
 
 function executionDepsForBrain(brainId: string) {
@@ -437,36 +492,99 @@ async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string
 }
 
 /**
- * START: widerrufene Einwilligungen reaktivieren (Double-Opt-In-proof bleibt)
- * — nur die der Kanzlei, der die Absender-Identität gehört.
+ * START: the person asks to receive messages from this firm again (or for the
+ * first time). Recorded as the person's own opt-in — but only for a number the
+ * firm knows as a confirmed client or a linked firm member; an unconfirmed
+ * number must confirm with its invitation code first.
  */
-async function reinstateWhatsAppConsent(
-  phone: string,
-  sender: { brainId?: string; orgId?: string }
-): Promise<void> {
-  const store = getWhatsAppConsentStore();
+async function reinstateWhatsAppConsent(phone: string, sender: WhatsAppIdentity): Promise<void> {
   const hash = phoneHash(phone);
-  const now = new Date().toISOString();
-  const rows = await store.getByPhoneHash(senderTenantKeys(sender), hash);
-  const withdrawn = rows.filter((c) => c.optOutAt);
-  for (const c of withdrawn) {
-    await store.update(c.id, {
-      optOutAt: null,
-      optInAt: now,
-      consentProof: { ...c.consentProof, reinstated_via: "whatsapp_start", reinstated_at: now },
+  const staff = isWhatsAppStaffRole(sender.role) && sender.userLinked === true && !!sender.userId;
+  const client = sender.role === "client" && !!sender.verifiedAt;
+  let granted = false;
+  if (staff || client) {
+    const result = await grantWhatsAppConsent({
+      brainId: sender.brainId,
+      orgId: sender.orgId,
+      phoneHash: hash,
+      subjectType: staff ? "lawyer" : "client",
+      subjectRef: staff ? (sender.userId as string) : sender.id,
+      scopes: staff ? STAFF_CONSENT_SCOPES : CLIENT_CONSENT_SCOPES,
+      source: "start_keyword",
     });
+    granted = result.status !== "withdrawn";
   }
-  await logAudit("whatsapp.consent_granted", "whatsapp_identity", {
-    brainId: sender.brainId ?? SYSTEM_BRAIN,
-    details: { phoneHash: hash, reinstated: withdrawn.length },
-  });
   const res = await sendWhatsAppText(
     phone,
-    withdrawn.length > 0
-      ? "Danke — der Nachrichtenempfang wurde wieder aktiviert."
-      : "Ihre Nummer ist bei uns noch nicht für den Nachrichtenempfang freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei."
+    granted
+      ? "Danke — der Nachrichtenempfang ist aktiviert. Mit STOPP können Sie ihn jederzeit beenden."
+      : "Ihre Nummer ist bei uns noch nicht für den Nachrichtenempfang freigeschaltet. Bitte bestätigen Sie zuerst den Code aus der Einladung Ihrer Kanzlei."
   );
   if (res.messageId && sender.brainId) {
     void recordOutboundMessage(res.messageId, sender.brainId);
   }
+}
+
+// ── Consent keywords: only a message that IS the keyword ───────────────────
+
+/**
+ * STOPP/START count only as the whole message ("Stopp", "STOP!", "Abmelden")
+ * — a client writing "Stopp, bitte die Klage noch nicht einbringen!" or
+ * "Start der Verhandlung ist am 3.10." is a message for the firm, not an
+ * opt-out or opt-in.
+ */
+function isStopKeyword(text: string): boolean {
+  return /^\s*(?:stopp?|abmelden|abbestellen|unsubscribe|opt[- ]?out)\s*[.!]*\s*$/i.test(text);
+}
+
+function isStartKeyword(text: string): boolean {
+  return /^\s*(?:start|anmelden|subscribe|opt[- ]?in)\s*[.!]*\s*$/i.test(text);
+}
+
+// ── Unknown senders ─────────────────────────────────────────────────────────
+
+const UNKNOWN_SENDER_REPLY_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A number without identity (prospect, client with a new phone) gets one
+ * friendly answer per day — without any firm data — and, when this instance
+ * receives public enquiries for a named firm (SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID,
+ * same rule as /erstanfrage), the message is filed there as an intake
+ * request without a matter. Media are not downloaded.
+ */
+async function handleUnknownSender(message: WhatsAppIncomingMessage): Promise<void> {
+  const hash = phoneHash(message.from);
+  const windowStore = getWhatsAppWindowStore();
+  const lastInbound = await windowStore.getLastInbound(hash).catch(() => null);
+  await windowStore.touch(hash);
+  if (lastInbound && Date.now() - lastInbound.getTime() < UNKNOWN_SENDER_REPLY_INTERVAL_MS) {
+    return;
+  }
+
+  const brainId = resolvePublicFormBrainId("intake");
+  const firm = brainId ? await loadPublicFirm(brainId) : null;
+  if (brainId && firm) {
+    const text = message.type === "text" ? message.text.trim() : "";
+    const intake = buildIntakeRequest({
+      source: "whatsapp",
+      summary: text || `[WhatsApp-${message.type}]`,
+      phoneHash: hash,
+      status: "new",
+    });
+    await writeIntakeRequest(brainId, intake);
+  }
+
+  const reply = firm
+    ? [
+        `Guten Tag, danke für Ihre Nachricht an ${firm.name}.`,
+        "Ihre Nummer ist bei uns noch nicht hinterlegt. Wir haben Ihre Anfrage aufgenommen und melden uns.",
+        `Sie können Ihr Anliegen auch hier schildern: ${siteUrl()}/erstanfrage`,
+        "Bitte senden Sie über WhatsApp noch keine vertraulichen Unterlagen.",
+      ].join("\n")
+    : [
+        "Guten Tag, danke für Ihre Nachricht.",
+        "Diese WhatsApp-Nummer ist für Mandant:innen vorgesehen, deren Nummer die Kanzlei bestätigt hat.",
+        "Bitte wenden Sie sich direkt an Ihre Kanzlei — sie meldet sich bei Ihnen.",
+      ].join("\n");
+  await sendWhatsAppText(message.from, reply);
 }

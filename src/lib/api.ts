@@ -2085,6 +2085,7 @@ export const api = {
 
     createIdentity(input: {
       phone: string;
+      user_id?: string;
       name?: string;
       role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
       status?: "active" | "suspended" | "revoked";
@@ -2098,6 +2099,8 @@ export const api = {
 
     updateIdentity(input: {
       id: string;
+      user_id?: string;
+      record_consent?: { note: string };
       name?: string;
       role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
       status?: "active" | "suspended" | "revoked";

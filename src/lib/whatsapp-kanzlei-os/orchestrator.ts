@@ -31,8 +31,9 @@ import {
 } from "@/lib/whatsapp-event-bus";
 import { executeApprovedAction, type ApprovalExecutionDeps } from "@/lib/approval-execution";
 import { ingestVerifiedClientWhatsAppSubmission } from "@/lib/whatsapp/client-ingest";
-import { verifyWhatsAppClientCode } from "@/lib/whatsapp/client-verification";
-import type { ActionType } from "@/lib/approval";
+import { isCodeMessage, verifyWhatsAppClientCode } from "@/lib/whatsapp/client-verification";
+import { ACTION_LABELS, type ActionType } from "@/lib/approval";
+import { canDecideApprovals } from "@/lib/approval-decision";
 
 /**
  * Briefing feedback was dead code (P1-SECR-006 followup): nothing ever
@@ -89,19 +90,22 @@ export interface OrchestratorDeps {
   handleMedia?: typeof handleLegalChatMedia;
   downloadMedia?: typeof downloadAndStoreWhatsAppMedia;
   transcribeVoice?: typeof transcribeVoiceMessage;
-  /** Approval return channel: list pending approvals for this sender */
+  /**
+   * Approval return channel: pending Freigaben this sender could decide now
+   * (visible to them, not proposed by them).
+   */
   listPendingApprovals?: (
-    brainId: string,
-    senderId: string
-  ) => Promise<Array<{ action_slug: string; action_type: ActionType }>>;
-  /** Approval return channel: update approval status after response */
-  updateApprovalStatus?: (
-    brainId: string,
+    sender: WhatsAppIdentity
+  ) => Promise<Array<{ action_slug: string; action_type: ActionType; summary?: string }>>;
+  /** Approval return channel: decide with the dashboard's rules (approval-decision.ts). */
+  decideApproval?: (
+    sender: WhatsAppIdentity,
     actionSlug: string,
     status: "approved" | "rejected",
-    decidedBy: string,
     rejectReason?: string
-  ) => Promise<boolean>;
+  ) => Promise<{ ok: true } | { ok: false; message: string }>;
+  /** Whether this sender has an open (not expired) chat command awaiting JA. */
+  hasPendingChatAction?: (sender: WhatsAppIdentity, fromPhone: string) => Promise<boolean>;
   /** Approval execution deps (optional — if provided, approved actions auto-execute) */
   approvalExecutionDeps?: ApprovalExecutionDeps;
 }
@@ -134,6 +138,13 @@ function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
   return role === "client" || role === "external" || role === "intake";
 }
 
+function staffApprovalReply(actionType: ActionType, slug: string): string {
+  return [
+    `Vorgang zur Freigabe vorgelegt: ${ACTION_LABELS[actionType] ?? actionType} (Referenz ${slug.slice(-8)}).`,
+    "Eine zweite Person (Anwalt/Anwältin oder Administration) entscheidet im Dashboard oder per WhatsApp.",
+  ].join("\n");
+}
+
 /**
  * G3: If a reply text contains the "Antworte mit JA" confirmation pattern,
  * convert it into an interactive button message with Ja/Nein buttons
@@ -155,51 +166,98 @@ function buildConfirmationButtons(reply: string): WhatsAppInteractiveButtonMessa
   };
 }
 
+/** "Ja", "nein", "ok", 👍 … without anything else — no Freigabe reference. */
+const BARE_DECISION = /^(?:ja|yes|ok|okay|approve|freigeben|nein|no|reject|ablehnen|✅|❌)[.!]?$/i;
+
+function isStaffRole(role: WhatsAppIdentity["role"] | undefined): boolean {
+  return role === "admin" || role === "lawyer" || role === "assistant";
+}
+
+function approvalRef(slug: string): string {
+  return slug.slice(-8);
+}
+
 /**
  * Approval Return Channel (P1-SECR-005)
  *
- * Checks if an inbound WhatsApp message is an approval response (Ja/Nein + reference).
- * If so, matches it to a pending approval and updates its status.
- * Returns null if the message is NOT an approval response (normal processing continues).
+ * "Ja <Referenz>" / "Nein <Referenz> <Grund>" decides a Freigabe — with the
+ * dashboard's rules: only lawyers/admins, never one's own proposal, only
+ * Freigaben the person can see (decideApproval / listPendingApprovals run
+ * with the sender's identity). A bare "Ja" never decides a Freigabe: when
+ * Freigaben are open for this person the reply asks which one is meant,
+ * instead of silently confirming an unrelated chat command.
+ * Returns null if the message is not meant for the Freigabe queue.
  */
 async function tryApprovalReturnChannel(
   message: WhatsAppIncomingMessage,
   sender: WhatsAppIdentity,
   normalizedText: string,
   deps: OrchestratorDeps
-): Promise<{ reply: string; actionSlug: string } | null> {
-  if (!deps.listPendingApprovals || !deps.updateApprovalStatus) return null;
-  if (sender.role !== "admin" && sender.role !== "lawyer" && sender.role !== "assistant")
-    return null;
+): Promise<{ reply: string; actionSlug?: string; decided: boolean } | null> {
+  if (!deps.listPendingApprovals || !deps.decideApproval) return null;
+  if (!isStaffRole(sender.role)) return null;
 
   const parsed = parseApprovalResponse(normalizedText);
   if (parsed.response === "unknown") return null;
+  const decider = canDecideApprovals(sender.role);
 
-  const pending = await deps.listPendingApprovals(sender.brainId, sender.id);
-  if (pending.length === 0) return null;
+  if (!parsed.action_slug) {
+    if (!decider || !BARE_DECISION.test(normalizedText.trim())) return null;
+    const pending = await deps.listPendingApprovals(sender);
+    if (pending.length === 0) return null;
+    const chatOpen = deps.hasPendingChatAction
+      ? await deps.hasPendingChatAction(sender, message.from)
+      : false;
+    const verb = parsed.response === "approve" ? "Ja" : "Nein";
+    const list = pending
+      .slice(0, 5)
+      .map((p) => `• ${verb} ${approvalRef(p.action_slug)} — ${p.summary ?? p.action_type}`);
+    return {
+      decided: false,
+      reply: [
+        chatOpen
+          ? "Offen sind Ihre Eingabe hier im Chat und Freigaben. Was meinen Sie?"
+          : "Welche Freigabe meinen Sie? Bitte mit Referenz antworten:",
+        ...list,
+        ...(pending.length > 5 ? [`… und ${pending.length - 5} weitere im Dashboard.`] : []),
+        ...(chatOpen ? ["Für Ihre Eingabe im Chat: „speichern“ oder „verwerfen“."] : []),
+      ].join("\n"),
+    };
+  }
 
+  if (!decider) {
+    return {
+      decided: false,
+      reply: "Freigaben entscheiden nur Anwältinnen/Anwälte und die Administration.",
+    };
+  }
+
+  const pending = await deps.listPendingApprovals(sender);
   const matched = matchApprovalByReference(parsed, pending);
-  if (!matched) return null;
+  if (!matched) {
+    return {
+      decided: false,
+      reply: `Keine offene Freigabe mit Referenz ${parsed.action_slug} gefunden, die Sie entscheiden können.`,
+    };
+  }
 
   const decision = responseToApprovalDecision(parsed);
   if (!decision) return null;
 
-  const updated = await deps.updateApprovalStatus(
-    sender.brainId,
+  const result = await deps.decideApproval(
+    sender,
     matched.action_slug,
     decision.status as "approved" | "rejected",
-    sender.id,
     decision.reject_reason
   );
-
-  if (!updated) return null;
+  if (!result.ok) return { decided: false, reply: result.message };
 
   // Auto-execute if approved and execution deps are available
   if (decision.status === "approved" && deps.approvalExecutionDeps) {
     try {
       await executeApprovedAction(deps.approvalExecutionDeps, {
         actionSlug: matched.action_slug,
-        executedBy: sender.id,
+        executedBy: sender.email || sender.userId || sender.id,
       });
     } catch (err) {
       console.error("[orchestrator] Approval auto-execution failed:", err);
@@ -208,10 +266,10 @@ async function tryApprovalReturnChannel(
 
   const replyText =
     decision.status === "approved"
-      ? `✅ Freigabe bestätigt für ${matched.action_type} (${matched.action_slug.slice(-8)}).`
-      : `❌ Abgelehnt: ${matched.action_type} (${matched.action_slug.slice(-8)}).${parsed.reject_reason ? ` Grund: ${parsed.reject_reason}` : ""}`;
+      ? `✅ Freigabe bestätigt für ${matched.action_type} (${approvalRef(matched.action_slug)}).`
+      : `❌ Abgelehnt: ${matched.action_type} (${approvalRef(matched.action_slug)}).${parsed.reject_reason ? ` Grund: ${parsed.reject_reason}` : ""}`;
 
-  return { reply: replyText, actionSlug: matched.action_slug };
+  return { reply: replyText, actionSlug: matched.action_slug, decided: true };
 }
 
 function caseSlugFromText(text: string): string | undefined {
@@ -245,6 +303,8 @@ function caseSlugFromText(text: string): string | undefined {
 function resolveClientCaseSlug(sender: WhatsAppIdentity, text: string): string | undefined {
   const explicit = caseSlugFromText(text);
   if (!isClientRole(sender.role)) return explicit;
+  // An unconfirmed number is not yet the client of any matter.
+  if (!sender.verifiedAt) return undefined;
   const scope = Array.isArray(sender.matterScope) ? sender.matterScope.filter(Boolean) : [];
   if (explicit && scope.includes(explicit)) return explicit;
   return scope.length === 1 ? scope[0] : undefined;
@@ -273,8 +333,10 @@ export async function orchestrateWhatsAppMessage(
 
   // G3: Map interactive button replies to confirmation intents
   if (message.type === "button_reply") {
-    if (message.buttonId === "confirm_yes") normalizedText = "ja";
-    else if (message.buttonId === "confirm_no") normalizedText = "nein";
+    // The Ja/Nein buttons belong to the chat command they were sent with —
+    // "speichern"/"verwerfen" keep them apart from a Freigabe decision.
+    if (message.buttonId === "confirm_yes") normalizedText = "speichern";
+    else if (message.buttonId === "confirm_no") normalizedText = "verwerfen";
     else normalizedText = message.buttonText || message.buttonId;
   }
 
@@ -294,6 +356,9 @@ export async function orchestrateWhatsAppMessage(
     sender,
     normalizedText,
     risk,
+    // A confirmed client's message belongs to their matter's communication
+    // history (only within their own scope).
+    caseSlug: isClientRole(sender.role) ? resolveClientCaseSlug(sender, normalizedText) : undefined,
     status: risk.requiresApproval ? "pending_approval" : "received",
     details: storedMedia ? { media: storedMedia } : undefined,
   });
@@ -310,12 +375,15 @@ export async function orchestrateWhatsAppMessage(
         reply: approvalResult.reply,
         eventSlug: event.slug,
         actionSlug: approvalResult.actionSlug,
-        status: "executed",
+        status: approvalResult.decided ? "executed" : "routed",
       };
     }
   }
 
-  if (isClientRole(sender.role) && !sender.verifiedAt && normalizedText) {
+  // A message that is only a confirmation code is checked against the
+  // number's open invitations — also for an already confirmed client who was
+  // invited to a further matter. Any other text is never a code attempt.
+  if (isClientRole(sender.role) && message.type === "text" && isCodeMessage(normalizedText)) {
     const verification = await verifyWhatsAppClientCode({
       sender,
       text: normalizedText,
@@ -442,8 +510,10 @@ export async function orchestrateWhatsAppMessage(
         action_slug: approvalRecord.slug,
         action_type: approvalRecord.actionType,
         summary: normalizedText.slice(0, 200),
-        recipient_user_ids: [sender.id],
-        recipient_phone: sender.phone,
+        // Recipients are the matter's responsible lawyers, resolved by the
+        // webhook (approvalNotificationRecipients) — never the sender, and
+        // never a client.
+        recipient_user_ids: [],
       });
       // The event bus is initialized and dispatched by the webhook route
       // or cron job — here we just make the event available via a side channel.
@@ -457,7 +527,10 @@ export async function orchestrateWhatsAppMessage(
       // for this case (e.g. the appointment_request acknowledgment) — using
       // the generic safeClientReply() unconditionally here meant that reply
       // was computed and then silently discarded for every client sender.
-      reply: clientIngestReply || safeClientReply(),
+      // Firm members get a note about the Freigabe, not the client wording.
+      reply: isClientRole(sender.role)
+        ? clientIngestReply || safeClientReply()
+        : staffApprovalReply(approvalRecord.actionType, approvalRecord.slug),
       eventSlug: event.slug,
       actionSlug: approvalRecord.slug,
       notificationEvent,

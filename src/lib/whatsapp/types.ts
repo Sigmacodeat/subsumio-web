@@ -4,6 +4,8 @@ export interface WhatsAppSenderBinding {
   userId?: string;
   name?: string;
   role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
+  /** Email of the linked user account — set at runtime for staff senders, never stored. */
+  email?: string;
 }
 
 /**
@@ -27,6 +29,13 @@ export interface WhatsAppIdentity extends WhatsAppSenderBinding {
   status: "active" | "suspended" | "revoked";
   /** ISO timestamp of identity verification (OTP / portal link), or null if unverified. */
   verifiedAt: string | null;
+  /**
+   * `userId` was explicitly chosen by an administrator as the person this
+   * number belongs to. Older firm identities stored the administrator who
+   * registered the number in `userId`; they stay unlinked (no firm commands)
+   * until an administrator links the right account.
+   */
+  userLinked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -421,8 +430,58 @@ export function extractMessageStatuses(payload: WhatsAppWebhookPayload): WhatsAp
   return statuses;
 }
 
-export function normalizePhone(phone: string): string {
-  const trimmed = phone.trim();
-  const digits = trimmed.replace(/[^\d+]/g, "");
-  return digits.startsWith("+") ? digits : `+${digits}`;
+/** Countries the firm can name as its default for national number formats. */
+export type PhoneCountry = "AT" | "DE" | "CH";
+
+export const PHONE_COUNTRY_CODES: Record<PhoneCountry, string> = {
+  AT: "43",
+  DE: "49",
+  CH: "41",
+};
+
+/** The firm's default country from a jurisdiction value ("AT", "de", …); AT otherwise. */
+export function phoneCountryFor(jurisdiction: string | null | undefined): PhoneCountry {
+  const j = (jurisdiction ?? "").trim().toUpperCase();
+  return j === "DE" || j === "CH" ? j : "AT";
+}
+
+/**
+ * E.164 form (`+<country><number>`) of a phone number as people write it.
+ *
+ *  - `+43 664 123 45 67`, `+43 (0) 664 …` → `+43664…` (the national trunk
+ *    "0" written in brackets after the country code is dropped)
+ *  - `0043 664 …` (international prefix 00) → `+43664…`
+ *  - `0664 123 45 67` (national, trunk prefix 0) → `+43664…` with the firm's
+ *    default country (`defaultCountry`, AT unless the firm is DE/CH)
+ *  - `436641234567` (digits only, as Meta delivers the sender) → `+436641234567`
+ *
+ * Meta always sends the international form without "+", so an inbound sender
+ * and a number the firm typed in national form now hash to the same value.
+ */
+export function normalizePhone(phone: string, defaultCountry: PhoneCountry = "AT"): string {
+  let s = phone.trim();
+  // "+43 (0) 664 …" — the bracketed trunk zero is not dialled internationally.
+  s = s.replace(/^(\+\d{1,3})\s*\(0\)/, "$1");
+  const digits = s.replace(/[^\d+]/g, "");
+  if (digits.startsWith("+")) return `+${digits.slice(1).replace(/\+/g, "")}`;
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  if (digits.startsWith("0")) return `+${PHONE_COUNTRY_CODES[defaultCountry]}${digits.slice(1)}`;
+  return `+${digits}`;
+}
+
+/**
+ * The forms an older version of normalizePhone produced for this number when
+ * it was entered nationally ("0664 …" → "+0664…") or with the 00 prefix
+ * ("0043 664 …" → "+0043664…"). Identities stored back then carry a hash of
+ * that form; the sender lookup tries these once and re-keys the identity.
+ */
+export function legacyPhoneForms(e164: string): string[] {
+  const forms: string[] = [];
+  for (const cc of Object.values(PHONE_COUNTRY_CODES)) {
+    if (!e164.startsWith(`+${cc}`)) continue;
+    const national = e164.slice(1 + cc.length);
+    if (!national) continue;
+    forms.push(`+0${national}`, `+00${cc}${national}`);
+  }
+  return forms;
 }

@@ -1,7 +1,8 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { applyMatterKnowledgeMutation } from "@/lib/matter-knowledge";
 import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
-import { signPortalToken } from "@/lib/portal-token";
+import { issueRegisteredPortalLink } from "@/lib/portal-link-issue";
+import { isPortalVisibleDeadline } from "@/lib/portal-view";
 import type { CaseFrontmatter } from "@/lib/legal-types";
 import { ordneAktenzahlZu } from "@/lib/legal/geschaeftszahl";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
@@ -122,10 +123,10 @@ export function ambiguousReply(labels: ScopedMatterLabel[]): string {
     .slice(0, 5)
     .join("; ");
   return [
-    "Danke, Ihre Nachricht ist eingegangen.",
+    "Danke, Ihre Nachricht ist bei der Kanzlei eingegangen — Sie müssen nichts erneut senden.",
     matters
-      ? `Bitte nennen Sie das Aktenzeichen (Geschäftszahl), damit wir die Unterlage korrekt zuordnen koennen. Ihre Akten: ${matters}.`
-      : "Bitte nennen Sie das Aktenzeichen (Geschäftszahl), damit wir die Unterlage korrekt zuordnen koennen.",
+      ? `Zu welcher Akte gehört sie? Bitte antworten Sie mit dem Aktenzeichen (Geschäftszahl). Ihre Akten: ${matters}.`
+      : "Zu welcher Akte gehört sie? Bitte antworten Sie mit dem Aktenzeichen (Geschäftszahl).",
   ].join("\n");
 }
 
@@ -175,8 +176,10 @@ function nextOpenDeadline(
 ): { title: string; due_date: string } | undefined {
   if (!Array.isArray(deadlines)) return undefined;
   const today = new Date().toISOString().slice(0, 10);
+  // Same rule as the client portal: only reviewed/confirmed deadlines, never
+  // unreviewed or rejected AI suggestions, internal pre-deadlines or done ones.
   return deadlines
-    .filter((d) => d.due_date && d.status !== "done" && d.due_date.slice(0, 10) >= today)
+    .filter((d) => isPortalVisibleDeadline(d) && d.due_date.slice(0, 10) >= today)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
     .map((d) => ({
       title: d.title || d.description || "Frist",
@@ -212,23 +215,35 @@ async function portalLinkReply(
   fetchImpl: typeof fetch
 ): Promise<string> {
   const page = await readCaseFrontmatter(sender.brainId, caseSlug, fetchImpl);
-  if (!page.frontmatter.portal_enabled) {
-    return "Das Mandantenportal ist für diese Akte noch nicht freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei.";
+  const unavailable =
+    "Das Mandantenportal ist für diese Akte nicht freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei.";
+  if (!page.frontmatter.portal_enabled || page.frontmatter.status === "archived") {
+    return unavailable;
   }
-  const token = await signPortalToken(caseSlug, 30 * 24 * 3600, sender.brainId);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.subsum.io";
+  // A registered link (listed and revocable in the matter's link management),
+  // refused for archived or unreleased matters — same path as reminders.
+  const link = await issueRegisteredPortalLink({
+    headers: engineHeadersForBrain(sender.brainId),
+    brainId: sender.brainId,
+    caseSlug,
+    createdBy: `whatsapp:${sender.id}`,
+    purpose: "whatsapp",
+  });
+  if (!link) return unavailable;
   return [
-    "Hier ist Ihr Zugang zum Mandantenportal (30 Tage gültig):",
-    `${baseUrl}/portal/${token}`,
+    "Hier ist Ihr Zugang zum Mandantenportal:",
+    link,
     "Dort finden Sie den Stand Ihrer Akte, Dokumente zum Herunterladen und zur Unterschrift.",
   ].join("\n");
 }
 
-function submissionStatement(input: WhatsAppClientIngestInput, caseSlug: string): string {
+function submissionStatement(input: WhatsAppClientIngestInput, caseSlug: string | null): string {
   if (input.media) {
     const caption = "caption" in input.message ? input.message.caption : undefined;
     return [
-      `Mandant hat per WhatsApp eine Datei zur Akte ${caseSlug.replace(/^legal\/cases\//, "")} eingereicht.`,
+      caseSlug
+        ? `Mandant hat per WhatsApp eine Datei zur Akte ${caseSlug.replace(/^legal\/cases\//, "")} eingereicht.`
+        : "Mandant hat per WhatsApp eine Datei ohne Aktenangabe eingereicht.",
       `Datei: ${input.media.filename}`,
       `Typ: ${input.media.mimeType}`,
       caption ? `Begleittext: ${caption}` : undefined,
@@ -293,7 +308,7 @@ async function writeCaseFrontmatter(
 
 async function writeSubmissionPage(
   input: WhatsAppClientIngestInput,
-  caseSlug: string,
+  caseSlug: string | null,
   statement: string,
   fetchImpl: typeof fetch
 ): Promise<string> {
@@ -315,7 +330,9 @@ async function writeSubmissionPage(
       frontmatter: {
         type: "client_submission",
         channel: "whatsapp",
-        case_slug: caseSlug,
+        case_slug: caseSlug ?? undefined,
+        // Several matters and none named: the firm assigns it (nothing is lost).
+        ...(caseSlug ? {} : { needs_case_assignment: true }),
         source_event_slug: input.eventSlug,
         sender_identity_id: input.sender.id,
         sender_name: input.sender.name,
@@ -379,9 +396,38 @@ export async function ingestVerifiedClientWhatsAppSubmission(
   );
   const caseSlug = resolved.caseSlug;
   if (!caseSlug) {
+    // Several matters and none named: keep the message/file (the client
+    // must not have to send it again), file it for assignment by the firm and
+    // ask which matter it belongs to.
+    if (!input.media && !input.normalizedText.trim()) {
+      return {
+        handled: true,
+        reason: "ambiguous_scope",
+        reply: ambiguousReply(resolved.labels ?? []),
+      };
+    }
+    const submissionSlug = await writeSubmissionPage(
+      input,
+      null,
+      submissionStatement(input, null),
+      fetchImpl
+    );
+    await stampInboundEntryBestEffort(
+      engineHeadersForBrain(input.sender.brainId),
+      {
+        channel: "whatsapp",
+        subject: (input.media?.filename ?? input.normalizedText.trim()).slice(0, 200),
+        senderName: input.sender.name,
+        documentSlug: submissionSlug,
+        notes: `WhatsApp ohne Aktenzuordnung, Nachricht ${input.message.id}`,
+      },
+      input.sender.brainId,
+      { fetchImpl }
+    );
     return {
       handled: true,
       reason: "ambiguous_scope",
+      submissionSlug,
       reply: ambiguousReply(resolved.labels ?? []),
     };
   }

@@ -46,7 +46,16 @@ vi.mock("@/lib/whatsapp/verify", async (importOriginal) => {
   };
 });
 vi.mock("@/lib/whatsapp/identity", () => ({
-  resolveSenderIdentity: vi.fn(async () => ({ brainId: "brain-1", orgId: "org-1", userId: "u1" })),
+  // A confirmed client of firm org-1.
+  resolveSenderIdentity: vi.fn(async () => ({
+    id: "wa-1",
+    brainId: "brain-1",
+    orgId: "org-1",
+    role: "client",
+    verifiedAt: "2026-01-01T00:00:00Z",
+    matterScope: ["legal/cases/a"],
+    status: "active",
+  })),
 }));
 vi.mock("@/lib/whatsapp/window-store", () => ({
   getWhatsAppWindowStore: () => ({ touch: vi.fn(async () => {}) }),

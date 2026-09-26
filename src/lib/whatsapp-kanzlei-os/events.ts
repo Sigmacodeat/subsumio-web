@@ -105,3 +105,52 @@ export async function writeConversationEvent(
     throw new Error(text || `conversation_event_write_failed:${res.status}`);
   }
 }
+
+/**
+ * Document a message the firm sent a client over WhatsApp in the matter's
+ * communication history (Akte → Kommunikation), next to the client's own
+ * messages. Best-effort: the message is already sent; a failed protocol write
+ * is logged by the caller, never reported as "not sent".
+ */
+export async function recordWhatsAppOutboundEvent(
+  input: {
+    brainId: string;
+    orgId?: string;
+    caseSlug?: string;
+    toPhone: string;
+    text: string;
+    messageId?: string;
+    actorId?: string;
+    actorName?: string;
+  },
+  fetchImpl: typeof fetch = fetch,
+  at: Date = new Date()
+): Promise<void> {
+  const id = input.messageId || `out-${at.getTime()}`;
+  await writeConversationEvent(
+    input.brainId,
+    {
+      slug: `legal/conversations/whatsapp/out-${safeSlugPart(id)}`,
+      title: `WhatsApp an Mandant: ${id}`,
+      frontmatter: {
+        type: "conversation_event",
+        channel: "whatsapp",
+        provider_message_id: input.messageId,
+        direction: "outbound",
+        role: "firm",
+        actor_id: input.actorId,
+        actor_name: input.actorName,
+        phone_hash: phoneHash(input.toPhone),
+        tenant_brain_id: input.brainId,
+        org_id: input.orgId,
+        case_slug: input.caseSlug,
+        message_type: "text",
+        normalized_text: input.text,
+        language: "de",
+        status: "executed",
+        created_at: at.toISOString(),
+      },
+    },
+    fetchImpl
+  );
+}

@@ -88,7 +88,7 @@ export function portalReleasedSummary(frontmatter: unknown): string {
 
 /** Deadlines the client may see: reviewed/approved or manually entered, never
  *  unreviewed or rejected AI suggestions, internal pre-deadlines or done ones. */
-function isPortalVisibleDeadline(d: {
+export function isPortalVisibleDeadline(d: {
   due_date?: unknown;
   status?: unknown;
   review_status?: unknown;

@@ -6,6 +6,22 @@ import { scanFile } from "@/lib/virus-scan";
 import { env } from "@/lib/env";
 import type { WhatsAppMediaMessage } from "./types";
 
+/** The file itself is refused (too large, unsafe) — resending it will not help. */
+export class WhatsAppMediaRejectedError extends Error {
+  constructor(
+    message: string,
+    /** Text for the sender, without technical detail. */
+    public readonly userMessage: string
+  ) {
+    super(message);
+    this.name = "WhatsAppMediaRejectedError";
+  }
+}
+
+function tooLargeReply(): string {
+  return `Die Datei ist zu groß (höchstens ${Math.floor(maxBytes() / (1024 * 1024))} MB). Bitte senden Sie sie verkleinert oder in mehreren Teilen.`;
+}
+
 export interface StoredWhatsAppMedia {
   provider: "whatsapp";
   mediaId: string;
@@ -96,8 +112,9 @@ export async function downloadAndStoreWhatsAppMedia(
   const downloadUrl = meta.url;
   const expectedSize = Number(meta.file_size || 0);
   if (expectedSize > maxBytes())
-    throw new Error(
-      `WhatsApp-Medium ist zu groß (${expectedSize} Bytes). Limit: ${maxBytes()} Bytes.`
+    throw new WhatsAppMediaRejectedError(
+      `WhatsApp-Medium ist zu groß (${expectedSize} Bytes). Limit: ${maxBytes()} Bytes.`,
+      tooLargeReply()
     );
 
   const res = await withRetry(() =>
@@ -114,8 +131,9 @@ export async function downloadAndStoreWhatsAppMedia(
   const arrayBuf = await res.arrayBuffer();
   const bytes = Buffer.from(arrayBuf);
   if (bytes.length > maxBytes())
-    throw new Error(
-      `WhatsApp-Medium ist zu groß (${bytes.length} Bytes). Limit: ${maxBytes()} Bytes.`
+    throw new WhatsAppMediaRejectedError(
+      `WhatsApp-Medium ist zu groß (${bytes.length} Bytes). Limit: ${maxBytes()} Bytes.`,
+      tooLargeReply()
     );
 
   const mimeType =
@@ -135,7 +153,17 @@ export async function downloadAndStoreWhatsAppMedia(
           : scan.reason === "clamav_infected"
             ? `Malware erkannt (${scan.signature})`
             : "Virenscanner nicht erreichbar";
-    throw new Error(`WhatsApp-Medium abgelehnt: ${detail}.`);
+    // A scanner outage is temporary (generic "try again"); a rejected file is
+    // not — the sender must send a different file, and is told so.
+    if (scan.reason === "clamav_unreachable") {
+      throw new Error(`WhatsApp-Medium abgelehnt: ${detail}.`);
+    }
+    throw new WhatsAppMediaRejectedError(
+      `WhatsApp-Medium abgelehnt: ${detail}.`,
+      scan.reason === "clamav_infected"
+        ? "Die Datei wurde aus Sicherheitsgründen nicht angenommen (Schadsoftware erkannt). Bitte senden Sie die Unterlage nicht erneut, sondern kontaktieren Sie die Kanzlei."
+        : "Diese Datei kann aus Sicherheitsgründen nicht angenommen werden. Bitte senden Sie die Unterlage als PDF oder Foto."
+    );
   }
   const hash = createHash("sha256").update(bytes).digest("hex");
   const ext = extensionFromMime(mimeType);
