@@ -717,8 +717,11 @@ export default function InvoicingPage() {
     en ? `${n} ${n === 1 ? "invoice" : "invoices"}` : `${n} ${n === 1 ? "Rechnung" : "Rechnungen"}`;
   const positionsLabel = (n: number) =>
     en ? `${n} ${n === 1 ? "item" : "items"}` : `${n} ${n === 1 ? "Position" : "Positionen"}`;
-  const canSend = userRole === "admin" || userRole === "lawyer" || userRole === "assistant";
+  // Same split as the server (invoice.issue / invoice.cancel): the
+  // Sekretariat prepares drafts and books payments; issuing, sending,
+  // cancelling and deleting stay with lawyers and admins.
   const canManage = userRole === "admin" || userRole === "lawyer";
+  const canSend = canManage;
 
   return (
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
@@ -945,7 +948,7 @@ export default function InvoicingPage() {
                   >
                     <FileText size={15} />
                   </IconAction>
-                  {inv.status === "draft" && (
+                  {canManage && inv.status === "draft" && (
                     <IconAction
                       label={t("inv.mark_sent")}
                       onClick={() => updateStatus(inv, "sent")}
@@ -976,7 +979,7 @@ export default function InvoicingPage() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-60">
-                      {inv.status === "draft" && (
+                      {canManage && inv.status === "draft" && (
                         <DropdownMenuItem
                           onClick={() => updateStatus(inv, "sent")}
                           disabled={busy}

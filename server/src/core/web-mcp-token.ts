@@ -151,6 +151,9 @@ export async function resolveWebMcpToken(
   if (!binding.sourceId || !binding.userId) return "owner_missing";
   const status = await userStatus(binding.userId, binding.sourceId);
   if (!status.active) return "owner_inactive";
+  // A client account reads only the released client view of the web app,
+  // never the brain itself — also not through an MCP token.
+  if (status.role === "client_viewer") return "owner_inactive";
   const known = await loadSourceMatterAccess(engine, binding.sourceId);
   const { scope, readOnly } = callerMatterScope(
     "all",

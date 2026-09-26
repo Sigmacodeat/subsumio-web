@@ -1329,6 +1329,30 @@ const put_page: Operation = {
       ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
     );
     if (ifAbsent && existingPage) throw pageExistsOperationError(slug);
+    // Vier-Augen-Kontrolle: no write path completes a Notfrist without the
+    // second check (see notfrist-gate.ts).
+    {
+      const storedFm =
+        existingPage?.frontmatter && typeof existingPage.frontmatter === "object"
+          ? (existingPage.frontmatter as Record<string, unknown>)
+          : null;
+      const raw = p.content as string;
+      const mayHoldNotfrist =
+        /is_notfrist|second_check_required/.test(raw) ||
+        (storedFm !== null && /is_notfrist|second_check_required/.test(JSON.stringify(storedFm)));
+      if (mayHoldNotfrist) {
+        const { parseMarkdown } = await import("./markdown.ts");
+        const parsed = parseMarkdown(raw, slug + ".md");
+        const nextFm: Record<string, unknown> = {
+          title: parsed.title,
+          ...((parsed.frontmatter ?? {}) as Record<string, unknown>),
+        };
+        const { notfristCompletionViolation, notfristGateMessage, NOTFRIST_GATE_CODE } =
+          await import("./notfrist-gate.ts");
+        const hit = notfristCompletionViolation(storedFm, nextFm);
+        if (hit) throw new OperationError(NOTFRIST_GATE_CODE, notfristGateMessage(hit));
+      }
+    }
     if (!existingPage) {
       const parsed = await import("./markdown.ts").then((m) =>
         m.parseMarkdown(p.content as string, slug + ".md")
@@ -2070,6 +2094,12 @@ const page_array_append: Operation = {
       // Same indistinguishable-from-missing shape the web layer uses.
       throw new NotFoundError(`Page not found: ${slug}`);
     }
+    {
+      const { notfristAppendViolation, notfristGateMessage, NOTFRIST_GATE_CODE } =
+        await import("./notfrist-gate.ts");
+      const hit = notfristAppendViolation(field, items);
+      if (hit) throw new OperationError(NOTFRIST_GATE_CODE, notfristGateMessage(hit));
+    }
     const res = await ctx.engine.appendPageArrayItems(slug, field, items, {
       sourceId: ctx.sourceId,
     });
@@ -2215,6 +2245,23 @@ const page_array_mutate: Operation = {
 
     if (!isSlugInMatterScope(slug, ctx)) {
       throw new NotFoundError(`Page not found: ${slug}`);
+    }
+
+    // Vier-Augen-Kontrolle: patching a Notfrist entry to done needs the
+    // second check (notfrist-gate.ts).
+    if (field === "deadlines" && !remove) {
+      const stored = await ctx.engine.getPage(
+        slug,
+        ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
+      );
+      const { notfristMutateViolation, notfristGateMessage, NOTFRIST_GATE_CODE } =
+        await import("./notfrist-gate.ts");
+      const hit = notfristMutateViolation(
+        field,
+        (stored?.frontmatter as Record<string, unknown> | undefined)?.deadlines,
+        { matchKey, matchValues, set, unset, remove }
+      );
+      if (hit) throw new OperationError(NOTFRIST_GATE_CODE, notfristGateMessage(hit));
     }
 
     const res = await ctx.engine.mutatePageArrayItems(

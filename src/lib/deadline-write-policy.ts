@@ -23,7 +23,12 @@
  * Pure functions — the routes read the stored page, call these and do the I/O.
  */
 
-import { type GuardRejection, embeddedDeadlineKey, isNotfrist } from "@/lib/page-write-guards";
+import {
+  type GuardRejection,
+  embeddedDeadlineKey,
+  guardSecondCheckWrite,
+  isNotfrist,
+} from "@/lib/page-write-guards";
 
 export interface PolicyUser {
   id?: string;
@@ -43,6 +48,22 @@ export const DEADLINE_IDENTITY_FIELDS = [
 
 /** Client-supplied reason for a Notfrist change; consumed, not stored as-is. */
 export const CHANGE_REASON_FIELD = "change_reason";
+
+/** Matter-level reason for removing deadlines from `deadlines[]` in this
+ *  write; consumed, recorded in the audit event. */
+export const DELETE_REASON_FIELD = "deadline_delete_reason";
+
+/** Roles that remove an ordinary deadline without giving a reason. */
+const DEADLINE_DELETE_FREE_ROLES = new Set(["admin", "lawyer"]);
+
+function deleteReasonRejection(title: unknown): GuardRejection {
+  const name = typeof title === "string" && title.trim() ? `„${title.trim()}“ ` : "";
+  return {
+    status: 422,
+    error: "deadline_delete_reason_required",
+    message: `Frist ${name}löschen: bitte eine Begründung angeben (nachvollziehbar im Fristen-Protokoll).`,
+  };
+}
 
 /** Service identities of createHandler — not a person for the four-eyes rule. */
 const NON_PERSON_IDS = new Set(["internal", "custom", "anonymous", "system", ""]);
@@ -286,7 +307,8 @@ export function applyDeadlineArrayPolicy(
   storedList: unknown,
   user: PolicyUser,
   scopeSlug: string,
-  now: string = new Date().toISOString()
+  now: string = new Date().toISOString(),
+  deleteReason = ""
 ): { deadlines: unknown[]; events: DeadlineChangeEvent[] } | { reject: GuardRejection } {
   const stored = new Map<string, Record<string, unknown>>();
   // Secondary index by title + date: matches an entry the client sends
@@ -347,6 +369,16 @@ export function applyDeadlineArrayPolicy(
         ),
       };
     }
+    // An open deadline removed by the Sekretariat needs a written reason; a
+    // cancelled/done entry is only tidied up.
+    const open = !CANCELLED.has(String(prev.status ?? "")) && String(prev.status ?? "") !== "done";
+    if (
+      open &&
+      !DEADLINE_DELETE_FREE_ROLES.has(String(user.role ?? "")) &&
+      deleteReason.length < MIN_REASON_LENGTH
+    ) {
+      return { reject: deleteReasonRejection(prev.title) };
+    }
     events.push({
       kind: "delete",
       deadline_id: entryAuditId(scopeSlug, prev),
@@ -356,6 +388,7 @@ export function applyDeadlineArrayPolicy(
       due_date_after: null,
       status_before: str(prev.status),
       status_after: null,
+      ...(deleteReason ? { reason: deleteReason } : {}),
     });
   }
   return { deadlines: out, events };
@@ -433,8 +466,18 @@ export function applyDeadlineWritePolicy(args: {
     if (res.event) events.push(res.event);
   }
 
+  const deleteReason =
+    typeof fm[DELETE_REASON_FIELD] === "string" ? String(fm[DELETE_REASON_FIELD]).trim() : "";
+  delete fm[DELETE_REASON_FIELD];
   if (Array.isArray(fm.deadlines)) {
-    const res = applyDeadlineArrayPolicy(fm.deadlines, curFm?.deadlines, args.user, args.slug, now);
+    const res = applyDeadlineArrayPolicy(
+      fm.deadlines,
+      curFm?.deadlines,
+      args.user,
+      args.slug,
+      now,
+      deleteReason
+    );
     if ("reject" in res) return res;
     fm.deadlines = res.deadlines;
     events.push(...res.events);
@@ -446,6 +489,8 @@ export function applyDeadlineWritePolicy(args: {
 // ── Atomic array ops on `deadlines` ─────────────────────────────────────
 
 export interface ArrayMutation {
+  /** Written reason for `remove` (required from the Sekretariat for open deadlines). */
+  reason?: string;
   match: Array<string | number | boolean>;
   match_key?: string;
   set?: Record<string, unknown>;
@@ -532,8 +577,19 @@ export function planDeadlineArrayMutation(
           ),
         };
       }
+      const reason = typeof m.reason === "string" ? m.reason.trim() : "";
+      const open =
+        !CANCELLED.has(String(prev.status ?? "")) && String(prev.status ?? "") !== "done";
+      if (
+        open &&
+        !DEADLINE_DELETE_FREE_ROLES.has(String(user.role ?? "")) &&
+        reason.length < MIN_REASON_LENGTH
+      ) {
+        return { reject: deleteReasonRejection(prev.title) };
+      }
       perEntry.push({ id, remove: true });
       events.push({
+        ...(reason ? { reason } : {}),
         kind: "delete",
         deadline_id: `${scopeSlug}#${id}`,
         title: String(prev.title ?? ""),
@@ -602,4 +658,29 @@ export function auditActionFor(
   if (kind === "create") return "deadline.create";
   if (kind === "delete") return "deadline.delete";
   return "deadline.update";
+}
+
+// ── One entry point for every deadline write ────────────────────────────
+
+/**
+ * The complete rule set for a write that may touch a Frist — the four-eyes
+ * rule for Notfristen (second-check fields are server-owned; no `done`
+ * without the stamped second check) plus identity stamping, Notfrist change
+ * protection and the audit trail. The generic page routes apply the same two
+ * steps; every other writer (Copilot, beA, WhatsApp, automations) calls this
+ * so it cannot skip one of them.
+ */
+export function guardDeadlineWrite(args: {
+  slug: string;
+  type?: unknown;
+  incoming: Record<string, unknown>;
+  current: { type?: unknown; frontmatter?: Record<string, unknown> } | null;
+  user: PolicyUser;
+  now?: string;
+}):
+  | { frontmatter: Record<string, unknown>; events: DeadlineChangeEvent[] }
+  | { reject: GuardRejection } {
+  const guarded = guardSecondCheckWrite(args.incoming, args.current?.frontmatter ?? null);
+  if ("reject" in guarded) return guarded;
+  return applyDeadlineWritePolicy({ ...args, incoming: guarded.frontmatter });
 }

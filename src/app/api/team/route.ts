@@ -7,7 +7,7 @@ const log = logger("api/team");
 
 export const GET = createHandler(
   {
-    action: "settings.read",
+    action: "account.read",
     rateTier: "standard",
     cacheMaxAge: 15,
   },

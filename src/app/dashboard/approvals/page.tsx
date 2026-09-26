@@ -14,10 +14,14 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { csrfFetch } from "@/lib/csrf";
+import { useMe } from "@/lib/queries/auth";
+import { approvalDecisionBlock, type ApprovalDecisionBlock } from "@/lib/approval-decision";
 
 interface ActionItem extends AgentActionFrontmatter {
   slug: string;
   title: string;
+  /** Why the signed-in person cannot decide this item (server rule), or null. */
+  blocked: ApprovalDecisionBlock | null;
 }
 
 /** Ausführungsstand in Kanzleisprache — nie den rohen Statuscode zeigen. */
@@ -46,6 +50,11 @@ export default function ApprovalsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loading = pagesQuery.isLoading;
+  // Same rule as the server (approval-decision.ts): lawyer/admin, and never
+  // the person who proposed or submitted the action.
+  const meQuery = useMe();
+  const meEmail = String(meQuery.data?.user?.email ?? "");
+  const meRole = String(meQuery.data?.user?.role ?? "");
 
   const items = useMemo<ActionItem[]>(() => {
     const pages = pagesQuery.data;
@@ -70,11 +79,15 @@ export default function ApprovalsPage() {
         executed_at: fm.executed_at,
         executed_by: fm.executed_by,
         execution_error: fm.execution_error,
+        blocked: approvalDecisionBlock(
+          { type: "agent_action", frontmatter: { ...fm, status: "pending" } },
+          { email: meEmail, role: meRole }
+        ),
       };
     });
     mapped.sort((a, b) => (b.proposed_at || "").localeCompare(a.proposed_at || ""));
     return mapped;
-  }, [pagesQuery.data]);
+  }, [pagesQuery.data, meEmail, meRole]);
 
   async function decide(item: ActionItem, status: "approved" | "rejected", rejectReason?: string) {
     setBusy(item.slug);
@@ -198,7 +211,13 @@ export default function ApprovalsPage() {
                     )}
                   </div>
 
-                  {rejecting === item.slug ? (
+                  {item.blocked ? (
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {item.blocked.code === "approval_self_decision"
+                        ? "Von Ihnen vorgeschlagen — die Entscheidung trifft eine zweite Person."
+                        : "Wartet auf die Entscheidung einer Anwältin/eines Anwalts."}
+                    </p>
+                  ) : rejecting === item.slug ? (
                     <div className="space-y-2">
                       <textarea
                         value={reason}

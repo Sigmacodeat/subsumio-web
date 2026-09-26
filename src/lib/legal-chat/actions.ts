@@ -16,6 +16,8 @@ import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { identityCanAccessMatter } from "@/lib/whatsapp/identity";
 import { logAudit } from "@/lib/audit";
+import { guardDeadlineWrite, type PolicyUser } from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { calculateRvg } from "@/lib/rvg";
@@ -133,6 +135,15 @@ async function batchListPages(
 
 async function getPage(brainId: string, slug: string): Promise<BrainPage> {
   return engineRequest<BrainPage>(brainId, `/api/pages/${encodeURIComponent(slug)}`);
+}
+
+/** The WhatsApp sender as the acting person for the deadline rules. */
+function senderPolicyUser(sender: WhatsAppIdentity): PolicyUser {
+  return {
+    id: sender.userId || `whatsapp:${sender.id}`,
+    name: sender.name,
+    role: sender.role,
+  };
 }
 
 async function putPage(brainId: string, page: EnginePageInput): Promise<void> {
@@ -1492,8 +1503,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   if (front.intent === "mark_done") {
     const itemType = str(payload.itemType) === "deadline" ? "deadlines" : "tasks";
     const query = str(payload.query).toLowerCase();
+    // Copies: the stored entries stay untouched for the deadline rules below.
     const items = Array.isArray(caseFm[itemType])
-      ? (caseFm[itemType] as Array<Record<string, unknown>>)
+      ? (caseFm[itemType] as Array<Record<string, unknown>>).map((item) => ({ ...item }))
       : [];
     const matchIdx = items.findIndex((item) => {
       const title = str(item.title).toLowerCase() || str(item.description).toLowerCase();
@@ -1504,29 +1516,43 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       return `Kein Treffer mehr in "${casePage.title}" — evtl. bereits erledigt.`;
     }
 
-    // P0: Vier-Augen-Prinzip — Notfristen können nicht via WhatsApp als
-    // erledigt markiert werden. Erfordert zweite Prüfung im Dashboard.
-    if (
-      itemType === "deadlines" &&
-      items[matchIdx].is_notfrist === true &&
-      !items[matchIdx].second_check_at
-    ) {
-      await markAction(ctx, action, "blocked", "notfrist requires second check");
-      const dlTitle =
-        str(items[matchIdx].title) || str(items[matchIdx].description) || str(payload.query);
-      return `⚠️ Die Notfrist "${dlTitle}" in "${casePage.title}" ist eine gesetzliche Frist und erfordert die Vier-Augen-Kontrolle. Bitte im Dashboard unter Fristen → Zweiprüfung bestätigen.`;
-    }
-
     items[matchIdx].done = true;
     items[matchIdx].status = "done";
     items[matchIdx].completed_at = new Date().toISOString();
+
+    // Same deadline rules as the dashboard: a Notfrist is completed only via
+    // the second check by another person; identity and history are stamped.
+    let written: Record<string, unknown> = { [itemType]: items };
+    if (itemType === "deadlines") {
+      const verdict = guardDeadlineWrite({
+        slug: casePage.slug,
+        type: "legal_case",
+        incoming: { deadlines: items },
+        current: casePage,
+        user: senderPolicyUser(ctx.sender),
+      });
+      if ("reject" in verdict) {
+        const dlTitle =
+          str(items[matchIdx].title) || str(items[matchIdx].description) || str(payload.query);
+        await markAction(ctx, action, "blocked", verdict.reject.error);
+        if (verdict.reject.error === "notfrist_second_check_required") {
+          return `⚠️ Die Notfrist "${dlTitle}" in "${casePage.title}" ist eine gesetzliche Frist und erfordert die Vier-Augen-Kontrolle. Bitte im Dashboard unter Fristen → Zweitprüfung bestätigen.`;
+        }
+        return `⚠️ Frist "${dlTitle}" in "${casePage.title}" wurde nicht geändert: ${verdict.reject.message}`;
+      }
+      written = { deadlines: verdict.frontmatter.deadlines };
+      await logDeadlineEvents(
+        { brainId: ctx.sender.brainId, user: { id: ctx.sender.userId } },
+        verdict.events
+      );
+    }
     const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
     await putPage(ctx.sender.brainId, {
       slug: casePage.slug,
       title: casePage.title,
       type: "legal_case",
       frontmatter: {
-        [itemType]: items,
+        ...written,
         updated_at: new Date().toISOString(),
         audit_log: [
           ...audit,
@@ -1593,8 +1619,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   }
 
   if (front.intent === "update_deadline" || front.intent === "cancel_deadline") {
+    // Copies: the stored entries stay untouched for the deadline rules below.
     const deadlines = Array.isArray(caseFm.deadlines)
-      ? [...(caseFm.deadlines as Array<Record<string, unknown>>)]
+      ? (caseFm.deadlines as Array<Record<string, unknown>>).map((d) => ({ ...d }))
       : [];
     const matchIdx = findItemIndex(deadlines, str(payload.query));
     if (matchIdx === -1) {
@@ -1612,12 +1639,29 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       deadlines[matchIdx].status = "cancelled";
       deadlines[matchIdx].cancelled_at = new Date().toISOString();
     }
+    // Same deadline rules as the dashboard: moving or cancelling a Notfrist
+    // needs a lawyer and a written reason — not available over WhatsApp.
+    const verdict = guardDeadlineWrite({
+      slug: casePage.slug,
+      type: "legal_case",
+      incoming: { deadlines },
+      current: casePage,
+      user: senderPolicyUser(ctx.sender),
+    });
+    if ("reject" in verdict) {
+      await markAction(ctx, action, "blocked", verdict.reject.error);
+      return `⚠️ Frist "${title}" in "${casePage.title}" wurde nicht geändert: ${verdict.reject.message} Bitte im Dashboard bearbeiten.`;
+    }
+    await logDeadlineEvents(
+      { brainId: ctx.sender.brainId, user: { id: ctx.sender.userId } },
+      verdict.events
+    );
     await putPage(ctx.sender.brainId, {
       slug: casePage.slug,
       title: casePage.title,
       type: "legal_case",
       frontmatter: {
-        deadlines,
+        deadlines: verdict.frontmatter.deadlines,
         updated_at: new Date().toISOString(),
         audit_log: appendAudit(
           caseFm,
@@ -1904,12 +1948,27 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       review_status: "unreviewed",
       created_at: new Date().toISOString(),
     };
+    const verdict = guardDeadlineWrite({
+      slug: casePage.slug,
+      type: "legal_case",
+      incoming: { deadlines: [...current, deadline] },
+      current: casePage,
+      user: senderPolicyUser(ctx.sender),
+    });
+    if ("reject" in verdict) {
+      await markAction(ctx, action, "blocked", verdict.reject.error);
+      return `⚠️ Frist wurde nicht gespeichert: ${verdict.reject.message}`;
+    }
+    await logDeadlineEvents(
+      { brainId: ctx.sender.brainId, user: { id: ctx.sender.userId } },
+      verdict.events
+    );
     await putPage(ctx.sender.brainId, {
       slug: casePage.slug,
       title: casePage.title,
       content: casePage.content,
       frontmatter: {
-        deadlines: [...current, deadline],
+        deadlines: verdict.frontmatter.deadlines,
         audit_log: [
           ...audit,
           {

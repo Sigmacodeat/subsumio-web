@@ -10,7 +10,7 @@ const bodySchema = groundRequestSchema;
 
 export const POST = createHandler(
   {
-    action: "legal.research",
+    action: "legal.ground",
     rateTier: "standard",
     body: bodySchema,
     audit: (_ctx, body) => ({

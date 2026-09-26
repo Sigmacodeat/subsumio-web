@@ -4,7 +4,12 @@ import { signActionToken, bindFragment, INVITE_TOKEN_TTL_SECONDS } from "@/lib/a
 import { limitsFor } from "@/lib/plans";
 import { sendMail, siteUrl } from "@/lib/mail";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { DEFAULT_INVITE_ROLE, INVITE_ROLES, inviteBinding } from "@/lib/invite-roles";
+import {
+  DEFAULT_INVITE_ROLE,
+  INVITE_ROLES,
+  inviteBinding,
+  mayManageTeam,
+} from "@/lib/invite-roles";
 
 const inviteSchema = z.object({
   email: z.string().email("invalid_email"),
@@ -26,8 +31,10 @@ export const POST = createHandler(
     if (!ctx.user.orgId) return apiError("not_in_org", "Nicht in einer Organisation", 400);
 
     const org = await getOrgStore().getById(ctx.user.orgId);
-    if (!org || org.ownerId !== ctx.user.id) {
-      return apiError("owner_only", "Nur der Eigent\u00fcmer kann einladen", 403);
+    // Owner and firm administrators manage the team (a support session
+    // never does).
+    if (!org || !mayManageTeam(org, ctx.user, ctx.supportSession)) {
+      return apiError("admin_only", "Nur Inhaber oder Administratoren k\u00f6nnen einladen", 403);
     }
 
     const email = body.email.trim().toLowerCase();

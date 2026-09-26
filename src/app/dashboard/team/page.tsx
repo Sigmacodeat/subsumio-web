@@ -46,6 +46,8 @@ interface OrgState {
   org: { id: string; name: string; ownerId: string } | null;
   members?: Member[];
   isOwner?: boolean;
+  /** Owner or administrator: may invite and remove members. */
+  canManageTeam?: boolean;
 }
 
 export default function TeamPage() {
@@ -253,7 +255,7 @@ export default function TeamPage() {
                         {m.role && ROLE_LABEL_KEYS[m.role] && <> · {t(ROLE_LABEL_KEYS[m.role])}</>}
                       </p>
                     </div>
-                    {state.isOwner && !m.isOwner && (
+                    {(state.canManageTeam ?? state.isOwner) && !m.isOwner && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -288,7 +290,7 @@ export default function TeamPage() {
             </ul>
           </Card>
 
-          {state.isOwner && (
+          {(state.canManageTeam ?? state.isOwner) && (
             <Card>
               <div className="space-y-3 p-6">
                 <div className="flex items-center gap-2.5">

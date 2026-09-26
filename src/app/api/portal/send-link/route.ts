@@ -1,3 +1,4 @@
+import { mayIssuePortalLink, PORTAL_LINK_FORBIDDEN } from "@/lib/portal-link-issue";
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
@@ -68,6 +69,9 @@ export const POST = createHandler(
     const caseFm = (casePage?.frontmatter ?? {}) as Record<string, unknown>;
     if (caseFm.status === "archived") {
       return apiError("case_archived", "Die Akte ist archiviert.", 409);
+    }
+    if (!mayIssuePortalLink(ctx.user, caseFm)) {
+      return apiError(PORTAL_LINK_FORBIDDEN.error, PORTAL_LINK_FORBIDDEN.message, 403);
     }
     if (!caseFm.portal_enabled) {
       return apiError(

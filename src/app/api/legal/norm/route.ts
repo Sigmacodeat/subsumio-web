@@ -14,7 +14,7 @@ const querySchema = z.object({
 /** Full text of one cited norm for the reader panel next to an AI answer. */
 export const GET = createHandler(
   {
-    action: "legal.research",
+    action: "legal.statute",
     rateTier: "standard",
     query: querySchema,
     cacheMaxAge: 3600,

@@ -3,6 +3,7 @@ import { getStore, getOrgStore, buildNewOrg, toPublic, withInviteRevoked } from 
 import { createHandler, apiError } from "@/lib/api-handler";
 import { detachFromFirm } from "@/lib/auth/firm-brain";
 import { visibleOrgMembers } from "@/lib/team-visibility";
+import { mayManageTeam } from "@/lib/invite-roles";
 
 const orgPostSchema = z.object({
   name: z.string().trim().min(2, "invalid_name").max(80, "invalid_name"),
@@ -14,7 +15,8 @@ const orgPatchSchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    // Own firm and (for staff) colleagues — client accounts see only themselves.
+    action: "account.read",
     rateTier: "standard",
   },
   async (ctx, _body, _query, _req) => {
@@ -38,6 +40,8 @@ export const GET = createHandler(
       },
       members,
       isOwner: ctx.user.id === org.ownerId,
+      // Owner and administrators invite and remove members.
+      canManageTeam: mayManageTeam(org, ctx.user, ctx.supportSession),
     });
   }
 );

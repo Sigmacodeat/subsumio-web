@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
+import { completeDeadlineAfterFiling } from "@/lib/deadline-guarded-write";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { logger } from "@/lib/logger";
 
@@ -82,33 +83,19 @@ export const POST = createHandler(
       );
     }
 
-    // 2. If deadline-linked, update deadline status to "done"
+    // 2. If deadline-linked: complete it under the deadline rules — a
+    //    Notfrist stays open (receipt recorded) until the second check.
+    let deadlineUpdated = false;
+    let deadlineSecondCheckRequired = false;
     if (body.deadline_id && body.is_success) {
-      try {
-        const deadlineRes = await fetch(
-          `${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
-              slug: body.deadline_id,
-              merge: true,
-              frontmatter: {
-                status: "done",
-                done_at: new Date().toISOString(),
-                done_by: ctx.user.email,
-                filing_receipt_slug: slug,
-              },
-            }),
-            signal: AbortSignal.timeout(10_000),
-          }
-        );
-        if (!deadlineRes.ok) {
-          log.error("[bea/receipt] deadline update failed:", deadlineRes.status);
-        }
-      } catch (err) {
-        log.error("[bea/receipt] deadline update error:", err);
-      }
+      const outcome = await completeDeadlineAfterFiling(
+        { headers: ctx.headers, user: ctx.user, brainId: ctx.brainId },
+        body.deadline_id,
+        { filing_receipt_slug: slug }
+      );
+      deadlineUpdated = outcome.updated;
+      deadlineSecondCheckRequired = outcome.second_check_required;
+      if (!outcome.updated) log.error("[bea/receipt] deadline update failed:", outcome.error);
     }
 
     // 3. Broadcast SSE event for real-time UI update
@@ -137,7 +124,8 @@ export const POST = createHandler(
       receipt_slug: slug,
       filing_id: body.filing_id,
       confirmation_code: body.confirmation_code,
-      deadline_updated: body.deadline_id ? body.is_success : false,
+      deadline_updated: deadlineUpdated,
+      deadline_second_check_required: deadlineSecondCheckRequired,
     });
   }
 );

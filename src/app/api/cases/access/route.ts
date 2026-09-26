@@ -40,6 +40,9 @@ const putSchema = z.object({
   allowed_users: z.array(z.string().min(1).max(200)).max(200).optional(),
   blocked_users: z.array(z.string().min(1).max(200)).max(200).optional(),
   grants: z.array(grantSchema).max(200).optional(),
+  /** Deliberate confirmation to give a client account access to a matter it
+   *  is not linked to as the client. */
+  confirm_client_access: z.boolean().optional(),
 });
 
 const querySchema = z.object({ case_slug: z.string().min(1).max(300) });
@@ -62,7 +65,11 @@ async function firmMembers(user: { id: string; orgId?: string | null }): Promise
 async function loadPermissions(
   headers: Record<string, string>,
   caseSlug: string
-): Promise<{ permissions: MatterPermissions; title: string } | null> {
+): Promise<{
+  permissions: MatterPermissions;
+  title: string;
+  frontmatter: Record<string, unknown>;
+} | null> {
   const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
     headers,
     signal: AbortSignal.timeout(10_000),
@@ -79,7 +86,44 @@ async function loadPermissions(
   return {
     permissions: raw && typeof raw === "object" ? (raw as MatterPermissions) : {},
     title: String(page.title ?? caseSlug),
+    frontmatter: fm,
   };
+}
+
+/** Roles that may open a matter to a client account. */
+const CLIENT_GRANT_ROLES = new Set(["admin", "lawyer"]);
+
+function normEmail(v: unknown): string {
+  return typeof v === "string" ? v.trim().toLowerCase() : "";
+}
+
+/**
+ * Is this client account the matter's client? True when its e-mail is the
+ * matter's client e-mail or the e-mail of the matter's client contact. A
+ * contact that cannot be read counts as "not linked" (fail-closed: the grant
+ * then needs the explicit confirmation).
+ */
+async function clientLinkedToMatter(
+  headers: Record<string, string>,
+  fm: Record<string, unknown>,
+  client: Member
+): Promise<boolean> {
+  const email = normEmail(client.email);
+  if (!email) return false;
+  if (normEmail(fm.client_email) === email) return true;
+  const contactSlug = typeof fm.client_slug === "string" ? fm.client_slug : "";
+  if (!contactSlug) return false;
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${contactSlug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers, signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) return false;
+    const contact = (await res.json()) as { frontmatter?: Record<string, unknown> };
+    return normEmail(contact.frontmatter?.email) === email;
+  } catch {
+    return false;
+  }
 }
 
 function grantKey(g: MatterGrant): string {
@@ -111,6 +155,9 @@ export const GET = createHandler(
       my_level: myLevel,
       can_manage: ctx.user.role === "admin" && !ctx.supportSession,
       can_grant: myLevel === "write" && ctx.user.role !== "client_viewer",
+      // Opening the matter to a client account: lawyer/admin with write access.
+      can_grant_clients:
+        myLevel === "write" && CLIENT_GRANT_ROLES.has(ctx.user.role) && !ctx.supportSession,
       me: ctx.user.id,
       // Staff may grant access to client accounts, so they see them here.
       members: visibleOrgMembers(ctx.user, await firmMembers(ctx.user), { includeClients: true }),
@@ -161,6 +208,49 @@ export const PUT = createHandler(
         "Sichtbarkeit, Aktenteam und Chinese Walls ändern nur Administratoren.",
         403
       );
+    }
+
+    // Client accounts (Mandant lesend) newly on the team or granted access:
+    // only a lawyer/admin opens a matter to a client, and only the matter
+    // where the account is the client — or after an explicit confirmation.
+    const clientById = new Map(
+      members.filter((m) => m.role === "client_viewer").map((m) => [m.id, m])
+    );
+    const beforeIds = new Set([
+      ...(current.allowed_users ?? []),
+      ...(current.grants ?? []).filter((g) => activeGrant(g)).map((g) => g.user_id),
+    ]);
+    const newClientIds = [
+      ...new Set(
+        [...(body.allowed_users ?? []), ...(body.grants ?? []).map((g) => g.user_id)].filter(
+          (id) => clientById.has(id) && !beforeIds.has(id)
+        )
+      ),
+    ];
+    let unlinkedClientsConfirmed: string[] = [];
+    if (newClientIds.length > 0) {
+      if (!CLIENT_GRANT_ROLES.has(ctx.user.role) || ctx.supportSession) {
+        return apiError(
+          "client_grant_forbidden",
+          "Zugriff für Mandantenkonten erteilen nur Anwältinnen/Anwälte oder Administratoren.",
+          403
+        );
+      }
+      const unlinked: string[] = [];
+      for (const id of newClientIds) {
+        if (!(await clientLinkedToMatter(ctx.headers, loaded.frontmatter, clientById.get(id)!))) {
+          unlinked.push(id);
+        }
+      }
+      if (unlinked.length > 0 && body.confirm_client_access !== true) {
+        return apiError(
+          "client_not_linked",
+          "Dieses Mandantenkonto ist nicht als Mandant dieser Akte hinterlegt. Bitte ausdrücklich bestätigen, dass es diese Akte sehen soll.",
+          409,
+          { client_ids: unlinked }
+        );
+      }
+      unlinkedClientsConfirmed = unlinked;
     }
 
     const next: MatterPermissions = { ...current };
@@ -233,6 +323,12 @@ export const PUT = createHandler(
           level: g.level,
           expires_at: g.expires_at,
         })),
+        ...(newClientIds.length > 0
+          ? {
+              client_access_added: newClientIds,
+              client_access_confirmed_unlinked: unlinkedClientsConfirmed,
+            }
+          : {}),
       },
     });
 

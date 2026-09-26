@@ -141,4 +141,69 @@ describe("/api/cases/access", () => {
     expect(data.members.map((m: { id: string }) => m.id)).toEqual(["u-client"]);
     expect(data.audit).toEqual([]);
   });
+
+  describe("client accounts (W2-6)", () => {
+    function withMatter(fm: Record<string, unknown>, contact?: Record<string, unknown>) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) =>
+          String(url).includes("/api/pages/legal/contacts/")
+            ? contact
+              ? Response.json({ frontmatter: contact })
+              : new Response("{}", { status: 404 })
+            : Response.json({
+                title: "Müller",
+                type: "legal_case",
+                frontmatter: { permissions: stored, ...fm },
+              })
+        )
+      );
+    }
+
+    it("the assistant may not open a matter to a client account", async () => {
+      user.current = { id: "u-assistant", role: "assistant", email: "s@x.at", orgId: "org-1" };
+      const res = await put({
+        grants: [{ user_id: "u-client", level: "read" }],
+        confirm_client_access: true,
+      });
+      expect(res.status).toBe(403);
+      expect(patches).toHaveLength(0);
+    });
+
+    it("a lawyer grants the matter's own client without extra confirmation", async () => {
+      user.current = { id: "u-lawyer", role: "lawyer", email: "l@x.at", orgId: "org-1" };
+      withMatter({ client_slug: "legal/contacts/client-a" }, { email: "C@m.at" });
+      const res = await put({ grants: [{ user_id: "u-client", level: "read" }] });
+      expect(res.status).toBe(200);
+    });
+
+    it("another matter's client needs an explicit confirmation", async () => {
+      user.current = { id: "u-lawyer", role: "lawyer", email: "l@x.at", orgId: "org-1" };
+      withMatter({ client_slug: "legal/contacts/client-a" }, { email: "c@m.at" });
+      const refused = await put({ grants: [{ user_id: "u-client2", level: "read" }] });
+      expect(refused.status).toBe(409);
+      expect(patches).toHaveLength(0);
+      const ok = await put({
+        grants: [{ user_id: "u-client2", level: "read" }],
+        confirm_client_access: true,
+      });
+      expect(ok.status).toBe(200);
+    });
+
+    it("an admin adding a client account to the team is judged the same way", async () => {
+      withMatter({});
+      const res = await put({ allowed_users: ["u-admin", "u-client2"] });
+      expect(res.status).toBe(409);
+    });
+
+    it("GET tells the UI whether client accounts may be granted", async () => {
+      user.current = { id: "u-assistant", role: "assistant", email: "s@x.at", orgId: "org-1" };
+      const res = await GET(
+        new Request("http://x/api/cases/access?case_slug=cases/mueller") as unknown as NextRequest
+      );
+      const { data } = await res.json();
+      expect(data.can_grant).toBe(true);
+      expect(data.can_grant_clients).toBe(false);
+    });
+  });
 });

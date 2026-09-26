@@ -67,4 +67,25 @@ describe("DELETE /api/org/member", () => {
     expect(users.member.orgId).toBeNull();
     expect(users.member.brainId).toBe("brain_member");
   });
+
+  it("a second administrator removes members but never the owner", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      headers: {},
+      brainId: "brain_founder",
+      plan: "team",
+      user: users.founder,
+    } as any);
+    expect((await DELETE(remove("owner"))).status).toBe(403);
+    expect((await DELETE(remove("member"))).status).toBe(200);
+  });
+
+  it("a lawyer does not manage the team", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      headers: {},
+      brainId: "brain_founder",
+      plan: "team",
+      user: users.member,
+    } as any);
+    expect((await DELETE(remove("founder"))).status).toBe(403);
+  });
 });

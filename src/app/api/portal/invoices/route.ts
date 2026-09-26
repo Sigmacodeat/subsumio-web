@@ -4,6 +4,7 @@ import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { listEnginePages } from "@/lib/engine-pages";
 import { resolvePortalAccess } from "@/lib/portal-access";
+import { isPortalVisibleInvoice } from "@/lib/portal-view";
 import { generateEpcQrCode } from "@/lib/e-invoice/qr-bill";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +54,7 @@ export const GET = createPublicHandler(
     const invoices = [];
     for (const p of pages) {
       const fm = (p.frontmatter ?? {}) as InvoiceFm;
-      if (!Array.isArray(fm.case_slugs) || !fm.case_slugs.includes(access.caseSlug)) continue;
-      if (!fm.status || !["sent", "overdue", "paid"].includes(fm.status)) continue;
+      if (!fm.status || !isPortalVisibleInvoice(fm, access.caseSlug)) continue;
       const open = fm.status !== "paid" && fm.total && fm.total > 0;
 
       let epcQr: string | undefined;

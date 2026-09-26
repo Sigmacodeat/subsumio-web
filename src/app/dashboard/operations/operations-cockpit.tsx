@@ -49,6 +49,8 @@ import {
   formatDaysUntil,
 } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
+import { useMe } from "@/lib/queries/auth";
+import { canDecideApprovals } from "@/lib/approval-decision";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
 import {
   attentionScore,
@@ -240,6 +242,9 @@ function OperationsLoadingSkeleton() {
 
 function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }) {
   const { lang } = useLang();
+  // Approve/reject buttons only for the roles the server accepts.
+  const meQuery = useMe();
+  const mayDecideApprovals = canDecideApprovals(meQuery.data?.user?.role);
   const { addToast } = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -1109,7 +1114,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                   const meta = KIND_META[item.kind];
                   const Icon = meta?.icon ?? Activity;
                   const isFailed = item.pipelineStage === "failed" || item.status === "failed";
-                  const isApproval = item.kind === "approval";
+                  const isApproval = item.kind === "approval" && mayDecideApprovals;
                   const isBusy = busyAction === item.id;
                   const isSelected = selectedIds.has(item.id);
                   const overdue = isOverdue(item);
@@ -1258,7 +1263,7 @@ function OperationsCockpitPage({ initialData }: { initialData?: OperationsData }
                 const meta = KIND_META[item.kind];
                 const Icon = meta?.icon ?? Activity;
                 const isFailed = item.pipelineStage === "failed" || item.status === "failed";
-                const isApproval = item.kind === "approval";
+                const isApproval = item.kind === "approval" && mayDecideApprovals;
                 const isBusy = busyAction === item.id;
                 const isSelected = selectedIds.has(item.id);
                 const overdue = isOverdue(item);

@@ -38,6 +38,7 @@ import {
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
 import { applyDeadlineWritePolicy, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
+import { logClientReleaseChanges } from "@/lib/client-release-audit";
 import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
@@ -320,13 +321,18 @@ export const POST = createHandler(
       const protectedWrite = guardProtectedPageWrite({
         slug: body.slug,
         current,
-        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        actor: {
+          email: ctx.user.email,
+          canWriteSettings: can(ctx.user, "settings.write"),
+          role: ctx.user.role,
+        },
         mode: isMergeWrite ? "merge" : "replace",
         type: body.type,
         frontmatter: body.frontmatter,
       });
       if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
       if (protectedWrite.frontmatter) body.frontmatter = protectedWrite.frontmatter;
+      const releaseChanges = protectedWrite.releaseChanges;
 
       // The SMTP password is stored encrypted, never as page plaintext.
       if (isKanzleiSettingsTarget(body.slug, current, body.type, body.frontmatter)) {
@@ -521,6 +527,7 @@ export const POST = createHandler(
       if (!isMerge) void recordQuota(ctx, "pages");
       const result = await res.json();
       await logDeadlineEvents(ctx, deadlineEvents);
+      await logClientReleaseChanges(ctx, body.slug, releaseChanges);
 
       if (isMerge && isCaseSlug(body.slug) && body.content === undefined) {
         // Metadata merge on a matter: refresh the Aktenblatt from the merged

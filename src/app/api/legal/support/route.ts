@@ -18,7 +18,7 @@ const bodySchema = z.object({
  */
 export const POST = createHandler(
   {
-    action: "legal.research",
+    action: "legal.ground",
     rateTier: "heavy",
     body: bodySchema,
     audit: (_ctx, body) => ({

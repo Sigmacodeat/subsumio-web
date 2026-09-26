@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getStore, getOrgStore, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { detachFromFirm } from "@/lib/auth/firm-brain";
+import { mayManageTeam } from "@/lib/invite-roles";
 
 const memberSchema = z.object({
   userId: z.string().min(1, "missing_user"),
@@ -23,16 +24,21 @@ export const DELETE = createHandler(
     if (!ctx.user.orgId) return apiError("not_in_org", "Nicht in einer Organisation", 400);
 
     const org = await getOrgStore().getById(ctx.user.orgId);
-    if (!org || org.ownerId !== ctx.user.id) {
-      return apiError("owner_only", "Nur der Eigentümer kann Mitglieder entfernen", 403);
+    if (!org || !mayManageTeam(org, ctx.user, ctx.supportSession)) {
+      return apiError(
+        "admin_only",
+        "Nur Inhaber oder Administratoren können Mitglieder entfernen",
+        403
+      );
     }
 
     if (body.userId === ctx.user.id) {
-      return apiError(
-        "owner_cannot_remove_self",
-        "Eigentümer kann sich nicht selbst entfernen",
-        400
-      );
+      return apiError("owner_cannot_remove_self", "Sie können sich nicht selbst entfernen", 400);
+    }
+    // The owner holds the firm (billing, brain) and is never removed by an
+    // administrator.
+    if (body.userId === org.ownerId) {
+      return apiError("owner_not_removable", "Der Inhaber kann nicht entfernt werden", 403);
     }
 
     const store = getStore();

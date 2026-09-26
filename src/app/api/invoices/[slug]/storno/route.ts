@@ -63,7 +63,7 @@ function stornoSlugFor(invoiceSlug: string): string {
 
 export const POST = createHandler(
   {
-    action: "invoice.write",
+    action: "invoice.cancel",
     rateTier: "standard",
     audit: (_ctx, _body, _query, req) => {
       const slug = (req as unknown as { __slug?: string })?.__slug;
