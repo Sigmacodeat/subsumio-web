@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bot, CalendarCheck, CheckCircle2, Loader2, Scale, Send, User } from "lucide-react";
+import { formatFirmDateLabel, formatFirmTime } from "@/lib/datetime";
+import {
+  PublicFirmGate,
+  PublicFirmHeader,
+  PublicPrivacyNotice,
+  consentText,
+  usePublicFirm,
+  type PublicFirm,
+} from "@/components/public-forms/public-firm";
 
 /**
  * Öffentlicher Mandatsannahme-Agent (WP-5.28) — geführtes Chat-Onboarding
@@ -11,6 +20,10 @@ import { Bot, CalendarCheck, CheckCircle2, Loader2, Scale, Send, User } from "lu
  * (Kollisionsprüfung § 10 RAO, serverseitig in /api/intake/public) →
  * Kontakt → Anliegen → DSGVO-Consent → Übermittlung → optional direkte
  * Terminbuchung über /api/booking/public.
+ *
+ * Angezeigt nur, wenn die empfangende Kanzlei feststeht und benannt werden
+ * kann (Art. 13 DSGVO). Die Direktbuchung wird nur angeboten, wenn sie an
+ * dieselbe Kanzlei geht.
  */
 
 interface Slot {
@@ -53,10 +66,15 @@ function toDateInput(d: Date): string {
 }
 
 export default function MandatAgentPage() {
+  return <PublicFirmGate form="intake">{(firm) => <MandatAgent firm={firm} />}</PublicFirmGate>;
+}
+
+function MandatAgent({ firm }: { firm: PublicFirm }) {
+  const bookingFirm = usePublicFirm("booking");
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "bot",
-      text: "Guten Tag — ich bin der digitale Assistent der Kanzlei und begleite Sie durch die Erstanfrage. Worum geht es rechtlich?",
+      text: `Guten Tag — ich bin der digitale Assistent von ${firm.name} und begleite Sie durch die Erstanfrage. Worum geht es rechtlich?`,
     },
   ]);
   const [step, setStep] = useState<Step>("legalArea");
@@ -131,6 +149,11 @@ export default function MandatAgentPage() {
   }
 
   async function offerBooking() {
+    // Direct booking only when it reaches the same firm as the enquiry.
+    if (bookingFirm.status !== "ready" || bookingFirm.firm.name !== firm.name) {
+      setBooking("unavailable");
+      return;
+    }
     setBooking("checking");
     // Finde den nächsten Tag mit freien Slots (max. 10 Werktage voraus).
     for (let i = 1; i <= 10; i++) {
@@ -183,14 +206,7 @@ export default function MandatAgentPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || "Die Buchung konnte nicht übermittelt werden.");
       }
-      const label = `${new Date(`${slotDate}T00:00:00`).toLocaleDateString("de-AT", {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-      })}, ${new Date(slot.start).toLocaleTimeString("de-AT", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })} Uhr`;
+      const label = `${formatFirmDateLabel(slotDate)}, ${formatFirmTime(slot.start)} Uhr (Wiener Zeit)`;
       setBookedLabel(label);
       push(
         "bot",
@@ -273,6 +289,7 @@ export default function MandatAgentPage() {
         <p className="text-xs text-[color:var(--ds-text-muted)]">
           Ein paar Fragen — dann landet Ihre Anfrage direkt bei der Kanzlei.
         </p>
+        <PublicFirmHeader firm={firm} />
       </div>
 
       {/* Chat-Verlauf */}
@@ -423,9 +440,9 @@ export default function MandatAgentPage() {
                 onChange={(e) => setConsent(e.target.checked)}
                 className="mt-0.5"
               />
-              Ich stimme zu, dass die Kanzlei meine Angaben zur Prüfung und Beantwortung dieser
-              Anfrage verarbeitet (inkl. Kollisionsprüfung gegen bestehende Mandate).
+              {consentText(firm)}
             </label>
+            <PublicPrivacyNotice firm={firm} purpose="intake" />
             <button
               type="button"
               disabled={!consent}
@@ -448,11 +465,7 @@ export default function MandatAgentPage() {
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                 <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text)]">
                   <CalendarCheck size={13} className="text-[color:var(--brand-primary)]" />
-                  {new Date(`${slotDate}T00:00:00`).toLocaleDateString("de-AT", {
-                    weekday: "long",
-                    day: "2-digit",
-                    month: "long",
-                  })}
+                  {formatFirmDateLabel(slotDate)} · Wiener Zeit
                 </p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {slots.slice(0, 9).map((s) => (
@@ -463,10 +476,7 @@ export default function MandatAgentPage() {
                       onClick={() => bookSlot(s)}
                       className="rounded-md border border-[color:var(--ds-border)] py-1.5 text-xs text-[color:var(--ds-text)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary)] disabled:opacity-50"
                     >
-                      {new Date(s.start).toLocaleTimeString("de-AT", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatFirmTime(s.start)}
                     </button>
                   ))}
                 </div>

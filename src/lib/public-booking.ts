@@ -3,12 +3,13 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { KANZLEI_SETTINGS_SLUG } from "@/lib/kanzlei-settings";
 import { generateSlots, type BookingSlot } from "@/lib/online-booking";
 import { FIRM_TIMEZONE, zonedDateString, zonedWallTimeToUtc } from "@/lib/datetime";
+import { resolvePublicFormBrainId } from "@/lib/public-firm";
 
 /**
  * Öffentliche Terminbuchung (WP-3.15) — Server-Seite.
  *
- * Dasselbe Ein-Instanz-pro-Kanzlei-Modell wie die öffentliche Erstanfrage
- * (api/intake/public): die Ziel-Brain kommt aus der Umgebung, die Kanzlei
+ * Dasselbe Modell wie die öffentliche Erstanfrage (api/intake/public): die
+ * Ziel-Brain kommt aus einer ausdrücklichen Konfiguration, die Kanzlei
  * aktiviert die Buchung in den Kanzlei-Settings (bookingEnabled). Belegte
  * Zeiten werden aus `booking`- und `appointment`-Seiten gelesen — WhatsApp-
  * Flows schreiben Termine bereits als `appointment` (siehe
@@ -24,13 +25,10 @@ export interface BookingConfig {
   kanzleiName?: string;
 }
 
+/** Explicit configuration only — see src/lib/public-firm.ts (no fallback
+ *  to the WhatsApp default firm). */
 export function resolvePublicBookingBrainId(): string | null {
-  return (
-    process.env.SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID ||
-    process.env.SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID ||
-    process.env.WHATSAPP_DEFAULT_BRAIN_ID ||
-    null
-  );
+  return resolvePublicFormBrainId("booking");
 }
 
 const DEFAULTS = { start: "09:00", end: "17:00", slotMinutes: 30 };

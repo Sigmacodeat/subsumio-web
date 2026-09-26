@@ -84,3 +84,13 @@ describe("firmToday / firmYear (audit QA-6)", () => {
     expect(addDaysToDateString("2026-10-24", 14)).toBe("2026-11-07");
   });
 });
+
+describe("formatFirmTime / formatFirmDateLabel (public booking)", () => {
+  it("shows Vienna wall-clock time regardless of the runtime timezone", async () => {
+    const { formatFirmTime, formatFirmDateLabel } = await import("./datetime");
+    // 07:00 UTC in summer time = 09:00 in Vienna.
+    expect(formatFirmTime("2026-07-01T07:00:00.000Z")).toBe("09:00");
+    expect(formatFirmTime("2026-12-01T08:30:00.000Z")).toBe("09:30");
+    expect(formatFirmDateLabel("2026-09-27")).toContain("27. September 2026");
+  });
+});
