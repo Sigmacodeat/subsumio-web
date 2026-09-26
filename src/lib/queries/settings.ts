@@ -159,7 +159,9 @@ export function useUpdateTeamRole() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
-      }).then((r) => r.json()),
+        // A refused change (403 owner_only, 409 last admin, …) must reject —
+        // otherwise the page shows a role the member does not have.
+      }).then((r) => jsonOrThrow<{ ok: true; userId: string; role: string }>(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team"] }),
   });
 }

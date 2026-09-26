@@ -8524,6 +8524,22 @@ export const D = {
     de: "Nur der Team-Inhaber kann das.",
     en: "Only the team owner can do that.",
   },
+  "team.error_owner_must_stay_admin": {
+    de: "Die Inhaberin oder der Inhaber bleibt Admin. Wechseln Sie zuerst den Inhaber.",
+    en: "The owner stays an admin. Transfer ownership first.",
+  },
+  "team.error_last_admin": {
+    de: "Die Kanzlei braucht mindestens einen aktiven Admin.",
+    en: "The firm needs at least one active admin.",
+  },
+  "team.error_not_in_your_org": {
+    de: "Diese Person gehört nicht zu Ihrer Kanzlei.",
+    en: "This person is not a member of your firm.",
+  },
+  "team.role_change_owner_only": {
+    de: "Rollen kann nur die Inhaberin oder der Inhaber der Kanzlei ändern.",
+    en: "Only the firm owner can change roles.",
+  },
   "team.loading": { de: "Team wird geladen…", en: "Loading team…" },
   "team.empty": {
     de: "Noch keine Mitglieder — laden Sie Kolleginnen und Kollegen ein.",

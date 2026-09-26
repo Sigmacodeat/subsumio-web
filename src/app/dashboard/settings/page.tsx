@@ -45,7 +45,9 @@ import {
   useSettingsApiKeys,
   useSaveSettingsApiKeys,
   useUpdateTeamRole,
+  useOrg,
 } from "@/lib/queries/settings";
+import { teamErrorText } from "@/app/dashboard/team/team-errors";
 import { useBrainStats } from "@/lib/queries/brain";
 import { limitsFor } from "@/lib/plans-limits";
 import type { Plan } from "@/lib/auth/store";
@@ -275,6 +277,11 @@ function SettingsPageInner() {
   const saveKeysMutation = useSaveSettingsApiKeys();
   const statsQuery = useBrainStats();
   const updateRoleMutation = useUpdateTeamRole();
+  // Only the firm owner may change roles (POST /api/team/role answers 403
+  // owner_only otherwise) — other admins see the roles read-only.
+  const orgQuery = useOrg();
+  const isFirmOwner = (orgQuery.data as { isOwner?: boolean } | undefined)?.isOwner === true;
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   const runDreamCycle = async () => {
     setDreamRunning(true);
@@ -1227,6 +1234,16 @@ function SettingsPageInner() {
                   .
                 </p>
               </div>
+              {!isFirmOwner && teamMembers.length > 0 && (
+                <p className="px-6 pt-4 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("team.role_change_owner_only")}
+                </p>
+              )}
+              {roleError && (
+                <p role="alert" className="px-6 pt-4 text-sm text-[color:var(--ds-danger-text)]">
+                  {roleError}
+                </p>
+              )}
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
                 {teamMembers.length === 0 ? (
                   <div className="py-10 text-center">
@@ -1261,22 +1278,19 @@ function SettingsPageInner() {
                           `Role of ${member.name ?? member.email}`
                         )}
                         value={member.role}
+                        disabled={!isFirmOwner || updateRoleMutation.isPending}
                         onChange={async (e) => {
+                          const role = e.target.value;
+                          setRoleError(null);
                           try {
-                            await updateRoleMutation.mutateAsync({
-                              userId: member.id,
-                              role: e.target.value,
-                            });
+                            await updateRoleMutation.mutateAsync({ userId: member.id, role });
+                            // Shown only once the server confirmed the change.
                             setTeamMembers((prev) =>
-                              prev.map((m) =>
-                                m.id === member.id ? { ...m, role: e.target.value } : m
-                              )
+                              prev.map((m) => (m.id === member.id ? { ...m, role } : m))
                             );
                           } catch (err) {
-                            console.error(
-                              "[team] failed to update role:",
-                              err instanceof Error ? err.message : String(err)
-                            );
+                            // The select keeps the role the member really has.
+                            setRoleError(teamErrorText(t, err));
                           }
                         }}
                         className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
