@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { engineHeadersForBrain } from "@/lib/engine";
 import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
-import { getUserMs365Token, isMs365Connected } from "@/lib/msgraph-user";
+import {
+  getUserMs365Token,
+  isMs365Connected,
+  Ms365AuthError,
+  MS365_NEEDS_RECONNECT,
+  recordMs365SyncSuccess,
+} from "@/lib/msgraph-user";
+import { persistNotificationUpsert } from "@/lib/comments";
 import {
   calendarSyncWindow,
   listAppointmentsForSync,
@@ -80,12 +87,19 @@ async function handler() {
           eventsSynced += push.pushed + push.updated + push.deleted;
           errors.push(...push.errors.map((e) => `${user.id}: ${e}`));
           usersSynced++;
+          if (pull.errors.length === 0 && push.errors.length === 0) {
+            await recordMs365SyncSuccess(user.id);
+          }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          // ms365_not_connected / token_expired = Nutzer muss neu verbinden —
-          // kein Fehler, nur Info.
-          if (msg.includes("not_connected") || msg.includes("token_expired")) {
-            log.info("user calendar skipped", { user: user.id, reason: msg });
+          const code = err instanceof Ms365AuthError ? err.code : "";
+          if (code === "ms365_not_connected") {
+            log.info("user calendar skipped", { user: user.id, reason: code });
+          } else if (code === MS365_NEEDS_RECONNECT) {
+            // Tokens were dropped (see getUserMs365Token); tell the user once —
+            // the job does not try this account again until they reconnect.
+            log.info("user calendar needs reconnect", { user: user.id });
+            await notifyReconnect(user.id, brainId);
           } else {
             errors.push(`${user.id}: ${msg}`);
           }
@@ -97,6 +111,22 @@ async function handler() {
 
   log.info("outlook user sync done", { usersSynced, eventsSynced, errors: errors.length });
   return NextResponse.json({ ok: errors.length === 0, usersSynced, eventsSynced, errors });
+}
+
+async function notifyReconnect(userId: string, brainId: string): Promise<void> {
+  await persistNotificationUpsert({
+    id: `notif_ms365_reconnect_${userId}_${new Date().toISOString().slice(0, 10)}`,
+    userId,
+    brainId,
+    type: "system",
+    data: {
+      message:
+        "Die Verbindung zu Ihrem Outlook-Kalender ist abgelaufen oder wurde widerrufen. Termine werden nicht mehr abgeglichen — bitte unter Einstellungen neu verbinden.",
+      href: "/dashboard/settings",
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  }).catch((err) => log.warn("reconnect notification failed", { error: String(err) }));
 }
 
 export const GET = createCronHandler(handler);

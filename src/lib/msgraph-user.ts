@@ -90,6 +90,37 @@ async function tokenRequest(params: Record<string, string>): Promise<Ms365TokenS
   return data;
 }
 
+/** Error code: the user must connect Outlook again (tokens were dropped). */
+export const MS365_NEEDS_RECONNECT = "ms365_needs_reconnect";
+
+/** Token-endpoint errors after which a refresh can never succeed again. */
+const RECONNECT_ERROR_CODES = new Set([
+  "invalid_grant",
+  "interaction_required",
+  "consent_required",
+  "login_required",
+]);
+
+/** Drops the dead tokens and records that the user has to reconnect. */
+export async function markMs365NeedsReconnect(userId: string): Promise<void> {
+  await getStore()
+    .update(userId, {
+      ms365AccessToken: null,
+      ms365RefreshToken: null,
+      ms365TokenExpiresAt: null,
+      ms365SyncError: "needs_reconnect",
+      ms365SyncErrorAt: new Date().toISOString(),
+    })
+    .catch((err) => log.warn("could not record ms365 reconnect", { error: String(err) }));
+}
+
+/** Records a successful calendar sync (clears an earlier error). */
+export async function recordMs365SyncSuccess(userId: string): Promise<void> {
+  await getStore()
+    .update(userId, { ms365LastSyncAt: new Date().toISOString(), ms365SyncError: null })
+    .catch((err) => log.warn("could not record ms365 sync", { error: String(err) }));
+}
+
 export function exchangeMs365Code(code: string): Promise<Ms365TokenSet> {
   return tokenRequest({
     grant_type: "authorization_code",
@@ -128,13 +159,26 @@ export async function getUserMs365Token(userId: string): Promise<string> {
   if (expiresAt > Date.now() + 60_000) return user.ms365AccessToken;
 
   if (!user.ms365RefreshToken) {
-    throw new Ms365AuthError("Token abgelaufen, kein Refresh-Token", "ms365_token_expired");
+    await markMs365NeedsReconnect(userId);
+    throw new Ms365AuthError("Token abgelaufen, kein Refresh-Token", MS365_NEEDS_RECONNECT);
   }
-  const refreshed = await tokenRequest({
-    grant_type: "refresh_token",
-    refresh_token: user.ms365RefreshToken,
-    scope: MS365_DELEGATED_SCOPES,
-  });
+  let refreshed: Ms365TokenSet;
+  try {
+    refreshed = await tokenRequest({
+      grant_type: "refresh_token",
+      refresh_token: user.ms365RefreshToken,
+      scope: MS365_DELEGATED_SCOPES,
+    });
+  } catch (err) {
+    if (err instanceof Ms365AuthError && RECONNECT_ERROR_CODES.has(err.code)) {
+      // Revoked consent, changed password, refresh token expired: the
+      // connection is dead until the user reconnects. Say so instead of
+      // retrying forever behind a "connected" badge.
+      await markMs365NeedsReconnect(userId);
+      throw new Ms365AuthError(err.message, MS365_NEEDS_RECONNECT);
+    }
+    throw err;
+  }
   await store.update(userId, {
     ms365AccessToken: refreshed.access_token,
     ms365RefreshToken: refreshed.refresh_token ?? user.ms365RefreshToken,

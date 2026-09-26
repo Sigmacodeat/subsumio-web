@@ -49,6 +49,8 @@ export const GET = createHandler(
       ms365RefreshToken: tokens.refresh_token ?? null,
       ms365TokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
       ms365UserEmail: email ?? null,
+      ms365SyncError: null,
+      ms365SyncErrorAt: null,
     });
 
     const res = NextResponse.redirect(`${settingsUrl}?outlook=connected`);

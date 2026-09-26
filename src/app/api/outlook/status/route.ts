@@ -11,9 +11,13 @@ export const GET = createHandler({ action: "settings.read" }, async (ctx) => {
     return apiSuccess({ configured: false, connected: false, reason: "not_configured" });
   }
   const user = await getStore().getById(ctx.user.id);
+  const connected = user ? isMs365Connected(user) : false;
+  const needsReconnect = !connected && user?.ms365SyncError === "needs_reconnect";
   return apiSuccess({
     configured: true,
-    connected: user ? isMs365Connected(user) : false,
+    connected,
+    ...(needsReconnect ? { reason: "needs_reconnect" } : {}),
     email: user?.ms365UserEmail ?? null,
+    lastSyncAt: user?.ms365LastSyncAt ?? null,
   });
 });

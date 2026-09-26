@@ -1560,6 +1560,7 @@ function OutlookCalendarCard() {
   const [state, setState] = useState<"loading" | "unconfigured" | "ready">("loading");
   const [connected, setConnected] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -1572,6 +1573,7 @@ function OutlookCalendarCard() {
         return;
       }
       setConnected(Boolean(d.connected));
+      setNeedsReconnect(!d.connected && d.reason === "needs_reconnect");
       setEmail(d.email ?? null);
       setState("ready");
     } catch {
@@ -1626,7 +1628,9 @@ function OutlookCalendarCard() {
               ? "Verbindungsstatus wird geladen…"
               : connected
                 ? `Verbunden${email ? ` als ${email}` : ""}. Ihre Termine werden in Subsumio gespiegelt und neue Termine können nach Outlook geschrieben werden.`
-                : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
+                : needsReconnect
+                  ? `Die Verbindung${email ? ` (${email})` : ""} ist abgelaufen oder wurde bei Microsoft widerrufen. Termine werden nicht mehr abgeglichen — bitte neu verbinden.`
+                  : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
           </p>
         </div>
         {state === "ready" && (
@@ -1645,10 +1649,13 @@ function OutlookCalendarCard() {
                 </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
-                {busy && <Loader2 size={13} className="animate-spin" />}
-                Mit Microsoft verbinden
-              </Button>
+              <>
+                {needsReconnect && <Badge variant="warning">Neu verbinden</Badge>}
+                <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
+                  {busy && <Loader2 size={13} className="animate-spin" />}
+                  {needsReconnect ? "Outlook neu verbinden" : "Mit Microsoft verbinden"}
+                </Button>
+              </>
             )}
           </div>
         )}

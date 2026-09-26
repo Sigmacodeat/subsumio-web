@@ -63,6 +63,11 @@ export interface User {
   ms365TokenExpiresAt?: string | null;
   /** UPN/E-Mail des verbundenen M365-Accounts (für die UI, nicht sensitiv). */
   ms365UserEmail?: string | null;
+  /** "needs_reconnect" once Microsoft refused the refresh (revoked/expired). */
+  ms365SyncError?: string | null;
+  ms365SyncErrorAt?: string | null;
+  /** Last successful per-user calendar sync. */
+  ms365LastSyncAt?: string | null;
   /** SSO identity link (WorkOS). */
   workosUserId?: string | null;
   ssoProvider?: string | null;
