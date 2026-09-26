@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
+import { sendEInvoiceWithResendConfirm } from "@/lib/e-invoice/send-client";
 import { useMe } from "@/lib/queries/auth";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
@@ -301,31 +302,56 @@ export default function InvoicingPage() {
         : "Übertragung an e-Rechnung.gv.at läuft …"
     );
     try {
-      const res = await csrfFetch("/api/e-invoice/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Nur den Slug senden — Belegdaten und Kanzlei-Settings (inkl. IBAN)
-        // lädt die Route serverseitig, damit kein manipulierter Client
-        // Rechnungs-XML mit fremden Daten unter Kanzlei-Identität erzeugt.
-        body: JSON.stringify({
+      // Nur den Slug senden — Belegdaten und Kanzlei-Settings (inkl. IBAN)
+      // lädt die Route serverseitig, damit kein manipulierter Client
+      // Rechnungs-XML mit fremden Daten unter Kanzlei-Identität erzeugt.
+      // Bereits eingereicht (409) → erneut senden nur nach Bestätigung.
+      const outcome = await sendEInvoiceWithResendConfirm(
+        {
           channel,
           format: channel === "erechnung_gv_at" ? "ebinterface" : "xrechnung",
           receiver_id: inv.leitwegId,
           invoiceSlug: inv.id,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+        },
+        {
+          post: (body) =>
+            csrfFetch("/api/e-invoice/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            }),
+          confirmResend: () =>
+            confirm({
+              title: "e-Rechnung erneut senden?",
+              message: `${inv.number} wurde bereits als e-Rechnung eingereicht${inv.eInvoiceReference ? ` (Referenz ${inv.eInvoiceReference})` : ""}. Erneut senden erzeugt eine zweite Einreichung beim Empfänger. Nur fortfahren, wenn die erste Einreichung nachweislich nicht angekommen ist.`,
+              confirmLabel: "Erneut senden",
+              variant: "danger",
+            }),
+        }
+      );
+      if (!outcome.ok) {
+        if (outcome.cancelled) {
+          setStatusMessage("Nicht erneut gesendet.", "info", 3000);
+          return;
+        }
         setStatusMessage(
-          invoiceErrorText(data.error, "e-Rechnung konnte nicht versendet werden."),
+          invoiceErrorText(
+            outcome.code,
+            outcome.error ?? "e-Rechnung konnte nicht versendet werden."
+          ),
           "error",
           6000
         );
         return;
       }
-      const payload = data.data ?? data;
+      const payload = outcome.data as {
+        message?: string;
+        status?: "queued" | "delivered" | "failed" | "not_configured";
+        issued?: boolean;
+        reference?: string;
+      };
       setStatusMessage(
-        payload.message,
+        payload.message ?? "e-Rechnung versendet.",
         payload.status === "not_configured" ? "error" : "success",
         8000
       );
@@ -333,11 +359,13 @@ export default function InvoicingPage() {
       if (payload.issued) void loadAll();
       // Transport-Referenz persistieren, damit der Zustellstatus später
       // gepollt werden kann (queued → delivered).
-      if (payload.reference && (payload.status === "queued" || payload.status === "delivered")) {
+      const reference = payload.reference;
+      const deliveryStatus = payload.status;
+      if (reference && (deliveryStatus === "queued" || deliveryStatus === "delivered")) {
         const refFrontmatter = {
           e_invoice_channel: channel,
-          e_invoice_reference: payload.reference,
-          e_invoice_status: payload.status,
+          e_invoice_reference: reference,
+          e_invoice_status: deliveryStatus,
         };
         try {
           await api.invoices.update(inv.id, refFrontmatter);
@@ -347,8 +375,8 @@ export default function InvoicingPage() {
                 ? {
                     ...i,
                     eInvoiceChannel: channel,
-                    eInvoiceReference: payload.reference,
-                    eInvoiceStatus: payload.status,
+                    eInvoiceReference: reference,
+                    eInvoiceStatus: deliveryStatus,
                   }
                 : i
             )

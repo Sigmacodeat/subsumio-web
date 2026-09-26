@@ -27,6 +27,10 @@ export const GET = createHandler(
       connected,
       expired,
       expiresAt: user?.docusignTokenExpiresAt ?? null,
+      // A refresh token renews an expired access token on the next send.
+      renewable: Boolean(user?.docusignRefreshToken),
+      email: connected ? (user?.docusignUserEmail ?? null) : null,
+      name: connected ? (user?.docusignUserName ?? null) : null,
     });
   }
 );

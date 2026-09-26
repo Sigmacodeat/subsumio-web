@@ -72,6 +72,11 @@ export interface ServerBrainClient {
     frontmatter?: Record<string, unknown>;
   }): Promise<{ slug: string; success?: boolean }>;
   deletePage(slug: string): Promise<{ success?: boolean }>;
+  /**
+   * Raw engine search. Hits are NOT filtered for other users' personal
+   * calendar mirrors: a caller that shows them to a user must pass them
+   * through `hideForeignPersonalEventHits` (calendar/personal-events.ts).
+   */
   search(query: string, limit?: number): Promise<SearchResult[]>;
   /**
    * Atomic append to a top-level frontmatter array field — engine-side

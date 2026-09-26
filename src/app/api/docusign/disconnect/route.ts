@@ -3,7 +3,9 @@ import { createHandler } from "@/lib/api-handler";
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    // Each user disconnects their own connection (connect is open to every
+    // role via /api/docusign/auth) — self-referential like profile.update.
+    action: "profile.update",
     rateTier: "standard",
     audit: (ctx, _body) => ({
       action: "docusign.disconnect" as const,

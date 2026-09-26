@@ -66,6 +66,11 @@ import {
 } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
+import { getEnginePage } from "@/lib/engine-page-io";
+import {
+  hideForeignPersonalEventHits,
+  hideForeignPersonalEvents,
+} from "@/lib/calendar/personal-events";
 const log = logger("api/copilot/tools");
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
@@ -682,7 +687,7 @@ async function executeSearchDeadlines(
 }
 
 async function executeSearchKnowledge(
-  ctx: { headers: Record<string, string> },
+  ctx: { headers: Record<string, string>; user: { id: string } },
   params: z.infer<typeof searchKnowledgeSchema>
 ): Promise<ToolResponse> {
   try {
@@ -691,12 +696,18 @@ async function executeSearchKnowledge(
       { headers: ctx.headers }
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const results = (await res.json()) as Array<{
-      slug: string;
-      title: string;
-      snippet?: string;
-      score?: number;
-    }>;
+    // Colleagues' personal calendar mirrors never reach the Copilot.
+    const results = await hideForeignPersonalEventHits(
+      (await res.json()) as Array<{
+        slug: string;
+        title: string;
+        snippet?: string;
+        score?: number;
+        type?: string;
+      }>,
+      ctx.user.id,
+      (slug) => getEnginePage(ctx.headers, slug, { timeoutMs: 5_000 })
+    );
     return {
       success: true,
       data: results,
@@ -1916,7 +1927,7 @@ async function executeSearchTasks(
 // ── Search Calendar (AP3) ──────────────────────────────────────────────
 
 async function executeSearchCalendar(
-  ctx: { headers: Record<string, string> },
+  ctx: { headers: Record<string, string>; user: { id: string } },
   params: z.infer<typeof searchCalendarSchema>
 ): Promise<ToolResponse> {
   try {
@@ -1929,11 +1940,16 @@ async function executeSearchCalendar(
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const pages = (await res.json()) as Array<{
-      slug: string;
-      title: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
+    // Only the caller's own personal mirrors (plus firm appointments).
+    const pages = hideForeignPersonalEvents(
+      (await res.json()) as Array<{
+        slug: string;
+        title: string;
+        type?: string;
+        frontmatter?: Record<string, unknown>;
+      }>,
+      ctx.user.id
+    );
 
     const now = new Date();
     now.setUTCHours(0, 0, 0, 0);

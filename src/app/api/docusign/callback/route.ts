@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { DOCUSIGN_OAUTH_HOST } from "@/lib/docusign";
+import { DOCUSIGN_OAUTH_HOST, fetchDocusignUserInfo } from "@/lib/docusign";
+import { logAudit } from "@/lib/audit";
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
 import { createHandler } from "@/lib/api-handler";
@@ -22,7 +23,7 @@ const DOCUSIGN_OAUTH_STATE_COOKIE = "docusign_oauth_state";
  * DocuSign account.
  */
 function backToSettings(result: string): NextResponse {
-  const url = `${env("NEXT_PUBLIC_APP_URL") || ""}/dashboard/settings?docusign=${encodeURIComponent(result)}`;
+  const url = `${env("NEXT_PUBLIC_APP_URL") || ""}/dashboard/settings?tab=signature&docusign=${encodeURIComponent(result)}`;
   const res = NextResponse.redirect(url);
   res.cookies.set(DOCUSIGN_OAUTH_STATE_COOKIE, "", {
     httpOnly: true,
@@ -82,11 +83,22 @@ export const GET = createHandler(
       return backToSettings("token_exchange_failed");
     }
 
+    const who = await fetchDocusignUserInfo(data.access_token);
     const store = getStore();
     await store.update(ctx.user.id, {
       docusignAccessToken: data.access_token,
       docusignRefreshToken: data.refresh_token ?? null,
       docusignTokenExpiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+      docusignUserEmail: who?.email ?? null,
+      docusignUserName: who?.name ?? null,
+    });
+    // createHandler audits only 2xx; this success is a redirect.
+    void logAudit("docusign.connect", "user", {
+      entityId: ctx.user.id,
+      details: { account: who?.email ?? null },
+      brainId: ctx.brainId,
+      userId: ctx.user.id,
+      userEmail: ctx.user.email,
     });
 
     return backToSettings("connected");

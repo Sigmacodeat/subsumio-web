@@ -72,6 +72,32 @@ describe("POST /api/dictation (R8-17)", () => {
     expect(res.status).toBe(200);
   });
 
+  it("the EU refusal names the missing EU provider setup (Mistral route not configured)", async () => {
+    m.engine = () =>
+      Response.json({ error: "eu_only_refused", message: "EU-only" }, { status: 403 });
+    const json = await (await dictate()).json();
+    expect(json.error).toMatch(/kein Verschriftungsdienst mit Verarbeitung in der EU eingerichtet/);
+    expect(json.error).toMatch(/an keinen externen Dienst übermittelt/);
+  });
+
+  it("an unconfigured provider is a clear 503 without a retry request", async () => {
+    m.engine = () =>
+      Response.json({ error: "transcription_not_configured", message: "x" }, { status: 503 });
+    const res = await dictate();
+    expect(res.status).toBe(503);
+    const json = await res.json();
+    expect(json.code).toBe("transcription_not_configured");
+    expect(json.error).not.toMatch(/erneut versuchen/);
+  });
+
+  it("a provider timeout is reported as such", async () => {
+    m.engine = () =>
+      Response.json({ error: "transcription_timeout", message: "x" }, { status: 504 });
+    const res = await dictate();
+    expect(res.status).toBe(504);
+    expect((await res.json()).code).toBe("transcription_timeout");
+  });
+
   it("any other failure keeps the retry hint", async () => {
     m.engine = () => new Response("boom", { status: 502 });
     const res = await dictate();

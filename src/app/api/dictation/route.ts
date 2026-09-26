@@ -67,12 +67,26 @@ export const POST = createHandler(
       model: "openai/whisper-1",
     });
     if (!outcome.ok && outcome.code === EU_ONLY_REFUSAL_CODE) {
-      // No EU transcription route exists yet: in EU-only mode dictation is
-      // unavailable — say so instead of asking for a pointless retry.
+      // EU-only mode without an EU transcription provider (Mistral): say so
+      // instead of asking for a pointless retry. Nothing was sent anywhere.
       return apiError(
         "transcription_unavailable_eu",
-        "Das Diktat ist im EU-Datenmodus derzeit nicht verfügbar: Es gibt noch keinen Verschriftungsdienst mit Verarbeitung in der EU. Die Aufnahme wurde an keinen externen Dienst übermittelt.",
+        "Das Diktat ist im EU-Datenmodus derzeit nicht verfügbar: Für diese Installation ist kein Verschriftungsdienst mit Verarbeitung in der EU eingerichtet. Die Aufnahme wurde an keinen externen Dienst übermittelt. Bitte wenden Sie sich an den Betreiber.",
         503
+      );
+    }
+    if (!outcome.ok && outcome.code === "transcription_not_configured") {
+      return apiError(
+        "transcription_not_configured",
+        "Die Verschriftung ist für diese Installation nicht eingerichtet. Die Aufnahme wurde an keinen externen Dienst übermittelt. Bitte wenden Sie sich an den Betreiber.",
+        503
+      );
+    }
+    if (!outcome.ok && outcome.code === "transcription_timeout") {
+      return apiError(
+        "transcription_timeout",
+        "Der Verschriftungsdienst hat nicht rechtzeitig geantwortet. Die Aufnahme bleibt erhalten — bitte in einigen Minuten erneut versuchen oder kürzer diktieren.",
+        504
       );
     }
     const transcript = outcome.ok ? (outcome.result.text?.trim() ?? "") : "";

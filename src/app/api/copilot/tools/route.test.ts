@@ -409,4 +409,53 @@ describe("search_calendar", () => {
     expect(json.data).toHaveLength(1);
     expect(json.data[0].label).toBe("Termin: Mandantengespräch");
   });
+
+  it("never shows a colleague's personal calendar mirror (R8-5)", async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    const ev = (slug: string, title: string, owner: string) => ({
+      slug,
+      title,
+      type: "calendar_event",
+      frontmatter: { type: "calendar_event", owner_user_id: owner, start: `${tomorrow}T09:00:00` },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          ev("calendar/outlook/k@x.at/E1", "Termin: privat", "u-colleague"),
+          ev("calendar/outlook/l@x.at/E2", "Termin: eigener", "u-lawyer"),
+        ])
+      )
+    );
+    const json = await (await call({ tool: "search_calendar", params: { range: "week" } })).json();
+    expect(json.data.map((d: { label: string }) => d.label)).toEqual(["Termin: eigener"]);
+  });
+});
+
+describe("search_knowledge", () => {
+  it("drops search hits that are a colleague's personal calendar mirror (R8-5)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        if (u.pathname.startsWith("/api/pages/")) {
+          const slug = decodeURIComponent(u.pathname.slice("/api/pages/".length));
+          return Response.json({
+            slug,
+            type: "calendar_event",
+            frontmatter: { owner_user_id: slug.includes("k@x.at") ? "u-colleague" : "u-lawyer" },
+          });
+        }
+        return Response.json([
+          { slug: "calendar/outlook/k@x.at/E1", type: "calendar_event", title: "privat" },
+          { slug: "legal/cases/a", type: "legal_case", title: "Akte A" },
+        ]);
+      })
+    );
+    const json = await (
+      await call({ tool: "search_knowledge", params: { query: "Termin" } })
+    ).json();
+    expect(json.success).toBe(true);
+    expect(json.data.map((d: { slug: string }) => d.slug)).toEqual(["legal/cases/a"]);
+  });
 });

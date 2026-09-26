@@ -561,8 +561,10 @@ export async function explainRetrieval(
     });
     if (!res.ok) return [];
 
-    const data = (await res.json()) as EngineSearchResponse;
-    const results = data.results ?? [];
+    // The engine's /api/search answers with a plain array; older callers
+    // wrapped it as { results }. Accept both.
+    const data = (await res.json()) as EngineSearchResponse | EngineSearchResponse["results"];
+    const results = (Array.isArray(data) ? data : data?.results) ?? [];
 
     return results.map((r) => {
       const explanation: RetrievalExplanation = {

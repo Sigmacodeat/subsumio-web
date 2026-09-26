@@ -95,9 +95,17 @@ export type EngineTranscribeOutcome =
   | { ok: true; result: EngineTranscribeResult }
   | { ok: false; code: string; status: number };
 
+/** Failure codes of the engine's /api/llm/transcribe passed through as-is. */
+const TRANSCRIBE_ENGINE_CODES = new Set([
+  "transcription_not_configured",
+  "transcription_timeout",
+  "audio_size_invalid",
+]);
+
 /**
- * Transcription with the reason of a failure: `eu_only_refused` (no EU
- * transcription route in EU-only mode), `engine_<status>` or `network`.
+ * Transcription with the reason of a failure: `eu_only_refused` (EU-only mode
+ * without an EU transcription provider), one of TRANSCRIBE_ENGINE_CODES,
+ * `engine_<status>` or `network`.
  */
 export async function engineTranscribeDetailed(
   headers: Record<string, string>,
@@ -133,6 +141,13 @@ export async function engineTranscribeDetailed(
       }
       if (isEuOnlyRefusal(payload)) {
         return { ok: false, code: EU_ONLY_REFUSAL_CODE, status: res.status };
+      }
+      const engineError =
+        payload && typeof payload === "object" && "error" in payload
+          ? (payload as { error?: unknown }).error
+          : undefined;
+      if (typeof engineError === "string" && TRANSCRIBE_ENGINE_CODES.has(engineError)) {
+        return { ok: false, code: engineError, status: res.status };
       }
       return { ok: false, code: `engine_${res.status}`, status: res.status };
     }
