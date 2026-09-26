@@ -1,10 +1,33 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getStore, type Plan, type KanzleiRole } from "@/lib/auth/store";
+import { getStore, type Plan, type KanzleiRole, type User } from "@/lib/auth/store";
 import { revokeUserAccess } from "@/lib/auth/revoke-access";
 import { isValidIndustry } from "@/lib/industry-pack";
 import { getTenant } from "@/lib/tenants";
-import { TenantAdminFailure, setMemberRole, tenantAdminMessage } from "@/lib/tenant-admin";
+import {
+  TenantAdminFailure,
+  assertMemberMayBeDeactivated,
+  setMemberRole,
+  tenantAdminMessage,
+} from "@/lib/tenant-admin";
+
+/**
+ * Same invariant as every tenant action: a firm keeps an active owner and an
+ * active admin. Returns the 409 answer, or null when the deactivation may go on.
+ */
+async function refuseDeactivation(target: User): Promise<Response | null> {
+  const tenant = target.orgId ? await getTenant(target.orgId) : null;
+  if (tenant?.kind !== "org") return null;
+  try {
+    await assertMemberMayBeDeactivated(tenant, target.id);
+    return null;
+  } catch (err) {
+    if (err instanceof TenantAdminFailure) {
+      return apiError(err.code, tenantAdminMessage(err.code), 409);
+    }
+    throw err;
+  }
+}
 
 const updateSchema = z.object({
   plan: z.enum(["free", "pro", "team", "enterprise"]).optional(),
@@ -64,7 +87,13 @@ export const PATCH = createHandler(
       }
     }
     if (body.emailVerifiedAt !== undefined) patch.emailVerifiedAt = body.emailVerifiedAt;
-    if (body.deactivatedAt !== undefined) patch.deactivatedAt = body.deactivatedAt;
+    if (body.deactivatedAt !== undefined) {
+      if (body.deactivatedAt) {
+        const refused = await refuseDeactivation(target);
+        if (refused) return refused;
+      }
+      patch.deactivatedAt = body.deactivatedAt;
+    }
 
     const updated = await store.update(id, patch);
     if (!updated) {
@@ -111,6 +140,8 @@ export const DELETE = createHandler(
     if (target.id === ctx.user.id) {
       return apiError("cannot_delete_self", "Das eigene Konto lässt sich nicht deaktivieren", 409);
     }
+    const refused = await refuseDeactivation(target);
+    if (refused) return refused;
 
     const updated = await store.update(id, {
       deactivatedAt: new Date().toISOString(),
