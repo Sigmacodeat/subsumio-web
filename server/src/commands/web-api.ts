@@ -88,6 +88,7 @@ import {
   ArchiveSafetyError,
 } from "../core/archive-upload.ts";
 import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
+import { storageEncryptionWarning } from "../core/file-encryption.ts";
 import {
   FILE_MIME_TYPES,
   storageConfigFromEnv as storageConfigFromEnvShared,
@@ -2677,6 +2678,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   assertWebApiKeyConfigured(apiKey);
   const guard = requireWebApiKey(apiKey);
   const requireTenant = tenantModeRequired(options);
+  {
+    // Readiness warning, not a hard stop: originals without at-rest
+    // encryption in a multi-tenant deployment (operator must set the key).
+    const warning = storageEncryptionWarning(process.env, requireTenant);
+    if (warning) console.error(`[web-api] WARNING: ${warning}`);
+  }
   const config = loadConfig() || { engine: "pglite" as const };
   const ctx = (req: Request) =>
     buildOperationContext(engine, {}, { remote: false, sourceId: requestSourceId(req) });

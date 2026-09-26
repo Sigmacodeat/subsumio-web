@@ -57,6 +57,23 @@ function decodeKey(b64: string, id: string): Buffer {
  *   SUBSUMIO_STORAGE_ENCRYPTION_KEY_ID        active key id (default "k1")
  *   SUBSUMIO_STORAGE_ENCRYPTION_RETIRED_KEYS  JSON {"<id>":"<base64 key>", ...} for rotation
  */
+/**
+ * Readiness note on at-rest encryption of originals. The data processing
+ * agreement promises AES-256-GCM for stored originals; without a key the
+ * engine still runs (existing deployments must not break), but tenant-mode
+ * startup and the admin health indicators say so, and the Netcup preflight
+ * requires the key. Files written before a key was set stay plaintext until
+ * re-encrypted (operator step).
+ */
+export function storageEncryptionWarning(
+  env: Record<string, string | undefined> = process.env,
+  tenantMode = true
+): string | null {
+  if (!tenantMode) return null;
+  if (env.SUBSUMIO_STORAGE_ENCRYPTION_KEY?.trim()) return null;
+  return "SUBSUMIO_STORAGE_ENCRYPTION_KEY is not set: uploaded originals are stored WITHOUT at-rest encryption. Set the key (see deploy/netcup/.env.example) — the data processing agreement promises encrypted storage.";
+}
+
 export function loadKeyring(env: Record<string, string | undefined> = process.env): Keyring | null {
   const active = env.SUBSUMIO_STORAGE_ENCRYPTION_KEY?.trim();
   if (!active) return null;
