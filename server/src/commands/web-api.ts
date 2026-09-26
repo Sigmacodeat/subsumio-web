@@ -10842,6 +10842,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     express.json({ limit: "1mb" }),
     async (req: Request, res: Response) => {
       try {
+        // The dream cycle works on the whole installation (every firm's
+        // pages, model calls): in multi-tenant mode only the operator's cron
+        // (a shared law source, no user identity) may start it — never a
+        // firm, not even a firm admin.
+        if (requireTenant && (req.userId !== undefined || !/^law-/.test(requestSourceId(req)))) {
+          res.status(403).json({
+            error: "host_admin_only",
+            message:
+              "Der Lernzyklus ist installationsweit und in Multi-Tenant-Deployments dem Betreiber vorbehalten.",
+          });
+          return;
+        }
         const { runDream } = await import("../commands/dream.ts");
         // The nightly web cron sends the COMPLETE list of firms that switched
         // "Kanzlei-Gehirn lernt mit" off. Reconcile the persisted flags to it
