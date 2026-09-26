@@ -96,7 +96,7 @@ describe("orchestrateWhatsAppMessage", () => {
   // KI4-04: deciding a Freigabe needs the person behind the number.
   it("never decides approvals for a staff number without a bound member", async () => {
     const listPendingApprovals = vi.fn(async () => [
-      { action_slug: "legal/actions/a-1", action_type: "send_message" as const },
+      { action_slug: "legal/actions/a-1", action_type: "message_send" as const },
     ]);
     const updateApprovalStatus = vi.fn(async () => true);
     const handleText = vi.fn(async () => "Bindungshinweis");

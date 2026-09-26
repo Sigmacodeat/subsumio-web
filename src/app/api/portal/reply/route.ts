@@ -9,6 +9,7 @@ import { pendingPortalAiDraft } from "@/lib/portal-ai-mode";
 import { notifyPortalClients } from "@/lib/portal-push";
 import { mailPortalClients } from "@/lib/portal-notify";
 import { zonedDateString } from "@/lib/datetime";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 const replySchema = z.object({
   case_slug: z.string().min(1).max(300),
@@ -131,23 +132,27 @@ export const POST = createHandler(
     // The draft is settled: released with this reply, or set aside for a
     // reply the lawyer wrote without it. Best effort — the reply stands.
     if (draftMessage) {
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify({
-          slug: draftMessage.slug,
-          merge: true,
-          frontmatter: {
-            ai_draft: {
-              ...(draftMessage.frontmatter.ai_draft as Record<string, unknown>),
-              status: aiAssisted ? "approved" : "discarded",
-              reviewed_by: reviewer,
-              reviewed_at: now,
+      await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...ctx.headers },
+          body: JSON.stringify({
+            slug: draftMessage.slug,
+            merge: true,
+            frontmatter: {
+              ai_draft: {
+                ...(draftMessage.frontmatter.ai_draft as Record<string, unknown>),
+                status: aiAssisted ? "approved" : "discarded",
+                reviewed_by: reviewer,
+                reviewed_at: now,
+              },
             },
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      }).catch(() => null);
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "KI-Entwurfsstatus"
+      );
     }
     // Devices that turned on notifications in the portal hear about it —
     // without the reply's content (lib/portal-push.ts).
