@@ -28,7 +28,7 @@ const items = {
         kind: "case",
         deleted_at: "2026-01-01T10:00:00.000Z",
         deleted_by: "anwalt@example.com",
-        reason: "archived",
+        reason: "manual_delete",
         legal_hold: true,
       },
       {
@@ -37,7 +37,7 @@ const items = {
         type: "document",
         kind: "item",
         deleted_at: "2026-02-01T10:00:00.000Z",
-        reason: "case_archived",
+        reason: "case_deleted",
         case_slug: "legal/cases/old",
       },
     ],
@@ -94,8 +94,8 @@ describe("Papierkorb page", () => {
     expect(screen.getByText("Schriftsatz")).toBeInTheDocument();
     expect(screen.getByText("Akte")).toBeInTheDocument();
     expect(screen.getByText("Dokument")).toBeInTheDocument();
-    expect(screen.getByText("Akte archiviert")).toBeInTheDocument();
-    expect(screen.getByText("Mit Akte archiviert")).toBeInTheDocument();
+    expect(screen.getByText("Manuell gelöscht")).toBeInTheDocument();
+    expect(screen.getByText("Mit Akte gelöscht")).toBeInTheDocument();
     expect(screen.getAllByText("Aufbewahrungssperre").length).toBeGreaterThan(0);
   });
 

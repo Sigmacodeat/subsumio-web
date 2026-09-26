@@ -91,11 +91,26 @@ function listingFailure(err: unknown): CascadeResult {
   };
 }
 
-/** Tombstone every active document of the matter (`tombstone_reason: "case_archived"`). */
-export async function archiveCaseDocuments(
+/**
+ * Why a matter's pages were hidden:
+ *  - "case_archived": the matter was archived (Aktenabschluss). The pages are
+ *    retained records — never in the Papierkorb, never purged.
+ *  - "case_deleted": the matter itself went to the Papierkorb; its pages go
+ *    with it and are purged with it after the trash window.
+ */
+export type CaseCascadeReason = "case_archived" | "case_deleted";
+
+/**
+ * Hide every page of the matter. Archiving tombstones the active pages;
+ * deleting also moves the pages an earlier archive hid into the Papierkorb
+ * (a matter whose retention period has run is deleted from the archive).
+ * Pages someone deleted on purpose keep their own reason and timestamp.
+ */
+export async function tombstoneCaseDocuments(
   headers: Record<string, string>,
   caseSlugForms: ReadonlySet<string>,
   actorEmail: string,
+  reason: CaseCascadeReason,
   now = new Date().toISOString()
 ): Promise<CascadeResult> {
   let docs: ListedPage[];
@@ -106,26 +121,42 @@ export async function archiveCaseDocuments(
   }
   const matched = docs.filter((d) => {
     const fm = d.frontmatter ?? {};
-    return caseSlugForms.has(fm.case_slug as string) && fm.status !== "tombstoned";
+    if (!caseSlugForms.has(fm.case_slug as string)) return false;
+    if (fm.status !== "tombstoned") return true;
+    return reason === "case_deleted" && fm.tombstone_reason === "case_archived";
   });
   return patchAll(headers, matched, {
     status: "tombstoned",
     tombstoned_at: now,
     tombstoned_by: actorEmail,
-    tombstone_reason: "case_archived",
+    tombstone_reason: reason,
   });
 }
 
-/**
- * Bring back the documents the archive cascade tombstoned. Manually deleted
- * documents of the matter stay in the Papierkorb.
- */
-export async function restoreCaseDocuments(
+/** Archive cascade (`tombstone_reason: "case_archived"`) — retained, not trash. */
+export async function archiveCaseDocuments(
   headers: Record<string, string>,
   caseSlugForms: ReadonlySet<string>,
   actorEmail: string,
   now = new Date().toISOString()
 ): Promise<CascadeResult> {
+  return tombstoneCaseDocuments(headers, caseSlugForms, actorEmail, "case_archived", now);
+}
+
+/**
+ * Bring back the pages a matter cascade hid (`fromReason`). Manually deleted
+ * pages of the matter stay in the Papierkorb. `backToArchive`: the matter is
+ * restored from the Papierkorb into the archive — its pages go back to being
+ * archived with it instead of becoming active.
+ */
+export async function restoreCaseDocuments(
+  headers: Record<string, string>,
+  caseSlugForms: ReadonlySet<string>,
+  actorEmail: string,
+  now = new Date().toISOString(),
+  opts: { fromReason?: CaseCascadeReason; backToArchive?: boolean } = {}
+): Promise<CascadeResult> {
+  const fromReason = opts.fromReason ?? "case_archived";
   let docs: ListedPage[];
   try {
     docs = await listAllDocuments(headers);
@@ -136,10 +167,17 @@ export async function restoreCaseDocuments(
     const fm = d.frontmatter ?? {};
     return (
       fm.status === "tombstoned" &&
-      fm.tombstone_reason === "case_archived" &&
+      fm.tombstone_reason === fromReason &&
       caseSlugForms.has(fm.case_slug as string)
     );
   });
+  if (opts.backToArchive) {
+    return patchAll(headers, matched, {
+      tombstone_reason: "case_archived",
+      restored_at: now,
+      restored_by: actorEmail,
+    });
+  }
   // Merge semantics: `null` removes the key.
   return patchAll(headers, matched, {
     status: null,

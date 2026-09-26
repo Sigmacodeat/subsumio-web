@@ -382,3 +382,96 @@ describe("PATCH /api/pages/[...slug] — portal summary release", () => {
     expect(written()?.frontmatter?.portal_summary).toBe("neu");
   });
 });
+
+describe("DELETE /api/pages/[...slug] — Aktenabschluss ist kein Löschen (§ 12 RAO, § 132 BAO)", () => {
+  function del(slug: string, query = "") {
+    const req = new Request(`http://localhost/api/pages/${slug}${query}`, { method: "DELETE" });
+    (req as unknown as { params: Promise<{ slug: string[] }> }).params = Promise.resolve({
+      slug: slug.split("/"),
+    });
+    return (DELETE as unknown as (r: Request) => Promise<Response>)(req);
+  }
+
+  it("archiving stores the closing date and the retention end, and is no tombstone", async () => {
+    stored = { slug: "legal/cases/akte-1", type: "legal_case", frontmatter: { status: "open" } };
+    const res = await del("legal/cases/akte-1");
+    expect(res.status).toBe(200);
+    expect((await res.json()).method).toBe("archived");
+    const fm = written()!.frontmatter!;
+    expect(fm.status).toBe("archived");
+    expect(typeof fm.closed_at).toBe("string");
+    const year = new Date().getFullYear();
+    expect(fm.retention_until).toBe(`${year + 7}-12-31`);
+    expect(fm).not.toHaveProperty("tombstoned_at");
+  });
+
+  it("keeps an earlier closing date as the start of the period", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: { status: "settled", closed_at: "2020-03-05" },
+    };
+    const res = await del("legal/cases/akte-1");
+    expect(res.status).toBe(200);
+    expect(written()!.frontmatter).toMatchObject({
+      closed_at: "2020-03-05",
+      retention_until: "2027-12-31",
+    });
+  });
+
+  it("refuses to move a closed matter to the Papierkorb while the period runs", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: { status: "archived", archived_at: new Date().toISOString() },
+    };
+    const res = await del("legal/cases/akte-1", "?mode=trash");
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe("retention_period_running");
+    expect(body.message).toMatch(/Aufbewahrungspflicht/);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("refuses the Papierkorb for a matter under legal hold", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: { status: "open", legal_hold: true },
+    };
+    const res = await del("legal/cases/akte-1", "?mode=trash");
+    expect(res.status).toBe(423);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("moves a matter created by mistake to the Papierkorb", async () => {
+    stored = { slug: "legal/cases/akte-1", type: "legal_case", frontmatter: { status: "open" } };
+    const res = await del("legal/cases/akte-1", "?mode=trash");
+    expect(res.status).toBe(200);
+    expect((await res.json()).method).toBe("deleted");
+    expect(written()!.frontmatter).toMatchObject({
+      status: "tombstoned",
+      status_before_delete: "open",
+      tombstone_reason: "manual_delete",
+    });
+  });
+
+  it("lets a matter whose period has run go to the Papierkorb", async () => {
+    stored = {
+      slug: "legal/cases/akte-1",
+      type: "legal_case",
+      frontmatter: {
+        status: "archived",
+        archived_at: "2010-01-10",
+        closed_at: "2010-01-10",
+        retention_until: "2017-12-31",
+      },
+    };
+    const res = await del("legal/cases/akte-1", "?mode=trash");
+    expect(res.status).toBe(200);
+    expect(written()!.frontmatter).toMatchObject({
+      status: "tombstoned",
+      status_before_delete: "archived",
+    });
+  });
+});

@@ -346,3 +346,107 @@ describe("per-item retention (documents/notes)", () => {
     expect(tombstoneCalls).toEqual([]);
   });
 });
+
+describe("Aufbewahrungsfrist abgeschlossener Akten (§ 12 RAO, § 132 BAO)", () => {
+  const thisYear = new Date().toISOString().slice(0, 10);
+
+  it("never purges an archived matter — it is not in the trash at all", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/done",
+        title: "Abgeschlossen",
+        type: "legal_case",
+        frontmatter: { status: "archived", archived_at: old, closed_at: thisYear },
+      },
+    ]);
+    pagesByType.set("document", [
+      tombstoned("docs/archived-with-case", {
+        tombstone_reason: "case_archived",
+        case_slug: "legal/cases/done",
+      }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.purged).toBe(0);
+  });
+
+  it("keeps a deleted matter closed this year and counts it as floored", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/closed",
+        title: "Geschlossen",
+        type: "legal_case",
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "manual_delete",
+          archived_at: old,
+          closed_at: thisYear,
+        },
+      },
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.retentionCaseFloored).toBe(1);
+  });
+
+  it("keeps trash entries of a matter whose period still runs", async () => {
+    casePages.set("legal/cases/archived", {
+      slug: "legal/cases/archived",
+      frontmatter: { status: "archived", closed_at: thisYear },
+    });
+    pagesByType.set("document", [
+      tombstoned("docs/deleted-before-close", { case_slug: "legal/cases/archived" }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.retentionCaseFloored).toBe(1);
+  });
+
+  it("purges a matter after the period and the trash window — pages before the matter", async () => {
+    const caseFm = {
+      status: "tombstoned",
+      tombstoned_at: old,
+      tombstone_reason: "manual_delete",
+      status_before_delete: "archived",
+      archived_at: "2015-02-01T10:00:00.000Z",
+      closed_at: "2015-02-01T10:00:00.000Z",
+      retention_until: "2022-12-31",
+    };
+    pagesByType.set("legal_case", [
+      { slug: "legal/cases/expired", title: "Alt", type: "legal_case", frontmatter: caseFm },
+    ]);
+    casePages.set("legal/cases/expired", { slug: "legal/cases/expired", frontmatter: caseFm });
+    pagesByType.set("document", [
+      tombstoned("docs/of-expired", {
+        tombstone_reason: "case_deleted",
+        case_slug: "legal/cases/expired",
+      }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["docs/of-expired", "legal/cases/expired"]);
+    expect(body.retentionCaseFloored).toBe(0);
+  });
+
+  it("purges a matter created by mistake after the trash window", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/mistake",
+        title: "Irrtum",
+        type: "legal_case",
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "manual_delete",
+        },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["legal/cases/mistake"]);
+  });
+});

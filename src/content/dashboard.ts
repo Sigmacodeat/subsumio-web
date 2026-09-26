@@ -338,8 +338,8 @@ export const D = {
     en: "Manage legal holds — protect matters from deletion and modification",
   },
   "nav.tooltip.papierkorb": {
-    de: "Gelöschte Dokumente und archivierte Akten einsehen und wiederherstellen",
-    en: "View and restore deleted documents and archived matters",
+    de: "Gelöschte Einträge einsehen und wiederherstellen (archivierte Akten stehen in der Aktenliste)",
+    en: "View and restore deleted items (archived matters are in the matter list)",
   },
   "nav.tooltip.case_assignment": {
     de: "Akten Teammitgliedern zuweisen und Arbeitslastverteilung anzeigen",
@@ -1031,8 +1031,8 @@ export const D = {
   "cases.status_archived": { de: "Archiviert", en: "Archived" },
   "cases.toast_deleted": { de: "Akte archiviert", en: "Case archived" },
   "cases.toast_deleted_desc": {
-    de: "Akte wurde archiviert und alle verknüpften Dokumente als tombstoned markiert.",
-    en: "Case has been archived and all linked documents have been tombstoned.",
+    de: "Akte wurde abgeschlossen und archiviert. Sie wird mit ihren Dokumenten für die gesetzliche Aufbewahrungsfrist (7 Jahre) aufbewahrt, nicht gelöscht.",
+    en: "Case has been closed and archived. It is kept with its documents for the statutory retention period (7 years), not deleted.",
   },
   "cases.toast_delete_fail": { de: "Archivierung fehlgeschlagen", en: "Archive failed" },
   "cases.toast_bulk_deleted": { de: "Akten archiviert", en: "cases archived" },
@@ -1040,8 +1040,8 @@ export const D = {
   "cases.unknown_error": { de: "Unbekannter Fehler", en: "Unknown error" },
   "cases.confirm_archive_title": { de: "Akte archivieren", en: "Archive case" },
   "cases.confirm_archive_msg": {
-    de: 'Akte „{{name}}" archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.',
-    en: 'Archive case "{{name}}"? All linked documents will be tombstoned.',
+    de: 'Akte „{{name}}" abschließen und archivieren? Die Akte und ihre Dokumente werden aus der laufenden Arbeit ausgeblendet und für die gesetzliche Aufbewahrungsfrist (7 Jahre ab Jahresende) aufbewahrt. Sie werden nicht gelöscht.',
+    en: 'Close and archive case "{{name}}"? The case and its documents leave the active workspace and are kept for the statutory retention period (7 years from year end). They are not deleted.',
   },
   "cases.close_checklist_title": {
     de: "Abschluss-Checkliste",
@@ -1097,8 +1097,8 @@ export const D = {
   },
   "cases.confirm_bulk_archive_title": { de: "Akten archivieren", en: "Archive cases" },
   "cases.confirm_bulk_archive_msg": {
-    de: "{{count}} Akte(n) archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.",
-    en: "Archive {{count}} case(s)? All linked documents will be tombstoned.",
+    de: "{{count}} Akte(n) abschließen und archivieren? Akten und Dokumente werden für die gesetzliche Aufbewahrungsfrist (7 Jahre ab Jahresende) aufbewahrt, nicht gelöscht.",
+    en: "Close and archive {{count}} case(s)? Cases and documents are kept for the statutory retention period (7 years from year end), not deleted.",
   },
   "cases.confirm_restore_title": { de: "Akte wiederherstellen", en: "Restore case" },
   "cases.confirm_restore_msg": {
@@ -1111,6 +1111,18 @@ export const D = {
     en: "Restore {{count}} case(s) from archive? All linked documents will be reactivated.",
   },
   "cases.btn_archive": { de: "Archivieren", en: "Archive" },
+  "cases.trash": {
+    de: "Irrtümlich angelegt — in den Papierkorb",
+    en: "Created by mistake — move to trash",
+  },
+  "cases.confirm_trash_title": { de: "Akte in den Papierkorb", en: "Move case to trash" },
+  "cases.confirm_trash_msg": {
+    de: 'Akte „{{name}}" in den Papierkorb verschieben? Nur für irrtümlich angelegte Akten: Akte und zugehörige Einträge werden nach Ablauf der Papierkorbfrist endgültig gelöscht. Abgeschlossene Akten bitte archivieren.',
+    en: 'Move case "{{name}}" to the trash? Only for cases created by mistake: the case and its entries are permanently deleted once the trash period ends. Please archive closed cases instead.',
+  },
+  "cases.btn_trash": { de: "In den Papierkorb", en: "Move to trash" },
+  "cases.toast_trashed": { de: "Akte im Papierkorb", en: "Case moved to trash" },
+  "cases.toast_trash_fail": { de: "Löschen nicht möglich", en: "Could not delete" },
   "cases.btn_restore": { de: "Wiederherstellen", en: "Restore" },
   "cases.btn_cancel": { de: "Abbrechen", en: "Cancel" },
   "cases.toast_restored": { de: "Akte wiederhergestellt", en: "Case restored" },

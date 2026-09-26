@@ -2,7 +2,16 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { getAuditExtra, setAuditExtra, slugFromRoutePath } from "@/lib/audit-context";
-import { archiveCaseDocuments, restoreCaseDocuments } from "@/lib/case-cascade";
+import {
+  archiveCaseDocuments,
+  restoreCaseDocuments,
+  tombstoneCaseDocuments,
+} from "@/lib/case-cascade";
+import {
+  caseRetentionState,
+  caseRetentionUntil,
+  retentionRunningMessage,
+} from "@/lib/case-retention";
 import { removeFromCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -530,10 +539,27 @@ export const DELETE = createHandler(
         if (notfristRejection) return rejectionResponse(notfristRejection);
       }
 
+      // Matters: DELETE archives (Aktenabschluss, default) — `?mode=trash`
+      // moves a matter created by mistake to the Papierkorb instead. Archiving
+      // is not deleting: an archived matter is kept for the statutory
+      // retention period and never reaches the Papierkorb.
+      const caseMode: "archive" | "trash" =
+        new URL(req.url).searchParams.get("mode") === "trash" ? "trash" : "archive";
+      const retention = caseRetentionState(fm);
+
       // Guard: already archived — return 409 to prevent double-archive
-      if (pageType === "legal_case" && fm.status === "archived") {
+      if (pageType === "legal_case" && caseMode === "archive" && fm.status === "archived") {
         return Response.json(
           { error: "already_archived", message: "Akte ist bereits archiviert." },
+          { status: 409 }
+        );
+      }
+      if (pageType === "legal_case" && fm.status === "tombstoned") {
+        return Response.json(
+          {
+            error: "already_deleted",
+            message: "Akte liegt im Papierkorb — zuerst wiederherstellen.",
+          },
           { status: 409 }
         );
       }
@@ -565,31 +591,98 @@ export const DELETE = createHandler(
       // Work released from a deleted invoice draft (null: release failed).
       let released: { time: number; expenses: number } | null | undefined;
 
-      if (pageType === "legal_case") {
+      if (pageType === "legal_case" && caseMode === "trash") {
+        // Papierkorb only for a matter that was never closed (or whose
+        // retention period has run). Fail closed: an undeterminable period
+        // counts as running.
+        if (retention.running) {
+          return Response.json(
+            {
+              error: "retention_period_running",
+              message: retentionRunningMessage(retention.until),
+              retention_until: retention.until,
+            },
+            { status: 409 }
+          );
+        }
+        const now = new Date().toISOString();
+        const existingTimeline = (fm.timeline_events as Array<Record<string, unknown>>) || [];
+        const trashRes = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: decodedSlug,
+            frontmatter: {
+              status: "tombstoned",
+              status_before_delete: typeof fm.status === "string" ? fm.status : "open",
+              tombstoned_at: now,
+              tombstoned_by: ctx.user.email,
+              tombstone_reason: "manual_delete",
+              portal_enabled: false,
+              timeline_events: [
+                ...existingTimeline,
+                {
+                  id: `tl-delete-${Date.now()}`,
+                  timestamp: now,
+                  type: "status_change",
+                  title: "Akte in den Papierkorb verschoben",
+                  description: `Gelöscht von ${ctx.user.email}`,
+                  actor: ctx.user.email,
+                },
+              ],
+            },
+          },
+          { timeoutMs: 15_000 }
+        );
+        if (!trashRes.ok) throw new Error(`Trash merge-update failed: HTTP ${trashRes.status}`);
+        cascade = await tombstoneCaseDocuments(
+          ctx.headers,
+          caseSlugForms,
+          ctx.user.email,
+          "case_deleted",
+          now
+        );
+        if (cascade.failed.length > 0) {
+          log.error("[pages/...slug] delete cascade incomplete", {
+            failed: cascade.failed.length,
+          });
+        }
+      } else if (pageType === "legal_case") {
+        const now = new Date();
+        // Aktenabschluss: the retention period starts with the closing date
+        // (an earlier closed_at is kept) and is stored on the matter.
+        const closedAt =
+          typeof fm.closed_at === "string" && fm.closed_at.trim()
+            ? fm.closed_at
+            : now.toISOString();
+        const retentionUntil =
+          caseRetentionState({ ...fm, status: "archived", closed_at: closedAt }, now).until ??
+          caseRetentionUntil(now.toISOString());
         // Build timeline event for archive
         const existingTimeline = (fm.timeline_events as Array<Record<string, unknown>>) || [];
         const archiveTimeline = [
           ...existingTimeline,
           {
             id: `tl-archive-${Date.now()}`,
-            timestamp: new Date().toISOString(),
+            timestamp: now.toISOString(),
             type: "status_change",
             title: "Akte archiviert",
-            description: `Archiviert von ${ctx.user.email}`,
+            description: `Archiviert von ${ctx.user.email} — Aufbewahrung bis ${retentionUntil}`,
             actor: ctx.user.email,
           },
         ];
 
-        // 2. Archive the case (soft-delete). The engine has no PATCH/If-Match;
-        //    merge-update overlays just these keys (status guarded above).
+        // 2. Archive the case. The engine has no PATCH/If-Match; merge-update
+        //    overlays just these keys (status guarded above).
         const archiveRes = await enginePatchPage(
           ctx.headers,
           {
             slug: decodedSlug,
             frontmatter: {
               status: "archived",
-              archived_at: new Date().toISOString(),
+              archived_at: now.toISOString(),
               archived_by: ctx.user.email,
+              closed_at: closedAt,
+              retention_until: retentionUntil,
               portal_enabled: false,
               timeline_events: archiveTimeline,
             },
@@ -599,8 +692,8 @@ export const DELETE = createHandler(
         if (!archiveRes.ok)
           throw new Error(`Archive merge-update failed: HTTP ${archiveRes.status}`);
 
-        // 3. Tombstone the matter's active documents (paged through the whole
-        //    document type — the engine caps a list at 100 rows).
+        // 3. Hide the matter's active documents with it (retained, not trash;
+        //    paged through the whole type — the engine caps a list at 100 rows).
         cascade = await archiveCaseDocuments(ctx.headers, caseSlugForms, ctx.user.email);
         if (cascade.failed.length > 0) {
           log.error("[pages/...slug] archive cascade incomplete", {
@@ -683,21 +776,23 @@ export const DELETE = createHandler(
         action: pageType === "legal_case" ? "case.delete" : "document.delete",
         details: {
           method: "soft_delete",
+          ...(pageType === "legal_case" ? { mode: caseMode } : {}),
           ...(cascade.attempted
             ? { cascaded: cascade.succeeded, cascadeFailed: cascade.failed.length }
             : {}),
         },
       });
+      const method = pageType === "legal_case" && caseMode === "archive" ? "archived" : "deleted";
       broadcastSseEvent(ctx.brainId, "case.deleted", {
         slug: path,
         by: ctx.user.email,
         at: new Date().toISOString(),
-        method: pageType === "legal_case" ? "archived" : "deleted",
+        method,
       });
       return Response.json(
         {
           ok: !cascade.attempted || cascade.failed.length === 0,
-          method: pageType === "legal_case" ? "archived" : "deleted",
+          method,
           cascade,
           ...(released !== undefined ? { released } : {}),
         },

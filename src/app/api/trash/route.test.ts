@@ -75,18 +75,30 @@ function enginePage(json: unknown, status = 200) {
 describe("GET /api/trash", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  test("lists archived cases and tombstoned pages, newest first", async () => {
+  test("lists deleted cases and tombstoned pages, newest first — archived matters are not trash", async () => {
     mockListEnginePages.mockImplementation((_h: unknown, type: string) => {
       if (type === "legal_case") {
         return Promise.resolve([
           {
-            slug: "legal/cases/old",
-            title: "Alte Akte",
+            slug: "legal/cases/archived",
+            title: "Abgeschlossene Akte",
             type: "legal_case",
             frontmatter: {
               status: "archived",
               archived_at: "2026-01-01T10:00:00.000Z",
               archived_by: "anwalt@example.com",
+              closed_at: "2026-01-01T10:00:00.000Z",
+            },
+          },
+          {
+            slug: "legal/cases/old",
+            title: "Irrtümlich angelegt",
+            type: "legal_case",
+            frontmatter: {
+              status: "tombstoned",
+              tombstoned_at: "2026-01-01T10:00:00.000Z",
+              tombstoned_by: "anwalt@example.com",
+              tombstone_reason: "manual_delete",
             },
           },
           {
@@ -106,8 +118,19 @@ describe("GET /api/trash", () => {
             frontmatter: {
               status: "tombstoned",
               tombstoned_at: "2026-02-01T10:00:00.000Z",
-              tombstone_reason: "case_archived",
+              tombstone_reason: "case_deleted",
               case_slug: "legal/cases/old",
+            },
+          },
+          {
+            slug: "legal/cases/archived/doc-1",
+            title: "Mit Akte archiviert",
+            type: "document",
+            frontmatter: {
+              status: "tombstoned",
+              tombstoned_at: "2026-02-01T10:00:00.000Z",
+              tombstone_reason: "case_archived",
+              case_slug: "legal/cases/archived",
             },
           },
         ]);
@@ -121,7 +144,7 @@ describe("GET /api/trash", () => {
     expect(body.data.items).toHaveLength(2);
     expect(body.data.items[0].slug).toBe("legal/cases/old/doc-1");
     expect(body.data.items[0].kind).toBe("item");
-    expect(body.data.items[0].reason).toBe("case_archived");
+    expect(body.data.items[0].reason).toBe("case_deleted");
     expect(body.data.items[1].slug).toBe("legal/cases/old");
     expect(body.data.items[1].kind).toBe("case");
     expect(body.data.items[1].deleted_by).toBe("anwalt@example.com");
@@ -361,6 +384,97 @@ describe("POST /api/trash (restore)", () => {
       frontmatter: Record<string, unknown>;
     };
     expect(casePatch.frontmatter.status).toBe("dormant");
+  });
+
+  test("restores a deleted case to its previous status and brings its pages back", async () => {
+    mockFetch.mockResolvedValueOnce(
+      enginePage({
+        slug: "legal/cases/mistake",
+        type: "legal_case",
+        frontmatter: {
+          status: "tombstoned",
+          status_before_delete: "pending",
+          tombstone_reason: "manual_delete",
+        },
+      })
+    );
+    mockListEnginePages.mockImplementation((_h: unknown, type: string) =>
+      Promise.resolve(
+        type === "document"
+          ? [
+              {
+                slug: "legal/cases/mistake/doc-1",
+                type: "document",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstone_reason: "case_deleted",
+                  case_slug: "legal/cases/mistake",
+                },
+              },
+            ]
+          : []
+      )
+    );
+    mockEnginePatchPage.mockResolvedValue(new Response("{}", { status: 200 }));
+
+    const res = await post({ slug: "legal/cases/mistake" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.status).toBe("pending");
+    const casePatch = mockEnginePatchPage.mock.calls[0][1] as {
+      frontmatter: Record<string, unknown>;
+    };
+    expect(casePatch.frontmatter).toMatchObject({
+      status: "pending",
+      status_before_delete: null,
+      tombstoned_at: null,
+      tombstone_reason: null,
+    });
+    const docPatch = mockEnginePatchPage.mock.calls[1][1] as {
+      slug: string;
+      frontmatter: Record<string, unknown>;
+    };
+    expect(docPatch.slug).toBe("legal/cases/mistake/doc-1");
+    expect(docPatch.frontmatter.status).toBeNull();
+    mockListEnginePages.mockReset();
+  });
+
+  test("a matter deleted from the archive goes back to the archive with its pages", async () => {
+    mockFetch.mockResolvedValueOnce(
+      enginePage({
+        slug: "legal/cases/expired",
+        type: "legal_case",
+        frontmatter: { status: "tombstoned", status_before_delete: "archived" },
+      })
+    );
+    mockListEnginePages.mockImplementation((_h: unknown, type: string) =>
+      Promise.resolve(
+        type === "document"
+          ? [
+              {
+                slug: "legal/cases/expired/doc-1",
+                type: "document",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstone_reason: "case_deleted",
+                  case_slug: "legal/cases/expired",
+                },
+              },
+            ]
+          : []
+      )
+    );
+    mockEnginePatchPage.mockResolvedValue(new Response("{}", { status: 200 }));
+
+    const res = await post({ slug: "legal/cases/expired" });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.status).toBe("archived");
+    const docPatch = mockEnginePatchPage.mock.calls[1][1] as {
+      frontmatter: Record<string, unknown>;
+    };
+    expect(docPatch.frontmatter).toMatchObject({ tombstone_reason: "case_archived" });
+    expect(docPatch.frontmatter).not.toHaveProperty("status");
+    mockListEnginePages.mockReset();
   });
 
   test("rejects a target status outside the archived state machine", async () => {

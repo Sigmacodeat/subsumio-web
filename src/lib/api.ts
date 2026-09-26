@@ -580,9 +580,15 @@ export const api = {
       });
     },
 
-    deletePage(slug: string): Promise<{ success: boolean }> {
+    /**
+     * Delete a page. For a matter this archives it (Aktenabschluss, kept for
+     * the retention period); `mode: "trash"` moves a matter created by
+     * mistake to the Papierkorb instead (refused while a retention period runs).
+     */
+    deletePage(slug: string, opts?: { mode?: "trash" }): Promise<{ success: boolean }> {
       const path = slug.split("/").map(encodeURIComponent).join("/");
-      return request(`/api/pages/${path}`, { method: "DELETE" });
+      const query = opts?.mode === "trash" ? "?mode=trash" : "";
+      return request(`/api/pages/${path}${query}`, { method: "DELETE" });
     },
 
     /**

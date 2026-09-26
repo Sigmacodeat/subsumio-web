@@ -12,6 +12,7 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { purgeExpiredSoftDeletedUsers } from "@/lib/user-purge";
 import { purgeOldTrackingEvents } from "@/lib/email/tracking";
 import { retentionUntil } from "@/lib/gobd";
+import { caseRetentionState } from "@/lib/case-retention";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/trash-purge");
@@ -143,6 +144,9 @@ function retentionExpiredAt(
  *  - Settings unlesbar → Brain wird übersprungen (nie mit Defaults löschen).
  *  - `trashAutoPurge: false` → Brain wird übersprungen.
  *  - `legal_hold` auf dem Eintrag ODER seiner Akte → nie gelöscht.
+ *  - Abgeschlossene/archivierte Akten und ihre Seiten → nie vor Ende der
+ *    Aufbewahrungsfrist gelöscht (src/lib/case-retention.ts). Archivierte
+ *    Akten liegen gar nicht im Papierkorb (src/lib/trash.ts).
  *  - Eintrag ohne `deleted_at`/`tombstoned_at` → nie gelöscht.
  *  - Einzelner Purge schlägt fehl → geht in errors[], Run antwortet 500.
  */
@@ -155,6 +159,8 @@ export const GET = createCronHandler(async () => {
     retentionTombstoned: 0,
     retentionInvalid: 0,
     retentionGobdFloored: 0,
+    /** Trash entries kept because their matter's retention period still runs. */
+    retentionCaseFloored: 0,
     failed: 0,
     errors: [] as string[],
   };
@@ -191,7 +197,7 @@ export const GET = createCronHandler(async () => {
           strict: true,
         });
         for (const page of pages) {
-          const item = toTrashItem(page);
+          const item = toTrashItem(page, now);
           if (item && isTrashExpired(item, retentionDays, now)) expired.push(item);
         }
       }
@@ -206,11 +212,16 @@ export const GET = createCronHandler(async () => {
     // case must protect everything in it (mirrors the DELETE guard in
     // api/pages/[...slug]). Case lookups are cached per brain; the retention
     // phase below uses the same check.
-    const caseHold = new Map<string, boolean>();
-    const caseIsHeld = async (caseSlug: string): Promise<boolean> => {
-      const cached = caseHold.get(caseSlug);
+    // The same read also yields the matter's retention period: pages of a
+    // closed/archived matter are part of the Handakte and are not purged
+    // while it runs (§ 12 RAO, § 132 BAO).
+    const caseState = new Map<string, { held: boolean; retentionRunning: boolean }>();
+    const readCase = async (
+      caseSlug: string
+    ): Promise<{ held: boolean; retentionRunning: boolean }> => {
+      const cached = caseState.get(caseSlug);
       if (cached !== undefined) return cached;
-      let held = false;
+      let state = { held: false, retentionRunning: false };
       try {
         const res = await fetch(
           `${ENGINE_URL}/api/pages/${caseSlug.split("/").map(encodeURIComponent).join("/")}`,
@@ -218,20 +229,25 @@ export const GET = createCronHandler(async () => {
         );
         if (res.ok) {
           const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-          held = page.frontmatter?.legal_hold === true;
+          state = {
+            held: page.frontmatter?.legal_hold === true,
+            retentionRunning: caseRetentionState(page.frontmatter, now).running,
+          };
         } else {
           // 404/403/5xx: die Akte ist gerade nicht lesbar (oder weg) — dann
           // ist ihr Hold unbekannt. Fail-closed wie beim geworfenen Fehler:
           // nie auf Verdacht löschen; der nächste Lauf prüft erneut.
-          held = true;
+          state = { held: true, retentionRunning: false };
         }
       } catch {
         // Unreadable parent → treat as held (fail-closed, never purge on doubt).
-        held = true;
+        state = { held: true, retentionRunning: false };
       }
-      caseHold.set(caseSlug, held);
-      return held;
+      caseState.set(caseSlug, state);
+      return state;
     };
+    const caseIsHeld = async (caseSlug: string): Promise<boolean> =>
+      (await readCase(caseSlug)).held;
 
     // Per-Item-Retention: aktive Dokumente/Notizen mit abgelaufener eigenen
     // Frist in den Papierkorb verschieben. Die Seiten bekommen ein frisches
@@ -312,12 +328,26 @@ export const GET = createCronHandler(async () => {
 
     if (expired.length === 0) continue;
 
+    // Matters last: their pages are checked against the matter first, and a
+    // purged matter can no longer be read (fail-closed → "held").
+    expired.sort((a, b) => Number(a.type === "legal_case") - Number(b.type === "legal_case"));
+
     for (const item of expired) {
       try {
-        const held =
-          item.legal_hold === true || (item.case_slug ? await caseIsHeld(item.case_slug) : false);
+        const parent = item.case_slug ? await readCase(item.case_slug) : null;
+        const held = item.legal_hold === true || parent?.held === true;
         if (held) {
           report.skippedHold++;
+          continue;
+        }
+        // Aufbewahrungsfrist: a matter (or a page of a matter) that was closed
+        // is never purged before the period has run — whatever the trash
+        // window says. Undeterminable period → kept (fail-closed).
+        if (
+          (item.type === "legal_case" && item.retention?.running !== false) ||
+          parent?.retentionRunning === true
+        ) {
+          report.retentionCaseFloored++;
           continue;
         }
 

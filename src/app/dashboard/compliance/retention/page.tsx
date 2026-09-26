@@ -116,7 +116,9 @@ export default function RetentionPage() {
     setDeleting(c.slug);
     setLoadError(null);
     try {
-      await api.brain.deletePage(c.slug);
+      // Nach Fristablauf: in den Papierkorb (endgültige Löschung nach der
+      // Papierkorbfrist). Ein normales DELETE würde die Akte nur archivieren.
+      await api.brain.deletePage(c.slug, { mode: "trash" });
       setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
     } catch {
       setLoadError(t("retention.error_delete"));
