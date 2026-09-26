@@ -1,6 +1,6 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import { loadApprovalSummary, type ApprovalCategoryKey } from "@/lib/approval-summary";
-import { listEnginePagesDetailed } from "@/lib/engine-pages";
+import type { ApprovalCategoryKey } from "@/lib/approval-summary";
+import { loadApprovalCounts } from "@/lib/approval-counts";
 import { fetchPageStatusCounts, sumCounts, type PageStatusCounts } from "@/lib/engine-page-counts";
 import { addDaysToIsoDate, firmToday } from "@/lib/datetime";
 import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
@@ -48,8 +48,25 @@ function isOpenStatus(status: unknown): boolean {
   return !CLOSED_STATUSES.has(String(status ?? "").toLowerCase());
 }
 
-/** Vault badge: new uploads sit at the top of the newest-first list. */
-const VAULT_WINDOW = 2_000;
+/** Vault badge: documents without a matter, or whose processing needs a look. */
+const VAULT_COUNT_QUERY = {
+  types: ["document", "legal_document"],
+  groupFields: [
+    "assignment_status",
+    "extraction_status",
+    "analysis_status",
+    "extraction_unverified",
+  ],
+  presentFields: ["case_slug"],
+};
+const VAULT_GAP_EXTRACTION = new Set([
+  "ocr_needed",
+  "ocr_failed",
+  "uploaded",
+  "processing",
+  "ocr_processing",
+]);
+const VAULT_GAP_ANALYSIS = new Set(["failed", "pending"]);
 
 /** Intake statuses that still wait for the firm. */
 const OPEN_INTAKE_STATUSES = new Set(["", "new", "needs_info", "conflict_check"]);
@@ -68,23 +85,14 @@ interface BadgeResult {
  */
 const badgeCache = createTtlCache<BadgeResult>(30_000);
 
-type Listed = { pages: Record<string, unknown>[]; incomplete: boolean };
-
-async function listForBadge(
-  headers: Record<string, string>,
-  type: string,
-  limit: number
-): Promise<Listed> {
-  try {
-    const r = await listEnginePagesDetailed(headers, type, limit, { timeoutMs: 8_000 });
-    return {
-      pages: r.pages as unknown as Record<string, unknown>[],
-      incomplete: r.failed || r.truncated,
-    };
-  } catch {
-    return { pages: [], incomplete: true };
-  }
-}
+/** Approval badge hrefs and the approval categories each one shows. */
+const APPROVAL_BADGES: Array<[string, ApprovalCategoryKey[] | "all"]> = [
+  ["/dashboard/freigaben", "all"],
+  ["/dashboard/communications", ["deadlines", "client_input", "requests", "case_scans"]],
+  ["/dashboard/approvals", ["agent_actions"]],
+  ["/dashboard/review-queue", ["analyses"]],
+  ["/dashboard/time-suggestions", ["time"]],
+];
 
 async function computeBadges(ctx: {
   headers: Record<string, string>;
@@ -92,7 +100,9 @@ async function computeBadges(ctx: {
   demo?: { ingested?: boolean } | null;
 }): Promise<BadgeResult> {
   const degraded = new Set<string>();
-  const approvalsPromise = loadApprovalSummary(ctx.headers, ctx.user.email).catch(() => null);
+  // Approvals and the vault are counted by the engine, too (grouped fields;
+  // the filters of the lists apply to the groups).
+  const approvalsPromise = loadApprovalCounts(ctx.headers, ctx.user.email).catch(() => null);
   // Deadlines, intake, signatures and invoices are counted by the engine in
   // one query per status (no page listing); a failed or partial count marks
   // the badges degraded instead of showing a too-low number.
@@ -101,18 +111,16 @@ async function computeBadges(ctx: {
     dateFields: ["due_date", "date"],
     dateBefore: addDaysToIsoDate(firmToday(), DEADLINE_CRITICAL_DAYS),
   }).catch(() => null);
-  const [counted, docsR, legalDocsR] = await Promise.all([
-    countsPromise,
-    listForBadge(ctx.headers, "document", VAULT_WINDOW),
-    listForBadge(ctx.headers, "legal_document", VAULT_WINDOW),
-  ]);
+  const vaultPromise: Promise<PageStatusCounts | null> = fetchPageStatusCounts(
+    ctx.headers,
+    VAULT_COUNT_QUERY
+  ).catch(() => null);
+  const [counted, vault] = await Promise.all([countsPromise, vaultPromise]);
   if (!counted || !counted.complete) for (const href of COUNTED_HREFS) degraded.add(href);
-  if (docsR.incomplete || legalDocsR.incomplete) degraded.add("/dashboard/vault");
+  if (!vault || !vault.complete) degraded.add("/dashboard/vault");
   const counts = counted?.counts ?? [];
   const openOf = (type: string, field: "count" | "before_count" = "count") =>
     sumCounts(counts, (c) => c.type === type && isOpenStatus(c.status), field);
-  const docs = docsR.pages;
-  const legalDocs = legalDocsR.pages;
   const approvals = await approvalsPromise;
 
   const badges: BadgeCounts = {};
@@ -143,27 +151,25 @@ async function computeBadges(ctx: {
   }
 
   // Approvals — one number for everything waiting for a decision, plus the
-  // per-list counts. All come from the same summary the lists use, so a
-  // badge never promises items its page does not show.
+  // per-list counts. Each category applies its list's filter (see
+  // approval-counts.ts), so a badge never promises items its page does not
+  // show; a failed or partial count marks the affected badges degraded.
   if (!approvals) {
-    for (const href of [
-      "/dashboard/freigaben",
-      "/dashboard/communications",
-      "/dashboard/approvals",
-      "/dashboard/review-queue",
-      "/dashboard/time-suggestions",
-    ]) {
-      degraded.add(href);
+    for (const [href] of APPROVAL_BADGES) degraded.add(href);
+  } else {
+    for (const [href, keys] of APPROVAL_BADGES) {
+      const partial =
+        keys === "all"
+          ? approvals.incomplete.length > 0
+          : keys.some((k) => approvals.incomplete.includes(k));
+      if (partial) degraded.add(href);
     }
-  }
-  if (approvals) {
-    const byKey = new Map(approvals.categories.map((c) => [c.key, c]));
     const count = (...keys: ApprovalCategoryKey[]) =>
-      keys.reduce((n, k) => n + (byKey.get(k)?.count ?? 0), 0);
+      keys.reduce((n, k) => n + approvals.byKey[k], 0);
     if (approvals.total > 0) {
       badges["/dashboard/freigaben"] = {
         count: approvals.total,
-        variant: approvals.urgent > 0 ? "danger" : "warning",
+        variant: approvals.urgent ? "danger" : "warning",
       };
     }
     const inbox = count("deadlines", "client_input", "requests", "case_scans");
@@ -182,28 +188,17 @@ async function computeBadges(ctx: {
     badges["/dashboard/signature"] = { count: sigCount, variant: "warning" };
   }
 
-  // Vault — unassigned docs + review gaps
-  const allDocs = [...docs, ...legalDocs];
-  const unassignedCount = allDocs.filter((d) => {
-    const fm = (d.frontmatter ?? {}) as Record<string, unknown>;
-    return !fm.case_slug && fm.assignment_status !== "assigned";
-  }).length;
-  const reviewGapCount = allDocs.filter((d) => {
-    const fm = (d.frontmatter ?? {}) as Record<string, unknown>;
-    const es = fm.extraction_status;
-    const as = fm.analysis_status;
-    return (
-      es === "ocr_needed" ||
-      es === "ocr_failed" ||
-      es === "uploaded" ||
-      es === "processing" ||
-      es === "ocr_processing" ||
-      fm.extraction_unverified === true ||
-      as === "failed" ||
-      as === "pending"
-    );
-  }).length;
-  const vaultCount = unassignedCount + reviewGapCount;
+  // Vault — unassigned docs + review gaps (a document can be both)
+  let vaultCount = 0;
+  for (const c of vault?.counts ?? []) {
+    const f = c.fields;
+    const unassigned = !c.present.case_slug && f.assignment_status !== "assigned";
+    const reviewGap =
+      VAULT_GAP_EXTRACTION.has(f.extraction_status ?? "") ||
+      f.extraction_unverified === "true" ||
+      VAULT_GAP_ANALYSIS.has(f.analysis_status ?? "");
+    vaultCount += c.count * (Number(unassigned) + Number(reviewGap));
+  }
   if (vaultCount > 0) {
     badges["/dashboard/vault"] = { count: vaultCount, variant: "danger" };
   }

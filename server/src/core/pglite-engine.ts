@@ -3336,7 +3336,7 @@ export class PGLiteEngine implements BrainEngine {
 
   async countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]> {
     const { sql, params } = buildCountByStatusSql(opts);
-    return normalizeCountRows(await this.executeRaw<Record<string, unknown>>(sql, params));
+    return normalizeCountRows(await this.executeRaw<Record<string, unknown>>(sql, params), opts);
   }
 
   async listLinkSources(opts?: {

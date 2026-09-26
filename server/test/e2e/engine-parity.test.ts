@@ -970,6 +970,69 @@ describeBoth("Engine parity — page array ops", () => {
     expect(await read(pgliteEngine)).toEqual(pg);
   });
 
+  test("countPagesByStatus: group/presence fields and array mode match on both engines", async () => {
+    const src = "parity-counts-multi";
+    const seed = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [src]
+      );
+      const rows: Array<[string, Record<string, unknown>]> = [
+        [
+          "pcm/a",
+          {
+            status: "open",
+            review_status: "Pending",
+            case_slug: "c/1",
+            items: [{ label: "x" }, { label: "y", due_date: "2030-01-02" }, null],
+          },
+        ],
+        ["pcm/b", { status: "open", items: [{ label: "z", review_status: "approved" }] }],
+        ["pcm/c", { status: "draft", items: "none" }],
+      ];
+      for (const [slug, fm] of rows) {
+        await eng.putPage(
+          slug,
+          { type: "note", title: slug, compiled_truth: "c", timeline: "", frontmatter: fm },
+          { sourceId: src }
+        );
+      }
+    };
+    const sortKey = (r: { status: string; fields?: unknown; present?: unknown }) =>
+      JSON.stringify([r.status, r.fields ?? null, r.present ?? null]);
+    const read = async (eng: BrainEngine) => ({
+      pages: (
+        await eng.countPagesByStatus({
+          types: ["note"],
+          groupFields: ["review_status"],
+          presentFields: ["case_slug"],
+          sourceId: src,
+        })
+      ).sort((x, y) => (sortKey(x) < sortKey(y) ? -1 : 1)),
+      elements: (
+        await eng.countPagesByStatus({
+          types: ["note"],
+          arrayField: "items",
+          groupFields: ["review_status"],
+          dateFields: ["due_date"],
+          dateBefore: "2030-01-31",
+          dateFallback: false,
+          sourceId: src,
+        })
+      ).sort((x, y) => (sortKey(x) < sortKey(y) ? -1 : 1)),
+    });
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    const pg = await read(pgEngine);
+    expect(
+      pg.pages.find((r) => r.fields?.review_status === "pending" && r.present?.case_slug)
+    ).toMatchObject({ count: 1, page_count: 1 });
+    expect(
+      pg.elements.find((r) => r.status === "open" && r.fields?.review_status === "")
+    ).toMatchObject({ count: 2, before_count: 1, page_count: 1 });
+    expect(await read(pgliteEngine)).toEqual(pg);
+  });
+
   test("listPages textMatch: same substring matches on both engines", async () => {
     const src = "parity-textmatch";
     const seed = async (eng: BrainEngine) => {

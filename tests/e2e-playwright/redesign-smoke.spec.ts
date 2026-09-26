@@ -255,10 +255,13 @@ test.describe("Redesign P3: Activity Sidebar", () => {
     // Copilot may already be open by default — only toggle if input hidden.
     // Two textareas exist (mobile drawer + desktop panel); target visible.
     const chatInputEl = page.locator("textarea[data-chat-input]:visible").first();
-    if (!(await chatInputEl.isVisible().catch(() => false))) {
-      await page.keyboard.press("Meta+Shift+c");
-    }
-    await expect(chatInputEl).toBeVisible({ timeout: 15_000 });
+    // Re-press only while closed: the shortcut listener attaches after hydration.
+    await expect(async () => {
+      if (!(await chatInputEl.isVisible().catch(() => false))) {
+        await page.keyboard.press("ControlOrMeta+Shift+C");
+      }
+      await expect(chatInputEl).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
   });
 });
 

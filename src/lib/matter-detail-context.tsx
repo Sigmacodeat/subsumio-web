@@ -59,6 +59,7 @@ import {
   type TaskEntry,
 } from "@/lib/legal-types";
 import { useMatterData } from "@/lib/matter-data-context";
+import { linkedContactSlugs, loadLinkedContacts, toCaseContact } from "@/lib/matter-contacts";
 import {
   type CaseDetail,
   type UploadQueueItem,
@@ -535,18 +536,12 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     (async () => {
       setContactsLoading(true);
       try {
-        const [page, batch] = await Promise.all([
-          api.brain.getPage(slug),
-          api.brain
-            .batchListPagesDetailed(["legal_contact"], 300)
-            .then((r) => {
-              if (r.errors.length) console.warn("[matter-detail] batch list partial:", r.errors);
-              return r.results;
-            })
-            .catch(() => ({}) as Record<string, BrainPage[]>),
-        ]);
-        const allContacts = batch["legal_contact"] ?? [];
+        const page = await api.brain.getPage(slug);
         const detail = parseCaseDetail(page);
+        // Only this matter's contacts, by slug; every other contact is found
+        // by the server-side search in the dialogs (no capped firm-wide list).
+        // A failed read is retried and reported by the contacts tab.
+        const linkedContactsPromise = loadLinkedContacts(detail).catch(() => [] as CaseContact[]);
         // This matter's deadlines, complete (server-side filter over all pages).
         let deadlinesFailed = false;
         const matterDeadlinePages = await api.brain
@@ -556,6 +551,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             deadlinesFailed = true;
             return [] as BrainPage[];
           });
+        const linkedContacts = await linkedContactsPromise;
         if (!cancelled) {
           setStandaloneDeadlinesFailed(deadlinesFailed);
           const mergedDeadlines = mergeCaseDeadlines(detail, matterDeadlinePages);
@@ -565,18 +561,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           setExpensesList(detail.expenses);
           setEvidenceList(detail.evidence || []);
           setDeadlinesList(mergedDeadlines);
-          setContacts(
-            allContacts.map((p) => {
-              const fm = p.frontmatter as Record<string, unknown>;
-              return {
-                slug: p.slug,
-                name: String(fm.name ?? p.title ?? ""),
-                role: String(fm.role ?? "other"),
-                email: fm.email as string | undefined,
-                phone: fm.phone as string | undefined,
-              };
-            })
-          );
+          setContacts(linkedContacts);
         }
       } catch (err) {
         console.error(
@@ -726,29 +711,34 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
 
   // ── Contacts refresh on focus ───────────────────────────────────────
 
+  // The matter's contacts may have been edited in another tab.
+  const linkedContactsKey = linkedContactSlugs(caseData).join("\u0000");
   useEffect(() => {
+    if (!linkedContactsKey) return;
+    const slugs = linkedContactsKey.split("\u0000");
     const onFocus = () => {
       api.brain
-        .listAllPages({ type: "legal_contact", max: 200 })
+        .getPages(slugs)
         .then((pages) => {
-          setContacts(
-            pages.map((p) => {
-              const fm = p.frontmatter as Record<string, unknown>;
-              return {
-                slug: p.slug,
-                name: String(fm.name ?? p.title ?? ""),
-                role: String(fm.role ?? "other"),
-                email: fm.email as string | undefined,
-                phone: fm.phone as string | undefined,
-              };
-            })
+          const fresh = new Map(
+            Object.values(pages ?? {})
+              .filter((p): p is BrainPage => Boolean(p?.slug))
+              .map((p) => [p.slug, toCaseContact(p)])
           );
+          if (fresh.size === 0) return;
+          setContacts((prev) => {
+            const have = new Set(prev.map((c) => c.slug));
+            return [
+              ...prev.map((c) => fresh.get(c.slug) ?? c),
+              ...[...fresh.values()].filter((c) => !have.has(c.slug)),
+            ];
+          });
         })
         .catch(() => {});
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, []);
+  }, [linkedContactsKey]);
 
   // ── Live sync polling ───────────────────────────────────────────────
 

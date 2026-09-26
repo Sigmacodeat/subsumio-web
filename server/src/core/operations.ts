@@ -4746,6 +4746,26 @@ const count_pages_by_status: Operation = {
       type: "string",
       description: "YYYY-MM-DD: also count per group the pages dated on or before this day.",
     },
+    date_fallback: {
+      type: "boolean",
+      description:
+        "false: pages without a date field are never counted as before (default true: creation day).",
+    },
+    group_fields: {
+      type: "array",
+      items: { type: "string" },
+      description: "Further frontmatter fields to group by (lower-cased value). Max 5.",
+    },
+    present_fields: {
+      type: "array",
+      items: { type: "string" },
+      description: "Frontmatter fields grouped by whether they are filled. Max 3.",
+    },
+    array_field: {
+      type: "string",
+      description:
+        "Count the object elements of this frontmatter array; group, presence and date fields are read from the element.",
+    },
   },
   handler: async (ctx, p) => {
     const { validateCountOpts, buildCountRowsSql, aggregateCountRows } =
@@ -4755,6 +4775,10 @@ const count_pages_by_status: Operation = {
       ...(typeof p.status_field === "string" ? { statusField: p.status_field } : {}),
       ...(Array.isArray(p.date_fields) ? { dateFields: p.date_fields as string[] } : {}),
       ...(typeof p.date_before === "string" ? { dateBefore: p.date_before } : {}),
+      ...(p.date_fallback === false ? { dateFallback: false } : {}),
+      ...(Array.isArray(p.group_fields) ? { groupFields: p.group_fields as string[] } : {}),
+      ...(Array.isArray(p.present_fields) ? { presentFields: p.present_fields as string[] } : {}),
+      ...(typeof p.array_field === "string" ? { arrayField: p.array_field } : {}),
       ...sourceScopeOpts(ctx),
       ...(ctx.aclGroups !== undefined ? { aclGroups: ctx.aclGroups } : {}),
     };
@@ -4779,10 +4803,11 @@ const count_pages_by_status: Operation = {
       frontmatter: unknown;
       status: string;
       before: unknown;
+      [key: string]: unknown;
     }>(sql, params);
     const complete = rows.length <= COUNT_ROWS_CAP;
     const kept = await matterScopeFilterResolved(rows.slice(0, COUNT_ROWS_CAP), ctx);
-    return { counts: aggregateCountRows(kept), complete };
+    return { counts: aggregateCountRows(kept, opts), complete };
   },
 };
 

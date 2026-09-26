@@ -96,6 +96,29 @@ beforeAll(async () => {
   });
   await put("d/other-firm", "legal_deadline", { status: "open", due_date: "2030-01-05" }, OTHER);
   await put("inv/1", "invoice", { status: "sent" });
+  // Multi-field and array counts.
+  await put("bd/1", "badge_doc", {
+    review_status: "Approved",
+    case_slug: "cases/open",
+    due_date: "2030-01-02",
+  });
+  await put("bd/2", "badge_doc", {});
+  await put("bd/3", "badge_doc", { case_slug: "" });
+  await put("bc/1", "badge_case", {
+    suggested_deadlines: [
+      { title: "a", due_date: "2030-01-05" },
+      { title: "b", due_date: "2031-01-05" },
+      { title: "c", review_status: "approved" },
+      null,
+      "not an object",
+    ],
+  });
+  await put("bc/2", "badge_case", { suggested_deadlines: [{ title: "d" }] });
+  await put("bc/3", "badge_case", { suggested_deadlines: "no array" });
+  await put("bc/walled", "badge_case", {
+    case_slug: "cases/walled",
+    suggested_deadlines: [{ title: "w" }],
+  });
 
   const g = await createAccessGroup(engine, SOURCE, "Partner");
   groupId = g.id;
@@ -153,9 +176,79 @@ describe("engine.countPagesByStatus", () => {
         { type: "a", status: "done", before: "t" },
       ])
     ).toEqual([
-      { type: "a", status: "done", count: 1, before_count: 1 },
-      { type: "a", status: "open", count: 2, before_count: 1 },
+      { type: "a", status: "done", count: 1, before_count: 1, page_count: 1 },
+      { type: "a", status: "open", count: 2, before_count: 1, page_count: 2 },
     ]);
+    expect(validateCountOpts({ types: ["a"], groupFields: ["x'"] })).toBe("invalid_group_field");
+    expect(validateCountOpts({ types: ["a"], presentFields: ["a", "b", "c", "d"] })).toBe(
+      "too_many_present_fields"
+    );
+    expect(validateCountOpts({ types: ["a"], arrayField: "a->b" })).toBe("invalid_array_field");
+    // Element rows of one page count once in page_count.
+    expect(
+      aggregateCountRows(
+        [
+          { page_id: 1, type: "a", status: "s", g0: "x", p0: false },
+          { page_id: 1, type: "a", status: "s", g0: "x", p0: false },
+          { page_id: 2, type: "a", status: "s", g0: "x", p0: true },
+        ],
+        { groupFields: ["k"], presentFields: ["r"] }
+      )
+    ).toEqual([
+      {
+        type: "a",
+        status: "s",
+        count: 2,
+        before_count: 0,
+        page_count: 1,
+        fields: { k: "x" },
+        present: { r: false },
+      },
+      {
+        type: "a",
+        status: "s",
+        count: 1,
+        before_count: 0,
+        page_count: 1,
+        fields: { k: "x" },
+        present: { r: true },
+      },
+    ]);
+  });
+
+  test("further group fields, presence fields and dates without creation-day fallback", async () => {
+    const rows = await engine.countPagesByStatus({
+      types: ["badge_doc"],
+      groupFields: ["review_status"],
+      presentFields: ["case_slug"],
+      dateFields: ["due_date"],
+      dateBefore: "2030-01-31",
+      dateFallback: false,
+      sourceId: SOURCE,
+    });
+    const pick = (review: string, filed: boolean) =>
+      rows.find((r) => r.fields?.review_status === review && r.present?.case_slug === filed);
+    expect(pick("approved", true)).toMatchObject({ count: 1, before_count: 1, page_count: 1 });
+    // No due date: never "before" without the creation-day fallback.
+    expect(pick("", false)).toMatchObject({ count: 2, before_count: 0 });
+  });
+
+  test("array mode counts object elements, page_count distinct pages", async () => {
+    const rows = await engine.countPagesByStatus({
+      types: ["badge_case"],
+      arrayField: "suggested_deadlines",
+      groupFields: ["review_status"],
+      dateFields: ["due_date"],
+      dateBefore: "2030-01-31",
+      dateFallback: false,
+      sourceId: SOURCE,
+    });
+    const open = rows.filter((r) => r.fields?.review_status === "");
+    // a, b (bc/1), d (bc/2), w (bc/walled); null and string elements do not count.
+    expect(open.reduce((n, r) => n + r.count, 0)).toBe(4);
+    expect(open.reduce((n, r) => n + r.page_count, 0)).toBe(3);
+    expect(open.reduce((n, r) => n + r.before_count, 0)).toBe(1);
+    expect(rows.find((r) => r.fields?.review_status === "approved")?.count).toBe(1);
   });
 });
 
@@ -179,6 +272,22 @@ describe("GET /api/page-status-counts", () => {
     // not acl (no group), not walled
     expect(total(r.counts, "legal_deadline", "open")).toBe(3);
     expect(before(r.counts, "legal_deadline", "open")).toBe(2);
+  });
+
+  test("array mode over HTTP honours the matter restriction", async () => {
+    const qs = "types=badge_case&array_field=suggested_deadlines&group_fields=review_status";
+    const admin = await counts(headers("u-admin", "admin"), qs);
+    const open = (r: { counts: PageStatusCount[] }) =>
+      r.counts.filter((c) => c.fields?.review_status === "").reduce((n, c) => n + c.count, 0);
+    expect(open(admin)).toBe(4);
+    const walled = await counts(headers("u-walled", "lawyer"), qs);
+    expect(walled.complete).toBe(true);
+    expect(open(walled)).toBe(3);
+    expect(
+      walled.counts
+        .filter((c) => c.fields?.review_status === "")
+        .reduce((n, c) => n + c.page_count, 0)
+    ).toBe(2);
   });
 
   test("invalid parameters answer 400", async () => {

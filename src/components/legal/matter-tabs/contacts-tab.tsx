@@ -26,7 +26,13 @@ import {
 } from "@/components/legal/ContactCreateDialog";
 import { WhatsAppClientInvitePanel } from "@/components/legal/WhatsAppClientInvitePanel";
 import type { CaseDetail } from "@/lib/matter-detail-types";
-import type { BrainPage } from "@/lib/types";
+import {
+  CONTACT_SEARCH_LIMIT,
+  CONTACT_SEARCH_MIN,
+  linkedContactSlugs,
+  toCaseContact,
+  useContactSearch,
+} from "@/lib/matter-contacts";
 
 const ROLE_LABELS_DE: Record<string, string> = {
   client: "Mandant",
@@ -61,75 +67,22 @@ const ROLE_COLORS: Record<string, string> = {
   other: "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]",
 };
 
-/** Firm contacts are searched on the server from this many characters on. */
-export const CONTACT_SEARCH_MIN = 2;
-const CONTACT_SEARCH_LIMIT = 50;
-const CONTACT_SEARCH_DEBOUNCE_MS = 300;
-
-function toContact(p: BrainPage) {
-  const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-  return {
-    slug: p.slug,
-    name: String(fm.name ?? p.title ?? ""),
-    role: String(fm.role ?? "other"),
-    email: fm.email as string | undefined,
-    phone: fm.phone as string | undefined,
-  };
-}
-
-/** Slugs of the contacts a matter links to (client, opponents, court, own lawyer). */
-function linkedContactSlugs(caseData: CaseDetail | null | undefined): string[] {
-  if (!caseData) return [];
-  const slugs = new Set<string>();
-  if (caseData.clientSlug) slugs.add(caseData.clientSlug);
-  caseData.opponentSlugs?.forEach((s) => slugs.add(s));
-  if (caseData.courtSlug) slugs.add(caseData.courtSlug);
-  if (caseData.ownLawyerSlug) slugs.add(caseData.ownLawyerSlug);
-  return [...slugs];
-}
-
 export function ContactsTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [linkedLoadFailed, setLinkedLoadFailed] = useState(false);
   // "Alle Kontakte": a server-side search over every contact of the firm
-  // (name, e-mail) — not the firm-wide list the matter view preloads, which
-  // holds only the most recently edited contacts.
+  // (name, e-mail) — the matter view loads only this matter's contacts.
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<ReturnType<typeof toContact>[] | null>(null);
-  const [searchState, setSearchState] = useState<"idle" | "loading" | "failed">("idle");
+  const {
+    results: searchResults,
+    state: searchState,
+    limited: searchLimited,
+  } = useContactSearch(search);
   const searchTerm = search.trim();
-  useEffect(() => {
-    if (searchTerm.length < CONTACT_SEARCH_MIN) {
-      setSearchResults(null);
-      setSearchState("idle");
-      return;
-    }
-    let cancelled = false;
-    setSearchState("loading");
-    const timer = setTimeout(() => {
-      api.brain
-        .listPages({ type: "legal_contact", q: searchTerm, limit: CONTACT_SEARCH_LIMIT })
-        .then((pages) => {
-          if (cancelled) return;
-          setSearchResults(pages.map(toContact));
-          setSearchState("idle");
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setSearchResults(null);
-          setSearchState("failed");
-        });
-    }, CONTACT_SEARCH_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
-  // The matter's own contacts are loaded by slug — the firm-wide contact list
-  // in the context is only the most recently edited ones, so the client,
-  // opponent or court of an older matter may be missing from it.
+  // The matter's own contacts are loaded by slug (the context loads them with
+  // the matter; this catches links made later and reports a failed read).
   const linkedKey = linkedContactSlugs(ctx.caseData).join("\u0000");
   const { contacts, contactsLoading, setContactsList } = ctx;
   useEffect(() => {
@@ -145,7 +98,7 @@ export function ContactsTab() {
         setLinkedLoadFailed(false);
         const loaded = Object.values(pages ?? {})
           .filter((p) => p?.slug)
-          .map(toContact);
+          .map(toCaseContact);
         if (loaded.length === 0) return;
         setContactsList((prev) => {
           const have = new Set(prev.map((c) => c.slug));
@@ -361,7 +314,7 @@ export function ContactsTab() {
           <div className="space-y-3 py-12 text-center">
             <Users size={40} className="mx-auto text-[color:var(--ds-border)]" />
             <p className="text-sm text-[color:var(--ds-text-muted)]">
-              {t("cases.detail_no_contacts")}
+              {t("cases.detail_no_linked_contacts")}
             </p>
             <Link
               href="/dashboard/contacts"
@@ -432,7 +385,7 @@ export function ContactsTab() {
               </p>
             )}
             {otherContacts.map(renderContactCard)}
-            {searchResults !== null && searchResults.length >= CONTACT_SEARCH_LIMIT && (
+            {searchLimited && (
               <p className="text-xs text-[color:var(--ds-text-muted)]">
                 {lang === "en"
                   ? `Showing the first ${CONTACT_SEARCH_LIMIT} matches — refine the search.`
@@ -443,7 +396,7 @@ export function ContactsTab() {
         )}
 
         {/* Link to full contacts page */}
-        {!ctx.contactsLoading && ctx.contacts.length > 0 && (
+        {!ctx.contactsLoading && (
           <div className="pt-2">
             <Link
               href="/dashboard/contacts"

@@ -994,10 +994,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         id="brain-copilot-panel"
         data-tour="copilot-panel"
         initial={false}
-        animate={{
-          width: open ? panelWidth : 0,
-          opacity: open ? 1 : 0,
-        }}
+        // Closed: width 0 still leaves the 1px border line; hide the panel once
+        // the close animation ends so it is gone visually and for the a11y tree.
+        animate={
+          open
+            ? { width: panelWidth, opacity: 1, visibility: "visible" }
+            : { width: 0, opacity: 0, transitionEnd: { visibility: "hidden" } }
+        }
         transition={panelTransition}
         className={cn(
           "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] md:relative md:inset-auto md:block md:shrink-0",
