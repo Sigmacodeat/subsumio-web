@@ -63,7 +63,8 @@ beforeAll(() => {
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }));
 
 const DB: Record<string, Array<string | null>> = {
-  "law-at-normen": ["NOR1", "NOR8", "NOR9", null, "NOR7"],
+  // NOR3: current law (in the Soll) whose file the fetch has not rewritten yet.
+  "law-at-normen": ["NOR1", "NOR8", "NOR9", null, "NOR7", "NOR3"],
   "law-at-judikatur": ["JJR_1"],
 };
 
@@ -96,8 +97,8 @@ describe("corpus-sync-inventory", () => {
       rawFiles: 5,
       normalizedFiles: 4,
       diskDocs: 3, // NOR2 counted once
-      dbDocs: 4,
-      dbPages: 5,
+      dbDocs: 5,
+      dbPages: 6,
       dbPagesWithoutDocId: 1,
       missingOnDisk: 2,
       // Raw reasons; the web side (toSyncRow) keeps "failed" as open work —
@@ -106,6 +107,7 @@ describe("corpus-sync-inventory", () => {
       diskNotInDb: 1, // NOR2
       dbNotOnDisk: 1, // NOR9
       dbHistorical: 1, // NOR7 — kept on purpose, not an orphan
+      dbAwaitingFile: 1, // NOR3 — in the Soll, file on its way
       notInRisSoll: 1, // NOR8 — repealed, still on disk
     });
 
