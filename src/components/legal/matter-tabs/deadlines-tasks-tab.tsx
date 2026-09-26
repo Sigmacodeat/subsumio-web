@@ -102,6 +102,13 @@ export function DeadlinesTasksTab() {
   const [ferialsache, setFerialsache] = useState<FerialsacheAnswer>(null);
   const [calcPreview, setCalcPreview] = useState<FristComputation | null>(null);
   const [calcError, setCalcError] = useState<string | null>(null);
+  // § 73 ZPO: a Verfahrenshilfeantrag interrupts an open Rechtsmittel-/
+  // Rechtsmittelbeantwortungsfrist; it starts over in full once the VH
+  // decision is final (or the assigned lawyer is served). AT only.
+  const [vhAntragAm, setVhAntragAm] = useState("");
+  const [vhFortsetzungAm, setVhFortsetzungAm] = useState("");
+  const selectedFristOption = fristOptions.find((o) => o.key === ctx.deadlineRuleKey);
+  const vhRelevant = rechtsraum.country === "AT" && selectedFristOption?.notfrist === true;
   const [aiDetectError, setAiDetectError] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -141,6 +148,10 @@ export function DeadlinesTasksTab() {
         country: rechtsraum.country,
         state: rechtsraum.state,
         ferialsache: answer === true,
+        verfahrenshilfe:
+          vhRelevant && vhAntragAm
+            ? { antragAm: vhAntragAm, fortsetzungAm: vhFortsetzungAm || undefined }
+            : undefined,
       });
       setCalcPreview(result);
       setCalcError(null);
@@ -511,6 +522,8 @@ export function DeadlinesTasksTab() {
                     setFerialsache(null);
                     setCalcPreview(null);
                     setCalcError(null);
+                    setVhAntragAm("");
+                    setVhFortsetzungAm("");
                   }}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 >
@@ -574,6 +587,56 @@ export function DeadlinesTasksTab() {
                   missing={ferialsacheAnswerMissing(calcPreview, ferialsache)}
                 />
               )}
+              {vhRelevant && (
+                <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                  <p className="text-xs font-medium text-[color:var(--ds-text)]">
+                    Verfahrenshilfeantrag gestellt? (§ 73 ZPO — unterbricht diese Frist)
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="matter-frist-vh-antrag"
+                        className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        Antrag gestellt am
+                      </label>
+                      <input
+                        id="matter-frist-vh-antrag"
+                        type="date"
+                        value={vhAntragAm}
+                        onChange={(e) => {
+                          setVhAntragAm(e.target.value);
+                          setCalcPreview(null);
+                        }}
+                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="matter-frist-vh-fortsetzung"
+                        className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        Rechtskraft der Entscheidung / Zustellung Beigebung (falls bekannt)
+                      </label>
+                      <input
+                        id="matter-frist-vh-fortsetzung"
+                        type="date"
+                        value={vhFortsetzungAm}
+                        disabled={!vhAntragAm}
+                        onChange={(e) => {
+                          setVhFortsetzungAm(e.target.value);
+                          setCalcPreview(null);
+                        }}
+                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    Ohne Fortsetzungsdatum ruht die Frist nur (kein neues Fristende berechenbar) —
+                    mit Fortsetzungsdatum läuft sie in voller Dauer neu, nicht bloß um den Rest.
+                  </p>
+                </div>
+              )}
               {calcError && (
                 <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
                   {calcError}
@@ -609,6 +672,10 @@ export function DeadlinesTasksTab() {
                       second_check_required: undefined,
                       erv_zustelldatum: undefined,
                     });
+                    setVhAntragAm("");
+                    setVhFortsetzungAm("");
+                    setCalcPreview(null);
+                    setFerialsache(null);
                   }}
                 >
                   {t("cases.detail_dl_cancel")}
