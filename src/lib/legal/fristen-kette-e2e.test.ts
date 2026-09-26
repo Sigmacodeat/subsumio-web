@@ -96,18 +96,19 @@ function isoToDe(iso: string): string {
   return iso.replace(/(\d{4})-(\d{2})-(\d{2})/, "$3.$2.$1");
 }
 
-// Trigger date 13 days before "now": StPO-Beschwerde (14 Tage, nicht
-// vhfZ-gehemmt) → Fristende am nächsten Tag = kritisch, sofern das ein
-// Werktag ist.
-function pipelineCalendarPage() {
-  const triggerDate = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+// The calendar's "Datum" column is the Fristende as written in the file
+// (the pipeline extracts it verbatim, it does not compute). Default: the end
+// date is tomorrow = kritisch.
+function pipelineCalendarPage(
+  endDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+) {
   return {
     slug: "deadline-calendars/urgent-case-2025",
     compiled_truth: `# Fristen-Kalender
 
 | Datum | Ampel | Frist | Rechtsgrundlage | Folge | Beleg |
 |------|-------|-------|-----------------|-------|-------|
-| ${isoToDe(triggerDate)} | 🔴 | Sofortige Beschwerde | § 88 Abs 1 StPO | Rechtskraft | Urteil.pdf |
+| ${isoToDe(endDate)} | 🔴 | Sofortige Beschwerde | § 88 Abs 1 StPO | Rechtskraft | Urteil.pdf |
 `,
     frontmatter: null,
   };
@@ -197,19 +198,19 @@ describe("E2: Full Fristen-Kette E2E — Pipeline → Sync → Digest", () => {
   });
 
   it.each([
-    // [now (Vienna), expected due date after the holiday/weekend shift]
-    ["2026-12-24T10:00:00+01:00", "2026-12-28"], // 25./26.12. + Sunday → Monday
-    ["2027-03-25T10:00:00+01:00", "2027-03-30"], // Karfreitag + weekend + Ostermontag → Tuesday
+    // [now (Vienna), Fristende laut Akt]
+    ["2026-12-24T10:00:00+01:00", "2026-12-28"],
+    ["2027-03-25T10:00:00+01:00", "2027-03-30"],
   ])(
-    "an end date on a holiday block is moved to the next working day → warning, not critical (now %s)",
-    async (now, shiftedDue) => {
+    "the end date from the file is taken unchanged — not recomputed as a service date (now %s)",
+    async (now, endDate) => {
       vi.setSystemTime(new Date(now));
-      setMockPages("deadline_calendar", [pipelineCalendarPage()]);
+      setMockPages("deadline_calendar", [pipelineCalendarPage(endDate)]);
       setMockPages("legal_deadline", []);
       const syncResult = await syncPipelineDeadlines("test-brain");
       expect(syncResult.created).toBe(1);
       const [item] = digestStatuses();
-      expect(item!.dueDate).toBe(shiftedDue);
+      expect(item!.dueDate).toBe(endDate);
       expect(item!.status).toBe("warning");
     }
   );
