@@ -660,6 +660,8 @@ export function DeadlinesTasksTab() {
                     }>;
                     error?: string;
                     message?: string;
+                    /** Partial check: model failed or text too long. */
+                    warnings?: string[];
                   } | null;
                   if (!res.ok) {
                     // A failed analysis is NOT "no deadlines found".
@@ -669,7 +671,7 @@ export function DeadlinesTasksTab() {
                     );
                     return;
                   }
-                  setAiDetectError(null);
+                  setAiDetectError(data?.warnings?.length ? data.warnings.join(" ") : null);
                   ctx.setAiDetectedDeadlines(data?.detected?.length ? data.detected : []);
                 } catch {
                   ctx.setAiDetectedDeadlines([]);

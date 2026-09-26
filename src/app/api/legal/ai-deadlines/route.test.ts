@@ -130,6 +130,59 @@ describe("POST /api/legal/ai-deadlines — credits for the LLM fallback", () => 
   });
 });
 
+describe("POST /api/legal/ai-deadlines — KI3-02: unvollständige Prüfung wird sichtbar", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    billing.affordable = true;
+  });
+
+  const detect = (body: Record<string, unknown>) =>
+    POST(
+      new Request("http://localhost/api/legal/ai-deadlines", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }) as unknown as NextRequest
+    );
+
+  test("gescheiterte KI-Prüfung ohne Treffer ist ein Fehler, nicht „keine Frist“", async () => {
+    vi.mocked(detectDeadlines).mockReturnValueOnce([]);
+    vi.mocked(hybridDeadlineDetection).mockImplementationOnce(async (_t, detected, _h, opts) => {
+      if (opts?.meta) {
+        opts.meta.modelCalled = true;
+        opts.meta.status = "failed";
+      }
+      return detected;
+    });
+    const res = await detect({ text: "binnen vier Wochen ab Zustellung" });
+    expect(res.status).toBe(502);
+    expect((await res.json()).error).toBe("deadline_analysis_failed");
+    expect(billing.charge).not.toHaveBeenCalled();
+  });
+
+  test("gescheiterte KI-Prüfung mit Regex-Treffern und gekürzter Text melden Hinweise", async () => {
+    vi.mocked(hybridDeadlineDetection).mockImplementationOnce(async (_t, detected, _h, opts) => {
+      if (opts?.meta) {
+        opts.meta.status = "failed";
+        opts.meta.omittedChars = 12_345;
+      }
+      return detected;
+    });
+    const res = await detect({ text: "binnen vier Wochen ab Zustellung" });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.llm_status).toBe("failed");
+    expect(data.warnings).toHaveLength(2);
+    expect(data.warnings[1]).toMatch(/12\D?345 Zeichen/);
+  });
+
+  test("Bezugsdatum des Dokuments wird an die Erkennung weitergegeben", async () => {
+    await detect({ text: "bis 15. April", referenceDate: "2026-03-02" });
+    expect(vi.mocked(hybridDeadlineDetection).mock.calls[0]![3]).toMatchObject({
+      referenceDate: "2026-03-02",
+    });
+  });
+});
+
 describe("POST /api/legal/ai-deadlines", () => {
   beforeEach(() => vi.clearAllMocks());
 
