@@ -156,7 +156,11 @@ function AgendaRow({ entry, showDate = false }: { entry: AgendaEntry; showDate?:
     <li>
       <Link
         href={
-          entry.caseSlug ? `/dashboard/cases/${encodeSlug(entry.caseSlug)}` : "/dashboard/deadlines"
+          entry.caseSlug
+            ? `/dashboard/cases/${encodeSlug(entry.caseSlug)}`
+            : entry.appointment
+              ? "/dashboard/calendar"
+              : "/dashboard/deadlines"
         }
         className="group grid grid-cols-[3.25rem_1fr] items-start gap-x-3 gap-y-1 px-4 py-2.5 transition-[background-color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-ring)] focus-visible:outline-none focus-visible:ring-inset sm:grid-cols-[3.25rem_1fr_auto] md:px-5"
       >
