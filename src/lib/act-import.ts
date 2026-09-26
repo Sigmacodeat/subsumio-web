@@ -102,3 +102,39 @@ export function safeImportId(value: string): string {
   if (!normalized || normalized.length > 120) throw new Error("invalid_import_id");
   return normalized;
 }
+
+/** What an act-import item records when its upload threw. */
+export interface UploadFailureRecord {
+  status: "duplicate" | "failed";
+  error_code: string;
+  error: string;
+  document_slug?: string;
+}
+
+/**
+ * A file that is already stored in the matter (409 "duplicate_file") is not a
+ * failure: it counts as "übersprungen – bereits vorhanden" and never blocks
+ * the import's completion. Everything else stays a retryable failure.
+ */
+export function uploadFailureRecord(error: unknown): UploadFailureRecord {
+  const e = (error ?? {}) as {
+    status?: unknown;
+    code?: unknown;
+    message?: unknown;
+    data?: { existing_slug?: unknown };
+  };
+  const message = typeof e.message === "string" ? e.message : String(error);
+  const duplicate =
+    e.code === "duplicate_file" ||
+    (e.status === 409 && /bereits vorhanden|duplicate/i.test(message));
+  if (duplicate) {
+    const existing = e.data?.existing_slug;
+    return {
+      status: "duplicate",
+      error_code: "duplicate_file",
+      error: "Übersprungen – bereits vorhanden",
+      ...(typeof existing === "string" && existing ? { document_slug: existing } : {}),
+    };
+  }
+  return { status: "failed", error_code: "upload_failed", error: message };
+}

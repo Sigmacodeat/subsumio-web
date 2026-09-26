@@ -36,7 +36,12 @@ import { api } from "@/lib/api";
 import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
 import { UPLOAD_ACCEPT, UPLOAD_FOLDER_ACCEPT_RE } from "@/lib/upload-formats";
 import { runUploadPool } from "@/lib/upload-queue";
-import { inferUploadRouting, uploadTargetCases, type KnownCase } from "@/lib/upload-routing";
+import {
+  divergentRoutingSlug,
+  inferUploadRouting,
+  uploadTargetCases,
+  type KnownCase,
+} from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
 import Link from "next/link";
@@ -70,6 +75,11 @@ interface UploadFile {
   overrides?: FileOverrides;
   /** Auto-routing suggestion derived from the filename (informational). */
   routingHint?: string;
+  /**
+   * Matter the filename points at. Never applied on its own — the chosen
+   * matter stays the target; the user can switch with one click.
+   */
+  suggestedCaseSlug?: string;
   /** D2: Recognition results from pipeline — shown as badges after upload */
   recognizedJurisdiction?: string;
   recognizedDocType?: string;
@@ -278,16 +288,16 @@ function UploadPageInner() {
         return { slug: c.slug, title: c.title ?? "", aktenzeichen: az };
       });
       const newFiles: UploadFile[] = accepted.map((f) => {
+        // The filename only suggests a matter; the matter the user chose
+        // stays the upload target (no silent re-routing by a title word).
         const routing = inferUploadRouting(f.name, knownCases);
-        const overrides: FileOverrides = {};
-        if (routing.matchedCaseSlug) overrides.case_slug = routing.matchedCaseSlug;
         return {
           id: crypto.randomUUID(),
           file: f,
           status: "pending" as const,
           progress: 0,
           routingHint: routing.hint,
-          overrides: Object.keys(overrides).length > 0 ? overrides : undefined,
+          suggestedCaseSlug: routing.matchedCaseSlug ?? routing.titleMatchCaseSlug,
         };
       });
       setFiles((prev) => [...prev, ...newFiles]);
@@ -1184,6 +1194,34 @@ function UploadPageInner() {
                           {f.routingHint}
                         </Badge>
                       )}
+                      {(() => {
+                        const other =
+                          mode === "case"
+                            ? divergentRoutingSlug(
+                                { matchedCaseSlug: f.suggestedCaseSlug },
+                                f.overrides?.case_slug ?? selectedCaseSlug
+                              )
+                            : undefined;
+                        const otherCase = other ? cases.find((c) => c.slug === other) : undefined;
+                        if (!otherCase) return null;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFiles((prev) =>
+                                prev.map((x) =>
+                                  x.id === f.id
+                                    ? { ...x, overrides: { ...x.overrides, case_slug: other } }
+                                    : x
+                                )
+                              )
+                            }
+                            className="rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 text-[0.6875rem] text-[color:var(--ds-warning-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                          >
+                            Dateiname passt zu „{otherCase.title}“ — in diese Akte legen?
+                          </button>
+                        );
+                      })()}
                       {/* Per-file override: route this single file to a different Akte. */}
                       {mode === "case" && cases.length > 0 && (
                         <select

@@ -269,6 +269,19 @@ export interface CaseFrontmatter {
   own_lawyer_slug?: string;
   court_id?: string;
   court_name?: string;
+  /** Vertreter der Gegenseite (aus einem übernommenen Parteivorschlag). */
+  opposing_counsel_name?: string;
+  opposing_counsel_slug?: string;
+  /** KI-Vorschläge für Gericht, Geschäftszahl, Streitwert (src/lib/legal/case-suggestions.ts). */
+  suggested_case_fields?: Array<{
+    field: "court_name" | "case_number" | "dispute_value";
+    value: string | number;
+    current?: string | number;
+    quote?: string;
+    source?: string;
+    confirmed?: boolean;
+    review_status?: "pending" | "approved" | "rejected";
+  }>;
   /** Slug des verknüpften Gerichts (role=court). */
   court_slug?: string;
   claims?: string[];

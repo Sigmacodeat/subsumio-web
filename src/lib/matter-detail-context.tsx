@@ -25,6 +25,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiRequestError } from "@/lib/api";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
+import {
+  decideCaseFieldSuggestion,
+  decidePartySuggestion,
+} from "@/lib/legal/case-suggestion-client";
 import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
@@ -271,7 +275,17 @@ interface MatterDetailContextValue {
     confirmed: boolean,
     opts?: { dueDate?: string }
   ) => Promise<void>;
-  confirmSuggestedParty: (index: number, confirmed: boolean) => Promise<void>;
+  /**
+   * Server-side decision on a party suggestion (contact, conflict check,
+   * placement). Throws with the server's message, e.g. on a conflict.
+   */
+  confirmSuggestedParty: (
+    index: number,
+    confirmed: boolean,
+    opts?: { role?: string; contactSlug?: string }
+  ) => Promise<void>;
+  /** Accept/discard an Aktendaten suggestion (court, Geschäftszahl, Streitwert). */
+  decideSuggestedCaseField: (index: number, approve: boolean) => Promise<void>;
 
   // Utilities
   docProcessingStatus: (doc: DocStatusFields) => { key: DocStatusKey; color: string };
@@ -666,37 +680,46 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   // ── Confirm suggested party ─────────────────────────────────────────
 
   const confirmSuggestedParty = useCallback(
-    async (index: number, confirmed: boolean) => {
+    async (index: number, confirmed: boolean, opts?: { role?: string; contactSlug?: string }) => {
       if (!caseData?.suggestedParties) return;
       if (caseData.status === "archived") {
         setSaveError(t("casesdetail.archived_msg"));
         return;
       }
-      const updated = caseData.suggestedParties.map((sp, i) =>
-        i === index
-          ? {
-              ...sp,
-              confirmed: true,
-              review_status: confirmed ? ("approved" as const) : ("rejected" as const),
-            }
-          : sp
-      );
-      setCaseData({ ...caseData, suggestedParties: updated });
+      // Server-side (src/lib/legal/case-suggestion-decision.ts): contact,
+      // conflict check and placement happen together or not at all.
       try {
-        const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
-        await csrfFetch(`/api/pages/${slugPath}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "If-Match": String(caseData.version || 0),
-          },
-          body: JSON.stringify({ frontmatter: { suggested_parties: updated }, merge: true }),
+        await decidePartySuggestion({
+          caseSlug: caseData.slug,
+          index,
+          action: confirmed ? "approve" : "reject",
+          role: opts?.role,
+          contactSlug: opts?.contactSlug,
         });
-      } catch {
-        /* best effort */
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : String(err));
+        throw err;
       }
+      await refreshCaseData();
     },
-    [caseData, t]
+    [caseData, t, refreshCaseData]
+  );
+
+  const decideSuggestedCaseField = useCallback(
+    async (index: number, approve: boolean) => {
+      if (!caseData) return;
+      if (caseData.status === "archived") {
+        setSaveError(t("casesdetail.archived_msg"));
+        return;
+      }
+      await decideCaseFieldSuggestion({
+        caseSlug: caseData.slug,
+        index,
+        action: approve ? "approve" : "reject",
+      });
+      await refreshCaseData();
+    },
+    [caseData, t, refreshCaseData]
   );
 
   // ── Contact conflict check ──────────────────────────────────────────
@@ -1786,6 +1809,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     refreshCaseData,
     confirmSuggestedDeadline,
     confirmSuggestedParty,
+    decideSuggestedCaseField,
     docProcessingStatus,
     formatUploadBytes,
     formatUploadEta,

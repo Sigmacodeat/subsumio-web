@@ -1,6 +1,8 @@
 "use client";
 
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { PARTY_ROLE_LABEL, RESOLVED_PARTY_ROLES } from "@/lib/legal/case-suggestions";
+import { contactRoleForSuggestion } from "@/lib/legal/case-suggestion-client";
 import { sourceLabel, urgencyLabel } from "./format";
 import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -453,7 +455,7 @@ export function StrategyTab() {
                         {sp.name}
                       </span>
                       <Badge variant="info" className="text-[10px]">
-                        {sp.role}
+                        {PARTY_ROLE_LABEL[sp.role] ?? sp.role}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
@@ -466,15 +468,14 @@ export function StrategyTab() {
                       size="sm"
                       disabled={isArchived}
                       onClick={() => {
-                        ctx.setContactDialogRole(
-                          sp.role === "mandant" || sp.role === "client"
-                            ? "client"
-                            : sp.role === "gegner" || sp.role === "opponent"
-                              ? "opponent"
-                              : sp.role === "gericht" || sp.role === "court"
-                                ? "court"
-                                : "other"
-                        );
+                        if (RESOLVED_PARTY_ROLES.has(sp.role)) {
+                          // Server-side: contact + conflict check + placement.
+                          void ctx.confirmSuggestedParty(originalIndex, true).catch(() => {
+                            /* message shown via saveError */
+                          });
+                          return;
+                        }
+                        ctx.setContactDialogRole(contactRoleForSuggestion(sp.role));
                         ctx.setContactDialogName(sp.name);
                         ctx.setContactDialogOpen(true);
                         ctx.setPendingSuggestedPartyIndex(originalIndex);
@@ -488,7 +489,11 @@ export function StrategyTab() {
                       variant="ghost"
                       size="sm"
                       disabled={isArchived}
-                      onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
+                      onClick={() =>
+                        void ctx.confirmSuggestedParty(originalIndex, false).catch(() => {
+                          /* message shown via saveError */
+                        })
+                      }
                       className="h-7 px-2 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                     >
                       <X size={12} />

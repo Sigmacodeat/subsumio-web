@@ -1,5 +1,10 @@
 import { describe, test, expect } from "vitest";
-import { inferUploadRouting, uploadTargetCases, type KnownCase } from "./upload-routing";
+import {
+  divergentRoutingSlug,
+  inferUploadRouting,
+  uploadTargetCases,
+  type KnownCase,
+} from "./upload-routing";
 
 const CASES: KnownCase[] = [
   { slug: "cases/mueller-gmbh", title: "Müller GmbH", aktenzeichen: "12 C 345/24" },
@@ -26,10 +31,31 @@ describe("inferUploadRouting", () => {
     expect(r.docType).toBe("klage");
   });
 
-  test("matches an existing case by title substring", () => {
+  test("a title in the filename is only a hint, never an assignment", () => {
     const r = inferUploadRouting("Schmidt Erbsache Vollmacht.pdf", CASES);
-    expect(r.matchedCaseSlug).toBe("cases/schmidt-erbe");
+    expect(r.matchedCaseSlug).toBeUndefined();
+    expect(r.titleMatchCaseSlug).toBe("cases/schmidt-erbe");
     expect(r.docType).toBe("vollmacht");
+  });
+
+  test("AT Geschäftszahl with Prüfbuchstabe matches the stored number", () => {
+    const at: KnownCase[] = [
+      { slug: "legal/cases/a", title: "A", aktenzeichen: "12 Cg 34/25x" },
+      { slug: "legal/cases/b", title: "B", aktenzeichen: "12 Cg 34/25y" },
+    ];
+    const r = inferUploadRouting("Urteil 12 Cg 34-25x.pdf", at);
+    expect(r.aktenzeichen).toBe("12 Cg 34/25x");
+    expect(r.matchedCaseSlug).toBe("legal/cases/a");
+  });
+
+  test("two matters with the same number stay undecided", () => {
+    const dup: KnownCase[] = [
+      { slug: "legal/cases/a", title: "A", aktenzeichen: "3 Ob 12/24k" },
+      { slug: "legal/cases/b", title: "B", aktenzeichen: "3Ob12/24k" },
+    ];
+    const r = inferUploadRouting("3 Ob 12_24k Beschluss.pdf", dup);
+    expect(r.matchedCaseSlug).toBeUndefined();
+    expect(r.ambiguousCaseSlugs).toEqual(["legal/cases/a", "legal/cases/b"]);
   });
 
   test("returns empty suggestion for an unremarkable filename", () => {
@@ -48,6 +74,20 @@ describe("inferUploadRouting", () => {
     const r = inferUploadRouting("12C345-24_klage.pdf", CASES);
     expect(r.hint).toContain("klage");
     expect(r.hint).toContain("Az.");
+  });
+});
+
+describe("divergentRoutingSlug", () => {
+  test("the chosen matter is kept; a different filename match is only offered", () => {
+    // "Mietvertrag Huber Kopie.pdf" while matter "Maier" is chosen.
+    const cases: KnownCase[] = [
+      { slug: "legal/cases/huber", title: "Huber" },
+      { slug: "legal/cases/maier", title: "Maier" },
+    ];
+    const r = inferUploadRouting("Mietvertrag Huber Kopie.pdf", cases);
+    expect(r.matchedCaseSlug).toBeUndefined();
+    expect(divergentRoutingSlug(r, "legal/cases/maier")).toBe("legal/cases/huber");
+    expect(divergentRoutingSlug(r, "legal/cases/huber")).toBeUndefined();
   });
 });
 

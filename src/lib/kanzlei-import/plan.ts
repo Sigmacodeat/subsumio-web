@@ -14,6 +14,7 @@ import {
   parseMinutes,
   parseYesNo,
 } from "./values";
+import { caseNumberKey } from "@/lib/legal/geschaeftszahl";
 
 export const IMPORT_SOURCE = "kanzlei-import";
 
@@ -132,12 +133,12 @@ function caseResolver(cases: ExistingPage[]) {
     map.set(key, [...(map.get(key) ?? []), slug]);
   };
   for (const c of cases) {
-    push(byNumber, normaliseKey(c.frontmatter?.case_number), c.slug);
+    push(byNumber, caseNumberKey(c.frontmatter?.case_number), c.slug);
     push(byTitle, normaliseName(c.title), c.slug);
   }
   const bySlug = new Map(cases.map((c) => [c.slug, c]));
   return (ref: string): { slug: string; page: ExistingPage } | { error: string } => {
-    const numberHits = byNumber.get(normaliseKey(ref)) ?? [];
+    const numberHits = byNumber.get(caseNumberKey(ref)) ?? [];
     const hits = numberHits.length > 0 ? numberHits : (byTitle.get(normaliseName(ref)) ?? []);
     if (hits.length === 1) return { slug: hits[0], page: bySlug.get(hits[0])! };
     if (hits.length > 1) return { error: `„${ref}“ passt zu ${hits.length} Akten` };
@@ -151,6 +152,22 @@ function count(rows: PlanRow[]): Record<PlanAction, number> {
   return counts;
 }
 
+/** Stable identity of a matter without Aktenzahl: title + client. */
+function titleClientKey(title: unknown, client: unknown): string {
+  const t = normaliseName(title);
+  return t ? `${t}|${normaliseName(client)}` : "";
+}
+
+/** Short deterministic suffix — the same row gets the same slug on every run. */
+function stableSuffix(key: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36).slice(0, 6);
+}
+
 function planCases(
   table: string[][],
   mapping: ColumnMapping,
@@ -159,9 +176,15 @@ function planCases(
 ): PlanRow[] {
   const slugs = new Set(existing.cases.map((c) => c.slug));
   const numbers = new Map<string, string>();
+  // Matters without Aktenzahl are recognised again by title + client, so a
+  // second import of the same file does not create them twice.
+  const titled = new Map<string, string>();
   for (const c of existing.cases) {
-    const n = normaliseKey(c.frontmatter?.case_number);
+    const n = caseNumberKey(c.frontmatter?.case_number);
     if (n) numbers.set(n, "existing");
+    if (!alive(c)) continue;
+    const tk = titleClientKey(c.title, c.frontmatter?.client_name);
+    if (tk && !n) titled.set(tk, "existing");
   }
   return table.map((cells, i) => {
     const row = i + 2;
@@ -171,7 +194,7 @@ function planCases(
     const label = title || caseNumber || `Zeile ${row}`;
     const warnings: string[] = [];
     if (!title) return { row, label, action: "error", reason: "Bezeichnung fehlt", warnings };
-    const numberKey = normaliseKey(caseNumber);
+    const numberKey = caseNumberKey(caseNumber);
     if (numberKey && numbers.has(numberKey)) {
       const where = numbers.get(numberKey);
       return {
@@ -185,8 +208,22 @@ function planCases(
         warnings,
       };
     }
+    const tKey = numberKey ? "" : titleClientKey(title, val("client_name"));
+    if (tKey && titled.has(tKey)) {
+      const where = titled.get(tKey);
+      return {
+        row,
+        label,
+        action: "skip",
+        reason:
+          where === "existing"
+            ? `Akte „${title}“ mit diesem Mandanten existiert bereits`
+            : `Akte „${title}“ mit diesem Mandanten steht schon in Zeile ${where}`,
+        warnings,
+      };
+    }
     let slug = `legal/cases/${translit(caseNumber || title) || `akte-${row}`}`;
-    if (slugs.has(slug)) slug = `${slug}-${shortId(opts.projectId)}-${row}`;
+    if (slugs.has(slug)) slug = `${slug}-${stableSuffix(numberKey || tKey || String(row))}`;
     if (slugs.has(slug)) {
       return { row, label, action: "skip", reason: "Akte existiert bereits", warnings };
     }
@@ -197,6 +234,7 @@ function planCases(
     if (openedRaw && !openedAt) warnings.push(`Datum „${openedRaw}“ nicht erkannt, weggelassen`);
     slugs.add(slug);
     if (numberKey) numbers.set(numberKey, String(row));
+    if (tKey) titled.set(tKey, String(row));
     const frontmatter: Record<string, unknown> = {
       type: "legal_case",
       case_number: caseNumber || undefined,

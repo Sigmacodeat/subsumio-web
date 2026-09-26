@@ -102,6 +102,9 @@ interface VaultDoc {
   content: string;
   extractionStatus?: string;
   extractionMethod?: string;
+  /** Sammelscan: several Schriftstücke detected in one file (engine hint). */
+  sammelscanAnzahl?: number;
+  sammelscanHinweis?: string;
   docType?: string;
   docTypeLabel?: string;
   caseSlug?: string;
@@ -183,6 +186,8 @@ function parseDoc(page: BrainPage): VaultDoc {
     extractionMethod: (fm.extraction_method as string) || undefined,
     docType: (fm.doc_type as string) || undefined,
     docTypeLabel: (fm.doc_type_label as string) || undefined,
+    sammelscanAnzahl: typeof fm.sammelscan_anzahl === "number" ? fm.sammelscan_anzahl : undefined,
+    sammelscanHinweis: (fm.sammelscan_hinweis as string) || undefined,
     caseSlug: (fm.case_slug as string) || undefined,
     isSplitParent: fm.is_split_parent === true || fm.is_split_parent === "true",
     partOf: (fm.part_of as string) || undefined,
@@ -1111,6 +1116,15 @@ export default function VaultPage() {
                         className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         {doc.docTypeLabel}
+                      </Badge>
+                    )}
+                    {doc.sammelscanAnzahl && doc.sammelscanAnzahl > 1 && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
+                        title={doc.sammelscanHinweis}
+                      >
+                        Sammelscan: {doc.sammelscanAnzahl} Schriftstücke — bitte trennen
                       </Badge>
                     )}
                     {doc.jurisdiction && (

@@ -2296,6 +2296,14 @@ export const api = {
       message?: string;
       matchedCase?: { slug: string; caseNumber?: string; title: string };
       suggestions?: Array<{ slug: string; caseNumber?: string; title: string }>;
+      /** Present when several matters fit equally (error "ambiguous_match"). */
+      candidates?: Array<{
+        slug: string;
+        title: string;
+        caseNumber?: string;
+        clientName?: string;
+        matchReason?: string;
+      }>;
     }> {
       return request("/api/email-import", {
         method: "POST",
@@ -3334,7 +3342,16 @@ export const api = {
                   (xhr.status === 413
                     ? "Datei zu groß für den aktuellen Upload-Kanal. Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                     : `HTTP ${xhr.status}`);
-                reject(new Error(message));
+                // Status + code stay readable for callers (e.g. a 409
+                // "duplicate_file" is "already there", not a failure).
+                reject(
+                  new ApiRequestError(
+                    message,
+                    xhr.status,
+                    typeof errBody.error === "string" ? errBody.error : undefined,
+                    errBody
+                  )
+                );
               } catch {
                 reject(
                   new Error(

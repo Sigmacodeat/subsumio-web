@@ -149,4 +149,24 @@ describe("POST /api/email-import", () => {
     await expect(importMail({ body: "x", subject: "S".repeat(3000) })).rejects.toThrow();
     expect(uploads).toHaveLength(0);
   });
+  it("two matters with the same Geschäftszahl: nothing is filed, both are offered", async () => {
+    listEnginePages.mockResolvedValue([
+      casePage(1, { case_number: "1 Cg 3/25a" }),
+      casePage(2, { case_number: "1Cg3/25a" }),
+      casePage(3, { case_number: "11 Cg 3/25a" }),
+    ]);
+    const res = await importMail({ subject: "1 Cg 3/25a – Ladung", body: "x" });
+    const json = (await res.json()) as { error?: string; candidates?: Array<{ slug: string }> };
+    expect(json.error).toBe("ambiguous_match");
+    expect(json.candidates?.map((c) => c.slug).sort()).toEqual(["cases/akte-1", "cases/akte-2"]);
+    expect(uploads).toHaveLength(0);
+  });
+
+  it("no match: no arbitrary matter list, nothing filed", async () => {
+    const res = await importMail({ subject: "Allgemeine Anfrage", body: "x" });
+    const json = (await res.json()) as { error?: string; suggestions?: unknown };
+    expect(json.error).toBe("no_case_match");
+    expect(json.suggestions).toBeUndefined();
+    expect(uploads).toHaveLength(0);
+  });
 });

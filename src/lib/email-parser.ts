@@ -17,10 +17,14 @@ export interface ParsedEmail {
   body: string;
   attachments: Array<{ filename: string; contentType: string }>;
   suggestedCaseSlug?: string;
+  /** First Geschäftszahl named in subject or body, canonical ("12 Cg 34/25x"). */
+  aktenzeichen?: string;
   confidence: "high" | "medium" | "low";
 }
 
 const AZ_REGEX = /(?:Az\.?|Aktenzeichen|AZ)[\s.:]*([0-9][A-Za-z0-9\s/-]{3,40})/i;
+
+import { findeGeschaeftszahlen } from "@/lib/legal/geschaeftszahl";
 
 export function parseEml(emlText: string): ParsedEmail {
   const lines = emlText.split(/\r?\n/);
@@ -142,6 +146,8 @@ export function parseEml(emlText: string): ParsedEmail {
     confidence = "high";
     suggestedCaseSlug = `case/${azMatch[1].replace(/\s+/g, "-").slice(0, 60)}`;
   }
+  const gz = findeGeschaeftszahlen(subject)[0] ?? findeGeschaeftszahlen(body.slice(0, 5000))[0];
+  if (gz) confidence = "high";
 
   return {
     from,
@@ -152,6 +158,7 @@ export function parseEml(emlText: string): ParsedEmail {
     body: body.slice(0, 5000),
     attachments,
     suggestedCaseSlug,
+    ...(gz ? { aktenzeichen: gz.formatted } : {}),
     confidence,
   };
 }

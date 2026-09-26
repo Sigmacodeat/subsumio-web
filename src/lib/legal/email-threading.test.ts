@@ -243,3 +243,42 @@ describe("resolveEmailImport", () => {
     expect(result.status).toBe("no_match");
   });
 });
+
+describe("Geschäftszahl matching (AT)", () => {
+  const AT_CASES = [
+    { slug: "legal/cases/eins", title: "Akte Eins", case_number: "1 Cg 3/25a" },
+    { slug: "legal/cases/elf", title: "Akte Elf", case_number: "11 Cg 3/25a" },
+  ];
+  const mail = (subject: string): EmailHeaders => ({
+    subject,
+    from: "kanzlei@example.at",
+    body: "",
+  });
+
+  test("11 Cg 3/25a never lands in the matter 1 Cg 3/25a", () => {
+    const result = resolveEmailImport(mail("11 Cg 3/25a – Ladung"), AT_CASES);
+    expect(result.status).toBe("matched");
+    expect(result.matchedCaseSlug).toBe("legal/cases/elf");
+  });
+
+  test("spacing and case do not matter: 1Cg3/25A", () => {
+    const result = resolveEmailImport(mail("AW: 1Cg3/25A"), AT_CASES);
+    expect(result.status).toBe("matched");
+    expect(result.matchedCaseSlug).toBe("legal/cases/eins");
+  });
+
+  test("two matters with the same number are ambiguous, not the first hit", () => {
+    const dup = [...AT_CASES, { slug: "legal/cases/eins-b", title: "B", case_number: "1Cg 3/25a" }];
+    const result = resolveEmailImport(mail("1 Cg 3/25a Beschluss"), dup);
+    expect(result.status).toBe("ambiguous");
+    expect(result.candidates?.map((c) => c.slug).sort()).toEqual([
+      "legal/cases/eins",
+      "legal/cases/eins-b",
+    ]);
+  });
+
+  test("an internal number is not found inside a longer one", () => {
+    const { candidates } = matchEmailToCases(mail("Zeichen 2026-0011"), CASES);
+    expect(candidates).toHaveLength(0);
+  });
+});

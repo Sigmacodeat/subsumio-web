@@ -295,14 +295,13 @@ export function ReviewInboxTab() {
         });
       }
       if (type === "suggested_party" && item.arrayIndex !== null) {
-        const reviewStatus = action === "approve" ? "approved" : "rejected";
-        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
-          frontmatter: {
-            suggested_parties: {
-              [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
-            },
-          },
-          merge: true,
+        // Server-side decision: approving links/creates the contact, runs the
+        // conflict check and places the party in the matter; the suggestion
+        // list is rewritten as a whole (an index-keyed patch would replace it).
+        return sendReviewWrite("/api/review-inbox/party-decision", "POST", {
+          case_slug: item.pageSlug,
+          index: item.arrayIndex,
+          action: action === "approve" ? "approve" : "reject",
         });
       }
       if (type === "pending_fact" && item.factId && item.factStatement) {

@@ -18,6 +18,14 @@
  * key, the same seam `runThink` uses.
  */
 import type { BrainEngine } from "../engine.ts";
+import {
+  extractCaseFactsDeterministic,
+  groundLlmCaseFacts,
+  groundLlmParties,
+  mergeCaseFacts,
+  type CaseFacts,
+  type ExtractedParty,
+} from "./case-facts.ts";
 
 export type IssueSeverity = "low" | "medium" | "high" | "critical";
 
@@ -32,7 +40,18 @@ export interface DocumentIssue {
 export interface DocumentAnalysis {
   slug: string;
   document_type: string;
+  /** Party names (kept for existing callers). */
   parties: string[];
+  /**
+   * Parties with their procedural role (klagende_partei, beklagte_partei, …)
+   * and representative — header regex first, model names only if verbatim.
+   */
+  party_roles: ExtractedParty[];
+  /**
+   * Aktendaten suggestions: Gericht, Geschäftszahl, Streitwert (+ quote and
+   * method). A suggestion for the matter, never written to it here.
+   */
+  case_facts: Omit<CaseFacts, "parteien">;
   key_dates: Array<{ date: string; what: string }>;
   issues: DocumentIssue[];
   /** Statute references the analysis relies on, e.g. "§ 1295 ABGB". */
@@ -53,7 +72,8 @@ const SYSTEM_PROMPT = `Du bist ein juristischer Analyse-Assistent für Kanzleien
 Analysiere das übergebene Dokument und gib NUR ein JSON-Objekt zurück (keine Prosa drumherum) mit:
 {
   "document_type": "z.B. Kaufvertrag / Mahnung / Klage / Bescheid / NDA / Mietvertrag / Sonstige",
-  "parties": ["Partei A", "Partei B"],
+  "parties": [{"name": "Name wie im Dokument", "role": "klagende_partei|beklagte_partei|antragsteller|antragsgegner|beschwerdefuehrer|behoerde|gericht|vertreter|sonstige", "vertreter": "Name des Vertreters wie im Dokument, falls genannt"}],
+  "case_facts": {"gericht": "Gericht/Behörde WÖRTLICH", "geschaeftszahl": "Geschäftszahl/Aktenzeichen WÖRTLICH", "streitwert": "Streitwert WÖRTLICH inkl. Betrag"},
   "key_dates": [{"date": "YYYY-MM-DD oder wörtlich wie im Text", "what": "Frist/Termin/Ereignis"}],
   "issues": [{"issue": "kurz", "severity": "low|medium|high|critical", "quote": "WÖRTLICHES Zitat aus dem Dokument, das dieses Problem belegt", "rationale": "rechtliche Begründung mit § wenn möglich"}],
   "relevant_statutes": ["§ 1295 ABGB", "§ 307 BGB"],
@@ -61,6 +81,7 @@ Analysiere das übergebene Dokument und gib NUR ein JSON-Objekt zurück (keine P
 }
 HARTE REGEL: Jedes "issue" MUSS ein "quote" enthalten, das WÖRTLICH (Zeichen für Zeichen) im Dokument vorkommt.
 Erfinde nichts. Wenn ein Problem nicht durch eine wörtliche Textstelle belegbar ist, nenne es NICHT.
+Namen, Gericht, Geschäftszahl und Streitwert nur so, wie sie WÖRTLICH im Dokument stehen; fehlt eine Angabe, lass das Feld weg.
 Du triffst keine endgültige rechtliche Bewertung — die anwaltliche Prüfung bleibt erforderlich.`;
 
 /** Normalize whitespace for verbatim quote matching (the model often reflows
@@ -277,6 +298,8 @@ export async function analyzeDocument(
     slug: opts.slug,
     document_type: "Unbekannt",
     parties: [],
+    party_roles: [],
+    case_facts: {},
     key_dates: [],
     issues: [],
     relevant_statutes: [],
@@ -342,10 +365,45 @@ export async function analyzeDocument(
 
   const union = (field: string) => [...new Set(parts.flatMap((p) => asStringArray(p[field])))];
 
+  // Aktendaten: header regex first; model values only where regex found
+  // nothing and only if they stand verbatim in the document.
+  const llmFacts = parts.reduce<CaseFacts>(
+    (acc, p) =>
+      mergeCaseFacts(acc, {
+        ...groundLlmCaseFacts(p.case_facts, documentText),
+        parteien: groundLlmParties(p.parties, documentText),
+      }),
+    { parteien: [] }
+  );
+  const { parteien: partyRoles, ...caseFacts } = mergeCaseFacts(
+    extractCaseFactsDeterministic(documentText),
+    llmFacts
+  );
+  // Names for existing callers: model strings and objects alike (an object
+  // used to vanish here), plus the grounded role parties.
+  const partyNames = [
+    ...new Set([
+      ...parts.flatMap((p) =>
+        Array.isArray(p.parties)
+          ? (p.parties as unknown[]).flatMap((x) =>
+              typeof x === "string"
+                ? [x]
+                : x && typeof x === "object" && typeof (x as { name?: unknown }).name === "string"
+                  ? [(x as { name: string }).name]
+                  : []
+            )
+          : []
+      ),
+      ...partyRoles.map((p) => p.name),
+    ]),
+  ].filter((n) => n.trim().length > 0);
+
   return {
     slug: opts.slug,
     document_type: typeof parsed.document_type === "string" ? parsed.document_type : "Unbekannt",
-    parties: union("parties"),
+    parties: partyNames,
+    party_roles: partyRoles,
+    case_facts: caseFacts,
     key_dates: keyDates,
     issues: grounded,
     relevant_statutes: union("relevant_statutes"),

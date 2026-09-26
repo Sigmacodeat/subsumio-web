@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { PARTY_ROLE_LABEL } from "@/lib/legal/case-suggestions";
+import {
+  contactRoleForSuggestion,
+  partyRoleFromContactRole,
+} from "@/lib/legal/case-suggestion-client";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -572,7 +577,10 @@ export function OverviewTab() {
                   <div className="min-w-0">
                     <span className="text-sm text-[color:var(--ds-text)]">{sp.name}</span>
                     <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
-                      {[sp.role, sp.source ? `Quelle: ${sourceLabel(sp.source)}` : ""]
+                      {[
+                        PARTY_ROLE_LABEL[sp.role] ?? sp.role,
+                        sp.source ? `Quelle: ${sourceLabel(sp.source)}` : "",
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
@@ -584,23 +592,9 @@ export function OverviewTab() {
                       disabled={caseData?.status === "archived"}
                       className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
                       onClick={() => {
-                        ctx.setContactDialogRole(
-                          sp.role === "Kläger" ||
-                            sp.role === "Mandant" ||
-                            sp.role === "Klient" ||
-                            sp.role === "client"
-                            ? "client"
-                            : sp.role === "Beklagter" ||
-                                sp.role === "Gegner" ||
-                                sp.role === "opponent"
-                              ? "opponent"
-                              : sp.role === "Gericht" ||
-                                  sp.role === "Behörde" ||
-                                  sp.role === "court" ||
-                                  sp.role === "authority"
-                                ? "court"
-                                : "other"
-                        );
+                        // Kläger/Beklagter say nothing about our side — the
+                        // lawyer picks the role in the dialog.
+                        ctx.setContactDialogRole(contactRoleForSuggestion(sp.role));
                         ctx.setContactDialogName(sp.name);
                         ctx.setContactDialogOpen(true);
                         ctx.setPendingSuggestedPartyIndex(originalIndex);
@@ -613,7 +607,11 @@ export function OverviewTab() {
                       size="sm"
                       disabled={caseData?.status === "archived"}
                       className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
-                      onClick={() => ctx.confirmSuggestedParty(originalIndex, false)}
+                      onClick={() =>
+                        void ctx.confirmSuggestedParty(originalIndex, false).catch(() => {
+                          /* message shown via saveError */
+                        })
+                      }
                     >
                       <X size={12} />
                     </Button>
@@ -801,10 +799,22 @@ export function OverviewTab() {
               phone: contact.phone,
             },
           ]);
-          // B4: Confirm the suggested party if one was pending
+          // B4: A pending party suggestion is decided server-side with the
+          // contact just created: conflict check + placement in the matter
+          // (never overwriting an existing client/opponent). No second,
+          // client-side assignment.
           if (ctx.pendingSuggestedPartyIndex !== null) {
-            ctx.confirmSuggestedParty(ctx.pendingSuggestedPartyIndex, true);
+            const index = ctx.pendingSuggestedPartyIndex;
             ctx.setPendingSuggestedPartyIndex(null);
+            void ctx
+              .confirmSuggestedParty(index, true, {
+                contactSlug: contact.slug,
+                role: partyRoleFromContactRole(contact.role),
+              })
+              .catch(() => {
+                /* message shown via saveError */
+              });
+            return;
           }
           // Assign to case based on role
           if (contact.role === "client") {

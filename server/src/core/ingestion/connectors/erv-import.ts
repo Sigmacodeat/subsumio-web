@@ -42,10 +42,13 @@ interface ErvMessageItem extends ConnectorItem {
   gericht: string;
   geschaeftszahl: string;
   erledigungsart: string;
-  /** ISO date the message arrived in the elektronischer Verfügungsbereich. */
-  einlangenDatum: string;
-  /** ISO date of the Zustellfiktion (§ 89a Abs 2 GOG). */
-  zustellDatum: string;
+  /**
+   * ISO date the message arrived in the elektronischer Verfügungsbereich,
+   * or null when the export carries no readable date (never "today").
+   */
+  einlangenDatum: string | null;
+  /** ISO date of the Zustellfiktion (§ 89a Abs 2 GOG); null without Einlangedatum. */
+  zustellDatum: string | null;
   betreff: string;
   body: string;
   gzGueltig: boolean;
@@ -168,13 +171,12 @@ export class ErvImportConnector extends BaseConnector {
       "datum",
       "sendedatum"
     );
-    let einlangenDatum: string;
-    const parsedDate = rawEinlangen ? new Date(rawEinlangen) : new Date();
-    einlangenDatum = isNaN(parsedDate.getTime())
-      ? new Date().toISOString().slice(0, 10)
-      : parsedDate.toISOString().slice(0, 10);
+    // Strict: ISO or DD.MM.YYYY only. `new Date("03.04.2026")` reads as
+    // 4 March (US order) and an unparseable value used to become "today" —
+    // either one starts the Frist on the wrong day.
+    const einlangenDatum = parseErvDatum(rawEinlangen);
     // § 89a Abs 2 GOG: zugestellt am folgenden Werktag (Samstag zählt nicht).
-    const zustellDatum = zustellungERV(einlangenDatum);
+    const zustellDatum = einlangenDatum ? zustellungERV(einlangenDatum) : null;
 
     // GZ structural validation (Gap I) — surface OCR/typo artifacts.
     let gzGueltig = true;
@@ -204,7 +206,7 @@ export class ErvImportConnector extends BaseConnector {
     return {
       id: messageId,
       title: `ERV: ${betreff}`,
-      modified_at: `${einlangenDatum}T00:00:00.000Z`,
+      modified_at: einlangenDatum ? `${einlangenDatum}T00:00:00.000Z` : new Date().toISOString(),
       content: body,
       content_type: "text/markdown",
       filePath,
@@ -234,14 +236,18 @@ export class ErvImportConnector extends BaseConnector {
         gericht: msg.gericht,
         geschaeftszahl: msg.geschaeftszahl,
         erledigungsart: msg.erledigungsart,
-        einlangen_datum: msg.einlangenDatum,
-        zustell_datum: msg.zustellDatum,
-        zustellfiktion: "§ 89a Abs 2 GOG",
+        ...(msg.einlangenDatum
+          ? {
+              einlangen_datum: msg.einlangenDatum,
+              zustell_datum: msg.zustellDatum,
+              zustellfiktion: "§ 89a Abs 2 GOG",
+            }
+          : { einlangen_unbekannt: true }),
         gz_gueltig: msg.gzGueltig,
         gz_befunde: msg.gzBefunde,
         attachments: msg.attachments.map((a) => a.name),
         source_file: basename(msg.filePath),
-        fristausloeser: true,
+        fristausloeser: msg.zustellDatum !== null,
       },
       { lineWidth: -1, noRefs: true }
     ).trimEnd();
@@ -255,8 +261,12 @@ ${frontmatter}
 **Gericht:** ${msg.gericht}
 **Geschäftszahl:** ${msg.geschaeftszahl || "—"}
 **Erledigungsart:** ${msg.erledigungsart}
-**Einlangen (elektr. Verfügungsbereich):** ${msg.einlangenDatum}
-**Zustelldatum (§ 89a Abs 2 GOG):** ${msg.zustellDatum} ← fristauslösendes Ereignis
+${
+  msg.einlangenDatum
+    ? `**Einlangen (elektr. Verfügungsbereich):** ${msg.einlangenDatum}
+**Zustelldatum (§ 89a Abs 2 GOG):** ${msg.zustellDatum} ← fristauslösendes Ereignis`
+    : `> ⚠ Einlangedatum im Export nicht lesbar — Zustelldatum und Fristbeginn bitte manuell im webERV prüfen.`
+}
 
 ${msg.gzBefunde.length > 0 ? `> ⚠ GZ-Prüfung: ${msg.gzBefunde.join("; ")}\n` : ""}
 ## Inhalt
@@ -266,7 +276,7 @@ ${msg.body || "_(kein Textinhalt — siehe Anhänge)_"}
 ${msg.attachments.length > 0 ? `## Anhänge (${msg.attachments.length})\n${msg.attachments.map((a) => `- ${a.name} (${Math.round(a.size / 1024)} KB)`).join("\n")}` : ""}
 `;
 
-    const dateStr = msg.einlangenDatum;
+    const dateStr = msg.einlangenDatum ?? "undatiert";
     return {
       source_id: this.id,
       source_kind: "connector",
@@ -278,6 +288,10 @@ ${msg.attachments.length > 0 ? `## Anhänge (${msg.attachments.length})\n${msg.a
       metadata: {
         slug: `legal/erv/${dateStr}-${slugifyId(msg.messageId)}`,
         title: `ERV: ${msg.betreff}`,
+        // Matter assignment happens in the capture job against the firm's
+        // own source: exactly one matter with this Geschäftszahl → assigned,
+        // otherwise the message waits for a human (never a guess).
+        ...(msg.geschaeftszahl ? { case_reference: msg.geschaeftszahl } : {}),
       },
     };
   }
@@ -317,6 +331,33 @@ function collectNodes(node: unknown, tags: string[]): unknown[] {
   };
   walk(node);
   return out;
+}
+
+/**
+ * Einlangedatum from an ERV export: "2026-04-03", "2026-04-03T09:12:00+02:00"
+ * (the calendar day as written, no UTC shift) or "03.04.2026" / "3.4.2026
+ * 09:12". Anything else — including impossible dates — is null.
+ */
+export function parseErvDatum(raw: string | undefined | null): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  let y: number, m: number, d: number;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/.exec(v);
+  const de = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:$|\s)/.exec(v);
+  if (iso) {
+    y = Number(iso[1]);
+    m = Number(iso[2]);
+    d = Number(iso[3]);
+  } else if (de) {
+    d = Number(de[1]);
+    m = Number(de[2]);
+    y = Number(de[3]);
+  } else {
+    return null;
+  }
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
 function slugifyId(id: string): string {

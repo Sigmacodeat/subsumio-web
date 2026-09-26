@@ -389,3 +389,105 @@ describe("writeSuggestedDeadlinesAndParties", () => {
     });
   });
 });
+
+describe("writeSuggestedDeadlinesAndParties — parties and Aktendaten (AT)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function caseResponse(fm: Record<string, unknown>) {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      new Response(JSON.stringify({ frontmatter: fm }), { status: 200 })
+    );
+  }
+
+  function patchedFrontmatter(): Record<string, unknown> {
+    const call = (enginePatchPage as ReturnType<typeof vi.fn>).mock.calls[0] as unknown[];
+    return (call[1] as { frontmatter: Record<string, unknown> }).frontmatter;
+  }
+
+  test("string parties (older engine) never become empty names", async () => {
+    caseResponse({});
+    await writeSuggestedDeadlinesAndParties(
+      {},
+      "legal/cases/test",
+      { parties: ["Anna Beispiel", "Widget-Co GmbH", "", "Dr. Max Anwalt"] },
+      "doc/klage.md"
+    );
+    const parties = patchedFrontmatter().suggested_parties as Array<{ name: string }>;
+    expect(parties.map((p) => p.name)).toEqual([
+      "Anna Beispiel",
+      "Widget-Co GmbH",
+      "Dr. Max Anwalt",
+    ]);
+    expect(parties.every((p) => p.name.length > 0)).toBe(true);
+  });
+
+  test("Kläger = our client → Beklagte is Gegner, her lawyer Gegnervertreter", async () => {
+    caseResponse({ client_name: "Anna Beispiel" });
+    await writeSuggestedDeadlinesAndParties(
+      {},
+      "legal/cases/test",
+      {
+        party_roles: [
+          { name: "Anna Beispiel", role: "klagende_partei", vertreter: "Dr. Max Anwalt" },
+          { name: "Widget-Co GmbH", role: "beklagte_partei", vertreter: "Mag. Erika Kollegin" },
+        ],
+      },
+      "doc/klage.md"
+    );
+    const parties = patchedFrontmatter().suggested_parties as Array<{ name: string; role: string }>;
+    expect(parties.map((p) => [p.name, p.role])).toEqual([
+      ["Widget-Co GmbH", "gegner"],
+      ["Mag. Erika Kollegin", "gegnervertreter"],
+    ]);
+  });
+
+  test("without a known client the procedural role stays for the lawyer to decide", async () => {
+    caseResponse({});
+    await writeSuggestedDeadlinesAndParties(
+      {},
+      "legal/cases/test",
+      { party_roles: [{ name: "Widget-Co GmbH", role: "beklagte_partei" }] },
+      "doc/klage.md"
+    );
+    const parties = patchedFrontmatter().suggested_parties as Array<{ role: string }>;
+    expect(parties[0]!.role).toBe("beklagte_partei");
+  });
+
+  test("court, Geschäftszahl and Streitwert become suggestions, the matter's fields stay untouched", async () => {
+    caseResponse({ court_name: "Bezirksgericht Innere Stadt Wien", case_number: "12C345/26K" });
+    await writeSuggestedDeadlinesAndParties(
+      {},
+      "legal/cases/test",
+      {
+        case_facts: {
+          gericht: {
+            value: "Landesgericht für ZRS Wien",
+            quote: "Landesgericht für ZRS Wien",
+            method: "regex",
+          },
+          geschaeftszahl: { value: "12 C 345/26k", quote: "12 C 345/26k", method: "regex" },
+          streitwert: { value: 8450, quote: "Streitwert: EUR 8.450,00", method: "regex" },
+        },
+      },
+      "doc/beschluss.md"
+    );
+    const fm = patchedFrontmatter();
+    expect(fm.court_name).toBeUndefined();
+    expect(fm.case_number).toBeUndefined();
+    expect(fm.dispute_value).toBeUndefined();
+    const fields = fm.suggested_case_fields as Array<{
+      field: string;
+      value: unknown;
+      current?: unknown;
+    }>;
+    // Same Geschäftszahl (normalised) is not suggested again.
+    expect(fields.map((f) => f.field)).toEqual(["court_name", "dispute_value"]);
+    expect(fields[0]).toMatchObject({
+      value: "Landesgericht für ZRS Wien",
+      current: "Bezirksgericht Innere Stadt Wien",
+    });
+    expect(fields[1]).toMatchObject({ value: 8450 });
+  });
+});

@@ -186,3 +186,45 @@ describe("long documents and model failures", () => {
     expect(a.key_dates).toEqual([{ date: "2026-04-09", what: "Frist" }]);
   });
 });
+
+describe("analyzeDocument — parties and Aktendaten", () => {
+  const KLAGE = `An das
+Handelsgericht Wien
+Klagende Partei: Acme-Example GmbH, FN 1a
+vertreten durch: Dr. Max Anwalt
+Beklagte Partei: Widget-Co AG
+wegen: EUR 12.000,-- s.A.`;
+
+  test("object-form parties keep their names; roles and facts come from the header", async () => {
+    await engine.putPage("akten/klage-acme", {
+      type: "legal_document",
+      title: "Klage",
+      compiled_truth: KLAGE,
+      frontmatter: {},
+    });
+    const llm: AnalyzeLLM = async () =>
+      JSON.stringify({
+        document_type: "Klage",
+        parties: [
+          { name: "Acme-Example GmbH", role: "klagende_partei" },
+          { name: "Widget-Co AG", role: "beklagte_partei" },
+          { name: "Erfundene Partei", role: "sonstige" },
+        ],
+        case_facts: { gericht: "Handelsgericht Wien", geschaeftszahl: "5 Cg 9/26z" },
+        key_dates: [],
+        issues: [],
+      });
+    const a = await analyzeDocument(engine, { slug: "akten/klage-acme", llm });
+    expect(a.parties).toContain("Acme-Example GmbH");
+    expect(a.parties.every((n) => n.length > 0)).toBe(true);
+    expect(a.party_roles.map((p) => [p.name, p.role])).toEqual([
+      ["Acme-Example GmbH", "klagende_partei"],
+      ["Widget-Co AG", "beklagte_partei"],
+    ]);
+    expect(a.party_roles[0]!.vertreter).toBe("Dr. Max Anwalt");
+    expect(a.case_facts.gericht?.value).toBe("Handelsgericht Wien");
+    expect(a.case_facts.streitwert?.value).toBe(12000);
+    // Not in the document → never suggested.
+    expect(a.case_facts.geschaeftszahl).toBeUndefined();
+  });
+});
