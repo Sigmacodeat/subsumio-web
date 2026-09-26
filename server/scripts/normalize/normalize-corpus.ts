@@ -41,6 +41,14 @@ import {
   type SourceFormat,
   type ValidationIssue,
 } from "./canonical-schema.ts";
+import {
+  cleanOrgan,
+  loadRisMetaIndex,
+  META_FIELDS,
+  reconcileMeta,
+  type MetaValues,
+  type RisMetaIndex,
+} from "./ris-meta.ts";
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -110,7 +118,12 @@ export function clean(v: string | null | undefined): string | null {
   // Escape sequences written literally by an old fetcher ("VGW-111/2021\t").
   s = s.replace(/\\[tnr]/g, " ");
   s = s.replace(/\s+/g, " ");
+  // A double-quoted YAML scalar escapes inner quotes: `"Programm \"Pinka\""`.
+  // Stripping only the outer quotes left 1,169 titles with a literal \" in
+  // the database (2026-09-26).
+  const dq = /^\s*"[\s\S]*"\s*$/.test(s);
   s = s.replace(/^["']|["']$/g, "");
+  if (dq) s = s.replace(/\\(["\\])/g, "$1");
   s = s.trim();
   return s === "" || s === "null" ? null : s;
 }
@@ -213,6 +226,15 @@ export function risDocNumberOf(url: string): string | null {
   } catch {
     return m[1];
   }
+}
+
+/**
+ * The document number a raw file stands for — the same rule the normalizer
+ * writes into `doc_id`. Reads the frontmatter only.
+ */
+export function rawDocIdOfText(text: string): string | null {
+  const raw = parseRaw(text);
+  return docIdOf(raw.fm, clean(raw.fm.source_url) ?? "") || null;
 }
 
 function docIdOf(fm: Record<string, string>, url: string): string {
@@ -355,7 +377,39 @@ export function risReadableUrl(url: string): string {
   );
 }
 
-export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontmatter {
+/** A title that is only a RIS document number names nothing. */
+const RE_DOCNR_TITLE = /^(NOR|L[A-Z]{2})\d+$/;
+
+export function mapToCanonical(
+  raw: Raw,
+  fallbackTitle: string,
+  risIndex: RisMetaIndex | null = null
+): CanonicalFrontmatter {
+  const canonical = mapToCanonicalRaw(raw, fallbackTitle);
+  if (canonical.doc_class !== "statute") return canonical;
+
+  // Statute metadata: the RIS in-force index fills and corrects (ris-meta.ts).
+  const hit = risIndex?.byDoc.get(canonical.doc_id);
+  if (hit) {
+    const ours = Object.fromEntries(META_FIELDS.map((f) => [f, canonical[f]])) as MetaValues;
+    Object.assign(
+      canonical,
+      reconcileMeta(ours, hit.values, canonical.retrieved_at, risIndex!.indexDate)
+    );
+  }
+  canonical.promulgation_organ = cleanOrgan(canonical.promulgation_organ);
+  // Never a document number as the title: 29,580 state-law pages carried
+  // "LBG40016037" as their name after the 2026-09-23 repair run.
+  if (
+    !canonical.title ||
+    canonical.title === canonical.doc_id ||
+    RE_DOCNR_TITLE.test(canonical.title)
+  )
+    canonical.title = canonical.short_title ?? fallbackTitle;
+  return canonical;
+}
+
+function mapToCanonicalRaw(raw: Raw, fallbackTitle: string): CanonicalFrontmatter {
   const { list } = raw;
   // Frontmatter wins; body sections only fill what it lacks or leaves empty
   // (statutes). An empty `gesetzesnummer: ""` counts as missing.
@@ -412,7 +466,10 @@ export function mapToCanonical(raw: Raw, fallbackTitle: string): CanonicalFrontm
     language: (clean(fm.language) ?? "de").toLowerCase(),
 
     title,
-    short_title: pick(fm, "kurztitel", "titel"),
+    // `statute:` is where the RIS fetchers put the Kurztitel — identical to
+    // the RIS index value in 98 % of 245,000 files (2026-09-26); the rest
+    // differ by suffixes like "ÜR", which the index corrects.
+    short_title: pick(fm, "kurztitel", "statute", "titel"),
     // `GNR-20006265` ist KEINE Gesetzesabkürzung, sondern ein Platzhalter, den
     // der Fetcher aus der Gesetzesnummer gebaut hat, wo RIS keine Abkürzung
     // liefert. Als Zitat gelesen ("GNR-20006265 Art. 1") ist das eine
@@ -589,7 +646,7 @@ function betterQ(a: Quality, b: Quality): Quality {
 }
 
 /** Vorlauf: bestimmt pro doc_id die Gewinnerdatei. */
-function selectWinners(files: string[]): { winners: Set<string>; dropped: number } {
+export function selectWinners(files: string[]): { winners: Set<string>; dropped: number } {
   const best = new Map<string, Quality>();
   const noId: string[] = [];
   for (const f of files) {
@@ -624,6 +681,12 @@ interface BatchReport {
 }
 
 function main() {
+  // Statute metadata from the RIS in-force index (at-normen, at-landesrecht).
+  const risIndex = loadRisMetaIndex(join(CORPUS_ROOT, "_state"), CORPUS!);
+  if (risIndex)
+    console.log(
+      `RIS-Index: ${risIndex.byDoc.size.toLocaleString("de-AT")} Normen, Stand ${risIndex.indexDate}`
+    );
   const srcDir = join(CORPUS_ROOT, CORPUS!);
   if (!existsSync(srcDir)) {
     console.error(`Korpus nicht gefunden: ${srcDir}`);
@@ -713,7 +776,7 @@ function main() {
 
       const raw = parseRaw(text);
       const fallback = rel.replace(/\.md$/, "").replace(/[-/]/g, " ");
-      const fm = mapToCanonical(raw, fallback);
+      const fm = mapToCanonical(raw, fallback, risIndex);
       const newBody = normalizeBody(raw.body);
 
       // SICHERUNG vor allem anderen

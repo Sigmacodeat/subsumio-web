@@ -51,7 +51,17 @@ import { join } from "node:path";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
 import { readFetchOutcomes, type FetchOutcome } from "./ris-fetch-outcomes.ts";
+import { rawDocIdOfText } from "./normalize/normalize-corpus.ts";
 import { RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace.ts";
+import {
+  loadRisMetaIndex,
+  META_FIELD_LABELS,
+  META_FIELDS,
+  metaDiffs,
+  type MetaField,
+  type MetaValues,
+  type RisMetaIndex,
+} from "./normalize/ris-meta.ts";
 
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? "/law-corpus";
 const PRINT = process.argv.includes("--print");
@@ -202,6 +212,8 @@ export interface SyncInventorySource {
   notInRisSoll: number | null;
   /** RIS lists fewer than we hold (courts: diskDocs − Soll when positive). */
   aboveSoll: number;
+  /** Canonical copies without a raw file — not counted as on disk. */
+  normalizedWithoutRaw?: number;
   /** Per-document proof (in scope only). */
   proof?: SyncProof;
   /** Courts: state of the document-number list, whether or not it is used as Soll yet. */
@@ -216,6 +228,7 @@ export const PROOF_BUCKETS = [
   "confirmed", //   file = DB by checksum, content check passed for this content
   "mismatch", //    in DB, but checksum file ≠ DB (or missing, or two differing files)
   "defective", //   checksum ok, content check ran after the last change and failed
+  "metaMismatch", // text ok by checksum, but metadata differ from the RIS index (ris-meta.ts)
   "unchecked", //   checksum ok, changed after the last content check (or never checked)
   "importOpen", //  on disk, not in the DB
   "fetchOpen", //   in the RIS Soll, not on disk, fetch still open (or failed)
@@ -237,6 +250,11 @@ export interface ProofUnit {
 }
 
 export interface SyncProof extends ProofUnit {
+  /**
+   * Index sources: per metadata field, how many documents in the DB miss it
+   * or carry a value that differs from the RIS index — whatever their bucket.
+   */
+  metaFields?: Partial<Record<MetaField, number>>;
   /**
    * true = the Soll is a list of document numbers (in-force index): the
    * buckets add up to risSoll exactly. false = the buckets cover what is on
@@ -281,20 +299,51 @@ function readHead(path: string): string {
 }
 
 const DOC_ID_RE = /^doc_id:\s*["']?([^"'\s]+)/m;
+
+/** Document number of a raw file by the normalizer's rule (frontmatter only). */
+export function rawDocIdOf(path: string): string | null {
+  // Frontmatter only — decision files run to hundreds of KB, and this runs
+  // for every canonical copy every hour.
+  let fd: number | null = null;
+  try {
+    fd = openSync(path, "r");
+    const buf = Buffer.alloc(RAW_HEAD_BYTES);
+    const n = readSync(fd, buf, 0, RAW_HEAD_BYTES, 0);
+    let text = buf.toString("utf8", 0, n);
+    let end = text.indexOf("\n---", 4);
+    if (end < 0 && n === RAW_HEAD_BYTES) {
+      text = readFileSync(path, "utf8");
+      end = text.indexOf("\n---", 4);
+    }
+    return rawDocIdOfText(end > 0 ? text.slice(0, end + 4) : text);
+  } catch {
+    return null;
+  } finally {
+    if (fd !== null) closeSync(fd);
+  }
+}
+
+const RAW_HEAD_BYTES = 16_384;
 const HASH_RE = /^content_hash:\s*["']?([0-9a-f]{16})\b/m;
 
 /**
  * doc_id → number of files carrying it, the plain file count, and per
  * doc_id the content_hash values its files carry ("" = file without hash).
  */
-export function scanNormalized(dir: string): {
+export function scanNormalized(
+  dir: string,
+  rawDir: string | null = null
+): {
   ids: Map<string, number>;
   files: number;
   hashes: Map<string, Set<string>>;
+  /** Canonical copies without their raw file (missing, or now another document). */
+  withoutRaw: number;
 } {
   const ids = new Map<string, number>();
   const hashes = new Map<string, Set<string>>();
   let files = 0;
+  let withoutRaw = 0;
   const walk = (d: string) => {
     let entries;
     try {
@@ -306,9 +355,23 @@ export function scanNormalized(dir: string): {
       const p = join(d, e.name);
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith(".md")) {
-        files++;
+        // A canonical copy without its source cannot be reproduced or
+        // re-checked — it does not count as "on the server" (2026-09-26:
+        // 17,945 such copies in at-landesrecht, 17,062 of them from the
+        // defective 2026-08-03 fetch).
         const head = readHead(p);
         const id = head.match(DOC_ID_RE)?.[1];
+        // …and only when that raw file still is the same document: a later
+        // fetch can put another document (a newer version) at the same path
+        // while the canonical copy still shows the old one.
+        if (rawDir) {
+          const raw = join(rawDir, p.slice(dir.length + 1));
+          if (!existsSync(raw) || !id || rawDocIdOf(raw) !== id) {
+            withoutRaw++;
+            continue;
+          }
+        }
+        files++;
         if (id && id !== "null") {
           ids.set(id, (ids.get(id) ?? 0) + 1);
           let h = hashes.get(id);
@@ -319,7 +382,7 @@ export function scanNormalized(dir: string): {
     }
   };
   walk(dir);
-  return { ids, files, hashes };
+  return { ids, files, hashes, withoutRaw };
 }
 
 function countMd(dir: string): number {
@@ -413,15 +476,8 @@ function lawKeyFor(nor: string, gnr: string): string {
 
 export const SAMPLE_CAP = 50;
 
-const emptyCounts = (): ProofCounts => ({
-  confirmed: 0,
-  mismatch: 0,
-  defective: 0,
-  unchecked: 0,
-  importOpen: 0,
-  fetchOpen: 0,
-  unreachable: 0,
-});
+const emptyCounts = (): ProofCounts =>
+  Object.fromEntries(PROOF_BUCKETS.map((b) => [b, 0])) as ProofCounts;
 
 const emptyUnit = (): ProofUnit => ({ counts: emptyCounts(), samples: {} });
 
@@ -438,6 +494,8 @@ interface DbDoc {
   allVerified: boolean;
   changedSinceCheck: boolean;
   dated: boolean;
+  /** Index sources only: the fields that differ from the RIS index. */
+  metaDiff?: MetaField[];
 }
 
 /**
@@ -453,9 +511,12 @@ export function classifyInDb(
   const diskHash = disk && disk.size === 1 ? [...disk][0]! : "";
   const dbHash = db.hashes.size === 1 ? [...db.hashes][0]! : "";
   if (!diskHash || !dbHash || diskHash !== dbHash) return "mismatch";
+  // A rejected text needs a new fetch, which also brings new metadata —
+  // so a failed content check outranks a metadata difference.
+  if (checked && !db.changedSinceCheck && !db.allVerified) return "defective";
+  if (db.metaDiff && db.metaDiff.length > 0) return "metaMismatch";
   if (db.allVerified) return "confirmed";
-  if (!checked || db.changedSinceCheck) return "unchecked";
-  return "defective";
+  return "unchecked";
 }
 
 function listDirs(root: string): string[] {
@@ -524,11 +585,23 @@ export async function measure(
       ids: diskIds,
       files: normalizedFiles,
       hashes: diskHashes,
+      withoutRaw: normalizedWithoutRaw,
     } = inScope
-      ? scanNormalized(join(NORMALIZED, corpus))
-      : { ids: new Map<string, number>(), files: 0, hashes: new Map<string, Set<string>>() };
+      ? scanNormalized(join(NORMALIZED, corpus), rawDir)
+      : {
+          ids: new Map<string, number>(),
+          files: 0,
+          hashes: new Map<string, Set<string>>(),
+          withoutRaw: 0,
+        };
 
     const lastCheck = checkedAt.get(sourceId) ?? null;
+    const metaIndex: RisMetaIndex | null = inScope ? loadRisMetaIndex(STATE, corpus) : null;
+    const metaCols = metaIndex
+      ? `, p.frontmatter->>'retrieved_at' AS m_retrieved_at, ${META_FIELDS.map(
+          (f) => `p.frontmatter->>'${f}' AS m_${f}`
+        ).join(", ")}`
+      : "";
     // DB: distinct doc_id of live pages, read in id order to keep memory flat.
     // Hash and content verdict only where they are used (in scope).
     const dbDocs = new Map<string, DbDoc>();
@@ -548,19 +621,22 @@ export async function measure(
     for (;;) {
       const batch = (await engine.executeRaw(
         `SELECT p.id, p.frontmatter->>'doc_id' AS doc_id,
-                nullif(p.frontmatter->>'in_force_to', '') IS NOT NULL AS dated${proofCols}
+                nullif(p.frontmatter->>'in_force_to', '') IS NOT NULL AS dated${proofCols}${metaCols}
            FROM pages p ${proofJoin}
           WHERE p.deleted_at IS NULL AND p.source_id = $1 AND p.id > $2
           ORDER BY p.id LIMIT 20000`,
         inScope && hasVerified ? [sourceId, lastId, lastCheck] : [sourceId, lastId]
-      )) as Array<{
-        id: number | string;
-        doc_id: string | null;
-        dated: boolean;
-        fm_hash?: string | null;
-        verified?: boolean;
-        changed?: boolean;
-      }>;
+      )) as Array<
+        {
+          id: number | string;
+          doc_id: string | null;
+          dated: boolean;
+          fm_hash?: string | null;
+          verified?: boolean;
+          changed?: boolean;
+          m_retrieved_at?: string | null;
+        } & Partial<Record<`m_${MetaField}`, string | null>>
+      >;
       if (batch.length === 0) break;
       for (const r of batch) {
         dbPages++;
@@ -574,6 +650,20 @@ export async function measure(
           if (r.verified !== true) d.allVerified = false;
           if (r.changed !== false) d.changedSinceCheck = true;
           if (r.dated) d.dated = true;
+          const idx = metaIndex?.byDoc.get(r.doc_id);
+          if (idx) {
+            const ours = Object.fromEntries(
+              META_FIELDS.map((f) => [f, r[`m_${f}`] ?? null])
+            ) as MetaValues;
+            const diff = metaDiffs(
+              ours,
+              idx.values,
+              r.m_retrieved_at ?? null,
+              metaIndex!.indexDate
+            );
+            // Several pages per number: the union of their differences.
+            d.metaDiff = [...new Set([...(d.metaDiff ?? []), ...diff])];
+          }
         } else dbPagesWithoutDocId++;
       }
       lastId = Number(batch[batch.length - 1]!.id);
@@ -617,6 +707,7 @@ export async function measure(
     };
     const parts = corpus === "at-landesrecht" ? new Map<string, ProofUnit>() : null;
     const laws = new Map<string, number[]>();
+    const metaFields: Partial<Record<MetaField, number>> = {};
     const place = (id: string, bucket: ProofBucket, label: string | null, law: string | null) => {
       const sample = { id, label };
       addTo(proof, bucket, sample);
@@ -650,8 +741,18 @@ export async function measure(
           const unreachable = o?.outcome === "no_text" || o?.outcome === "not_found";
           place(id, unreachable ? "unreachable" : "fetchOpen", entry.label, law);
         } else if (!dbIds.has(id)) place(id, "importOpen", entry.label, law);
-        else place(id, inDbBucket(id), entry.label, law);
+        else {
+          const bucket = inDbBucket(id);
+          const diff = dbIds.get(id)!.metaDiff ?? [];
+          for (const f of diff) metaFields[f] = (metaFields[f] ?? 0) + 1;
+          const label =
+            bucket === "metaMismatch"
+              ? `${entry.label ?? id} — ${diff.map((f) => META_FIELD_LABELS[f]).join(", ")}`
+              : entry.label;
+          place(id, bucket, label, law);
+        }
       }
+      if (metaIndex) proof.metaFields = metaFields;
       notInRisSoll = 0;
       for (const id of diskIds.keys()) if (!soll.has(id)) notInRisSoll++;
     } else {
@@ -698,6 +799,7 @@ export async function measure(
       dbHistorical,
       notInRisSoll,
       aboveSoll,
+      normalizedWithoutRaw,
       ...(inScope && corpus !== "at" ? { proof } : {}),
       ...(courtMeta ? { courtIndex: courtMeta } : {}),
     });

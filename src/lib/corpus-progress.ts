@@ -12,7 +12,7 @@ import { PROOF_BUCKETS, type ProofCounts } from "@/lib/corpus-proof";
 export interface DailyPoint {
   day: string;
   confirmed: number;
-  /** Mit unseren Mitteln schließbar: abweichend, fehlerhaft, ungeprüft, Import, Abruf. */
+  /** Mit unseren Mitteln schließbar: abweichend, fehlerhaft, Metadaten, ungeprüft, Import, Abruf. */
   open: number;
   /** Alle Töpfe zusammen. */
   total: number;
@@ -20,7 +20,7 @@ export interface DailyPoint {
 
 /** Was offen ist und von uns geschlossen werden kann — „RIS ohne Text" gehört nicht dazu. */
 export function openOf(c: ProofCounts): number {
-  return c.mismatch + c.defective + c.unchecked + c.importOpen + c.fetchOpen;
+  return c.mismatch + c.defective + c.metaMismatch + c.unchecked + c.importOpen + c.fetchOpen;
 }
 
 export function pointOf(day: string, c: ProofCounts): DailyPoint {

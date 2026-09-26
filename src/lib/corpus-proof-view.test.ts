@@ -18,6 +18,7 @@ const counts = (over: Partial<Record<string, number>> = {}) => ({
   confirmed: 0,
   mismatch: 0,
   defective: 0,
+  metaMismatch: 0,
   unchecked: 0,
   importOpen: 0,
   fetchOpen: 0,
@@ -151,7 +152,7 @@ describe("parseProof", () => {
     const p = parseProof({
       counts: { confirmed: 3, mismatch: "x" },
       samples: { fetchOpen: [{ id: "NOR1", label: "ABGB § 1" }, { nope: 1 }, null] },
-      laws: { "1": [1, 0, 0, 0, 0, 0, 0], "2": [1, 2] },
+      laws: { "1": [1, 0, 0, 0, 0, 0, 0, 0], "2": [1, 2] },
       parts: { wien: { counts: { confirmed: 1 } } },
     })!;
     expect(p.counts).toEqual(counts({ confirmed: 3 }));
@@ -164,7 +165,10 @@ describe("parseProof", () => {
 
   it("die Sync-Zeile trägt den Nachweis ohne die große Gesetzesliste", () => {
     const r = row({
-      proof: parseProof({ counts: counts({ confirmed: 1 }), laws: { "1": [1, 0, 0, 0, 0, 0, 0] } }),
+      proof: parseProof({
+        counts: counts({ confirmed: 1 }),
+        laws: { "1": [1, 0, 0, 0, 0, 0, 0, 0] },
+      }),
     });
     expect(r.proof).not.toBeNull();
     expect("laws" in r.proof!).toBe(false);
@@ -179,5 +183,16 @@ describe("corpus-areas", () => {
     expect(risDocumentUrl("at-normen", "NOR40000001")).toContain("/Bundesnormen/NOR40000001/");
     expect(risDocumentUrl("at-judikatur-vwgh", "JWT_2020010001_1")).toContain("Abfrage=Vwgh");
     expect(risDocumentUrl("at-gemeinden", "GEM1")).toBeNull();
+  });
+});
+
+describe("Metadaten-Topf", () => {
+  it("zählt als „falsch“ und als offene Arbeit, nie als bestätigt", () => {
+    const c = counts({ confirmed: 5, metaMismatch: 2 });
+    expect(byCategory(c)).toMatchObject({ confirmed: 5, wrong: 2 });
+    expect(isFullyConfirmed(c)).toBe(false);
+    expect(parseProof({ counts: c, metaFields: { abbr: 2, bogus: 9 } })!.metaFields).toEqual({
+      abbr: 2,
+    });
   });
 });

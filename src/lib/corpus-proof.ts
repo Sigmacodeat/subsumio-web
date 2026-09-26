@@ -10,6 +10,7 @@ export const PROOF_BUCKETS = [
   "confirmed",
   "mismatch",
   "defective",
+  "metaMismatch",
   "unchecked",
   "importOpen",
   "fetchOpen",
@@ -28,7 +29,20 @@ export interface ProofUnit {
   samples: Partial<Record<ProofBucket, ProofSample[]>>;
 }
 
+/** Metadatenfelder, die gegen den RIS-Index geprüft werden (ris-meta.ts im Server). */
+export const META_FIELD_LABELS: Record<string, string> = {
+  short_title: "Kurztitel",
+  abbr: "Abkürzung",
+  promulgation_organ: "Kundmachungsorgan",
+  in_force_from: "Inkrafttreten",
+  in_force_to: "Außerkrafttreten",
+  region: "Bundesland",
+  paragraph_ref: "Paragraph",
+};
+
 export interface SyncProof extends ProofUnit {
+  /** Index-Quellen: je Metadatenfeld, wie viele Dokumente es nicht oder falsch tragen. */
+  metaFields?: Record<string, number>;
   /** true = Soll ist eine Liste von Dokumentnummern: Summe der Töpfe = Soll. */
   sollExact: boolean;
   /** Letzte vollständige Inhaltsprüfung dieser Quelle; null = nie. */
@@ -72,6 +86,13 @@ export function parseProof(raw: unknown): SyncProof | undefined {
   if (r.parts && typeof r.parts === "object") {
     proof.parts = Object.fromEntries(
       Object.entries(r.parts as Record<string, unknown>).map(([k, v]) => [k, parseUnit(v)])
+    );
+  }
+  if (r.metaFields && typeof r.metaFields === "object") {
+    proof.metaFields = Object.fromEntries(
+      Object.entries(r.metaFields as Record<string, unknown>)
+        .filter(([k]) => k in META_FIELD_LABELS)
+        .map(([k, v]) => [k, num(v)])
     );
   }
   if (r.laws && typeof r.laws === "object") {

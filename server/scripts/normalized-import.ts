@@ -15,7 +15,16 @@
  */
 
 import { spawnSync } from "child_process";
-import { existsSync, mkdtempSync, readdirSync, statSync, writeFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "fs";
+import { RENORMALIZE_FROM } from "./normalize/canonical-schema.ts";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -39,6 +48,22 @@ export function staleRawFiles(raw: string, norm: string): string[] {
   });
 }
 
+/** Marker of the last full normalization of a corpus. */
+export function markerPath(root: string, corpus: string): string {
+  return join(root, "_normalized", "_state", `${corpus}.renormalized-version`);
+}
+
+/** true when a rule change (RENORMALIZE_FROM) has not reached this corpus yet. */
+export function needsFullRenormalize(root: string, corpus: string): boolean {
+  const want = RENORMALIZE_FROM[corpus];
+  if (!want) return false;
+  try {
+    return Number(readFileSync(markerPath(root, corpus), "utf8").trim()) < want;
+  } catch {
+    return true;
+  }
+}
+
 if (import.meta.main) {
   const argv = process.argv.slice(2);
   const sep = argv.indexOf("--");
@@ -53,8 +78,27 @@ if (import.meta.main) {
   const rawDir = join(root, corpus);
   const normDir = join(root, "_normalized", corpus);
 
-  const stale = staleRawFiles(rawDir, normDir);
-  console.log(`[normalized-import] ${corpus}: ${stale.length} Rohdateien neu oder geändert`);
+  const full = needsFullRenormalize(root, corpus);
+  const stale = full ? [] : staleRawFiles(rawDir, normDir);
+  if (full) {
+    // Whole corpus, with duplicate selection over the full set.
+    console.log(
+      `[normalized-import] ${corpus}: Regeländerung (Version ${RENORMALIZE_FROM[corpus]}) — alle Dateien werden neu normalisiert`
+    );
+    const n = spawnSync(
+      "bun",
+      [join(import.meta.dirname, "normalize", "normalize-corpus.ts"), "--corpus", corpus],
+      { stdio: "inherit", env: { ...process.env, LAW_CORPUS_ROOT: root } }
+    );
+    if (n.status !== 0) {
+      console.error(
+        `[normalized-import] Normalisierung fehlgeschlagen (exit ${n.status}) — kein Import.`
+      );
+      process.exit(n.status ?? 1);
+    }
+    mkdirSync(join(root, "_normalized", "_state"), { recursive: true });
+    writeFileSync(markerPath(root, corpus), String(RENORMALIZE_FROM[corpus]));
+  } else console.log(`[normalized-import] ${corpus}: ${stale.length} Rohdateien neu oder geändert`);
   if (stale.length > 0) {
     const list = join(mkdtempSync(join(tmpdir(), "norm-")), "files.txt");
     writeFileSync(list, stale.join("\n"));

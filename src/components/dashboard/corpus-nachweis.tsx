@@ -3,7 +3,7 @@
 /**
  * Bestand nach Rechtsbereich, mit Nachweis je Dokument (Reiter „Bestand").
  *
- * Grün ist nur, was vier Prüfungen besteht: RIS listet die Nummer, die Datei
+ * Grün ist nur, was alle Prüfungen besteht: RIS listet die Nummer, die Datei
  * liegt auf dem Server, ihre Prüfsumme gleicht der in der Datenbank, und die
  * Inhaltsprüfung hat genau diesen Stand angenommen. Jedes Dokument steht in
  * genau einem Topf — Fehlendes, Abweichendes und Ungeprüftes wird nie mit
@@ -37,6 +37,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { cn, formatDateTime } from "@/lib/utils";
 import type { CorpusSyncRow } from "@/lib/corpus-sync-inventory";
 import {
+  META_FIELD_LABELS,
   PROOF_BUCKETS,
   proofTotal,
   type ProofBucket,
@@ -74,7 +75,7 @@ const BUCKET: Record<
     bar: "bg-[color:var(--ds-success-solid)]",
     text: "text-[color:var(--ds-success-text)]",
     means:
-      "Im RIS gelistet, Datei auf dem Server, Prüfsumme Server = Datenbank, Inhaltsprüfung für genau diesen Stand bestanden.",
+      "Im RIS gelistet, Datei auf dem Server, Prüfsumme Server = Datenbank, Inhaltsprüfung für genau diesen Stand bestanden; bei Gesetzen zusätzlich Kurztitel, Abkürzung, Kundmachungsorgan, Geltungszeitraum, Bundesland und Paragraph wie im RIS.",
     todo: "Nichts.",
   },
   mismatch: {
@@ -92,6 +93,14 @@ const BUCKET: Record<
     means:
       "Prüfsumme stimmt, aber die Inhaltsprüfung hat diesen Stand abgelehnt (z. B. Text leer, abgeschnitten oder aus einem bekannt fehlerhaften Abruf).",
     todo: "Beim RIS neu abrufen; im Inspektor ansehen.",
+  },
+  metaMismatch: {
+    label: "Metadaten ≠ RIS",
+    bar: "bg-[color:var(--ds-danger-solid)]/55",
+    text: "text-[color:var(--ds-danger-text)]",
+    means:
+      "Text belegt, aber mindestens ein Metadatenfeld fehlt oder weicht vom amtlichen RIS-Verzeichnis ab (Kurztitel, Abkürzung, Kundmachungsorgan, In-/Außerkrafttreten, Bundesland, Paragraph).",
+    todo: "Wird beim nächsten Normalisieren aus dem RIS-Verzeichnis ergänzt.",
   },
   unchecked: {
     label: "Noch nicht geprüft",
@@ -131,13 +140,13 @@ const CATEGORY: Record<
 > = {
   confirmed: {
     label: "Nachweislich 1:1",
-    hint: "vier Prüfungen bestanden",
+    hint: "alle Prüfungen bestanden",
     tone: "text-[color:var(--ds-success-text)]",
     icon: CheckCircle2,
   },
   wrong: {
     label: "Abweichend oder fehlerhaft",
-    hint: "Prüfsumme oder Inhalt falsch",
+    hint: "Prüfsumme, Inhalt oder Metadaten falsch",
     tone: "text-[color:var(--ds-danger-text)]",
     icon: XCircle,
   },
@@ -248,7 +257,7 @@ export function CorpusNachweis({
             Bestand nach Rechtsbereich
           </h2>
           <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-            Grün ist nur, was vier Prüfungen besteht. Jedes Dokument steht in genau einem Topf —
+            Grün ist nur, was alle Prüfungen besteht. Jedes Dokument steht in genau einem Topf —
             Fehlendes, Abweichendes und Ungeprüftes wird nie mit Bestätigtem zusammengezählt.
           </p>
         </div>
@@ -395,6 +404,7 @@ function ProofSteps() {
     "Datei auf dem Server",
     "Prüfsumme Server = Datenbank",
     "Inhaltsprüfung bestanden",
+    "Metadaten = RIS (Gesetze)",
   ];
   return (
     <ol className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-[color:var(--ds-text-muted)]">
@@ -870,6 +880,8 @@ function SourceDetail({
         </div>
       )}
 
+      {proof?.metaFields && <MetaFieldList fields={proof.metaFields} />}
+
       <OutsideBuckets row={row} />
 
       {proof?.parts && (
@@ -924,6 +936,46 @@ function SourceDetail({
   );
 }
 
+/** Je Metadatenfeld: wie viele Dokumente es nicht oder anders als das RIS tragen. */
+function MetaFieldList({ fields }: { fields: Record<string, number> }) {
+  const rows = Object.entries(META_FIELD_LABELS).map(
+    ([k, label]) => [label, fields[k] ?? 0] as const
+  );
+  const bad = rows.filter(([, n]) => n > 0);
+  return (
+    <div className="rounded-lg border border-[color:var(--ds-border)] p-3">
+      <p className="text-xs font-medium">Metadaten gegen das RIS-Verzeichnis</p>
+      {bad.length === 0 ? (
+        <p className="mt-1 text-xs text-[color:var(--ds-success-text)]">
+          ✓ Alle geprüften Felder stimmen mit dem RIS überein.
+        </p>
+      ) : (
+        <ul className="mt-1 grid gap-x-6 gap-y-0.5 text-xs sm:grid-cols-2">
+          {rows.map(([label, n]) => (
+            <li key={label} className="flex justify-between gap-3">
+              <span>{label}</span>
+              <span
+                className={cn(
+                  "tabular-nums",
+                  n > 0
+                    ? "font-medium text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-success-text)]"
+                )}
+              >
+                {n > 0 ? `${fmt(n)} fehlen/weichen ab` : "✓"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1.5 text-xs text-[color:var(--ds-text-subtle)]">
+        Gezählt über alle Dokumente in der Datenbank, auch wenn sie wegen eines anderen Befunds in
+        einem anderen Topf stehen.
+      </p>
+    </div>
+  );
+}
+
 /** Was bewusst außerhalb der Töpfe steht — getrennt ausgewiesen, nie mitgezählt. */
 function OutsideBuckets({ row }: { row: CorpusSyncRow }) {
   const items: Array<{ value: number; label: string; hint: string; tone?: string }> = [
@@ -941,6 +993,12 @@ function OutsideBuckets({ row }: { row: CorpusSyncRow }) {
       value: row.dbExtra,
       label: "nur in der Datenbank (Waisen)",
       hint: "In der Datenbank ohne Datei auf dem Server und ohne Enddatum — bereinigen.",
+      tone: "text-[color:var(--ds-attention-text)]",
+    },
+    {
+      value: row.normalizedWithoutRaw,
+      label: "normalisierte Kopien ohne Rohdatei",
+      hint: "Die Quelldatei fehlt oder ist inzwischen ein anderes Dokument — nicht belegbar, zählt nicht als „auf dem Server“. Mit quarantine-normalized-copies.ts aussortieren.",
       tone: "text-[color:var(--ds-attention-text)]",
     },
     {

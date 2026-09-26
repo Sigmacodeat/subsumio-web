@@ -45,6 +45,7 @@ describe("openOf / sumSeries", () => {
         confirmed: 9,
         mismatch: 1,
         defective: 1,
+        metaMismatch: 0,
         unchecked: 1,
         importOpen: 1,
         fetchOpen: 1,
@@ -62,7 +63,10 @@ describe("openOf / sumSeries", () => {
 describe("parseSyncHistory", () => {
   it("nimmt je Wiener Tag den letzten Stand und verwirft Altes und Kaputtes", () => {
     const line = (at: string, confirmed: number) =>
-      JSON.stringify({ at, s: { "at-normen": [100, confirmed, 0, 0, 0, 0, 100 - confirmed, 0] } });
+      JSON.stringify({
+        at,
+        s: { "at-normen": [100, confirmed, 0, 0, 0, 0, 0, 100 - confirmed, 0] },
+      });
     const jsonl = [
       line("2026-08-01T10:00:00Z", 1), // älter als 30 Tage
       line("2026-09-25T10:00:00Z", 10),

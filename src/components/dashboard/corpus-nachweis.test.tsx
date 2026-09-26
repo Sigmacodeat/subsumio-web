@@ -16,6 +16,7 @@ const counts = (over: Record<string, number>) => ({
   confirmed: 0,
   mismatch: 0,
   defective: 0,
+  metaMismatch: 0,
   unchecked: 0,
   importOpen: 0,
   fetchOpen: 0,

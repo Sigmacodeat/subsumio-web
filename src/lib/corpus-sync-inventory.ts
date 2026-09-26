@@ -61,6 +61,8 @@ export interface SyncInventorySource {
   proof?: SyncProof;
   /** Gerichte: Stand der Nummernliste (ris-jud-index-crawl.ts). */
   courtIndex?: CourtIndexState;
+  /** Normalisierte Kopien ohne ihre Rohdatei — zählen nicht als „auf dem Server“. */
+  normalizedWithoutRaw?: number;
 }
 
 /** Nummernliste eines Gerichts — erst vollständig abgeglichen wird sie zum Soll. */
@@ -122,6 +124,8 @@ export interface CorpusSyncRow {
   pipelineKey: string | null;
   /** In der DB ohne Dokumentnummer — außerhalb jedes Topfs, eigens ausgewiesen. */
   dbPagesWithoutDocId: number;
+  /** Normalisierte Kopien ohne ihre Rohdatei (fehlt oder ist inzwischen ein anderes Dokument). */
+  normalizedWithoutRaw: number;
   /** Gerichte: Stand der Nummernliste; null = noch keine. */
   courtIndex: CourtIndexState | null;
   /** Nachweis je Dokument; null = Messung vor dem Nachweis-Ausbau. Ohne `laws` (zu groß für die Seite). */
@@ -220,6 +224,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
         aboveSoll: num(s.aboveSoll),
         proof: parseProof((s as { proof?: unknown }).proof),
         courtIndex: parseCourtIndex((s as { courtIndex?: unknown }).courtIndex),
+        normalizedWithoutRaw: num((s as { normalizedWithoutRaw?: unknown }).normalizedWithoutRaw),
       })),
   };
 }
@@ -294,6 +299,7 @@ export function toSyncRow(
     canUpdate: status === "fetch_open" && pipelineKey !== null,
     pipelineKey,
     dbPagesWithoutDocId: s.dbPagesWithoutDocId,
+    normalizedWithoutRaw: s.normalizedWithoutRaw ?? 0,
     courtIndex: s.courtIndex ?? null,
     proof: s.proof && !s.historical && s.inScope ? withoutLaws(s.proof) : null,
   };

@@ -88,10 +88,11 @@ const FILTERS: Filter[] = [
 const P_CONFIRMED = PROOF_BUCKETS.indexOf("confirmed");
 const P_MISMATCH = PROOF_BUCKETS.indexOf("mismatch");
 const P_DEFECTIVE = PROOF_BUCKETS.indexOf("defective");
+const P_META = PROOF_BUCKETS.indexOf("metaMismatch");
 
-/** Paragraphen mit falscher Prüfsumme oder abgelehntem Inhalt. */
+/** Paragraphen mit falscher Prüfsumme, abgelehntem Inhalt oder Metadaten ungleich RIS. */
 function wrongCount(l: LawCoverageRow): number {
-  return l.proof ? l.proof[P_MISMATCH]! + l.proof[P_DEFECTIVE]! : 0;
+  return l.proof ? l.proof[P_MISMATCH]! + l.proof[P_DEFECTIVE]! + (l.proof[P_META] ?? 0) : 0;
 }
 
 /**
@@ -116,7 +117,7 @@ function ProofCell({ l }: { l: LawCoverageRow }) {
       )}
       title={
         wrong > 0
-          ? `${fmt(wrong)} §§ mit abweichender Prüfsumme oder fehlerhaftem Inhalt`
+          ? `${fmt(wrong)} §§ mit abweichender Prüfsumme, fehlerhaftem Inhalt oder Metadaten ungleich RIS`
           : "Nachweislich 1:1: Prüfsumme Server = Datenbank und Inhaltsprüfung bestanden"
       }
     >

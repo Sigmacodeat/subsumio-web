@@ -21,12 +21,21 @@ const hashOf = (docId: string) =>
     .padEnd(16, "0")
     .slice(0, 16);
 
-function md(path: string, docId: string | null, hash: string | null = docId && hashOf(docId)) {
+function md(
+  path: string,
+  docId: string | null,
+  hash: string | null = docId && hashOf(docId),
+  withRaw = true
+) {
+  const text = `---\nschema_version: 1\n${docId ? `doc_id: ${docId}\n` : ""}${hash ? `content_hash: "${hash}"\n` : ""}title: "x"\n---\n\nText\n`;
   mkdirSync(join(ROOT, path, ".."), { recursive: true });
-  writeFileSync(
-    join(ROOT, path),
-    `---\nschema_version: 1\n${docId ? `doc_id: ${docId}\n` : ""}${hash ? `content_hash: "${hash}"\n` : ""}title: "x"\n---\n\nText\n`
-  );
+  writeFileSync(join(ROOT, path), text);
+  // A canonical copy counts only next to its raw file (same relative path).
+  const raw = path.replace(/^_normalized\//, "");
+  if (withRaw && raw !== path) {
+    mkdirSync(join(ROOT, raw, ".."), { recursive: true });
+    writeFileSync(join(ROOT, raw), text);
+  }
 }
 
 beforeAll(() => {
@@ -35,8 +44,7 @@ beforeAll(() => {
   md("_normalized/at-normen/a/p-2.md", "NOR2");
   md("_normalized/at-normen/a-old/p-2.md", "NOR2");
   md("_normalized/at-normen/b/p-1.md", "NOR8"); // repealed: not in the in-force index
-  for (const f of ["a/p-1.md", "a/p-2.md", "a-old/p-2.md", "b/p-1.md", "junk.md"])
-    md(`at-normen/${f}`, null);
+  md("at-normen/junk.md", null); // raw file without a canonical copy
   mkdirSync(join(ROOT, "_state"), { recursive: true });
   writeFileSync(
     join(ROOT, "_state/ris-inforce.jsonl"),
@@ -72,14 +80,22 @@ beforeAll(() => {
   // LBG1 not fetched.
   md("_normalized/at-landesrecht/stmk/a.md", "LST1");
   md("_normalized/at-landesrecht/stmk/b.md", "LST2");
+  md("_normalized/at-landesrecht/stmk/c.md", "LST3");
   md("_normalized/at-landesrecht/wien/a.md", "LWI1");
   md("_normalized/at-landesrecht/wien/b.md", "LWI2");
   md("_normalized/at-landesrecht/wien/c.md", "LWI3");
+  // Canonical copy whose raw file is gone: not on disk, LBG1 stays missing.
+  md("_normalized/at-landesrecht/bgld/x.md", "LBG1", undefined, false);
+  // A later fetch put another document at the same path: the canonical copy
+  // (LWI8, an older version) no longer has its raw file.
+  md("_normalized/at-landesrecht/wien/d.md", "LWI8");
+  md("at-landesrecht/wien/d.md", "LWI9");
   writeFileSync(
     join(ROOT, "_state/ris-inforce-landesrecht.jsonl"),
     [
       { nor: "LST1", gnr: "20000001", abk: "StLG", apa: "§ 1" },
       { nor: "LST2", gnr: "20000001", abk: "StLG", apa: "§ 2" },
+      { nor: "LST3", gnr: "20000001", abk: "StLG", apa: "§ 3" },
       { nor: "LWI1", gnr: "20000001", abk: "WLG", apa: "§ 1" },
       { nor: "LWI2", gnr: "20000001", abk: "WLG", apa: "§ 2" },
       { nor: "LWI3", gnr: "20000001", abk: "WLG", apa: "§ 3" },
@@ -95,10 +111,20 @@ afterAll(() => rmSync(ROOT, { recursive: true, force: true }));
 const DB: Record<string, Array<string | null>> = {
   "law-at-normen": ["NOR1", "NOR8", "NOR9", null, "NOR7"],
   "law-at-judikatur": ["JJR_1"],
-  "law-at-landesrecht": ["LST1", "LST2", "LWI1", "LWI2"],
+  "law-at-landesrecht": ["LST1", "LST2", "LWI1", "LWI2", "LST3"],
 };
 /** Pages whose content the audit accepted (corpus_page_verified). */
-const VERIFIED = new Set(["NOR1", "JJR_1", "LST1", "LST2"]);
+const VERIFIED = new Set(["NOR1", "JJR_1", "LST1", "LST2", "LST3"]);
+/** Metadata in the DB; by default what the RIS index says. */
+const META: Record<string, Record<string, string>> = {
+  NOR1: { m_paragraph_ref: "§ 1" },
+  LST1: { m_abbr: "StLG", m_paragraph_ref: "§ 1" },
+  LST2: { m_abbr: "StLG", m_paragraph_ref: "§ 2" },
+  LWI1: { m_abbr: "WLG", m_paragraph_ref: "§ 1" },
+  LWI2: { m_abbr: "WLG", m_paragraph_ref: "§ 2" },
+  // Text verified, but the abbreviation is not what RIS lists.
+  LST3: { m_abbr: "StLG 1999", m_paragraph_ref: "§ 3", m_retrieved_at: "2026-01-01" },
+};
 /** Pages changed after the last content check. */
 const CHANGED = new Set(["LWI2"]);
 /** DB checksum differs from the file. */
@@ -125,6 +151,7 @@ const engine = {
           fm_hash: doc_id ? (DB_HASH[doc_id] ?? hashOf(doc_id)) : null,
           verified: doc_id !== null && VERIFIED.has(doc_id),
           changed: doc_id !== null && CHANGED.has(doc_id),
+          ...(doc_id ? META[doc_id] : {}),
         }))
         .filter((r) => r.id > lastId)
     );
@@ -192,6 +219,7 @@ describe("corpus-sync-inventory", () => {
       confirmed: 1, // NOR1
       mismatch: 0,
       defective: 0,
+      metaMismatch: 0,
       unchecked: 0,
       importOpen: 1, // NOR2
       fetchOpen: 1, // NOR3 (failed = still open)
@@ -199,13 +227,15 @@ describe("corpus-sync-inventory", () => {
     });
     expect(sum(normen.counts)).toBe(by["at-normen"]!.risSoll);
     expect(normen.samples.fetchOpen).toEqual([{ id: "NOR3", label: "Gesetz 1 § 3" }]);
-    expect(normen.laws).toEqual({ "1": [1, 0, 0, 0, 1, 1, 1] });
+    expect(normen.laws).toEqual({ "1": [1, 0, 0, 0, 0, 1, 1, 1] });
 
     const lr = by["at-landesrecht"]!.proof!;
     expect(lr.counts).toEqual({
       confirmed: 1,
       mismatch: 1,
       defective: 1,
+      metaMismatch: 1, // LST3
+
       unchecked: 1,
       importOpen: 1,
       fetchOpen: 1,
@@ -213,7 +243,12 @@ describe("corpus-sync-inventory", () => {
     });
     expect(sum(lr.counts)).toBe(by["at-landesrecht"]!.risSoll);
     expect(Object.keys(lr.parts!)).toEqual(["bgld", "stmk", "wien"]);
-    expect(lr.parts!.stmk!.counts).toMatchObject({ confirmed: 1, mismatch: 1 });
+    expect(by["at-landesrecht"]!.normalizedWithoutRaw).toBe(2);
+    expect(lr.parts!.stmk!.counts).toMatchObject({ confirmed: 1, mismatch: 1, metaMismatch: 1 });
+    expect(lr.parts!.stmk!.samples.metaMismatch).toEqual([
+      { id: "LST3", label: "StLG § 3 — Abkürzung" },
+    ]);
+    expect(lr.metaFields).toEqual({ abbr: 1 });
     expect(lr.parts!.wien!.samples.defective).toEqual([{ id: "LWI1", label: "WLG § 1" }]);
     // Statute keys carry the Land — the same key the per-statute list uses.
     expect(Object.keys(lr.laws!).sort()).toEqual([
@@ -254,6 +289,13 @@ describe("classifyInDb", () => {
     expect(classifyInDb(new Set([""]), db(), true)).toBe("mismatch");
     expect(classifyInDb(disk, db({ hashes: new Set([""]) }), true)).toBe("mismatch");
   });
+  test("metadata: a failed text outranks it, a verified text does not make it right", () => {
+    expect(classifyInDb(disk, db({ metaDiff: ["abbr"] }), true)).toBe("metaMismatch");
+    expect(classifyInDb(disk, db({ metaDiff: ["abbr"], allVerified: false }), true)).toBe(
+      "defective"
+    );
+    expect(classifyInDb(disk, db({ metaDiff: [] }), true)).toBe("confirmed");
+  });
   test("content verdict only counts for unchanged pages", () => {
     expect(classifyInDb(disk, db(), true)).toBe("confirmed");
     expect(classifyInDb(disk, db({ allVerified: false }), true)).toBe("defective");
@@ -270,7 +312,7 @@ describe("history", () => {
       await import("../scripts/corpus-sync-inventory.ts");
     const inv = await measure(engine, ROOT, async () => new Map([["at-avn", 707]]));
     const line = historyLine(inv);
-    expect(line.s["at-normen"]).toEqual([4, 1, 0, 0, 0, 1, 1, 1]);
+    expect(line.s["at-normen"]).toEqual([4, 1, 0, 0, 0, 0, 1, 1, 1]);
     expect(line.s["ch"]).toBeUndefined();
 
     const now = Date.parse(inv.measuredAt);

@@ -25,7 +25,23 @@ export const SCHEMA_VERSION = 1;
 //    document links; literal "\t" escapes are removed from metadata.
 // 5: state law takes its `region` from the document number when the raw file
 //    names no state (the XML fetcher never does).
-export const NORMALIZER_VERSION = 5;
+// 6: statute metadata is reconciled with the RIS in-force index (Kurztitel,
+//    Abkürzung, Kundmachungsorgan, In-/Außerkrafttreten, Bundesland); the raw
+//    `statute:` field counts as Kurztitel; a document number is never a title.
+export const NORMALIZER_VERSION = 6;
+
+/**
+ * The normalizer only sees raw files newer than their canonical copy, so a
+ * rule change never reaches existing files on its own. A corpus listed here
+ * is renormalized in full once when its marker is below this version
+ * (normalized-import.ts). Listed per corpus on purpose: a full run rewrites
+ * normalized_at in every file and with it the import hash of every page —
+ * only corpora whose output actually changes should pay that.
+ */
+export const RENORMALIZE_FROM: Record<string, number> = {
+  "at-normen": 6,
+  "at-landesrecht": 6,
+};
 
 /** Dokumentklasse — ersetzt die 8 konkurrierenden type-Felder. */
 export type DocClass = "statute" | "decision" | "literature";

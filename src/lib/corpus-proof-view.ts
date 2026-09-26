@@ -16,6 +16,7 @@ export const CATEGORY_OF: Record<ProofBucket, ProofCategory> = {
   confirmed: "confirmed",
   mismatch: "wrong",
   defective: "wrong",
+  metaMismatch: "wrong",
   fetchOpen: "missing",
   unreachable: "missing",
   importOpen: "working",
