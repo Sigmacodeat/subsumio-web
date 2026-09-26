@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { getStore } from "@/lib/auth/store";
 import {
   createAbsence,
   activateAbsence,
@@ -108,6 +109,59 @@ export const POST = createHandler(
         "self_delegation",
         "Die Vertretung muss eine andere Person sein als die abwesende Person.",
         422
+      );
+    }
+
+    // The stand-in must be an active member of the firm — a typo would
+    // otherwise leave every deadline of the absence with nobody.
+    if (ctx.user.orgId) {
+      let delegate: Awaited<ReturnType<ReturnType<typeof getStore>["getByEmail"]>>;
+      try {
+        delegate = await getStore().getByEmail(body.delegate_email.trim().toLowerCase());
+      } catch {
+        return apiError("store_unavailable", "Kanzleikonten konnten nicht geprüft werden", 503);
+      }
+      if (
+        !delegate ||
+        delegate.orgId !== ctx.user.orgId ||
+        delegate.deactivatedAt ||
+        delegate.role === "client_viewer"
+      ) {
+        return apiError(
+          "delegate_not_member",
+          "Die Vertretung muss ein aktives Mitglied der Kanzlei sein.",
+          422
+        );
+      }
+    }
+
+    // One absence per person at a time: with two overlapping records the
+    // stand-in shown on a deadline would depend on the listing order.
+    let existing: Awaited<ReturnType<typeof listEnginePages>>;
+    try {
+      existing = await listEnginePages(ctx.headers, "absence_record", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Bestehende Abwesenheiten konnten nicht geprüft werden", 502);
+    }
+    const who = body.user_email.trim().toLowerCase();
+    const clash = existing
+      .map((p) => p.frontmatter as unknown as AbsenceRecord | undefined)
+      .find(
+        (a) =>
+          a &&
+          String(a.user_email ?? "").toLowerCase() === who &&
+          a.status !== "cancelled" &&
+          a.status !== "completed" &&
+          typeof a.start_date === "string" &&
+          typeof a.end_date === "string" &&
+          a.start_date.slice(0, 10) <= body.end_date &&
+          a.end_date.slice(0, 10) >= body.start_date
+      );
+    if (clash) {
+      return apiError(
+        "absence_overlap",
+        `Für diese Person ist im Zeitraum bereits eine Abwesenheit eingetragen (${clash.start_date.slice(0, 10)} bis ${clash.end_date.slice(0, 10)}). Bitte diese anpassen oder stornieren.`,
+        409
       );
     }
 

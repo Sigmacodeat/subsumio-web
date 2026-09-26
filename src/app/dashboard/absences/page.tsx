@@ -170,10 +170,17 @@ export default function AbsencePage() {
         }),
       });
       if (!res.ok) {
+        // Overlap (409) and a stand-in outside the firm (422) come with a
+        // specific explanation from the server.
+        const serverMessage =
+          res.status === 409 || res.status === 422
+            ? ((await res.json().catch(() => null)) as { error?: string } | null)?.error
+            : undefined;
         setFormError(
-          res.status === 400 || res.status === 422
-            ? "Bitte prüfen Sie die Eingaben — insbesondere die beiden E-Mail-Adressen und den Zeitraum."
-            : "Die Abwesenheit konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+          serverMessage ??
+            (res.status === 400 || res.status === 422
+              ? "Bitte prüfen Sie die Eingaben — insbesondere die beiden E-Mail-Adressen und den Zeitraum."
+              : "Die Abwesenheit konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.")
         );
         return;
       }

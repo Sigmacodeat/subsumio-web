@@ -14,6 +14,13 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...args: unknown[]) => mockPatch(...args),
 }));
 
+const mockGetByEmail = vi.fn();
+vi.mock("@/lib/auth/store", () => ({
+  getStore: () => ({ getByEmail: (...args: unknown[]) => mockGetByEmail(...args) }),
+}));
+
+let ctxUser: Record<string, unknown> = { id: "u1", name: "Anwalt", email: "anwalt@example.com" };
+
 vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: (...args: unknown[]) => mockList(...args),
 }));
@@ -27,12 +34,12 @@ vi.mock("@/lib/api-handler", () => ({
     },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
   ) => {
-    const ctx = {
-      headers: { "x-subsumio-source": "brain-at" },
-      brainId: "brain-at",
-      user: { id: "u1", name: "Anwalt", email: "anwalt@example.com" },
-    };
     return async (req: Request) => {
+      const ctx = {
+        headers: { "x-subsumio-source": "brain-at" },
+        brainId: "brain-at",
+        user: ctxUser,
+      };
       const raw = await req.json().catch(() => ({}));
       const parsed = opts.body?.safeParse(raw);
       if (parsed && !parsed.success) {
@@ -233,7 +240,64 @@ describe("POST /api/absences", () => {
     );
   }
 
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockList.mockResolvedValue([]);
+    ctxUser = { id: "u1", name: "Anwalt", email: "anwalt@example.com" };
+  });
+
+  test("Überschneidung mit bestehender Abwesenheit derselben Person → 409", async () => {
+    mockList.mockResolvedValueOnce([
+      {
+        slug: "legal/absences/alt",
+        frontmatter: { ...ABSENCE, start_date: "2026-10-10", end_date: "2026-10-20" },
+      },
+    ]);
+    const res = await post(baseBody);
+    expect(res.status).toBe(409);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("stornierte oder fremde Abwesenheit im Zeitraum blockiert nicht", async () => {
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/s", frontmatter: { ...ABSENCE, status: "cancelled" } },
+      {
+        slug: "legal/absences/f",
+        frontmatter: { ...ABSENCE, user_email: "andere@example.com" },
+      },
+    ]);
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post(baseBody);
+    expect(res.status).toBe(200);
+  });
+
+  test("Kanzlei: unbekannte Vertretungs-E-Mail → 422", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce(null);
+    const res = await post(baseBody);
+    expect(res.status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("Kanzlei: Vertretung aus anderer Kanzlei oder deaktiviert → 422", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce({ orgId: "org-2", role: "lawyer" });
+    expect((await post(baseBody)).status).toBe(422);
+    mockGetByEmail.mockResolvedValueOnce({
+      orgId: "org-1",
+      role: "lawyer",
+      deactivatedAt: "2026-01-01",
+    });
+    expect((await post(baseBody)).status).toBe(422);
+  });
+
+  test("Kanzlei: aktives Mitglied als Vertretung → angelegt", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce({ orgId: "org-1", role: "lawyer" });
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    expect((await post(baseBody)).status).toBe(200);
+    expect(mockGetByEmail).toHaveBeenCalledWith("vertreter@example.com");
+  });
 
   test("legt die Abwesenheit an und liefert den Record", async () => {
     mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
@@ -247,6 +311,7 @@ describe("POST /api/absences", () => {
   test("Anlegen mit Start heute → aktiv und forwarded_deadlines enthält die passende Frist", async () => {
     const today = zonedDateString(new Date());
     mockList
+      .mockResolvedValueOnce([]) // overlap check
       .mockResolvedValueOnce([
         {
           slug: "legal/deadlines/heute",
