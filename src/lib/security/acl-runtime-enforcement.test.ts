@@ -1,77 +1,29 @@
+// @vitest-environment node
 /**
  * T7.1 / WP7.1.4 — ACL Runtime Enforcement Tests
  *
- * Tests that document-level Access Control Lists (ACLs) are enforced
- * at runtime — pages with permissions are only visible to users in
- * authorized groups, and fail-closed behavior is verified.
+ * Runs the engine's document-ACL functions (server/src/core/acl.ts) — not a
+ * copy of them. The engine is replaced by a fixture that answers the two ACL
+ * queries from a permission table, so what is tested is the product's
+ * decision logic: when filtering applies at all, open-by-default for pages
+ * without permissions, group matching, and that group ids only ever travel
+ * as query parameters.
  *
- * Coverage:
- *   1. Open-by-default: pages without permissions are accessible
- *   2. Restricted pages: only accessible to users in authorized groups
- *   3. Fail-closed: errors in ACL resolution deny access
- *   4. Admin bypass: admin role grants access to all pages
- *   5. ACL group membership: correct filtering by group_id
- *   6. Matter scope + ACL combined enforcement
- *   7. ACL injection via fake groups is rejected
+ * The fail-closed behaviour of the ACL middleware (lookup error → request
+ * refused, never widened to "all") is pinned by the engine test
+ * server/test/acl-middleware-fail-closed.test.ts.
  */
 
 import { describe, it, expect } from "vitest";
-
-// ── Types matching server/src/core/acl.ts ─────────────────────────────
-
-interface PagePermission {
-  page_id: number;
-  group_id: string;
-}
-
-interface MockAclContext {
-  pagePermissions: PagePermission[];
-  userGroups: string[];
-  role: "admin" | "user";
-  aclGroups: string[] | "all" | undefined;
-}
-
-// ── Mock ACL Engine (mirrors server/src/core/acl.ts logic) ───────────
-
-function mockIsPageAccessible(ctx: MockAclContext, pageId: number): boolean {
-  // No filtering only for undefined / "all". An empty list (a user in no
-  // group) sees open pages only — leaving the last group never widens access.
-  if (ctx.aclGroups === undefined || ctx.aclGroups === "all") {
-    return true;
-  }
-
-  // Admin bypass
-  if (ctx.role === "admin") {
-    return true;
-  }
-
-  // Check if page has any permissions
-  const pagePerms = ctx.pagePermissions.filter((p) => p.page_id === pageId);
-  if (pagePerms.length === 0) {
-    return true; // No permissions = open access
-  }
-
-  // Check if user's groups match any permission
-  const userGroupSet = new Set(ctx.aclGroups);
-  const hasMatch = pagePerms.some((p) => userGroupSet.has(p.group_id));
-  return hasMatch;
-}
-
-function mockFilterPagesByACL(
-  ctx: MockAclContext,
-  pages: Array<{ id: number; slug: string; title: string }>
-): Array<{ id: number; slug: string; title: string }> {
-  return pages.filter((p) => mockIsPageAccessible(ctx, p.id));
-}
-
-// ── Fixtures ─────────────────────────────────────────────────────────
+import { aclFilterClause, filterPagesByACL, isPageAccessible } from "../../../server/src/core/acl";
+import type { BrainEngine } from "../../../server/src/core/engine";
 
 const GROUP_LEGAL = "11111111-1111-1111-1111-111111111111";
 const GROUP_LITIGATION = "22222222-2222-2222-2222-222222222222";
 const GROUP_TAX = "33333333-3333-3333-3333-333333333333";
 const GROUP_FOREIGN = "99999999-9999-9999-9999-999999999999";
 
-const PAGE_PERMISSIONS: PagePermission[] = [
+const PAGE_PERMISSIONS = [
   { page_id: 101, group_id: GROUP_LEGAL },
   { page_id: 101, group_id: GROUP_LITIGATION },
   { page_id: 102, group_id: GROUP_TAX },
@@ -80,301 +32,135 @@ const PAGE_PERMISSIONS: PagePermission[] = [
 ];
 
 const ALL_PAGES = [
-  { id: 101, slug: "cases/restricted-case", title: "Restricted Case" },
-  { id: 102, slug: "cases/tax-case", title: "Tax Case" },
-  { id: 103, slug: "cases/litigation-case", title: "Litigation Case" },
-  { id: 104, slug: "notes/open-note", title: "Open Note" },
+  { id: 101, slug: "cases/restricted-case" },
+  { id: 102, slug: "cases/tax-case" },
+  { id: 103, slug: "cases/litigation-case" },
+  { id: 104, slug: "notes/open-note" },
 ];
 
-// ── 1. Open-by-Default ───────────────────────────────────────────────
+/** Answers acl.ts's queries from PAGE_PERMISSIONS; records every call. */
+function fixtureEngine() {
+  const calls: Array<{ sql: string; params: unknown[] }> = [];
+  const engine = {
+    async executeRaw(sql: string, params: unknown[] = []) {
+      calls.push({ sql, params });
+      if (sql.includes("AS count FROM page_permissions")) {
+        const [pageId] = params as [number];
+        return [{ count: PAGE_PERMISSIONS.filter((p) => p.page_id === pageId).length }];
+      }
+      if (sql.includes("FROM pages p") && params.length === 1) {
+        const [ids] = params as [number[]];
+        return ids
+          .filter((id) => !PAGE_PERMISSIONS.some((p) => p.page_id === id))
+          .map((page_id) => ({ page_id }));
+      }
+      if (sql.includes("AS matching")) {
+        const [pageId, groups] = params as [number, string[]];
+        const rows = PAGE_PERMISSIONS.filter((p) => p.page_id === pageId);
+        return [
+          { count: rows.length, matching: rows.filter((p) => groups.includes(p.group_id)).length },
+        ];
+      }
+      if (sql.includes("FROM pages p")) {
+        const [ids, groups] = params as [number[], string[]];
+        return ids
+          .filter((id) => {
+            const rows = PAGE_PERMISSIONS.filter((p) => p.page_id === id);
+            return rows.length === 0 || rows.some((p) => groups.includes(p.group_id));
+          })
+          .map((page_id) => ({ page_id }));
+      }
+      throw new Error(`unexpected query: ${sql}`);
+    },
+  };
+  return { engine: engine as unknown as BrainEngine, calls };
+}
 
-describe("ACL Runtime: Open-by-Default", () => {
-  it("page without permissions is accessible to all users", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "user",
-      aclGroups: [GROUP_FOREIGN], // not in any group
-    };
-    expect(mockIsPageAccessible(ctx, 104)).toBe(true); // no permissions
-  });
+const ids = ALL_PAGES.map((p) => p.id);
+const slugsOf = (pageIds: number[]) =>
+  ALL_PAGES.filter((p) => pageIds.includes(p.id)).map((p) => p.slug);
 
-  it("aclGroups=undefined means no filtering", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "user",
-      aclGroups: undefined,
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
-    expect(mockIsPageAccessible(ctx, 102)).toBe(true);
-  });
-
-  it("aclGroups='all' means no filtering", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "user",
-      aclGroups: "all",
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
-  });
-
-  it("empty aclGroups array (user in no group) sees open pages only", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "user",
-      aclGroups: [],
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(false);
-    expect(mockIsPageAccessible(ctx, 104)).toBe(true);
-  });
-});
-
-// ── 2. Restricted Pages ──────────────────────────────────────────────
-
-describe("ACL Runtime: Restricted Access", () => {
-  it("user in LEGAL group can access page 101", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LEGAL],
-      role: "user",
-      aclGroups: [GROUP_LEGAL],
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
-  });
-
-  it("user in LITIGATION group can access page 101", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LITIGATION],
-      role: "user",
-      aclGroups: [GROUP_LITIGATION],
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
-  });
-
-  it("user in TAX group cannot access page 101", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_TAX],
-      role: "user",
-      aclGroups: [GROUP_TAX],
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(false);
-  });
-
-  it("user in FOREIGN group cannot access page 102 (TAX only)", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_FOREIGN],
-      role: "user",
-      aclGroups: [GROUP_FOREIGN],
-    };
-    expect(mockIsPageAccessible(ctx, 102)).toBe(false);
-  });
-
-  it("user in multiple groups can access pages from any of their groups", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LEGAL, GROUP_TAX],
-      role: "user",
-      aclGroups: [GROUP_LEGAL, GROUP_TAX],
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true); // LEGAL
-    expect(mockIsPageAccessible(ctx, 102)).toBe(true); // TAX
-    expect(mockIsPageAccessible(ctx, 103)).toBe(false); // LITIGATION only
+describe("ACL runtime: when filtering applies", () => {
+  it.each([
+    ["undefined", undefined],
+    ["'all'", "all" as const],
+  ])("aclGroups = %s → no filtering and no query", async (_label, groups) => {
+    const { engine, calls } = fixtureEngine();
+    expect(await isPageAccessible(engine, 101, groups)).toBe(true);
+    expect(await filterPagesByACL(engine, ids, groups)).toEqual(ids);
+    expect(aclFilterClause(groups, 1)).toBeNull();
+    expect(calls).toHaveLength(0);
   });
 });
 
-// ── 3. Fail-Closed Behavior ──────────────────────────────────────────
-
-describe("ACL Runtime: Fail-Closed", () => {
-  it("ACL resolution error denies access (fail-closed)", () => {
-    // Simulate: aclGroupsMiddleware catches error → returns 500
-    // User gets no data, not all data
-    const _ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "user",
-      aclGroups: undefined, // simulates error → middleware returns 500
-    };
-    // When aclGroups is undefined, the mock returns true (open)
-    // But in the real system, the middleware returns 500 before reaching here
-    // The test verifies that the middleware pattern is fail-closed
-    expect(true).toBe(true); // Pattern verified in web-api.ts
-  });
-
-  it("invalid identity token causes 403, not fallback to all", () => {
-    // This is verified in web-api.ts: verifiedMatterScope throws OperationError
-    // when token is present but invalid
-    // The test documents this behavior
-    const tokenPresent = true;
-    const tokenValid = false;
-    expect(tokenPresent && !tokenValid).toBe(true); // would throw
+describe("ACL runtime: a user in no group", () => {
+  it("sees only pages without permissions — never a restricted one", async () => {
+    const { engine } = fixtureEngine();
+    expect(await isPageAccessible(engine, 101, [])).toBe(false);
+    expect(await isPageAccessible(engine, 104, [])).toBe(true);
+    expect(slugsOf(await filterPagesByACL(engine, ids, []))).toEqual(["notes/open-note"]);
   });
 });
 
-// ── 4. Admin Bypass ──────────────────────────────────────────────────
-
-describe("ACL Runtime: Admin Bypass", () => {
-  it("admin can access restricted page 101", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "admin",
-      aclGroups: [], // admin has no specific groups
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
+describe("ACL runtime: open-by-default and group matching", () => {
+  it("a page without permissions is open to any group", async () => {
+    const { engine } = fixtureEngine();
+    expect(await isPageAccessible(engine, 104, [GROUP_FOREIGN])).toBe(true);
   });
 
-  it("admin can access all pages", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "admin",
-      aclGroups: [],
-    };
-    const filtered = mockFilterPagesByACL(ctx, ALL_PAGES);
-    expect(filtered).toHaveLength(ALL_PAGES.length);
+  it("a restricted page is open only to one of its groups", async () => {
+    const { engine } = fixtureEngine();
+    expect(await isPageAccessible(engine, 101, [GROUP_LEGAL])).toBe(true);
+    expect(await isPageAccessible(engine, 101, [GROUP_LITIGATION])).toBe(true);
+    expect(await isPageAccessible(engine, 101, [GROUP_TAX])).toBe(false);
+    expect(await isPageAccessible(engine, 102, [GROUP_FOREIGN])).toBe(false);
   });
 
-  it("admin bypass works even with aclGroups=undefined", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [],
-      role: "admin",
-      aclGroups: undefined,
-    };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
-    expect(mockIsPageAccessible(ctx, 102)).toBe(true);
-    expect(mockIsPageAccessible(ctx, 103)).toBe(true);
-  });
-});
-
-// ── 5. ACL Group Membership Filtering ────────────────────────────────
-
-describe("ACL Runtime: Group Membership Filtering", () => {
-  it("filterPagesByACL returns only accessible pages for LEGAL user", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LEGAL],
-      role: "user",
-      aclGroups: [GROUP_LEGAL],
-    };
-    const filtered = mockFilterPagesByACL(ctx, ALL_PAGES);
-    // Page 101 (LEGAL+LITIGATION) → accessible
-    // Page 102 (TAX) → not accessible
-    // Page 103 (LITIGATION) → not accessible
-    // Page 104 (no perms) → accessible
-    const accessibleSlugs = filtered.map((p) => p.slug);
-    expect(accessibleSlugs).toContain("cases/restricted-case");
-    expect(accessibleSlugs).toContain("notes/open-note");
-    expect(accessibleSlugs).not.toContain("cases/tax-case");
-    expect(accessibleSlugs).not.toContain("cases/litigation-case");
+  it("several groups open the pages of each of them", async () => {
+    const { engine } = fixtureEngine();
+    const groups = [GROUP_LEGAL, GROUP_TAX];
+    expect(await isPageAccessible(engine, 101, groups)).toBe(true);
+    expect(await isPageAccessible(engine, 102, groups)).toBe(true);
+    expect(await isPageAccessible(engine, 103, groups)).toBe(false);
   });
 
-  it("filterPagesByACL returns all pages for user with all groups", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LEGAL, GROUP_LITIGATION, GROUP_TAX],
-      role: "user",
-      aclGroups: [GROUP_LEGAL, GROUP_LITIGATION, GROUP_TAX],
-    };
-    const filtered = mockFilterPagesByACL(ctx, ALL_PAGES);
-    expect(filtered).toHaveLength(ALL_PAGES.length);
+  it("filterPagesByACL keeps restricted pages of the caller's groups plus open pages", async () => {
+    const { engine } = fixtureEngine();
+    expect(slugsOf(await filterPagesByACL(engine, ids, [GROUP_LEGAL]))).toEqual([
+      "cases/restricted-case",
+      "notes/open-note",
+    ]);
+    expect(slugsOf(await filterPagesByACL(engine, ids, [GROUP_FOREIGN]))).toEqual([
+      "notes/open-note",
+    ]);
+    expect(await filterPagesByACL(engine, ids, [GROUP_LEGAL, GROUP_LITIGATION, GROUP_TAX])).toEqual(
+      ids
+    );
   });
 
-  it("filterPagesByACL returns only open pages for user with no matching groups", () => {
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_FOREIGN],
-      role: "user",
-      aclGroups: [GROUP_FOREIGN],
-    };
-    const filtered = mockFilterPagesByACL(ctx, ALL_PAGES);
-    // Only page 104 (no permissions) is accessible
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0].slug).toBe("notes/open-note");
+  it("an empty page list is answered without a query", async () => {
+    const { engine, calls } = fixtureEngine();
+    expect(await filterPagesByACL(engine, [], [GROUP_LEGAL])).toEqual([]);
+    expect(calls).toHaveLength(0);
   });
 });
 
-// ── 6. Matter Scope + ACL Combined ───────────────────────────────────
-
-describe("ACL Runtime: Matter Scope + ACL Combined", () => {
-  it("page in matter scope but not in ACL group is filtered out", () => {
-    // Matter scope: ["cases/"] → includes all cases
-    // ACL: user only in LEGAL group → can access page 101, not 102/103
-    const matterScope = ["cases/"];
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_LEGAL],
-      role: "user",
-      aclGroups: [GROUP_LEGAL],
-    };
-
-    // First filter by matter scope
-    const matterFiltered = ALL_PAGES.filter((p) => matterScope.some((s) => p.slug.startsWith(s)));
-    // Then filter by ACL
-    const aclFiltered = mockFilterPagesByACL(ctx, matterFiltered);
-
-    const accessibleSlugs = aclFiltered.map((p) => p.slug);
-    expect(accessibleSlugs).toContain("cases/restricted-case"); // LEGAL
-    expect(accessibleSlugs).not.toContain("cases/tax-case"); // not LEGAL
-    expect(accessibleSlugs).not.toContain("cases/litigation-case"); // not LEGAL
-    // notes/open-note is not in "cases/" scope
-    expect(accessibleSlugs).not.toContain("notes/open-note");
+describe("ACL runtime: group ids are query parameters, never SQL text", () => {
+  it("isPageAccessible / filterPagesByACL pass groups as parameters", async () => {
+    const hostile = "'; DROP TABLE page_permissions; --";
+    const { engine, calls } = fixtureEngine();
+    await isPageAccessible(engine, 101, [hostile]);
+    await filterPagesByACL(engine, ids, [hostile]);
+    for (const call of calls) {
+      expect(call.sql).not.toContain(hostile);
+      expect(JSON.stringify(call.params)).toContain("DROP TABLE");
+    }
   });
 
-  it("page in ACL group but not in matter scope is filtered out", () => {
-    const matterScope = ["cases/tax-case"];
-    const ctx: MockAclContext = {
-      pagePermissions: PAGE_PERMISSIONS,
-      userGroups: [GROUP_TAX],
-      role: "user",
-      aclGroups: [GROUP_TAX],
-    };
-
-    const matterFiltered = ALL_PAGES.filter((p) => matterScope.some((s) => p.slug.startsWith(s)));
-    const aclFiltered = mockFilterPagesByACL(ctx, matterFiltered);
-
-    expect(aclFiltered).toHaveLength(1);
-    expect(aclFiltered[0].slug).toBe("cases/tax-case");
-  });
-});
-
-// ── 7. ACL Injection Prevention ──────────────────────────────────────
-
-describe("ACL Runtime: Injection Prevention", () => {
-  it("fake group ID in token is rejected by verification", () => {
-    // Identity token verification checks HMAC signature
-    // An attacker cannot inject arbitrary group IDs
-    const fakeGroups = ["all", "admin", "*"];
-    // These string values are not valid UUIDs and would be rejected
-    // by the verifyIdentityToken function
-    const isValidUUID = (s: string) =>
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-    expect(fakeGroups.every((g) => !isValidUUID(g))).toBe(true);
-  });
-
-  it("ACL groups are resolved server-side, not from client input", () => {
-    // The aclGroupsMiddleware resolves groups from:
-    // 1. Verify identity token (HMAC)
-    // 2. Extract userId from token
-    // 3. Query getUserGroups(engine, userId, sourceId)
-    // Client cannot directly pass group IDs
-    const clientInput = { aclGroups: ["all"] };
-    // Server ignores client-provided aclGroups
-    expect(clientInput.aclGroups).not.toBe("all"); // server would override
-  });
-
-  it("SQL injection in group_id is prevented by parameterized queries", () => {
-    // aclFilterClause uses ANY($2::uuid[]) which is parameterized
-    const maliciousGroupId = "'; DROP TABLE page_permissions; --";
-    const isValidUUID = (s: string) =>
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-    expect(isValidUUID(maliciousGroupId)).toBe(false);
-    // Postgres would reject this as invalid uuid type
+  it("aclFilterClause uses a numbered uuid[] placeholder and keeps the ids out of the clause", () => {
+    const hostile = "'; DROP TABLE page_permissions; --";
+    const out = aclFilterClause([hostile], 3);
+    expect(out?.clause).toContain("ANY($3::uuid[])");
+    expect(out?.clause).not.toContain(hostile);
   });
 });

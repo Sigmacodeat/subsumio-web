@@ -1,61 +1,29 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
+import {
+  MAX_REMINDERS,
+  REMINDER_INTERVAL_DAYS,
+  reminderDecision,
+} from "./document-request-reminder";
 
-const REMINDER_INTERVAL_DAYS = 7;
-const MAX_REMINDERS = 3;
-
-interface ReminderCheckInput {
+// The product decision the reminder cron uses (not a copy of it).
+function shouldSendReminder(input: {
   status: string;
   sent_at: string | undefined;
   reminder_sent_at: string | undefined;
   reminder_count: number;
   items: Array<{ received_document_slug?: string }>;
   now: Date;
+}) {
+  const { now, ...fm } = input;
+  return reminderDecision(fm, now);
 }
 
-interface ReminderCheckResult {
-  shouldRemind: boolean;
-  reason: string;
-}
-
-function shouldSendReminder(input: ReminderCheckInput): ReminderCheckResult {
-  if (input.status !== "sent" && input.status !== "partially_fulfilled") {
-    return { shouldRemind: false, reason: "not_pending" };
-  }
-
-  if (!input.sent_at) {
-    return { shouldRemind: false, reason: "no_sent_at" };
-  }
-
-  const sentAt = new Date(input.sent_at);
-  const daysSinceSent = Math.floor(
-    (input.now.getTime() - sentAt.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (input.reminder_count >= MAX_REMINDERS) {
-    return { shouldRemind: false, reason: "max_reminders_reached" };
-  }
-
-  if (input.reminder_sent_at) {
-    const lastReminder = new Date(input.reminder_sent_at);
-    const daysSinceReminder = Math.floor(
-      (input.now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysSinceReminder < REMINDER_INTERVAL_DAYS) {
-      return { shouldRemind: false, reason: "too_soon_after_last_reminder" };
-    }
-  } else if (daysSinceSent < REMINDER_INTERVAL_DAYS) {
-    return { shouldRemind: false, reason: "too_soon_after_sent" };
-  }
-
-  const openItems = input.items.filter((item) => !item.received_document_slug);
-  if (openItems.length === 0) {
-    return { shouldRemind: false, reason: "no_open_items" };
-  }
-
-  return { shouldRemind: true, reason: "ok" };
-}
+test("rhythm: every 7 days, at most 3 reminders", () => {
+  expect(REMINDER_INTERVAL_DAYS).toBe(7);
+  expect(MAX_REMINDERS).toBe(3);
+});
 
 describe("document-request-reminder logic", () => {
   const now = new Date("2026-02-15T12:00:00Z");

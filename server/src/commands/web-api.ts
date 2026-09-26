@@ -36,13 +36,7 @@ import {
 } from "../core/extract-document.ts";
 import { slugifySegment, isImageFilePath } from "../core/sync.ts";
 import { splitStatute } from "../core/legal/split-statute.ts";
-import {
-  AT_LAW_SOURCES_ALL,
-  DE_LAW_SOURCES_ALL,
-  CH_LAW_SOURCES_ALL,
-  EU_LAW_SOURCES_ALL,
-  DE_LAW_SOURCES_STATUTES,
-} from "../core/legal/jurisdiction.ts";
+import { DE_LAW_SOURCES_STATUTES, scopedReadSources } from "../core/legal/jurisdiction.ts";
 import { loadConfig } from "../core/config.ts";
 import { OperationError } from "../core/operations.ts";
 import { executeRawJsonb } from "../core/sql-query.ts";
@@ -2148,20 +2142,6 @@ export function isDemoSessionSource(sourceId: string): boolean {
 }
 
 /**
- * Map a jurisdiction code to the law sources that jurisdiction's attorneys need.
- * DE → DE_LAW_SOURCES_ALL (law-de + judikatur + literatur + law-eu),
- * AT → AT_LAW_SOURCES_ALL, CH → CH_LAW_SOURCES_ALL (law-ch +
- * law-ch-judikatur + law-eu).
- * EU law applies to all DACH jurisdictions, so it's always included.
- */
-const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-  DE: DE_LAW_SOURCES_ALL,
-  AT: AT_LAW_SOURCES_ALL,
-  CH: CH_LAW_SOURCES_ALL,
-  EU: EU_LAW_SOURCES_ALL,
-};
-
-/**
  * The federated READ scope for a request: the tenant's own source plus the
  * shared statute sources scoped by jurisdiction. Never used for writes.
  *
@@ -2177,19 +2157,14 @@ const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
  */
 function readSourcesFor(req: Request): string[] | undefined {
   if (SHARED_READ_SOURCES.length === 0) return undefined;
-  const own = requestSourceId(req);
-  const caseJurHeader = req.headers["x-subsumio-case-jurisdiction"] as string | undefined;
-  const userJurHeader = req.headers["x-subsumio-jurisdiction"] as string | undefined;
-  const caseJur = caseJurHeader?.toUpperCase();
-  const userJur = userJurHeader?.toUpperCase();
-  const jur = caseJur ?? userJur;
-  if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => SHARED_READ_SOURCES.includes(s));
-    return [...new Set([own, ...scoped])];
-  }
-  // Fail-closed: no jurisdiction determined → no law corpus access.
-  // The tenant can still search their own documents (own source).
-  return [own];
+  // Fail-closed without a jurisdiction: own source only, no law corpus
+  // (src/core/legal/jurisdiction.ts scopedReadSources).
+  return scopedReadSources(
+    SHARED_READ_SOURCES,
+    requestSourceId(req),
+    req.headers["x-subsumio-case-jurisdiction"] as string | undefined,
+    req.headers["x-subsumio-jurisdiction"] as string | undefined
+  );
 }
 
 /**

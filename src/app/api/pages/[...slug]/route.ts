@@ -16,8 +16,9 @@ import {
   rejectionResponse,
 } from "@/lib/page-write-guards";
 import {
+  canWaiveConflict,
   checkPartiesConflicts,
-  type ConflictParty,
+  matterParties,
   type MatterConflictOutcome,
 } from "@/lib/conflict-gate";
 import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
@@ -281,6 +282,86 @@ export const PATCH = createHandler(
       patchBody.frontmatter = { version: storedVersion(curFm) + 1 };
     }
 
+    // Kollisionsprüfung beim Parteiwechsel (§ 10 Abs 1 RAO) — BEFORE the
+    // write, with the same gate as the matter creation: a critical hit blocks
+    // (409) until a lawyer/admin waives it with a reason, and a check that
+    // cannot run blocks the change (503). Only parties that are new in this
+    // write are checked, so saving a matter with unchanged parties (or an
+    // earlier, waived conflict) does not re-trigger the gate.
+    let conflictWarning: MatterConflictOutcome | undefined;
+    const isCase =
+      currentPage.type === "legal_case" ||
+      curFm.type === "legal_case" ||
+      body.type === "legal_case";
+    if (isCase && patchBody.frontmatter) {
+      const fm = patchBody.frontmatter as Record<string, unknown>;
+      const partyKey = (p: { side: string; name: string }) => `${p.side}:${p.name.toLowerCase()}`;
+      const before = new Set(matterParties(curFm).map(partyKey));
+      const newParties = matterParties({ ...curFm, ...fm }).filter((p) => !before.has(partyKey(p)));
+      if (newParties.length > 0) {
+        try {
+          conflictWarning = await checkPartiesConflicts(ctx.headers, newParties, {
+            selfCaseSlug: rawSlug,
+          });
+        } catch (err) {
+          log.error(
+            "[pages/...slug] conflict check failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+          return apiError(
+            "conflict_check_unavailable",
+            "Kollisionsprüfung nicht verfügbar. Die Änderung der Parteien wurde nicht gespeichert.",
+            503
+          );
+        }
+        const waiverReason =
+          typeof fm.conflict_waiver_reason === "string" ? fm.conflict_waiver_reason.trim() : "";
+        const blocking = conflictWarning.blocking.length > 0;
+        if (blocking && waiverReason.length === 0) {
+          return Response.json(
+            {
+              error: "conflict_detected",
+              message:
+                "Interessenkonflikt: Eine Partei steht in einer bestehenden Akte auf der Gegenseite. Die Änderung wurde nicht gespeichert.",
+              conflictWarning,
+            },
+            { status: 409 }
+          );
+        }
+        if (blocking && !canWaiveConflict(ctx.user.role)) {
+          return Response.json(
+            {
+              error: "conflict_waiver_unauthorized",
+              message: "Konflikt-Freigabe erfordert die Rolle Anwalt oder Admin.",
+            },
+            { status: 403 }
+          );
+        }
+        if (blocking) {
+          patchBody.frontmatter = {
+            ...fm,
+            conflict_waived_by: ctx.user.email,
+            conflict_waived_by_id: ctx.user.id,
+            conflict_waived_by_role: ctx.user.role,
+            conflict_waived_at: new Date().toISOString(),
+            conflict_status: "conflict_waived",
+          };
+        } else if (curFm.conflict_status !== "conflict_waived") {
+          patchBody.frontmatter = { ...fm, conflict_status: "conflict_cleared" };
+        }
+        setAuditExtra(ctx, {
+          details: {
+            conflict_check: {
+              parties: conflictWarning.parties.map((p) => ({ name: p.name, side: p.side })),
+              severity: conflictWarning.severity,
+              waived: blocking,
+              ...(blocking ? { waived_reason: waiverReason } : {}),
+            },
+          },
+        });
+      }
+    }
+
     try {
       const res = await enginePatchPage(
         ctx.headers,
@@ -321,30 +402,6 @@ export const PATCH = createHandler(
           log.error("[pages/...slug] restore cascade incomplete", {
             failed: restoreCascade.failed.length,
           });
-        }
-      }
-
-      // B3: Server-side conflict check when client_name or opponent_name is
-      // explicitly included in the PATCH body. Using body.frontmatter (not
-      // patchBody.frontmatter) avoids running the check on every auto-save
-      // that happens to include these fields in the merged frontmatter.
-      let conflictWarning: MatterConflictOutcome | { checked: false } | undefined;
-      const bodyFm = (body.frontmatter ?? {}) as Record<string, unknown>;
-      const parties: ConflictParty[] = [];
-      if (typeof bodyFm.client_name === "string" && bodyFm.client_name.trim()) {
-        parties.push({ name: bodyFm.client_name.trim(), side: "client", ownContactSlugs: [] });
-      }
-      if (typeof bodyFm.opponent_name === "string" && bodyFm.opponent_name.trim()) {
-        parties.push({ name: bodyFm.opponent_name.trim(), side: "opponent", ownContactSlugs: [] });
-      }
-      if (parties.length > 0) {
-        try {
-          // Each name with its side in this matter; the matter itself is no hit.
-          conflictWarning = await checkPartiesConflicts(ctx.headers, parties, {
-            selfCaseSlug: decodeURIComponent(path),
-          });
-        } catch {
-          conflictWarning = { checked: false };
         }
       }
 

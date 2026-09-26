@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 // @vitest-environment node
 
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const mockFetch = vi.fn();
 const mockListEnginePages = vi.fn();
@@ -91,6 +91,16 @@ function post(slug = originalInvoice.slug) {
   (req as unknown as { params: Promise<{ slug: string }> }).params = Promise.resolve({ slug });
   return POST(req);
 }
+
+// Fixed clock for the whole file: the number range and storno date follow the
+// firm's current year, so the expectations must not depend on the run date.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-15T10:00:00+02:00"));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("POST /api/invoices/[slug]/storno", () => {
   beforeEach(() => vi.clearAllMocks());

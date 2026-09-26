@@ -185,9 +185,9 @@ export function checkStoredInvoiceTotals(fm: Record<string, unknown>): string[] 
 
 /** A line amount rounded to the cent (hours × rate). */
 export function lineAmount(hours: number, rate: number): number {
-  return fromCents(
-    Math.round((Number.isFinite(hours) ? hours : 0) * (Number.isFinite(rate) ? rate : 0) * 100)
-  );
+  // Same commercial rounding as every other amount (toCents: half away from
+  // zero, float noise such as 16.045 * 100 = 1604.4999… absorbed).
+  return roundEur((Number.isFinite(hours) ? hours : 0) * (Number.isFinite(rate) ? rate : 0));
 }
 
 /**

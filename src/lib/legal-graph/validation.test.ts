@@ -1,48 +1,12 @@
 import { describe, test, expect } from "vitest";
+import { heuristicClassification, overallTreatmentStatus, timeWeight } from "./validation";
 
-// Test the heuristic classification logic directly
-// (the LLM path requires a running engine, so we test the fallback)
-
-// We need to import the internal function — since it's not exported,
-// we test the logic through the exported classifyCitation path
-// with mocked DB and failed LLM (which triggers heuristic fallback).
+// These tests run the product functions of validation.ts (the keyword
+// fallback, the status aggregation and the time decay) — not copies of them.
 
 describe("heuristic classification logic", () => {
-  // Test the signal detection logic inline
-  // (mirrors the heuristicClassification function in validation.ts)
-
   function heuristicClassify(contextSnippet: string): string {
-    const ctx = contextSnippet.toLowerCase();
-    const negativeSignals = [
-      "überholt",
-      "aufgehoben",
-      "nicht gefolgt",
-      "ablehnend",
-      "entgegen",
-      "widerruft",
-      "revidiert",
-    ];
-    const positiveSignals = [
-      "folgt",
-      "stützt",
-      "bestätigt",
-      "in übereinstimmung",
-      "entsprechend",
-      "analog",
-    ];
-    const distinguishingSignals = [
-      "unterscheidet",
-      "abgrenzend",
-      "nicht vergleichbar",
-      "anderer sachverhalt",
-    ];
-    const overruledSignals = ["overruled", "aufgehoben durch", "nicht mehr anwendbar"];
-
-    if (overruledSignals.some((s) => ctx.includes(s))) return "overruled";
-    if (negativeSignals.some((s) => ctx.includes(s))) return "negative";
-    if (distinguishingSignals.some((s) => ctx.includes(s))) return "distinguishing";
-    if (positiveSignals.some((s) => ctx.includes(s))) return "positive";
-    return "neutral";
+    return heuristicClassification({ contextSnippet }).treatment;
   }
 
   test("detects positive treatment signals", () => {
@@ -92,24 +56,21 @@ describe("heuristic classification logic", () => {
 });
 
 describe("treatment aggregation logic", () => {
-  // Test the overall_status determination logic inline
-  // (mirrors the aggregateTreatments function in validation.ts)
-
   function determineOverallStatus(
     positive: number,
     negative: number,
     overruled: number,
-    atRiskReasons: number
+    atRiskReasons: number,
+    limited = 0
   ): string {
-    if (overruled > 0) return "bad_law";
-    if (negative > 0 && positive === 0) return "bad_law";
-    if (negative > 0 && positive > 0) return "mixed";
-    if (positive > 0 && negative === 0) {
-      if (atRiskReasons > 0) return "at_risk";
-      return "good_law";
-    }
-    return "unknown";
+    const total = positive + negative + overruled + limited;
+    return overallTreatmentStatus({ positive, negative, overruled, limited }, atRiskReasons, total);
   }
+
+  test("limited (with or without positive) → at_risk", () => {
+    expect(determineOverallStatus(3, 0, 0, 0, 1)).toBe("at_risk");
+    expect(determineOverallStatus(0, 0, 0, 0, 2)).toBe("at_risk");
+  });
 
   test("overruled → bad_law", () => {
     expect(determineOverallStatus(5, 0, 1, 0)).toBe("bad_law");
@@ -137,27 +98,28 @@ describe("treatment aggregation logic", () => {
 });
 
 describe("time weight function", () => {
-  // Test the time decay logic (5-year half-life)
-  function timeWeight(yearsAgo: number): number {
-    return Math.exp(-0.1386 * yearsAgo);
+  // Product time decay (5-year half-life), measured from a fixed reference date.
+  const ref = new Date("2026-01-01T00:00:00Z");
+  function weightYearsAgo(yearsAgo: number): number {
+    return timeWeight(new Date(ref.getTime() - yearsAgo * 365.25 * 86_400_000), ref);
   }
 
   test("current citation has weight 1.0", () => {
-    expect(timeWeight(0)).toBeCloseTo(1.0, 2);
+    expect(weightYearsAgo(0)).toBeCloseTo(1.0, 2);
   });
 
   test("5-year-old citation has ~0.5 weight (half-life)", () => {
-    expect(timeWeight(5)).toBeCloseTo(0.5, 1);
+    expect(weightYearsAgo(5)).toBeCloseTo(0.5, 1);
   });
 
   test("10-year-old citation has ~0.25 weight", () => {
-    expect(timeWeight(10)).toBeCloseTo(0.25, 1);
+    expect(weightYearsAgo(10)).toBeCloseTo(0.25, 1);
   });
 
   test("weight decreases monotonically", () => {
-    const w1 = timeWeight(1);
-    const w5 = timeWeight(5);
-    const w10 = timeWeight(10);
+    const w1 = weightYearsAgo(1);
+    const w5 = weightYearsAgo(5);
+    const w10 = weightYearsAgo(10);
     expect(w1).toBeGreaterThan(w5);
     expect(w5).toBeGreaterThan(w10);
   });

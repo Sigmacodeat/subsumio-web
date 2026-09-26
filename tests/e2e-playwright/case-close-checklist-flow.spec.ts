@@ -12,6 +12,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { daysFromNow } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = { password: "CaseCloseTest1234!", name: "Case Close Tester" };
@@ -87,8 +88,8 @@ test.describe("Aktenschließungs-Checkliste", () => {
             { billed: false, billable: true, amount: 45.0, description: "Gerichtsgebühr" },
           ],
           deadlines: [
-            { title: "Klagefrist", due_date: "2026-12-31", status: "pending" },
-            { title: "Berufungsfrist", due_date: "2027-01-15", status: "warning" },
+            { title: "Klagefrist", due_date: daysFromNow(60), status: "pending" },
+            { title: "Berufungsfrist", due_date: daysFromNow(5), status: "warning" },
           ],
           document_requests: [{ status: "pending", title: "Gehaltsabrechnung" }],
         },
@@ -177,7 +178,7 @@ test.describe("Aktenschließungs-Checkliste", () => {
           legal_area: "Zivilrecht",
           time_entries: [{ billed: true, billable: true, hours: 1.0 }],
           expenses: [],
-          deadlines: [{ title: "Done Frist", due_date: "2026-01-01", status: "done" }],
+          deadlines: [{ title: "Done Frist", due_date: daysFromNow(-30), status: "done" }],
           document_requests: [{ status: "fulfilled", title: "Vertrag" }],
         },
       },

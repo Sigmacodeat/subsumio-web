@@ -111,8 +111,15 @@ export async function collectFullBackup(
             return;
           }
           const full = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-          const content = full && typeof full.content === "string" ? full.content : "";
-          if (content) entry.content = content;
+          // Only a failed read is "Text nicht lesbar". An entry whose text is
+          // deliberately empty (a contact, a frontmatter-only record) is
+          // backed up as it is.
+          if (!full || typeof full !== "object") {
+            missingContent.push(slug);
+            return;
+          }
+          if (typeof full.content === "string") entry.content = full.content;
+          else if (full.content === undefined || full.content === null) entry.content = "";
           else missingContent.push(slug);
         } catch {
           missingContent.push(slug);

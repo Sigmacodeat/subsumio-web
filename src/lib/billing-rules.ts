@@ -175,6 +175,8 @@ export function resolveHourlyRate(entryRate: unknown, ctx: RateContext): Resolve
 }
 
 export interface TimeEntryLike {
+  /** Entry id; carried into the position as `time_entry_id`. */
+  id?: string;
   description: string;
   date?: string;
   minutes: number;
@@ -190,6 +192,8 @@ export interface RuledTimeItem {
   recorded_minutes: number;
   billed_minutes: number;
   rate_source: RateSource;
+  /** The time entry this position bills (the server check pairs by it). */
+  time_entry_id?: string;
 }
 
 /**
@@ -215,6 +219,7 @@ export function ruledTimeItem(
     recorded_minutes: recorded,
     billed_minutes: billed,
     rate_source: source,
+    ...(typeof entry.id === "string" && entry.id ? { time_entry_id: entry.id } : {}),
   };
 }
 
@@ -304,6 +309,117 @@ export function checkTimeItemBilling(
   });
   if (rules && timeEntryIds.length > 0 && ruled !== timeEntryIds.length) {
     problems.push("time_items");
+  }
+  return problems;
+}
+
+/**
+ * Checks the time positions against the STORED time entries they bill — not
+ * only against themselves. Every id in `time_entry_ids` needs exactly one
+ * position (paired by `time_entry_id`, or — for positions without it — in
+ * the order of `time_entry_ids`), and that position must carry the entry's
+ * recorded minutes and the rate that applies to it:
+ *
+ *  - rules on: exactly the position `ruledTimeItem` builds from the stored
+ *    entry (rounding, rate by entry > fee agreement > practice area > firm,
+ *    `rate_source`, amount);
+ *  - rules off: the entry's minutes at the entry's rate (firm rate when the
+ *    entry has none), amount = minutes / 60 × rate.
+ *
+ * `stored` maps entry id → stored entry; an id without a stored entry is a
+ * problem. Returns the problems (empty = the positions follow the records).
+ */
+export function checkTimeItemsAgainstEntries(
+  fm: Record<string, unknown>,
+  stored: ReadonlyMap<string, TimeEntryLike>,
+  rules: ActiveBillingRules | null,
+  ctx: RateContext
+): string[] {
+  const problems: string[] = [];
+  const ids = Array.isArray(fm.time_entry_ids) ? [...new Set(fm.time_entry_ids.map(String))] : [];
+  const items = Array.isArray(fm.items) ? (fm.items as Array<Record<string, unknown>>) : [];
+  const timeItems = items
+    .map((item, idx) => ({ item, idx }))
+    .filter(
+      ({ item }) =>
+        !!item &&
+        typeof item === "object" &&
+        (typeof item.time_entry_id === "string" ||
+          item.recorded_minutes !== undefined ||
+          item.billed_minutes !== undefined ||
+          Number(item.hours) > 0)
+    );
+  if (ids.length === 0) {
+    // Time positions without billed time entries are not bound to any record.
+    for (const { idx } of timeItems) problems.push(`items[${idx}].time_entry_id`);
+    return problems;
+  }
+
+  const pairs: Array<{ id: string; item: Record<string, unknown>; idx: number }> = [];
+  if (
+    timeItems.length > 0 &&
+    timeItems.every(({ item }) => typeof item.time_entry_id === "string")
+  ) {
+    const wanted = new Set(ids);
+    const seen = new Set<string>();
+    for (const { item, idx } of timeItems) {
+      const id = String(item.time_entry_id);
+      if (!wanted.has(id) || seen.has(id)) {
+        problems.push(`items[${idx}].time_entry_id`);
+        continue;
+      }
+      seen.add(id);
+      pairs.push({ id, item, idx });
+    }
+    if (seen.size !== wanted.size) problems.push("time_items");
+  } else if (timeItems.length !== ids.length) {
+    problems.push("time_items");
+  } else {
+    ids.forEach((id, i) => pairs.push({ id, ...timeItems[i]! }));
+  }
+
+  const firmRate = parseHourlyRate(ctx.settings?.stundensatz ?? null);
+  for (const { id, item, idx } of pairs) {
+    const entry = stored.get(id);
+    const at = `items[${idx}]`;
+    if (!entry) {
+      problems.push(`${at}.time_entry`);
+      continue;
+    }
+    if (rules) {
+      const want = ruledTimeItem(entry, rules, ctx);
+      if (!want) {
+        problems.push(`${at}.rate`);
+        continue;
+      }
+      if (Number(item.recorded_minutes) !== want.recorded_minutes) {
+        problems.push(`${at}.recorded_minutes`);
+      }
+      if (Math.abs(Number(item.billed_minutes) - want.billed_minutes) > 1e-6) {
+        problems.push(`${at}.billed_minutes`);
+      }
+      if (toCents(item.rate) !== toCents(want.rate)) problems.push(`${at}.rate`);
+      if (item.rate_source !== want.rate_source) problems.push(`${at}.rate_source`);
+      if (toCents(item.amount) !== toCents(want.amount)) problems.push(`${at}.amount`);
+      continue;
+    }
+    const minutes = Math.max(0, Number(entry.minutes) || 0);
+    const own = Number(entry.rate);
+    const rate = Number.isFinite(own) && own !== 0 ? own : firmRate;
+    if (rate === null || rate < 0) {
+      problems.push(`${at}.rate`);
+      continue;
+    }
+    if (item.recorded_minutes !== undefined && Number(item.recorded_minutes) !== minutes) {
+      problems.push(`${at}.recorded_minutes`);
+    }
+    if (Math.abs(Number(item.hours) - roundHours(minutes / 60)) > 1e-9) {
+      problems.push(`${at}.hours`);
+    }
+    if (toCents(item.rate) !== toCents(rate)) problems.push(`${at}.rate`);
+    if (toCents(item.amount) !== toCents(roundEur((minutes / 60) * rate))) {
+      problems.push(`${at}.amount`);
+    }
   }
   return problems;
 }

@@ -8,7 +8,7 @@
  *     `reviewed_by_id`, `completed_by_id` are never taken from the client.
  *     The second-check route compares the checker against these ids.
  *
- *  2. Notfristen. Cancelling, rejecting or moving the due date of a stored
+ *  2. Notfristen. Cancelling, rejecting, moving or clearing the due date of a stored
  *     Notfrist needs the role admin/lawyer AND a written reason
  *     (`change_reason`); removing it from a matter or deleting its page is
  *     refused — it must be cancelled with a reason instead, so it stays
@@ -110,9 +110,14 @@ function protectedNotfristChange(
   const statusPrev = String(prev.status ?? "");
   if (CANCELLED.has(statusNext) && !CANCELLED.has(statusPrev)) return "cancel";
   if (next.review_status === "rejected" && prev.review_status !== "rejected") return "reject";
-  const dueNext = dueOf(next);
+  // Clearing the due date counts as changing it: a Notfrist without an end
+  // date drops out of reminders, the Fristenbuch and the calendar.
   const duePrev = dueOf(prev);
-  if (duePrev && dueNext && dueNext !== duePrev) return "due_date";
+  if (duePrev && dueOf(next) !== duePrev) return "due_date";
+  for (const field of ["due_date", "date"] as const) {
+    const before = str(prev[field]);
+    if (before && str(next[field]) !== before) return "due_date";
+  }
   return null;
 }
 

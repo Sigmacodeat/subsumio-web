@@ -31,13 +31,85 @@ import {
   computeInvoiceTotals,
   totalsInputFromFrontmatter,
 } from "@/lib/invoice-totals";
-import { activeBillingRules, checkTimeItemBilling } from "@/lib/billing-rules";
+import {
+  activeBillingRules,
+  checkTimeItemBilling,
+  checkTimeItemsAgainstEntries,
+  feeAgreementRate,
+  type ActiveBillingRules,
+  type FeeAgreementLike,
+  type TimeEntryLike,
+} from "@/lib/billing-rules";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
+import { STANDALONE_ENTRY_PREFIX } from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices");
 
 export const dynamic = "force-dynamic";
+
+/**
+ * The stored records the time positions are checked against: the billed
+ * entries (matter array + standalone `time-entries/…` pages), the matter's
+ * practice area and — with the billing rules on — its fee-agreement rate.
+ * Throws when anything cannot be read (the caller refuses the invoice).
+ */
+async function loadBilledTimeRecords(
+  headers: Record<string, string>,
+  caseSlug: string,
+  timeEntryIds: string[],
+  rules: ActiveBillingRules | null
+): Promise<{
+  entries: Map<string, TimeEntryLike>;
+  legalArea: string | null;
+  feeAgreementRate: number | null;
+}> {
+  const entries = new Map<string, TimeEntryLike>();
+  if (timeEntryIds.length === 0) return { entries, legalArea: null, feeAgreementRate: null };
+  const brain = createServerBrainClient(headers);
+  const matter = await brain.getPage(caseSlug);
+  const mfm = (matter?.frontmatter ?? {}) as Record<string, unknown>;
+  const wanted = new Set(timeEntryIds);
+  const toEntry = (id: string, e: Record<string, unknown>): TimeEntryLike => ({
+    id,
+    description: String(e.description ?? ""),
+    date: typeof e.date === "string" ? e.date : undefined,
+    minutes: Number(e.minutes ?? 0),
+    rate: e.rate === null || e.rate === undefined || e.rate === "" ? null : Number(e.rate),
+  });
+  for (const raw of Array.isArray(mfm.time_entries) ? mfm.time_entries : []) {
+    if (!raw || typeof raw !== "object") continue;
+    const e = raw as Record<string, unknown>;
+    const id = String(e.id ?? "");
+    if (wanted.has(id)) entries.set(id, toEntry(id, e));
+  }
+  const standalone = timeEntryIds.filter(
+    (id) => id.startsWith(STANDALONE_ENTRY_PREFIX) && !entries.has(id)
+  );
+  await Promise.all(
+    standalone.map(async (id) => {
+      const read = await readCurrentPage(ENGINE_URL, headers, id);
+      if (read.kind === "error") throw new Error("time entry unreadable");
+      if (read.kind === "found") {
+        const fm = (read.page.frontmatter ?? {}) as Record<string, unknown>;
+        if (String(fm.case_slug ?? "") === caseSlug) entries.set(id, toEntry(id, fm));
+      }
+    })
+  );
+  let agreementRate: number | null = null;
+  if (rules) {
+    const pages = await listEnginePages(headers, "fee_agreement", 10_000, { strict: true });
+    agreementRate = feeAgreementRate(
+      pages.map((p) => p.frontmatter as unknown as FeeAgreementLike),
+      caseSlug
+    );
+  }
+  return {
+    entries,
+    legalArea: typeof mfm.legal_area === "string" ? mfm.legal_area : null,
+    feeAgreementRate: agreementRate,
+  };
+}
 
 const idList = z.array(z.string().min(1).max(300)).max(2000);
 
@@ -108,7 +180,8 @@ export const POST = createHandler(
     } catch {
       return rejectionResponse(GUARD_READ_FAILED);
     }
-    const billingProblems = checkTimeItemBilling(fm, activeBillingRules(settings));
+    const rules = activeBillingRules(settings);
+    const billingProblems = checkTimeItemBilling(fm, rules);
     if (billingProblems.length > 0) {
       return apiError(
         "invoice_billing_mismatch",
@@ -120,6 +193,28 @@ export const POST = createHandler(
     const caseSlug = fm.case_slugs[0];
     const timeEntryIds = [...new Set(fm.time_entry_ids ?? [])];
     const expenseIds = [...new Set(fm.expense_entry_ids ?? [])];
+
+    // The time positions must follow from the STORED time entries (minutes,
+    // rate and its source) — not only from themselves. Unreadable records →
+    // refused, never checked against the client's copy.
+    let recordProblems: string[];
+    try {
+      const records = await loadBilledTimeRecords(ctx.headers, caseSlug, timeEntryIds, rules);
+      recordProblems = checkTimeItemsAgainstEntries(fm, records.entries, rules, {
+        feeAgreementRate: records.feeAgreementRate,
+        legalArea: records.legalArea,
+        settings,
+      });
+    } catch {
+      return rejectionResponse(GUARD_READ_FAILED);
+    }
+    if (recordProblems.length > 0) {
+      return apiError(
+        "invoice_billing_mismatch",
+        `Die Zeitpositionen passen nicht zu den erfassten Zeiteinträgen (${recordProblems.join(", ")}). Es wurde keine Rechnung angelegt — bitte die Akte neu laden und die Rechnung neu erstellen.`,
+        422
+      );
+    }
 
     // Fail closed: a create must never land on an existing page. This read
     // answers early; the create-only write below is what guarantees it.

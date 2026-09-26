@@ -165,3 +165,36 @@ export function assertLegalSourceJurisdiction(
     }
   }
 }
+
+/**
+ * Law sources a jurisdiction's attorneys read. EU law applies to all DACH
+ * jurisdictions, so each set includes it.
+ */
+export const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
+  DE: DE_LAW_SOURCES_ALL,
+  AT: AT_LAW_SOURCES_ALL,
+  CH: CH_LAW_SOURCES_ALL,
+  EU: EU_LAW_SOURCES_ALL,
+};
+
+/**
+ * The federated READ scope of a request: the tenant's own source plus the
+ * shared law sources of ONE jurisdiction — the case's, else the user's.
+ * Without a known jurisdiction only the own source (fail-closed: no law
+ * corpus rather than a foreign one). `undefined` when no shared sources are
+ * configured (no federation).
+ */
+export function scopedReadSources(
+  sharedSources: readonly string[],
+  ownSource: string,
+  caseJurisdiction?: string,
+  userJurisdiction?: string
+): string[] | undefined {
+  if (sharedSources.length === 0) return undefined;
+  const jur = caseJurisdiction?.toUpperCase() ?? userJurisdiction?.toUpperCase();
+  if (jur && JURISDICTION_LAW_SOURCES[jur]) {
+    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => sharedSources.includes(s));
+    return [...new Set([ownSource, ...scoped])];
+  }
+  return [ownSource];
+}
