@@ -25,6 +25,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { readCurrentPage, type CurrentPageRead } from "@/lib/page-write-guards";
 import { matterParties, requestConflictCheck, type ConflictSide } from "@/lib/conflict-gate";
 import { caseContentWithAktenblatt } from "@/lib/aktenblatt";
+import { brainIdFromEngineHeaders, emitCaseCreated } from "@/lib/webhook-dispatch";
 
 export const CASE_SLUG_PREFIX = "legal/cases/";
 
@@ -241,7 +242,11 @@ export function engineCaseCreateDeps(headers: Record<string, string>): SafeCaseC
           body: JSON.stringify({ ...page, if_absent: true }),
           signal: AbortSignal.timeout(15_000),
         });
-        if (res.ok) return { ok: true };
+        if (res.ok) {
+          // The matter landed in the brain these headers are scoped to.
+          emitCaseCreated(brainIdFromEngineHeaders(headers), page);
+          return { ok: true };
+        }
         const upstream = (await res.json().catch(() => null)) as {
           error?: unknown;
           message?: unknown;

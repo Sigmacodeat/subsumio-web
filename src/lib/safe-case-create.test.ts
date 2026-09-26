@@ -9,6 +9,12 @@ import {
 } from "./safe-case-create";
 import type { CurrentPageRead } from "./page-write-guards";
 
+const hooks = vi.hoisted(() => ({ caseCreated: vi.fn() }));
+vi.mock("@/lib/webhook-dispatch", async (orig) => ({
+  ...(await orig<typeof import("@/lib/webhook-dispatch")>()),
+  emitCaseCreated: (...a: unknown[]) => hooks.caseCreated(...a),
+}));
+
 function fakeDeps(opts: {
   existing?: string[];
   readError?: boolean;
@@ -166,6 +172,24 @@ describe("engineCaseCreateDeps.writePage", () => {
       const body = JSON.parse(String(fetchMock.mock.calls[0]![1]!.body));
       expect(body).toMatchObject({ slug: "legal/cases/a-1", if_absent: true });
       expect(body.merge).toBeUndefined();
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
+  it("a created matter fires exactly one case.created for the brain it landed in", async () => {
+    hooks.caseCreated.mockClear();
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+    try {
+      const outcome = await engineCaseCreateDeps({ "x-subsumio-source": "brain-a" }).writePage(
+        page
+      );
+      expect(outcome).toEqual({ ok: true });
+      expect(hooks.caseCreated).toHaveBeenCalledTimes(1);
+      expect(hooks.caseCreated.mock.calls[0][0]).toBe("brain-a");
+      expect(hooks.caseCreated.mock.calls[0][1]).toMatchObject({ slug: "legal/cases/a-1" });
     } finally {
       fetchMock.mockRestore();
     }

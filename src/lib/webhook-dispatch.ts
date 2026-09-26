@@ -267,6 +267,60 @@ export async function retryDueWebhookDeliveries(
 }
 
 /**
+ * Fire-and-forget dispatch for request paths: delivery (and its retry queue)
+ * never blocks or fails the business action that caused the event.
+ */
+export function emitWebhookEvent(
+  brainId: string | undefined | null,
+  eventType: WebhookEventType,
+  payload: Record<string, unknown>
+): void {
+  if (!brainId) return;
+  void dispatchWebhookEvent(brainId, eventType, payload).catch((err) =>
+    log.warn("Webhook dispatch failed", { eventType, error: String(err) })
+  );
+}
+
+/** The firm (brain) an engine request is scoped to — its `x-subsumio-source`. */
+export function brainIdFromEngineHeaders(headers: Record<string, string>): string | null {
+  const id = headers["x-subsumio-source"];
+  return typeof id === "string" && id ? id : null;
+}
+
+/** `case.created` for a newly created matter (not for bulk imports from other software). */
+export function emitCaseCreated(
+  brainId: string | undefined | null,
+  page: { slug: string; title?: string; frontmatter?: Record<string, unknown> }
+): void {
+  const fm = page.frontmatter ?? {};
+  if (fm.import_project_id) return;
+  emitWebhookEvent(brainId, "case.created", {
+    slug: page.slug,
+    title: page.title ?? (typeof fm.title === "string" ? fm.title : undefined),
+    case_number: typeof fm.case_number === "string" ? fm.case_number : undefined,
+    legal_area: typeof fm.legal_area === "string" ? fm.legal_area : undefined,
+  });
+}
+
+/** `invoice.paid` when a client invoice (Honorarnote) becomes paid. */
+export function emitInvoicePaid(
+  brainId: string | undefined | null,
+  invoice: { slug: string; frontmatter?: Record<string, unknown> },
+  paid: { paid_at?: string; paid_amount?: unknown; payment_method?: string }
+): void {
+  const fm = invoice.frontmatter ?? {};
+  emitWebhookEvent(brainId, "invoice.paid", {
+    slug: invoice.slug,
+    invoice_number: typeof fm.invoice_number === "string" ? fm.invoice_number : undefined,
+    total: fm.total ?? fm.amount ?? undefined,
+    currency: typeof fm.currency === "string" ? fm.currency : "EUR",
+    paid_at: paid.paid_at ?? new Date().toISOString(),
+    paid_amount: paid.paid_amount,
+    payment_method: paid.payment_method,
+  });
+}
+
+/**
  * Verify a webhook signature (for incoming webhook verification).
  * Used by recipients to verify that a webhook came from Subsumio.
  */

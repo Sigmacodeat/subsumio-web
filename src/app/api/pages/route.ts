@@ -2,6 +2,7 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
 import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
+import { emitCaseCreated } from "@/lib/webhook-dispatch";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
@@ -551,6 +552,13 @@ export const POST = createHandler(
 
       if (!isMerge && body.type === "legal_case") {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
+        if (!current) {
+          emitCaseCreated(ctx.brainId, {
+            slug: body.slug,
+            title: body.title,
+            frontmatter: body.frontmatter,
+          });
+        }
       } else if (!isMerge && body.type === "legal_deadline") {
         void markOnboardingProgress(ctx.user.id, { firstDeadline: true });
       }

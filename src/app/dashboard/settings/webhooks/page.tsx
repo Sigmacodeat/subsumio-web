@@ -20,7 +20,7 @@ import { unwrapApiBody } from "@/lib/api-body";
 const EVENT_LABELS: Record<string, { de: string; en: string }> = {
   "case.created": { de: "Akte angelegt", en: "Matter created" },
   "deadline.critical": { de: "Frist wird kritisch", en: "Deadline becomes critical" },
-  "invoice.paid": { de: "Rechnung bezahlt", en: "Invoice paid" },
+  "invoice.paid": { de: "Honorarnote bezahlt", en: "Client invoice paid" },
   "document.received": { de: "Dokument eingegangen", en: "Document received" },
   "intake.new": { de: "Neue Mandatsanfrage", en: "New client enquiry" },
 };

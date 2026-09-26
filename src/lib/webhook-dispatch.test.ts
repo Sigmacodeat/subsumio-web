@@ -226,3 +226,28 @@ describe("webhook dispatch", () => {
     expect(q.fail).toHaveBeenCalledWith("d1", 2, expect.stringContaining("engine down"), true);
   });
 });
+
+describe("webhook event sources (R8-13)", () => {
+  it("case.created is not fired for bulk imports from other software", async () => {
+    const mod = await import("./webhook-dispatch");
+    m.list.mockResolvedValue([
+      hook("wh-1", { url: "https://a.example/h", secret_enc: "enc:s", events: ["case.created"] }),
+    ]);
+    const fetchMock = vi.fn(async () => new Response("ok"));
+    vi.stubGlobal("fetch", fetchMock);
+    mod.emitCaseCreated("firm-a", {
+      slug: "legal/cases/x",
+      frontmatter: { import_project_id: "imp-1" },
+    });
+    await new Promise((r) => setTimeout(r, 10));
+    expect(fetchMock).not.toHaveBeenCalled();
+    mod.emitCaseCreated("firm-a", { slug: "legal/cases/y", title: "Neu" });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+  });
+
+  it("the subscription billing webhook no longer emits invoice.paid", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/app/api/billing/webhook/route.ts", "utf8");
+    expect(src).not.toMatch(/dispatchWebhookEvent\([^)]*"invoice\.paid"/s);
+  });
+});

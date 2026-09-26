@@ -14,6 +14,7 @@ import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 import { invoiceIssueProblem, isIssuingTransition } from "@/lib/invoice-issue";
 
 import { logger } from "@/lib/logger";
+import { emitInvoicePaid } from "@/lib/webhook-dispatch";
 const log = logger("api/invoices/[slug]");
 
 function validSlug(raw: string): string | null {
@@ -145,6 +146,18 @@ export const PATCH = createHandler(
           );
         }
         if (nextStatus === "paid" && prevStatus !== "paid") {
+          emitInvoicePaid(
+            ctx.brainId,
+            { slug, frontmatter: (currentRead.page.frontmatter ?? {}) as Record<string, unknown> },
+            {
+              paid_at: typeof frontmatter.paid_at === "string" ? frontmatter.paid_at : undefined,
+              paid_amount: frontmatter.paid_amount,
+              payment_method:
+                typeof frontmatter.payment_method === "string"
+                  ? frontmatter.payment_method
+                  : undefined,
+            }
+          );
           await closeOpenItemForInvoice(ctx.headers, slug, "paid");
         }
       } catch (err) {
