@@ -26,13 +26,37 @@ export async function GET(
     );
   }
 
-  const safeSlug = decodeURIComponent(slug ?? "");
+  let safeSlug: string;
+  try {
+    safeSlug = decodeURIComponent(slug ?? "");
+  } catch {
+    // Malformed percent-encoding (e.g. "%E0") is a bad request, not a crash.
+    return Response.json({ error: "invalid_slug" }, { status: 400 });
+  }
   if (!safeSlug || safeSlug.includes("..")) {
     return Response.json({ error: "invalid_slug" }, { status: 400 });
   }
   const encoded = safeSlug.split("/").map(encodeURIComponent).join("/");
 
   try {
+    // The token's scope is "documents": only pages of type document are
+    // served — any other record (matter, invoice, note) is "not found".
+    const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encoded}`, {
+      headers: auth.headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (pageRes.status === 404) return Response.json({ error: "not_found" }, { status: 404 });
+    if (!pageRes.ok) throw new Error(`engine page ${pageRes.status}`);
+    const page = (await pageRes.json()) as {
+      type?: string;
+      title?: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    };
+    const type =
+      page.type || (typeof page.frontmatter?.type === "string" ? page.frontmatter.type : "");
+    if (type !== "document") return Response.json({ error: "not_found" }, { status: 404 });
+
     // Prefer the original upload (PDF/DOCX/…). 404 means "no stored file",
     // in which case the page content is the document.
     const fileRes = await fetch(`${ENGINE_URL}/api/files/${encoded}`, {
@@ -53,13 +77,6 @@ export async function GET(
     }
     if (fileRes.status !== 404) throw new Error(`engine file ${fileRes.status}`);
 
-    const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encoded}`, {
-      headers: auth.headers,
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (pageRes.status === 404) return Response.json({ error: "not_found" }, { status: 404 });
-    if (!pageRes.ok) throw new Error(`engine page ${pageRes.status}`);
-    const page = (await pageRes.json()) as { title?: string; content?: string };
     const body = `# ${page.title ?? safeSlug}\n\n${page.content ?? ""}`;
     return new Response(body, {
       headers: {

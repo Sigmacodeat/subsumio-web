@@ -3,6 +3,9 @@ import { resolveFeedToken } from "@/lib/feed-auth";
 
 export const dynamic = "force-dynamic";
 
+/** Safety bound for the listing, far above any firm's document count. */
+const DAV_DOCUMENTS_MAX = 100_000;
+
 /**
  * GET /api/calendar/<userId>.<secret>/dav/documents — JSON document listing
  * for the read-only WebDAV bridge (`scripts/dav-server.ts`).
@@ -25,8 +28,9 @@ export async function GET(_req: Request, context: { params: Promise<{ token: str
   }
 
   try {
-    // The 200 most recent documents — paged, one engine request returns 100.
-    const pages = await listEnginePages(auth.headers, "document", 200, {
+    // Every document the token owner may see — paged (one engine request
+    // returns 100); a mounted drive must not silently stop at a cut-off.
+    const pages = await listEnginePages(auth.headers, "document", DAV_DOCUMENTS_MAX, {
       strict: true,
       timeoutMs: 15_000,
     });

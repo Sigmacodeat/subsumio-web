@@ -68,3 +68,52 @@ describe("DAV document routes require the documents scope", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("DAV document routes — slug, type and completeness (R8-20)", () => {
+  const davAuth = {
+    ok: true,
+    userId: "u1",
+    kind: "dav",
+    headers: { "x-subsumio-source": "b1" },
+  };
+
+  it("malformed percent-encoding → 400, not a crash", async () => {
+    resolveFeedToken.mockResolvedValue(davAuth);
+    const res = await getDocument(
+      new Request("http://x"),
+      params({ token: "u1.dav", slug: "%E0" })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("a slug of a non-document page (e.g. a matter) → 404, no file read", async () => {
+    resolveFeedToken.mockResolvedValue(davAuth);
+    fetchMock.mockResolvedValue(
+      Response.json({ slug: "legal/cases/a", type: "legal_case", content: "geheim" })
+    );
+    const res = await getDocument(
+      new Request("http://x"),
+      params({ token: "u1.dav", slug: "legal%2Fcases%2Fa" })
+    );
+    expect(res.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/pages/");
+  });
+
+  it("250 documents → all listed", async () => {
+    resolveFeedToken.mockResolvedValue(davAuth);
+    const all = Array.from({ length: 250 }, (_, i) => ({
+      slug: `docs/d${i}`,
+      title: `D${i}`,
+      frontmatter: { type: "document" },
+    }));
+    fetchMock.mockImplementation(async (url: string) => {
+      const u = new URL(url);
+      const offset = Number(u.searchParams.get("offset") ?? 0);
+      const limit = Math.min(Number(u.searchParams.get("limit") ?? 100), 100);
+      return Response.json(all.slice(offset, offset + limit));
+    });
+    const res = await listDocuments(new Request("http://x"), params({ token: "u1.dav" }));
+    expect((await res.json()).documents).toHaveLength(250);
+  });
+});
