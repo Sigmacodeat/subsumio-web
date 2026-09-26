@@ -14,17 +14,35 @@ import { caseRetentionState, type CaseRetentionState } from "@/lib/case-retentio
  *    ihre Seiten mit `tombstone_reason: "case_deleted"` — beides im Papierkorb.
  *  - every other page becomes `status: "tombstoned"` (+ tombstoned_at …).
  */
-export const TRASH_TYPES = [
-  "legal_case",
+/**
+ * Page types that belong to a matter (`case_slug`) and follow it: archived
+ * with it (retained), deleted with it (Papierkorb), restored with it. Invoices
+ * (§ 132 BAO, Storno only), KYC records (own retention) and document versions
+ * (purged with their document) have their own rules and are not listed.
+ */
+export const CASE_DEPENDENT_TYPES = [
   "document",
-  "intake_request",
-  "legal_contact",
   "legal_deadline",
   "deadline",
-  "invoice",
+  "legal_note",
+  "legal_phone_note",
   "note",
   "time_entry",
+  "expense",
   "task",
+  "chat_session",
+  "document_request",
+  "shared_item",
+  "calendar_event",
+] as const;
+
+/** Every type the Papierkorb lists — the matter types plus their dependents. */
+export const TRASH_TYPES = [
+  "legal_case",
+  ...CASE_DEPENDENT_TYPES,
+  "intake_request",
+  "legal_contact",
+  "invoice",
 ] as const;
 
 export interface TrashItem {

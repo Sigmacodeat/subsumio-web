@@ -1,20 +1,28 @@
 /**
- * Archive/restore cascade for a matter's documents — one implementation for
- * the matter page (DELETE/PATCH /api/pages/<akte>) and the Papierkorb
+ * Archive/restore cascade for a matter's pages — one implementation for the
+ * matter page (DELETE/PATCH /api/pages/<akte>) and the Papierkorb
  * (POST /api/trash).
  *
  * The engine cannot filter by frontmatter and returns at most 100 rows per
- * list request, so the documents of a matter are found by paging through the
- * whole `document` type (keyset cursor, strict: a failed page aborts instead
- * of looking like "no more documents") and filtering on `case_slug`.
+ * list request, so the pages of a matter are found by paging through every
+ * matter-dependent type (CASE_DEPENDENT_TYPES — documents, deadlines, notes,
+ * time entries, chats, document requests …; keyset cursor, strict: a failed
+ * page aborts instead of looking like "no more pages") and filtering on
+ * `case_slug`.
  *
- * Restore semantics (same on both routes): only documents the archive
- * cascade tombstoned (`tombstone_reason: "case_archived"`) come back.
- * Documents someone deleted on purpose stay deleted.
+ * Restore semantics (same on both routes): only pages the cascade hid come
+ * back. Pages someone deleted on purpose stay deleted.
+ *
+ * Never cascaded: a live Notfrist (cancelled with a reason, never hidden),
+ * billed time entries/expenses (part of an issued invoice) and pages under
+ * their own Legal Hold. They are reported as `skipped`.
  */
 
 import { enginePatchPage } from "@/lib/engine";
 import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
+import { CASE_DEPENDENT_TYPES } from "@/lib/trash";
+import { checkDeadlinePageDelete, isDeadlinePage } from "@/lib/deadline-write-policy";
+import { checkBilledEntriesWrite } from "@/lib/billing-write-guards";
 
 /** Upper bound for the firm-wide document scan behind a cascade. */
 export const CASCADE_SCAN_MAX = 100_000;
@@ -38,18 +46,38 @@ export interface CascadeResult {
   matched: number;
   succeeded: number;
   failed: CascadeFailure[];
+  /** Pages of the matter the cascade left alone (live Notfrist, billed, Legal Hold). */
+  skipped?: number;
 }
 
-/** Every document page of the firm (including deleted ones). Throws on a failed read. */
+/**
+ * Every page of the matter-dependent types (including deleted ones). Throws
+ * on a failed read or a truncated type — a partial list must not look like
+ * "the matter has no more pages".
+ */
 async function listAllDocuments(headers: Record<string, string>): Promise<ListedPage[]> {
-  const docs = await listEnginePages(headers, "document", CASCADE_SCAN_MAX, {
-    includeTombstoned: true,
-    strict: true,
-  });
-  if (docs.length >= CASCADE_SCAN_MAX) {
-    throw new Error(`document scan truncated at ${CASCADE_SCAN_MAX}`);
+  const out: ListedPage[] = [];
+  for (const type of CASE_DEPENDENT_TYPES) {
+    const pages = await listEnginePages(headers, type, CASCADE_SCAN_MAX, {
+      includeTombstoned: true,
+      strict: true,
+    });
+    if (pages.length >= CASCADE_SCAN_MAX) {
+      throw new Error(`${type} scan truncated at ${CASCADE_SCAN_MAX}`);
+    }
+    for (const p of pages) out.push(p.type ? p : { ...p, type });
   }
-  return docs;
+  return out;
+}
+
+/** Pages the cascade must leave alone (see the file header). */
+function isCascadeExempt(page: ListedPage): boolean {
+  const fm = page.frontmatter ?? {};
+  if (fm.legal_hold === true) return true;
+  if (isDeadlinePage(page.type, fm.type, page.slug) && checkDeadlinePageDelete(fm, page.title)) {
+    return true;
+  }
+  return checkBilledEntriesWrite(page, { mode: "delete" }) !== null;
 }
 
 async function patchAll(
@@ -119,18 +147,20 @@ export async function tombstoneCaseDocuments(
   } catch (err) {
     return listingFailure(err);
   }
-  const matched = docs.filter((d) => {
+  const candidates = docs.filter((d) => {
     const fm = d.frontmatter ?? {};
     if (!caseSlugForms.has(fm.case_slug as string)) return false;
     if (fm.status !== "tombstoned") return true;
     return reason === "case_deleted" && fm.tombstone_reason === "case_archived";
   });
-  return patchAll(headers, matched, {
+  const matched = candidates.filter((d) => !isCascadeExempt(d));
+  const result = await patchAll(headers, matched, {
     status: "tombstoned",
     tombstoned_at: now,
     tombstoned_by: actorEmail,
     tombstone_reason: reason,
   });
+  return { ...result, skipped: candidates.length - matched.length };
 }
 
 /** Archive cascade (`tombstone_reason: "case_archived"`) — retained, not trash. */

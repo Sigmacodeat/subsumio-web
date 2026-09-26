@@ -70,6 +70,13 @@ const TYPE_LABEL: Record<string, string> = {
   note: "Notiz",
   time_entry: "Zeiteintrag",
   task: "Aufgabe",
+  legal_note: "Aktennotiz",
+  legal_phone_note: "Telefonnotiz",
+  expense: "Auslage",
+  chat_session: "Unterhaltung",
+  document_request: "Dokumentanfrage",
+  shared_item: "Freigabe",
+  calendar_event: "Termin",
 };
 
 const REASON_LABEL: Record<string, string> = {

@@ -450,3 +450,19 @@ describe("Aufbewahrungsfrist abgeschlossener Akten (§ 12 RAO, § 132 BAO)", () 
     expect(deleted).toEqual(["legal/cases/mistake"]);
   });
 });
+
+describe("purge covers every deletable matter page type", () => {
+  it("purges an expired deleted matter note", async () => {
+    pagesByType.set("legal_note", [
+      {
+        slug: "notes/n1",
+        title: "n",
+        type: "legal_note",
+        frontmatter: { status: "tombstoned", tombstoned_at: old },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["notes/n1"]);
+  });
+});

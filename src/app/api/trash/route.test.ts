@@ -192,6 +192,7 @@ describe("GET /api/trash", () => {
 describe("POST /api/trash (restore)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListEnginePages.mockReset();
     currentRole.value = "lawyer";
   });
 
@@ -310,35 +311,41 @@ describe("POST /api/trash (restore)", () => {
         frontmatter: { status: "archived", archived_at: "2026-01-01T10:00:00.000Z" },
       })
     );
-    mockListEnginePages.mockResolvedValueOnce([
-      {
-        slug: "legal/cases/old/doc-1",
-        type: "document",
-        frontmatter: {
-          status: "tombstoned",
-          tombstone_reason: "case_archived",
-          case_slug: "legal/cases/old",
-        },
-      },
-      {
-        slug: "legal/cases/old/doc-2",
-        type: "document",
-        frontmatter: {
-          status: "tombstoned",
-          tombstone_reason: "manual_delete",
-          case_slug: "legal/cases/old",
-        },
-      },
-      {
-        slug: "legal/cases/other/doc-3",
-        type: "document",
-        frontmatter: {
-          status: "tombstoned",
-          tombstone_reason: "case_archived",
-          case_slug: "legal/cases/other",
-        },
-      },
-    ]);
+    mockListEnginePages.mockImplementation((_h: unknown, type: string) =>
+      Promise.resolve(
+        type !== "document"
+          ? []
+          : [
+              {
+                slug: "legal/cases/old/doc-1",
+                type: "document",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstone_reason: "case_archived",
+                  case_slug: "legal/cases/old",
+                },
+              },
+              {
+                slug: "legal/cases/old/doc-2",
+                type: "document",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstone_reason: "manual_delete",
+                  case_slug: "legal/cases/old",
+                },
+              },
+              {
+                slug: "legal/cases/other/doc-3",
+                type: "document",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstone_reason: "case_archived",
+                  case_slug: "legal/cases/other",
+                },
+              },
+            ]
+      )
+    );
     mockEnginePatchPage.mockResolvedValue(new Response("{}", { status: 200 }));
 
     const res = await post({ slug: "legal/cases/old" });
@@ -436,7 +443,6 @@ describe("POST /api/trash (restore)", () => {
     };
     expect(docPatch.slug).toBe("legal/cases/mistake/doc-1");
     expect(docPatch.frontmatter.status).toBeNull();
-    mockListEnginePages.mockReset();
   });
 
   test("a matter deleted from the archive goes back to the archive with its pages", async () => {
@@ -474,12 +480,46 @@ describe("POST /api/trash (restore)", () => {
     };
     expect(docPatch.frontmatter).toMatchObject({ tombstone_reason: "case_archived" });
     expect(docPatch.frontmatter).not.toHaveProperty("status");
-    mockListEnginePages.mockReset();
   });
 
   test("rejects a target status outside the archived state machine", async () => {
     const res = await post({ slug: "legal/cases/old", status: "won" });
     expect(res.status).toBe(400);
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/trash — every deletable matter page type", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListEnginePages.mockReset();
+  });
+
+  test("a deleted matter note is listed (and thus restorable and purgeable)", async () => {
+    mockListEnginePages.mockImplementation((_h: unknown, type: string) =>
+      Promise.resolve(
+        type === "legal_note"
+          ? [
+              {
+                slug: "notes/n1",
+                title: "Aktennotiz",
+                type: "legal_note",
+                frontmatter: {
+                  status: "tombstoned",
+                  tombstoned_at: "2026-09-01T10:00:00.000Z",
+                  tombstone_reason: "manual_delete",
+                },
+              },
+            ]
+          : []
+      )
+    );
+    const res = await GET(new Request("http://localhost/api/trash") as unknown as NextRequest);
+    const body = await res.json();
+    expect(body.data.items.map((i: { slug: string }) => i.slug)).toEqual(["notes/n1"]);
+    const types = mockListEnginePages.mock.calls.map((c) => c[1]);
+    expect(types).toEqual(
+      expect.arrayContaining(["legal_note", "chat_session", "document_request"])
+    );
   });
 });
