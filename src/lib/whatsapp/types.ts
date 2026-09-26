@@ -4,6 +4,8 @@ export interface WhatsAppSenderBinding {
   userId?: string;
   name?: string;
   role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
+  /** Email of the linked user account — set at runtime for staff senders, never stored. */
+  email?: string;
 }
 
 /**
@@ -27,6 +29,13 @@ export interface WhatsAppIdentity extends WhatsAppSenderBinding {
   status: "active" | "suspended" | "revoked";
   /** ISO timestamp of identity verification (OTP / portal link), or null if unverified. */
   verifiedAt: string | null;
+  /**
+   * `userId` was explicitly chosen by an administrator as the person this
+   * number belongs to. Older firm identities stored the administrator who
+   * registered the number in `userId`; they stay unlinked (no firm commands)
+   * until an administrator links the right account.
+   */
+  userLinked?: boolean;
   createdAt: string;
   updatedAt: string;
 }

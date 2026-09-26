@@ -149,6 +149,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
           updated_at timestamptz NOT NULL DEFAULT now()
         );
         ALTER TABLE subsumio_whatsapp_identities ADD COLUMN IF NOT EXISTS phone_enc text;
+        ALTER TABLE subsumio_whatsapp_identities ADD COLUMN IF NOT EXISTS user_linked boolean NOT NULL DEFAULT false;
       `
         )
         .then(() => undefined);
@@ -176,6 +177,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       phone: (await decrypt(typeof r.phone_enc === "string" ? r.phone_enc : null)) ?? "",
       phoneHash: String(r.phone_hash),
       userId: r.user_id ? String(r.user_id) : undefined,
+      userLinked: r.user_linked === true,
       name: r.name ? String(r.name) : undefined,
       role: (r.role ? String(r.role) : "lawyer") as WhatsAppIdentity["role"],
       matterScope,
@@ -217,8 +219,8 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     await this.ensureSchema();
     await this.pool().query(
       `INSERT INTO subsumio_whatsapp_identities
-         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at, phone_enc)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at, phone_enc, user_linked)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         identity.id,
         identity.orgId,
@@ -233,6 +235,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
         identity.createdAt,
         identity.updatedAt,
         await encrypt(identity.phone || null),
+        identity.userLinked === true,
       ]
     );
     return identity;
@@ -250,6 +253,10 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     if (patch.userId !== undefined) {
       sets.push(`user_id = $${i++}`);
       vals.push(patch.userId || null);
+    }
+    if (patch.userLinked !== undefined) {
+      sets.push(`user_linked = $${i++}`);
+      vals.push(patch.userLinked === true);
     }
     if (patch.phoneHash !== undefined) {
       sets.push(`phone_hash = $${i++}`);

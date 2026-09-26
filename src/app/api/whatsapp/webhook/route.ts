@@ -7,9 +7,16 @@ import {
   extractMessageStatuses,
   type WhatsAppWebhookPayload,
   type WhatsAppMessageStatus,
+  type WhatsAppIdentity,
+  type WhatsAppIncomingMessage,
 } from "@/lib/whatsapp/types";
 import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
 import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
+import {
+  isWhatsAppStaffRole,
+  resolveStaffAccount,
+  staffAccountDeniedReply,
+} from "@/lib/whatsapp/staff-account";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import {
   getWhatsAppConsentStore,
@@ -19,7 +26,13 @@ import {
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
-import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
+import {
+  ENGINE_URL,
+  engineHeadersForBrain,
+  enginePatchPage,
+  runAsEngineCaller,
+  type EngineCaller,
+} from "@/lib/engine";
 import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import {
   createCaseSafely,
@@ -154,62 +167,47 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       continue;
     }
 
-    try {
-      const result = await orchestrateWhatsAppMessage(message, sender, {
-        listPendingApprovals,
-        updateApprovalStatus,
-        approvalExecutionDeps: executionDepsForBrain(sender.brainId),
-      });
-      if (result.interactive) {
-        const sendResult = await sendWhatsAppInteractive(message.from, result.interactive);
-        if (sendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(sendResult.messageId, sender.brainId);
-        }
-      } else if (result.reply) {
-        const sendResult = await sendWhatsAppText(message.from, result.reply);
-        if (sendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(sendResult.messageId, sender.brainId);
-        }
-      }
-
-      // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
-      // If the orchestrator created a pending approval with a notification event,
-      // send a proactive WhatsApp message to the lawyer with the approval summary.
-      if (result.status === "pending_approval" && result.actionSlug) {
+    // Firm numbers act as the linked person: without an active user account
+    // of this firm there are no firm commands (fail-closed). With one, every
+    // engine call below carries that person's identity, so walls, matter
+    // teams and document ACLs apply as in the dashboard.
+    let actingSender = sender;
+    let caller: EngineCaller | undefined;
+    if (isWhatsAppStaffRole(sender.role)) {
+      const account = await resolveStaffAccount(sender);
+      if (!account.ok) {
+        await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
+          brainId: sender.brainId,
+          details: { phoneHash: phoneHash(message.from), reason: account.reason },
+        });
         try {
-          const event = result.notificationEvent;
-          const messageBody = event ? buildWhatsAppMessageBody(event) : "";
-          if (event?.recipient_phone && messageBody) {
-            await sendProactiveMessage({
-              to: event.recipient_phone,
-              brainId: sender.brainId,
-              scope: "approval_request",
-              freeform: messageBody,
-              urgent: true,
-            });
-          }
-        } catch {
-          // Non-blocking: notification dispatch is best-effort
-        }
+          await sendWhatsAppText(message.from, staffAccountDeniedReply());
+        } catch {}
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "denied");
+        results.push({ id: message.id, status: "ignored", error: account.reason });
+        continue;
       }
-
-      await markMessageProcessed(message.id, phoneHash(message.from), message.type, result.status);
-      results.push({ id: message.id, status: result.status });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      log.error("[whatsapp-webhook] message failed:", error);
-      try {
-        const errSendResult = await sendWhatsAppText(
-          message.from,
-          "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
-        );
-        if (errSendResult.messageId && sender.brainId) {
-          void recordOutboundMessage(errSendResult.messageId, sender.brainId);
-        }
-      } catch {}
-      await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
-      results.push({ id: message.id, status: "failed" });
+      actingSender = account.sender;
+      caller = account.caller;
     }
+
+    const processMessage = () =>
+      processInboundMessage(message, actingSender, results).catch(async (err) => {
+        const error = err instanceof Error ? err.message : String(err);
+        log.error("[whatsapp-webhook] message failed:", error);
+        try {
+          const errSendResult = await sendWhatsAppText(
+            message.from,
+            "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
+          );
+          if (errSendResult.messageId && sender.brainId) {
+            void recordOutboundMessage(errSendResult.messageId, sender.brainId);
+          }
+        } catch {}
+        await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
+        results.push({ id: message.id, status: "failed" });
+      });
+    await (caller ? runAsEngineCaller(caller, processMessage) : processMessage());
   }
 
   return Response.json({
@@ -219,6 +217,53 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     results,
   });
 });
+
+async function processInboundMessage(
+  message: WhatsAppIncomingMessage,
+  sender: WhatsAppIdentity,
+  results: Array<{ id: string; status: string; error?: string }>
+): Promise<void> {
+  const result = await orchestrateWhatsAppMessage(message, sender, {
+    listPendingApprovals,
+    updateApprovalStatus,
+    approvalExecutionDeps: executionDepsForBrain(sender.brainId),
+  });
+  if (result.interactive) {
+    const sendResult = await sendWhatsAppInteractive(message.from, result.interactive);
+    if (sendResult.messageId && sender.brainId) {
+      void recordOutboundMessage(sendResult.messageId, sender.brainId);
+    }
+  } else if (result.reply) {
+    const sendResult = await sendWhatsAppText(message.from, result.reply);
+    if (sendResult.messageId && sender.brainId) {
+      void recordOutboundMessage(sendResult.messageId, sender.brainId);
+    }
+  }
+
+  // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
+  // If the orchestrator created a pending approval with a notification event,
+  // send a proactive WhatsApp message to the lawyer with the approval summary.
+  if (result.status === "pending_approval" && result.actionSlug) {
+    try {
+      const event = result.notificationEvent;
+      const messageBody = event ? buildWhatsAppMessageBody(event) : "";
+      if (event?.recipient_phone && messageBody) {
+        await sendProactiveMessage({
+          to: event.recipient_phone,
+          brainId: sender.brainId,
+          scope: "approval_request",
+          freeform: messageBody,
+          urgent: true,
+        });
+      }
+    } catch {
+      // Non-blocking: notification dispatch is best-effort
+    }
+  }
+
+  await markMessageProcessed(message.id, phoneHash(message.from), message.type, result.status);
+  results.push({ id: message.id, status: result.status });
+}
 
 /** Store outbound message status updates in the brain as chat_outbox pages. */
 async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promise<void> {

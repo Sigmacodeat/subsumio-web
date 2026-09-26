@@ -29,6 +29,7 @@ import {
   twoFactorSetupRequiredResponse,
 } from "@/lib/auth/two-factor-gate";
 import { createHmac } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
@@ -502,10 +503,55 @@ export function engineMonitoringHeaders(): Record<string, string> {
   return headers;
 }
 
+/**
+ * A signed-in person acting through a channel without a browser session —
+ * today: a firm member writing via WhatsApp. While a call chain runs inside
+ * {@link runAsEngineCaller}, every engine header built for that person's brain
+ * (engineHeadersForBrain, engineHeadersForBrainWithMatterScope, and so every
+ * helper built on them) carries their signed identity, so the engine applies
+ * walls, matter teams and document ACLs exactly as in the dashboard.
+ */
+export interface EngineCaller {
+  brainId: string;
+  userId: string;
+  role: string;
+  orgId?: string | null;
+  /** Upper bound on top of the person's own matter access ("all" = none). */
+  matterScope: string[] | "all";
+}
+
+const engineCallerStore = new AsyncLocalStorage<EngineCaller>();
+
+export function runAsEngineCaller<T>(caller: EngineCaller, fn: () => Promise<T>): Promise<T> {
+  return engineCallerStore.run(caller, fn);
+}
+
+/** The caller active for `brainId` in this call chain, if any. */
+export function currentEngineCaller(brainId: string): EngineCaller | undefined {
+  const caller = engineCallerStore.getStore();
+  return caller && caller.brainId === brainId ? caller : undefined;
+}
+
+function signCaller(
+  headers: Record<string, string>,
+  caller: EngineCaller,
+  matterScope: string[] | "all" = caller.matterScope
+): Record<string, string> {
+  const token = createSignedIdentityToken(caller.brainId, matterScope, {
+    userId: caller.userId,
+    role: caller.role,
+    orgId: caller.orgId,
+  });
+  if (token) headers["x-subsumio-identity-token"] = token;
+  return headers;
+}
+
 export function engineHeadersForBrain(brainId: string): Record<string, string> {
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  const caller = currentEngineCaller(brainId);
+  if (caller) signCaller(headers, caller);
   return headers;
 }
 
@@ -527,6 +573,9 @@ export function engineHeadersForBrainWithMatterScope(
   matterScope: string[] | "all"
 ): Record<string, string> {
   const headers = engineHeadersForBrain(brainId);
+  const caller = currentEngineCaller(brainId);
+  // A known person keeps their own access rules; the scope only narrows it.
+  if (caller) return signCaller(headers, caller, matterScope);
   const token = createSignedIdentityToken(brainId, matterScope);
   if (token) headers["x-subsumio-identity-token"] = token;
   return headers;

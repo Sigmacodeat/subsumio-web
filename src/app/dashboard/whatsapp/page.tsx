@@ -39,6 +39,7 @@ import { WhatsAppInbox } from "@/components/whatsapp/whatsapp-inbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { formatDateTime } from "@/lib/utils";
+import { useOrg } from "@/lib/queries/settings";
 
 /** German wording for workflow/identity status values stored in English. */
 const STATUS_DE: Record<string, string> = {
@@ -64,6 +65,7 @@ const STATUS_DE: Record<string, string> = {
   failed: "fehlgeschlagen",
 };
 const ROLE_DE: Record<string, string> = {
+  admin: "Administration",
   lawyer: "Anwalt",
   assistant: "Kanzleimitarbeiter",
   client: "Mandant",
@@ -94,6 +96,7 @@ interface WhatsAppStatus {
     id: string;
     brainId: string;
     userId?: string;
+    userLinked?: boolean;
     name?: string;
     role?: string;
     status: string;
@@ -127,9 +130,17 @@ export default function WhatsAppDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [identityName, setIdentityName] = useState("");
-  const [identityRole, setIdentityRole] = useState<"lawyer" | "assistant" | "client" | "intake">(
-    "lawyer"
-  );
+  const [identityRole, setIdentityRole] = useState<"member" | "client" | "intake">("member");
+  const [identityUserId, setIdentityUserId] = useState("");
+  const orgQuery = useOrg();
+  const firmMembers = useMemo(() => {
+    const data = orgQuery.data as
+      | { members?: Array<{ id: string; name?: string; email?: string; role?: string }> }
+      | undefined;
+    return (data?.members ?? []).filter(
+      (m) => m.role === "admin" || m.role === "lawyer" || m.role === "assistant"
+    );
+  }, [orgQuery.data]);
   const [savingIdentity, setSavingIdentity] = useState(false);
   const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
   const [caseSelections, setCaseSelections] = useState<Record<string, string>>({});
@@ -224,16 +235,22 @@ export default function WhatsAppDashboardPage() {
     setSavingIdentity(true);
     setError(null);
     try {
+      // A firm number belongs to a member account: role and matter access come
+      // from that account ("all" = the member's own access, enforced by the
+      // engine). Clients never get "all" — they are invited from the matter.
+      const member = identityRole === "member";
       await api.whatsapp.createIdentity({
         phone: phone.trim(),
         name: identityName.trim() || undefined,
-        role: identityRole,
+        role: member ? "lawyer" : identityRole,
+        ...(member && identityUserId ? { user_id: identityUserId } : {}),
         status: "active",
-        matter_scope: "all",
+        matter_scope: member ? "all" : [],
       });
       setPhone("");
       setIdentityName("");
-      setIdentityRole("lawyer");
+      setIdentityRole("member");
+      setIdentityUserId("");
       await reload();
     } catch {
       setError(t("whatsapp.err_save_identity"));
@@ -585,8 +602,7 @@ export default function WhatsAppDashboardPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lawyer">{t("whatsapp.role_lawyer")}</SelectItem>
-                    <SelectItem value="assistant">{t("whatsapp.role_assistant")}</SelectItem>
+                    <SelectItem value="member">{t("whatsapp.role_member")}</SelectItem>
                     <SelectItem value="client">{t("whatsapp.role_client")}</SelectItem>
                     <SelectItem value="intake">{t("whatsapp.role_intake")}</SelectItem>
                   </SelectContent>
@@ -595,7 +611,11 @@ export default function WhatsAppDashboardPage() {
               <div className="flex items-end">
                 <Button
                   onClick={() => void addIdentity()}
-                  disabled={savingIdentity || !phone.trim()}
+                  disabled={
+                    savingIdentity ||
+                    !phone.trim() ||
+                    (identityRole === "member" && firmMembers.length > 0 && !identityUserId)
+                  }
                 >
                   {savingIdentity ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -605,6 +625,28 @@ export default function WhatsAppDashboardPage() {
                   {t("whatsapp.activate")}
                 </Button>
               </div>
+              {identityRole === "member" && firmMembers.length > 0 ? (
+                <div className="space-y-1.5 md:col-span-4">
+                  <Label htmlFor="whatsapp-member" className="text-xs">
+                    {t("whatsapp.member")}
+                  </Label>
+                  <Select value={identityUserId} onValueChange={setIdentityUserId}>
+                    <SelectTrigger id="whatsapp-member">
+                      <SelectValue placeholder={t("whatsapp.member_select")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {firmMembers.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name || m.email} {m.role ? `· ${de(ROLE_DE, m.role)}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("whatsapp.member_hint")}
+                  </p>
+                </div>
+              ) : null}
             </div>
             {status?.identities?.length ? (
               <div className="space-y-2">
@@ -625,6 +667,12 @@ export default function WhatsAppDashboardPage() {
                         {de(STATUS_DE, identity.status)} ·{" "}
                         {identity.verifiedAt ? t("whatsapp.verified") : t("whatsapp.not_verified")}
                       </div>
+                      {["admin", "lawyer", "assistant"].includes(identity.role ?? "") &&
+                      !identity.userLinked ? (
+                        <div className="text-[color:var(--ds-warning-text)]">
+                          {t("whatsapp.member_unlinked")}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
