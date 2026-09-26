@@ -31,7 +31,7 @@ import {
 } from "@/lib/whatsapp-event-bus";
 import { executeApprovedAction, type ApprovalExecutionDeps } from "@/lib/approval-execution";
 import { ingestVerifiedClientWhatsAppSubmission } from "@/lib/whatsapp/client-ingest";
-import { verifyWhatsAppClientCode } from "@/lib/whatsapp/client-verification";
+import { isCodeMessage, verifyWhatsAppClientCode } from "@/lib/whatsapp/client-verification";
 import type { ActionType } from "@/lib/approval";
 
 /**
@@ -315,7 +315,10 @@ export async function orchestrateWhatsAppMessage(
     }
   }
 
-  if (isClientRole(sender.role) && !sender.verifiedAt && normalizedText) {
+  // A message that is only a confirmation code is checked against the
+  // number's open invitations — also for an already confirmed client who was
+  // invited to a further matter. Any other text is never a code attempt.
+  if (isClientRole(sender.role) && message.type === "text" && isCodeMessage(normalizedText)) {
     const verification = await verifyWhatsAppClientCode({
       sender,
       text: normalizedText,

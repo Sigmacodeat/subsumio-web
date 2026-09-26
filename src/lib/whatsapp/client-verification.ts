@@ -1,11 +1,34 @@
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
-import { normalizePhone, type WhatsAppIdentity } from "@/lib/whatsapp/types";
+import { normalizePhone, type PhoneCountry, type WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
+import {
+  CLIENT_CONSENT_SCOPES,
+  CLIENT_OPT_IN_TEXT,
+  grantWhatsAppConsent,
+} from "@/lib/whatsapp/consent-grant";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
-const CODE_REGEX = /\b(?:code|pin|bestaetigen|bestätigen)?\s*(\d{6})\b/i;
+/** Wrong codes an invitation tolerates before it is closed. */
+const MAX_CODE_ATTEMPTS = 5;
+/**
+ * Only a message that IS the code counts as an attempt ("123456",
+ * "Code: 123456") — a client writing an amount or a file number with six
+ * digits must never burn an invitation.
+ */
+const CODE_MESSAGE_REGEX = /^\s*(?:code|pin|bestaetigen|bestätigen)?\s*:?\s*(\d{6})\s*[.!]?\s*$/i;
+
+/** Why an invitation cannot be created for this number. */
+export class WhatsAppInviteConflictError extends Error {
+  constructor(
+    public readonly code: "phone_bound_other_firm" | "phone_bound_staff" | "phone_blocked",
+    message: string
+  ) {
+    super(message);
+    this.name = "WhatsAppInviteConflictError";
+  }
+}
 
 export interface WhatsAppClientInviteInput {
   brainId: string;
@@ -13,6 +36,10 @@ export interface WhatsAppClientInviteInput {
   phone: string;
   caseSlug: string;
   clientName?: string;
+  /** The firm's name — the client must see who is asking. */
+  firmName?: string;
+  /** Country for numbers written nationally ("0664 …"). */
+  defaultCountry?: PhoneCountry;
   invitedByUserId?: string;
   invitedByName?: string;
   now?: Date;
@@ -53,7 +80,18 @@ function safeSlugPart(input: string): string {
 }
 
 function extractCode(text: string): string | null {
-  return text.match(CODE_REGEX)?.[1] ?? null;
+  return text.match(CODE_MESSAGE_REGEX)?.[1] ?? null;
+}
+
+/** The message consists of a confirmation code only. */
+export function isCodeMessage(text: string): boolean {
+  return extractCode(text) !== null;
+}
+
+/** Link that opens a chat with the firm's business number, code prefilled. */
+function businessChatLink(code: string): string | null {
+  const digits = (process.env.WHATSAPP_BUSINESS_DISPLAY_NUMBER ?? "").replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(code)}` : null;
 }
 
 function codesEqual(inputCode: string, storedHash: string): boolean {
@@ -64,17 +102,23 @@ function codesEqual(inputCode: string, storedHash: string): boolean {
 
 function inviteMessage(params: {
   clientName?: string;
+  firmName?: string;
   caseSlug: string;
   code: string;
   expiresAt: string;
 }): string {
   const caseRef = params.caseSlug.replace(/^legal\/cases\//, "");
+  const firm = params.firmName?.trim() || "Ihre Kanzlei";
+  const link = businessChatLink(params.code);
   return [
-    `Hallo${params.clientName ? ` ${params.clientName}` : ""},`,
-    `die Kanzlei moechte diese WhatsApp-Nummer fuer die Akte ${caseRef} bestaetigen.`,
-    `Bitte antworten Sie mit: ${params.code}`,
-    `Der Code ist bis ${new Date(params.expiresAt).toLocaleString("de-DE", { timeZone: "Europe/Vienna" })} gueltig.`,
-    "Danach koennen Sie Unterlagen sicher per WhatsApp einreichen. Rechtsauskuenfte erfolgen erst nach Pruefung durch die Kanzlei.",
+    `Guten Tag${params.clientName ? ` ${params.clientName}` : ""},`,
+    `${firm} möchte diese WhatsApp-Nummer für Ihre Akte ${caseRef} bestätigen.`,
+    link
+      ? `Bitte senden Sie den Code ${params.code} an die WhatsApp-Nummer der Kanzlei: ${link}`
+      : `Bitte senden Sie den Code ${params.code} an die WhatsApp-Nummer der Kanzlei.`,
+    `Der Code ist bis ${new Date(params.expiresAt).toLocaleString("de-AT", { timeZone: "Europe/Vienna" })} gültig.`,
+    CLIENT_OPT_IN_TEXT,
+    "Danach können Sie Unterlagen sicher per WhatsApp einreichen. Rechtsauskünfte erfolgen erst nach Prüfung durch die Kanzlei.",
   ].join("\n");
 }
 
@@ -128,10 +172,13 @@ async function listPendingInvites(
   hash: string,
   fetchImpl: typeof fetch
 ): Promise<Array<{ slug: string; frontmatter: Record<string, unknown> }>> {
-  const res = await fetchImpl(`${ENGINE_URL}/api/pages?type=whatsapp_client_invite&limit=100`, {
-    headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(15_000),
-  });
+  const res = await fetchImpl(
+    `${ENGINE_URL}/api/pages?type=whatsapp_client_invite&limit=100&fm.phone_hash=${encodeURIComponent(hash)}`,
+    {
+      headers: engineHeadersForBrain(brainId),
+      signal: AbortSignal.timeout(15_000),
+    }
+  );
   if (!res.ok) return [];
   const data = (await res.json().catch(() => ({}))) as {
     pages?: Array<{ slug?: string; frontmatter?: Record<string, unknown> }>;
@@ -157,8 +204,9 @@ async function listPendingInvites(
 async function markInvite(
   brainId: string,
   inviteSlug: string,
-  status: "verified" | "expired" | "failed",
-  fetchImpl: typeof fetch
+  status: "verified" | "expired" | "failed" | "pending",
+  fetchImpl: typeof fetch,
+  extra: Record<string, unknown> = {}
 ): Promise<void> {
   await fetchImpl(`${ENGINE_URL}/api/pages`, {
     method: "POST",
@@ -173,6 +221,7 @@ async function markInvite(
         status,
         verified_at: status === "verified" ? new Date().toISOString() : undefined,
         updated_at: new Date().toISOString(),
+        ...extra,
       },
       merge: true,
     }),
@@ -180,36 +229,64 @@ async function markInvite(
   }).catch(() => undefined);
 }
 
+/**
+ * Invite a client's number for a matter. The number is only confirmed — and
+ * the matter only added to its scope — when the client sends the code back
+ * (verifyWhatsAppClientCode). An invitation never takes over a number that
+ * belongs to another firm, to a firm member, or that the firm blocked.
+ */
 export async function createWhatsAppClientInvite(
   input: WhatsAppClientInviteInput
 ): Promise<WhatsAppClientInvite> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? new Date();
-  const normalizedPhone = normalizePhone(input.phone);
+  const normalizedPhone = normalizePhone(input.phone, input.defaultCountry);
   const hash = phoneHash(normalizedPhone);
   const code = String(randomInt(100000, 1000000));
   const expiresAt = new Date(now.getTime() + INVITE_TTL_MS).toISOString();
   const store = getWhatsAppIdentityStore();
   const existing = await store.getByPhoneHash(hash);
-  const existingScope = Array.isArray(existing?.matterScope) ? existing.matterScope : [];
-  const matterScope = Array.from(new Set([...existingScope, input.caseSlug]));
-  const identity: WhatsAppIdentity = {
-    id: existing?.id ?? `wa_${randomUUID()}`,
-    orgId: input.orgId,
-    brainId: input.brainId,
-    phone: normalizedPhone,
-    phoneHash: hash,
-    userId: existing?.userId ?? input.invitedByUserId,
-    name: input.clientName ?? existing?.name,
-    role: "client",
-    matterScope,
-    status: "active",
-    verifiedAt: existing?.verifiedAt ?? null,
-    createdAt: existing?.createdAt ?? now.toISOString(),
-    updatedAt: now.toISOString(),
-  };
-  const saved = existing ? await store.update(existing.id, identity) : await store.create(identity);
-  const finalIdentity = saved ?? identity;
+  if (existing && existing.orgId !== input.orgId) {
+    throw new WhatsAppInviteConflictError(
+      "phone_bound_other_firm",
+      "Diese WhatsApp-Nummer ist bereits einer anderen Kanzlei zugeordnet."
+    );
+  }
+  if (existing && existing.role !== "client") {
+    throw new WhatsAppInviteConflictError(
+      "phone_bound_staff",
+      "Diese WhatsApp-Nummer gehört zu einem Kanzleikonto und kann nicht als Mandant eingeladen werden."
+    );
+  }
+  if (existing && existing.status !== "active") {
+    throw new WhatsAppInviteConflictError(
+      "phone_blocked",
+      "Diese WhatsApp-Nummer ist gesperrt. Eine Freischaltung ist nur durch die Administration möglich."
+    );
+  }
+
+  let finalIdentity: WhatsAppIdentity;
+  if (existing) {
+    // Known client of this firm: nothing changes until the code comes back.
+    finalIdentity = existing;
+  } else {
+    const identity: WhatsAppIdentity = {
+      id: `wa_${randomUUID()}`,
+      orgId: input.orgId,
+      brainId: input.brainId,
+      phone: normalizedPhone,
+      phoneHash: hash,
+      name: input.clientName,
+      role: "client",
+      // Pending: no matter until the client confirms the number.
+      matterScope: [],
+      status: "active",
+      verifiedAt: null,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+    finalIdentity = await store.create(identity);
+  }
   const inviteSlug = `legal/whatsapp-client-invites/${safeSlugPart(input.caseSlug)}-${hash.slice(-10)}-${now.getTime()}`;
 
   await writeInvitePage({
@@ -229,11 +306,12 @@ export async function createWhatsAppClientInvite(
 
   return {
     inviteSlug,
-    identity: finalIdentity,
+    identity: { ...finalIdentity, phone: normalizedPhone },
     code,
     expiresAt,
     message: inviteMessage({
       clientName: input.clientName,
+      firmName: input.firmName,
       caseSlug: input.caseSlug,
       code,
       expiresAt,
@@ -241,6 +319,13 @@ export async function createWhatsAppClientInvite(
   };
 }
 
+/**
+ * Check a code message against ALL open invitations of this number. A match
+ * confirms the number, adds that matter to the client's scope (keeping the
+ * matters already confirmed) and records the client's WhatsApp consent. A
+ * wrong code counts an attempt on the open invitations; they close only after
+ * MAX_CODE_ATTEMPTS, so one typo never burns an invitation for another matter.
+ */
 export async function verifyWhatsAppClientCode(params: {
   sender: WhatsAppIdentity;
   text: string;
@@ -257,60 +342,106 @@ export async function verifyWhatsAppClientCode(params: {
     params.sender.phoneHash,
     fetchImpl
   );
-  const invite = invites[0];
-  if (!invite) {
+  if (invites.length === 0) {
     return {
       ok: false,
       reason: "no_invite",
-      reply: "Ich finde keine offene WhatsApp-Bestaetigung fuer diese Nummer.",
+      reply: "Ich finde keine offene WhatsApp-Bestätigung für diese Nummer.",
     };
   }
 
-  const expiresAt = new Date(String(invite.frontmatter.expires_at ?? ""));
-  if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() < now.getTime()) {
-    await markInvite(params.sender.brainId, invite.slug, "expired", fetchImpl);
+  const open: typeof invites = [];
+  for (const invite of invites) {
+    const expiresAt = new Date(String(invite.frontmatter.expires_at ?? ""));
+    if (!Number.isFinite(expiresAt.getTime()) || expiresAt.getTime() < now.getTime()) {
+      await markInvite(params.sender.brainId, invite.slug, "expired", fetchImpl);
+    } else {
+      open.push(invite);
+    }
+  }
+  if (open.length === 0) {
     return {
       ok: false,
       reason: "expired",
       reply:
-        "Der Bestaetigungscode ist abgelaufen. Bitte fordern Sie einen neuen Code bei der Kanzlei an.",
+        "Der Bestätigungscode ist abgelaufen. Bitte fordern Sie einen neuen Code bei der Kanzlei an.",
     };
   }
 
-  const storedHash = String(invite.frontmatter.code_hash ?? "");
-  if (!storedHash || !codesEqual(code, storedHash)) {
-    await markInvite(params.sender.brainId, invite.slug, "failed", fetchImpl);
+  const invite = open.find((i) => {
+    const storedHash = String(i.frontmatter.code_hash ?? "");
+    return storedHash !== "" && codesEqual(code, storedHash);
+  });
+  if (!invite) {
+    for (const i of open) {
+      const attempts = Number(i.frontmatter.failed_attempts ?? 0) + 1;
+      await markInvite(
+        params.sender.brainId,
+        i.slug,
+        attempts >= MAX_CODE_ATTEMPTS ? "failed" : "pending",
+        fetchImpl,
+        { failed_attempts: attempts }
+      );
+    }
     return {
       ok: false,
       reason: "invalid_code",
       reply:
-        "Der Bestaetigungscode passt nicht. Bitte pruefen Sie den Code oder fordern Sie einen neuen an.",
+        "Der Bestätigungscode passt nicht. Bitte prüfen Sie den Code oder fordern Sie einen neuen an.",
     };
   }
 
+  const caseSlug = String(invite.frontmatter.case_slug);
+  const store = getWhatsAppIdentityStore();
   const identityId = String(invite.frontmatter.identity_id ?? params.sender.id);
-  const identity = await getWhatsAppIdentityStore().update(identityId, {
-    role: "client",
+  const current = await store.getById(identityId);
+  if (!current || current.orgId !== params.sender.orgId || current.role !== "client") {
+    return {
+      ok: false,
+      reason: "identity_missing",
+      reply:
+        "Die WhatsApp-Identität konnte nicht gefunden werden. Bitte kontaktieren Sie die Kanzlei.",
+    };
+  }
+  const scope = Array.isArray(current.matterScope) ? current.matterScope : [];
+  const identity = await store.update(identityId, {
     status: "active",
     verifiedAt: now.toISOString(),
-    matterScope: [String(invite.frontmatter.case_slug)],
+    matterScope: Array.from(new Set([...scope, caseSlug])),
   });
   if (!identity) {
     return {
       ok: false,
       reason: "identity_missing",
       reply:
-        "Die WhatsApp-Identity konnte nicht gefunden werden. Bitte kontaktieren Sie die Kanzlei.",
+        "Die WhatsApp-Identität konnte nicht gefunden werden. Bitte kontaktieren Sie die Kanzlei.",
     };
   }
 
   await markInvite(params.sender.brainId, invite.slug, "verified", fetchImpl);
+  const consent = await grantWhatsAppConsent({
+    brainId: params.sender.brainId,
+    orgId: params.sender.orgId,
+    phoneHash: params.sender.phoneHash,
+    subjectType: "client",
+    subjectRef: identity.id,
+    scopes: CLIENT_CONSENT_SCOPES,
+    source: "client_code",
+    proof: { invite_slug: invite.slug, case_slug: caseSlug },
+    now,
+  }).catch(() => null);
   return {
     ok: true,
     identity,
-    caseSlug: String(invite.frontmatter.case_slug),
+    caseSlug,
     inviteSlug: invite.slug,
-    reply:
-      "Danke, Ihre WhatsApp-Nummer ist bestaetigt. Sie koennen jetzt Nachrichten und Unterlagen zu dieser Akte senden.",
+    reply: [
+      "Danke, Ihre WhatsApp-Nummer ist bestätigt. Sie können jetzt Nachrichten und Unterlagen zu dieser Akte senden.",
+      consent?.status === "withdrawn"
+        ? "Sie hatten Nachrichten der Kanzlei abbestellt. Mit START erhalten Sie wieder Nachrichten."
+        : null,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }

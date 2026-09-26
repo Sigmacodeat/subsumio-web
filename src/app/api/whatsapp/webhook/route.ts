@@ -23,6 +23,11 @@ import {
   isConsentActive,
   whatsAppTenantKeys,
 } from "@/lib/whatsapp/consent-store";
+import {
+  CLIENT_CONSENT_SCOPES,
+  STAFF_CONSENT_SCOPES,
+  grantWhatsAppConsent,
+} from "@/lib/whatsapp/consent-grant";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
@@ -482,34 +487,33 @@ async function withdrawWhatsAppConsent(phone: string, sender: { brainId?: string
 }
 
 /**
- * START: widerrufene Einwilligungen reaktivieren (Double-Opt-In-proof bleibt)
- * — nur die der Kanzlei, der die Absender-Identität gehört.
+ * START: the person asks to receive messages from this firm again (or for the
+ * first time). Recorded as the person's own opt-in — but only for a number the
+ * firm knows as a confirmed client or a linked firm member; an unconfirmed
+ * number must confirm with its invitation code first.
  */
-async function reinstateWhatsAppConsent(
-  phone: string,
-  sender: { brainId?: string; orgId?: string }
-): Promise<void> {
-  const store = getWhatsAppConsentStore();
+async function reinstateWhatsAppConsent(phone: string, sender: WhatsAppIdentity): Promise<void> {
   const hash = phoneHash(phone);
-  const now = new Date().toISOString();
-  const rows = await store.getByPhoneHash(senderTenantKeys(sender), hash);
-  const withdrawn = rows.filter((c) => c.optOutAt);
-  for (const c of withdrawn) {
-    await store.update(c.id, {
-      optOutAt: null,
-      optInAt: now,
-      consentProof: { ...c.consentProof, reinstated_via: "whatsapp_start", reinstated_at: now },
+  const staff = isWhatsAppStaffRole(sender.role) && sender.userLinked === true && !!sender.userId;
+  const client = sender.role === "client" && !!sender.verifiedAt;
+  let granted = false;
+  if (staff || client) {
+    const result = await grantWhatsAppConsent({
+      brainId: sender.brainId,
+      orgId: sender.orgId,
+      phoneHash: hash,
+      subjectType: staff ? "lawyer" : "client",
+      subjectRef: staff ? (sender.userId as string) : sender.id,
+      scopes: staff ? STAFF_CONSENT_SCOPES : CLIENT_CONSENT_SCOPES,
+      source: "start_keyword",
     });
+    granted = result.status !== "withdrawn";
   }
-  await logAudit("whatsapp.consent_granted", "whatsapp_identity", {
-    brainId: sender.brainId ?? SYSTEM_BRAIN,
-    details: { phoneHash: hash, reinstated: withdrawn.length },
-  });
   const res = await sendWhatsAppText(
     phone,
-    withdrawn.length > 0
-      ? "Danke — der Nachrichtenempfang wurde wieder aktiviert."
-      : "Ihre Nummer ist bei uns noch nicht für den Nachrichtenempfang freigeschaltet. Bitte wenden Sie sich an Ihre Kanzlei."
+    granted
+      ? "Danke — der Nachrichtenempfang ist aktiviert. Mit STOPP können Sie ihn jederzeit beenden."
+      : "Ihre Nummer ist bei uns noch nicht für den Nachrichtenempfang freigeschaltet. Bitte bestätigen Sie zuerst den Code aus der Einladung Ihrer Kanzlei."
   );
   if (res.messageId && sender.brainId) {
     void recordOutboundMessage(res.messageId, sender.brainId);
