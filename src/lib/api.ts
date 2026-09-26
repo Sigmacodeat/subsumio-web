@@ -643,6 +643,8 @@ export const api = {
       /** A page list failed to load — counts may be incomplete. */
       degraded?: boolean;
       failed_types?: string[];
+      /** Lists with more pages than were read — counts are lower bounds. */
+      capped_types?: string[];
     }> {
       const params = new URLSearchParams();
       if (opts?.types) params.set("types", opts.types);

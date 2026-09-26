@@ -437,21 +437,25 @@ export function WidgetBoard() {
               {
                 label: t("cockpit.stat_cases"),
                 value: data.activeCases.length,
+                capped: data.isCapped("legal_case"),
                 href: "/dashboard/cases",
               },
               {
                 label: t("cockpit.stat_inbox"),
                 value: data.inboxItems.length,
+                capped: data.isCapped("intake_request"),
                 href: "/dashboard/intake",
               },
               {
                 label: t("cockpit.stat_reviews"),
                 value: data.pendingReviews.length,
+                capped: data.isCapped("review_item", "agent_action"),
                 href: "/dashboard/review-queue",
               },
               {
                 label: t("cockpit.stat_billing"),
                 value: data.openInvoices.length,
+                capped: data.isCapped("invoice"),
                 href: "/dashboard/invoicing",
               },
             ]}

@@ -228,6 +228,9 @@ export function useKanzleiCockpitData() {
   // cockpit is degraded too — never a silent "0 Fristen".
   const degraded = cockpitQuery.isError || cockpitQuery.data?.degraded === true;
   const loading = cockpitQuery.isLoading;
+  // Lists with more records than were read: their counts are lower bounds.
+  const cappedTypes = cockpitQuery.data?.capped_types ?? [];
+  const isCapped = (...types: string[]) => types.some((type) => cappedTypes.includes(type));
 
   return {
     stats,
@@ -247,6 +250,7 @@ export function useKanzleiCockpitData() {
     overdueReconciliations,
     loading,
     degraded,
+    isCapped,
   };
 }
 
@@ -1019,7 +1023,7 @@ export function SecondaryStats({
   items,
 }: {
   loading: boolean;
-  items: Array<{ label: string; value: number; href: string }>;
+  items: Array<{ label: string; value: number; href: string; capped?: boolean }>;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[color:var(--ds-text-muted)]">
@@ -1030,7 +1034,7 @@ export function SecondaryStats({
           className="inline-flex items-center gap-1 transition-[background-color,border-color,color] hover:underline motion-reduce:transition-none"
         >
           <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-            {loading ? "—" : item.value}
+            {loading ? "—" : item.capped ? `${item.value}+` : item.value}
           </span>
           <span>{item.label}</span>
           {i < items.length - 1 && <span className="text-[color:var(--ds-text-subtle)]">·</span>}
@@ -1053,21 +1057,25 @@ export function WidgetDashboard() {
     {
       label: t("cockpit.stat_cases"),
       value: data.activeCases.length,
+      capped: data.isCapped("legal_case"),
       href: "/dashboard/cases",
     },
     {
       label: t("cockpit.stat_inbox"),
       value: data.inboxItems.length,
+      capped: data.isCapped("intake_request"),
       href: "/dashboard/intake",
     },
     {
       label: t("cockpit.stat_reviews"),
       value: reviewCount,
+      capped: data.isCapped("review_item", "agent_action"),
       href: "/dashboard/review-queue",
     },
     {
       label: t("cockpit.stat_billing"),
       value: openInvoiceCount,
+      capped: data.isCapped("invoice"),
       href: "/dashboard/invoicing",
     },
   ];
