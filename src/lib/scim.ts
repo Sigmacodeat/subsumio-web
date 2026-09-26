@@ -27,7 +27,7 @@ import { logAudit } from "@/lib/audit";
 import { auditBrainForOrg } from "@/lib/audit-user";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
-import { revokeAllSessions } from "@/lib/auth/session";
+import { revokeUserAccess } from "@/lib/auth/revoke-access";
 import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
@@ -72,7 +72,8 @@ export interface SCIMUser extends SCIMResource {
   name?: SCIMName;
   displayName?: string;
   emails: SCIMEmail[];
-  active: boolean;
+  /** Absent means "unchanged" on update and "active" on creation. */
+  active?: boolean;
   title?: string;
   userType?: string;
   department?: string;
@@ -305,7 +306,7 @@ export function scimToUserData(scimUser: SCIMUser): {
   email: string;
   name: string;
   externalId?: string;
-  active: boolean;
+  active: boolean | undefined;
 } {
   const email =
     scimUser.emails?.find((e) => e.primary)?.value ||
@@ -325,6 +326,22 @@ export function scimToUserData(scimUser: SCIMUser): {
     externalId: scimUser.externalId || scimUser.id,
     active: scimUser.active,
   };
+}
+
+/**
+ * SCIM booleans as IdPs send them: JSON `true`/`false`, or the strings
+ * "true"/"false" in any case (Microsoft Entra ID sends "True"/"False").
+ * Anything else is not a boolean — null, so the caller answers 400 instead of
+ * guessing (`Boolean("False")` would be `true`).
+ */
+export function parseScimBoolean(value: unknown): boolean | null {
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true") return true;
+    if (v === "false") return false;
+  }
+  return null;
 }
 
 // ── SCIM Provisioning Logic ───────────────────────────────────────────
@@ -373,7 +390,8 @@ export async function provisionOrUpdateUser(
     newUser.scimExternalId = externalId || null;
     newUser.ssoProvider = "scim";
     newUser.emailVerifiedAt = new Date().toISOString();
-    if (!active) {
+    // Only an explicit `active: false` creates a blocked account.
+    if (active === false) {
       newUser.deactivatedAt = new Date().toISOString();
     }
     user = await store.create(newUser);
@@ -396,10 +414,12 @@ export async function provisionOrUpdateUser(
     scimExternalId: externalId || user.scimExternalId,
   };
 
-  if (active && user.deactivatedAt) {
+  // `active` is applied only when the IdP states it; a request without it
+  // (partial PUT/POST) leaves the account as it is.
+  if (active === true && user.deactivatedAt) {
     // Reactivate
     patch.deactivatedAt = null;
-  } else if (!active && !user.deactivatedAt) {
+  } else if (active === false && !user.deactivatedAt) {
     // Deactivate (deprovision)
     patch.deactivatedAt = new Date().toISOString();
   }
@@ -408,7 +428,7 @@ export async function provisionOrUpdateUser(
   if (!user) throw new Error("Failed to update user during SCIM sync");
 
   if (patch.deactivatedAt) {
-    await revokeAllSessions(user.id);
+    await revokeUserAccess(user.id);
   }
 
   await logAudit("scim.user_updated", "user", {
@@ -433,7 +453,7 @@ export async function deprovisionUser(userId: string, orgId?: string): Promise<U
     deactivatedAt: new Date().toISOString(),
   });
 
-  await revokeAllSessions(userId);
+  await revokeUserAccess(userId);
 
   await logAudit("scim.user_deprovisioned", "user", {
     brainId: await auditBrainForOrg(orgId ?? user.orgId),
