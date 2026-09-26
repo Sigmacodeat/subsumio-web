@@ -38,6 +38,10 @@ export type LegalDocType =
   | "erv_erledigung"
   | "ladung"
   | "zahlungsbefehl"
+  | "bescheid"
+  | "vollmacht"
+  | "zustellnachweis"
+  | "verbesserungsauftrag"
   | "legal_document";
 
 interface ClassificationPattern {
@@ -651,8 +655,6 @@ const PATTERNS: ClassificationPattern[] = [
       "mahnverfahren",
       "mahnbescheid",
       "zahlungsbefehlsantrag",
-      "rechtsmittelbelehrung",
-      "widerspruch",
       "vollstreckungsklausel",
     ],
     minMatches: 1,
@@ -669,17 +671,147 @@ const PATTERNS: ClassificationPattern[] = [
   },
 ];
 
+// ── Matching ────────────────────────────────────────────────
+//
+// Short keywords must be whole words (optionally with a German inflection
+// ending): "haft" is Haft, never the tail of "Mandantschaft" or the head of
+// "Haftung". Long keywords (7+ letters) may sit inside compounds
+// ("Sachverständigengutachten", "Mietvertrag").
+
+const INFLECTION = "(?:e|en|er|es|em|n|s|ns|nen)?";
+const LONG_KEYWORD = 7;
+const keywordCache = new Map<string, RegExp>();
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function keywordRe(keyword: string): RegExp {
+  const kw = keyword.toLowerCase();
+  let re = keywordCache.get(kw);
+  if (!re) {
+    const body = escapeRe(kw).replace(/\s+/g, "\\s+");
+    re =
+      kw.replace(/\s+/g, "").length >= LONG_KEYWORD
+        ? new RegExp(body, "u")
+        : new RegExp(`(?<![\\p{L}\\p{N}])${body}${INFLECTION}(?![\\p{L}\\p{N}])`, "u");
+    keywordCache.set(kw, re);
+  }
+  return re;
+}
+
+export function containsKeyword(lowerText: string, keyword: string): boolean {
+  return keywordRe(keyword).test(lowerText);
+}
+
+/** A heading line consisting of just this word ("BESCHLUSS", "B e s c h l u s s"). */
+function headingRe(word: string): RegExp {
+  const spaced = word
+    .split("")
+    .map((ch) => escapeRe(ch))
+    .join("\\s*");
+  return new RegExp(`^[ \\t]*${spaced}[ \\t]*[:.]?[ \\t]*$`, "imu");
+}
+
+// ── AT document headers (strong, deterministic signals) ─────
+//
+// Austrian court and authority documents announce their kind in the header:
+// "IM NAMEN DER REPUBLIK" + "Urteil", a "BESCHLUSS"/"BESCHEID" heading, the
+// Zahlungsbefehl's Einspruchsbelehrung, the Rückschein (RSa/RSb). These are
+// checked first, in this order; the keyword scoring below only runs when none
+// applies. Generic words that appear in every decision (Rechtsmittelbelehrung,
+// Gericht, Kosten) are never decisive.
+
+interface HeaderRule {
+  type: LegalDocType;
+  test: (head: string, lower: string) => boolean;
+}
+
+const HEADER_RULES: HeaderRule[] = [
+  {
+    type: "zustellnachweis",
+    test: (head, lower) =>
+      /zustellnachweis|rückschein|rueckschein|zustellschein/.test(head) ||
+      (/(?<![\p{L}])rs[ab](?![\p{L}])/u.test(lower) &&
+        /übernahme|übernommen|hinterleg|empfänger/.test(lower) &&
+        !/im namen der republik/.test(lower)),
+  },
+  {
+    type: "court_judgment",
+    test: (head) =>
+      /im\s+namen\s+der\s+republik/.test(head) &&
+      (headingRe("urteil").test(head) || /(?<![\p{L}])urteil(?![\p{L}])/u.test(head)),
+  },
+  {
+    type: "vollmacht",
+    test: (head) =>
+      /^[ \t]*(?:prozess|general|spezial|anwalts|gattungs)?vollmacht[ \t]*$/imu.test(head) ||
+      /erteile[n]?\s+(?:hiermit\s+)?(?:\S+\s+){0,6}vollmacht/.test(head),
+  },
+  {
+    type: "verbesserungsauftrag",
+    test: (head) =>
+      /verbesserungsauftrag/.test(head) ||
+      /aufgetragen[\s\S]{0,200}?(?:zu\s+verbessern|verbesserung)/.test(head) ||
+      /zur\s+verbesserung\s+(?:des|der|ihres|ihrer)[\s\S]{0,120}?binnen/.test(head),
+  },
+  {
+    type: "zahlungsbefehl",
+    test: (head, lower) =>
+      headingRe("zahlungsbefehl").test(head) || /gegen\s+diesen\s+zahlungsbefehl/.test(lower),
+  },
+  {
+    type: "bescheid",
+    test: (head, lower) =>
+      headingRe("bescheid").test(head) ||
+      (/(?<![\p{L}])bescheid(?![\p{L}])/u.test(head) &&
+        /(?<![\p{L}])spruch(?![\p{L}])/u.test(lower) &&
+        /beschwerde|rechtsmittelbelehrung/.test(lower)),
+  },
+  {
+    type: "court_order",
+    test: (head) => headingRe("beschluss").test(head),
+  },
+  {
+    type: "ladung",
+    test: (head) => /^[ \t]*ladung\b/imu.test(head),
+  },
+];
+
+/**
+ * The document kind a header announces, or null. Used by the classifier and
+ * by the Sammelscan detection (a page whose head announces a new kind starts
+ * a new Schriftstück).
+ */
+export function classifyByHeader(headText: string): LegalDocType | null {
+  const head = headText.toLowerCase();
+  for (const rule of HEADER_RULES) {
+    if (rule.test(head, head)) return rule.type;
+  }
+  if (/^[ \t]*(?:kostennote|honorarnote|rechnung)\b/imu.test(head)) return "invoice";
+  return null;
+}
+
+/** Characters of the document start that count as its header. */
+const HEADER_CHARS = 2500;
+
 /**
  * Classify a legal document based on its text content.
  * Returns the semantic type and a confidence score (0-1).
  *
- * Conservative: requires `minMatches` keyword hits, boosted by
- * `boostWords` presence. Falls back to `legal_document` when
- * no pattern reaches its threshold.
+ * Strong AT header signals decide first (confidence 0.9). Otherwise
+ * conservative keyword scoring: requires `minMatches` whole-word keyword hits,
+ * boosted by `boostWords` presence. Falls back to `legal_document` when no
+ * pattern reaches its threshold.
  */
 export function classifyLegalDocument(text: string): { type: LegalDocType; confidence: number } {
   const lower = text.toLowerCase();
   const textSlice = lower.slice(0, 5000); // Only examine first 5000 chars for performance
+  const head = lower.slice(0, HEADER_CHARS);
+
+  for (const rule of HEADER_RULES) {
+    if (rule.test(head, textSlice)) return { type: rule.type, confidence: 0.9 };
+  }
 
   let bestMatch: { type: LegalDocType; confidence: number } = {
     type: "legal_document",
@@ -689,7 +821,7 @@ export function classifyLegalDocument(text: string): { type: LegalDocType; confi
   for (const pattern of PATTERNS) {
     let matches = 0;
     for (const kw of pattern.keywords) {
-      if (textSlice.includes(kw.toLowerCase())) matches++;
+      if (containsKeyword(textSlice, kw)) matches++;
     }
 
     if (matches < pattern.minMatches) continue;
@@ -700,7 +832,7 @@ export function classifyLegalDocument(text: string): { type: LegalDocType; confi
     if (pattern.boostWords) {
       let boostHits = 0;
       for (const bw of pattern.boostWords) {
-        if (textSlice.includes(bw.toLowerCase())) boostHits++;
+        if (containsKeyword(textSlice, bw)) boostHits++;
       }
       confidence += boostHits * 0.1;
     }
@@ -742,6 +874,10 @@ export function legalDocTypeLabel(type: LegalDocType): string {
     erv_erledigung: "ERV-Erledigung",
     ladung: "Ladung",
     zahlungsbefehl: "Zahlungsbefehl",
+    bescheid: "Bescheid",
+    vollmacht: "Vollmacht",
+    zustellnachweis: "Zustellnachweis",
+    verbesserungsauftrag: "Verbesserungsauftrag",
     legal_document: "Rechtsdokument",
   };
   return labels[type] ?? "Rechtsdokument";
