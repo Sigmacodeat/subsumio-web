@@ -6,6 +6,18 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
+// CSRF exempt-path lookahead, kept in ONE place and interpolated into all
+// three selectors below — mirrors middleware.ts's full allowlist (the
+// prefix checks, API_CSRF_EXEMPT_PATHS and WEBHOOK_CSRF_EXEMPT_PREFIXES) so
+// the lint guard recognizes an exempt path wherever it's called from, not
+// only from the two files currently excluded by filename below.
+const CSRF_EXEMPT_LOOKAHEAD =
+  "portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|" +
+  "realtime\\x2Fpresence|auth\\x2F(?:login|signup|register|forgot|reset|2fa\\x2Flogin-verify)|" +
+  "cron\\x2F|billing\\x2F(?:pipeline-reserve|pipeline-settle|webhook)|" +
+  "whatsapp\\x2F(?:webhook|flow-endpoint)|email\\x2Fwebhook\\x2Fresend|webhooks\\x2Fresend|" +
+  "docusign\\x2Fwebhook|rciid\\x2Fwebhook|webhook\\x2F|cti\\x2Fwebhook";
+
 const eslintConfig = defineConfig([
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
@@ -64,22 +76,19 @@ const eslintConfig = defineConfig([
       "no-restricted-syntax": [
         "error",
         {
-          selector:
-            "CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]",
+          selector: `CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!${CSRF_EXEMPT_LOOKAHEAD})/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]`,
           message:
             "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
         },
         {
-          selector:
-            "CallExpression[callee.name='fetch'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]",
+          selector: `CallExpression[callee.name='fetch'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^\\x2Fapi\\x2F(?!${CSRF_EXEMPT_LOOKAHEAD})/] > ObjectExpression > Property[key.name='method'][value.value=/^(post|put|patch|delete)$/i]`,
           message:
             "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
         },
         {
           // `method` passed as a variable (e.g. `{ method, body }`): cannot be
           // proven read-only, so it needs csrfFetch as well.
-          selector:
-            "CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!portal\\x2F|concierge|intake\\x2Fpublic|booking\\x2Fpublic|demo\\x2Fsession|realtime\\x2Fpresence)/] > ObjectExpression > Property[key.name='method'][value.type='Identifier']",
+          selector: `CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^\\x2Fapi\\x2F(?!${CSRF_EXEMPT_LOOKAHEAD})/] > ObjectExpression > Property[key.name='method'][value.type='Identifier']`,
           message:
             "Schreibende /api/-Aufrufe brauchen den CSRF-Header: csrfFetch (src/lib/csrf.ts) oder api.* statt fetch verwenden.",
         },
