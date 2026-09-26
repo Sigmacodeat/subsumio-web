@@ -63,7 +63,7 @@ function decodeKey(b64: string, id: string): Buffer {
  * engine still runs (existing deployments must not break), but tenant-mode
  * startup and the admin health indicators say so, and the Netcup preflight
  * requires the key. Files written before a key was set stay plaintext until
- * re-encrypted (operator step).
+ * re-encrypted with `gbrain storage reencrypt --apply` (core/storage-reencrypt.ts).
  */
 export function storageEncryptionWarning(
   env: Record<string, string | undefined> = process.env,

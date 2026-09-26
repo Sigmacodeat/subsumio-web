@@ -43,18 +43,20 @@ import { FRONTMATTER_FILTER_KEY_RE, FRONTMATTER_FILTER_MAX } from "../core/types
 import { executeRawJsonb } from "../core/sql-query.ts";
 import { publicErrorMessage, redactErrorResponseBody } from "../core/public-error-message.ts";
 import {
+  PERSONAL_CALENDAR_PREFIX,
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
+  isFirmStaffRole,
   jobMatterStamp,
   jobOwnerStamp,
   matterScopeAllows,
-  type MatterAccessRow,
 } from "../core/matter-access.ts";
 import {
   callerMatterScope,
   loadSourceMatterAccess,
   notifyMatterAccessChanged,
   onMatterAccessChanged,
+  type SourceMatterAccess,
 } from "../core/matter-access-db.ts";
 import {
   canonicalCaseSlugFor,
@@ -1983,11 +1985,8 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * Writes to a case page clear the source's entry (see POST /api/pages).
  */
 const MATTER_ACCESS_TTL_MS = 10_000;
-interface SourceAccess {
+interface SourceAccess extends SourceMatterAccess {
   at: number;
-  rows: MatterAccessRow[];
-  /** Owner segments of private Copilot conversations (chat-sessions/private/<owner>/…). */
-  chatOwners: string[];
 }
 const matterAccessCache = new Map<string, SourceAccess>();
 
@@ -2077,7 +2076,12 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       // Matter access (walls, restricted matters, grants) applies to every
       // role, admins included — see core/matter-access.ts.
       // Other people's private Copilot conversations are hidden from everyone.
-      const known = await sourceAccess(engine, sourceId);
+      // Callers who are not firm staff read the source's access rules fresh:
+      // a KYC record or ID copy filed a moment ago must already be hidden
+      // from them, not only after the cache expires.
+      const known = isFirmStaffRole(payload.role)
+        ? await sourceAccess(engine, sourceId)
+        : await loadSourceMatterAccess(engine, sourceId);
       const effective = callerMatterScope(
         req.matterScope ?? "all",
         { userId: payload.userId, role: payload.role },
@@ -5426,7 +5430,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       );
       if (
         (frontmatter.type ?? storedType) === "legal_case" ||
-        slug.startsWith(PRIVATE_CHAT_PREFIX)
+        slug.startsWith(PRIVATE_CHAT_PREFIX) ||
+        // A new personal calendar mirror must be hidden from colleagues at once.
+        slug.startsWith(PERSONAL_CALENDAR_PREFIX) ||
+        (typeof frontmatter.owner_user_id === "string" &&
+          (frontmatter.type ?? storedType) === "calendar_event")
       ) {
         notifyMatterAccessChanged(sourceId);
       }
@@ -8131,6 +8139,248 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     }
   );
+
+  // ============================================================
+  // Full firm export (Art. 20 DSGVO / leaving the service)
+  // ============================================================
+  //
+  // An admin starts a `firm-export` job (core/firm-export.ts); the job builds
+  // a ZIP of every page and original the admin may see. The archive can be
+  // downloaded once, by that admin, within 24 hours; afterwards (or right
+  // after the download) it is deleted. The web app signs the download link,
+  // writes the audit entries and sends the completion notice.
+
+  async function firmExportStorage() {
+    const { resolveStorageConfig } = await import("../core/file-store.ts");
+    const { createRawStorage } = await import("../core/storage.ts");
+    return createRawStorage(resolveStorageConfig(config.storage ?? storageConfigFromEnv()));
+  }
+
+  /** Admin of a real tenant, or null after answering the refusal. */
+  function firmExportCaller(
+    req: Request,
+    res: Response
+  ): { sourceId: string; userId: string } | null {
+    const sourceId = requestSourceId(req);
+    if (!req.userId || req.userRole !== "admin") {
+      apiError(res, 403, "admin_required", "Only a firm administrator can export the firm's data.");
+      return null;
+    }
+    if (sourceId === "default") {
+      apiError(res, 400, "tenant_required");
+      return null;
+    }
+    return { sourceId, userId: req.userId };
+  }
+
+  function firmExportView(
+    job: import("../core/firm-export.ts").FirmExportJobRow,
+    userId: string,
+    state: string
+  ): Record<string, unknown> {
+    const r = job.result ?? {};
+    const p = job.progress ?? {};
+    return {
+      id: job.id,
+      state,
+      own: job.data.user_id === userId,
+      created_at: job.created_at,
+      finished_at: job.finished_at,
+      progress: {
+        phase: p.phase ?? null,
+        pages_total: p.pages_total ?? null,
+        pages_done: p.pages_done ?? 0,
+        files_done: p.files_done ?? 0,
+      },
+      ...(job.status === "completed"
+        ? {
+            pages: r.pages ?? 0,
+            files: r.files ?? 0,
+            pages_missing: r.pages_missing ?? 0,
+            files_missing: r.files_missing ?? 0,
+            complete: r.complete === true,
+            size_bytes: r.size_bytes ?? null,
+            sha256: r.sha256 ?? null,
+            expires_at: r.expires_at ?? null,
+            downloaded_at: r.downloaded_at ?? null,
+          }
+        : {}),
+      ...(state === "failed" ? { error: "export_failed" } : {}),
+    };
+  }
+
+  async function sweepFirmExportsQuietly(): Promise<void> {
+    try {
+      const { sweepFirmExports } = await import("../core/firm-export.ts");
+      await sweepFirmExports(engine, await firmExportStorage());
+    } catch (e) {
+      console.error(`[firm-export] sweep failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  app.post(
+    "/api/firm-export",
+    express.json({ limit: "16kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const caller = firmExportCaller(req, res);
+        if (!caller) return;
+        await sweepFirmExportsQuietly();
+        const { findRunningFirmExport, firmExportState, FIRM_EXPORT_JOB } =
+          await import("../core/firm-export.ts");
+        const running = await findRunningFirmExport(engine, caller.sourceId);
+        if (running) {
+          res.json({
+            ...firmExportView(running, caller.userId, firmExportState(running)),
+            existing: true,
+          });
+          return;
+        }
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const webBrainId =
+          typeof body.web_brain_id === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(body.web_brain_id)
+            ? body.web_brain_id
+            : undefined;
+        const { JOB_MATTER_SCOPE_KEY } = await import("../core/matter-access.ts");
+        const queue = new MinionQueue(engine);
+        const job = await queue.add(
+          FIRM_EXPORT_JOB,
+          {
+            _source_id: caller.sourceId,
+            user_id: caller.userId,
+            // Always stamped, "all" included: the handler refuses a job
+            // without it rather than widening to the whole tenant.
+            [JOB_MATTER_SCOPE_KEY]: req.matterScope ?? "all",
+            acl_groups: req.aclGroups ?? [],
+            ...jobOwnerStamp(caller.userId),
+            ...(webBrainId ? { web_brain_id: webBrainId } : {}),
+          },
+          { max_attempts: 2, max_stalled: 3 },
+          { allowProtectedSubmit: true }
+        );
+        res.json({ id: job.id, state: "queued", own: true, existing: false });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        console.error(`[firm-export] start failed: ${msg}`);
+        apiError(res, 500, "firm_export_start_failed");
+      }
+    }
+  );
+
+  app.get("/api/firm-export", async (req: Request, res: Response) => {
+    try {
+      const caller = firmExportCaller(req, res);
+      if (!caller) return;
+      await sweepFirmExportsQuietly();
+      const { listFirmExportJobs, firmExportState } = await import("../core/firm-export.ts");
+      const jobs = await listFirmExportJobs(engine, caller.sourceId, 10);
+      res.json({
+        exports: jobs.map((j) => firmExportView(j, caller.userId, firmExportState(j))),
+      });
+    } catch (e) {
+      console.error(`[firm-export] list failed: ${e instanceof Error ? e.message : String(e)}`);
+      apiError(res, 500, "firm_export_list_failed");
+    }
+  });
+
+  app.get("/api/firm-export/:id", async (req: Request, res: Response) => {
+    try {
+      const caller = firmExportCaller(req, res);
+      if (!caller) return;
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        apiError(res, 400, "invalid_id");
+        return;
+      }
+      const { getFirmExportJob, firmExportState } = await import("../core/firm-export.ts");
+      const job = await getFirmExportJob(engine, id, caller.sourceId);
+      if (!job) {
+        apiError(res, 404, "not_found");
+        return;
+      }
+      res.json(firmExportView(job, caller.userId, firmExportState(job)));
+    } catch (e) {
+      console.error(`[firm-export] status failed: ${e instanceof Error ? e.message : String(e)}`);
+      apiError(res, 500, "firm_export_status_failed");
+    }
+  });
+
+  app.get("/api/firm-export/:id/download", async (req: Request, res: Response) => {
+    try {
+      const caller = firmExportCaller(req, res);
+      if (!caller) return;
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        apiError(res, 400, "invalid_id");
+        return;
+      }
+      const { claimFirmExportDownload, openFirmExportArchive, deleteFirmExportArchive } =
+        await import("../core/firm-export.ts");
+      const claim = await claimFirmExportDownload(engine, id, caller.sourceId, caller.userId);
+      if (!claim.ok) {
+        const status =
+          claim.reason === "not_found"
+            ? 404
+            : claim.reason === "forbidden"
+              ? 403
+              : claim.reason === "not_ready"
+                ? 409
+                : 410;
+        apiError(res, status, `export_${claim.reason}`);
+        return;
+      }
+      const job = claim.job;
+      const r = job.result ?? {};
+      const storage = await firmExportStorage();
+      const { loadKeyring } = await import("../core/file-encryption.ts");
+      const archive = await openFirmExportArchive(
+        storage,
+        String(r.storage_path),
+        loadKeyring(),
+        r.encrypted === true
+      );
+      const day = String(r.finished_at ?? job.finished_at ?? "").slice(0, 10) || "export";
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="kanzlei-export-${day}.zip"`);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "private, no-store");
+      if (typeof r.sha256 === "string") res.setHeader("X-Export-Sha256", r.sha256);
+      const { pipeline: pipe } = await import("node:stream/promises");
+      try {
+        await pipe(archive, res);
+      } finally {
+        // One download only: the archive goes as soon as it was sent (or the
+        // transfer broke off — a new export is one click away).
+        await deleteFirmExportArchive(engine, storage, job).catch((e) =>
+          console.error(
+            `[firm-export] delete after download failed: ${e instanceof Error ? e.message : String(e)}`
+          )
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      console.error(`[firm-export] download failed: ${msg}`);
+      if (!res.headersSent) apiError(res, 500, "firm_export_download_failed");
+      else res.destroy();
+    }
+  });
+
+  // Server-only housekeeping (web cron): delete expired archives, hand out
+  // newly finished exports once for the completion notice. Refused for any
+  // request that carries a user identity.
+  app.post("/api/firm-export/sweep", async (req: Request, res: Response) => {
+    try {
+      if (req.userId) {
+        apiError(res, 403, "server_only");
+        return;
+      }
+      const { sweepFirmExports } = await import("../core/firm-export.ts");
+      res.json(await sweepFirmExports(engine, await firmExportStorage()));
+    } catch (e) {
+      console.error(`[firm-export] sweep failed: ${e instanceof Error ? e.message : String(e)}`);
+      apiError(res, 500, "firm_export_sweep_failed");
+    }
+  });
 
   // ============================================================
   // v0.43 — Agent DAG API

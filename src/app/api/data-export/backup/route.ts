@@ -14,6 +14,9 @@ const PER_PAGE = ENGINE_LIST_MAX;
 const MAX_PAGES = 50_000;
 /** Page texts are fetched one by one; this many at a time. */
 const CONTENT_BATCH = 20;
+/** Where the full export (background job, with originals) is started. */
+const FULL_EXPORT_HREF = "/dashboard/settings/privacy";
+const FULL_EXPORT_PLACE = "Einstellungen → Privatsphäre";
 
 export const GET = createHandler(
   {
@@ -33,6 +36,15 @@ export const GET = createHandler(
       // it holds exactly that many. Without the number, completeness cannot
       // be confirmed and the backup is marked incomplete.
       const expectedTotal = await readExpectedTotal(ctx.headers);
+      // Too large for this in-request backup: send the admin to the full
+      // export (background job, originals included) instead of a cut copy.
+      if (expectedTotal !== null && expectedTotal > MAX_PAGES) {
+        return apiError(
+          "use_full_export",
+          `Der Bestand (${expectedTotal.toLocaleString("de-AT")} Einträge) ist zu groß für die Sofort-Sicherung. Bitte den vollständigen Kanzlei-Export unter ${FULL_EXPORT_PLACE} verwenden — er läuft im Hintergrund und enthält auch die Originaldateien.`,
+          413
+        );
+      }
 
       const bySlug = new Map<string, Record<string, unknown>>();
       const allPages: Array<Record<string, unknown>> = [];
@@ -133,7 +145,7 @@ export const GET = createHandler(
             allPages.length === expectedTotal,
           format: "JSON",
           description:
-            "Sicherung aller Einträge des Kanzleiwissens samt Texten — für Umzug oder Archivierung",
+            "Sicherung aller Einträge des Kanzleiwissens samt Texten (ohne Originaldateien — die enthält der Kanzlei-Export unter Einstellungen → Privatsphäre)",
           ...(engineError
             ? {
                 warning:
@@ -142,7 +154,8 @@ export const GET = createHandler(
             : {}),
           ...(truncated
             ? {
-                truncated_warning: `Sicherung bei ${MAX_PAGES.toLocaleString("de-AT")} Einträgen abgeschnitten. Bitte wenden Sie sich an den Support für eine vollständige Ausleitung.`,
+                truncated_warning: `Sicherung bei ${MAX_PAGES.toLocaleString("de-AT")} Einträgen abgeschnitten. Für eine vollständige Ausleitung samt Originaldateien den Kanzlei-Export unter ${FULL_EXPORT_PLACE} verwenden.`,
+                full_export: FULL_EXPORT_HREF,
               }
             : {}),
           ...(!engineError && expectedTotal === null

@@ -394,6 +394,81 @@ export function privateAreaPrefix(userId: string): string {
 }
 
 /**
+ * Firm-internal records a client account never reaches, not even for its own
+ * matter: the anti-money-laundering file (identity check, risk rating,
+ * screening) and the ID copies filed with it. The web app keeps the records
+ * under `legal/kyc/<id>`; ID copies are ordinary documents marked with
+ * `doc_type: ausweiskopie` (or tagged `kyc`) or linked from a record.
+ */
+export const KYC_RECORD_PREFIX = "legal/kyc";
+export const KYC_RECORD_TYPE = "kyc_verification";
+export const ID_COPY_DOC_TYPE = "ausweiskopie";
+export const KYC_TAG = "kyc";
+
+const FIRM_STAFF_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer", "assistant"]);
+
+/** True for firm staff. Unknown or missing roles are not staff (fail-closed). */
+export function isFirmStaffRole(role: string | undefined): boolean {
+  return typeof role === "string" && FIRM_STAFF_ROLES.has(role);
+}
+
+/**
+ * Deny entries (plain slugs/prefixes, for withDeniedMatters) keeping the
+ * firm-internal records from a caller who is not firm staff. `recordSlugs`
+ * are the individual KYC records and ID copies of the source; the prefix
+ * covers records created after the list was read.
+ */
+export function staffOnlyDenies(role: string | undefined, recordSlugs: string[]): string[] {
+  if (isFirmStaffRole(role)) return [];
+  return [KYC_RECORD_PREFIX, ...recordSlugs.filter(Boolean)];
+}
+
+/**
+ * Personal calendar mirrors: appointments pulled from one lawyer's own
+ * Outlook (`calendar/outlook/<mailbox>/<event>`, type calendar_event,
+ * frontmatter owner_user_id) belong to that lawyer alone. Everyone else's
+ * scope denies them; a mirror whose owner is not recorded is denied to all
+ * (fail-closed) until the next sync stamps the owner.
+ */
+export const PERSONAL_CALENDAR_PREFIX = "calendar/outlook/";
+
+export interface PersonalCalendarMirror {
+  slug: string;
+  /** owner_user_id, or null when the mirror does not record it. */
+  owner: string | null;
+}
+
+/** Deny entries (plain slugs/prefixes) for the mirrors `userId` does not own. */
+export function personalCalendarDenies(
+  mirrors: PersonalCalendarMirror[],
+  userId: string
+): string[] {
+  const groups = new Map<string, PersonalCalendarMirror[]>();
+  const loose: PersonalCalendarMirror[] = [];
+  for (const m of mirrors) {
+    if (m.slug.startsWith(PERSONAL_CALENDAR_PREFIX)) {
+      const mailbox = m.slug.slice(PERSONAL_CALENDAR_PREFIX.length).split("/")[0];
+      if (mailbox) {
+        const prefix = `${PERSONAL_CALENDAR_PREFIX}${mailbox}`;
+        const list = groups.get(prefix) ?? [];
+        list.push(m);
+        groups.set(prefix, list);
+        continue;
+      }
+    }
+    loose.push(m);
+  }
+  const denies: string[] = [];
+  for (const [prefix, list] of groups) {
+    // A whole mailbox of someone else: one prefix entry instead of one per event.
+    if (list.every((m) => m.owner !== null && m.owner !== userId)) denies.push(prefix);
+    else for (const m of list) if (m.owner !== userId) denies.push(m.slug);
+  }
+  for (const m of loose) if (m.owner !== userId) denies.push(m.slug);
+  return denies;
+}
+
+/**
  * Where the pages an agent run writes may go.
  *
  *   free     no stamp at all (CLI, operator cron): unchanged behaviour.

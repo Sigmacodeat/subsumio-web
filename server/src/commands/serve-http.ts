@@ -1309,11 +1309,23 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           ? (((errors as any).count / (total as any).count) * 100).toFixed(1)
           : "0";
       const { storageEncryptionWarning } = await import("../core/file-encryption.ts");
+      // Plaintext originals as of the last full `gbrain storage reencrypt`
+      // pass (dry run or applied) — reading every object here would not be cheap.
+      const { readReencryptStatus } = await import("../core/storage-reencrypt.ts");
+      const scan = await readReencryptStatus(engine);
       res.json({
         expiring_soon: (expiring as any).count,
         error_rate: `${errorRate}%`,
         // Admin-only: at-rest encryption of originals (never on the public /health).
         storage_encryption: storageEncryptionWarning(process.env) ? "off" : "on",
+        storage_plaintext: scan
+          ? {
+              files: scan.plaintext,
+              total: scan.total,
+              share: scan.total > 0 ? Math.round((scan.plaintext / scan.total) * 1000) / 1000 : 0,
+              checked_at: scan.checked_at,
+            }
+          : null,
       });
     } catch {
       res.status(503).json({ error: "service_unavailable" });

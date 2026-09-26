@@ -43,9 +43,87 @@ export async function runStorage(engine: BrainEngine, args: string[]): Promise<v
     await runStorageStatus(engine, args.slice(1));
     return;
   }
+  if (subcommand === "reencrypt") {
+    await runStorageReencrypt(engine, args.slice(1));
+    return;
+  }
   console.error(`Unknown storage subcommand: ${subcommand}`);
-  console.error("Available subcommands: status");
+  console.error("Available subcommands: status, reencrypt");
   process.exit(1);
+}
+
+function flagValue(args: string[], name: string): string | undefined {
+  const i = args.indexOf(name);
+  return i !== -1 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : undefined;
+}
+
+/**
+ * `gbrain storage reencrypt [--apply] [--source <id>] [--limit <n>] [--restart] [--json]`
+ *
+ * Encrypts originals stored before SUBSUMIO_STORAGE_ENCRYPTION_KEY was set
+ * (core/storage-reencrypt.ts). Dry run unless --apply; resumable; every
+ * object is verified by decryption before the plaintext is replaced.
+ */
+async function runStorageReencrypt(engine: BrainEngine, args: string[]): Promise<void> {
+  const { loadKeyring } = await import("../core/file-encryption.ts");
+  const keyring = loadKeyring();
+  if (!keyring) {
+    console.error(
+      "SUBSUMIO_STORAGE_ENCRYPTION_KEY is not set — nothing to encrypt with. Set the key first."
+    );
+    process.exit(1);
+  }
+  const { loadConfig } = await import("../core/config.ts");
+  const { resolveStorageConfig, storageConfigFromEnv } = await import("../core/file-store.ts");
+  const { createRawStorage } = await import("../core/storage.ts");
+  const backend = await createRawStorage(
+    resolveStorageConfig(loadConfig()?.storage ?? storageConfigFromEnv())
+  );
+  const { createProgress } = await import("../core/progress.ts");
+  const { getCliOptions, cliOptsToProgressOptions } = await import("../core/cli-options.ts");
+  const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
+  const apply = args.includes("--apply");
+  const limitRaw = Number(flagValue(args, "--limit"));
+  const { reencryptStoredFiles } = await import("../core/storage-reencrypt.ts");
+
+  let started = false;
+  const result = await reencryptStoredFiles({
+    engine,
+    backend,
+    keyring,
+    apply,
+    sourceId: flagValue(args, "--source"),
+    limit: Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined,
+    restart: args.includes("--restart"),
+    onProgress: (_done, total) => {
+      if (!started) {
+        progress.start(apply ? "storage.reencrypt" : "storage.reencrypt.dry_run", total);
+        started = true;
+      }
+      progress.tick();
+    },
+  });
+  if (started) progress.finish();
+
+  if (args.includes("--json")) {
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    console.log(
+      [
+        apply ? "Re-encryption run" : "Dry run (nothing written; use --apply to encrypt)",
+        `  rows in scope:        ${result.total}`,
+        `  checked this run:     ${result.scanned}`,
+        `  already encrypted:    ${result.alreadyEncrypted}`,
+        `  encrypted now:        ${result.reencrypted}`,
+        `  still plaintext:      ${result.plaintext}`,
+        `  missing in storage:   ${result.missing}`,
+        `  failed:               ${result.failed.length}`,
+        `  complete:             ${result.complete ? "yes" : "no (run again to continue)"}`,
+        ...result.failed.slice(0, 20).map((f) => `    ! ${f.path}: ${f.error}`),
+      ].join("\n")
+    );
+  }
+  if (result.failed.length > 0) process.exitCode = 1;
 }
 
 async function runStorageStatus(engine: BrainEngine, args: string[]): Promise<void> {

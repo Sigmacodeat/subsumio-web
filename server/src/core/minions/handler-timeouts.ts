@@ -47,6 +47,8 @@ export const HANDLER_DEFAULT_TIMEOUT_MS: Readonly<Record<string, number>> = {
   // Deep Analysis (async): one chat call over up to 25 documents, plus
   // queue wait under a provider lease.
   "deep-analysis": SIXTY_MIN_MS,
+  // Full firm export: every page and original of a tenant into one archive.
+  "firm-export": SIXTY_MIN_MS * 6,
 };
 
 /**

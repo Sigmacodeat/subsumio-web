@@ -101,6 +101,16 @@ export default function DataExportPage() {
       const res = await fetch("/api/data-export/backup", {
         signal: AbortSignal.timeout(300_000),
       });
+      if (res.status === 413) {
+        // Too large for the in-request backup: the server names the full
+        // export (background job, with originals) instead.
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setBackupError(
+          body?.error ??
+            "Der Bestand ist zu groß für die Sofort-Sicherung. Bitte den Kanzlei-Export unter Einstellungen → Privatsphäre verwenden."
+        );
+        return;
+      }
       if (!res.ok) throw new Error("backup_failed");
       const data = (await res.json()) as { export_metadata?: BackupMetadata };
       downloadJson(data, `subsumio-sicherung-${today()}.json`);
