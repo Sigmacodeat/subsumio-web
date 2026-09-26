@@ -98,6 +98,7 @@ import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
 import { claimPendingUpload, releasePendingUpload } from "../core/upload-confirm-claim.ts";
+import { withOcrOwner } from "../core/ocr-budget.ts";
 import {
   confirmPipelinePlan,
   legalPipelineIdempotencyKey,
@@ -1077,11 +1078,14 @@ export async function runExtractionAndImport(
     userId,
   } = params;
 
-  const markdown = await buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
-    depth: 0,
-    budget: { entries: 0, expandedBytes: 0 },
-    password,
-  });
+  // OCR pages count against the firm's daily budget (ocr-budget.ts).
+  const markdown = await withOcrOwner(tenantSource, () =>
+    buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
+      depth: 0,
+      budget: { entries: 0, expandedBytes: 0 },
+      password,
+    })
+  );
 
   const { partSlugs } = await splitAndImportLargeDocument(
     engine,

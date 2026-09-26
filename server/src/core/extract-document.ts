@@ -533,8 +533,18 @@ async function tryOcrFallback(
   const uniqueRequested = [...new Set(requestedPages)]
     .filter((page) => page >= 1 && page <= totalPages)
     .sort((a, b) => a - b);
-  const capped = maxPages > 0 && uniqueRequested.length > maxPages;
-  const pagesToConvert = capped ? uniqueRequested.slice(0, maxPages) : uniqueRequested;
+  const perDocument = maxPages > 0 ? uniqueRequested.slice(0, maxPages) : uniqueRequested;
+  // Daily per-firm OCR budget (ocr-budget.ts): pages over it stay unread and
+  // are reported like the per-document cap.
+  const { reserveOcrPages } = await import("./ocr-budget.ts");
+  const granted = reserveOcrPages(perDocument.length);
+  const pagesToConvert = perDocument.slice(0, granted);
+  const capped = pagesToConvert.length < uniqueRequested.length;
+  if (granted < perDocument.length) {
+    warnings.push(
+      `pdf_ocr_quota_exhausted: daily OCR budget of this firm reached — ${perDocument.length - granted} page(s) left for later`
+    );
+  }
 
   const convert = fromBuffer(pdfBuf, {
     density: 300,
@@ -1470,9 +1480,14 @@ export async function synthesizeDocumentMarkdown(
   // scanned PDFs that couldn't be OCR'd are silently stuck with no text.
   const ocrUnavailable = extracted.warnings.some((w) => w.startsWith("pdf_ocr_unavailable"));
   const ocrFailed = extracted.warnings.some((w) => w.startsWith("pdf_ocr_failed"));
-  if (ocrUnavailable || ocrFailed) {
+  const ocrQuota = extracted.warnings.some((w) => w.startsWith("pdf_ocr_quota_exhausted"));
+  if (ocrUnavailable || ocrFailed || ocrQuota) {
     fm.ocr_status = "needs_backfill";
-    fm.ocr_backfill_reason = ocrUnavailable ? "rasterizer_missing" : "ocr_failed";
+    fm.ocr_backfill_reason = ocrQuota
+      ? "ocr_quota_exhausted"
+      : ocrUnavailable
+        ? "rasterizer_missing"
+        : "ocr_failed";
   } else if (fm.extraction_method === "ocr_vision") {
     fm.ocr_status = "completed";
   }
