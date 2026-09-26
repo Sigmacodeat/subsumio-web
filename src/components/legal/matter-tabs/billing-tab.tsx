@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
+import { tariffAmountOf } from "@/lib/time-entry-value";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import type { TimeEntry } from "@/lib/legal-types";
 import type { DashboardKey } from "@/content/dashboard";
@@ -214,6 +215,10 @@ export function BillingTab() {
     .filter((e) => e.billable !== false && !e.billed)
     .reduce((sum, e) => sum + (e.minutes || 0), 0);
   const unbilledHours = Math.round((unbilledMinutes / 60) * 100) / 100;
+  // Tarifleistungen (RATG/AHK) wait for the invoice with their amount.
+  const unbilledTariff = ctx.timeEntries
+    .filter((e) => e.billable !== false && !e.billed)
+    .reduce((sum, e) => sum + (tariffAmountOf(e) ?? 0), 0);
   const expenseTotal = ctx.expensesList.reduce(
     (sum, e) => sum + (typeof e.amount === "number" ? e.amount : 0),
     0
@@ -425,9 +430,14 @@ export function BillingTab() {
                       {fmtHours(Math.round((entry.minutes / 60) * 100) / 100, lang)}
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {entry.rate
-                        ? `${formatEur(entry.rate, lang)}${lang === "en" ? "/h" : "/Std."}`
-                        : ""}
+                      {tariffAmountOf(entry) !== null
+                        ? `${entry.tariff?.system === "ahk" ? "AHK" : "RATG"} ${formatEur(
+                            tariffAmountOf(entry) ?? 0,
+                            lang
+                          )}`
+                        : entry.rate
+                          ? `${formatEur(entry.rate, lang)}${lang === "en" ? "/h" : "/Std."}`
+                          : ""}
                     </div>
                   </div>
                   <Badge
@@ -633,7 +643,7 @@ export function BillingTab() {
         </div>
 
         {/* Unbilled Summary */}
-        {(unbilledHours > 0 || ctx.unbilledExpenses > 0) && (
+        {(unbilledHours > 0 || unbilledTariff > 0 || ctx.unbilledExpenses > 0) && (
           <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
             <div>
               <h3 className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
@@ -641,6 +651,7 @@ export function BillingTab() {
               </h3>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                 {fmtHours(unbilledHours, lang)} {t("billingtab.time")} +{" "}
+                {unbilledTariff > 0 ? `${formatEur(unbilledTariff, lang)} Tarif + ` : ""}
                 {formatEur(ctx.unbilledExpenses, lang)} {t("billingtab.expenses")}
               </p>
             </div>

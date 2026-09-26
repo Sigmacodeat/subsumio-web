@@ -89,7 +89,16 @@ function serverRecordCheck(fm: Record<string, unknown>) {
     description: string;
     minutes: number;
   }>;
-  const stored = new Map(entries.map((e) => [e.id, e]));
+  // Same mapping as POST /api/invoices (a Tarifleistung carries its amount).
+  const stored = new Map(
+    entries.map((e) => {
+      const tariff = (e as { tariff?: { amount: number; label: string } }).tariff;
+      return [
+        e.id,
+        tariff ? { ...e, tariffAmount: tariff.amount, tariffLabel: tariff.label } : e,
+      ];
+    })
+  );
   return checkTimeItemsAgainstEntries(fm, stored, activeBillingRules(state.settings), {
     feeAgreementRate: feeAgreementRate(state.feeAgreements, "cases/a"),
     legalArea: String(state.caseFm.legal_area ?? ""),
@@ -218,5 +227,67 @@ describe("InvoiceQuickCreateDialog — Abrechnungsregeln (OPS-16)", () => {
     await screen.findByText(/Honorarvereinbarungen konnten nicht geladen werden/);
     const button = screen.getByRole("button", { name: /inv\.create/ });
     expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  describe("Tarifleistungen aus der Zeiterfassung (W4-09)", () => {
+    const withTariff = () => {
+      state.caseFm = {
+        ...state.caseFm,
+        time_entries: [
+          { id: "t1", description: "Telefonat", minutes: 22, date: "2026-09-01" },
+          {
+            id: "t3",
+            description: "Klage — BG 12.000 €",
+            minutes: 90,
+            date: "2026-09-03",
+            tariff: { system: "ratg", amount: 431.1, basis: 12000, label: "Klage TP 3A" },
+          },
+        ],
+      };
+    };
+
+    it("switch off: the Tarifleistung becomes a flat position with its amount, not minutes × rate", async () => {
+      state.settings = { stundensatz: "200" };
+      withTariff();
+      const fm = await createInvoice();
+      expect(fm.items).toEqual([
+        expect.objectContaining({ time_entry_id: "t1", amount: 73.33 }),
+        expect.objectContaining({
+          time_entry_id: "t3",
+          description: "Klage TP 3A",
+          hours: 0,
+          rate: 0,
+          amount: 431.1,
+          tariff: true,
+        }),
+      ]);
+      expect(fm.time_entry_ids).toEqual(["t1", "t3"]);
+      expect(checkTimeItemBilling(fm, null)).toEqual([]);
+      expect(serverRecordCheck(fm)).toEqual([]);
+      expect(checkStoredInvoiceTotals(fm)).toEqual([]);
+    });
+
+    it("switch on: no rounding of the Tarifleistung, the server check passes", async () => {
+      state.settings = { billingRulesEnabled: true, stundensatz: "200", abrechnungstakt: "10" };
+      withTariff();
+      const fm = await createInvoice();
+      expect(fm.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ time_entry_id: "t3", amount: 431.1, hours: 0 }),
+        ])
+      );
+      expect(checkTimeItemBilling(fm, activeBillingRules(state.settings))).toEqual([]);
+      expect(serverRecordCheck(fm)).toEqual([]);
+    });
+
+    it("the server refuses a Tarifleistung billed at another amount", async () => {
+      state.settings = { stundensatz: "200" };
+      withTariff();
+      const fm = await createInvoice();
+      const items = (fm.items as Array<Record<string, unknown>>).map((i) =>
+        i.time_entry_id === "t3" ? { ...i, amount: 999 } : i
+      );
+      expect(serverRecordCheck({ ...fm, items })).toContain("items[1].amount");
+    });
   });
 });

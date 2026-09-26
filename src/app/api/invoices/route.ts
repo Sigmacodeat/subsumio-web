@@ -71,13 +71,20 @@ async function loadBilledTimeRecords(
   const matter = await brain.getPage(caseSlug);
   const mfm = (matter?.frontmatter ?? {}) as Record<string, unknown>;
   const wanted = new Set(timeEntryIds);
-  const toEntry = (id: string, e: Record<string, unknown>): TimeEntryLike => ({
-    id,
-    description: String(e.description ?? ""),
-    date: typeof e.date === "string" ? e.date : undefined,
-    minutes: Number(e.minutes ?? 0),
-    rate: e.rate === null || e.rate === undefined || e.rate === "" ? null : Number(e.rate),
-  });
+  const toEntry = (id: string, e: Record<string, unknown>): TimeEntryLike => {
+    const tariff = e.tariff && typeof e.tariff === "object" ? (e.tariff as Record<string, unknown>) : null;
+    return {
+      id,
+      description: String(e.description ?? ""),
+      date: typeof e.date === "string" ? e.date : undefined,
+      minutes: Number(e.minutes ?? 0),
+      rate: e.rate === null || e.rate === undefined || e.rate === "" ? null : Number(e.rate),
+      // A Tarifleistung is checked against its stored tariff amount.
+      ...(tariff && typeof tariff.amount === "number"
+        ? { tariffAmount: tariff.amount, tariffLabel: String(tariff.label ?? "") }
+        : {}),
+    };
+  };
   for (const raw of Array.isArray(mfm.time_entries) ? mfm.time_entries : []) {
     if (!raw || typeof raw !== "object") continue;
     const e = raw as Record<string, unknown>;

@@ -5,6 +5,8 @@
  * At 80% budget consumption → warning in rundown + insights.
  */
 
+import { timeEntryValue } from "@/lib/time-entry-value";
+
 export type FeeModelType = "rvg" | "hourly" | "flat" | "capped";
 
 export interface FeeAgreement {
@@ -61,6 +63,7 @@ export interface BudgetEntryLike {
   rate?: number;
   billable?: boolean;
   billed?: boolean;
+  tariff?: unknown;
 }
 
 /**
@@ -79,7 +82,8 @@ export function budgetInputsFromEntries(
   for (const e of entries) {
     if (e.billable === false) continue;
     const m = Number(e.minutes) || 0;
-    const cents = Math.round((m / 60) * (Number(e.rate) || defaultRate || 0) * 100);
+    // A Tarifleistung counts with its tariff amount, not by the hour.
+    const cents = Math.round(timeEntryValue(e, Number(e.rate) || defaultRate || 0) * 100);
     if (e.billed === true) {
       billedCents += cents;
     } else {

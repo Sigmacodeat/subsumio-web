@@ -99,6 +99,21 @@ export interface TimeEntry {
   note?: string;
   /** P3-2: Approval status for time entries — null = no approval needed, "pending" = submitted for approval, "approved" = confirmed, "rejected" = declined */
   approval_status?: "pending" | "approved" | "rejected" | null;
+  /**
+   * Tarifleistung (RATG/AHK): billed at this fixed amount instead of
+   * minutes × rate. `minutes` stays the time actually spent.
+   */
+  tariff?: TimeEntryTariff;
+}
+
+export interface TimeEntryTariff {
+  system: "ratg" | "ahk";
+  /** Net amount in euro, as calculated under the tariff. */
+  amount: number;
+  /** Bemessungsgrundlage (Streitwert) the amount was calculated from. */
+  basis?: number;
+  /** Position text on the invoice, e.g. "Klage TP 3A — BG 12.000 €". */
+  label: string;
 }
 
 export interface ExpenseEntry {

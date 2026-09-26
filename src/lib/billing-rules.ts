@@ -181,6 +181,38 @@ export interface TimeEntryLike {
   date?: string;
   minutes: number;
   rate?: number | null;
+  /** Tarifleistung (RATG/AHK): billed at this fixed amount, not by the hour. */
+  tariffAmount?: number | null;
+  /** Position text of a Tarifleistung. */
+  tariffLabel?: string;
+}
+
+/** Invoice position of a Tarifleistung: a flat amount bound to its time entry. */
+export interface TariffTimeItem {
+  description: string;
+  date: string;
+  hours: 0;
+  rate: 0;
+  amount: number;
+  /** The time entry this position bills (the server check pairs by it). */
+  time_entry_id?: string;
+  tariff: true;
+}
+
+/** The position of a Tarifleistung, or null for an hourly entry. */
+export function tariffTimeItem(entry: TimeEntryLike): TariffTimeItem | null {
+  const amount = Number(entry.tariffAmount);
+  if (entry.tariffAmount === null || entry.tariffAmount === undefined) return null;
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return {
+    description: entry.tariffLabel?.trim() || entry.description,
+    date: String(entry.date ?? "").split("T")[0],
+    hours: 0,
+    rate: 0,
+    amount: roundEur(amount),
+    ...(typeof entry.id === "string" && entry.id ? { time_entry_id: entry.id } : {}),
+    tariff: true,
+  };
 }
 
 export interface RuledTimeItem {
@@ -307,7 +339,11 @@ export function checkTimeItemBilling(
       problems.push(`items[${idx}].rate_source`);
     }
   });
-  if (rules && timeEntryIds.length > 0 && ruled !== timeEntryIds.length) {
+  // Tarifleistungen are bound to their time entry but carry no minutes.
+  const tariffItems = items.filter(
+    (item) => !!item && item.tariff === true && typeof item.time_entry_id === "string"
+  ).length;
+  if (rules && timeEntryIds.length > 0 && ruled + tariffItems !== timeEntryIds.length) {
     problems.push("time_items");
   }
   return problems;
@@ -384,6 +420,16 @@ export function checkTimeItemsAgainstEntries(
     const at = `items[${idx}]`;
     if (!entry) {
       problems.push(`${at}.time_entry`);
+      continue;
+    }
+    // A Tarifleistung is billed at its stored tariff amount — exactly that,
+    // as a flat position (no hours, no rate), with or without billing rules.
+    if (entry.tariffAmount !== null && entry.tariffAmount !== undefined) {
+      if (Number(item.hours) !== 0) problems.push(`${at}.hours`);
+      if (Number(item.rate) !== 0) problems.push(`${at}.rate`);
+      if (toCents(item.amount) !== toCents(roundEur(Number(entry.tariffAmount)))) {
+        problems.push(`${at}.amount`);
+      }
       continue;
     }
     if (rules) {

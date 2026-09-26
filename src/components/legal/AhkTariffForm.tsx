@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calculator, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,10 @@ import {
   type AhkStrafVerfahren,
 } from "@/lib/legal/ahk-tariff-data";
 import type { RatgTariffItem } from "@/lib/legal/ratg";
-import type { TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
+import {
+  basisInputFromValue,
+  type TariffInvoiceLine,
+} from "@/components/legal/RatgTariffForm";
 
 const ITEM_OPTIONS: Array<{ value: RatgTariffItem; label: string }> = [
   { value: "TP1", label: "TP 1 – Anzeigen, Mitteilungen, Fristansuchen" },
@@ -63,9 +66,15 @@ function parseAmount(value: string): number {
 export function AhkTariffForm({
   lines,
   onChange,
+  defaultBasis,
+  date,
 }: {
   lines: TariffInvoiceLine[];
   onChange: (lines: TariffInvoiceLine[]) => void;
+  /** Streitwert of the matter — prefilled as Bemessungsgrundlage. */
+  defaultBasis?: number;
+  /** Service date of the positions (default: today). */
+  date?: string;
 }) {
   const [bereich, setBereich] = useState<Bereich>("zivil");
   const [label, setLabel] = useState("");
@@ -75,7 +84,12 @@ export function AhkTariffForm({
   const [item, setItem] = useState<RatgTariffItem>("TP3A");
   const [kind, setKind] = useState<"schriftsatz" | "verhandlung">("schriftsatz");
   const [sachgebiet, setSachgebiet] = useState("");
-  const [basis, setBasis] = useState("");
+  const [basis, setBasis] = useState(() => basisInputFromValue(defaultBasis));
+  // A matter picked later (or its Streitwert) fills an empty basis field.
+  useEffect(() => {
+    const prefill = basisInputFromValue(defaultBasis);
+    if (prefill) setBasis((cur) => (cur.trim() ? cur : prefill));
+  }, [defaultBasis]);
   const [hours, setHours] = useState("1");
   const [factor, setFactor] = useState("1");
   const [represented, setRepresented] = useState("1");
@@ -159,14 +173,14 @@ export function AhkTariffForm({
     }
     try {
       const result = compute();
-      const date = new Date().toISOString().slice(0, 10);
+      const lineDate = date || new Date().toISOString().slice(0, 10);
       const stamp = Date.now();
       onChange([
         ...lines,
         ...result.lines.map((l, i) => ({
           id: `ahk-${stamp}-${i}`,
           description: `${l.label} — ${l.basis}`,
-          date,
+          date: lineDate,
           amount: l.amount,
         })),
       ]);

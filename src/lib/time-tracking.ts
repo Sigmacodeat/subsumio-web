@@ -15,6 +15,9 @@ import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brai
 import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
 import { assertEngineWriteOk } from "@/lib/engine-write";
+import { timeEntryValue } from "@/lib/time-entry-value";
+
+export { tariffAmountOf, timeEntryValue } from "@/lib/time-entry-value";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -199,8 +202,7 @@ export function computeSummary(entries: TimeEntry[]): TimeSummary {
   const totalMinutes = entries.reduce((sum, e) => sum + (e.minutes || 0), 0);
   const totalAmount = entries.reduce((sum, e) => {
     if (!e.billable) return sum;
-    const hours = (e.minutes || 0) / 60;
-    return sum + hours * (e.rate || 0);
+    return sum + timeEntryValue(e, e.rate || 0);
   }, 0);
 
   return {
@@ -450,17 +452,20 @@ export function createTimeEntry(input: {
   billable?: boolean;
   lawyer?: string;
   activity_type?: string;
+  tariff?: TimeEntry["tariff"];
 }): TimeEntry {
   return {
     id: `time-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     description: input.description,
     minutes: input.minutes,
     date: input.date,
-    rate: input.rate,
+    // A Tarifleistung is billed at its tariff amount, never at an hourly rate.
+    rate: input.tariff ? undefined : input.rate,
     billable: input.billable ?? true,
     billed: false,
     lawyer: input.lawyer,
     activity_type: input.activity_type,
+    ...(input.tariff ? { tariff: input.tariff } : {}),
   };
 }
 
@@ -517,11 +522,10 @@ export function computeBillingSummary(
   for (const [caseSlug, caseEntries] of byCaseMap) {
     const summary = computeSummary(caseEntries);
     const amount = caseEntries.reduce((sum, e) => {
-      const hours = (e.minutes || 0) / 60;
       // `??`, not `||` — an explicit rate of 0 (pro bono) must not fall back
       // to the default rate and get billed.
       const rate = e.rate ?? defaultRate ?? 0;
-      return sum + hours * rate;
+      return sum + timeEntryValue(e, rate);
     }, 0);
 
     by_case.push({

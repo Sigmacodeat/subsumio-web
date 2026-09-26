@@ -3626,6 +3626,8 @@ export const api = {
       billable?: boolean;
       activity_type?: string;
       lawyer?: string;
+      /** Tarifleistung (RATG/AHK): billed at this amount instead of minutes × rate. */
+      tariff?: { system: "ratg" | "ahk"; amount: number; basis?: number; label: string };
     }): Promise<{ id: string }> {
       // POST answers { entry, case_slug } — callers want the created entry,
       // so resolve to it (its `id` is what time-suggestions persists).
