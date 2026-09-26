@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { zonedDateString } from "@/lib/datetime";
 import { createStaffMember, vacationAccount, StaffInputError, type StaffMember } from "@/lib/staff";
 import type { AbsenceRecord } from "@/lib/absence";
 
@@ -93,7 +94,8 @@ export const GET = createHandler(
       .map((p) => p.frontmatter as AbsenceRecord | undefined)
       .filter((a): a is AbsenceRecord => Boolean(a));
 
-    const year = query?.year ?? new Date().getUTCFullYear();
+    // Firm calendar year (Europe/Vienna) — UTC lagged on New Year's night.
+    const year = query?.year ?? Number(zonedDateString(new Date()).slice(0, 4));
     let members: StaffMember[] = staffPages
       .map((p) => p.frontmatter as StaffMember | undefined)
       .filter((m): m is StaffMember => Boolean(m));

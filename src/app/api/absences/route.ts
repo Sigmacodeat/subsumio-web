@@ -9,6 +9,7 @@ import {
   cancelAbsence,
   deadlineSlugsCoveredByAbsence,
   absenceHasStarted,
+  ABSENCE_KINDS,
   type AbsenceRecord,
 } from "@/lib/absence";
 
@@ -26,6 +27,9 @@ const createAbsenceSchema = z.object({
   // absence records that never activate.
   start_date: z.string().regex(DATE_RE, "invalid_date"),
   end_date: z.string().regex(DATE_RE, "invalid_date"),
+  // Required: decides whether the absence counts against the vacation
+  // account (a free-text reason did so only by accident).
+  kind: z.enum(ABSENCE_KINDS),
   reason: z.string().max(500).optional(),
   auto_route_enabled: z.boolean().default(true),
   notes: z.string().max(2000).optional(),
@@ -90,6 +94,7 @@ export const POST = createHandler(
       details: {
         start_date: body.start_date,
         end_date: body.end_date,
+        kind: body.kind,
         auto_route_enabled: body.auto_route_enabled,
       },
     }),

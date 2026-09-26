@@ -13,8 +13,14 @@ import { zonedDateString } from "@/lib/datetime";
  * - `auto_route_enabled === false` disables the stand-in annotation
  */
 
+/** Art der Abwesenheit — entscheidet u. a., ob sie das Urlaubskonto belastet. */
+export const ABSENCE_KINDS = ["urlaub", "krankheit", "fortbildung", "sonstiges"] as const;
+export type AbsenceKind = (typeof ABSENCE_KINDS)[number];
+
 export interface AbsenceRecord {
   id: string;
+  /** Pflicht bei neuen Einträgen; ältere Einträge haben nur `reason`. */
+  kind?: AbsenceKind;
   user_email: string;
   user_name: string;
   delegate_email: string;
@@ -41,6 +47,7 @@ export interface AbsenceCreateInput {
   delegate_name: string;
   start_date: string;
   end_date: string;
+  kind?: AbsenceKind;
   reason?: string;
   auto_route_enabled?: boolean;
   notes?: string;
@@ -56,6 +63,7 @@ export function createAbsence(input: AbsenceCreateInput): AbsenceRecord {
     delegate_name: input.delegate_name,
     start_date: input.start_date,
     end_date: input.end_date,
+    ...(input.kind ? { kind: input.kind } : {}),
     reason: input.reason,
     status: "planned",
     created_at: now,

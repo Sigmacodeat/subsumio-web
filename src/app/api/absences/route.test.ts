@@ -220,6 +220,7 @@ describe("POST /api/absences", () => {
     delegate_name: "RA Vertreter",
     start_date: "2026-10-01",
     end_date: "2026-10-14",
+    kind: "urlaub",
   };
 
   function post(body: unknown) {
@@ -264,6 +265,19 @@ describe("POST /api/absences", () => {
     expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
     const written = JSON.parse(String(mockFetch.mock.calls[0]![1].body));
     expect(written.frontmatter.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
+  });
+
+  test("ohne Art der Abwesenheit → 400", async () => {
+    const { kind: _kind, ...withoutKind } = baseBody;
+    const res = await post(withoutKind);
+    expect(res.status).toBe(400);
+  });
+
+  test("Art wird gespeichert", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post({ ...baseBody, kind: "krankheit" });
+    const body = await res.json();
+    expect(body.data.absence.kind).toBe("krankheit");
   });
 
   test("Freitext-Datum wird abgelehnt (400) — solche Records aktivierten nie", async () => {

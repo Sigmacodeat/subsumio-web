@@ -1,4 +1,6 @@
 import type { AbsenceRecord } from "@/lib/absence";
+import { publicHolidays, type Bundesland } from "@/lib/legal-deadlines";
+import { zonedDateString } from "@/lib/datetime";
 
 /**
  * Personalstamm (WP-8.53): Mitarbeiterakte mit Urlaubskonto.
@@ -63,51 +65,106 @@ export function createStaffMember(input: StaffCreateInput): StaffMember {
   };
 }
 
-/** Werktage (Mo–Fr) zwischen zwei ISO-Daten, inklusive beider Enden. */
-export function workdaysBetween(startIso: string, endIso: string): number {
-  const start = new Date(`${startIso}T00:00:00Z`);
-  const end = new Date(`${endIso}T00:00:00Z`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
-  let days = 0;
-  for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-    const dow = d.getUTCDay();
-    if (dow !== 0 && dow !== 6) days++;
+/**
+ * Gesetzliche Feiertage in Österreich, an denen kein Urlaubstag verbraucht
+ * wird (§ 7 ARG). Quelle ist dieselbe Feiertagsliste wie für die Fristen —
+ * ohne den Karfreitag: der steht dort, weil § 126 Abs 2 ZPO ihn für das
+ * Fristende ausnimmt, ist aber seit 2019 kein allgemeiner Feiertag mehr.
+ */
+function vacationHolidays(year: number): Set<string> {
+  const out = new Set<string>();
+  for (const [date, name] of publicHolidays(year, "AT" as Bundesland, "AT")) {
+    if (name !== "Karfreitag") out.add(date);
   }
-  return days;
+  return out;
 }
 
-/** Urlaubs-Absences gelten als solche, wenn der Grund „urlaub"/„vacation" enthält. */
+/**
+ * Arbeitstage (Mo–Fr ohne österreichische Feiertage) zwischen zwei
+ * ISO-Daten, inklusive beider Enden.
+ */
+export function workdaysBetween(startIso: string, endIso: string): number {
+  return workdayDates(startIso, endIso).length;
+}
+
+/** Die einzelnen Arbeitstage (ISO) zwischen zwei ISO-Daten, inklusive. */
+function workdayDates(startIso: string, endIso: string): string[] {
+  const start = new Date(`${startIso.slice(0, 10)}T00:00:00Z`);
+  const end = new Date(`${endIso.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return [];
+  const holidays = new Map<number, Set<string>>();
+  const out: string[] = [];
+  for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const dow = d.getUTCDay();
+    if (dow === 0 || dow === 6) continue;
+    const year = d.getUTCFullYear();
+    let set = holidays.get(year);
+    if (!set) {
+      set = vacationHolidays(year);
+      holidays.set(year, set);
+    }
+    const iso = d.toISOString().slice(0, 10);
+    if (!set.has(iso)) out.push(iso);
+  }
+  return out;
+}
+
+/**
+ * Urlaub ist, was als Art „urlaub“ erfasst ist. Ältere Einträge ohne Art
+ * werden am Freitext-Grund erkannt.
+ */
 export function isVacationAbsence(a: AbsenceRecord): boolean {
-  return /urlaub|vacation|ferien/i.test(a.reason ?? "");
+  if (a.kind) return a.kind === "urlaub";
+  return /urlaub|vacation|ferien|erholung/i.test(a.reason ?? "");
 }
 
 export interface VacationAccount {
   /** Anspruch im laufenden Kalenderjahr inkl. Übertrag. */
   entitled: number;
-  /** Verbrauchte Werktage (aktive + abgeschlossene Urlaubs-Absences im Jahr). */
+  /** Verbrauchte Arbeitstage im Jahr (Urlaubstage vor heute). */
   used: number;
-  /** Bereits geplante Werktage (status „planned"). */
+  /** Geplante Arbeitstage im Jahr (ab heute). */
   planned: number;
   /** Verbleibend = entitled − used − planned. */
   remaining: number;
   year: number;
 }
 
+/**
+ * Urlaubskonto eines Kalenderjahres. Jeder Urlaubstag zählt in dem Jahr, in
+ * dem er liegt (ein Urlaub über den Jahreswechsel wird aufgeteilt).
+ * „Verbraucht“ richtet sich nach dem Datum, nicht nach dem gespeicherten
+ * Status (der wird nicht automatisch fortgeschrieben); ein vorzeitig
+ * abgeschlossener Urlaub endet mit dem Tag des Abschlusses. Kalendertage
+ * nach Europe/Vienna.
+ */
 export function vacationAccount(
   member: StaffMember,
   absences: AbsenceRecord[],
-  year = new Date().getUTCFullYear()
+  year = Number(zonedDateString(new Date()).slice(0, 4)),
+  now: Date = new Date()
 ): VacationAccount {
   const entitled = member.vacation_days_per_year + member.vacation_carryover_days;
+  const today = zonedDateString(now);
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
   let used = 0;
   let planned = 0;
   for (const a of absences) {
     if (a.status === "cancelled" || !isVacationAbsence(a)) continue;
     if (a.user_email.toLowerCase() !== member.email.toLowerCase()) continue;
-    if (!a.start_date.startsWith(String(year))) continue;
-    const days = workdaysBetween(a.start_date, a.end_date);
-    if (a.status === "planned") planned += days;
-    else used += days;
+    let end = a.end_date.slice(0, 10);
+    if (a.status === "completed" && a.updated_at) {
+      const closedOn = zonedDateString(new Date(a.updated_at));
+      if (closedOn < end) end = closedOn;
+    }
+    const start = a.start_date.slice(0, 10);
+    const from = start > yearStart ? start : yearStart;
+    const to = end < yearEnd ? end : yearEnd;
+    for (const day of workdayDates(from, to)) {
+      if (day < today) used++;
+      else planned++;
+    }
   }
   return { entitled, used, planned, remaining: entitled - used - planned, year };
 }

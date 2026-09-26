@@ -26,7 +26,12 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, formatDate } from "@/lib/utils";
-import { absenceDisplayStatus, type AbsenceRecord } from "@/lib/absence";
+import {
+  ABSENCE_KINDS,
+  absenceDisplayStatus,
+  type AbsenceKind,
+  type AbsenceRecord,
+} from "@/lib/absence";
 import type { DashboardKey } from "@/content/dashboard";
 
 type DisplayStatus = AbsenceRecord["status"];
@@ -64,6 +69,14 @@ const STATUS_ORDER: Record<DisplayStatus, number> = {
   cancelled: 3,
 };
 
+/** Die Art entscheidet, ob die Abwesenheit das Urlaubskonto belastet. */
+const ABSENCE_KIND_LABELS: Record<AbsenceKind, string> = {
+  urlaub: "Urlaub",
+  krankheit: "Krankenstand",
+  fortbildung: "Fortbildung",
+  sonstiges: "Sonstiges",
+};
+
 /** Upper bound for the absence list; reaching it shows a notice. */
 const ABSENCES_LIST_MAX = 10_000;
 
@@ -74,6 +87,7 @@ const EMPTY_FORM = {
   delegate_email: "",
   start_date: "",
   end_date: "",
+  kind: "" as AbsenceKind | "",
   reason: "",
   notes: "",
   auto_route: true,
@@ -127,7 +141,8 @@ export default function AbsencePage() {
       !form.delegate_name.trim() ||
       !form.delegate_email.trim() ||
       !form.start_date ||
-      !form.end_date
+      !form.end_date ||
+      !form.kind
     ) {
       setFormError(t("absence.err_required"));
       return;
@@ -148,6 +163,7 @@ export default function AbsencePage() {
           delegate_email: form.delegate_email.trim(),
           start_date: form.start_date,
           end_date: form.end_date,
+          kind: form.kind,
           reason: form.reason.trim() || undefined,
           notes: form.notes.trim() || undefined,
           auto_route_enabled: form.auto_route,
@@ -355,6 +371,25 @@ export default function AbsencePage() {
                 required
               />
             </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="absence-kind" className="text-xs text-[color:var(--ds-text-muted)]">
+              Art der Abwesenheit
+            </Label>
+            <select
+              id="absence-kind"
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as AbsenceKind | "" })}
+              required
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            >
+              <option value="">Bitte wählen</option>
+              {ABSENCE_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {ABSENCE_KIND_LABELS[kind]}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="absence-reason" className="text-xs text-[color:var(--ds-text-muted)]">
