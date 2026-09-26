@@ -88,7 +88,7 @@ export const POST = createHandler(
                         fristende: fristResult.fristende,
                         vorfrist_date: fristResult.vorfrist,
                         kalendertage: fristResult.kalendertage,
-                        notfrist: fristResult.art.notfrist,
+                        is_notfrist: fristResult.art.notfrist,
                         deterministic: true,
                       }
                     : {

@@ -295,7 +295,7 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
                 fristbeginn: fristResult.fristbeginn,
                 fristende: fristResult.fristende,
                 kalendertage: fristResult.kalendertage,
-                notfrist: fristResult.art.notfrist,
+                is_notfrist: fristResult.art.notfrist,
                 deterministic: true,
                 ...(vhfzUnconfirmed
                   ? { second_check_required: true, ferialsache_unconfirmed: true }
