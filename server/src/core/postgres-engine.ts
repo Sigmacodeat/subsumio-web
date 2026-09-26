@@ -161,6 +161,33 @@ export function getPostgresSchema(
 // See TODOS.md item: "err.code-based connection-error matching" for the
 // follow-up that will reintroduce a typed retry mechanism.
 
+/**
+ * The page date filters of keyword search (SearchOpts afterDate / beforeDate /
+ * asOfDate) as one SQL fragment on page alias `p`; pushes its values to
+ * `params`. asOfDate keeps statute pages to versions in force on that date.
+ */
+export function buildPageDateClauses(
+  opts: Pick<SearchOpts, "afterDate" | "beforeDate" | "asOfDate"> | undefined,
+  params: unknown[]
+): string {
+  const parts: string[] = [];
+  if (opts?.afterDate) {
+    params.push(opts.afterDate);
+    parts.push(`AND COALESCE(p.updated_at, p.created_at) > $${params.length}::timestamptz`);
+  }
+  if (opts?.beforeDate) {
+    params.push(opts.beforeDate);
+    parts.push(`AND COALESCE(p.updated_at, p.created_at) < $${params.length}::timestamptz`);
+  }
+  if (opts?.asOfDate) {
+    params.push(opts.asOfDate);
+    parts.push(
+      `AND (p.slug NOT LIKE 'legal/statutes/%' OR ((p.frontmatter->>'version_date') ~ '^\\d{4}-\\d{2}-\\d{2}$' AND (p.frontmatter->>'version_date')::date <= $${params.length}::date))`
+    );
+  }
+  return parts.join("\n");
+}
+
 export class PostgresEngine implements BrainEngine {
   readonly kind = "postgres" as const;
   private _sql: ReturnType<typeof postgres> | null = null;
@@ -2054,7 +2081,15 @@ export class PostgresEngine implements BrainEngine {
    * The @@@ operator uses Tantivy (Rust Lucene port) for scoring.
    * pdb.score(id) returns the BM25 score for the matched row.
    */
+  /**
+   * Set once pg_search (paradedb) turns out to be missing: from then on the
+   * BM25 path goes straight to searchKeyword instead of failing (and logging)
+   * on every legal query.
+   */
+  private bm25Unavailable = false;
+
   async searchKeywordBM25(query: string, opts?: SearchOpts): Promise<SearchResult[]> {
+    if (this.bm25Unavailable) return this.searchKeyword(query, opts);
     const sql = this.sql;
     const limit = clampSearchLimit(opts?.limit);
     const offset = opts?.offset || 0;
@@ -2115,6 +2150,9 @@ export class PostgresEngine implements BrainEngine {
       },
       params
     );
+    // Same date filters as searchKeyword — above all the as-of date, so a
+    // question about an earlier date gets the statute version in force then.
+    const dateClauses = buildPageDateClauses(opts, params);
 
     const innerLimit = Math.min(limit * 3, MAX_SEARCH_LIMIT * 3);
     const bm25Limit = Math.min(innerLimit * 10, MAX_SEARCH_LIMIT * 5);
@@ -2162,6 +2200,7 @@ export class PostgresEngine implements BrainEngine {
           ${languageClause}
           ${sourceClause}
           ${legalMetaClause}
+          ${dateClauses}
           ${hardExcludeClause}
           ${visibilityClause}
         ORDER BY score DESC, page_id ASC, chunk_id ASC
@@ -2185,7 +2224,16 @@ export class PostgresEngine implements BrainEngine {
       });
       return rows.map(rowToSearchResult);
     } catch (err: any) {
-      console.error("[bm25-search] error, falling back to ts_rank:", err?.message ?? err);
+      const msg = String(err?.message ?? err);
+      if (/paradedb|pg_search|@@@/i.test(msg) && /does not exist|not found|unknown/i.test(msg)) {
+        this.bm25Unavailable = true;
+        console.error(
+          "[bm25-search] pg_search is not available; using ts_rank keyword search from now on:",
+          msg
+        );
+      } else {
+        console.error("[bm25-search] error, falling back to ts_rank:", msg);
+      }
       return this.searchKeyword(query, opts);
     }
   }
@@ -2325,6 +2373,7 @@ export class PostgresEngine implements BrainEngine {
         ${symbolKindClause}
         ${afterDateClause}
         ${beforeDateClause}
+        ${asOfDateClause}
         ${sourceClause}
         ${legalMetaClause}
         ${hardExcludeClause}
