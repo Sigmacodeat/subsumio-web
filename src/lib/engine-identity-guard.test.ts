@@ -24,6 +24,7 @@ const SESSIONLESS_ROUTES: Record<string, string> = {
   "concierge/route.ts": "website chatbot on its own sales brain",
   "demo/route.ts": "public demo search on the demo brain",
   "cti/webhook/route.ts": "telephony webhook",
+  "cti/webhook/[token]/route.ts": "telephony webhook, token in the path",
   "docusign/webhook/route.ts": "DocuSign webhook",
   "internal/post-upload/route.ts": "internal worker, shared-secret auth",
   "signature/qes/done/[token]/route.ts": "signing provider callback, token auth",

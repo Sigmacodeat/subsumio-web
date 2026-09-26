@@ -264,6 +264,9 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   // RCIID status webhook: server-to-server, authenticated by the HMAC
   // signature over the raw body inside the route (fail-closed without secret).
   "/api/rciid/webhook",
+  // CTI webhook with the token in the path (providers without a settable
+  // Authorization header): authenticated by that token inside the route.
+  "/api/cti/webhook/",
 ] as const;
 const API_CSRF_EXEMPT_PATHS = new Set([
   // Presence is an authenticated best-effort heartbeat endpoint. The route
