@@ -210,6 +210,61 @@ describe("llm-deadline-extract", () => {
     });
   });
 
+  describe("W1-3: Fristbeginn nur aus dem Zustelldatum", () => {
+    const llmItem = (over: Record<string, unknown>) =>
+      stubResult(
+        JSON.stringify([
+          {
+            frist_key: "berufung",
+            frist_beschreibung: "Berufungsfrist",
+            zustellungsdatum: null,
+            absolutes_datum: null,
+            tage_relativ: null,
+            rechtsgrundlage: "§ 464 Abs 1 ZPO",
+            snippet: "Berufung bis 04.05.2026",
+            confidence: "high",
+            ...over,
+          },
+        ])
+      );
+
+    test("a named end date is the Fristende, never the start of a new period", async () => {
+      mockComplete.mockResolvedValueOnce(llmItem({ absolutes_datum: "2026-05-04" }));
+      const [d] = await extractDeadlinesWithLLM("Die Berufung ist bis 04.05.2026 einzubringen.", {
+        headers: HEADERS,
+        referenceDate: "2026-04-10",
+      });
+      // Before the fix: 4 weeks from 04.05. → 01.06.2026, "high".
+      expect(d.date).toBe("2026-05-04");
+      expect(d.fristResult).toBeUndefined();
+      expect(d.confidence).toBe("medium");
+      expect(d.rueckfrage).toContain("Zustelldatum fehlt");
+    });
+
+    test("no service date → no date, no high, a question instead", async () => {
+      mockComplete.mockResolvedValueOnce(llmItem({}));
+      const [d] = await extractDeadlinesWithLLM("Gegen das Urteil ist Berufung zulässig.", {
+        headers: HEADERS,
+        referenceDate: "2026-04-10",
+      });
+      expect(d.date).toBeUndefined();
+      expect(d.confidence).not.toBe("high");
+      expect(d.rueckfrage).toContain("Zustelldatum fehlt");
+    });
+
+    test("an ERV arrival date gets the § 89d Abs 2 GOG service fiction", async () => {
+      mockComplete.mockResolvedValueOnce(
+        llmItem({ zustellungsdatum: "2026-10-02", zustellungsart: "erv" })
+      );
+      const [d] = await extractDeadlinesWithLLM("Urteil, im ERV eingelangt am 02.10.2026.", {
+        headers: HEADERS,
+        referenceDate: "2026-10-02",
+      });
+      expect(d.berechnung?.zustellungsdatum).toBe("2026-10-05");
+      expect(d.date).toBe("2026-11-02");
+    });
+  });
+
   describe("reference date", () => {
     const item = (absolutes_datum: string | null, zustellungsdatum: string | null = null) => ({
       frist_key: null,

@@ -22,8 +22,12 @@
  */
 
 import { engineComplete, isEngineLLMAvailable, parseJsonObject } from "@/lib/engine-llm";
-import { berechneFristAuto, FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
-import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
+import { FRISTEN_REGISTRY } from "@/lib/legal/frist-engine";
+import {
+  enrichDetectedDeadline,
+  type DetectedDeadline,
+  type EnrichOpts,
+} from "@/lib/ai-deadline-detect";
 
 /**
  * Known FRISTEN_REGISTRY keys — the LLM must choose from these.
@@ -45,11 +49,13 @@ Für jede erkannte Frist extrahiere:
 6. "rechtsgrundlage": Zitierte Gesetzesstelle (z.B. "§ 464 Abs 1 ZPO"), oder null
 7. "snippet": Der exakte Textabschnitt aus dem die Frist extrahiert wurde (max 200 Zeichen)
 8. "confidence": "high" wenn Datum+Art klar erkennbar, "medium" wenn unsicher, "low" bei vagen Hinweisen
+9. "zustellungsart": "erv" wenn das Datum das Einlangen im ERV (elektronischer Rechtsverkehr) ist, sonst "standard"
 
 WICHTIG:
 - Extrahiere NUR tatsächlich im Text genannte Fristen, erfinde keine.
 - "zustellungsdatum" ist das Datum der Zustellung/Zustellungsfiktion, NICHT das Fristende.
-- Bei ERV-Zustellung: das Einlangungsdatum angeben (die Engine berechnet den Folgewerktag).
+- Bei ERV-Zustellung: das Einlangungsdatum angeben und "zustellungsart": "erv" setzen (die Engine berechnet den Folgewerktag).
+- Ein im Text genanntes Fristende ("bis 04.05.2026") gehört in "absolutes_datum", NIE in "zustellungsdatum".
 - Bei Verjährung: das Datum der Kenntniserlangung als "zustellungsdatum" angeben.
 - Wenn kein Datum extrahierbar ist, setze "zustellungsdatum" auf null.
 - Im Auftrag steht ein BEZUGSDATUM. Löse Angaben ohne Jahr oder mit relativem Bezug ("dieses Jahres", "nächsten Montag", "Monatsletzter") gegen dieses Bezugsdatum auf. Rate niemals ein Jahr. Lässt sich ein Datum nicht sicher bestimmen, setze es auf null.
@@ -67,7 +73,8 @@ Beispiel-Output:
     "tage_relativ": null,
     "rechtsgrundlage": "§ 464 Abs 1 ZPO",
     "snippet": "Das Urteil wurde zugestellt am 15.03.2024. Berufungsfrist vier Wochen.",
-    "confidence": "high"
+    "confidence": "high",
+    "zustellungsart": "standard"
   }
 ]`;
 
@@ -80,6 +87,7 @@ interface LLMExtractedDeadline {
   rechtsgrundlage: string | null;
   snippet: string;
   confidence: "high" | "medium" | "low";
+  zustellungsart?: "erv" | "standard" | null;
 }
 
 function isoDay(value: string | null | undefined): string | null {
@@ -141,9 +149,7 @@ export function isLLMDeadlineExtractionAvailable(): boolean {
  */
 export async function extractDeadlinesWithLLM(
   text: string,
-  opts?: {
-    ferialsache?: boolean;
-    vorfristTage?: number;
+  opts?: EnrichOpts & {
     headers?: Record<string, string>;
     /** Date the text was written or received (ISO). Defaults to today. */
     referenceDate?: string;
@@ -183,7 +189,10 @@ export async function extractDeadlinesWithLLM(
       : Array.isArray((json as { deadlines?: unknown }).deadlines)
         ? (json as { deadlines: LLMExtractedDeadline[] }).deadlines
         : [];
-    // Convert LLM results to DetectedDeadline with frist-engine enrichment
+    // Convert LLM results to DetectedDeadline with frist-engine enrichment.
+    // The period always starts at the service date — a named end date
+    // ("Berufung bis 04.05.2026") is taken as the end, never as the start;
+    // without a service date there is no "high" and a question for the human.
     return parsed.map((raw): DetectedDeadline => {
       const item = dropUngroundedDates(raw, truncated, referenceDate);
       const dd: DetectedDeadline = {
@@ -191,32 +200,21 @@ export async function extractDeadlinesWithLLM(
         description: item.frist_beschreibung || "LLM-extrahierte Frist",
         date: item.absolutes_datum ?? undefined,
         daysFromNow: item.tage_relativ ?? undefined,
+        ...(item.tage_relativ ? { dauer: { tage: item.tage_relativ } } : {}),
         confidence: item.confidence,
         sourceSnippet: item.snippet,
         matchedRule: "llm_fallback",
         suggestedTemplate: item.frist_key ?? undefined,
         zustellungsdatum: item.zustellungsdatum ?? undefined,
+        ...(item.zustellungsdatum
+          ? {
+              zustellungsart:
+                item.zustellungsart === "erv" ? ("erv" as const) : ("standard" as const),
+            }
+          : {}),
       };
-
-      // Enrich with frist-engine if we have a key and a date
-      if (item.frist_key && (item.zustellungsdatum || item.absolutes_datum)) {
-        const ausloeser = item.zustellungsdatum || item.absolutes_datum!;
-        try {
-          const result = berechneFristAuto(item.frist_key, ausloeser, opts);
-          return {
-            ...dd,
-            fristResult: result,
-            date: result.fristende,
-            confidence: "high",
-            zustellungsdatum: ausloeser,
-          };
-        } catch {
-          // If frist-engine fails (unknown key etc.), keep the LLM result
-          return dd;
-        }
-      }
-
-      return dd;
+      if (!item.frist_key && !item.tage_relativ) return dd;
+      return enrichDetectedDeadline(dd, truncated, opts);
     });
   } catch (err) {
     console.error(
@@ -246,7 +244,7 @@ export async function hybridDeadlineDetection(
   text: string,
   regexDetected: DetectedDeadline[],
   headers?: Record<string, string>,
-  opts?: { ferialsache?: boolean; vorfristTage?: number; meta?: LlmCallMeta }
+  opts?: EnrichOpts & { meta?: LlmCallMeta }
 ): Promise<DetectedDeadline[]> {
   const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
   const shouldCallLLM = highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);
