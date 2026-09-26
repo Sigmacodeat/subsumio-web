@@ -17,6 +17,7 @@ import { useMe, use2FASetup, use2FAVerify, use2FADisable, use2FAQrCode } from "@
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { ActiveSessions } from "@/components/dashboard/active-sessions";
 import { ChangeEmail } from "@/components/dashboard/change-email";
+import { SupportAccessCard } from "@/components/dashboard/support-access-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/use-lang";
@@ -500,6 +501,8 @@ export default function SecuritySettingsPage() {
           )}
         </div>
       )}
+
+      {isAdmin && !meQuery.data?.demo && <SupportAccessCard />}
 
       {meQuery.data?.user?.email && !meQuery.data?.demo && (
         <ChangeEmail currentEmail={meQuery.data.user.email} />

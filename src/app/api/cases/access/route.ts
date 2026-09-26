@@ -10,6 +10,7 @@ import {
   type MatterGrant,
   type MatterPermissions,
 } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export const GET = createHandler(
     const caseSlug = query!.case_slug;
     const loaded = await loadPermissions(ctx.headers, caseSlug);
     if (!loaded) return apiError("case_not_found", "Akte nicht gefunden", 404);
-    const me = { userId: ctx.user.id, role: ctx.user.role };
+    const me = matterAccessUserFor(ctx);
     const myLevel = matterAccessLevel(me, loaded.permissions);
     // Client accounts never see other accounts or the access history.
     const staff = isStaffRole(ctx.user.role);
@@ -108,7 +109,7 @@ export const GET = createHandler(
       title: loaded.title,
       permissions: loaded.permissions,
       my_level: myLevel,
-      can_manage: ctx.user.role === "admin",
+      can_manage: ctx.user.role === "admin" && !ctx.supportSession,
       can_grant: myLevel === "write" && ctx.user.role !== "client_viewer",
       me: ctx.user.id,
       // Staff may grant access to client accounts, so they see them here.
@@ -128,8 +129,9 @@ export const PUT = createHandler(
     const loaded = await loadPermissions(ctx.headers, body.case_slug);
     if (!loaded) return apiError("case_not_found", "Akte nicht gefunden", 404);
     const current = loaded.permissions;
-    const isAdmin = ctx.user.role === "admin";
-    const myLevel = matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, current);
+    // Support sessions never get the firm-admin powers over matter access.
+    const isAdmin = ctx.user.role === "admin" && !ctx.supportSession;
+    const myLevel = matterAccessLevel(matterAccessUserFor(ctx), current);
     if (myLevel !== "write") {
       return apiError("forbidden", "Sie dürfen den Zugriff auf diese Akte nicht ändern.", 403);
     }
@@ -200,7 +202,7 @@ export const PUT = createHandler(
     }
 
     // Nobody can lock themselves out of a matter they are managing.
-    if (matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, next) !== "write") {
+    if (matterAccessLevel(matterAccessUserFor(ctx), next) !== "write") {
       return apiError(
         "self_lockout",
         "Mit dieser Änderung hätten Sie selbst keinen Zugriff mehr. Nehmen Sie sich ins Aktenteam auf oder lassen Sie die Wall weg.",
