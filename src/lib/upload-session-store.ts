@@ -32,7 +32,8 @@ export interface UploadSession {
     source?: string;
     tags?: string[];
     case_slug?: string;
-    password?: string;
+    // No document password: it would sit unencrypted in the browser for up
+    // to 24 h (shared workstations). A resumed upload asks for it again.
     pause_for_review?: boolean;
     jurisdiction?: string;
     doc_type?: string;
@@ -54,6 +55,34 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+/** Never persist a document password, whatever the caller passes. */
+function withoutSecrets(session: UploadSession): UploadSession {
+  if (!session.options) return session;
+  const { password: _password, ...options } = session.options as UploadSession["options"] & {
+    password?: string;
+  };
+  return { ...session, options };
+}
+
+/**
+ * Remove every stored upload session — on logout, so nothing of the
+ * previous user's uploads stays in this browser.
+ */
+export async function clearAllUploadSessions(): Promise<void> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).clear();
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    // IndexedDB unavailable — nothing stored
+  }
+}
+
 function generateSessionId(filename: string, fileSize: number, uploadToken: string): string {
   return `${uploadToken}-${filename}-${fileSize}`;
 }
@@ -67,7 +96,7 @@ export async function saveUploadSession(session: UploadSession): Promise<void> {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const id = generateSessionId(session.filename, session.fileSize, session.uploadToken);
-    store.put({ ...session, id, updatedAt: Date.now() });
+    store.put({ ...withoutSecrets(session), id, updatedAt: Date.now() });
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);

@@ -2895,7 +2895,6 @@ export const api = {
                       source: options.source,
                       tags: options.tags,
                       case_slug: options.case_slug,
-                      password: options.password,
                       pause_for_review: options.pause_for_review,
                       jurisdiction: options.jurisdiction,
                       doc_type: options.doc_type,

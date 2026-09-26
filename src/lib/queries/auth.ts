@@ -7,6 +7,7 @@ import { api, isPublicRoute } from "@/lib/api";
 import { tracking, resetUser } from "@/lib/tracking";
 import type { OnboardingProgress } from "@/lib/types";
 import { currentPushEndpoint, unsubscribeCurrentPush } from "@/lib/push-client";
+import { clearAllUploadSessions } from "@/lib/upload-session-store";
 
 export interface LoginInput {
   email: string;
@@ -95,6 +96,8 @@ export function useLogout() {
     onSuccess: () => {
       tracking.auth.logout();
       resetUser();
+      // Resumable-upload state of this user must not outlive the session.
+      void clearAllUploadSessions();
       qc.removeQueries({ queryKey: ["auth", "me"] });
       qc.clear();
       router.push("/at/login");
