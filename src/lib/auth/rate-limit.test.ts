@@ -50,6 +50,14 @@ describe("clientIp", () => {
     expect(clientIp(headers)).toBe("9.8.7.6");
   });
 
+  test("prefers the proxy-set x-real-ip over a client-sent x-forwarded-for", () => {
+    const headers = new Headers({
+      "x-forwarded-for": "203.0.113.9, 10.0.0.2",
+      "x-real-ip": "198.51.100.7",
+    });
+    expect(clientIp(headers)).toBe("198.51.100.7");
+  });
+
   test("returns unknown when no headers", () => {
     const headers = new Headers();
     expect(clientIp(headers)).toBe("unknown");

@@ -128,9 +128,12 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
+    # Own edge network, shared only with the reverse proxy (see the
+    # `networks:` section at the end). No other project's container can
+    # reach the engine directly.
     networks:
       default:
-      hetzner_default:
+      subsumio-edge:
         aliases:
           - engine
     healthcheck:
@@ -198,7 +201,7 @@ services:
         condition: service_healthy
     networks:
       default:
-      hetzner_default:
+      subsumio-edge:
         aliases:
           - web
     healthcheck:
@@ -212,7 +215,14 @@ services:
       retries: 5
       start_period: 60s
 
+  # Standalone proxy for a box without the shared /opt/caddy proxy (fresh
+  # install, disaster recovery). Production does not start it: it sits behind
+  # a profile, so a plain `docker compose up` never competes for ports 80/443.
+  #   docker compose -p subsumio-engine --profile standalone-proxy up -d caddy
+  # ./Caddyfile is the reference configuration for the shared proxy too.
   caddy:
+    logging: *default-logging
+    profiles: ["standalone-proxy"]
     image: caddy:2
     restart: unless-stopped
     ports:
@@ -432,5 +442,11 @@ volumes:
   web-data:
 
 networks:
-  hetzner_default:
+  # web and engine are reachable only from this stack and from the shared
+  # reverse proxy (/opt/caddy), which deploy-code.sh attaches to this network.
+  # The proxy overwrites X-Real-IP with the TCP peer; the app relies on that
+  # for its IP allowlist, rate limits and audit rows, so no container that
+  # bypasses the proxy may share a network with web or engine.
+  subsumio-edge:
     external: true
+    name: subsumio-edge

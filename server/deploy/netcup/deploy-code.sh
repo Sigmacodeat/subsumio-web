@@ -145,6 +145,38 @@ if [ "$build_only" = 1 ]; then
   exit 0
 fi
 
+# ── Edge network + shared reverse proxy ─────────────────────────────────
+# web and engine sit on their own network `subsumio-edge`, shared only with the
+# proxy from /opt/caddy (the container publishing port 443; override with
+# DEPLOY_PROXY_CONTAINER). The proxy must overwrite X-Real-IP with the TCP
+# peer — the app's IP allowlist, rate limits and audit rows rely on it — so a
+# proxy configuration without that line stops the deploy before the switch.
+echo "[deploy] Edge-Netz und Proxy prüfen …"
+ssh "$HOST" "PROXY='${DEPLOY_PROXY_CONTAINER:-}' ALLOW_DRIFT='${DEPLOY_ALLOW_PROXY_DRIFT:-0}'" 'sh -s' <<'REMOTE'
+set -eu
+docker network inspect subsumio-edge >/dev/null 2>&1 || docker network create subsumio-edge >/dev/null
+if [ -z "$PROXY" ]; then
+  PROXY="$(docker ps --filter publish=443 --format '{{.Names}}' | grep -v '^subsumio-engine-' || true)"
+fi
+if [ -z "$PROXY" ] || [ "$(printf '%s\n' "$PROXY" | wc -l)" -ne 1 ]; then
+  echo "[deploy] Reverse Proxy nicht eindeutig gefunden (${PROXY:-keiner}) — nichts umgeschaltet." >&2
+  echo "         DEPLOY_PROXY_CONTAINER=<name> setzen." >&2
+  exit 1
+fi
+if ! docker inspect -f '{{json .NetworkSettings.Networks}}' "$PROXY" | grep -q '"subsumio-edge"'; then
+  docker network connect subsumio-edge "$PROXY"
+  echo "[deploy] Proxy $PROXY an subsumio-edge angeschlossen."
+fi
+if ! docker exec "$PROXY" grep -q 'X-Real-IP {remote_host}' /etc/caddy/Caddyfile 2>/dev/null; then
+  echo "[deploy] Proxy-Konfiguration von $PROXY überschreibt X-Real-IP nicht" >&2
+  echo "         (erwartet: header_up X-Real-IP {remote_host}, siehe server/deploy/netcup/Caddyfile)." >&2
+  if [ "$ALLOW_DRIFT" != 1 ]; then
+    echo "         Nichts umgeschaltet. Nach bewusster Prüfung: DEPLOY_ALLOW_PROXY_DRIFT=1." >&2
+    exit 1
+  fi
+fi
+REMOTE
+
 echo "[deploy] umschalten …"
 ssh "$HOST" "APP=$APP H=$H APP_SERVICES='$APP_SERVICES'" 'sh -s' <<'REMOTE'
 set -eu

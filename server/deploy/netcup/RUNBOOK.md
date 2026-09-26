@@ -5,9 +5,8 @@ Produktion: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Debi
 
 > Der Umzug von Hetzner ist abgeschlossen und der alte Server abgeschaltet (2026-09).
 > Die Migrationsanleitung liegt in der Git-Historie (`migrate.sh`, Stand vor dem
-> Aufräumen). Docker-Volumes und das externe Netzwerk heißen weiterhin
-> `hetzner_*` / `hetzner_default` — das sind die realen Objekte auf der Box und
-> bleiben so benannt, weil ein Rename die Daten verwaist.
+> Aufräumen). Die Docker-Volumes heißen weiterhin `hetzner_*` — das sind die
+> realen Objekte auf der Box und bleiben so benannt, weil ein Rename die Daten verwaist.
 
 ## Ordner auf dem Server
 
@@ -20,9 +19,32 @@ Produktion: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Debi
 | `/opt/caddy`                          | gemeinsamer Reverse Proxy für alle Projekte auf der Box                                                                                                                  |
 | Docker-Volumes `hetzner_*`            | Datenbank, Originaldateien, Sicherungen                                                                                                                                  |
 
-Alle Projekte auf der Box erwarten das Netzwerk `hetzner_default` (`external: true`).
-Der Dienst `caddy` in der Compose-Datei ist Altbestand und wird nie gestartet; der
-gemeinsame Proxy läuft aus `/opt/caddy`.
+### Reverse Proxy und Netze
+
+Der gemeinsame Proxy für alle Projekte der Box läuft aus `/opt/caddy`. Subsumio-`web` und
+`engine` hängen **nicht** im gemeinsamen Netz `hetzner_default`, sondern nur im eigenen Netz
+`subsumio-edge`, das sie ausschließlich mit dem Proxy teilen. `deploy-code.sh` legt das Netz bei
+Bedarf an und schließt den Proxy-Container (der Container, der Port 443 veröffentlicht; sonst
+`DEPLOY_PROXY_CONTAINER=<name>`) daran an.
+
+Die App verlässt sich darauf, dass der Proxy `X-Real-IP` mit der TCP-Gegenstelle überschreibt
+(IP-Allowlist, Rate-Limits, Audit-IP). `server/deploy/netcup/Caddyfile` ist die
+Referenzkonfiguration für die Subsumio-Hosts; der Block in `/opt/caddy/Caddyfile` muss ihr
+entsprechen (Hostnamen stehen dort als Klartext statt `{$APP_DOMAIN}` usw.). Der Deploy bricht
+vor dem Umschalten ab, wenn im laufenden Proxy `header_up X-Real-IP {remote_host}` fehlt
+(bewusste Ausnahme: `DEPLOY_ALLOW_PROXY_DRIFT=1`). Nach jeder Änderung an `/opt/caddy/Caddyfile`
+den Subsumio-Teil hier im Repo nachziehen.
+
+Prüfen, wer web/engine erreichen kann:
+
+```sh
+ssh subsumio-netcup 'docker network inspect subsumio-edge -f "{{range .Containers}}{{.Name}} {{end}}"'
+```
+
+Erwartet: nur `subsumio-engine-web-1`, `subsumio-engine-engine-1` und der Proxy.
+
+Der Dienst `caddy` in der Compose-Datei läuft nur mit `--profile standalone-proxy` (neue Box
+ohne `/opt/caddy`, Notfall) und wird im Normalbetrieb nie gestartet.
 
 ## Neuen Code ausrollen
 

@@ -462,18 +462,14 @@ function extractUaCore(ua: string): string {
 }
 
 /**
- * Extract the real client IP from a request, respecting X-Forwarded-For
- * and X-Real-IP headers.
+ * Extract the client IP from a request. X-Real-IP (overwritten by the reverse
+ * proxy with the TCP peer) wins over the client-controlled X-Forwarded-For.
  */
 export function extractClientIp(headers: Headers): string | null {
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const realIp = headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  return null;
+  const realIp = headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const first = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return first || null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

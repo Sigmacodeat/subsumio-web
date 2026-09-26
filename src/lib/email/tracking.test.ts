@@ -156,12 +156,12 @@ describe("extractClientIp", () => {
     expect(extractClientIp(headers)).toBeNull();
   });
 
-  test("prioritizes X-Forwarded-For over X-Real-IP", () => {
+  test("prioritizes the proxy-set X-Real-IP over client-sent X-Forwarded-For", () => {
     const headers = new Headers({
       "x-forwarded-for": "1.1.1.1",
       "x-real-ip": "2.2.2.2",
     });
-    expect(extractClientIp(headers)).toBe("1.1.1.1");
+    expect(extractClientIp(headers)).toBe("2.2.2.2");
   });
 });
 
