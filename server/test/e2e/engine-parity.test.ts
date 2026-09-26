@@ -378,6 +378,41 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
     }
   });
 
+  test("purgeDeletedPages parity: files rows go with the purged page on both engines", async () => {
+    for (const engine of [pgEngine, pgliteEngine]) {
+      await engine.putPage("wiki/purge-files", {
+        type: "note",
+        title: "purge",
+        compiled_truth: "body",
+        timeline: "",
+      });
+      await engine.executeRaw(
+        `INSERT INTO files (source_id, page_slug, filename, storage_path, content_hash)
+         VALUES ('default', 'wiki/purge-files', 'x.pdf', 'clean/parity/wiki/purge-files/x.pdf', 'hp')`
+      );
+      await engine.softDeletePage("wiki/purge-files");
+      await engine.executeRaw(
+        `UPDATE pages SET deleted_at = now() - INTERVAL '73 hours' WHERE slug = 'wiki/purge-files'`
+      );
+    }
+    const pg = await pgEngine.purgeDeletedPages(72);
+    const pglite = await pgliteEngine.purgeDeletedPages(72);
+    for (const r of [pg, pglite]) {
+      expect(r.slugs).toContain("wiki/purge-files");
+      expect(r.files).toContainEqual({
+        sourceId: "default",
+        pageSlug: "wiki/purge-files",
+        storagePath: "clean/parity/wiki/purge-files/x.pdf",
+      });
+    }
+    for (const engine of [pgEngine, pgliteEngine]) {
+      const left = await engine.executeRaw<{ n: number }>(
+        `SELECT COUNT(*)::int AS n FROM files WHERE page_slug = 'wiki/purge-files'`
+      );
+      expect(left[0].n).toBe(0);
+    }
+  });
+
   test("v114 (#1941) listLinkSources parity: same ordered provenance counts on both engines", async () => {
     const sourceId = "link-source-parity";
     const mk = async (eng: BrainEngine) => {

@@ -70,7 +70,9 @@ async function runPurgeDeleted(engine: BrainEngine, args: string[]): Promise<voi
     return;
   }
 
-  const result = await engine.purgeDeletedPages(olderThanHours);
+  const { purgeDeletedPagesWithFiles } = await import("../core/file-store.ts");
+  const { loadConfig } = await import("../core/config.ts");
+  const result = await purgeDeletedPagesWithFiles(engine, olderThanHours, loadConfig()?.storage);
   if (json) {
     console.log(
       JSON.stringify(

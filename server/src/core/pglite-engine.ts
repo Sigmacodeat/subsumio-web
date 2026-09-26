@@ -31,6 +31,7 @@ import type {
   FactListOpts,
   FactsHealth,
   SourceRow,
+  PurgeDeletedPagesResult,
 } from "./engine.ts";
 import { MAX_SEARCH_LIMIT, clampSearchLimit } from "./engine.ts";
 import {
@@ -1181,19 +1182,43 @@ export class PGLiteEngine implements BrainEngine {
     return rows.length > 0;
   }
 
-  async purgeDeletedPages(olderThanHours: number): Promise<{ slugs: string[]; count: number }> {
+  async purgeDeletedPages(olderThanHours: number): Promise<PurgeDeletedPagesResult> {
     // Clamp to non-negative integer; cascade through FKs (content_chunks,
-    // page_links, chunk_relations) on DELETE.
+    // page_links, chunk_relations) on DELETE. The page's `files` rows go in
+    // the same transaction; their storage objects are returned for the caller
+    // to delete (parity with postgres-engine).
     const hours = Math.max(0, Math.floor(olderThanHours));
-    const { rows } = await this.db.query(
-      `DELETE FROM pages
-       WHERE deleted_at IS NOT NULL
-         AND deleted_at < now() - ($1 || ' hours')::interval
-       RETURNING slug`,
-      [hours]
-    );
-    const slugs = (rows as { slug: string }[]).map((r) => r.slug);
-    return { slugs, count: slugs.length };
+    return this.db.transaction(async (tx) => {
+      const files = await tx.query(
+        `DELETE FROM files f
+         USING pages p
+         WHERE p.deleted_at IS NOT NULL
+           AND p.deleted_at < now() - ($1 || ' hours')::interval
+           AND f.source_id = p.source_id
+           AND (f.page_id = p.id OR f.page_slug = p.slug)
+         RETURNING f.source_id, f.page_slug, f.storage_path`,
+        [hours]
+      );
+      const { rows } = await tx.query(
+        `DELETE FROM pages
+         WHERE deleted_at IS NOT NULL
+           AND deleted_at < now() - ($1 || ' hours')::interval
+         RETURNING slug`,
+        [hours]
+      );
+      const slugs = (rows as { slug: string }[]).map((r) => r.slug);
+      return {
+        slugs,
+        count: slugs.length,
+        files: (
+          files.rows as Array<{ source_id: string; page_slug: string | null; storage_path: string }>
+        ).map((r) => ({
+          sourceId: r.source_id,
+          pageSlug: r.page_slug ?? null,
+          storagePath: r.storage_path,
+        })),
+      };
+    });
   }
 
   // PGLite returns jsonb result columns as text in some paths — normalize

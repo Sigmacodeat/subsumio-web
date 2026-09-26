@@ -88,7 +88,10 @@ import {
   ArchiveSafetyError,
 } from "../core/archive-upload.ts";
 import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
-import { FILE_MIME_TYPES } from "../core/file-store.ts";
+import {
+  FILE_MIME_TYPES,
+  storageConfigFromEnv as storageConfigFromEnvShared,
+} from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
@@ -240,18 +243,7 @@ declare global {
  * Optional: R2_ENDPOINT (default: AWS S3), R2_REGION (default: auto)
  */
 function storageConfigFromEnv(): import("../core/storage.ts").StorageConfig | undefined {
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET;
-  if (!accessKeyId || !secretAccessKey || !bucket) return undefined;
-  return {
-    backend: "s3",
-    bucket,
-    accessKeyId,
-    secretAccessKey,
-    ...(process.env.R2_ENDPOINT ? { endpoint: process.env.R2_ENDPOINT } : {}),
-    ...(process.env.R2_REGION ? { region: process.env.R2_REGION } : {}),
-  };
+  return storageConfigFromEnvShared();
 }
 
 /**
@@ -4927,6 +4919,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+      // An original is served only while its page exists: a deleted (or
+      // purged) page takes its file out of reach, whatever scope the caller has.
+      if (!pageForScope) {
+        apiError(res, 404, "file_not_found");
+        return;
+      }
       await assertPageMatterAccess(engine, req, slug, { stored: pageForScope });
 
       const { readStoredFile } = await import("../core/file-store.ts");
