@@ -143,3 +143,18 @@ describe("Settings → Team: role changes", () => {
     expect(select.disabled).toBe(true);
   });
 });
+
+describe("Settings → Nächtliche Konsolidierung", () => {
+  test("firm users get no run-now button; the page never starts the installation-wide cycle", async () => {
+    q.params = new URLSearchParams("tab=dream");
+    render(<SettingsPage />);
+    expect(await screen.findByText(/dem Betrieb vorbehalten/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Jetzt ausführen|Sofort ausführen/ })).toBeNull();
+    const { csrfFetch } = await import("@/lib/csrf");
+    const calls = [
+      ...(csrfFetch as unknown as { mock: { calls: unknown[][] } }).mock.calls,
+      ...(fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls,
+    ];
+    expect(calls.some(([url]) => String(url).includes("dream-cycle"))).toBe(false);
+  });
+});

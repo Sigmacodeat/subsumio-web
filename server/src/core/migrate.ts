@@ -6788,6 +6788,19 @@ export const MIGRATIONS: Migration[] = [
     },
     transaction: false,
   },
+  {
+    version: 152,
+    name: "eval_contradictions_runs_source_id",
+    // A contradiction-probe run belongs to one firm source: the probe
+    // searches only that source and find_contradictions reads the latest run
+    // of the caller's source. NULL = a host run (CLI) from before the column.
+    // The table is small; a plain index is enough on both engines.
+    sql: `
+      ALTER TABLE eval_contradictions_runs ADD COLUMN IF NOT EXISTS source_id TEXT;
+      CREATE INDEX IF NOT EXISTS eval_contradictions_runs_source_ran_at_idx
+        ON eval_contradictions_runs (source_id, ran_at DESC);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

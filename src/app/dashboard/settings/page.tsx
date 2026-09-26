@@ -280,9 +280,6 @@ function SettingsPageInner() {
   const [keysSaveError, setKeysSaveError] = useState(false);
   // Full saved settings — the billing form only edits a subset, the rest must survive a save.
   const savedKanzleiRef = useRef<KanzleiSettings | null>(null);
-  const [dreamDone, setDreamDone] = useState(false);
-  const [dreamRunning, setDreamRunning] = useState(false);
-  const [dreamError, setDreamError] = useState(false);
   const [singleKeyShortcuts, setSingleKeyShortcuts] = useState(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("single-key-shortcuts") !== "false";
@@ -305,21 +302,6 @@ function SettingsPageInner() {
   const orgQuery = useOrg();
   const isFirmOwner = (orgQuery.data as { isOwner?: boolean } | undefined)?.isOwner === true;
   const [roleError, setRoleError] = useState<string | null>(null);
-
-  const runDreamCycle = async () => {
-    setDreamRunning(true);
-    setDreamError(false);
-    setDreamDone(false);
-    try {
-      const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
-      if (!response.ok) throw new Error(String(response.status));
-      setDreamDone(true);
-    } catch {
-      setDreamError(true);
-    } finally {
-      setDreamRunning(false);
-    }
-  };
 
   // Kanzlei form — RHF + Zod
   const kanzleiForm = useForm<KanzleiSettingsFormData>({
@@ -820,39 +802,17 @@ function SettingsPageInner() {
                     ))}
                   </ul>
                 </Field>
+                {/* The cycle runs for the whole installation: starting it by hand
+                    is reserved to the platform operator (POST /api/brain/dream-cycle
+                    is operator-only), so firm users get no button here. */}
                 <Field
-                  label={L("Sofort ausführen", "Run now")}
+                  label={L("Manueller Start", "Manual start")}
                   desc={L(
-                    "Nur nötig nach einem größeren Import; kann einige Minuten dauern.",
-                    "Only needed after a large import; can take a few minutes."
+                    "Ein manueller Lauf ist dem Betrieb vorbehalten. Wenden Sie sich nach einem größeren Import an den Support.",
+                    "A manual run is reserved to operations. After a large import, please contact support."
                   )}
                 >
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void runDreamCycle()}
-                      disabled={dreamRunning}
-                    >
-                      <RefreshCw
-                        size={14}
-                        className={cn(dreamRunning && "animate-spin")}
-                        aria-hidden
-                      />
-                      {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
-                    </Button>
-                    {dreamDone && (
-                      <p role="status" className="text-xs text-[color:var(--ds-success-text)]">
-                        {L("Konsolidierung abgeschlossen.", "Consolidation finished.")}
-                      </p>
-                    )}
-                    {dreamError && (
-                      <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
-                        {t("sidebar.dream_error")}
-                      </p>
-                    )}
-                  </div>
+                  <span className="sr-only">{L("Nicht verfügbar", "Not available")}</span>
                 </Field>
               </div>
             </Card>

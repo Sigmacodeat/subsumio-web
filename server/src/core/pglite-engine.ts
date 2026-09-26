@@ -33,7 +33,13 @@ import type {
   SourceRow,
   PurgeDeletedPagesResult,
 } from "./engine.ts";
-import { MAX_SEARCH_LIMIT, clampSearchLimit } from "./engine.ts";
+import { MAX_SEARCH_LIMIT, clampSearchLimit, sourceScopeList } from "./engine.ts";
+import {
+  buildCountByStatusSql,
+  normalizeCountRows,
+  type PageStatusCount,
+  type PageStatusCountOpts,
+} from "./page-status-counts.ts";
 import {
   withRetry,
   BULK_RETRY_OPTS,
@@ -116,6 +122,8 @@ import {
   GBrainError,
   PAGE_SORT_SQL,
   normalizeFrontmatterFilter,
+  textMatchPattern,
+  TEXT_MATCH_FIELDS,
   ENRICH_ORDER_SQL,
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
@@ -1511,6 +1519,14 @@ export class PGLiteEngine implements BrainEngine {
         return `p.frontmatter->>'${key}' = $${params.length}`;
       });
       where.push(`(${ors.join(" OR ")})`);
+    }
+    // Substring search over title + TEXT_MATCH_FIELDS (literal keys).
+    const textPattern = textMatchPattern(filters?.textMatch);
+    if (textPattern) {
+      params.push(textPattern);
+      const n = `$${params.length}`;
+      const cols = ["p.title", ...TEXT_MATCH_FIELDS.map((k) => `p.frontmatter->>'${k}'`)];
+      where.push(`(${cols.map((c) => `${c} ILIKE ${n} ESCAPE '\\'`).join(" OR ")})`);
     }
 
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
@@ -3318,6 +3334,11 @@ export class PGLiteEngine implements BrainEngine {
     return rows as unknown as Link[];
   }
 
+  async countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]> {
+    const { sql, params } = buildCountByStatusSql(opts);
+    return normalizeCountRows(await this.executeRaw<Record<string, unknown>>(sql, params));
+  }
+
   async listLinkSources(opts?: {
     sourceId?: string;
     sourceIds?: string[];
@@ -5120,6 +5141,7 @@ export class PGLiteEngine implements BrainEngine {
     duration_ms: number;
     source_tier_breakdown: Record<string, unknown>;
     report_json: Record<string, unknown>;
+    source_id?: string | null;
   }): Promise<boolean> {
     const result = await this.db.query(
       `INSERT INTO eval_contradictions_runs (
@@ -5127,13 +5149,13 @@ export class PGLiteEngine implements BrainEngine {
          queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
          wilson_ci_lower, wilson_ci_upper, judge_errors_total,
          cost_usd_total, duration_ms,
-         source_tier_breakdown, report_json
+         source_tier_breakdown, report_json, source_id
        ) VALUES (
          $1, $2, $3,
          $4, $5, $6,
          $7, $8, $9,
          $10, $11,
-         $12::jsonb, $13::jsonb
+         $12::jsonb, $13::jsonb, $14
        )
        ON CONFLICT (run_id) DO NOTHING`,
       [
@@ -5150,16 +5172,21 @@ export class PGLiteEngine implements BrainEngine {
         row.duration_ms,
         row.source_tier_breakdown,
         row.report_json,
+        row.source_id ?? null,
       ]
     );
     return (result.affectedRows ?? 0) > 0;
   }
 
   /** v0.32.6 M5 — read probe runs from the last N days. */
-  async loadContradictionsTrend(days: number): Promise<
+  async loadContradictionsTrend(
+    days: number,
+    opts?: { sourceIds?: string[] }
+  ): Promise<
     Array<{
       run_id: string;
       ran_at: string;
+      source_id: string | null;
       judge_model: string;
       queries_evaluated: number;
       queries_with_contradiction: number;
@@ -5174,20 +5201,23 @@ export class PGLiteEngine implements BrainEngine {
     }>
   > {
     const cutoff = new Date(Date.now() - Math.max(0, days) * 86400000);
+    const scoped = Array.isArray(opts?.sourceIds);
     const { rows } = await this.db.query(
-      `SELECT run_id, ran_at, judge_model,
+      `SELECT run_id, ran_at, source_id, judge_model,
               queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
               wilson_ci_lower, wilson_ci_upper, judge_errors_total,
               cost_usd_total, duration_ms,
               source_tier_breakdown, report_json
        FROM eval_contradictions_runs
        WHERE ran_at >= $1
+         ${scoped ? "AND source_id = ANY($2::text[])" : ""}
        ORDER BY ran_at DESC`,
-      [cutoff]
+      scoped ? [cutoff, opts!.sourceIds] : [cutoff]
     );
     return (rows as Record<string, unknown>[]).map((r) => ({
       run_id: r.run_id as string,
       ran_at: r.ran_at instanceof Date ? (r.ran_at as Date).toISOString() : String(r.ran_at),
+      source_id: typeof r.source_id === "string" ? r.source_id : null,
       judge_model: r.judge_model as string,
       queries_evaluated: Number(r.queries_evaluated),
       queries_with_contradiction: Number(r.queries_with_contradiction),
@@ -5288,6 +5318,7 @@ export class PGLiteEngine implements BrainEngine {
            OR ($6::boolean = false AND t.resolved_at IS NULL)
          )
          AND ($7::text[] IS NULL OR t.holder = ANY($7::text[]))
+         AND ($11::text[] IS NULL OR p.source_id = ANY($11::text[]))
        ORDER BY
          CASE WHEN $8 = 'weight'      THEN t.weight     END DESC NULLS LAST,
          CASE WHEN $8 = 'since_date'  THEN t.since_date END DESC NULLS LAST,
@@ -5304,6 +5335,7 @@ export class PGLiteEngine implements BrainEngine {
         sortBy,
         limit,
         offset,
+        sourceScopeList(opts),
       ]
     );
     return rows.map((r) => takeRowToTake(r as Record<string, unknown>));
@@ -5590,6 +5622,13 @@ export class PGLiteEngine implements BrainEngine {
       params.push(allowList);
       clauses.push(`AND holder = ANY($${params.length}::text[])`);
     }
+    const scorecardSources = sourceScopeList(opts);
+    if (scorecardSources) {
+      params.push(scorecardSources);
+      clauses.push(
+        `AND EXISTS (SELECT 1 FROM pages sp WHERE sp.id = takes.page_id AND sp.source_id = ANY($${params.length}::text[]))`
+      );
+    }
     const where = clauses.join(" ");
     // v0.36.1.1 T1c: `resolved` deliberately filters to the 3-state subset
     // (correct|incorrect|partial) — NOT `resolved_quality IS NOT NULL` — so
@@ -5643,6 +5682,13 @@ export class PGLiteEngine implements BrainEngine {
     if (allowList !== undefined) {
       params.push(allowList);
       clauses.push(`AND holder = ANY($${params.length}::text[])`);
+    }
+    const curveSources = sourceScopeList(opts);
+    if (curveSources) {
+      params.push(curveSources);
+      clauses.push(
+        `AND EXISTS (SELECT 1 FROM pages sp WHERE sp.id = takes.page_id AND sp.source_id = ANY($${params.length}::text[]))`
+      );
     }
     const where = clauses.join(" ");
     // NUMERIC casts for exact decimal arithmetic — keeps PGLite + Postgres
@@ -6475,6 +6521,11 @@ export class PGLiteEngine implements BrainEngine {
       params.push(escaped);
       prefixCondition = `AND p.slug LIKE $${params.length} ESCAPE '\\'`;
     }
+    const salienceSources = sourceScopeList(opts);
+    if (salienceSources) {
+      params.push(salienceSources);
+      prefixCondition += ` AND p.source_id = ANY($${params.length}::text[])`;
+    }
     params.push(limit);
     const limitParam = `$${params.length}`;
 
@@ -6608,6 +6659,8 @@ export class PGLiteEngine implements BrainEngine {
     const sinceDate = new Date(sinceIso + "T00:00:00Z");
     const sinceEnd = new Date(sinceDate.getTime() + 86400000);
     const baselineStart = new Date(sinceDate.getTime() - lookbackDays * 86400000);
+    // Only pages of the caller's sources ($3; NULL = no source filter).
+    const sources = sourceScopeList(opts);
 
     const tagBaselineRes = await this.db.query(
       `WITH days AS (
@@ -6618,6 +6671,7 @@ export class PGLiteEngine implements BrainEngine {
        cohort_keys AS (
          SELECT DISTINCT t.tag FROM tags t JOIN pages p ON p.id = t.page_id
           WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
        ),
        touched AS (
          SELECT t.tag,
@@ -6625,12 +6679,13 @@ export class PGLiteEngine implements BrainEngine {
                 COUNT(DISTINCT p.id) AS cnt
            FROM tags t JOIN pages p ON p.id = t.page_id
           WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
           GROUP BY 1, 2
        )
        SELECT cd.tag AS cohort_value, d.day::text AS day, COALESCE(t.cnt, 0)::int AS count
          FROM cohort_keys cd CROSS JOIN days d
          LEFT JOIN touched t ON t.tag = cd.tag AND t.day = d.day`,
-      [baselineStart.toISOString(), sinceDate.toISOString()]
+      [baselineStart.toISOString(), sinceDate.toISOString(), sources]
     );
 
     const typeBaselineRes = await this.db.query(
@@ -6642,6 +6697,7 @@ export class PGLiteEngine implements BrainEngine {
        cohort_keys AS (
          SELECT DISTINCT p.type FROM pages p
           WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
        ),
        touched AS (
          SELECT p.type,
@@ -6649,12 +6705,13 @@ export class PGLiteEngine implements BrainEngine {
                 COUNT(DISTINCT p.id) AS cnt
            FROM pages p
           WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
           GROUP BY 1, 2
        )
        SELECT cd.type AS cohort_value, d.day::text AS day, COALESCE(t.cnt, 0)::int AS count
          FROM cohort_keys cd CROSS JOIN days d
          LEFT JOIN touched t ON t.type = cd.type AND t.day = d.day`,
-      [baselineStart.toISOString(), sinceDate.toISOString()]
+      [baselineStart.toISOString(), sinceDate.toISOString(), sources]
     );
 
     const tagTodayRes = await this.db.query(
@@ -6663,8 +6720,9 @@ export class PGLiteEngine implements BrainEngine {
               array_agg(DISTINCT p.slug) AS slugs
          FROM tags t JOIN pages p ON p.id = t.page_id
         WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
         GROUP BY 1`,
-      [sinceIso, sinceEnd.toISOString()]
+      [sinceIso, sinceEnd.toISOString(), sources]
     );
 
     const typeTodayRes = await this.db.query(
@@ -6673,8 +6731,9 @@ export class PGLiteEngine implements BrainEngine {
               array_agg(DISTINCT p.slug) AS slugs
          FROM pages p
         WHERE p.updated_at >= $1::timestamptz AND p.updated_at < $2::timestamptz
+            AND ($3::text[] IS NULL OR p.source_id = ANY($3::text[]))
         GROUP BY 1`,
-      [sinceIso, sinceEnd.toISOString()]
+      [sinceIso, sinceEnd.toISOString(), sources]
     );
 
     const baseline = [

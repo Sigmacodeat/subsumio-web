@@ -1,3 +1,4 @@
+import type { PageStatusCount, PageStatusCountOpts } from "./page-status-counts.ts";
 import type {
   Page,
   PageInput,
@@ -343,6 +344,9 @@ export interface TakesListOpts {
   sortBy?: "weight" | "since_date" | "created_at";
   limit?: number;
   offset?: number;
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 /** Search result row from searchTakes / searchTakesVector. */
@@ -441,6 +445,9 @@ export interface TakesScorecardOpts {
   domainPrefix?: string; // e.g. 'companies/' to scope the scorecard
   since?: string; // ISO date 'YYYY-MM-DD'
   until?: string; // ISO date 'YYYY-MM-DD'
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 /** v0.30.0: calibration curve bucket. */
@@ -460,6 +467,22 @@ export interface CalibrationBucket {
 export interface CalibrationCurveOpts {
   holder?: string;
   bucketSize?: number; // default 0.1
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
+}
+
+/**
+ * The source list a read is limited to: the federated array when non-empty,
+ * else the scalar source, else null (no source filter — trusted callers).
+ */
+export function sourceScopeList(opts: {
+  sourceId?: string;
+  sourceIds?: string[];
+}): string[] | null {
+  if (opts.sourceIds && opts.sourceIds.length > 0) return [...opts.sourceIds];
+  if (opts.sourceId) return [opts.sourceId];
+  return null;
 }
 
 /** Synthesis evidence row input (provenance from think synthesis pages). */
@@ -1314,6 +1337,15 @@ export interface BrainEngine {
    */
   getBacklinks(slug: string, opts?: { sourceId?: string }): Promise<Link[]>;
   /**
+   * Pages per type and status (a frontmatter field), counted in SQL for
+   * dashboard badges — see core/page-status-counts.ts. Scoped by
+   * `sourceId`/`sourceIds` and the document ACL (`aclGroups`); deleted and
+   * tombstoned pages are never counted. Matter scope is applied by the
+   * `count_pages_by_status` operation, not here.
+   */
+  countPagesByStatus(opts: PageStatusCountOpts): Promise<PageStatusCount[]>;
+
+  /**
    * v114 (#1941): distinct link_source provenances with edge counts, for
    * `gbrain link-sources`. Source-scoped via `{sourceId?, sourceIds?}` (both
    * forms, so federated `allowedSources` reads don't leak cross-source counts).
@@ -1779,6 +1811,8 @@ export interface BrainEngine {
     duration_ms: number;
     source_tier_breakdown: Record<string, unknown>;
     report_json: Record<string, unknown>;
+    /** The firm source the run probed; omitted/null for a host run (CLI). */
+    source_id?: string | null;
   }): Promise<boolean>;
 
   /**
@@ -1786,11 +1820,18 @@ export interface BrainEngine {
    * newest first. Used by `gbrain eval suspected-contradictions trend` and
    * by the doctor `contradictions` check. `report_json` and
    * `source_tier_breakdown` are parsed JSONB columns.
+   *
+   * `opts.sourceIds` limits the result to runs of those sources (a host run
+   * without source is never included then); omitted = every run.
    */
-  loadContradictionsTrend(days: number): Promise<
+  loadContradictionsTrend(
+    days: number,
+    opts?: { sourceIds?: string[] }
+  ): Promise<
     Array<{
       run_id: string;
       ran_at: string;
+      source_id: string | null;
       judge_model: string;
       queries_evaluated: number;
       queries_with_contradiction: number;

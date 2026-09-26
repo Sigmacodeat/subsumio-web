@@ -52,6 +52,8 @@ interface ExtractJobData {
   upload_frontmatter?: Record<string, unknown>;
   matter_scope?: string[] | "all";
   acl_groups?: string[] | "all";
+  /** Set by the submitting route: the uploader is a firm admin. */
+  acl_admin?: boolean;
   auto_trigger_legal_pipeline?: boolean;
   owner_id?: string;
   owner_type?: "user" | "org";
@@ -92,6 +94,7 @@ export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) 
         password: d.password,
         matterScope: d.matter_scope,
         aclGroups: d.acl_groups,
+        aclAdmin: d.acl_admin === true,
         autoTriggerLegalPipeline: d.auto_trigger_legal_pipeline ?? true,
         ownerId: d.owner_id,
         ownerType: d.owner_type,

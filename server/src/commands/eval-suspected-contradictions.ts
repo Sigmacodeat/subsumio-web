@@ -90,6 +90,13 @@ interface ParsedFlags {
   help: boolean;
   /** v0.41: scope probe to pages with this doc_type in frontmatter. */
   docType?: string;
+  /**
+   * The one source (firm) the run is bound to: queries come from its pages,
+   * retrieval searches only it, and the run row is recorded for it.
+   */
+  source?: string;
+  /** Build queries from the source's documents changed in the last N hours. */
+  recentHours?: number;
 }
 
 export function parseFlags(args: string[]): ParsedFlags {
@@ -162,6 +169,8 @@ export function parseFlags(args: string[]): ParsedFlags {
       f.severity = v;
     } else if (arg === "--since") f.since = next();
     else if (arg === "--doc-type") f.docType = next();
+    else if (arg === "--source") f.source = next();
+    else if (arg === "--recent-hours") f.recentHours = Number.parseInt(next(), 10);
     else {
       throw new Error(`unknown flag: ${arg}`);
     }
@@ -247,10 +256,14 @@ function exclusiveOneOf(...flags: Array<unknown>): boolean {
 }
 
 async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
-  if (!exclusiveOneOf(f.queriesFile, f.query, f.fromCapture, f.docType)) {
+  if (!exclusiveOneOf(f.queriesFile, f.query, f.fromCapture, f.docType, f.recentHours)) {
     console.error(
-      `Must pass exactly one of: --queries-file FILE, --query "...", --from-capture, --doc-type TYPE.`
+      `Must pass exactly one of: --queries-file FILE, --query "...", --from-capture, --doc-type TYPE, --recent-hours N.`
     );
+    throw new CliExit(2);
+  }
+  if (f.recentHours !== undefined && !f.source) {
+    console.error(`--recent-hours needs --source (the firm whose documents are checked).`);
     throw new CliExit(2);
   }
 
@@ -262,14 +275,31 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   // v0.41: When --doc-type is set, generate queries from pages with that doc_type.
   // This scopes the probe to only compare chunks from documents of a specific
   // semantic type (e.g. "medical_report" vs "medical_report").
-  if (f.docType) {
+  // With --source, only that firm's pages seed the queries.
+  if (f.docType || f.recentHours !== undefined) {
+    const params: unknown[] = [f.limit ?? 50];
+    const where: string[] = [
+      `deleted_at IS NULL`,
+      `COALESCE(frontmatter->>'status', '') <> 'tombstoned'`,
+    ];
+    if (f.docType) {
+      params.push(f.docType);
+      where.push(`frontmatter->>'doc_type' = $${params.length}`);
+    } else {
+      params.push(Math.max(1, f.recentHours ?? 24));
+      where.push(`frontmatter ? 'doc_type'`);
+      where.push(`updated_at >= now() - make_interval(hours => $${params.length}::int)`);
+    }
+    if (f.source) {
+      params.push(f.source);
+      where.push(`source_id = $${params.length}`);
+    }
     const docTypeQueries = await engine.executeRaw<{ compiled_truth: string }>(
       `SELECT compiled_truth FROM pages
-       WHERE deleted_at IS NULL
-         AND frontmatter->>'doc_type' = $1
+       WHERE ${where.join(" AND ")}
        ORDER BY updated_at DESC
-       LIMIT $2`,
-      [f.docType, f.limit ?? 50]
+       LIMIT $1`,
+      params
     );
     if (docTypeQueries && docTypeQueries.length > 0) {
       // Use first 200 chars of each page as a query — the probe will retrieve
@@ -278,7 +308,9 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
         .map((r) => (r.compiled_truth ?? "").replace(/\s+/g, " ").trim().slice(0, 200))
         .filter((q) => q.length > 20);
       console.error(
-        `Doc-type scoping: ${queries.length} queries from pages with doc_type=${f.docType}`
+        f.docType
+          ? `Doc-type scoping: ${queries.length} queries from pages with doc_type=${f.docType}`
+          : `Recent documents: ${queries.length} queries from the last ${f.recentHours} h`
       );
     }
   }
@@ -345,10 +377,11 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
       yesOverride: f.yes,
       maxPairChars: f.maxPairChars,
       noCache: f.noCache,
+      ...(f.source ? { sourceId: f.source } : {}),
     });
 
-    // Persist to runs table (M5).
-    await writeRunRow(engine, out.report, out.report.duration_ms);
+    // Persist to runs table (M5), recorded for the probed source.
+    await writeRunRow(engine, out.report, out.report.duration_ms, f.source);
 
     // Human summary.
     const r = out.report;

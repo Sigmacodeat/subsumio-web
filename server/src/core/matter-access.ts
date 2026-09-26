@@ -275,12 +275,69 @@ export function jobOwnerStamp(ownerUserId?: string, caseSlug?: string): Record<s
 }
 
 /**
+ * The document-level ACL groups (see core/acl.ts) of the user who started a
+ * piece of agent work travel with the job in this key, like the matter stamp.
+ * `"all"` is only ever stamped for a firm admin.
+ */
+export const JOB_ACL_GROUPS_KEY = "_acl_groups";
+
+/**
+ * The job-data stamp for a caller's document ACL groups. Only an admin keeps
+ * "all"; every other caller (a user in no group, or a call without a user)
+ * is stamped with its group list — possibly empty, i.e. open pages only.
+ */
+export function jobAclStamp(
+  aclGroups: string[] | "all" | undefined,
+  isAdmin: boolean
+): Record<string, unknown> {
+  if (aclGroups === "all" && isAdmin) return { [JOB_ACL_GROUPS_KEY]: "all" };
+  return {
+    [JOB_ACL_GROUPS_KEY]: Array.isArray(aclGroups)
+      ? aclGroups.filter((g) => typeof g === "string" && g.length > 0)
+      : [],
+  };
+}
+
+/**
+ * Read a job's document ACL groups.
+ *
+ *   stamp present  "all" or the stamped group list; a malformed stamp is []
+ *   no stamp       [] (open pages only) when the job was started for a user
+ *                  or a firm (owner, matter stamp or a non-default source);
+ *                  undefined — no document filter — only for host jobs
+ *                  without any of these (CLI, host cron).
+ */
+export function readJobAclGroups(data: unknown): string[] | "all" | undefined {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  if (JOB_ACL_GROUPS_KEY in d) {
+    const raw = d[JOB_ACL_GROUPS_KEY];
+    if (raw === "all") return "all";
+    return isSlugList(raw) ? [...raw] : [];
+  }
+  const source = nonEmptyString(d._source_id) ?? nonEmptyString(d.source_id);
+  const userJob =
+    readJobOwner(d) !== undefined ||
+    JOB_MATTER_SCOPE_KEY in d ||
+    JOB_MATTER_READ_ONLY_KEY in d ||
+    (source !== undefined && source !== "default");
+  return userJob ? [] : undefined;
+}
+
+/** The ACL stamp a job passes on to the jobs it spawns (`{}` for host jobs). */
+export function inheritedJobAclStamp(data: unknown): Record<string, unknown> {
+  const groups = readJobAclGroups(data);
+  if (groups === undefined) return {};
+  return { [JOB_ACL_GROUPS_KEY]: groups === "all" ? "all" : [...groups] };
+}
+
+/**
  * Everything a spawned agent job inherits from its parent: the matter access
- * stamp, the owner and the bound matter.
+ * stamp, the document ACL groups, the owner and the bound matter.
  */
 export function inheritedAgentStamps(data: unknown): Record<string, unknown> {
   return {
     ...inheritedJobMatterStamp(data),
+    ...inheritedJobAclStamp(data),
     ...jobOwnerStamp(readJobOwner(data), readJobCase(data)),
   };
 }

@@ -31,9 +31,11 @@ export interface TrendRow {
 export async function writeRunRow(
   engine: BrainEngine,
   report: ProbeReport,
-  durationMs: number
+  durationMs: number,
+  sourceId?: string
 ): Promise<boolean> {
   return engine.writeContradictionsRun({
+    ...(sourceId ? { source_id: sourceId } : {}),
     run_id: report.run_id,
     judge_model: report.judge_model,
     prompt_version: report.prompt_version,

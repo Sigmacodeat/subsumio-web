@@ -76,11 +76,12 @@
 # Has its own BudgetMeter; cost is bounded by phase config.
 30 2 * * *     sh /etc/cronjob.sh dream-cycle /api/cron/dream-cycle
 
-# Contradiction probe: no scheduled run. The engine probe works across the
-# whole database, not per firm source, so a nightly run cannot be scoped to
-# one firm. Firm contradictions are checked per matter after each upload
-# (post-upload outbox). /api/cron/contradiction-probe stays for manual,
-# explicitly parameterised runs (brain_id + doc_type or query).
+# ── 03:00 UTC (05:00 CEST) — Contradiction probe ──
+# Per firm (paying/trial only): documents changed in the last 24 h are checked
+# against the same firm's documents. Each run is bound to the firm's source and
+# capped by its daily probe budget (CONTRADICTION_PROBE_DAILY_BUDGET_USD on the
+# engine). Runs after the dream cycle.
+0 3 * * *      sh /etc/cronjob.sh contradiction-probe /api/cron/contradiction-probe --max-time 310
 
 # ── 08:00 UTC (10:00 CEST) — Retention policy check ──
 0 8 * * *      sh /etc/cronjob.sh retention /api/cron/retention

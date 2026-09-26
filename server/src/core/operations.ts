@@ -2344,6 +2344,11 @@ const list_pages: Operation = {
       description:
         "Frontmatter equality filter as { key: value } (string values, snake_case keys, max 5). A page matches when ANY pair matches (frontmatter->>key = value) — e.g. { case_slug: 'legal/cases/x' } lists one matter's pages in SQL instead of scanning the type.",
     },
+    match: {
+      type: "string",
+      description:
+        "Case-insensitive substring search over the title and the name / email / company / case_number frontmatter fields (min 2, max 100 chars) — e.g. find a contact by name or e-mail.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
@@ -2372,6 +2377,7 @@ const list_pages: Operation = {
       sort,
       cursor: typeof p.cursor === "string" ? p.cursor : undefined,
       frontmatterAny: frontmatterAnyParam(p.frontmatter_any),
+      ...(typeof p.match === "string" ? { textMatch: p.match } : {}),
       ...scope,
     });
     // Pagination metadata is computed on the UNFILTERED SQL window: matter
@@ -2977,6 +2983,8 @@ const takes_list: Operation = {
       // Per-token allow-list — server-side filter for MCP-bound calls.
       // Local CLI callers leave takesHoldersAllowList unset and see all holders.
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only takes on pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-list" },
@@ -3030,6 +3038,7 @@ const takes_scorecard: Operation = {
         domainPrefix: p.domain_prefix as string | undefined,
         since: p.since as string | undefined,
         until: p.until as string | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -3055,6 +3064,7 @@ const takes_calibration: Operation = {
       {
         holder: p.holder as string | undefined,
         bucketSize: p.bucket_size as number | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -4662,6 +4672,8 @@ const get_recent_salience: Operation = {
       limit: typeof p.limit === "number" ? p.limit : undefined,
       slugPrefix: typeof p.slugPrefix === "string" ? p.slugPrefix : undefined,
       recency_bias: recencyBias,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "salience" },
@@ -4690,9 +4702,88 @@ const find_anomalies: Operation = {
       since: typeof p.since === "string" ? p.since : undefined,
       lookback_days: typeof p.lookback_days === "number" ? p.lookback_days : undefined,
       sigma: typeof p.sigma === "number" ? p.sigma : undefined,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "anomalies" },
+};
+
+/** Row cap of the matter-restricted count path (one small row per page). */
+const COUNT_ROWS_CAP = 200_000;
+
+/**
+ * Pages per type and status for dashboard badges: counted in SQL instead of
+ * listing every page. Source scope (sourceScopeOpts), document ACL
+ * (ctx.aclGroups) and matter scope (ctx.matterScope, every frontmatter
+ * binding resolved) apply; deleted and tombstoned pages are not counted.
+ * `complete: false` when the matter-restricted path hit its row cap.
+ */
+const count_pages_by_status: Operation = {
+  name: "count_pages_by_status",
+  description:
+    "Count pages per type and status (a frontmatter field), optionally with how many are dated on or before a day. For badge counters.",
+  scope: "read",
+  localOnly: true,
+  params: {
+    types: {
+      type: "array",
+      items: { type: "string" },
+      required: true,
+      description: "Page types to count (max 10).",
+    },
+    status_field: {
+      type: "string",
+      description: "Frontmatter field to group by (default: status).",
+    },
+    date_fields: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Frontmatter date fields, first non-empty wins (creation day as fallback). Max 3.",
+    },
+    date_before: {
+      type: "string",
+      description: "YYYY-MM-DD: also count per group the pages dated on or before this day.",
+    },
+  },
+  handler: async (ctx, p) => {
+    const { validateCountOpts, buildCountRowsSql, aggregateCountRows } =
+      await import("./page-status-counts.ts");
+    const opts = {
+      types: Array.isArray(p.types) ? (p.types as string[]) : [],
+      ...(typeof p.status_field === "string" ? { statusField: p.status_field } : {}),
+      ...(Array.isArray(p.date_fields) ? { dateFields: p.date_fields as string[] } : {}),
+      ...(typeof p.date_before === "string" ? { dateBefore: p.date_before } : {}),
+      ...sourceScopeOpts(ctx),
+      ...(ctx.aclGroups !== undefined ? { aclGroups: ctx.aclGroups } : {}),
+    };
+    const invalid = validateCountOpts(opts);
+    if (invalid) throw new OperationError("invalid_params", invalid);
+    const scope = ctx.matterScope;
+    if (scope === undefined || scope === "all") {
+      return { counts: await ctx.engine.countPagesByStatus(opts), complete: true };
+    }
+    if (scope.length === 0) return { counts: [], complete: true };
+    const { matterBindingSelectSql } = await import("./matter-binding.ts");
+    const { sql, params } = buildCountRowsSql(
+      opts,
+      matterBindingSelectSql("p.frontmatter"),
+      COUNT_ROWS_CAP
+    );
+    const rows = await ctx.engine.executeRaw<{
+      page_id: number;
+      slug: string;
+      source_id: string;
+      type: string;
+      frontmatter: unknown;
+      status: string;
+      before: unknown;
+    }>(sql, params);
+    const complete = rows.length <= COUNT_ROWS_CAP;
+    const kept = await matterScopeFilterResolved(rows.slice(0, COUNT_ROWS_CAP), ctx);
+    return { counts: aggregateCountRows(kept), complete };
+  },
 };
 
 // v0.33: expertise + relationship-proximity routing. CLI: gbrain whoknows.
@@ -4774,7 +4865,19 @@ const find_contradictions: Operation = {
     const slugFilter = typeof p.slug === "string" ? p.slug.toLowerCase() : null;
     const sevFilter =
       p.severity === "low" || p.severity === "medium" || p.severity === "high" ? p.severity : null;
-    const rows = await ctx.engine.loadContradictionsTrend(30);
+    // Probe runs are bound to one source. An untrusted caller reads the
+    // latest run of its own sources only; trusted local callers see all.
+    const runSources = [
+      ...new Set(
+        [ctx.sourceId, ...(ctx.auth?.allowedSources ?? [])].filter(
+          (x): x is string => typeof x === "string" && x.length > 0
+        )
+      ),
+    ];
+    const rows = await ctx.engine.loadContradictionsTrend(
+      30,
+      ctx.remote === false ? undefined : { sourceIds: runSources }
+    );
     if (rows.length === 0) {
       return {
         contradictions: [],
@@ -8261,6 +8364,7 @@ export const operations: Operation[] = [
   // v0.29: Salience + anomalies + recent transcripts
   get_recent_salience,
   find_anomalies,
+  count_pages_by_status,
   get_recent_transcripts,
   // v0.31: hot memory (facts table)
   extract_facts,

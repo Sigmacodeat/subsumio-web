@@ -22,7 +22,10 @@ import {
   timingSafeEqual as cryptoTimingSafeEqual,
 } from "crypto";
 import { safeStringEqual } from "../core/timing-safe.ts";
-import { parseContradictionProbeBody } from "../core/eval-contradictions/probe-request.ts";
+import {
+  parseContradictionProbeBody,
+  probeDailyBudgetUsd,
+} from "../core/eval-contradictions/probe-request.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -48,6 +51,7 @@ import {
   agentRunVisibility,
   isFirmStaffRole,
   jobMatterStamp,
+  jobAclStamp,
   jobOwnerStamp,
   matterScopeAllows,
 } from "../core/matter-access.ts";
@@ -1065,6 +1069,8 @@ export async function runExtractionAndImport(
     password?: string;
     matterScope?: string[] | "all";
     aclGroups?: string[] | "all";
+    /** The caller is a firm admin: only then may the pipeline stamp ACL "all". */
+    aclAdmin?: boolean;
     /** Bulk-act imports defer analysis until every raw document is ready. */
     autoTriggerLegalPipeline?: boolean;
     /** Signed owner context. Auto AI is forbidden without it. */
@@ -1086,6 +1092,7 @@ export async function runExtractionAndImport(
     password,
     matterScope,
     aclGroups,
+    aclAdmin = false,
     autoTriggerLegalPipeline = true,
     ownerId,
     ownerType,
@@ -1300,6 +1307,7 @@ export async function runExtractionAndImport(
           // pages those agents write are bound to the assigned matter (or kept
           // private for the uploader when the upload has none).
           ...jobMatterStamp(matterScope, undefined),
+          ...jobAclStamp(aclGroups, aclAdmin),
           ...jobOwnerStamp(userId, caseSlug?.trim() || undefined),
           owner_id: ownerId,
           owner_type: ownerType,
@@ -2032,7 +2040,16 @@ function assertMatterWritable(req: Request, slug: string, caseSlug?: string): vo
  * `{}` for unrestricted callers, whose jobs keep today's behaviour.
  */
 function agentMatterStamp(req: Request): Record<string, unknown> {
-  return jobMatterStamp(req.matterScope, req.matterReadOnly);
+  return { ...jobMatterStamp(req.matterScope, req.matterReadOnly), ...agentAclStamp(req) };
+}
+
+/**
+ * The caller's document ACL groups as a job-data stamp (`_acl_groups`). Only
+ * a firm admin's run keeps "all"; everyone else — also a call without an
+ * identity — runs with its group list (possibly empty: open pages only).
+ */
+function agentAclStamp(req: Request): Record<string, unknown> {
+  return jobAclStamp(req.aclGroups, req.userRole === "admin");
 }
 
 export function aclGroupsMiddleware(engine: BrainEngine) {
@@ -4760,6 +4777,50 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
+  // Pages per type and status for the dashboard badges: counted in SQL,
+  // scoped to the caller's source, document ACL and matter access. Tombstoned
+  // and deleted pages are not counted. `complete: false` = lower bound.
+  app.get("/api/page-status-counts", async (req: Request, res: Response) => {
+    const list = (v: unknown): string[] =>
+      typeof v === "string" && v.length > 0
+        ? v
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean)
+        : [];
+    try {
+      const result = await invokeOp(
+        engine,
+        "count_pages_by_status",
+        {
+          types: list(req.query.types),
+          ...(typeof req.query.status_field === "string"
+            ? { status_field: req.query.status_field }
+            : {}),
+          ...(typeof req.query.date_fields === "string"
+            ? { date_fields: list(req.query.date_fields) }
+            : {}),
+          ...(typeof req.query.date_before === "string"
+            ? { date_before: req.query.date_before }
+            : {}),
+        },
+        requestSourceId(req),
+        undefined,
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all",
+        req.userId
+      );
+      res.json(result);
+    } catch (e) {
+      if (e instanceof OperationError && e.code === "invalid_params") {
+        apiError(res, 400, "invalid_params", e.message);
+        return;
+      }
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "page_status_counts_failed", message: msg });
+    }
+  });
+
   app.get("/api/pages", async (req: Request, res: Response) => {
     try {
       // Single hard cap, identical to the op's clamp (100). The previous
@@ -4771,6 +4832,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugPrefix = req.query.slug_prefix ? String(req.query.slug_prefix) : undefined;
       // Keyset cursor wins over offset (they don't compose meaningfully).
       const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
+      // Substring search over title / name / e-mail (engine-side, see
+      // PageFilters.textMatch) — e.g. a contact picker searching all contacts.
+      const match = typeof req.query.q === "string" ? req.query.q.slice(0, 100) : undefined;
       // Frontmatter equality filter: `fm.<key>=<value>` (any pair matches),
       // e.g. `fm.case_slug=legal/cases/x` — one matter's pages in SQL
       // instead of the caller scanning the whole type.
@@ -4798,6 +4862,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(tag ? { tag } : {}),
           ...(slugPrefix ? { slug_prefix: slugPrefix } : {}),
           ...(Object.keys(frontmatterAny).length > 0 ? { frontmatter_any: frontmatterAny } : {}),
+          ...(match ? { match } : {}),
           sort: "updated_desc",
           include_frontmatter: true,
           envelope: true,
@@ -6440,6 +6505,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               : {}),
             matter_scope: req.matterScope ?? "all",
             acl_groups: req.aclGroups ?? "all",
+            acl_admin: req.userRole === "admin",
           },
           { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
           { allowProtectedSubmit: true }
@@ -6458,6 +6524,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           password: fields.password || undefined,
           matterScope: req.matterScope ?? "all",
           aclGroups: req.aclGroups ?? "all",
+          aclAdmin: req.userRole === "admin",
           autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline, source),
           ownerId: billingOwnerId || undefined,
           ownerType: billingOwnerType,
@@ -7597,6 +7664,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               auto_trigger_legal_pipeline: confirmPlan.autoTriggerLegalPipeline,
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
+              acl_admin: req.userRole === "admin",
               ...(billingOwnerId && billingOwnerType
                 ? {
                     owner_id: billingOwnerId,
@@ -7629,6 +7697,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             password: pending.password,
             matterScope: req.matterScope ?? "all",
             aclGroups: req.aclGroups ?? "all",
+            aclAdmin: req.userRole === "admin",
             ownerId: billingOwnerId || undefined,
             ownerType: billingOwnerType,
             userId: billingUserId || undefined,
@@ -8737,9 +8806,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // caller's own access replaces it, so replaying a colleague's run never
       // reaches matters the caller may not see.
       // The replay belongs to whoever started it.
-      const stamp = agentMatterStamp(req);
+      const stamp = jobMatterStamp(req.matterScope, req.matterReadOnly);
       const overrides: Record<string, unknown> = {
         ...(Object.keys(stamp).length > 0 ? { _matter_read_only: [], ...stamp } : {}),
+        // The replay reads with the replaying caller's document ACL groups.
+        ...agentAclStamp(req),
         ...jobOwnerStamp(req.userId),
       };
       const job = await queue.replayJob(
@@ -11259,8 +11330,26 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     guard,
     express.json({ limit: "64kb" }),
     async (req: Request, res: Response) => {
-      const parsed = parseContradictionProbeBody(req.body);
+      // Every run is bound to the calling firm's source — the probe searches
+      // only that source and its run row is recorded for it — and costs at
+      // most what the firm has left of its daily probe budget.
+      const sourceId = requestSourceId(req);
+      let remaining: number;
+      try {
+        const today = await engine.loadContradictionsTrend(1, { sourceIds: [sourceId] });
+        const spent = today.reduce((sum, r) => sum + (Number(r.cost_usd_total) || 0), 0);
+        remaining = probeDailyBudgetUsd() - spent;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(503).json({ error: "contradiction_probe_budget_unavailable", message: msg });
+        return;
+      }
+      const parsed = parseContradictionProbeBody(req.body, { sourceId, maxBudgetUsd: remaining });
       if ("error" in parsed) {
+        if (parsed.error === "probe_budget_exhausted") {
+          apiError(res, 429, parsed.error);
+          return;
+        }
         apiError(res, 400, parsed.error);
         return;
       }

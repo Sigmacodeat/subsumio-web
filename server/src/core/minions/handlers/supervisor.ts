@@ -46,6 +46,7 @@ import {
   agentWriteBinding,
   inheritedAgentStamps,
   matterScopeAllows,
+  readJobAclGroups,
   readJobCase,
   readJobMatterAccess,
   type MatterScope,
@@ -168,7 +169,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     let caseContext: CaseContext | null = null;
     if (boundCase) {
       try {
-        caseContext = await loadCaseContext(engine, boundCase, sourceStamp, matterAccess.scope);
+        caseContext = await loadCaseContext(
+          engine,
+          boundCase,
+          sourceStamp,
+          matterAccess.scope,
+          readJobAclGroups(data)
+        );
       } catch (e) {
         // Non-fatal: proceed with the plain prompt.
         const msg = e instanceof Error ? e.message : String(e);
@@ -683,7 +690,8 @@ export async function loadCaseContext(
   engine: BrainEngine,
   caseSlug: string,
   sourceId?: string,
-  matterScope?: MatterScope
+  matterScope?: MatterScope,
+  aclGroups?: string[] | "all"
 ): Promise<CaseContext | null> {
   if (!caseSlug || !matterScopeAllows(matterScope, caseSlug, caseSlug)) return null;
 
@@ -691,11 +699,12 @@ export async function loadCaseContext(
   const params: unknown[] = sourceId ? [caseSlug, sourceId] : [caseSlug];
 
   const [caseRow] = await engine.executeRaw<{
+    id: number;
     slug: string;
     title: string;
     compiled_truth: string | null;
   }>(
-    `SELECT slug, title, compiled_truth
+    `SELECT id, slug, title, compiled_truth
      FROM pages
      WHERE slug = $1
        AND type = 'legal_case'
@@ -705,15 +714,22 @@ export async function loadCaseContext(
     params
   );
   if (!caseRow) return null;
+  // The document ACL of the user who started the run applies to the case
+  // page and to everything loaded with it.
+  const { aclUnrestricted, filterPagesByACL } = await import("../../acl.ts");
+  const aclVisible = async (ids: number[]): Promise<Set<number>> =>
+    new Set(aclUnrestricted(aclGroups) ? ids : await filterPagesByACL(engine, ids, aclGroups));
+  if (!(await aclVisible([Number(caseRow.id)])).has(Number(caseRow.id))) return null;
 
   // Pages bound to the matter by frontmatter (deadlines, documents, evidence).
   const relatedRows = await engine.executeRaw<{
+    id: number;
     slug: string;
     title: string;
     type: string;
     frontmatter: unknown;
   }>(
-    `SELECT slug, title, type, frontmatter
+    `SELECT id, slug, title, type, frontmatter
      FROM pages
      WHERE deleted_at IS NULL
        AND (
@@ -742,8 +758,11 @@ export async function loadCaseContext(
           { sourceId }
         )
       : [];
+  const aclOk = await aclVisible(relatedWithFm.map((r) => Number(r.id)));
   const related = relatedWithFm.filter(
-    (r, i) => bindings.length === 0 || pageBindingAllowed(matterScope, r.slug, bindings[i]!)
+    (r, i) =>
+      aclOk.has(Number(r.id)) &&
+      (bindings.length === 0 || pageBindingAllowed(matterScope, r.slug, bindings[i]!))
   );
 
   const deadlines = related
