@@ -144,6 +144,9 @@ export interface FristenReadModel {
   failedSources: FristenSource[];
 }
 
+/** Safety stop per page type — far beyond any real firm; reaching it is reported. */
+export const FRISTEN_READ_CAP = 100_000;
+
 /** Loads and merges every deadline source for the caller behind `headers`. */
 export async function loadFristenReadModel(
   headers: Record<string, string>,
@@ -212,12 +215,24 @@ export async function loadFristenReadModel(
   // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
   {
     // All matters and deadlines, in batches; deleted deadlines are left out.
-    // strict: a failed batch must surface as a failed source, never as a
-    // silently shortened list.
+    // strict + failOnTruncate: a failed batch or a list cut at the safety
+    // stop must surface as a failed source, never as a silently shortened
+    // list (the listing is newest-first, so a cut would drop exactly the
+    // long-untouched deadlines that are now falling due). With a matter
+    // filter, the engine selects only that matter's rows.
     const fetchPagesByType = async (type: FristenSource): Promise<BrainPage[]> => {
       try {
-        return (await listEnginePages(headers, type, 10_000, {
+        const scoped: Parameters<typeof listEnginePages>[3] = !caseFilter
+          ? {}
+          : type === "legal_deadline"
+            ? { frontmatter: { case_slug: caseFilter } }
+            : type === "legal_case"
+              ? { slugPrefix: caseFilter }
+              : {};
+        return (await listEnginePages(headers, type, FRISTEN_READ_CAP, {
           strict: true,
+          failOnTruncate: true,
+          ...scoped,
         })) as unknown as BrainPage[];
       } catch {
         failedSources.push(type);
