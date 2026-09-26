@@ -227,7 +227,13 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(result.status).toBe("routed");
     expect(result.reply).toContain("Bitte nennen Sie das Aktenzeichen");
     expect(handleText).not.toHaveBeenCalled();
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    // Only the event is written; the matters are merely read to name their
+    // Aktenzeichen in the question back to the client.
+    const writes = fetchImpl.mock.calls.filter(
+      (c) => ((c as unknown[])[1] as RequestInit | undefined)?.method
+    );
+    expect(writes).toHaveLength(1);
+    expect(result.reply).not.toContain("legal/cases/");
   });
 
   it("routes an existing client's appointment request to the approval queue, linked to their known matter — not a generic new-contact intake", async () => {

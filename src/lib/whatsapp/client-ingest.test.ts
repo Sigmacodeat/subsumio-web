@@ -208,3 +208,63 @@ describe("ingestVerifiedClientWhatsAppSubmission — quick intents", () => {
     expect(result.reply).toContain("zur Akte genommen");
   });
 });
+
+describe("ingestVerifiedClientWhatsAppSubmission — Aktenzeichen", () => {
+  const MATTERS: Record<string, { title: string; case_number?: string }> = {
+    "legal/cases/eins": { title: "Mietsache", case_number: "1 Cg 3/25a" },
+    "legal/cases/elf": { title: "Kaufsache", case_number: "11 Cg 3/25a" },
+  };
+  let writes: Array<Record<string, unknown>>;
+  let fetchImpl: typeof fetch;
+
+  beforeEach(() => {
+    writes = [];
+    fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      if (!init?.method) {
+        const slug = decodeURIComponent(String(url).split("/api/pages/")[1] ?? "");
+        const m = MATTERS[slug];
+        if (!m) return new Response("{}", { status: 404 });
+        return new Response(
+          JSON.stringify({ slug, title: m.title, frontmatter: { case_number: m.case_number } }),
+          { status: 200 }
+        );
+      }
+      writes.push(JSON.parse(String(init.body)));
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }) as unknown as typeof fetch;
+  });
+
+  const scope = { matterScope: ["legal/cases/eins", "legal/cases/elf"] };
+
+  it("a Geschäftszahl with spaces assigns the message to that matter", async () => {
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Zu Akt 11 Cg 3/25a: anbei die Rechnung", scope),
+      fetchImpl
+    );
+    expect(result.caseSlug).toBe("legal/cases/elf");
+    const submission = writes.find((w) => w.type === "client_submission");
+    expect((submission?.frontmatter as Record<string, unknown>).case_slug).toBe("legal/cases/elf");
+  });
+
+  it("without a number the client is asked — with readable numbers, never slugs", async () => {
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Anbei die Unterlagen", scope),
+      fetchImpl
+    );
+    expect(result.reason).toBe("ambiguous_scope");
+    expect(result.reply).toContain("1 Cg 3/25a");
+    expect(result.reply).toContain("11 Cg 3/25a");
+    expect(result.reply).not.toContain("legal/cases");
+    expect(result.reply).not.toContain("eins");
+    expect(writes).toHaveLength(0);
+  });
+
+  it("the status reply names the Aktenzeichen, not the slug", async () => {
+    const result = await ingestVerifiedClientWhatsAppSubmission(
+      input("Status", { matterScope: ["legal/cases/eins"] }),
+      fetchImpl
+    );
+    expect(result.reply).toContain("Stand Ihrer Akte 1 Cg 3/25a");
+    expect(result.reply).not.toContain("legal/cases");
+  });
+});
