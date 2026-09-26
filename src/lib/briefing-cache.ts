@@ -23,6 +23,10 @@ export interface BriefingData {
   activeDelegations: Array<{ name: string; delegate: string; until: string }>;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number; delegate?: string }>;
   topCases: Array<{ title: string; status: string }>;
+  /** A deadline source failed to load — deadline counts are lower bounds. */
+  deadlinesIncomplete?: boolean;
+  failedTypes?: string[];
+  cappedCounts?: string[];
 }
 
 export interface BriefingResponse {
@@ -30,6 +34,8 @@ export interface BriefingResponse {
   data: BriefingData;
   generatedAt: string;
   usedFallback: boolean;
+  /** Some list failed to load; such a briefing is never cached. */
+  degraded?: boolean;
 }
 
 export const BRIEFING_CACHE_KEY = "subsumio:morning-briefing";
@@ -106,7 +112,11 @@ export function loadBriefing(
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const briefing = briefingFromPayload(await res.json());
-    if (briefing) writeBriefingCache(briefing);
+    // An incomplete briefing must not stick for hours after the engine
+    // recovered — the next load asks again.
+    if (briefing && !briefing.degraded && !briefing.data.deadlinesIncomplete) {
+      writeBriefingCache(briefing);
+    }
     return briefing;
   })().finally(() => {
     if (briefingInflight?.promise === promise) briefingInflight = null;

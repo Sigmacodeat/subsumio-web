@@ -8,6 +8,7 @@ import {
   type DeadlineStatus,
 } from "@/lib/legal-deadlines";
 import { caseFrontmatter } from "@/lib/legal-types";
+import { isClosedDeadline, isDiscardedDeadline } from "@/lib/deadline-reminders";
 
 /**
  * Unified Fristen Read-Model — shared by GET /api/legal/fristen and the
@@ -248,10 +249,9 @@ export async function loadFristenReadModel(
       const dueDate = String(fm.due_date ?? fm.date ?? "");
       if (!dueDate) continue;
       // A discarded AI suggestion must not linger in the Fristenbuch —
-      // and a cancelled deadline must not resurface as "overdue"
+      // and a cancelled or deleted deadline must not resurface as "overdue"
       // (computeDeadlineStatus only knows "done" as closed).
-      if (fm.review_status === "rejected") continue;
-      if (fm.status === "cancelled" || fm.status === "storniert") continue;
+      if (isDiscardedDeadline(fm)) continue;
       if (caseFilter && fm.case_slug !== caseFilter) continue;
 
       const f: Frist = {
@@ -264,7 +264,9 @@ export async function loadFristenReadModel(
         due_date: dueDate.slice(0, 10),
         status: computeDeadlineStatus(
           dueDate,
-          typeof fm.status === "string" ? fm.status : undefined,
+          // "erledigt", "completed", … are done too — same closed set as
+          // the reminders (isClosedDeadline), never "overdue".
+          isClosedDeadline(fm) ? "done" : typeof fm.status === "string" ? fm.status : undefined,
           typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
           typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined
         ),
@@ -298,9 +300,10 @@ export async function loadFristenReadModel(
       for (const d of rawDeadlines) {
         const dueDate = d.due_date;
         if (!dueDate) continue;
-        // Stored JSON can carry "cancelled"/"storniert" even though the
-        // DeadlineStatus union doesn't list them.
-        if (/^(cancelled|storniert)$/i.test(String(d.status ?? ""))) continue;
+        // Stored JSON can carry "cancelled"/"storniert"/"erledigt" even
+        // though the DeadlineStatus union doesn't list them; a discarded AI
+        // suggestion is gone here just like on a deadline page.
+        if (isDiscardedDeadline(d)) continue;
 
         const f: Frist = {
           id: d.id || `${page.slug}-${dueDate}`,
@@ -309,7 +312,12 @@ export async function loadFristenReadModel(
           title: d.title || d.description || "Frist",
           description: d.description,
           due_date: dueDate.slice(0, 10),
-          status: computeDeadlineStatus(dueDate, d.status, d.vorfrist_date, d.erv_zustelldatum),
+          status: computeDeadlineStatus(
+            dueDate,
+            isClosedDeadline(d) ? "done" : d.status,
+            d.vorfrist_date,
+            d.erv_zustelldatum
+          ),
           type: d.type || "deadline",
           law: d.law,
           court: d.court,
