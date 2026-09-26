@@ -60,8 +60,12 @@ vi.mock("@/lib/api-handler", () => ({
   recordQuota: vi.fn(),
 }));
 
+const builderOptions: Array<Record<string, unknown>> = [];
 vi.mock("@/lib/intake-conversion", () => ({
-  buildCaseFromIntake: (intake: { slug: string; frontmatter: Record<string, unknown> }) => ({
+  buildCaseFromIntake: (
+    intake: { slug: string; frontmatter: Record<string, unknown> },
+    options: Record<string, unknown>
+  ) => (builderOptions.push(options), {
     slug: `legal/cases/2026-12345-max-muster`,
     title: "Max Muster - Arbeitsrecht",
     type: "legal_case",
@@ -81,6 +85,31 @@ vi.mock("@/lib/intake-conversion", () => ({
 }));
 
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
+const mockResolveNumber = vi.fn(async (..._a: unknown[]) => "26-0001");
+const mockCheckPoa = vi.fn(
+  async (..._a: unknown[]): Promise<{ ok: true } | { ok: false; code: string; message: string }> => ({
+    ok: true,
+  })
+);
+const mockRelink = vi.fn(async (..._a: unknown[]) => ({
+  powers_of_attorney: ["legal/poa/p1"],
+  fee_agreements: [],
+  documents: [],
+  failed: [],
+}));
+const { MockIntakeCaseNumberError } = vi.hoisted(() => ({
+  MockIntakeCaseNumberError: class MockIntakeCaseNumberError extends Error {},
+}));
+vi.mock("@/lib/intake-case-links", () => ({
+  IntakeCaseNumberError: MockIntakeCaseNumberError,
+  resolveIntakeCaseNumber: (...a: unknown[]) => mockResolveNumber(...a),
+  checkSignedPoa: (...a: unknown[]) => mockCheckPoa(...a),
+  relinkIntakeRecords: (...a: unknown[]) => mockRelink(...a),
+}));
+const mockEnsureContacts = vi.fn(async (..._a: unknown[]): Promise<Record<string, unknown>> => ({}));
+vi.mock("@/lib/case-contacts", () => ({
+  ensureCaseContacts: (...a: unknown[]) => mockEnsureContacts(...a),
+}));
 vi.mock("@/lib/comments", () => ({ createDocumentRequestNotification: vi.fn() }));
 const mockCaseCreated = vi.fn();
 vi.mock("@/lib/webhook-dispatch", () => ({
@@ -791,5 +820,105 @@ describe("POST /api/intake/convert", () => {
     const res = await convert();
     expect(res.status).toBe(503);
     expect(caseCreates()).toHaveLength(0);
+  });
+
+  // ── W4-02/03/04: one number range, opponent contact, documents to the matter ──
+
+  const acceptedPage = () =>
+    new Response(
+      JSON.stringify({
+        slug: "legal/intake/2026-06-20/max",
+        title: "Intake: Max Muster",
+        type: "intake_request",
+        frontmatter: {
+          type: "intake_request",
+          status: "accepted",
+          client_name: "Max Muster",
+          missing_documents: [],
+          acceptance: {
+            conflict_check: SERVER_CLEAR,
+            kyc: { required: false, status: "not_required" },
+            poa: { required: true, status: "signed", poa_slug: "legal/poa/p1" },
+            engagement_letter: { status: "sent", document_slug: "intake/x/engagement-letter-1" },
+          },
+        },
+      }),
+      { status: 200 }
+    );
+
+  test("the Aktenzeichen comes from the firm's number range and the Streitwert is carried over", async () => {
+    builderOptions.length = 0;
+    mockFetch
+      .mockResolvedValueOnce(acceptedPage())
+      .mockResolvedValueOnce(clearCheck())
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max", dispute_value: 12000 }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    expect(mockResolveNumber).toHaveBeenCalledTimes(1);
+    expect(mockResolveNumber.mock.calls[0][1]).toBe("test-brain");
+    expect(builderOptions[0]).toMatchObject({ caseNumber: "26-0001", disputeValue: 12000 });
+  });
+
+  test("no number from the range → no matter (503), nothing written", async () => {
+    mockResolveNumber.mockRejectedValueOnce(new MockIntakeCaseNumberError("down"));
+    mockFetch.mockResolvedValueOnce(acceptedPage()).mockResolvedValueOnce(clearCheck());
+    const res = await convert();
+    expect(res.status).toBe(503);
+    expect(caseCreates()).toHaveLength(0);
+  });
+
+  test("client and opponent become linked contacts of the new matter", async () => {
+    mockEnsureContacts.mockResolvedValueOnce({
+      client_slug: "contact/max-1",
+      opponent_slugs: ["contact/gegner-1"],
+    });
+    mockFetch
+      .mockResolvedValueOnce(acceptedPage())
+      .mockResolvedValueOnce(clearCheck())
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await convert();
+    expect(res.status).toBe(200);
+    const created = JSON.parse(String((caseCreates()[0]![1] as RequestInit).body));
+    expect(created.frontmatter.opponent_slugs).toEqual(["contact/gegner-1"]);
+    expect(created.frontmatter.client_slug).toBe("contact/max-1");
+  });
+
+  test("a POA marked signed without a signed record blocks the matter (422)", async () => {
+    mockCheckPoa.mockResolvedValueOnce({
+      ok: false,
+      code: "poa_not_signed",
+      message: "Mandatsannahme unvollständig: Vollmacht",
+    });
+    mockFetch.mockResolvedValueOnce(acceptedPage());
+    const res = await convert();
+    expect(res.status).toBe(422);
+    expect((await res.json()).details?.code).toBe("poa_not_signed");
+    expect(caseCreates()).toHaveLength(0);
+  });
+
+  test("power of attorney, fee agreement and engagement letter move to the new matter", async () => {
+    mockFetch
+      .mockResolvedValueOnce(acceptedPage())
+      .mockResolvedValueOnce(clearCheck())
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await convert();
+    expect(res.status).toBe(200);
+    expect(mockRelink).toHaveBeenCalledWith(expect.anything(), {
+      intakeSlug: "legal/intake/2026-06-20/max",
+      caseSlug: "legal/cases/2026-12345-max-muster",
+      engagementLetterSlug: "intake/x/engagement-letter-1",
+    });
+    expect((await res.json()).relinked.powers_of_attorney).toEqual(["legal/poa/p1"]);
   });
 });

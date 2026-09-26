@@ -14,6 +14,8 @@ export interface IntakeConversionOptions {
   title?: string;
   priority?: "low" | "medium" | "high" | "critical";
   portalEnabled?: boolean;
+  /** Streitwert in Euro (RATG/AHK-Bemessungsgrundlage). */
+  disputeValue?: number;
   convertedBy?: string;
   at?: Date;
 }
@@ -47,6 +49,10 @@ function inferTitle(intake: IntakeConversionInput): string {
   return intake.title?.replace(/^Intake:\s*/i, "").trim() || fm.summary.slice(0, 80) || "Neue Akte";
 }
 
+/**
+ * Fallback only for callers without the firm's number range (tests, offline
+ * tools). The conversion route always passes a number from the range.
+ */
 function inferCaseNumber(at: Date): string {
   return `${at.getFullYear()}-${String(at.getTime()).slice(-6)}`;
 }
@@ -59,8 +65,14 @@ export function buildCaseFromIntake(
   const fm = intake.frontmatter;
   const title = options.title?.trim() || inferTitle(intake);
   const caseNumber = options.caseNumber?.trim() || inferCaseNumber(at);
-  const slug = options.caseSlug?.trim() || `legal/cases/${caseNumber}-${safeSlugPart(title)}`;
+  // Lower-case slug parts: the engine stores slugs lower-cased, and a firm
+  // prefix ("MK-26-0042") must not produce a link that misses the matter.
+  const slug =
+    options.caseSlug?.trim() ||
+    `legal/cases/${safeSlugPart(caseNumber)}-${safeSlugPart(title)}`;
   const missingDocs = fm.missing_documents ?? [];
+  const opponent = typeof fm.opponent === "string" ? fm.opponent.trim() : "";
+  const engagementLetter = fm.acceptance?.engagement_letter;
   const contentParts = [
     "## Intake",
     fm.summary,
@@ -89,6 +101,12 @@ export function buildCaseFromIntake(
       priority: options.priority ?? "medium",
       legal_area: fm.legal_area,
       client_name: fm.client_name,
+      // The opponent the conflict check already knew — checked for future
+      // mandates and linked as a contact of role "opponent".
+      ...(opponent ? { opponent_name: opponent } : {}),
+      ...(typeof options.disputeValue === "number" && Number.isFinite(options.disputeValue)
+        ? { dispute_value: options.disputeValue }
+        : {}),
       portal_enabled: options.portalEnabled ?? false,
       source: "intake",
       source_intake_slug: intake.slug,
@@ -97,7 +115,19 @@ export function buildCaseFromIntake(
       created_at: at.toISOString(),
       updated_at: at.toISOString(),
       deadlines: [],
-      documents: [],
+      // The engagement letter drafted during the acceptance belongs to the file.
+      documents: engagementLetter?.document_slug
+        ? [
+            {
+              id: `engagement-letter-${at.getTime()}`,
+              name: "Mandatsannahme-Schreiben",
+              slug: engagementLetter.document_slug,
+              uploadedAt: engagementLetter.generated_at ?? at.toISOString(),
+              source: "intake",
+              portal_visible: false,
+            },
+          ]
+        : [],
       tasks: missingDocs.map((doc, index) => ({
         id: `missing-doc-${index + 1}`,
         text: `Unterlage anfordern: ${doc}`,

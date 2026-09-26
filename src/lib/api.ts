@@ -2480,6 +2480,7 @@ export const api = {
       priority?: "low" | "medium" | "high" | "critical";
       portal_enabled?: boolean;
       send_document_request?: boolean;
+      dispute_value?: number;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake/convert", { method: "POST", body: JSON.stringify(input) });
     },
