@@ -29,6 +29,7 @@ import {
   type MailAccount,
 } from "@/lib/email/imap-accounts";
 import { addMinutesToWallClock } from "@/lib/calendar/wall-clock";
+import { isPrivateSensitivity } from "@/lib/calendar/personal-events";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
@@ -42,6 +43,8 @@ export interface GraphCalendarEvent {
   isCancelled?: boolean;
   webLink?: string;
   lastModifiedDateTime?: string;
+  /** normal | personal | private | confidential */
+  sensitivity?: string;
 }
 
 /** Graph event → engine page payload (pure, unit-tested). */
@@ -57,21 +60,25 @@ export function graphEventToPage(
 } | null {
   if (!event.id) return null;
   const start = event.start?.dateTime ?? null;
+  // A private/confidential Outlook appointment only blocks time in Subsumio:
+  // subject, location and link stay in the owner's own calendar.
+  const isPrivate = isPrivateSensitivity(event.sensitivity);
   return {
     slug: `calendar/outlook/${ownerEmail}/${event.id}`,
-    title: `Termin: ${event.subject ?? "(ohne Betreff)"}`,
+    title: isPrivate ? "Termin: Beschäftigt" : `Termin: ${event.subject ?? "(ohne Betreff)"}`,
     type: "calendar_event",
     frontmatter: {
       type: "calendar_event",
       outlook_event_id: event.id,
-      subject: event.subject ?? "",
+      subject: isPrivate ? "Beschäftigt" : (event.subject ?? ""),
       start,
       end: event.end?.dateTime ?? null,
       timezone: event.start?.timeZone ?? null,
-      location: event.location?.displayName ?? null,
+      location: isPrivate ? null : (event.location?.displayName ?? null),
       all_day: event.isAllDay === true,
       cancelled: event.isCancelled === true,
-      web_link: event.webLink ?? null,
+      web_link: isPrivate ? null : (event.webLink ?? null),
+      ...(isPrivate ? { private: true } : {}),
       owner_email: ownerEmail,
       ...(opts.ownerUserId ? { owner_user_id: opts.ownerUserId } : {}),
       synced_from: "outlook",
@@ -193,7 +200,9 @@ export async function pullOutlookEvents(
   window: { start: Date; end: Date },
   /** outlook_event_ids of pushed Subsumio appointments — not re-imported. */
   skipEventIds: ReadonlySet<string> = new Set()
-): Promise<{ pulled: number; errors: string[] }> {
+): Promise<{ pulled: number; removed: number; errors: string[] }> {
+  // Throws on any Graph failure or an oversized view — then nothing below
+  // runs, in particular no page is marked as deleted on an incomplete view.
   const events = await fetchCalendarView(accessToken, window);
   let pulled = 0;
   const errors: string[] = [];
@@ -214,7 +223,63 @@ export async function pullOutlookEvents(
       errors.push(`pull:${event.id}:${e instanceof Error ? e.message : "network"}`);
     }
   }
-  return { pulled, errors };
+  const removed = await markEventsRemovedInOutlook(
+    headers,
+    owner.email,
+    window,
+    new Set(events.map((e) => e.id)),
+    errors
+  );
+  return { pulled, removed, errors };
+}
+
+const DAY_MS = 86_400_000;
+
+/**
+ * Earlier pulled events of this mailbox that the (complete) calendar view no
+ * longer returns were deleted in Outlook: mark them cancelled so they leave
+ * the Subsumio calendar. Only pages whose start lies well inside the window
+ * are judged (a day of margin for the wall-clock/UTC difference).
+ */
+async function markEventsRemovedInOutlook(
+  headers: Record<string, string>,
+  ownerEmail: string,
+  window: { start: Date; end: Date },
+  deliveredIds: ReadonlySet<string>,
+  errors: string[]
+): Promise<number> {
+  let pages: ListedPage[];
+  try {
+    pages = await listEnginePages(headers, "calendar_event", 10_000, { strict: true });
+  } catch (e) {
+    errors.push(`reconcile:list:${e instanceof Error ? e.message : "failed"}`);
+    return 0;
+  }
+  const prefix = `calendar/outlook/${ownerEmail}/`;
+  const from = window.start.getTime() + DAY_MS;
+  const to = window.end.getTime() - DAY_MS;
+  const now = new Date().toISOString();
+  let removed = 0;
+  for (const page of pages) {
+    if (!page.slug.startsWith(prefix)) continue;
+    const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+    if (fm.cancelled === true || fm.status === "tombstoned") continue;
+    const eventId = typeof fm.outlook_event_id === "string" ? fm.outlook_event_id : "";
+    if (!eventId || deliveredIds.has(eventId)) continue;
+    const start = Date.parse(String(fm.start ?? ""));
+    if (!Number.isFinite(start) || start < from || start > to) continue;
+    try {
+      const res = await enginePatchPage(headers, {
+        slug: page.slug,
+        frontmatter: { cancelled: true, removed_in_outlook_at: now },
+      });
+      if (res.ok) removed++;
+      else errors.push(`reconcile:${eventId}:${res.status}`);
+    } catch (e) {
+      errors.push(`reconcile:${eventId}:${e instanceof Error ? e.message : "network"}`);
+    }
+  }
+  return removed;
 }
 
 const CLOSED_STATUSES = new Set(["cancelled", "storniert", "tombstoned"]);

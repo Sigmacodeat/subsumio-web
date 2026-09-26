@@ -25,6 +25,7 @@ import {
 import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { isForeignPersonalEvent } from "@/lib/calendar/personal-events";
 import { can } from "@/lib/permissions";
 import {
   applyDeadlineWritePolicy,
@@ -70,7 +71,10 @@ export const GET = createHandler(
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return Response.json(redactPageSecrets(await res.json()));
+      const page = (await res.json()) as unknown;
+      // Another user's personal calendar mirror is theirs alone.
+      if (isForeignPersonalEvent(page, ctx.user?.id)) return apiNotFound("not_found");
+      return Response.json(redactPageSecrets(page));
     } catch (err) {
       log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiNotFound("not_found");

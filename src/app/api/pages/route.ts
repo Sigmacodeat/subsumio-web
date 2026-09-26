@@ -1,6 +1,7 @@
 import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
+import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
@@ -116,7 +117,10 @@ export const GET = createHandler(
           timeoutMs: 15_000,
         });
         return Response.json(
-          redactPageSecrets(all.filter((p) => belongsToMatter(p.frontmatter, query)))
+          hideForeignPersonalEvents(
+            redactPageSecrets(all.filter((p) => belongsToMatter(p.frontmatter, query))),
+            ctx.user?.id
+          )
         );
       } catch (err) {
         log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
@@ -136,10 +140,14 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = (await res.json()) as unknown;
       // Deleted records are tombstoned, not removed; lists must not bring them back.
-      const data = redactPageSecrets(
-        Array.isArray(raw) && query.include_tombstoned !== "1"
-          ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
-          : raw
+      // Other users' personal calendar mirrors are theirs alone.
+      const data = hideForeignPersonalEvents(
+        redactPageSecrets(
+          Array.isArray(raw) && query.include_tombstoned !== "1"
+            ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
+            : raw
+        ),
+        ctx.user?.id
       );
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");

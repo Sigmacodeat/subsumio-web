@@ -43,6 +43,20 @@ describe("graphEventToPage", () => {
     expect(graphEventToPage({ ...event, id: "" }, "a@b.at")).toBeNull();
   });
 
+  it("private/vertrauliche Termine blockieren nur Zeit — ohne Betreff, Ort und Link", () => {
+    for (const sensitivity of ["private", "confidential"]) {
+      const page = graphEventToPage({ ...event, sensitivity }, "a@b.at", { ownerUserId: "u1" });
+      expect(page!.title).toBe("Termin: Beschäftigt");
+      expect(page!.frontmatter.subject).toBe("Beschäftigt");
+      expect(page!.frontmatter.location).toBeNull();
+      expect(page!.frontmatter.web_link).toBeNull();
+      expect(JSON.stringify(page)).not.toContain("Huber");
+      expect(page!.frontmatter.start).toBe("2026-10-05T09:00:00");
+    }
+    const normal = graphEventToPage({ ...event, sensitivity: "normal" }, "a@b.at");
+    expect(normal!.frontmatter.subject).toBe("Mandantengespräch Huber");
+  });
+
   it("abgesagte Termine werden markiert statt verworfen", () => {
     const page = graphEventToPage({ ...event, isCancelled: true }, "a@b.at");
     expect(page!.frontmatter.cancelled).toBe(true);
@@ -175,7 +189,8 @@ describe("Graph-Sync gegen gemocktes Graph/Engine", () => {
       ...fm,
     },
   });
-  const engineWrites = () => calls.filter((c) => !c.url.startsWith("https://graph"));
+  const engineWrites = () =>
+    calls.filter((c) => !c.url.startsWith("https://graph") && c.method !== "GET");
 
   it("geänderter Termin → PATCH /me/events/{id}, Sync-Zeit wird gesetzt", async () => {
     graphHandler = () => new Response(JSON.stringify({ id: "E1" }), { status: 200 });
