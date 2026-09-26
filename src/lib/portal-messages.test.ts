@@ -70,3 +70,42 @@ describe("listPortalMessages", () => {
     ]);
   });
 });
+
+describe("listPortalMessages — KI-Entwürfe", () => {
+  it("hands out the reviewed-AI label, never a pending draft", async () => {
+    vi.stubEnv("SUBSUMIO_API_URL", ENGINE);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify([
+              {
+                slug: "portal-message/cases/a/1",
+                frontmatter: {
+                  sender: "client",
+                  message: "Wie stehen meine Chancen?",
+                  created_at: "2026-09-19T09:00:00Z",
+                  ai_draft: { text: "ENTWURF-GEHEIM", status: "pending", grounded: true },
+                },
+              },
+              {
+                slug: "portal-message/cases/a/2",
+                frontmatter: {
+                  sender: "lawyer",
+                  message: "Geprüfte Antwort",
+                  ai_assisted: true,
+                  created_at: "2026-09-19T10:00:00Z",
+                },
+              },
+            ]),
+            { status: 200 }
+          )
+      )
+    );
+    const messages = await listPortalMessages({}, "cases/a");
+    expect(JSON.stringify(messages)).not.toContain("ENTWURF-GEHEIM");
+    expect(messages[0]!.aiAssisted).toBeUndefined();
+    expect(messages[1]!.aiAssisted).toBe(true);
+  });
+});

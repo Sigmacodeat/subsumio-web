@@ -5,6 +5,7 @@ import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
 import { createTimeEntry, appendTimeEntries } from "@/lib/time-tracking";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { portalMessageSlugPrefix } from "@/lib/portal-messages";
+import { pendingPortalAiDraft } from "@/lib/portal-ai-mode";
 import { notifyPortalClients } from "@/lib/portal-push";
 import { mailPortalClients } from "@/lib/portal-notify";
 import { zonedDateString } from "@/lib/datetime";
@@ -15,6 +16,10 @@ const replySchema = z.object({
   /** WP-3.16: Antwort als abrechenbare Leistung verbuchen (Minuten). */
   bill_minutes: z.number().int().min(1).max(600).optional(),
   bill_note: z.string().trim().max(300).optional(),
+  /** The client's portal message this reply answers (slug). */
+  in_reply_to: z.string().min(1).max(400).optional(),
+  /** The reply is the (possibly edited) AI draft of `in_reply_to`. */
+  ai_draft_used: z.boolean().optional(),
 });
 
 /**
@@ -35,6 +40,32 @@ async function appendTimeEntry(
 }
 
 /**
+ * The client message a reply answers, if it belongs to this matter's portal
+ * conversation and carries a pending AI draft. Anything else → null (a reply
+ * is then an ordinary, unlabelled firm reply).
+ */
+async function pendingDraftMessage(
+  headers: Record<string, string>,
+  caseSlug: string,
+  slug: string | undefined
+): Promise<{ slug: string; frontmatter: Record<string, unknown> } | null> {
+  if (!slug || !slug.startsWith(portalMessageSlugPrefix(caseSlug))) return null;
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+    const fm = page.frontmatter ?? {};
+    if (fm.sender === "lawyer" || fm.case_slug !== caseSlug) return null;
+    return pendingPortalAiDraft(fm) ? { slug, frontmatter: fm } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The firm's reply to a client in the portal. It is stored next to the
  * client's messages, so the portal's message tab shows the conversation.
  */
@@ -47,7 +78,7 @@ export const POST = createHandler(
       action: "portal.reply" as const,
       entityType: "portal_message",
       entityId: body.case_slug,
-      details: { length: body.message.length },
+      details: { length: body.message.length, ai_draft_used: body.ai_draft_used === true },
     }),
   },
   async (ctx, body) => {
@@ -65,6 +96,13 @@ export const POST = createHandler(
       );
     }
 
+    // KI im Mandantenportal, Modus "entwurf": the lawyer releases (possibly
+    // edited) the AI draft of a client question as this reply. Only a draft
+    // that is really pending on a message of this matter counts.
+    const draftMessage = await pendingDraftMessage(ctx.headers, body.case_slug, body.in_reply_to);
+    const aiAssisted = draftMessage !== null && body.ai_draft_used === true;
+    const reviewer = ctx.user?.name ?? ctx.user?.email ?? "Kanzlei";
+
     const now = new Date().toISOString();
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -81,12 +119,36 @@ export const POST = createHandler(
           author: ctx.user?.name ?? ctx.user?.email ?? "Kanzlei",
           message: body.message,
           read: true,
+          ...(aiAssisted ? { ai_assisted: true, reviewed_by: reviewer } : {}),
+          ...(body.in_reply_to ? { in_reply_to: body.in_reply_to } : {}),
           created_at: now,
         },
       }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return apiError("save_failed", "Antwort konnte nicht gespeichert werden", 502);
+
+    // The draft is settled: released with this reply, or set aside for a
+    // reply the lawyer wrote without it. Best effort — the reply stands.
+    if (draftMessage) {
+      await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ctx.headers },
+        body: JSON.stringify({
+          slug: draftMessage.slug,
+          merge: true,
+          frontmatter: {
+            ai_draft: {
+              ...(draftMessage.frontmatter.ai_draft as Record<string, unknown>),
+              status: aiAssisted ? "approved" : "discarded",
+              reviewed_by: reviewer,
+              reviewed_at: now,
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => null);
+    }
     // Devices that turned on notifications in the portal hear about it —
     // without the reply's content (lib/portal-push.ts).
     // WP-3.16: Kontaktzeit optional als Leistung auf die Akte buchen.

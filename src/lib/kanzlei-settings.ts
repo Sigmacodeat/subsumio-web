@@ -1,4 +1,5 @@
 import { api, ApiRequestError } from "./api";
+import { resolvePortalAiMode, type PortalAiMode } from "./portal-ai-mode";
 
 export interface KanzleiSettings {
   kanzleiName: string;
@@ -109,6 +110,11 @@ export interface KanzleiSettings {
   // Opt-in pro Kanzlei, Standard AUS — die Kanzlei sieht Autopilot nie
   // ungefragt loslaufen. undefined/false = aus.
   autopilotEnabled?: boolean;
+  // KI im Mandantenportal (src/lib/portal-ai-mode.ts): "aus", "entwurf"
+  // (Standard — Antwortentwurf wartet auf anwaltliche Freigabe) oder
+  // "direkt" (nur bewusst gewählt, jede Antwort als ungeprüft gekennzeichnet).
+  // Unset = "entwurf"; serverseitig in /api/portal/chat durchgesetzt.
+  portalAiMode?: PortalAiMode;
 }
 
 export const TRASH_RETENTION_DEFAULT_DAYS = 30;
@@ -178,6 +184,9 @@ export function normalizeKanzleiSettings(input?: Partial<KanzleiSettings> | null
       merged.trashRetentionDays === undefined
         ? undefined
         : normalizeTrashRetentionDays(merged.trashRetentionDays),
+    // An unknown stored value never reads as "direkt".
+    portalAiMode:
+      merged.portalAiMode === undefined ? undefined : resolvePortalAiMode(merged.portalAiMode),
   };
 }
 
