@@ -4,6 +4,7 @@ import {
   getSLOsForWorkflow,
   getSLOSummary,
   generateAlerts,
+  SLO_METRICS_CONNECTED,
 } from "@/lib/slo-monitor-client";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ export const maxDuration = 10;
  * Returns SLO definitions, current status (met/breached/no_data),
  * and active alerts. Supports ?workflow=think filter.
  *
- * Requires admin role.
+ * `connected: false` means no metrics source is attached: the targets are
+ * listed, nothing is measured and no alerts are produced.
+ *
+ * Requires the platform operator role.
  */
 
 export const GET = createHandler(
@@ -33,6 +37,7 @@ export const GET = createHandler(
 
     return Response.json({
       timestamp: new Date().toISOString(),
+      connected: SLO_METRICS_CONNECTED,
       summary,
       slo_statuses: sloStatuses,
       alerts,
