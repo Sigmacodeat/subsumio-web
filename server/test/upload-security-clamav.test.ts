@@ -193,7 +193,10 @@ describe("inspectUploadBytes honours the stream limit", () => {
     try {
       pointAt(clamd.port);
       process.env.CLAMAV_STREAM_MAX_BYTES = "16";
-      const result = await inspectUploadBytes("akte.pdf", Buffer.from("%PDF-1.7\n" + "x".repeat(32)));
+      const result = await inspectUploadBytes(
+        "akte.pdf",
+        Buffer.from("%PDF-1.7\n" + "x".repeat(32))
+      );
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.code).toBe("file_too_large_for_scan");
       expect(clamd.requests).toHaveLength(0);

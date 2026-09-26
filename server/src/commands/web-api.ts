@@ -2466,7 +2466,10 @@ export async function enrichCitations(
     const pageCount = pageCountMap.get(slug);
 
     // The chunk retrieval actually matched for this page, if we can identify it.
-    const matched = pickMatchedChunk(chunks, matchedPassages?.filter((p) => p.slug === slug));
+    const matched = pickMatchedChunk(
+      chunks,
+      matchedPassages?.filter((p) => p.slug === slug)
+    );
     const chunk = matched ?? chunks[0];
 
     let pageNumber: number | undefined;

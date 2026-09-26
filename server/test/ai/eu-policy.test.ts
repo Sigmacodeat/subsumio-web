@@ -355,9 +355,7 @@ describe("gateway touchpoints under SUBSUMIO_EU_ONLY=1", () => {
   });
 
   test("embeddings: an EU provider passes without any opt-out", () => {
-    expect(() =>
-      assertEuResidency("mistral:mistral-embed", "embedding", EU)
-    ).not.toThrow();
+    expect(() => assertEuResidency("mistral:mistral-embed", "embedding", EU)).not.toThrow();
   });
 
   test("multimodal embeddings: document-side refused under EU_ONLY_EMBEDDINGS", async () => {

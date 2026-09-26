@@ -66,18 +66,18 @@ describe("extractCitations / extractLawAbbreviations with Austrian citations", (
     expect(extractCitations("Nach § 16 AußStrG ist das Rekursverfahren zweiseitig.")).toEqual([
       "§ 16 AußStrG",
     ]);
-    expect(extractLawAbbreviations("Nach § 16 AußStrG ist das Rekursverfahren zweiseitig.")).toEqual(
-      ["AußStrG"]
-    );
+    expect(
+      extractLawAbbreviations("Nach § 16 AußStrG ist das Rekursverfahren zweiseitig.")
+    ).toEqual(["AußStrG"]);
   });
 
   test("§ 7 Abs 4 VwGVG — Abs without dot is the Absatz, not a law", () => {
     expect(extractCitations("Die Frist beträgt nach § 7 Abs 4 VwGVG vier Wochen.")).toEqual([
       "§ 7 Abs. 4 VwGVG",
     ]);
-    expect(extractLawAbbreviations("Die Frist beträgt nach § 7 Abs 4 VwGVG vier Wochen.")).toEqual(
-      ["VwGVG"]
-    );
+    expect(extractLawAbbreviations("Die Frist beträgt nach § 7 Abs 4 VwGVG vier Wochen.")).toEqual([
+      "VwGVG",
+    ]);
   });
 
   test("§ 50 ASGG", () => {

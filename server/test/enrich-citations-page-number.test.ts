@@ -130,7 +130,9 @@ describe("enrichCitations: page number from the matched chunk", () => {
 
   test("matched chunk whose text is not in compiled_truth → NO page number", async () => {
     const [cite] = await enrichCitations(
-      stubEngine({ chunks: [PAGE1, "Ein Chunk, der im Volltext nicht mehr vorkommt (alte Fassung)."] }),
+      stubEngine({
+        chunks: [PAGE1, "Ein Chunk, der im Volltext nicht mehr vorkommt (alte Fassung)."],
+      }),
       [{ page_slug: SLUG, row_num: null }],
       "default",
       undefined,
