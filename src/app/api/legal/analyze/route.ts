@@ -17,8 +17,25 @@ import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
 import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
 import { checkCaseContradictions } from "@/lib/legal/contradiction-check";
 
+import { createHash } from "node:crypto";
+import { hit } from "@/lib/auth/rate-limit";
+import { deductCredits } from "@/lib/billing/credits";
+import { CREDIT_COSTS } from "@/lib/billing/credit-constants";
+
 import { logger } from "@/lib/logger";
 const log = logger("api/legal/analyze");
+
+/**
+ * Background analyses (upload outbox, retry cron, messenger intake) run
+ * without a user session. Per firm and day at most this many run without a
+ * billing owner to book them on — a guard against runaway model costs.
+ */
+const INTERNAL_ANALYSIS_DAILY_CAP = Number(process.env.SUBSUMIO_INTERNAL_ANALYSIS_DAILY_CAP ?? 300);
+
+/** Short content fingerprint: an unchanged document is never analysed twice. */
+function analysisContentHash(text: string): string {
+  return createHash("sha256").update(text).digest("hex").slice(0, 32);
+}
 
 export const maxDuration = 120;
 
@@ -65,6 +82,13 @@ const analyzeSchema = z
     text: z.string().max(512_000).optional(),
     jurisdiction: z.string().optional(),
     brain_id: z.string().optional(),
+    /** Re-run even though an analysis of this exact content exists. */
+    force: z.boolean().optional(),
+    /** Internal callers: billing owner of the document's upload. */
+    owner_id: z.string().max(200).optional(),
+    owner_type: z.enum(["user", "org"]).optional(),
+    /** Internal callers: which background job retries a failure ("outbox" | "cron"). */
+    retry_owner: z.enum(["outbox", "cron"]).optional(),
   })
   .passthrough();
 
@@ -106,6 +130,7 @@ export const POST = createHandler(
     const warnings: string[] = [];
     let text = "";
     let documentCaseSlug: string | undefined;
+    let documentFm: Record<string, unknown> = {};
 
     if (documentSlug) {
       try {
@@ -120,6 +145,7 @@ export const POST = createHandler(
             frontmatter?: Record<string, unknown>;
           };
           text = [page.title, page.content].filter(Boolean).join("\n\n");
+          documentFm = page.frontmatter ?? {};
           documentCaseSlug =
             typeof page.frontmatter?.case_slug === "string"
               ? page.frontmatter.case_slug
@@ -143,6 +169,39 @@ export const POST = createHandler(
 
     if (!text.trim()) {
       return apiError("document_not_found_or_empty", "Document not found or empty", 404);
+    }
+
+    // Idempotent per document content: an analysis of exactly this text is
+    // returned as stored instead of calling the model again (outbox re-runs,
+    // overlapping retries, repeated clicks). `force` re-runs on purpose.
+    const contentHash = analysisContentHash(text);
+    if (documentSlug && body.force !== true && documentFm.analysis_status === "completed") {
+      const stored = documentFm.auto_analysis;
+      const storedHash = documentFm.analysis_content_hash;
+      // Analyses stored before the fingerprint existed count as current for
+      // background jobs only — a user can still ask again.
+      const sameContent = storedHash ? storedHash === contentHash : isInternal;
+      if (sameContent && stored && typeof stored === "object") {
+        return Response.json({ ...(stored as Record<string, unknown>), _cached: true });
+      }
+    }
+
+    // Background analyses without a session: bounded per firm and day.
+    if (isInternal && documentSlug) {
+      const brainKey = typeof body.brain_id === "string" && body.brain_id ? body.brain_id : "none";
+      const budget = await hit(
+        `internal-analysis:${brainKey}`,
+        INTERNAL_ANALYSIS_DAILY_CAP,
+        24 * 60 * 60_000
+      );
+      if (!budget.ok) {
+        log.warn(`[analyze] internal analysis budget reached for ${brainKey}`);
+        return apiError(
+          "internal_analysis_budget_exhausted",
+          "Tageskontingent für Hintergrundanalysen erreicht",
+          429
+        );
+      }
     }
 
     if (text.length > MAX_ANALYSIS_CHARS) {
@@ -201,6 +260,9 @@ export const POST = createHandler(
               analysis_status: "failed",
               analysis_failed_at: new Date().toISOString(),
               analysis_error: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+              // One job retries a failure: the outbox while its task lives,
+              // otherwise the hourly retry cron.
+              ...(body.retry_owner ? { analysis_retry_owner: body.retry_owner } : {}),
             },
           });
           if (!failedPatch.ok)
@@ -215,9 +277,22 @@ export const POST = createHandler(
       return Response.json(empty, { status: 502 });
     }
 
-    // Charged once the AI step succeeded. Internal calls come from engine
-    // pipelines that settle their own token-based bill (pipeline-reserve).
-    if (!isInternal) void recordCreditConsumption(ctx, "document_analysis", documentCaseSlug);
+    // Charged once the AI step succeeded. A background analysis is booked on
+    // the firm that uploaded the document, once per document content.
+    if (!isInternal) {
+      void recordCreditConsumption(ctx, "document_analysis", documentCaseSlug);
+    } else if (documentSlug && body.owner_id && body.owner_type) {
+      void deductCredits(body.owner_id, body.owner_type, CREDIT_COSTS.document_analysis, {
+        operation: "document_analysis",
+        caseSlug: documentCaseSlug,
+        idempotencyKey: `document_analysis:${body.brain_id ?? ""}:${documentSlug}:${contentHash}`,
+      }).catch((err) =>
+        log.error(
+          "[analyze] background analysis booking failed:",
+          err instanceof Error ? err.message : String(err)
+        )
+      );
+    }
 
     // ── 3. Grounding + Precedent search (parallel) ──────────────────────
     const rawCitations = Array.isArray(parsed.cited_statutes)
@@ -252,6 +327,7 @@ export const POST = createHandler(
           analyzed_at: new Date().toISOString(),
           analysis_status: "completed",
           analysis_retry_count: 0,
+          analysis_content_hash: contentHash,
         };
         if (docType && docType !== "unknown") {
           docFrontmatter.document_type = docType;
@@ -296,13 +372,17 @@ export const POST = createHandler(
       );
 
       // Called in-process with the same engine headers (same brain, same
-      // access) — no HTTP round trip back into this app.
-      void checkCaseContradictions(engineHeaders, documentCaseSlug).catch((err) => {
-        // Best-effort — contradictions check failure must not block analysis response
-        log.warn("contradictions check failed", {
-          error: err instanceof Error ? err.message : String(err),
+      // access) — no HTTP round trip back into this app. The upload outbox
+      // runs its own contradiction task for the matter; running it here too
+      // probed every upload twice.
+      if (body.retry_owner !== "outbox") {
+        void checkCaseContradictions(engineHeaders, documentCaseSlug).catch((err) => {
+          // Best-effort — contradictions check failure must not block analysis response
+          log.warn("contradictions check failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
-      });
+      }
     }
 
     if (warnings.length > 0) {

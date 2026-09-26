@@ -8,6 +8,7 @@ import { getRecipientsByBrain, mapWithConcurrency } from "@/lib/cron-utils";
 import { CaseArchivedError, reconcileCaseDocuments } from "@/lib/case-documents";
 import { stampInboundEntry } from "@/lib/inbound-register-stamp";
 import { listEnginePages } from "@/lib/engine-pages";
+import { tryWithKeyedLock } from "@/lib/keyed-lock";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/post-upload-drain");
@@ -31,12 +32,28 @@ interface TaskPage {
 /** Max tasks read per brain per run (paged in batches of ENGINE_LIST_MAX). */
 const OUTBOX_SCAN_LIMIT = 2_000;
 
+/**
+ * A task is leased for this long while it runs. A run that dies mid-task
+ * (deploy, maxDuration) leaves the task pending; the lease keeps the next
+ * run from starting the same paid analysis while the first may still finish.
+ */
+const TASK_LEASE_MS = 6 * 60_000;
+
 function backoffMs(attempt: number): number {
   // 1 min → 4 min → 16 min → exhausted
   return Math.min(60_000 * Math.pow(4, attempt), 16 * 60_000);
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
+  // Runs every 2 minutes, and one run can take longer than that. An
+  // overlapping run would pick up the same pending tasks and analyse the same
+  // documents a second time — so a run that finds the lock held skips.
+  const run = await tryWithKeyedLock("cron:post-upload-drain", drainOutbox);
+  if (!run.ran) return Response.json({ ok: true, skipped: "already_running" });
+  return run.value;
+});
+
+async function drainOutbox(): Promise<Response> {
   const origin = env("NEXTAUTH_URL") ?? env("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
   const internalSecret = env("SUBSUMIO_INTERNAL_SECRET") ?? "";
 
@@ -70,6 +87,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const pending = allPages.filter((p) => {
     const fm = p.frontmatter ?? {};
     if (fm.status !== "pending") return false;
+    if (fm.lease_until && new Date(fm.lease_until) > now) return false;
     if (!fm.next_attempt_at) return true;
     return new Date(fm.next_attempt_at) <= now;
   });
@@ -124,8 +142,22 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       }
     }
 
+    // Lease the paid tasks before running them; without a lease, skip.
+    if (task_type === "analyze" || task_type === "contradiction") {
+      const lease = await enginePatchPage(headers, {
+        slug: page.slug,
+        frontmatter: { lease_until: new Date(Date.now() + TASK_LEASE_MS).toISOString() },
+      });
+      if (!lease.ok) {
+        log.error(`[post-upload-drain] could not lease ${page.slug}: ${lease.status} — skipped`);
+        continue;
+      }
+    }
+
     let success = false;
     let errorMsg = "";
+    // Minutes a config-/budget-blocked task waits (no attempt burnt).
+    let blockedForMinutes = 15;
     // The matter was archived/deleted before its document could be listed —
     // permanent, so the task is closed instead of retried.
     let caseClosed: CaseArchivedError | null = null;
@@ -160,11 +192,29 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           const res = await fetch(`${origin}/api/legal/analyze`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-internal-secret": internalSecret },
-            body: JSON.stringify({ document_slug: doc_slug, brain_id }),
+            body: JSON.stringify({
+              document_slug: doc_slug,
+              brain_id,
+              // Books the analysis on the firm that uploaded the document
+              // (idempotent per document content) and marks the outbox as
+              // the one retrying it.
+              ...(fm.owner_id && fm.owner_type
+                ? { owner_id: fm.owner_id, owner_type: fm.owner_type }
+                : {}),
+              retry_owner: "outbox",
+            }),
             signal: AbortSignal.timeout(300_000),
           });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          success = true;
+          if (res.status === 429) {
+            // Daily budget for unbilled background analyses reached: wait,
+            // do not burn an attempt.
+            configBlocked = true;
+            blockedForMinutes = 60;
+            errorMsg = "internal_analysis_budget_exhausted";
+          } else {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            success = true;
+          }
         }
       } else if (task_type === "contradiction") {
         if (!case_slug) {
@@ -239,8 +289,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         slug: page.slug,
         frontmatter: {
           status: "pending",
-          next_attempt_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+          next_attempt_at: new Date(Date.now() + blockedForMinutes * 60_000).toISOString(),
           last_error: errorMsg,
+          lease_until: null,
         },
       });
       if (!patch.ok) {
@@ -287,6 +338,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           attempts: attempt,
           next_attempt_at: nextAt,
           last_error: errorMsg,
+          lease_until: null,
         },
       });
       if (!patch.ok)
@@ -304,7 +356,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     blocked,
     skipped: allPages.length - pending.length,
   });
-});
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

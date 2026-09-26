@@ -40,6 +40,11 @@ export interface PostUploadTask {
   last_error?: string;
   /** Payload for `inbound_stamp` tasks — the register entry to retry. */
   inbound?: { entry_id: string; input: StampInboundInput };
+  /** A drain run is working on the task until then (no second run starts it). */
+  lease_until?: string | null;
+  /** Billing owner of the upload — background analyses are booked on it. */
+  owner_id?: string;
+  owner_type?: "user" | "org";
 }
 
 export const MAX_ATTEMPTS = 4;
@@ -141,6 +146,9 @@ export async function enqueueAllPostUploadTasks(params: {
   doc_title?: string;
   doc_size?: number;
   uploaded_at?: string;
+  /** Billing owner of the upload (booked for the background analysis). */
+  owner_id?: string;
+  owner_type?: "user" | "org";
   /** Re-run tasks that already finished (explicit user retry only). */
   force?: boolean;
 }): Promise<void> {
@@ -151,6 +159,9 @@ export async function enqueueAllPostUploadTasks(params: {
     doc_title: params.doc_title,
     doc_size: params.doc_size,
     uploaded_at: params.uploaded_at ?? new Date().toISOString(),
+    ...(params.owner_id && params.owner_type
+      ? { owner_id: params.owner_id, owner_type: params.owner_type }
+      : {}),
   };
 
   const tasks: PostUploadTaskType[] = ["analyze"];

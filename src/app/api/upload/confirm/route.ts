@@ -60,7 +60,8 @@ async function afterConfirm(
   headers: Record<string, string>,
   brainId: string,
   slug: string,
-  result: ConfirmResult
+  result: ConfirmResult,
+  billing: { ownerId: string; ownerType: "user" | "org" }
 ): Promise<void> {
   if (result.pipeline_deferred === true) {
     try {
@@ -84,6 +85,8 @@ async function afterConfirm(
     brain_id: brainId,
     doc_title: result.title,
     uploaded_at: new Date().toISOString(),
+    owner_id: billing.ownerId,
+    owner_type: billing.ownerType,
   });
 }
 
@@ -204,7 +207,7 @@ export const POST = createHandler(
               try {
                 const result = JSON.parse(data) as ConfirmResult;
                 if (result.slug) {
-                  await afterConfirm(ctx.headers, ctx.brainId, result.slug, result);
+                  await afterConfirm(ctx.headers, ctx.brainId, result.slug, result, ctx.billing);
                 }
               } catch {
                 /* best-effort */
@@ -245,7 +248,7 @@ export const POST = createHandler(
         };
 
         if (result.slug) {
-          await afterConfirm(ctx.headers, ctx.brainId, result.slug, result);
+          await afterConfirm(ctx.headers, ctx.brainId, result.slug, result, ctx.billing);
         }
 
         return Response.json(result, { status: upstream.status });

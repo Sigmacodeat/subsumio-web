@@ -120,7 +120,7 @@
 # ── Every 2 minutes — Post-upload task drain ──
 # Drains the persistent post_upload_task outbox: analysis, contradiction probe,
 # case reconciliation. Tasks survive container restarts; retried with backoff.
-*/2 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true
+*/2 * * * *    curl -fsS --max-time 310 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true
 
 # ── Every 10 minutes — Upload reconcile sweeper ──
 # Safety net for the upload chain: finds extraction-ready documents whose

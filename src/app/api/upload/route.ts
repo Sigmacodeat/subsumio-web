@@ -316,6 +316,8 @@ export const POST = createHandler(
                     doc_title: uploadResult.title ?? result.cleanName,
                     doc_size: result.buffer.byteLength,
                     uploaded_at: new Date().toISOString(),
+                    owner_id: ctx.billing.ownerId,
+                    owner_type: ctx.billing.ownerType,
                   });
                 } catch (err) {
                   analysisStatus = "failed";

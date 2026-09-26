@@ -38,7 +38,9 @@ async function listFailedDocuments(brainId: string): Promise<FailedDoc[]> {
     })) as unknown as FailedDoc[];
     return data.filter((p) => {
       const fm = p.frontmatter ?? {};
-      return fm.analysis_status === "failed";
+      // A failure the upload outbox is still retrying is not retried here as
+      // well — two retry loops ran the same paid analysis twice.
+      return fm.analysis_status === "failed" && fm.analysis_retry_owner !== "outbox";
     });
   } catch {
     return [];
@@ -158,6 +160,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           body: JSON.stringify({
             document_slug: doc.slug,
             brain_id: brainId,
+            retry_owner: "cron",
           }),
           signal: AbortSignal.timeout(300_000),
         });

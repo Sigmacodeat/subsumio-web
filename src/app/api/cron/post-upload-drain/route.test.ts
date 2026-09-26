@@ -90,6 +90,17 @@ describe("post-upload drain — reconcile into an archived matter", () => {
     expect(p.frontmatter).not.toHaveProperty("next_attempt_at");
   });
 
+  it("a leased task is left alone by the next run", async () => {
+    const t = reconcileTask();
+    (t.frontmatter as Record<string, unknown>).lease_until = new Date(
+      Date.now() + 60_000
+    ).toISOString();
+    tasks.push(t);
+    const out = await drain();
+    expect(out.processed).toBe(0);
+    expect(patches).toHaveLength(0);
+  });
+
   it("a transient failure is still retried", async () => {
     tasks.push(reconcileTask());
     reconcileImpl.fn = async () => {
