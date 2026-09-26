@@ -20,6 +20,7 @@ import type {
   ModelProfileResponse,
 } from "@/lib/model-profile-types";
 import type { DashboardKey } from "@/content/dashboard";
+import { DataResidencyCard } from "@/components/settings/data-residency-card";
 
 type Draft = Partial<Record<ModelArea, AreaChoice>>;
 
@@ -133,6 +134,8 @@ export default function AIModelSettingsPage() {
   return (
     <div className="ds-page ds-page-narrow space-y-6 p-4 md:p-6 lg:p-8">
       {header}
+
+      <DataResidencyCard />
 
       <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden />
