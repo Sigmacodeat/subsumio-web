@@ -4,7 +4,7 @@ import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine
 import { listEnginePages, type ListedPage } from "@/lib/engine-pages";
 import { TRASH_TYPES, toTrashItem, isTrashExpired, type TrashItem } from "@/lib/trash";
 import { isTombstoned } from "@/lib/tombstone";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { CRON_FULL_READ_CAP, getRecipientsByBrain } from "@/lib/cron-utils";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { normalizeTrashRetentionDays } from "@/lib/kanzlei-settings";
 import { logAudit } from "@/lib/audit";
@@ -197,10 +197,15 @@ export const GET = createCronHandler(async () => {
     const expired: TrashItem[] = [];
     try {
       for (const type of TRASH_TYPES) {
-        const pages = await listEnginePages(headers, type, 5000, {
+        // Expired entries are the OLD ones — read the whole type, never the
+        // newest N; a truncated read aborts the brain instead of passing.
+        const pages = await listEnginePages(headers, type, CRON_FULL_READ_CAP, {
           includeTombstoned: true,
           strict: true,
         });
+        if (pages.length >= CRON_FULL_READ_CAP) {
+          throw new Error(`${type} list truncated at ${CRON_FULL_READ_CAP}`);
+        }
         for (const page of pages) {
           const item = toTrashItem(page, now);
           if (item && isTrashExpired(item, retentionDays, now)) expired.push(item);
@@ -261,7 +266,10 @@ export const GET = createCronHandler(async () => {
     // wie ein manuelles Löschen).
     try {
       for (const type of RETENTION_ITEM_TYPES) {
-        const pages = await listEnginePages(headers, type, 5000, { strict: true });
+        const pages = await listEnginePages(headers, type, CRON_FULL_READ_CAP, { strict: true });
+        if (pages.length >= CRON_FULL_READ_CAP) {
+          throw new Error(`${type} list truncated at ${CRON_FULL_READ_CAP}`);
+        }
         for (const page of pages) {
           if (isTombstoned(page)) continue;
           const fm = page.frontmatter ?? {};
@@ -413,9 +421,12 @@ export const GET = createCronHandler(async () => {
         // legal/doc-versions/<slug>/ weiter.
         if (item.type === "document") {
           try {
-            const versions = await listEnginePages(headers, "document_version", 200, {
-              slugPrefix: `legal/doc-versions/${item.slug}/`,
-            });
+            const versions = await listEnginePages(
+              headers,
+              "document_version",
+              CRON_FULL_READ_CAP,
+              { slugPrefix: `legal/doc-versions/${item.slug}/`, strict: true }
+            );
             for (const v of versions) {
               const vPath = v.slug.split("/").map(encodeURIComponent).join("/");
               const vRes = await fetch(`${ENGINE_URL}/api/pages/${vPath}`, {

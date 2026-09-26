@@ -4,7 +4,8 @@ import { createCronHandler } from "@/lib/api-handler";
 import {
   type EnginePage,
   activeStaffRecipients,
-  fetchPages,
+  CRON_FULL_READ_CAP,
+  fetchAllPagesStrict,
   getRecipientsByBrain,
   createDailyDedup,
   matterPermissionsBySlug,
@@ -45,8 +46,16 @@ interface RetentionItem {
   action: "review" | "delete";
 }
 
+/**
+ * Every matter of the firm (paged, strict): the matters due for review are
+ * the OLD ones, so a list of the newest N would silently miss them. A failed
+ * or truncated read throws — the run reports it instead of answering "ok".
+ */
 async function fetchClosedCases(brainId: string): Promise<EnginePage[]> {
-  const pages = await fetchPages(brainId, "legal_case", 500);
+  const pages = await fetchAllPagesStrict(brainId, "legal_case");
+  if (pages.length >= CRON_FULL_READ_CAP) {
+    throw new Error(`legal_case list truncated at ${CRON_FULL_READ_CAP}`);
+  }
   // Closed matters; Legal Hold is excluded from retention/deletion.
   return pages.filter((p) => isRetentionCandidate(p.frontmatter));
 }
@@ -61,19 +70,27 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let brainsChecked = 0;
   let mailsSent = 0;
   let itemsFound = 0;
+  const errors: string[] = [];
 
   for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
     const recipients = activeStaffRecipients(brainUsers);
     if (recipients.length === 0) continue;
-    const closedCases = await fetchClosedCases(brainId);
+    let closedCases: EnginePage[];
+    try {
+      closedCases = await fetchClosedCases(brainId);
+    } catch (err) {
+      errors.push(`brain ${brainId}: ${err instanceof Error ? err.message : String(err)}`);
+      continue;
+    }
     // Every item IS a closed matter, so its access rules come from the same read.
     const matterPermissions = matterPermissionsBySlug(closedCases);
 
     const items: RetentionItem[] = [];
     for (const page of closedCases) {
       const fm = page.frontmatter ?? {};
-      const closedAt = String(fm.closed_at ?? "");
+      // Archived before closed_at was stamped: the archive date is the closing.
+      const closedAt = String(fm.closed_at ?? fm.archived_at ?? "");
       if (!closedAt) continue;
       const action = classifyRetention(closedAt);
       if (!action) continue;
@@ -149,12 +166,17 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
   }
 
-  return Response.json({
-    ok: true,
-    brains_checked: brainsChecked,
-    items_found: itemsFound,
-    mails_sent: mailsSent,
-  });
+  // A run that could not read a firm's matters answers 500 (supercronic marks it failed).
+  return Response.json(
+    {
+      ok: errors.length === 0,
+      brains_checked: brainsChecked,
+      items_found: itemsFound,
+      mails_sent: mailsSent,
+      ...(errors.length > 0 ? { errors } : {}),
+    },
+    { status: errors.length === 0 ? 200 : 500 }
+  );
 });
 
 /** One person's digest — only the matters they may see. */

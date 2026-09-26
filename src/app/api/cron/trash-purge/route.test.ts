@@ -9,6 +9,7 @@ const tombstoneCalls = vi.hoisted(
 );
 const audits = vi.hoisted(() => [] as Array<{ action: string; entityId?: string }>);
 const pagesByType = vi.hoisted(() => new Map<string, Array<Record<string, unknown>>>());
+const listLimits = vi.hoisted(() => [] as number[]);
 const casePages = vi.hoisted(() => new Map<string, Record<string, unknown>>());
 const settingsByBrain = vi.hoisted(() => new Map<string, Record<string, unknown> | Error>());
 
@@ -16,6 +17,7 @@ vi.mock("@/lib/api-handler", () => ({
   createCronHandler: (h: (req: NextRequest) => Promise<Response>) => h,
 }));
 vi.mock("@/lib/cron-utils", () => ({
+  CRON_FULL_READ_CAP: 100_000,
   getRecipientsByBrain: async () => new Map([["brain_a", [{ id: "u1" }]]]),
 }));
 vi.mock("@/lib/kanzlei-settings-server", () => ({
@@ -40,10 +42,11 @@ vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: async (
     _h: unknown,
     type: string,
-    _l: number,
+    limit: number,
     opts?: { slugPrefix?: string }
   ) => {
-    const all = pagesByType.get(type) ?? [];
+    listLimits.push(limit);
+    const all = (pagesByType.get(type) ?? []).slice(0, limit);
     if (!opts?.slugPrefix) return all;
     return all.filter((p) => String(p.slug).startsWith(opts.slugPrefix!));
   },
@@ -61,6 +64,7 @@ vi.mock("@/lib/logger", () => ({
 const realFetch = globalThis.fetch;
 beforeEach(() => {
   deleted.length = 0;
+  listLimits.length = 0;
   caseFetches.length = 0;
   tombstoneCalls.length = 0;
   audits.length = 0;
@@ -519,5 +523,20 @@ describe("AML records: retention end is enforced (§ 12 Abs 3 RAO)", () => {
     const { status } = await run();
     expect(status).toBe(200);
     expect(deleted).toEqual(["legal/kyc/k1"]);
+  });
+});
+
+describe("full reads, no silent cap (R12-9)", () => {
+  it("reaches an expired entry beyond the first 5 000 of a type", async () => {
+    const fresh5d = new Date(Date.now() - 5 * 86_400_000).toISOString();
+    const docs = Array.from({ length: 6000 }, (_, i) =>
+      tombstoned(`docs/fresh-${i}`, { tombstoned_at: fresh5d })
+    );
+    docs.push(tombstoned("docs/oldest"));
+    pagesByType.set("document", docs);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["docs/oldest"]);
+    expect(Math.min(...listLimits)).toBeGreaterThanOrEqual(100_000);
   });
 });
