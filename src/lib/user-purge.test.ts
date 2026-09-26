@@ -126,3 +126,78 @@ describe("purgeExpiredSoftDeletedUsers", () => {
     expect(call).toBe(2);
   });
 });
+
+describe("purgeExpiredSoftDeletedUsers — self-deleted single-lawyer firm", () => {
+  type Row = { id: string; brain_id: string; org_id: string | null; purge_brain: string | null };
+  function poolWith(rows: Row[]) {
+    return fakePool(rows as never);
+  }
+  const clear = vi.fn().mockResolvedValue({ status: "clear" });
+
+  it("purges the brain with the account when nothing must be kept", async () => {
+    const { pool, calls } = poolWith([
+      { id: "u1", brain_id: "brain_solo", org_id: null, purge_brain: "true" },
+    ]);
+    const purgeBrain = vi.fn().mockResolvedValue(undefined);
+    const purged = await purgeExpiredSoftDeletedUsers(pool, report(), {
+      checkHolds: clear,
+      checkRetention: vi.fn().mockResolvedValue({ status: "clear" }),
+      isFirmBrain: vi.fn().mockResolvedValue(false),
+      purgeBrain,
+    });
+    expect(purged).toBe(1);
+    expect(purgeBrain).toHaveBeenCalledWith("brain_solo");
+    expect(calls.some((c) => c.sql.includes("DELETE FROM subsumio_users"))).toBe(true);
+  });
+
+  it("keeps brain and account while records are still retained", async () => {
+    const { pool, calls } = poolWith([
+      { id: "u1", brain_id: "brain_solo", org_id: null, purge_brain: "true" },
+    ]);
+    const purgeBrain = vi.fn();
+    const rep = report();
+    const purged = await purgeExpiredSoftDeletedUsers(pool, rep, {
+      checkHolds: clear,
+      checkRetention: vi
+        .fn()
+        .mockResolvedValue({ status: "retained", cases: ["c"], receipts: 0, until: null }),
+      isFirmBrain: vi.fn().mockResolvedValue(false),
+      purgeBrain,
+    });
+    expect(purged).toBe(0);
+    expect(rep.skippedHold).toBe(1);
+    expect(purgeBrain).not.toHaveBeenCalled();
+    expect(calls.some((c) => c.sql.includes("DELETE FROM subsumio_users"))).toBe(false);
+  });
+
+  it("never purges a brain that is a firm's brain", async () => {
+    const { pool } = poolWith([
+      { id: "u1", brain_id: "brain_firm", org_id: null, purge_brain: "true" },
+    ]);
+    const purgeBrain = vi.fn();
+    const purged = await purgeExpiredSoftDeletedUsers(pool, report(), {
+      checkHolds: clear,
+      checkRetention: vi.fn().mockResolvedValue({ status: "clear" }),
+      isFirmBrain: vi.fn().mockResolvedValue(true),
+      purgeBrain,
+    });
+    expect(purged).toBe(0);
+    expect(purgeBrain).not.toHaveBeenCalled();
+  });
+
+  it("a failed brain purge keeps the account for the next run", async () => {
+    const { pool, calls } = poolWith([
+      { id: "u1", brain_id: "brain_solo", org_id: null, purge_brain: "true" },
+    ]);
+    const rep = report();
+    const purged = await purgeExpiredSoftDeletedUsers(pool, rep, {
+      checkHolds: clear,
+      checkRetention: vi.fn().mockResolvedValue({ status: "clear" }),
+      isFirmBrain: vi.fn().mockResolvedValue(false),
+      purgeBrain: vi.fn().mockRejectedValue(new Error("HTTP 500")),
+    });
+    expect(purged).toBe(0);
+    expect(rep.failed).toBe(1);
+    expect(calls.some((c) => c.sql.includes("DELETE FROM subsumio_users"))).toBe(false);
+  });
+});

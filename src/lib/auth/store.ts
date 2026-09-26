@@ -70,6 +70,14 @@ export interface User {
   scimExternalId?: string | null;
   /** ISO timestamp when user was deactivated via SCIM (null = active). Not deleted for audit-trail. */
   deactivatedAt?: string | null;
+  /** Soft-delete (DSGVO): set by the self-service or operator deletion; the
+   *  row is hard-deleted after the grace period (src/lib/user-purge.ts). */
+  deletedAt?: string | null;
+  /** Self-deletion of a single-lawyer firm: the brain's data is purged with
+   *  the account after the grace period (holds and retention re-checked). */
+  purgeBrainOnDelete?: boolean;
+  /** Firm the account belonged to when it was deleted (legal-hold re-check). */
+  deletedFromOrgId?: string | null;
   /** API keys (server-persisted, encrypt-at-rest in production). */
   openaiKey?: string | null;
   anthropicKey?: string | null;
