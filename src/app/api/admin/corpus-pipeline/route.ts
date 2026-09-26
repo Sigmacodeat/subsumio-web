@@ -112,6 +112,32 @@ export const POST = createHandler(
 
     // fetch_missing: trigger discovery/fetch for a source with reconcile_gap
     if (body.action === "fetch_missing") {
+      // pipeline_config.fetch_triggered holds exactly ONE source, and the
+      // pipeline keeps it until that source's fetch exits cleanly (it
+      // respawns after timeouts/deploys). Overwriting it silently dropped a
+      // running multi-day court fetch — refuse instead and name what is
+      // pending. The operator can start the other source once it is done.
+      try {
+        const pending = await pool.query(
+          `SELECT value, updated_at FROM pipeline_config WHERE key = 'fetch_triggered'`
+        );
+        const raw = pending.rows[0]?.value as unknown;
+        const pendingKey =
+          typeof raw === "string"
+            ? raw
+            : raw && typeof raw === "object" && "source_key" in raw
+              ? String((raw as { source_key: unknown }).source_key)
+              : null;
+        if (pendingKey && pendingKey !== body.source_key) {
+          return apiError(
+            "conflict",
+            `Es steht bereits ein Abruf an: ${pendingKey}. Erst wenn dieser fertig ist, kann ${body.source_key} starten.`,
+            409
+          );
+        }
+      } catch {
+        // Table missing — the INSERT below reports that.
+      }
       try {
         await pool.query(
           `INSERT INTO pipeline_config (key, value, updated_at, updated_by)

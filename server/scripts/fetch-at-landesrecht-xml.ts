@@ -27,6 +27,15 @@
  *   bun scripts/fetch-at-landesrecht-xml.ts
  *   bun scripts/fetch-at-landesrecht-xml.ts --limit 100    # Testlauf
  *   bun scripts/fetch-at-landesrecht-xml.ts --page 50      # Resume ab Seite 50
+ *   bun scripts/fetch-at-landesrecht-xml.ts --from-index /law-corpus/_state/ris-inforce-landesrecht.jsonl
+ *
+ * --from-index: holt NUR die Dokumente, die der In-force-Index listet und die
+ * noch nicht geprüft in _normalized liegen — direkt per Dokumentnummer, ohne
+ * die ~1.100 Suchseiten erneut zu blättern. Der Vollabruf vom 22.09. brach bei
+ * Seite ~266 ab (Deploy) und wurde nie fortgesetzt; 12.111 geltende
+ * Landesnormen wurden so nie geholt. Ein abgebrochener Index-Lauf setzt beim
+ * nächsten Start genau dort fort, weil Geholtes nach der Normalisierung als
+ * vorhanden zählt.
  */
 
 import { mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, renameSync } from "fs";
@@ -36,6 +45,7 @@ import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { landOfDocId } from "./normalize/normalize-corpus";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
+import { recordFetchOutcome } from "./ris-fetch-outcomes";
 
 const RIS_API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
 /** Vorhandene Dateien überschreiben — nötig nach jeder Extraktor-Korrektur. */
@@ -74,6 +84,7 @@ function arg(name: string, fb?: string): string {
 }
 
 const LIMIT = Number(arg("limit", "0"));
+const FROM_INDEX = arg("from-index");
 const START_PAGE = Number(arg("page", "1"));
 const END_PAGE = Number(arg("to-page", String(MAX_PAGES)));
 
@@ -139,8 +150,11 @@ function extractText(xml: string): { text: string; meta: Record<string, string> 
 
 let consecutive503 = 0;
 let aborted = false;
+/** Why the last fetchXmlFromUrl() returned null — 404 is "not found", anything else "failed". */
+let lastFetchNotFound = false;
 
 async function fetchXmlFromUrl(url: string, attempt = 0): Promise<string | null> {
+  if (attempt === 0) lastFetchNotFound = false;
   try {
     const res = await fetch(url, {
       headers: UA,
@@ -148,6 +162,7 @@ async function fetchXmlFromUrl(url: string, attempt = 0): Promise<string | null>
     });
     if (res.status === 404) {
       consecutive503 = 0;
+      lastFetchNotFound = true;
       return null;
     }
     if (res.status === 429 || res.status === 503) {
@@ -233,6 +248,17 @@ function extractXmlUrl(ref: Record<string, unknown>): string {
     if (du.DataType === "Xml") return String(du.Url ?? "");
   }
   return "";
+}
+
+interface LrDoc {
+  docId: string;
+  title: string;
+  xmlUrl: string;
+  lrMeta: Record<string, string>;
+  eli: string;
+  gn: string;
+  apa: string;
+  fileKey: string;
 }
 
 function normKey(apa: string | null): string | null {
@@ -361,7 +387,161 @@ async function main() {
   const inventory: string[] = [];
   let reachedEnd = false;
 
-  for (let page = START_PAGE; page <= Math.min(MAX_PAGES, END_PAGE); page++) {
+  // Fetch XML for a batch of documents (one RIS connection — CONCURRENCY 1).
+  const runDocs = async (docs: LrDoc[], label: string) => {
+    const queue = [...docs];
+    const workers: Promise<void>[] = [];
+    for (let w = 0; w < CONCURRENCY; w++) {
+      workers.push(
+        (async () => {
+          while (queue.length > 0 && !aborted) {
+            if (LIMIT > 0 && totalWritten >= LIMIT) break;
+            const doc = queue.shift()!;
+
+            // Build file key: gn-folder/key.md (like at-normen)
+            // The states number their laws independently (Gesetzesnummer
+            // 10000001 exists in Burgenland, Upper Austria, Salzburg, Tyrol …),
+            // so the state is part of the path. Without it the paragraphs of
+            // different states' laws overwrote each other.
+            const land = landOfDocId(doc.docId) ?? "unbekannt";
+            const folderName = `${land}/${doc.gn ? `gnr-${doc.gn}` : "no-gn"}`;
+            const fullKey = `${folderName}/${doc.fileKey}`;
+
+            // BUG FIX: Use fullKey (folder/key) not just fileKey —
+            // different laws can have the same § number (p-1, p-2, etc.)
+            // --force überschreibt vorhandene Dateien. Ohne diesen Schalter
+            // ist der Lauf nach einer Extraktor-Korrektur wirkungslos: er
+            // meldet für jede der 108.297 Dateien "skipped" und repariert
+            // keine einzige. Derselbe Blocker steckte in ris-xml-fetch-normen.ts.
+            if (!FORCE && validated.has(doc.docId)) {
+              totalSkipped++;
+              continue;
+            }
+
+            totalProcessed++;
+
+            // Fetch XML — use API URL or construct fallback
+            let xmlUrl = doc.xmlUrl;
+            if (!xmlUrl) {
+              xmlUrl = `${XML_BASE}/${doc.docId}/${doc.docId}.xml`;
+            }
+
+            const xml = await fetchXmlFromUrl(xmlUrl);
+
+            if (!xml) {
+              totalFailed++;
+              if (!aborted)
+                recordFetchOutcome(
+                  _corpusRoot,
+                  "at-landesrecht",
+                  doc.docId,
+                  lastFetchNotFound ? "not_found" : "failed"
+                );
+              continue;
+            }
+
+            // Parse XML
+            const { text, meta: xmlMeta } = extractText(xml);
+
+            // Skip docs with too little text
+            if (text.length < MIN_TEXT_LENGTH) {
+              totalFailed++;
+              // Typically an Anlage RIS keeps only as PDF/image.
+              recordFetchOutcome(_corpusRoot, "at-landesrecht", doc.docId, "no_text", doc.apa);
+              continue;
+            }
+
+            // Build markdown
+            const md = buildMarkdown(
+              doc.docId,
+              doc.title,
+              text,
+              xmlMeta,
+              doc.lrMeta,
+              doc.eli,
+              doc.gn
+            );
+
+            // Write file in subfolder
+            const outFolder = join(OUT_DIR, folderName);
+            mkdirSync(outFolder, { recursive: true });
+            // Roh-XML ablegen, BEVOR der Text daraus gewonnen wird.
+            //
+            // Ohne Ablage erzwingt jede Extraktor-Korrektur einen vollständigen
+            // Neuabruf. Beim Bundesrecht hat die abgelegte Kopie den
+            // Beachte/Anmerkung-Fix auf 2 Minuten gedrückt statt 9 Stunden —
+            // und sie ist die Voraussetzung dafür, den Textbestand überhaupt
+            // gegen die Quelle prüfen zu können (Stufe „textidentisch"), ohne
+            // 110.000 Anfragen an RIS zu stellen. Kostet ~1 GB.
+            if (KEEP_XML) {
+              const xmlDir = join(KEEP_XML, folderName);
+              mkdirSync(xmlDir, { recursive: true });
+              writeFileSync(join(xmlDir, `${doc.docId}.xml`), xml);
+            }
+            const outPath = join(outFolder, `${doc.fileKey}.md`);
+            writeFileSync(outPath, md);
+            existing.add(fullKey);
+            totalWritten++;
+
+            if (totalWritten % 200 === 0) {
+              console.log(
+                `  [${label}] Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}`
+              );
+            }
+
+            await risMassPause("Landesrecht-XML");
+          }
+        })()
+      );
+    }
+    await Promise.all(workers);
+  };
+
+  if (FROM_INDEX) {
+    const docs: LrDoc[] = [];
+    for (const line of readFileSync(FROM_INDEX, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      let d: {
+        nor?: string;
+        id?: string;
+        gnr?: string | null;
+        apa?: string | null;
+        kurztitel?: string | null;
+        region?: string | null;
+        eli?: string | null;
+      };
+      try {
+        d = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const docId = d.nor ?? d.id;
+      if (!docId || d.apa === "§ 0") continue;
+      const fileKey = normKey(d.apa ?? null);
+      if (!fileKey) {
+        totalSkippedNorm++;
+        continue;
+      }
+      if (!FORCE && validated.has(docId)) {
+        totalSkipped++;
+        continue;
+      }
+      docs.push({
+        docId,
+        title: d.kurztitel || docId,
+        xmlUrl: "",
+        lrMeta: d.region ? { bundesland: d.region } : {},
+        eli: d.eli ?? "",
+        gn: d.gnr ?? "",
+        apa: d.apa ?? "",
+        fileKey,
+      });
+    }
+    console.log(`  Index-Modus: ${docs.length} fehlende Landesnormen aus ${FROM_INDEX}`);
+    await runDocs(docs, "index");
+  }
+
+  for (let page = START_PAGE; !FROM_INDEX && page <= Math.min(MAX_PAGES, END_PAGE); page++) {
     if (aborted) {
       console.log(`\nAborted due to ${MAX_CONSECUTIVE_503} consecutive 503 errors.`);
       console.log(`Resume with: --page ${page}`);
@@ -385,17 +565,7 @@ async function main() {
     }
 
     // Filter: Only Paragraph docs (skip Norm docs)
-    const pageDocs: {
-      docId: string;
-      title: string;
-      xmlUrl: string;
-      lrMeta: Record<string, string>;
-      eli: string;
-      gn: string;
-      apa: string;
-      fileKey: string;
-    }[] = [];
-
+    const pageDocs: LrDoc[] = [];
     for (const ref of refs) {
       const meta = ref?.Data?.Metadaten ?? {};
       const tech = meta?.Technisch ?? {};
@@ -446,106 +616,7 @@ async function main() {
       continue;
     }
 
-    // Fetch XML for each document (with concurrency)
-    const queue = [...pageDocs];
-    const workers: Promise<void>[] = [];
-
-    for (let w = 0; w < CONCURRENCY; w++) {
-      workers.push(
-        (async () => {
-          while (queue.length > 0 && !aborted) {
-            if (LIMIT > 0 && totalWritten >= LIMIT) break;
-            const doc = queue.shift()!;
-
-            // Build file key: gn-folder/key.md (like at-normen)
-            // The states number their laws independently (Gesetzesnummer
-            // 10000001 exists in Burgenland, Upper Austria, Salzburg, Tyrol …),
-            // so the state is part of the path. Without it the paragraphs of
-            // different states' laws overwrote each other.
-            const land = landOfDocId(doc.docId) ?? "unbekannt";
-            const folderName = `${land}/${doc.gn ? `gnr-${doc.gn}` : "no-gn"}`;
-            const fullKey = `${folderName}/${doc.fileKey}`;
-
-            // BUG FIX: Use fullKey (folder/key) not just fileKey —
-            // different laws can have the same § number (p-1, p-2, etc.)
-            // --force überschreibt vorhandene Dateien. Ohne diesen Schalter
-            // ist der Lauf nach einer Extraktor-Korrektur wirkungslos: er
-            // meldet für jede der 108.297 Dateien "skipped" und repariert
-            // keine einzige. Derselbe Blocker steckte in ris-xml-fetch-normen.ts.
-            if (!FORCE && validated.has(doc.docId)) {
-              totalSkipped++;
-              continue;
-            }
-
-            totalProcessed++;
-
-            // Fetch XML — use API URL or construct fallback
-            let xmlUrl = doc.xmlUrl;
-            if (!xmlUrl) {
-              xmlUrl = `${XML_BASE}/${doc.docId}/${doc.docId}.xml`;
-            }
-
-            const xml = await fetchXmlFromUrl(xmlUrl);
-
-            if (!xml) {
-              totalFailed++;
-              continue;
-            }
-
-            // Parse XML
-            const { text, meta: xmlMeta } = extractText(xml);
-
-            // Skip docs with too little text
-            if (text.length < MIN_TEXT_LENGTH) {
-              totalFailed++;
-              continue;
-            }
-
-            // Build markdown
-            const md = buildMarkdown(
-              doc.docId,
-              doc.title,
-              text,
-              xmlMeta,
-              doc.lrMeta,
-              doc.eli,
-              doc.gn
-            );
-
-            // Write file in subfolder
-            const outFolder = join(OUT_DIR, folderName);
-            mkdirSync(outFolder, { recursive: true });
-            // Roh-XML ablegen, BEVOR der Text daraus gewonnen wird.
-            //
-            // Ohne Ablage erzwingt jede Extraktor-Korrektur einen vollständigen
-            // Neuabruf. Beim Bundesrecht hat die abgelegte Kopie den
-            // Beachte/Anmerkung-Fix auf 2 Minuten gedrückt statt 9 Stunden —
-            // und sie ist die Voraussetzung dafür, den Textbestand überhaupt
-            // gegen die Quelle prüfen zu können (Stufe „textidentisch"), ohne
-            // 110.000 Anfragen an RIS zu stellen. Kostet ~1 GB.
-            if (KEEP_XML) {
-              const xmlDir = join(KEEP_XML, folderName);
-              mkdirSync(xmlDir, { recursive: true });
-              writeFileSync(join(xmlDir, `${doc.docId}.xml`), xml);
-            }
-            const outPath = join(outFolder, `${doc.fileKey}.md`);
-            writeFileSync(outPath, md);
-            existing.add(fullKey);
-            totalWritten++;
-
-            if (totalWritten % 200 === 0) {
-              console.log(
-                `  [page ${page}] Written: ${totalWritten} | Skipped: ${totalSkipped} | Norm skipped: ${totalSkippedNorm} | Failed: ${totalFailed} | Total: ${totalProcessed}`
-              );
-            }
-
-            await risMassPause("Landesrecht-XML");
-          }
-        })()
-      );
-    }
-
-    await Promise.all(workers);
+    await runDocs(pageDocs, `page ${page}`);
 
     if (page % 10 === 0) {
       console.log(

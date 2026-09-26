@@ -52,8 +52,12 @@ export const GET = createHandler(
 
     const cfg = LAW_SOURCE_CFG[source];
     try {
-      const [indexResult, pageResult, fetchState] = await Promise.all([
-        cfg.indexFile ? loadRisIndex(cfg.indexFile) : Promise.resolve(null),
+      const indexResult = cfg.indexFile ? await loadRisIndex(cfg.indexFile) : null;
+      // Auch Seiten ohne (passende) statute_id zählen, wenn ihre
+      // Dokumentnummer zum Soll des Gesetzes gehört — dieselbe Regel wie in
+      // computeLawCoverage, sonst widerspräche die Detailseite der Liste.
+      const sollDocs = [...(indexResult?.entries.get(key)?.docs.keys() ?? [])];
+      const [pageResult, fetchState] = await Promise.all([
         pool.query(
           `SELECT p.slug,
                   ${cfg.docExpr} AS doc,
@@ -66,10 +70,11 @@ export const GET = createHandler(
                   count(cc.id) FILTER (WHERE cc.embedding IS NOT NULL)::int AS embedded
              FROM pages p
              LEFT JOIN content_chunks cc ON cc.page_id = p.id
-            WHERE p.source_id = $1 AND p.deleted_at IS NULL AND ${cfg.keyExpr} = $2
+            WHERE p.source_id = $1 AND p.deleted_at IS NULL
+              AND (${cfg.keyExpr} = $2 OR ${cfg.docExpr} = ANY($3::text[]))
             GROUP BY p.id
             LIMIT ${MAX_PAGES}`,
-          [source, key]
+          [source, key, sollDocs]
         ),
         source === "law-at-normen" ? loadLawFetchState(pool) : Promise.resolve(null),
       ]);

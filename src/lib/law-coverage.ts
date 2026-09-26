@@ -29,6 +29,36 @@ interface RisIndexLine {
 }
 
 /**
+ * Landeskürzel aus dem Präfix der RIS-Dokumentnummer (LST… → stmk). Gleiche
+ * Tabelle wie LAND_CODES in server/scripts/normalize/normalize-corpus.ts —
+ * die Web-App darf den Server-Code nicht importieren.
+ */
+const LAND_CODES: Record<string, string> = {
+  BG: "bgld",
+  KT: "ktn",
+  NO: "noe",
+  OO: "ooe",
+  SB: "sbg",
+  ST: "stmk",
+  TI: "tir",
+  VB: "vbg",
+  WI: "wien",
+};
+
+/**
+ * Gesetzes-Key im selben Format wie frontmatter.statute_id: Bundesrecht die
+ * nackte Gesetzesnummer, Landesrecht mit Land („stmk-20000534"). Die Länder
+ * vergeben ihre Nummern unabhängig — 10000001 ist zugleich ein burgenländisches,
+ * ein oberösterreichisches und ein Tiroler Gesetz. Nach nackter Nummer
+ * gruppiert, fielen 7.851 Landesgesetze auf 2.579 Keys zusammen, und kein Key
+ * traf je die DB-Seite (Audit 2026-09-25).
+ */
+export function lawKeyFor(nor: string, gnr: string): string {
+  const land = LAND_CODES[nor.match(/^L([A-Z]{2})\d/)?.[1] ?? ""];
+  return land && !gnr.startsWith(`${land}-`) ? `${land}-${gnr}` : gnr;
+}
+
+/**
  * Parst eine ris-inforce-JSONL (ris-inforce-crawl.ts). Deckblätter
  * (apa === "§ 0") werden übersprungen — sie tragen keinen Normtext und
  * würden jedes Gesetz mit einem dauerhaft „unvollständig" aussehen lassen.
@@ -45,10 +75,11 @@ export function parseRisInforceIndex(jsonl: string): Map<string, RisIndexEntry> 
     }
     const nor = d.nor ?? d.id;
     if (!nor || !d.gnr || d.apa === "§ 0") continue;
-    let entry = map.get(d.gnr);
+    const key = lawKeyFor(nor, d.gnr);
+    let entry = map.get(key);
     if (!entry) {
-      entry = { gnr: d.gnr, kurztitel: d.kurztitel ?? null, abk: d.abk ?? null, docs: new Map() };
-      map.set(d.gnr, entry);
+      entry = { gnr: key, kurztitel: d.kurztitel ?? null, abk: d.abk ?? null, docs: new Map() };
+      map.set(key, entry);
     }
     entry.docs.set(nor, d.apa ?? null);
     if (!entry.kurztitel && d.kurztitel) entry.kurztitel = d.kurztitel;
@@ -133,8 +164,13 @@ export function computeLawCoverage(
   dbAggs: DbLawAgg[]
 ): { rows: LawCoverageRow[]; totals: LawCoverageTotals } {
   const docsByLaw = new Map<string, Set<string>>();
+  // Vorhanden = die Dokumentnummer ist irgendwo in der Quelle aktiv — nicht
+  // nur unter dem erwarteten Gesetzes-Key. Ältere Landesrecht-Seiten tragen
+  // keine statute_id; nach Key gezählt, erschienen sie als „fehlt".
+  const allDocs = new Set<string>();
   for (const d of dbDocs) {
     if (!d.doc) continue;
+    allDocs.add(d.doc);
     const set = docsByLaw.get(d.key) ?? new Set<string>();
     set.add(d.doc);
     docsByLaw.set(d.key, set);
@@ -145,11 +181,10 @@ export function computeLawCoverage(
 
   if (index) {
     for (const [gnr, entry] of index) {
-      const have = docsByLaw.get(gnr);
       const missing: MissingDoc[] = [];
       let haveCount = 0;
       for (const [nor, apa] of entry.docs) {
-        if (have?.has(nor)) haveCount++;
+        if (allDocs.has(nor)) haveCount++;
         else missing.push({ nor, apa });
       }
       const agg = aggByLaw.get(gnr);
@@ -340,11 +375,13 @@ export function lawOfficialUrl(
       label: "Im RIS öffnen",
     };
   }
-  if (source === "law-at-landesrecht" && /^\d+$/.test(key)) {
+  // Landesrecht-Keys tragen das Land („stmk-20000534"), RIS will die nackte Nummer.
+  const bareLr = source === "law-at-landesrecht" ? key.replace(/^[a-z]+-/, "") : "";
+  if (source === "law-at-landesrecht" && /^\d+$/.test(bareLr)) {
     const abfrage = landesrechtAbfrage(sampleDocId);
     return abfrage
       ? {
-          url: `https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=${abfrage}&Gesetzesnummer=${key}`,
+          url: `https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=${abfrage}&Gesetzesnummer=${bareLr}`,
           label: "Im RIS öffnen",
         }
       : null;

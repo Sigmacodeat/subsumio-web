@@ -1210,6 +1210,22 @@ function runPlausibilityAudit(): void {
   appendHistory(key, "audit", "started");
 }
 
+/**
+ * Hourly measurement behind the /ops/corpus sync table: RIS-Soll → Platte →
+ * DB per source, by document number (corpus-sync-inventory.ts →
+ * _state/corpus-sync-inventory.json). Read-only on the DB, ~5 minutes over
+ * the whole corpus; the dashboard only reads the file.
+ */
+function runSyncInventory(): void {
+  const key = "sync-inventory";
+  ensureSourceRow(key);
+  if (ranWithin(key, 3600)) return;
+  if (processRunningGrep("corpus-sync-inventory.ts")) return;
+  startProcess(key, ["scripts/corpus-sync-inventory.ts"], key, 1800);
+  updateSourceState(key, { last_cycle_at: new Date().toISOString(), stage: "importing" });
+  appendHistory(key, "audit", "started");
+}
+
 function runHashIntegrityCheck(): void {
   const key = "hash-integrity";
   ensureSourceRow(key);
@@ -2411,10 +2427,39 @@ async function cycle(): Promise<void> {
         // (see backup/dump-firm-data.sh) — and a text-fidelity check can only
         // ever cover documents whose XML survived. Cost is disk, not RIS
         // traffic: ~10 GB per full federal pass per a prior measurement here.
-        landesrecht: [
-          "scripts/fetch-at-landesrecht-xml.ts",
+        // With the in-force index present, fetch only the missing documents
+        // by number (--from-index) instead of paging all ~1,100 search pages;
+        // the full scan is the fallback that also writes the index.
+        landesrecht: existsSync(`${INFORCE_INDEX_DIR}/ris-inforce-landesrecht.jsonl`)
+          ? [
+              "scripts/fetch-at-landesrecht-xml.ts",
+              "--from-index",
+              `${INFORCE_INDEX_DIR}/ris-inforce-landesrecht.jsonl`,
+              "--keep-xml",
+              "/law-corpus/_xml/at-landesrecht",
+            ]
+          : [
+              "scripts/fetch-at-landesrecht-xml.ts",
+              "--keep-xml",
+              "/law-corpus/_xml/at-landesrecht",
+            ],
+        // Smaller RIS collections ("Nachholen" on /ops/corpus; the key is
+        // the corpus directory, which fetch-missing-sources.ts accepts).
+        "at-bmerl": ["scripts/fetch-missing-sources.ts", "--source", "at-bmerl"],
+        "at-avsv": ["scripts/fetch-missing-sources.ts", "--source", "at-avsv"],
+        "at-avn": ["scripts/fetch-missing-sources.ts", "--source", "at-avn"],
+        "at-spg": ["scripts/fetch-missing-sources.ts", "--source", "at-spg"],
+        "at-kmger": ["scripts/fetch-missing-sources.ts", "--source", "at-kmger"],
+        "at-bezirke": ["scripts/fetch-missing-sources.ts", "--source", "at-bezirke"],
+        "at-gemeinden": ["scripts/fetch-missing-sources.ts", "--source", "at-gemeinden"],
+        // Federal paragraphs in force that are not on disk yet (the fetcher
+        // skips everything already validated in _normalized).
+        "normen-at": [
+          "scripts/ris-xml-fetch-normen.ts",
+          "--ris",
+          `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
           "--keep-xml",
-          "/law-corpus/_xml/at-landesrecht",
+          "/law-corpus/_xml/at-normen",
         ],
       };
       const cmd = fetchCmd[key];
@@ -2514,6 +2559,9 @@ async function cycle(): Promise<void> {
 
     // ── Layer 5b: full plausibility audit → corpus_status + embedding clearance (6h) ──
     if (!REPORT_ONLY) runPlausibilityAudit();
+
+    // ── Layer 5c: sync inventory by document number → dashboard (1h) ──
+    if (!REPORT_ONLY) runSyncInventory();
 
     // ── Layer 6: Fassungs-Sync / version_date delta (at most once per 12h) ──
     runFassungsSync();

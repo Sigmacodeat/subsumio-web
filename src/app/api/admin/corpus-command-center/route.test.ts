@@ -11,7 +11,7 @@
 // failed query still reported the DB as available and every source
 // silently showed 0 instead of the already-built "nicht erreichbar" banner.
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { NextRequest } from "next/server";
 
 // A tmpdir that is never created: listCorpusNames()/getCorpusIndex() and the
@@ -144,13 +144,59 @@ describe("GET /api/admin/corpus-command-center", () => {
     expect(seen.some((s) => s.includes("corpus_inventory_snapshot"))).toBe(true);
   });
 
-  it("uses the snapshot's document count as the DB figure compared against RIS", async () => {
-    pool.query.mockImplementation(baseQueryRouter());
-    const body = await (await get()).json();
-    const normen = body.data.sync.rows.find((r: any) => r.sourceId === "law-at-normen");
-    expect(normen).toBeDefined();
-    expect(normen.dbDocuments).toBe(10);
-    expect(normen.dbPages).toBe(100);
+  it("builds sync rows from the document-number inventory, embeddings from the snapshot", async () => {
+    // The table no longer counts files or import file names itself: the
+    // hourly corpus-sync-inventory measurement is the only source of the
+    // RIS/Server/DB numbers (audit 2026-09-25).
+    mkdirSync(`${ROOT}/_state`, { recursive: true });
+    writeFileSync(
+      `${ROOT}/_state/corpus-sync-inventory.json`,
+      JSON.stringify({
+        version: 1,
+        measuredAt: "2026-09-25T10:00:00.000Z",
+        durationMs: 1000,
+        sources: [
+          {
+            corpus: "at-normen",
+            sourceId: "law-at-normen",
+            inScope: true,
+            historical: false,
+            risSoll: 148157,
+            risSollKind: "index",
+            diskDocs: 147774,
+            dbDocs: 147700,
+            dbPages: 147700,
+            missingOnDisk: 383,
+            missingByReason: { open: 383, no_text: 0, not_found: 0, failed: 0 },
+            diskNotInDb: 74,
+            dbNotOnDisk: 0,
+            notInRisSoll: 2240,
+          },
+        ],
+      })
+    );
+    try {
+      pool.query.mockImplementation(baseQueryRouter());
+      const body = await (await get()).json();
+      expect(body.data.sync.measuredAt).toBe("2026-09-25T10:00:00.000Z");
+      const normen = body.data.sync.rows.find((r: any) => r.sourceId === "law-at-normen");
+      expect(normen).toMatchObject({
+        risSoll: 148157,
+        diskDocs: 147774,
+        dbDocs: 147700,
+        missingOpen: 383,
+        importOpen: 74,
+        notInSoll: 2240,
+        status: "fetch_open",
+        pipelineKey: "normen-at",
+        // From the snapshot row for law-at-normen.
+        dbChunks: 300,
+        embeddedChunks: 150,
+      });
+      expect(body.data.sync.totals.missingOpen).toBe(383);
+    } finally {
+      rmSync(`${ROOT}/_state`, { recursive: true, force: true });
+    }
   });
 
   it("dbAvailable is false when the snapshot read throws, and the response still succeeds", async () => {
@@ -166,10 +212,10 @@ describe("GET /api/admin/corpus-command-center", () => {
     expect(res.status).toBe(200);
     expect(body.data.dbAvailable).toBe(false);
     expect(body.data.snapshotAt).toBeNull();
-    // No source ever got real numbers, but the route must not crash — it
-    // degrades to an empty sync table, which the frontend renders behind
-    // the "noch keine DB-Zählung" banner (see corpus-command-center.tsx).
+    // No inventory measurement exists here either — the route must not
+    // crash; the frontend shows "Noch keine Messung" instead of numbers.
     expect(body.data.sync.rows).toEqual([]);
+    expect(body.data.sync.measuredAt).toBeNull();
   });
 
   it("dbAvailable is false when no snapshot exists yet (fresh install)", async () => {
