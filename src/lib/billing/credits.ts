@@ -28,7 +28,12 @@ export {
 } from "@/lib/billing/credit-constants";
 
 import type { CreditOperation, CreditPack } from "@/lib/billing/credit-constants";
-import { CREDIT_PACKS, TRIAL_CREDITS, TRIAL_DAYS } from "@/lib/billing/credit-constants";
+import {
+  CREDIT_PACKS,
+  CREDIT_VALIDITY_DAYS,
+  TRIAL_CREDITS,
+  TRIAL_DAYS,
+} from "@/lib/billing/credit-constants";
 
 const log = logger("credits");
 
@@ -396,7 +401,7 @@ export async function addCredits(
             [opts.stripeSessionId]
           );
           if (grantExists.rows.length === 0) {
-            const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+            const expiresAt = new Date(Date.now() + CREDIT_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
             await client.query(
               `INSERT INTO subsumio_credit_grants
                  (owner_id, owner_type, grant_type, amount, remaining, burn_priority, expires_at, stripe_session_id, description)
@@ -2129,7 +2134,8 @@ export async function addCreditGrant(
   try {
     await ensureCreditSchema();
     const burnPriority = grantType === "promotional" ? 0 : grantType === "grant" ? 1 : 2;
-    const expiresAt = opts?.expiresAt ?? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 Jahr default
+    const expiresAt =
+      opts?.expiresAt ?? new Date(Date.now() + CREDIT_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
 
     await pool.query(
       `INSERT INTO subsumio_credit_grants (owner_id, owner_type, grant_type, amount, remaining, burn_priority, expires_at, stripe_session_id, description)

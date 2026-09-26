@@ -4,7 +4,12 @@
 
 import { Check, Shield, Clock, Globe, Coins, Zap } from "lucide-react";
 import { contentFor, pBind, type Market } from "@/lib/market";
-import { CREDIT_PACKS, CREDIT_COSTS, type CreditOperation } from "@/lib/billing/credit-constants";
+import {
+  CREDIT_PACKS,
+  CREDIT_COSTS,
+  CREDIT_VALIDITY_MONTHS,
+  type CreditOperation,
+} from "@/lib/billing/credit-constants";
 import { SectionHeading, CTASection, PageHero, Section } from "./primitives";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
@@ -99,6 +104,9 @@ export default function PricingPage({ market = "at" }: { market?: Market }) {
                   </p>
                   <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
                     {`${fmt((pack.priceEur / pack.credits) * 100, 1)} Cent pro Credit`}
+                  </p>
+                  <p className="mt-1 text-xs [color:var(--mk-text-muted)]">
+                    {`Gültig ${CREDIT_VALIDITY_MONTHS} Monate ab Kauf`}
                   </p>
                 </GlowCard>
               </StaggerItem>

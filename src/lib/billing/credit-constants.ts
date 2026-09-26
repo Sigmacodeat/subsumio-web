@@ -37,6 +37,13 @@ export const TRIAL_CREDITS = 100;
  *  every "30 Tage" in the website copy follow it (checked by price-drift.test.ts). */
 export const TRIAL_DAYS = 30;
 
+/** Validity of purchased credit packs, from the purchase date. The single
+ *  source for the expiry the billing code sets and for the pricing page,
+ *  FAQ and AGB § 4 (checked by price-drift.test.ts). */
+export const CREDIT_VALIDITY_DAYS = 365;
+/** Same validity in months, as the copy states it ("12 Monate"). */
+export const CREDIT_VALIDITY_MONTHS = 12;
+
 export interface CreditPack {
   id: string;
   name: string;

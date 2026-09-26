@@ -3,6 +3,7 @@ import type { Lang } from "@/content/site";
 import { Section } from "@/components/marketing/primitives";
 import { H1_CLASS, H3_CLASS } from "@/components/marketing/typography";
 import { LEGAL_VERSIONS, formatLegalVersion } from "@/lib/auth/legal-acceptance";
+import { CREDIT_VALIDITY_MONTHS } from "@/lib/billing/credit-constants";
 
 // Legal content (de-AT) — used by /privacy, /terms, /imprint and /dpa.
 // `home` sets the back-link. The version shown on AGB, Datenschutzerklärung
@@ -512,7 +513,9 @@ export function TermsContent({
         </Link>{" "}
         ausgewiesenen Preise zzgl. USt. (2) Abrechnung über den Zahlungsdienstleister im Voraus. (3)
         Der Vertrag verlängert sich um den Abrechnungszeitraum, sofern nicht zu dessen Ende
-        gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam.
+        gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam. (5)
+        Zugekauftes KI-Guthaben (Credits) ist {CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig; danach
+        verfällt nicht verbrauchtes Guthaben.
       </p>
 
       <H2>§ 5 Pflichten des Kunden</H2>

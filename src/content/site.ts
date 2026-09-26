@@ -7,7 +7,7 @@
 // To reactivate a market: restore routes and content from the locale archive
 // tag documented under docs/archive/.
 
-import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
+import { CREDIT_VALIDITY_MONTHS, TRIAL_DAYS } from "@/lib/billing/credit-constants";
 
 export const CONTENT_LANGS = ["de", "at", "ch", "en"] as const;
 export type Lang = (typeof CONTENT_LANGS)[number];
@@ -498,7 +498,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
     },
     {
       q: "Gibt es versteckte Gebühren?",
-      a: "Nein. Mehrverbrauch entsteht nur über KI-Guthaben, das Sie selbst dazukaufen; die Preise stehen oben auf dieser Seite und unter „Plan & Abrechnung“. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      a: `Nein. Mehrverbrauch entsteht nur über KI-Guthaben, das Sie selbst dazukaufen; die Preise stehen oben auf dieser Seite und unter „Plan & Abrechnung“. Zugekauftes Guthaben ist ${CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig; nicht verbrauchtes Guthaben verfällt danach. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.`,
     },
   ],
 };

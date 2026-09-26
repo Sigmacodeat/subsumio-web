@@ -99,3 +99,20 @@ describe("included AI requests are one number everywhere", () => {
     expect(free).not.toMatch(/KI-Anfragen/);
   });
 });
+
+describe("validity of purchased credits is disclosed where it is sold", () => {
+  test("pricing page, FAQ and AGB state CREDIT_VALIDITY_MONTHS; billing uses the constant", async () => {
+    const { CREDIT_VALIDITY_DAYS, CREDIT_VALIDITY_MONTHS } = await import("./credit-constants");
+    expect(CREDIT_VALIDITY_MONTHS * 30).toBeLessThanOrEqual(CREDIT_VALIDITY_DAYS);
+    const read = (f: string) => readFileSync(path.join(process.cwd(), f), "utf8");
+    expect(read("src/components/marketing/pricing-page.tsx")).toContain("CREDIT_VALIDITY_MONTHS");
+    expect(read("src/components/legal/legal-content.tsx")).toMatch(
+      /\{CREDIT_VALIDITY_MONTHS\} Monate ab Kauf gültig/
+    );
+    expect(JSON.stringify(PRICING_FAQ)).toContain(
+      `${CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig`
+    );
+    // The expiry the billing code sets comes from the constant, not a literal.
+    expect(read("src/lib/billing/credits.ts")).not.toMatch(/365 \* 24 \* 60 \* 60 \* 1000/);
+  });
+});
