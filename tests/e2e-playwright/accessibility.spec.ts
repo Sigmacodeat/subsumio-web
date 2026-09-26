@@ -14,6 +14,9 @@ const PUBLIC_PAGES = [
   "/at/cities",
   "/at/cities/wien",
   "/at/blog/ki-kanzleisoftware-berufsgeheimnis-rao",
+  // Barrierefreiheitserklärung (BaFG/BFSG) — beide Märkte.
+  "/at/barrierefreiheit",
+  "/de/barrierefreiheit",
 ];
 
 const DASHBOARD_ROUTES = [
@@ -79,6 +82,8 @@ const DASHBOARD_ROUTES = [
   "/dashboard/settings/ai-model",
   "/dashboard/settings/kanzlei",
   "/dashboard/settings/scim",
+  // Darstellung: Schriftgröße/Kontrast/Bewegung/Farbschema (Radiogruppen).
+  "/dashboard/settings/darstellung",
   "/dashboard/shared-spaces",
   "/dashboard/sources",
   "/dashboard/templates",

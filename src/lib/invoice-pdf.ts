@@ -6,6 +6,13 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { REVERSE_CHARGE_NOTE } from "@/lib/invoice-totals";
+import {
+  PDF_MIN_FONT_PT,
+  addPdfBookmark,
+  applyPdfAccessibility,
+  currentPageNumber,
+  type PdfLang,
+} from "@/lib/pdf-accessibility";
 
 export interface InvoicePdfData {
   number: string;
@@ -34,6 +41,8 @@ export interface InvoicePdfData {
   epcQrDataUrl?: string;
   /** Pre-generated Swiss QR-Bill data URL — generate with generateSwissQrCode() */
   swissQrDataUrl?: string;
+  /** Dokumentsprache für Screenreader (BCP 47). Standard: de-AT. */
+  lang?: PdfLang;
   kanzlei: {
     name: string;
     anwaltName?: string;
@@ -47,6 +56,16 @@ export interface InvoicePdfData {
 
 export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  // Sprache, Metadaten, Titelleiste, Lesezeichen — vor dem ersten text().
+  applyPdfAccessibility(doc, {
+    title: `Rechnung ${data.number}`,
+    subject: `Honorarnote ${data.number} an ${data.client}`,
+    author: data.kanzlei.name || "Kanzlei",
+    keywords: ["Rechnung", "Honorarnote", data.number, data.caseNumber ?? ""]
+      .filter(Boolean)
+      .join(", "),
+    lang: data.lang,
+  });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = margin;
@@ -115,6 +134,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
   doc.setFont("helvetica", "bold");
   doc.text("Rechnung", margin, y);
+  const bmRoot = addPdfBookmark(doc, `Rechnung ${data.number}`, currentPageNumber(doc));
   y += 10;
 
   doc.setFontSize(9);
@@ -143,6 +163,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   ]);
 
   if (itemRows.length > 0) {
+    addPdfBookmark(doc, "Honorar", currentPageNumber(doc), bmRoot);
     autoTable(doc, {
       startY: y,
       head: [["Datum", "Beschreibung", "Stunden", "Satz", "Betrag"]],
@@ -177,6 +198,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   ]);
 
   if (expenseRows.length > 0) {
+    addPdfBookmark(doc, "Auslagen", currentPageNumber(doc), bmRoot);
     autoTable(doc, {
       startY: y,
       head: [["Datum", "Auslage", "", "", "Betrag"]],
@@ -208,6 +230,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
 
   doc.setFontSize(9);
   doc.setTextColor(darkText);
+  addPdfBookmark(doc, "Summen", currentPageNumber(doc), bmRoot);
 
   const sums = [
     { label: "Honorar netto", value: data.subtotal },
@@ -242,10 +265,11 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   doc.text(`${data.total.toFixed(2)} €`, valueX, y, { align: "right" });
   y += 8;
 
-  // --- Zahlungsinfo & Fuß ---
+  // --- Zahlungsinfo & Fuß --- (Mindestschrift 9 pt, BFSG)
   doc.setFont("helvetica", "normal");
   doc.setTextColor(lightText);
-  doc.setFontSize(8);
+  doc.setFontSize(PDF_MIN_FONT_PT);
+  addPdfBookmark(doc, "Zahlung", currentPageNumber(doc), bmRoot);
 
   if (data.reverseCharge) {
     const note = doc.splitTextToSize(REVERSE_CHARGE_NOTE, pageW - 2 * margin) as string[];
@@ -270,7 +294,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
       const qrSize = 30;
       const qrX = pageW - margin - qrSize;
       doc.addImage(data.epcQrDataUrl, "PNG", qrX, y, qrSize, qrSize);
-      doc.setFontSize(7);
+      doc.setFontSize(PDF_MIN_FONT_PT);
       doc.setTextColor(lightText);
       doc.text("GiroCode / EPC-QR", qrX, y + qrSize + 4);
       y += qrSize + 8;
@@ -285,7 +309,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
       const qrSize = 35;
       const qrX = pageW - margin - qrSize;
       doc.addImage(data.swissQrDataUrl, "PNG", qrX, y, qrSize, qrSize);
-      doc.setFontSize(7);
+      doc.setFontSize(PDF_MIN_FONT_PT);
       doc.setTextColor(lightText);
       doc.text("Swiss QR-Bill", qrX, y + qrSize + 4);
       y += qrSize + 8;

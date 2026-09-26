@@ -1638,6 +1638,20 @@ export const D = {
     en: "Manage your account, firm and security settings",
   },
   "settings.hub_back": { de: "← Zurück zur Übersicht", en: "← Back to overview" },
+  // ── Settings → Darstellung (Barrierefreiheit) ──
+  "settings.darstellung.title": { de: "Darstellung", en: "Display" },
+  "settings.darstellung.desc": {
+    de: "Schriftgröße, Kontrast, Bewegung und Farbschema – für Sie auf diesem Gerät.",
+    en: "Font size, contrast, motion and colour scheme – for you on this device.",
+  },
+  "settings.darstellung.tile_desc": {
+    de: "Schrift vergrößern, Kontrast erhöhen, Animationen abschalten, hell oder dunkel.",
+    en: "Larger text, higher contrast, no animations, light or dark.",
+  },
+  "settings.darstellung.font_size": { de: "Schriftgröße", en: "Font size" },
+  "settings.darstellung.contrast": { de: "Kontrast", en: "Contrast" },
+  "settings.darstellung.motion": { de: "Bewegung reduzieren", en: "Reduce motion" },
+  "settings.darstellung.theme": { de: "Farbschema", en: "Colour scheme" },
   "settings.tile_account_desc": {
     de: "Plan, Sprache, Datenexport und Empfehlungen",
     en: "Plan, language, data export and referrals",

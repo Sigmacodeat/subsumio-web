@@ -11,6 +11,7 @@ import {
   CreditCard,
   Database,
   Download,
+  Eye,
   FileInput,
   FileText,
   History,
@@ -455,6 +456,18 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         href: "/dashboard/settings?tab=account",
         allowed: ALL,
         keywords: "sprache language profil",
+      },
+      {
+        id: "darstellung",
+        label: { de: "Darstellung", en: "Display" },
+        desc: {
+          de: "Schriftgröße, Kontrast, Bewegung und Farbschema – für Sie auf diesem Gerät.",
+          en: "Font size, contrast, motion and colour scheme – for you on this device.",
+        },
+        icon: Eye,
+        href: "/dashboard/settings/darstellung",
+        allowed: ALL,
+        keywords: "barrierefreiheit accessibility schrift kontrast dunkel theme animation",
       },
       {
         id: "billing",

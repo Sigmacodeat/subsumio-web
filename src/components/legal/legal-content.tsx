@@ -18,6 +18,10 @@ const T = {
   terms: "AGB",
   imprint: "Impressum",
   dpa: "AVV",
+  accessibility: "Barrierefreiheit",
+  accessibilityTitle: "Barrierefreiheitserklärung",
+  accessibilitySubtitle:
+    "Erklärung nach dem Barrierefreiheitsgesetz (BaFG, Österreich) bzw. § 15 BFSG (Deutschland) · Stand 26. September 2026",
   imprintTitle: "Impressum",
   imprintSubtitle: "Angaben gemäß § 5 ECG und Offenlegung gemäß § 25 MedienG",
   privacyTitle: "Datenschutzerklärung",
@@ -249,7 +253,7 @@ function LegalLinks({
   lang: _lang,
 }: {
   home: string;
-  exclude: "privacy" | "terms" | "imprint" | "dpa";
+  exclude: "privacy" | "terms" | "imprint" | "dpa" | "accessibility";
   lang: Lang;
 }) {
   const t = T;
@@ -258,6 +262,11 @@ function LegalLinks({
     { key: "terms" as const, href: `${home === "/" ? "" : home}/terms`, label: t.terms },
     { key: "dpa" as const, href: `${home === "/" ? "" : home}/dpa`, label: t.dpa },
     { key: "imprint" as const, href: `${home === "/" ? "" : home}/imprint`, label: t.imprint },
+    {
+      key: "accessibility" as const,
+      href: `${home === "/" ? "" : home}/barrierefreiheit`,
+      label: t.accessibility,
+    },
   ].filter((l) => l.key !== exclude);
   return (
     <p className="pt-6 text-xs [color:var(--mk-text-subtle)]">
@@ -304,6 +313,159 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <LegalLinks home={home} exclude="imprint" lang={lang} />
     </Shell>
   );
+}
+
+/** E-Mail-Adresse für Barrierefreiheits-Feedback — identisch mit dem Impressum. */
+export const ACCESSIBILITY_FEEDBACK_EMAIL = "help@rciid.at";
+/** Datum der letzten Überprüfung dieser Erklärung (ISO). */
+export const ACCESSIBILITY_STATEMENT_DATE = "2026-09-26";
+
+const ACCESSIBILITY_LIMITATIONS: Array<{ what: string; why: string; plan: string }> = [
+  {
+    what: "Erzeugte PDF-Dokumente (Honorarnoten, Vollmachten, Schriftsatz-Entwürfe, ZUGFeRD-Rechnungen)",
+    why: "Die verwendeten PDF-Bibliotheken schreiben keine Struktur-Tags (PDF/UA). Sprache, Titel, Lesezeichen und Mindestschriftgröße sind gesetzt; Überschriften- und Tabellen-Semantik fehlen für Screenreader.",
+    plan: "Umstellung der PDF-Erzeugung auf getaggte PDFs (HTML-Rendering über Chromium) ist geplant; Details in der technischen Dokumentation.",
+  },
+  {
+    what: "Datentabellen mit horizontalem Scrollen (z. B. Fristenbuch, Rechnungslisten auf schmalen Bildschirmen)",
+    why: "Breite Tabellen werden nicht umgebrochen, sondern seitlich gescrollt; bei starker Vergrößerung ist Wischen oder Tastaturscrollen nötig (WCAG 1.4.10 Reflow).",
+    plan: "Kartenansicht für schmale Viewports wird schrittweise ergänzt.",
+  },
+  {
+    what: "Einzelne Symbolschaltflächen ohne sichtbare Beschriftung",
+    why: "Wenige Schaltflächen tragen nur ein Symbol; sie sind per aria-label benannt, ein sichtbarer Text fehlt (WCAG 2.5.3 / 3.3.2).",
+    plan: "Sichtbare Beschriftungen bzw. Tooltips werden nachgezogen; Fundstellen aus der axe-Prüfung sind erfasst.",
+  },
+];
+
+export function AccessibilityContent({
+  home,
+  lang = "de",
+  market = "at",
+}: {
+  home: string;
+  lang?: Lang;
+  market?: "at" | "de";
+}) {
+  const t = T;
+  const contactHref = `${home === "/" ? "" : home}/contact`;
+  return (
+    <Shell home={home} lang={lang} title={t.accessibilityTitle} subtitle={t.accessibilitySubtitle}>
+      <p>
+        RCIID — Rocket Chain Investigation &amp; Intelligence Division (Betreiber von Subsumio,
+        siehe Impressum) ist bemüht, das Angebot Subsumio im Einklang mit dem
+        Barrierefreiheitsgesetz (BaFG) und der Richtlinie (EU) 2019/882 barrierefrei zugänglich zu
+        machen. Diese Erklärung gilt für die unten genannten Dienste.
+      </p>
+
+      <H2>1. Geltungsbereich</H2>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>
+          Website <span className="font-medium">subsum.io</span> einschließlich der Marktseiten für
+          Österreich und Deutschland
+        </li>
+        <li>Kanzlei-Dashboard (angemeldeter Bereich unter /dashboard)</li>
+        <li>Mandantenportal (Freigabe- und Dokumentenbereich für Mandant:innen)</li>
+        <li>Mobile Hülle (iOS/Android-App, die das Dashboard als Web-Ansicht lädt)</li>
+      </ul>
+
+      <H2>2. Stand der Vereinbarkeit mit den Anforderungen</H2>
+      <p>
+        Die genannten Dienste sind mit den Web Content Accessibility Guidelines (WCAG) 2.2,
+        Konformitätsstufe AA, bzw. EN 301 549{" "}
+        <span className="font-medium">teilweise vereinbar</span>. Die unter Abschnitt 3 aufgeführten
+        Inhalte sind nicht oder nur eingeschränkt barrierefrei.
+      </p>
+
+      <H2>3. Nicht barrierefreie Inhalte</H2>
+      <ol className="list-decimal space-y-3 pl-5">
+        {ACCESSIBILITY_LIMITATIONS.map((l) => (
+          <li key={l.what}>
+            <span className="font-medium [color:var(--mk-text)]">{l.what}.</span> {l.why}{" "}
+            <span className="[color:var(--mk-text-subtle)]">Geplante Abhilfe: {l.plan}</span>
+          </li>
+        ))}
+      </ol>
+      <p>
+        Nutzer:innen können im Dashboard unter{" "}
+        <span className="font-medium">Einstellungen → Darstellung</span> Schriftgröße, Kontrast,
+        Bewegungsreduktion und Farbschema anpassen; die Einstellungen gelten sofort und werden im
+        Browser gespeichert.
+      </p>
+
+      <H2>4. Erstellung dieser Erklärung</H2>
+      <p>
+        Diese Erklärung wurde am {formatStatementDate(ACCESSIBILITY_STATEMENT_DATE)} erstellt. Die
+        Bewertung beruht auf einer Selbstprüfung des Betreibers:
+      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>
+          Automatisierte axe-core-Prüfung (Regelsätze WCAG 2.0/2.1/2.2 A und AA) über mehr als 70
+          Dashboard-Routen sowie die öffentlichen Seiten, ausgeführt mit Playwright in der
+          Continuous-Integration.
+        </li>
+        <li>Statische Prüfung der Oberfläche mit ESLint (jsx-a11y-Regeln als Fehler).</li>
+        <li>
+          Manuelle Tastaturprüfung (Fokusreihenfolge, Sprunglink, Dialoge, Menüs) und Prüfung mit
+          Screenreader an Stichproben der Kernabläufe (Akte anlegen, Frist erfassen, Rechnung
+          erstellen).
+        </li>
+      </ul>
+
+      <H2>5. Feedback und Kontakt</H2>
+      <p>
+        Wenn Ihnen Mängel beim barrierefreien Zugang zu Subsumio auffallen oder Sie Inhalte in
+        barrierefreier Form benötigen, wenden Sie sich an uns:
+      </p>
+      <p>
+        E-Mail:{" "}
+        <a href={`mailto:${ACCESSIBILITY_FEEDBACK_EMAIL}`} className="brand-text hover:underline">
+          {ACCESSIBILITY_FEEDBACK_EMAIL}
+        </a>
+        <br />
+        Formular:{" "}
+        <Link href={contactHref} className="brand-text hover:underline">
+          Kontaktformular
+        </Link>
+      </p>
+      <p>
+        Bitte nennen Sie die betroffene Seite oder Funktion und die verwendete Hilfstechnologie. Wir
+        antworten innerhalb von zwei Wochen und stellen, wo möglich, eine zugängliche Alternative
+        bereit.
+      </p>
+
+      <H2>6. Durchsetzungsverfahren</H2>
+      {market === "de" ? (
+        <p>
+          Erhalten Sie auf Ihre Meldung keine zufriedenstellende Antwort, können Sie sich an die
+          nach dem Barrierefreiheitsstärkungsgesetz (BFSG) zuständige Marktüberwachungsbehörde Ihres
+          Bundeslandes wenden.{" "}
+          <span className="[color:var(--mk-text-subtle)]">
+            Behördenangabe anwaltlich zu prüfen.
+          </span>
+        </p>
+      ) : (
+        <p>
+          Erhalten Sie auf Ihre Meldung keine zufriedenstellende Antwort, können Sie eine Beschwerde
+          bei der nach dem Barrierefreiheitsgesetz (BaFG) zuständigen Stelle einbringen.{" "}
+          <span className="[color:var(--mk-text-subtle)]">
+            Behördenangabe anwaltlich zu prüfen.
+          </span>
+        </p>
+      )}
+      <LegalLinks home={home} exclude="accessibility" lang={lang} />
+    </Shell>
+  );
+}
+
+function formatStatementDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("de-AT", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 export function PrivacyContent({

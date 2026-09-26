@@ -49,13 +49,8 @@ export async function generateZugferdPdf(
     afRelationship: AFRelationship.Alternative,
   });
 
-  // Set document metadata
-  pdfDoc.setTitle(`Rechnung ${data.invoiceNumber}`);
-  pdfDoc.setSubject("ZUGFeRD Rechnung");
-  pdfDoc.setProducer("Subsumio E-Invoicing");
-  pdfDoc.setCreator("Subsumio");
-  pdfDoc.setCreationDate(new Date());
-  pdfDoc.setModificationDate(new Date());
+  // Metadaten + Barrierefreiheit (Sprache, Titel in der Titelleiste)
+  applyPdfLibAccessibility(pdfDoc, data);
 
   // Mark as PDF/A-3 by adding the necessary metadata
   // Note: Full PDF/A-3 conformance requires XMP metadata with the PDF/A-3 schema.
@@ -76,6 +71,26 @@ export async function generateZugferdPdf(
  * Add PDF/A-3 conformance marker to the PDF catalog.
  * This adds the necessary AF (Associated File) relationship.
  */
+/**
+ * Metadaten + Barrierefreiheits-Grundlagen für pdf-lib-Dokumente (BFSG):
+ * Titel/Betreff/Autor/Erzeuger, Dokumentsprache (`/Lang`) und
+ * `DisplayDocTitle`, damit Viewer den Titel statt des Dateinamens zeigen.
+ * Struktur-Tags (PDF/UA) kann pdf-lib ebenso wenig wie jsPDF schreiben —
+ * siehe docs/BARRIEREFREIHEIT-PDF.md.
+ */
+function applyPdfLibAccessibility(pdfDoc: PDFDocument, data: EInvoiceData): void {
+  pdfDoc.setTitle(`Rechnung ${data.invoiceNumber}`);
+  pdfDoc.setSubject(`ZUGFeRD-Rechnung ${data.invoiceNumber} an ${data.buyer.name}`);
+  pdfDoc.setAuthor(data.seller.name);
+  pdfDoc.setKeywords(["Rechnung", "ZUGFeRD", "Factur-X", data.invoiceNumber]);
+  pdfDoc.setProducer("Subsumio E-Invoicing");
+  pdfDoc.setCreator("Subsumio Kanzleisoftware");
+  pdfDoc.setLanguage(data.seller.country === "DE" ? "de-DE" : "de-AT");
+  pdfDoc.setCreationDate(new Date());
+  pdfDoc.setModificationDate(new Date());
+  pdfDoc.catalog.getOrCreateViewerPreferences().setDisplayDocTitle(true);
+}
+
 function markPdfA3(pdfDoc: PDFDocument): void {
   const catalog = pdfDoc.catalog;
   const context = pdfDoc.context;
@@ -271,6 +286,7 @@ export async function generateZugferdPdfFromScratch(data: EInvoiceData): Promise
     afRelationship: AFRelationship.Alternative,
   });
 
+  applyPdfLibAccessibility(pdfDoc, data);
   markPdfA3(pdfDoc);
 
   const pdfBytes = await pdfDoc.save({ useObjectStreams: false });

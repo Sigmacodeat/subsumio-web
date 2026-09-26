@@ -1,4 +1,13 @@
 import { jsPDF } from "jspdf";
+import {
+  PDF_MIN_FONT_PT,
+  PDF_TOTAL_PAGES_TOKEN,
+  addPdfBookmark,
+  applyPdfAccessibility,
+  currentPageNumber,
+  finalizePdfPageTotals,
+  type PdfLang,
+} from "@/lib/pdf-accessibility";
 
 export interface DraftPdfData {
   title: string;
@@ -18,6 +27,8 @@ export interface DraftPdfData {
   };
   /** Diagonal watermark — defaults to "ENTWURF" (drafts). "MUSTER" for templates. */
   watermark?: string;
+  /** Dokumentsprache für Screenreader (BCP 47). Standard: de-AT. */
+  lang?: PdfLang;
 }
 
 const DRAFT_TYPE_LABELS: Record<string, string> = {
@@ -28,6 +39,14 @@ const DRAFT_TYPE_LABELS: Record<string, string> = {
   klage_entwurf: "Klageentwurf",
   versand_checkliste: "Versand-Checkliste",
 };
+
+/** Markdown-Überschriften (# … ######) als Klartext — Basis der Lesezeichen. */
+function extractHeadings(text: string): string[] {
+  return text
+    .split("\n")
+    .filter((line) => /^#{1,6}\s+/.test(line))
+    .map((line) => stripMarkdown(line));
+}
 
 function stripMarkdown(text: string): string {
   return text
@@ -48,6 +67,19 @@ function stripMarkdown(text: string): string {
 
 export function generateDraftPdf(data: DraftPdfData): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const typeLabel = data.draftType ? (DRAFT_TYPE_LABELS[data.draftType] ?? data.draftType) : "";
+  // Sprache, Metadaten, Titelleiste, Lesezeichen — vor dem ersten text().
+  applyPdfAccessibility(doc, {
+    title: data.title,
+    subject: [typeLabel || "Schriftsatz", data.caseRef ? `Aktenzeichen ${data.caseRef}` : ""]
+      .filter(Boolean)
+      .join(" · "),
+    author: data.kanzlei?.name || "Kanzlei",
+    keywords: [data.watermark || "ENTWURF", typeLabel, data.caseRef ?? ""]
+      .filter(Boolean)
+      .join(", "),
+    lang: data.lang,
+  });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 25;
@@ -110,12 +142,12 @@ export function generateDraftPdf(data: DraftPdfData): jsPDF {
   y += 8;
 
   // --- Titel ---
-  const typeLabel = data.draftType ? (DRAFT_TYPE_LABELS[data.draftType] ?? data.draftType) : "";
   doc.setFontSize(16);
   doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
   doc.setFont("helvetica", "bold");
   const titleLines = doc.splitTextToSize(data.title, maxWidth);
   doc.text(titleLines, margin, y);
+  const bmRoot = addPdfBookmark(doc, data.title, currentPageNumber(doc));
   y += titleLines.length * 7;
 
   if (typeLabel) {
@@ -139,6 +171,9 @@ export function generateDraftPdf(data: DraftPdfData): jsPDF {
   y += 6;
 
   // --- Body ---
+  // Markdown-Überschriften werden vor dem Strippen gemerkt: sie ergeben die
+  // Lesezeichen-Hierarchie (jsPDF kann keine Struktur-Tags schreiben).
+  const headings = new Set(extractHeadings(data.content));
   const plainText = stripMarkdown(data.content);
   doc.setFontSize(11);
   doc.setTextColor(darkText);
@@ -147,32 +182,42 @@ export function generateDraftPdf(data: DraftPdfData): jsPDF {
   const paragraphs = plainText.split(/\n\n+/);
   const lineHeight = 5.5;
 
+  // Fußzeile: Kanzlei — Titel · „Seite X von Y“ (Y via putTotalPages), 9 pt.
+  const drawFooter = () => {
+    doc.setFontSize(PDF_MIN_FONT_PT);
+    doc.setTextColor(lightText);
+    doc.text(`${data.kanzlei?.name || "Kanzlei"} — ${data.title}`, margin, pageH - 10);
+    doc.text(
+      `Seite ${currentPageNumber(doc)} von ${PDF_TOTAL_PAGES_TOKEN}`,
+      pageW - margin,
+      pageH - 10,
+      { align: "right" }
+    );
+  };
+
   for (const para of paragraphs) {
+    const isHeading = headings.has(para.trim());
+    if (isHeading) addPdfBookmark(doc, para.trim(), currentPageNumber(doc), bmRoot);
     const lines = doc.splitTextToSize(para, maxWidth);
     for (const line of lines) {
       if (y > pageH - margin - 15) {
-        // Page break
-        doc.setFontSize(8);
-        doc.setTextColor(lightText);
-        doc.text(`${data.kanzlei?.name || "Kanzlei"} — ${data.title}`, margin, pageH - 10);
-        doc.text(`Seite ${doc.getNumberOfPages()}`, pageW - margin, pageH - 10, { align: "right" });
+        drawFooter();
         doc.addPage();
         y = margin;
         doc.setFontSize(11);
         doc.setTextColor(darkText);
         doc.setFont("helvetica", "normal");
       }
+      if (isHeading) doc.setFont("helvetica", "bold");
       doc.text(line, margin, y);
+      if (isHeading) doc.setFont("helvetica", "normal");
       y += lineHeight;
     }
     y += 2;
   }
 
   // --- Footer auf letzter Seite ---
-  doc.setFontSize(8);
-  doc.setTextColor(lightText);
-  doc.text(`${data.kanzlei?.name || "Kanzlei"} — ${data.title}`, margin, pageH - 10);
-  doc.text(`Seite ${doc.getNumberOfPages()}`, pageW - margin, pageH - 10, { align: "right" });
+  drawFooter();
 
   // --- Entwurf-Wasserzeichen ---
   doc.setTextColor(200, 200, 200);
@@ -183,5 +228,6 @@ export function generateDraftPdf(data: DraftPdfData): jsPDF {
     angle: 45,
   });
 
+  finalizePdfPageTotals(doc);
   return doc;
 }
