@@ -412,6 +412,33 @@ describe("POST /api/pages — server-side write guards", () => {
   });
 });
 
+describe("GET /api/pages — frontmatter filter relay (R11-9)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+  });
+
+  it("relays fm.<key> to the engine and refuses malformed keys", async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        urls.push(url);
+        return Response.json([]);
+      })
+    );
+    const ok = await GET(
+      new NextRequest("http://localhost:3000/api/pages?type=legal_case&fm.portal_enabled=true")
+    );
+    expect(ok.status).toBe(200);
+    expect(new URL(urls[0]).searchParams.get("fm.portal_enabled")).toBe("true");
+    const bad = await GET(
+      new NextRequest("http://localhost:3000/api/pages?type=legal_case&fm.Bad-Key=1")
+    );
+    expect(bad.status).toBe(400);
+  });
+});
+
 describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
   const deadlines = Array.from({ length: 250 }, (_, i) => ({
     slug: `legal/deadlines/d-${i}`,

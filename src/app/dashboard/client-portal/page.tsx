@@ -17,7 +17,8 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { encodeSlugPath, formatDate } from "@/lib/utils";
 import { caseFrontmatter, type DeadlineEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -62,13 +63,19 @@ export default function ClientPortalPage() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const [listCapped, setListCapped] = useState(false);
   async function loadCases() {
     setLoading(true);
     try {
-      // API doesn't support frontmatter-based filtering (portal_enabled),
-      // so we fetch all cases and filter client-side. Limit 200 to cover
-      // most practices. For 500+ cases, a dedicated API endpoint would be needed.
-      const pages = await api.brain.listAllPages({ type: "legal_case", max: 200 });
+      // Only matters with the portal switched on — selected by the engine
+      // (frontmatter filter), so older matters are included; the client-side
+      // check below stays as a guard.
+      const { pages, capped } = await api.brain.listAllPagesDetailed({
+        type: "legal_case",
+        max: CASE_PICKER_MAX,
+        frontmatter: { portal_enabled: "true" },
+      });
+      setListCapped(capped);
       const loaded: ClientCase[] = pages
         .filter((p) => caseFrontmatter(p).portal_enabled === true)
         .map((p) => {
@@ -188,6 +195,7 @@ export default function ClientPortalPage() {
           </Button>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {loadError && (
         <div className="rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">

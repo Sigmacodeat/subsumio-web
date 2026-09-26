@@ -15,7 +15,7 @@ import {
 import { Reply, X, ArrowDown, Quote, MessageSquare, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
@@ -1004,7 +1004,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listAllPages({ type: "legal_case", max: 100 });
+        // Every matter up to the picker bound (was: the 100 most recently edited).
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: CASE_PICKER_MAX });
         if (cancelled) return;
         setCases(
           pages

@@ -16,7 +16,16 @@ vi.mock("@/lib/use-portal-visit-events", () => ({ usePortalVisitEvents: () => un
 vi.mock("next/navigation", () => ({ useSearchParams: () => search }));
 vi.mock("@/lib/api", async (orig) => ({
   ...(await orig<typeof import("@/lib/api")>()),
-  api: { brain: { listAllPages: (...a: unknown[]) => listAllPages(...a) } },
+  CASE_PICKER_MAX: 10_000,
+  api: {
+    brain: {
+      listAllPages: (...a: unknown[]) => listAllPages(...a),
+      listAllPagesDetailed: async (...a: unknown[]) => ({
+        pages: await listAllPages(...a),
+        capped: false,
+      }),
+    },
+  },
 }));
 
 function poaPage(id: string, status: string, extra: Record<string, unknown> = {}) {

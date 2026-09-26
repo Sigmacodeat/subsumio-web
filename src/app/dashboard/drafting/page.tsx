@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
@@ -204,10 +205,15 @@ export default function DraftingPage() {
 
   useUnsavedChanges(f.formState.isDirty);
 
+  const [listCapped, setListCapped] = useState(false);
   useEffect(() => {
     let cancelled = false;
     api.brain
-      .listAllPages({ type: "legal_case", max: 200 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then((pages) => {
         if (!cancelled) setCases(pages);
       })
@@ -390,6 +396,7 @@ export default function DraftingPage() {
           { label: t("drafting.breadcrumb") },
         ]}
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {/* Template selector */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">

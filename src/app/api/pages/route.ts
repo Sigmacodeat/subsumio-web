@@ -57,7 +57,25 @@ const pagesQuerySchema = z.object({
   case_slug: z.string().max(500).optional(),
   case_title: z.string().max(500).optional(),
   case_number: z.string().max(200).optional(),
-});
+})
+  // `fm.<key>=<value>`: engine-side frontmatter equality filter, relayed
+  // as is (keys validated below).
+  .passthrough();
+
+/** Frontmatter filter params of a list query (`fm.<snake_case key>`). */
+function frontmatterFilterParams(
+  query: Record<string, unknown>
+): Array<[string, string]> | "invalid" {
+  const out: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(query)) {
+    if (!key.startsWith("fm.")) continue;
+    if (!/^[a-z][a-z0-9_]{0,62}$/.test(key.slice(3)) || typeof value !== "string") {
+      return "invalid";
+    }
+    out.push([key, value.slice(0, 500)]);
+  }
+  return out.length > 5 ? "invalid" : out;
+}
 
 /** Safety stop for one matter's pages of one type (engine-filtered). */
 const MATTER_SCAN_MAX = 50_000;
@@ -146,6 +164,11 @@ export const GET = createHandler(
       const val = query[key];
       if (val) params.set(key, val);
     }
+    const fmParams = frontmatterFilterParams(query as Record<string, unknown>);
+    if (fmParams === "invalid") {
+      return apiError("invalid_frontmatter_filter", "Ungültiger Filter", 400);
+    }
+    for (const [k, v] of fmParams) params.set(k, v);
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
         headers: ctx.headers,

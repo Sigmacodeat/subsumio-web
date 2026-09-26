@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { csrfFetch } from "@/lib/csrf";
 import type { OutboundEntry } from "@/lib/outbound-register";
 import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "@/lib/outbound-register";
@@ -52,10 +53,15 @@ export default function OutboundRegisterPage() {
     }
   }, [addToast, t]);
 
+  const [listCapped, setListCapped] = useState(false);
   useEffect(() => {
     void load();
     api.brain
-      .listAllPages({ type: "legal_case", max: 2000 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);
@@ -126,6 +132,7 @@ export default function OutboundRegisterPage() {
           </div>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {showCreate && (
         <form
