@@ -95,6 +95,11 @@ import {
   ArchiveSafetyError,
 } from "../core/archive-upload.ts";
 import { inspectUploadBytes, inspectUploadFile } from "../core/upload-security.ts";
+import {
+  PAGE_SEP as CITATION_PAGE_SEP,
+  pageForOffset,
+  parsePageSegments,
+} from "../core/citation-provenance.ts";
 import { storageEncryptionWarning } from "../core/file-encryption.ts";
 import {
   FILE_MIME_TYPES,
@@ -2343,14 +2348,21 @@ export async function patchPageFrontmatterBatch(
  *
  * Passage grounding (Harvey-parity): every citation carries the exact text
  * excerpt the LLM saw, plus a page_number when the source document was a
- * paginated PDF. The page number is derived from the `###***###` separator
- * pattern that extract-document.ts inserts between PDF pages.
+ * paginated PDF. The page number is derived from the `--- Page N ---` markers
+ * and `###***###` separators that extract-document.ts inserts between PDF pages.
+ *
+ * `matchedPassages` are the passages retrieval actually handed to the model
+ * (think's provenance `source_chunks`: slug + excerpt). Only a chunk that
+ * matches such a passage yields a page number; without a match the citation
+ * keeps its title/quote but carries NO page number rather than a wrong one
+ * (the old behaviour derived every page from chunk 0 of the document).
  */
-async function enrichCitations(
+export async function enrichCitations(
   engine: BrainEngine,
   citations: Array<{ page_slug: string; row_num?: number | null }>,
   sourceId: string,
-  allowedSources?: string[]
+  allowedSources?: string[],
+  matchedPassages?: Array<{ slug: string; text: string; chunk_index?: number }>
 ): Promise<
   Array<{
     slug: string;
@@ -2437,26 +2449,26 @@ async function enrichCitations(
     )
     .catch(() => [] as Array<{ page_slug: string; chunk_index: number; chunk_text: string }>);
 
-  // Build a map: slug → best chunk (first chunk = most representative)
-  const chunkMap = new Map<string, { chunk_index: number; chunk_text: string }>();
+  // slug → all chunks in order (chunk 0 is only the QUOTE fallback, never a page source).
+  const chunksBySlug = new Map<string, Array<{ chunk_index: number; chunk_text: string }>>();
   for (const cr of chunkRows) {
-    if (!chunkMap.has(cr.page_slug)) {
-      chunkMap.set(cr.page_slug, { chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
-    }
+    const list = chunksBySlug.get(cr.page_slug) ?? [];
+    list.push({ chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
+    chunksBySlug.set(cr.page_slug, list);
   }
 
   return citations.map((c) => {
     const slug = c.page_slug;
     const rawTitle = titleMap.get(slug) ?? slug.split("/").pop() ?? slug;
     const title = formatCitationTitle(rawTitle, slug);
-    const chunk = chunkMap.get(slug);
+    const chunks = chunksBySlug.get(slug) ?? [];
     const truth = truthMap.get(slug);
     const pageCount = pageCountMap.get(slug);
 
-    // Derive page_number from the chunk_text position within the compiled_truth.
-    // The PDF extractor inserts `###***###` between pages. By counting how many
-    // separators appear before the chunk_text's position in the full document,
-    // we can determine which PDF page this chunk came from.
+    // The chunk retrieval actually matched for this page, if we can identify it.
+    const matched = pickMatchedChunk(chunks, matchedPassages?.filter((p) => p.slug === slug));
+    const chunk = matched ?? chunks[0];
+
     let pageNumber: number | undefined;
     let charOffsetStart: number | undefined;
     let charOffsetEnd: number | undefined;
@@ -2465,20 +2477,19 @@ async function enrichCitations(
     if (chunk) {
       // Use up to 200 chars of the chunk as the passage quote
       quote = chunk.chunk_text.slice(0, 200).trim();
+    }
 
-      if (truth && chunk.chunk_text.length > 20) {
-        const offset = truth.indexOf(chunk.chunk_text.slice(0, 50));
-        if (offset >= 0) {
-          charOffsetStart = offset;
-          charOffsetEnd = offset + chunk.chunk_text.length;
-
-          // Count page separators before this offset to derive page number
-          if (pageCount && pageCount > 1) {
-            const PAGE_SEP = "###***###";
-            const before = truth.slice(0, offset);
-            const sepCount = before.split(PAGE_SEP).length - 1;
-            pageNumber = sepCount + 1; // 1-based page number
-          }
+    // Page + offsets only from the MATCHED chunk located in the compiled text.
+    // Unknown chunk, chunk not found in the text, or a text without page
+    // markers → no page number (a wrong page is worse than none).
+    if (matched && truth) {
+      const offset = locatePassage(truth, matched.chunk_text);
+      if (offset !== undefined) {
+        charOffsetStart = offset;
+        charOffsetEnd = offset + matched.chunk_text.length;
+        const page = pageAtOffset(truth, offset);
+        if (page !== undefined && (pageCount === undefined || page <= pageCount)) {
+          pageNumber = page;
         }
       }
     }
@@ -2495,6 +2506,58 @@ async function enrichCitations(
       ...(charOffsetEnd !== undefined ? { char_offset_end: charOffsetEnd } : {}),
     };
   });
+}
+
+/**
+ * Pick the chunk of a page that retrieval actually surfaced: by chunk_index
+ * when the passage carries one, otherwise by the passage text (the prompt
+ * excerpt is a prefix of the chunk text). Undefined when nothing matches.
+ */
+function pickMatchedChunk(
+  chunks: Array<{ chunk_index: number; chunk_text: string }>,
+  passages: Array<{ text: string; chunk_index?: number }> | undefined
+): { chunk_index: number; chunk_text: string } | undefined {
+  if (!passages || passages.length === 0 || chunks.length === 0) return undefined;
+  for (const passage of passages) {
+    if (typeof passage.chunk_index === "number") {
+      const byIndex = chunks.find((ch) => ch.chunk_index === passage.chunk_index);
+      if (byIndex) return byIndex;
+    }
+    const needle = passage.text.trim().slice(0, 120);
+    if (needle.length < 20) continue;
+    const byText = chunks.find((ch) => ch.chunk_text.includes(needle));
+    if (byText) return byText;
+  }
+  return undefined;
+}
+
+/** First offset of a chunk's text in the compiled document, or undefined. */
+function locatePassage(truth: string, chunkText: string): number | undefined {
+  const trimmed = chunkText.trim();
+  if (trimmed.length < 20) return undefined;
+  for (const needle of [trimmed, trimmed.slice(0, 200), trimmed.slice(0, 50)]) {
+    const idx = truth.indexOf(needle);
+    if (idx >= 0) return idx;
+  }
+  return undefined;
+}
+
+/**
+ * 1-based PDF page for a char offset. Prefers the `--- Page N ---` markers
+ * (sparse pages are skipped in the text layer, so the marker number is the
+ * real page), falls back to counting `###***###` separators for older
+ * extracts without markers. Undefined when the text carries neither.
+ */
+function pageAtOffset(truth: string, offset: number): number | undefined {
+  const segments = parsePageSegments(truth);
+  if (segments.length > 0) {
+    // An offset on a marker line (chunk starts with "--- Page N ---") belongs
+    // to the page that marker opens; past the last page (annotations) → none.
+    const page = pageForOffset(segments, offset) ?? segments.find((s) => s.start >= offset)?.page;
+    return page ?? undefined;
+  }
+  if (!truth.includes(CITATION_PAGE_SEP)) return undefined;
+  return truth.slice(0, offset).split(CITATION_PAGE_SEP).length;
 }
 
 // ── Direct-to-Engine Upload Token ──────────────────────────────────────
@@ -4057,7 +4120,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         engine,
         result.citations ?? [],
         sourceId,
-        readSourcesFor(req)
+        readSourcesFor(req),
+        // Passages the model actually saw (slug + excerpt) → page numbers come
+        // from the matched chunk, never from chunk 0 of the document.
+        result.provenance?.source_chunks
       );
       // Shared law (statutes, decisions in the law-* sources) is public
       // authority, not matter evidence: it stays citable inside a matter.
