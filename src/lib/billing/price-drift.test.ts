@@ -72,7 +72,8 @@ describe("trial length in the copy matches the trial the product grants", () => 
       );
       expect(days, line).toBe(TRIAL_DAYS);
     }
-  });
+    // A grep over all of src/ — slow when the full suite saturates the disk.
+  }, 30_000);
 });
 
 describe("included AI requests are one number everywhere", () => {
