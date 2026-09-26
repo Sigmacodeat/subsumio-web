@@ -30,6 +30,8 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
   const res = await page.context().request.post("/api/auth/signup", {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,
@@ -60,6 +62,11 @@ test.describe("Smoke: Auth Flow", () => {
     await page.locator('input[name="name"]').fill(TEST_USER.name);
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(TEST_USER.password);
+    for (const box of await page
+      .locator('[data-testid="signup-legal"] input[type="checkbox"]')
+      .all()) {
+      await box.check();
+    }
     await page.locator('form button[type="submit"]').click();
     await page.waitForURL("**/dashboard", { timeout: 45_000 });
     expect(page.url()).toContain("/dashboard");

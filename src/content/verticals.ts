@@ -117,12 +117,12 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
       {
         icon: "Brain",
         title: "Widersprüche erkennen",
-        desc: "Die nächtliche Prüfung findet widersprüchliche Aussagen über Schriftsätze, Beilagen und Protokolle hinweg und nennt beide Stellen.",
+        desc: "Nach dem Hochladen werden widersprüchliche Aussagen über Schriftsätze, Beilagen und Protokolle einer Akte hinweg markiert – mit beiden Stellen.",
       },
       {
         icon: "Search",
         title: "Die anwaltliche Prüfung bleibt",
-        desc: "KI-Antworten sind als solche gekennzeichnet. Subsumio bringt nichts ein und versendet nichts von selbst — Freigabe und rechtliche Beurteilung bleiben bei Ihnen.",
+        desc: "KI-Antworten sind als solche gekennzeichnet. Subsumio bringt nichts ein und versendet keine KI-Ergebnisse ohne Freigabe — Freigabe und rechtliche Beurteilung bleiben bei Ihnen.",
       },
       {
         icon: "Layers",
@@ -131,7 +131,7 @@ export const VERTICALS: Record<VerticalSlug, VerticalContent> = {
       },
     ],
     proofTitle: "Offen gemessen",
-    proof: PROOF.recall8.plain,
+    proof: PROOF.search.plain,
     faq: [
       {
         q: "Gibt Subsumio Rechtsberatung?",

@@ -81,7 +81,7 @@ export const HANDBOOK: HandbookGroup[] = [
           },
           {
             title: "Erste Frage stellen",
-            body: "Öffnen Sie den Assistenten und fragen Sie zu einer Akte. Jede Antwort nennt ihre Fundstellen.",
+            body: "Öffnen Sie den Assistenten und fragen Sie zu einer Akte. Antworten nennen ihre Fundstellen; was sich nicht belegen lässt, wird gekennzeichnet.",
           },
         ],
       },
@@ -460,7 +460,7 @@ export const HANDBOOK: HandbookGroup[] = [
       {
         id: "assistent",
         title: "Assistent & Fundstellen",
-        lead: "Fragen zu Akte und Rechtslage — jede Antwort mit überprüften Fundstellen.",
+        lead: "Fragen zu Akte und Rechtslage — Antworten mit Fundstellen, die gegen die Rechtsquellen geprüft werden.",
         where: "Seitenleiste › Assistent · Seitenpanel auf jeder Seite",
         href: "/dashboard/chat",
         replica: "assistant",

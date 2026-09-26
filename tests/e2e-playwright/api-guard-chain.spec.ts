@@ -7,7 +7,15 @@ async function signUpViaApi(
   password: string
 ) {
   const res = await page.context().request.post("/api/auth/signup", {
-    data: { email, name, password, locale: "en", industry: "legal" },
+    data: {
+      acceptTerms: true,
+      acceptDpa: true,
+      email,
+      name,
+      password,
+      locale: "en",
+      industry: "legal",
+    },
   });
   expect(res.status()).toBe(201);
   await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });

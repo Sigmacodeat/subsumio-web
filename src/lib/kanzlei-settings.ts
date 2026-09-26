@@ -6,6 +6,9 @@ export interface KanzleiSettings {
   kanzleiAdresse?: string;
   kanzleiEmail?: string;
   kanzleiTelefon?: string;
+  /** Link to the firm's own privacy policy — shown on the public forms
+   *  (/erstanfrage, /termin, /mandat) next to the Art. 13 DSGVO notice. */
+  datenschutzUrl?: string;
   kammerNummer?: string;
   ustId: string;
   stundensatz: string;

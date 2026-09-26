@@ -3,6 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CalendarCheck, CheckCircle2, Loader2, Scale } from "lucide-react";
+import {
+  PublicFirmGate,
+  PublicFirmHeader,
+  PublicPrivacyNotice,
+  consentText,
+  type PublicFirm,
+} from "@/components/public-forms/public-firm";
 
 /**
  * Öffentliches Erstanfrage-Formular für die Kanzlei — kein Login, keine
@@ -11,9 +18,17 @@ import { CalendarCheck, CheckCircle2, Loader2, Scale } from "lucide-react";
  * eigenständiger Root-Pfad, kein Unterpfad von /at (das ist Subsumios
  * eigene Marketing-Seite) — derselbe Aufbau wie /portal/[token], die
  * andere Mandanten-zu-Kanzlei-Fläche außerhalb des Dashboards.
+ *
+ * Angezeigt nur, wenn die empfangende Kanzlei feststeht und benannt werden
+ * kann (Verantwortliche, Art. 13 DSGVO) — siehe PublicFirmGate.
  */
 export default function ErstanfrageFormPage() {
+  return <PublicFirmGate form="intake">{(firm) => <ErstanfrageForm firm={firm} />}</PublicFirmGate>;
+}
+
+function ErstanfrageForm({ firm }: { firm: PublicFirm }) {
   const [name, setName] = useState("");
+  const [opponent, setOpponent] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [legalArea, setLegalArea] = useState("");
@@ -31,6 +46,10 @@ export default function ErstanfrageFormPage() {
       setError("Bitte Name und Anliegen ausfüllen.");
       return;
     }
+    if (!email.trim() && !phone.trim()) {
+      setError("Bitte geben Sie eine E-Mail-Adresse oder Telefonnummer an.");
+      return;
+    }
     if (!consent) {
       setError("Bitte der Verarbeitung Ihrer Angaben zustimmen.");
       return;
@@ -45,6 +64,7 @@ export default function ErstanfrageFormPage() {
           email: email.trim() || undefined,
           phone: phone.trim() || undefined,
           legalArea: legalArea.trim() || undefined,
+          opponent: opponent.trim() || undefined,
           message: message.trim(),
           consent: true,
           website,
@@ -99,6 +119,8 @@ export default function ErstanfrageFormPage() {
         </p>
       </div>
 
+      <PublicFirmHeader firm={firm} />
+
       <form onSubmit={submit} className="space-y-4">
         {/* Honeypot — für Menschen unsichtbar, Bots füllen jedes Feld aus. */}
         <input
@@ -128,7 +150,7 @@ export default function ErstanfrageFormPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="ea-email" className="text-xs font-medium text-[color:var(--ds-text)]">
-              E-Mail
+              E-Mail (oder Telefon) *
             </label>
             <input
               id="ea-email"
@@ -166,6 +188,19 @@ export default function ErstanfrageFormPage() {
         </div>
 
         <div className="space-y-1.5">
+          <label htmlFor="ea-opponent" className="text-xs font-medium text-[color:var(--ds-text)]">
+            Gegenseite (Person oder Firma, falls bekannt)
+          </label>
+          <input
+            id="ea-opponent"
+            value={opponent}
+            onChange={(e) => setOpponent(e.target.value)}
+            placeholder="Für die vorgeschriebene Kollisionsprüfung"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div className="space-y-1.5">
           <label htmlFor="ea-message" className="text-xs font-medium text-[color:var(--ds-text)]">
             Ihr Anliegen *
           </label>
@@ -186,9 +221,10 @@ export default function ErstanfrageFormPage() {
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-0.5"
           />
-          Ich stimme zu, dass meine Angaben zur Bearbeitung dieser Anfrage verarbeitet werden. Eine
-          Kollisionsprüfung nach § 10 RAO erfolgt vor jeder weiteren Kontaktaufnahme.
+          {consentText(firm)}
         </label>
+
+        <PublicPrivacyNotice firm={firm} purpose="intake" />
 
         {error && (
           <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">

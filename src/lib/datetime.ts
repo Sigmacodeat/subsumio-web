@@ -120,3 +120,25 @@ export function addDaysToIsoDate(dateIso: string, days: number): string {
 
 /** Alias kept for callers that use the older name. */
 export const addDaysToDateString = addDaysToIsoDate;
+
+/** Clock time ("14:30") of an instant in the firm's timezone — public booking
+ *  slots are the firm's wall-clock times, whatever the visitor's timezone. */
+export function formatFirmTime(iso: string, timeZone: string = FIRM_TIMEZONE): string {
+  return new Date(iso).toLocaleTimeString("de-AT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  });
+}
+
+/** Long date label ("Sonntag, 27. September 2026") of a firm calendar day. */
+export function formatFirmDateLabel(dateIso: string, timeZone: string = FIRM_TIMEZONE): string {
+  // Noon UTC stays on the same calendar day in every European timezone.
+  return new Date(`${dateIso.slice(0, 10)}T12:00:00.000Z`).toLocaleDateString("de-AT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone,
+  });
+}

@@ -19,6 +19,8 @@ export const TWO_FACTOR_SETUP_PAGE = "/dashboard/settings/security";
  *  - POST /api/auth/2fa/verify  — confirm the code; re-issues the session
  *  - POST /api/2fa/qrcode       — render the enrolment QR code
  *  - POST /api/auth/logout      — always possible
+ *  - POST /api/auth/legal-acceptance — the blocking contract dialog also
+ *    covers the setup page, so it must be answerable there
  */
 const ALLOWED: ReadonlyArray<readonly [path: string, methods: readonly string[]]> = [
   ["/api/auth/me", ["GET", "HEAD"]],
@@ -26,6 +28,7 @@ const ALLOWED: ReadonlyArray<readonly [path: string, methods: readonly string[]]
   ["/api/auth/2fa/verify", ["POST"]],
   ["/api/2fa/qrcode", ["POST"]],
   ["/api/auth/logout", ["POST"]],
+  ["/api/auth/legal-acceptance", ["POST"]],
 ];
 
 /**

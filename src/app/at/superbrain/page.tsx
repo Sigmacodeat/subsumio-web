@@ -13,7 +13,7 @@ import { keywordsFor } from "@/lib/seo-keywords";
 export const metadata: Metadata = {
   title: "SuperBrain – das Gedächtnis Ihrer Kanzlei | Subsumio",
   description:
-    "Das Subsumio SuperBrain prüft jede Nacht die neuen Dokumente Ihrer Kanzlei. Am Morgen sehen Sie neue Widersprüche, anstehende Fristen und fehlende Unterlagen – mit Fundstellen. EU-Hosting, österreichisches Recht aus dem RIS.",
+    "Das Subsumio SuperBrain führt Ihre Dokumente zu Kanzleiwissen zusammen: Widerspruchsprüfung nach dem Hochladen, Judikatur-Wächter jede Nacht, Akten-Scan auf Abruf mit Kostenvorschau – Antworten mit Fundstellen. EU-Hosting, österreichisches Recht aus dem RIS.",
   keywords: keywordsFor("superbrain"),
   alternates: {
     canonical: "/at/superbrain",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SuperBrain – das Gedächtnis Ihrer Kanzlei",
     description:
-      "Nächtliche Prüfung Ihrer Akten in fünf Schritten: Widersprüche, Fristen und fehlende Unterlagen liegen am Morgen in Ihrer Übersicht.",
+      "Widerspruchsprüfung nach dem Hochladen, Judikatur-Wächter jede Nacht, Akten-Scan auf Abruf – mit Fundstellen.",
     url: "/at/superbrain",
     type: "website",
     siteName: "Subsumio",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SuperBrain – das Gedächtnis Ihrer Kanzlei",
     description:
-      "Nächtliche Prüfung Ihrer Akten in fünf Schritten, Antworten mit Fundstellen, EU-Hosting.",
+      "Widerspruchsprüfung, Judikatur-Wächter und Antworten mit Fundstellen, EU-Hosting.",
   },
 };
 

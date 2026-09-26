@@ -69,6 +69,8 @@ const ENABLED_SETTINGS = {
     bookingStart: "09:00",
     bookingEnd: "10:00",
     kanzleiEmail: "k@k.at",
+    kanzleiName: "Kanzlei Muster",
+    kanzleiAdresse: "Musterweg 1, 1010 Wien",
   },
 };
 
@@ -422,5 +424,63 @@ describe("POST /api/booking/public", () => {
       }) as unknown as NextRequest
     );
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/booking/public — Empfänger und Kontakt (R2-3/R2-4)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const post = (body: unknown) =>
+    POST(
+      new Request("http://localhost/api/booking/public", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }) as unknown as NextRequest
+    );
+  const body = {
+    date: futureDate(),
+    start: `${futureDate()}T07:00:00.000Z`,
+    name: "Max Muster",
+    email: "max@example.com",
+    matter: "Erstberatung",
+    consent: true,
+  };
+
+  test("rejects a booking without e-mail and phone", async () => {
+    vi.stubEnv("SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID", "brain-at");
+    const res = await post({ ...body, email: "", phone: "" });
+    expect(res.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("never falls back to the WhatsApp default firm", async () => {
+    vi.stubEnv("SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID", "");
+    vi.stubEnv("SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID", "");
+    vi.stubEnv("WHATSAPP_DEFAULT_BRAIN_ID", "brain-whatsapp");
+    const res = await post(body);
+    expect(res.status).toBe(503);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("503 when the firm cannot be named in its settings", async () => {
+    vi.stubEnv("SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID", "brain-at");
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({ frontmatter: { bookingEnabled: true, kanzleiEmail: "k@k.at" } }),
+        {
+          status: 200,
+        }
+      )
+    );
+    const res = await post(body);
+    expect(res.status).toBe(503);
+    // Only the settings read — no booking page was written.
+    expect(
+      mockFetch.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "POST")
+    ).toBe(false);
   });
 });

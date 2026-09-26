@@ -182,6 +182,21 @@ export default function KanzleiSettingsPage() {
               onChange={(v) => update("website", v)}
             />
           </div>
+          <div className="sm:col-span-2">
+            <Field
+              id="k-privacy-url"
+              label={L(
+                "Datenschutzerklärung der Kanzlei (Webadresse)",
+                "Firm privacy policy (web address)"
+              )}
+              hint={L(
+                "Wird auf den öffentlichen Formularen (Erstanfrage, Terminbuchung) neben dem Datenschutzhinweis verlinkt. Die Formulare erscheinen nur, wenn Kanzleiname, Anschrift und E-Mail hinterlegt sind.",
+                "Linked on the public forms (enquiry, booking) next to the privacy notice. The forms are only offered when firm name, address and e-mail are set."
+              )}
+              value={settings.datenschutzUrl ?? ""}
+              onChange={(v) => update("datenschutzUrl", v.trim())}
+            />
+          </div>
           <Field
             id="k-aktenzeichen-prefix"
             label={L("Aktenzeichen-Kürzel (optional)", "Case-number prefix (optional)")}

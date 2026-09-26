@@ -34,7 +34,15 @@ export async function signUpLegalUser(
 ): Promise<{ email: string; csrf: string }> {
   const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@subsumio.local`;
   const res = await page.context().request.post("/api/auth/signup", {
-    data: { email, name: "E2E Anwalt", password, locale: "de", industry: "legal" },
+    data: {
+      acceptTerms: true,
+      acceptDpa: true,
+      email,
+      name: "E2E Anwalt",
+      password,
+      locale: "de",
+      industry: "legal",
+    },
   });
   expect(res.status()).toBe(201);
   await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });

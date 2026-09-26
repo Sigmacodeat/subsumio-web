@@ -200,7 +200,7 @@ export function knowledgeBase(): KnowledgeChunk[] {
       id: "proof-recall",
       title: "Messung der Suchqualität",
       url: "/at/benchmark-methodology",
-      text: PROOF.recall8.plain,
+      text: PROOF.search.plain,
     },
     ...SALES_KNOWLEDGE,
   ];

@@ -122,7 +122,8 @@ export default function ContactPage() {
                     firm: get("firm"),
                     message: get("message"),
                     website: get("website"),
-                    consent: true,
+                    // The visitor's own tick — never set by the page itself.
+                    consent: data.get("consent") === "on",
                     page: window.location.pathname,
                   }),
                 }).catch(() => null);
@@ -172,6 +173,23 @@ export default function ContactPage() {
                 aria-hidden="true"
                 className="absolute h-0 w-0 opacity-0"
               />
+              <label className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
+                <input
+                  name="consent"
+                  type="checkbox"
+                  required
+                  className="mt-1 h-4 w-4 shrink-0"
+                  data-testid="contact-consent"
+                />
+                <span>
+                  Ich möchte zu dieser Anfrage kontaktiert werden; meine Angaben dürfen dafür
+                  verarbeitet werden. Näheres in der{" "}
+                  <Link href={p("/privacy")} className="underline underline-offset-2">
+                    Datenschutzerklärung
+                  </Link>
+                  .
+                </span>
+              </label>
               {status === "sent" && (
                 <p role="status" className="text-sm [color:var(--mk-text)]">
                   Danke! Ihre Nachricht ist bei uns. Wir antworten binnen eines Werktags.

@@ -43,6 +43,13 @@ vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
+const FIRM = { name: "Kanzlei Muster", address: "Musterweg 1, 1010 Wien", email: "k@k.at" };
+const mockLoadFirm = vi.fn(async (_brainId: string): Promise<typeof FIRM | null> => FIRM);
+vi.mock("@/lib/public-firm", async (orig) => ({
+  ...(await orig<typeof import("@/lib/public-firm")>()),
+  loadPublicFirm: (brainId: string) => mockLoadFirm(brainId),
+}));
+
 import { POST } from "./route";
 
 const validBody = {
@@ -88,6 +95,29 @@ describe("POST /api/intake/public", () => {
     delete process.env.WHATSAPP_DEFAULT_BRAIN_ID;
     const res = await post(validBody);
     expect(res.status).toBe(503);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("never falls back to the WhatsApp default firm", async () => {
+    vi.stubEnv("SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID", "");
+    vi.stubEnv("WHATSAPP_DEFAULT_BRAIN_ID", "brain-whatsapp");
+    const res = await post(validBody);
+    expect(res.status).toBe(503);
+    expect(mockLoadFirm).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("returns 503 when the firm cannot be named (no name/address/e-mail)", async () => {
+    mockLoadFirm.mockResolvedValueOnce(null);
+    const res = await post(validBody);
+    expect(res.status).toBe(503);
+    expect(mockLoadFirm).toHaveBeenCalledWith("brain-at");
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("rejects a request without any contact channel", async () => {
+    const res = await post({ ...validBody, email: "", phone: "" });
+    expect(res.status).toBe(400);
     expect(mockFetch).not.toHaveBeenCalled();
   });
 

@@ -2198,14 +2198,14 @@ export const D = {
   "settings.usage_desc": { de: "Aktueller Monat", en: "Current month" },
   "settings.usage_pages": { de: "Seiten", en: "Pages" },
   "settings.usage_queries": { de: "Anfragen", en: "Queries" },
-  "settings.referral": { de: "Empfehlen & sparen", en: "Refer & save" },
+  "settings.referral": { de: "Empfehlen", en: "Refer" },
   "settings.referral_desc": {
-    de: "Sie erhalten einen Monat gratis pro geworbener Kanzlei — die geworbene Kanzlei ebenfalls.",
-    en: "You get 1 month free per referred customer — so do they.",
+    de: "Teilen Sie Ihren persönlichen Link mit Kolleginnen und Kollegen.",
+    en: "Share your personal link with colleagues.",
   },
   "settings.referral_info": {
-    de: "12 Empfehlungen = ein Gratisjahr. Keine Obergrenze.",
-    en: "12 referrals = one free year. No limit.",
+    de: "Kanzleien, die sich über Ihren Link registrieren, werden Ihnen zugeordnet. Eine Gutschrift ist damit derzeit nicht verbunden.",
+    en: "Firms that sign up through your link are attributed to you. No credit is attached to it at present.",
   },
   "settings.referral_so_far": { de: "Bisher geworben:", en: "Referred so far:" },
   "settings.referral_loading": {

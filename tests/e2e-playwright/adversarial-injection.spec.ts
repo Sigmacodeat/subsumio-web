@@ -32,6 +32,8 @@ async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
   const res = await page.context().request.post("/api/auth/signup", {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,

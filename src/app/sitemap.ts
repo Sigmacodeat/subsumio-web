@@ -34,8 +34,9 @@ function langAlts(path: string): Record<string, string> {
   };
 }
 
+// Static pages carry no lastModified: "now" on every fetch said nothing.
+// Blog posts keep their publication date.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
 
   for (const page of PAGES) {
@@ -43,7 +44,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const path = `/${market}${page}`;
       entries.push({
         url: `${BASE}${path}`,
-        lastModified: now,
         changeFrequency: "weekly",
         priority: page === "" ? 1 : 0.7,
         alternates: { languages: langAlts(page) },
@@ -54,7 +54,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const url = `${BASE}/at${page}`;
     entries.push({
       url,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.7,
       alternates: { languages: { "de-AT": url, "x-default": url } },
@@ -64,7 +63,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Public live demo — standalone URL (not under /at), the conversion entry.
   entries.push({
     url: `${BASE}/demo`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.9,
     alternates: {
@@ -76,19 +74,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   });
 
-  // Legal pages — canonical in both markets (auth pages remain noindex).
-  for (const page of ["/privacy", "/imprint", "/terms", "/dpa"]) {
-    for (const market of ["at", "de"] as const) {
-      const url = `${BASE}/${market}${page}`;
-      entries.push({
-        url,
-        lastModified: now,
-        changeFrequency: "monthly",
-        priority: 0.3,
-        alternates: { languages: langAlts(page) },
-      });
-    }
-  }
+  // Legal pages (/privacy, /imprint, /terms, /dpa) are noindex and linked from
+  // every page footer — not listed here, a sitemap entry would contradict the
+  // noindex.
 
   // Blog posts — Austrian-law content, AT market only.
   for (const post of getAllPosts()) {
@@ -109,7 +97,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ] as const) {
     entries.push({
       url: `${BASE}/${market}/cities`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.5,
       alternates: { languages: langAlts("/cities") },
@@ -118,7 +105,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const url = `${BASE}/${market}/cities/${slug}`;
       entries.push({
         url,
-        lastModified: now,
         changeFrequency: "monthly",
         priority: 0.6,
         alternates:

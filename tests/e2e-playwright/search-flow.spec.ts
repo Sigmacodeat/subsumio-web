@@ -19,6 +19,11 @@ test.describe("Search Flow", () => {
     await page.locator('input[name="name"]').fill(TEST_USER.name);
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(TEST_USER.password);
+    for (const box of await page
+      .locator('[data-testid="signup-legal"] input[type="checkbox"]')
+      .all()) {
+      await box.check();
+    }
     await page.locator('form button[type="submit"]').click();
     await page.waitForFunction(() => window.location.pathname === "/dashboard", {
       timeout: 45_000,

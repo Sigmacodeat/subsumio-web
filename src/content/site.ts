@@ -7,7 +7,7 @@
 // To reactivate a market: restore routes and content from the locale archive
 // tag documented under docs/archive/.
 
-import { PROOF } from "./proof-points";
+import { CREDIT_VALIDITY_MONTHS, TRIAL_DAYS } from "@/lib/billing/credit-constants";
 
 export const CONTENT_LANGS = ["de", "at", "ch", "en"] as const;
 export type Lang = (typeof CONTENT_LANGS)[number];
@@ -222,7 +222,7 @@ export const NAV: NavContent = {
       featuredContent: {
         title: "SuperBrain 2.0",
         description:
-          "Wie Subsumio Kanzleiwissen in fünf Prüfschritten aufbaut und über Nacht auf Widersprüche prüft",
+          "Wie Subsumio Kanzleiwissen in fünf Prüfschritten aufbaut und auf Widersprüche prüft",
         href: "/superbrain",
         badge: "AI",
         icon: "Brain",
@@ -498,7 +498,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
     },
     {
       q: "Gibt es versteckte Gebühren?",
-      a: "Nein. Mehrverbrauch entsteht nur über KI-Guthaben, das Sie selbst dazukaufen; die Preise stehen oben auf dieser Seite und unter „Plan & Abrechnung“. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      a: `Nein. Mehrverbrauch entsteht nur über KI-Guthaben, das Sie selbst dazukaufen; die Preise stehen oben auf dieser Seite und unter „Plan & Abrechnung“. Zugekauftes Guthaben ist ${CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig; nicht verbrauchtes Guthaben verfällt danach. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.`,
     },
   ],
 };
@@ -506,7 +506,7 @@ export const PRICING_FAQ: { title: string; items: { q: string; a: string }[] } =
 export const LANDING = {
   badge: "KI-Kanzleisoftware & Anwaltssoftware für Österreich",
   heroBadges: [
-    "Jede Antwort mit geprüfter Fundstelle",
+    "Antworten mit Fundstelle, Unbelegtes gekennzeichnet",
     "Verschwiegenheit nach § 9 Abs. 2 RAO im Systemdesign",
     "EU-Cloud oder On-Premise — Ihre Wahl",
   ],
@@ -583,8 +583,8 @@ export const LANDING = {
   },
   stats: [
     {
-      value: PROOF.recall8.value,
-      label: `Trefferquote beim Wiederfinden der richtigen Stelle (${PROOF.recall8.benchmark}, ${PROOF.recall8.sampleSize} Fragen)`,
+      value: "§",
+      label: "Gesetzesstellen mit Paragraf und Quelle zitiert — am Originaltext nachprüfbar",
     },
     {
       value: "AT",
@@ -595,7 +595,7 @@ export const LANDING = {
       label: "Training auf Ihren Mandantendaten — vertraglich ausgeschlossen",
     },
     {
-      value: "14",
+      value: String(TRIAL_DAYS),
       label: "Tage gratis testen",
     },
   ],
@@ -803,7 +803,7 @@ export const UI_STRINGS: Record<string, string> = {
   seePricingPlans: "Preise ansehen",
   faqSuperbrainTitle: "Häufig gestellte Fragen",
   faqSuperbrainSub:
-    "Alles, was Sie über das SuperBrain, die nächtliche Konsolidierung und die 5-Ebenen-Architektur wissen müssen.",
+    "Alles, was Sie über das SuperBrain, die automatischen Prüfungen und die fünf Prüfschritte wissen müssen.",
   youLabel: "Sie",
   sourcesLabel: "Quellen:",
   thinkingLabel: "Durchsuche Wissensgraph…",
@@ -842,8 +842,7 @@ export const UI_STRINGS: Record<string, string> = {
   verticalSeeLive: "Live ansehen",
   verticalTrialNote: "30 Tage kostenlos testen · Keine Kreditkarte erforderlich",
   verticalTrustNote: "EU-Cloud · On-Premise (Enterprise) · DSGVO · § 9 Abs. 2 RAO",
-  verticalFeaturesSub:
-    "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort mit Fundstelle.",
+  verticalFeaturesSub: "Von Fristenkontrolle bis Widerspruchserkennung — Antworten mit Fundstelle.",
   subpagesConfirmationNote: "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte.",
   typingLabel: "tippt…",
   todayLabel: "Heute",
@@ -980,7 +979,7 @@ export const SCROLL_STORY = {
     },
     {
       key: "fundstelle",
-      title: "Jede Aussage hat eine Fundstelle",
+      title: "Fundstelle oder Kennzeichnung",
       text: "Gesetz und Aktenseite werden zitiert und gegen den Rechtskorpus geprüft. Was nicht belegt ist, wird als solches markiert.",
     },
     {

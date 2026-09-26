@@ -21,6 +21,7 @@ import { apiSuccess } from "@/lib/api-response";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { availableSlots, resolvePublicBookingBrainId } from "@/lib/public-booking";
+import { loadPublicFirm } from "@/lib/public-firm";
 import { checkBookingConflict, createBookingFrontmatter } from "@/lib/online-booking";
 import { sendMail } from "@/lib/mail";
 import { logger } from "@/lib/logger";
@@ -69,24 +70,30 @@ async function isReleasedBooking(brainId: string, slug: string): Promise<boolean
 
 const querySchema = z.object({ date: z.string().regex(DATE_RE, "invalid_date") });
 
-const bodySchema = z.object({
-  date: z.string().regex(DATE_RE, "invalid_date"),
-  /** ISO-Startzeit des Slots — wird serverseitig gegen frische Slots geprüft. */
-  start: z.string().min(10).max(40),
-  name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(200).optional().or(z.literal("")),
-  phone: z
-    .string()
-    .trim()
-    .max(40)
-    .regex(/^[+\d\s()/-]*$/, "invalid_phone")
-    .optional()
-    .or(z.literal("")),
-  matter: z.string().trim().min(1).max(300),
-  legalArea: z.string().trim().max(80).optional(),
-  consent: z.literal(true),
-  website: z.string().max(0).optional(),
-});
+const bodySchema = z
+  .object({
+    date: z.string().regex(DATE_RE, "invalid_date"),
+    /** ISO-Startzeit des Slots — wird serverseitig gegen frische Slots geprüft. */
+    start: z.string().min(10).max(40),
+    name: z.string().trim().min(1).max(200),
+    email: z.string().trim().email().max(200).optional().or(z.literal("")),
+    phone: z
+      .string()
+      .trim()
+      .max(40)
+      .regex(/^[+\d\s()/-]*$/, "invalid_phone")
+      .optional()
+      .or(z.literal("")),
+    matter: z.string().trim().min(1).max(300),
+    legalArea: z.string().trim().max(80).optional(),
+    consent: z.literal(true),
+    website: z.string().max(0).optional(),
+  })
+  // Ohne Kontaktweg kann die Kanzlei den Termin weder bestätigen noch absagen.
+  .refine((b) => Boolean(b.email) || Boolean(b.phone), {
+    message: "contact_required",
+    path: ["email"],
+  });
 
 export const GET = createPublicHandler(
   {
@@ -128,6 +135,11 @@ export const POST = createPublicHandler(
     const brainId = resolvePublicBookingBrainId();
     if (!brainId) {
       log.error("SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID not configured");
+      return apiError("not_configured", "Terminbuchung derzeit nicht verfügbar.", 503);
+    }
+    // Die Kanzlei muss als Verantwortliche benennbar sein (Art. 13 DSGVO) —
+    // dieselbe Bedingung, unter der /termin das Formular anzeigt.
+    if (!(await loadPublicFirm(brainId))) {
       return apiError("not_configured", "Terminbuchung derzeit nicht verfügbar.", 503);
     }
 

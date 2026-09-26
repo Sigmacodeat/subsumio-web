@@ -113,7 +113,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     proofTitle: "Offen gemessen",
-    proof: PROOF.recall8.plain,
+    proof: PROOF.search.plain,
     faq: [
       {
         q: "Wie lange dauert die Einführung?",
@@ -191,7 +191,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     proofTitle: "Dieselbe Suche wie im Kanzlei-Tarif",
-    proof: `Solo nutzt dieselbe Suche wie der Kanzlei-Tarif. ${PROOF.recall8.plain}`,
+    proof: `Solo nutzt dieselbe Suche wie der Kanzlei-Tarif. ${PROOF.search.plain}`,
     faq: [
       {
         q: "Muss ich technisch versiert sein?",
@@ -268,7 +268,7 @@ export const SOLUTIONS: Record<SolutionSlug, SolutionContent> = {
       },
     ],
     proofTitle: "Offen gemessen",
-    proof: PROOF.recall8.plain,
+    proof: PROOF.search.plain,
     faq: [
       {
         q: "Wie kommen unsere Dokumente in Subsumio?",

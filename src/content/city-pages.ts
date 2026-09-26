@@ -29,7 +29,7 @@ const _cities: Record<string, CityPageContent> = {
       "KI-Kanzleisoftware für Anwälte in Wien: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. Hosting in Wien.",
     h1: "KI-Kanzleisoftware für Wiener Anwaltskanzleien",
     intro:
-      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und dem übrigen Bundesrecht aus dem RIS. Jede Antwort nennt ihre Fundstelle; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
+      "Subsumio ist die KI-Kanzleisoftware für Rechtsanwältinnen und Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und dem übrigen Bundesrecht aus dem RIS. Antworten nennen ihre Fundstellen; nicht belegbare Aussagen werden gekennzeichnet, die anwaltliche Prüfung bleibt bei Ihnen.",
     jurisdictionNote:
       "Subsumio berechnet Fristen nach §§ 125, 126 ZPO, berücksichtigt die Fristenhemmung nach § 222 ZPO und alle gesetzlichen Feiertage. Das OLG Wien ist für Wien, Niederösterreich und das Burgenland zuständig. Rechtsgebiete: Zivilrecht (ABGB), Zivilprozessrecht (ZPO), Exekutionsrecht (EO) und Verwaltungsrecht.",
     courts: [

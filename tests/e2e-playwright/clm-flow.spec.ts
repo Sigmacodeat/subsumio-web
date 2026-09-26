@@ -11,6 +11,8 @@ async function signUpViaApi(page: Page) {
   const email = `clm-${Date.now()}-${++testCounter}@subsumio.local`;
   const signup = await page.context().request.post("/api/auth/signup", {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: "CLM Tester",
       password: "CLMTest1234!",
