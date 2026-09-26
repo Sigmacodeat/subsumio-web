@@ -13,6 +13,7 @@ import {
 import { env } from "@/lib/env";
 import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createRetentionNotification } from "@/lib/comments";
+import { classifyRetention, isRetentionCandidate, yearsSinceClosure } from "@/lib/legal/retention";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -44,22 +45,10 @@ interface RetentionItem {
   action: "review" | "delete";
 }
 
-const REVIEW_YEARS = 7; // § 132 BAO
-const DELETE_YEARS = 10;
-
 async function fetchClosedCases(brainId: string): Promise<EnginePage[]> {
   const pages = await fetchPages(brainId, "legal_case", 500);
-  return pages.filter((p) => {
-    const fm = p.frontmatter ?? {};
-    return fm.closed_at || fm.status === "closed";
-  });
-}
-
-function classifyRetention(closedAt: string): RetentionItem["action"] | null {
-  const years = (Date.now() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365);
-  if (years >= DELETE_YEARS) return "delete";
-  if (years >= REVIEW_YEARS) return "review";
-  return null;
+  // Closed matters; Legal Hold is excluded from retention/deletion.
+  return pages.filter((p) => isRetentionCandidate(p.frontmatter));
 }
 
 const alreadyNotifiedToday = createDailyDedup("subsumio_retention_notify_log");
@@ -84,16 +73,11 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const items: RetentionItem[] = [];
     for (const page of closedCases) {
       const fm = page.frontmatter ?? {};
-      // Legal Hold: skip cases under legal hold from retention/deletion
-      if (fm.legal_hold === true) continue;
       const closedAt = String(fm.closed_at ?? "");
       if (!closedAt) continue;
       const action = classifyRetention(closedAt);
       if (!action) continue;
-      const years =
-        Math.round(
-          ((Date.now() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365)) * 10
-        ) / 10;
+      const years = Math.round(yearsSinceClosure(closedAt) * 10) / 10;
       items.push({
         slug: page.slug,
         title: page.title,

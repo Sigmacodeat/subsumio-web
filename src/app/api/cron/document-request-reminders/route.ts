@@ -14,6 +14,7 @@ import { createDocumentRequestNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { issueRegisteredPortalLink } from "@/lib/portal-link-issue";
+import { reminderDecision } from "@/lib/legal/document-request-reminder";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,6 @@ interface DocumentRequestFm {
   portal_url?: string;
   message_draft?: string;
 }
-
-const REMINDER_INTERVAL_DAYS = 7;
-const MAX_REMINDERS = 3;
 
 export const GET = createCronHandler(async (_req) => {
   const now = new Date();
@@ -75,46 +73,15 @@ export const GET = createCronHandler(async (_req) => {
 
     for (const page of pendingRequests) {
       const fm = page.frontmatter as unknown as DocumentRequestFm;
-      const sentAt = fm.sent_at ? new Date(fm.sent_at) : null;
-      if (!sentAt) {
+      const decision = reminderDecision(fm, now);
+      if (!decision.shouldRemind) {
         report.skipped++;
-        report.details.push({ slug: page.slug, reason: "no_sent_at" });
+        report.details.push({ slug: page.slug, reason: decision.reason });
         continue;
       }
-
-      const daysSinceSent = Math.floor((now.getTime() - sentAt.getTime()) / (1000 * 60 * 60 * 24));
-
-      const lastReminder = fm.reminder_sent_at ? new Date(fm.reminder_sent_at) : null;
+      const { daysSinceSent } = decision;
       const reminderCount = fm.reminder_count ?? 0;
-
-      if (reminderCount >= MAX_REMINDERS) {
-        report.skipped++;
-        report.details.push({ slug: page.slug, reason: "max_reminders_reached" });
-        continue;
-      }
-
-      if (lastReminder) {
-        const daysSinceReminder = Math.floor(
-          (now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (daysSinceReminder < REMINDER_INTERVAL_DAYS) {
-          report.skipped++;
-          report.details.push({ slug: page.slug, reason: "too_soon_after_last_reminder" });
-          continue;
-        }
-      } else if (daysSinceSent < REMINDER_INTERVAL_DAYS) {
-        report.skipped++;
-        report.details.push({ slug: page.slug, reason: "too_soon_after_sent" });
-        continue;
-      }
-
       const openItems = (fm.items ?? []).filter((item) => !item.received_document_slug);
-
-      if (openItems.length === 0) {
-        report.skipped++;
-        report.details.push({ slug: page.slug, reason: "no_open_items" });
-        continue;
-      }
 
       try {
         const headers = engineHeadersForBrain(brainId);

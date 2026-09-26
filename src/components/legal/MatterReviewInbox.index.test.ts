@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, test, expect } from "vitest";
+import { openSuggestions } from "@/lib/suggestion-index";
 
 /**
  * Regression test for the index-shift bug in MatterReviewInbox.
@@ -10,8 +11,8 @@ import { describe, test, expect } from "vitest";
  * the index within the FILTERED array, not the ORIGINAL array. When acceptSuggestedDeadline
  * used `matter.suggestedDeadlines[item.index]`, it accessed the wrong element.
  *
- * This test verifies that the index mapping logic produces original-array indices
- * even when some elements are already confirmed.
+ * This test runs the mapping the inbox uses (openSuggestions) and verifies it
+ * produces original-array indices even when some elements are already confirmed.
  */
 
 interface SuggestedDeadline {
@@ -59,16 +60,10 @@ describe("MatterReviewInbox index mapping", () => {
       },
     ];
 
-    // Replicate the fixed logic: map to include originalIndex, then filter, then map
-    const items = suggestedDeadlines
-      .map((deadline, originalIndex) => ({ deadline, originalIndex }))
-      .filter(({ deadline }) => !deadline.confirmed)
-      .slice(0, 3)
-      .map(({ deadline, originalIndex }) => ({
-        id: `deadline-${originalIndex}-${deadline.title}`,
-        index: originalIndex,
-        title: deadline.title,
-      }));
+    const items = openSuggestions(suggestedDeadlines).map(({ item, index }) => ({
+      index,
+      title: item.title,
+    }));
 
     expect(items).toHaveLength(2);
     // B is at original index 1, C is at original index 2
@@ -89,15 +84,10 @@ describe("MatterReviewInbox index mapping", () => {
       { name: "Lisa", role: "Gegner", source: "KI", confirmed: false },
     ];
 
-    const items = suggestedParties
-      .map((party, originalIndex) => ({ party, originalIndex }))
-      .filter(({ party }) => !party.confirmed)
-      .slice(0, 3)
-      .map(({ party, originalIndex }) => ({
-        id: `party-${originalIndex}-${party.name}`,
-        index: originalIndex,
-        name: party.name,
-      }));
+    const items = openSuggestions(suggestedParties).map(({ item, index }) => ({
+      index,
+      name: item.name,
+    }));
 
     expect(items).toHaveLength(2);
     expect(items[0].index).toBe(1);
@@ -138,18 +128,19 @@ describe("MatterReviewInbox index mapping", () => {
       },
     ];
 
-    const items = suggestedDeadlines
-      .map((deadline, originalIndex) => ({ deadline, originalIndex }))
-      .filter(({ deadline }) => !deadline.confirmed)
-      .slice(0, 3)
-      .map(({ deadline, originalIndex }) => ({
-        index: originalIndex,
-        title: deadline.title,
-      }));
+    const items = openSuggestions(suggestedDeadlines).map(({ item, index }) => ({
+      index,
+      title: item.title,
+    }));
 
     expect(items).toHaveLength(1);
     expect(items[0].index).toBe(2);
     expect(items[0].title).toBe("C");
     expect(suggestedDeadlines[items[0].index].title).toBe("C");
+  });
+
+  test("at most three open suggestions are shown", () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({ name: `P${i}`, confirmed: i === 0 }));
+    expect(openSuggestions(many).map((x) => x.index)).toEqual([1, 2, 3]);
   });
 });

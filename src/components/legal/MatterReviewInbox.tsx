@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { openSuggestions } from "@/lib/suggestion-index";
 import type { ElementType } from "react";
 import {
   AlertTriangle,
@@ -136,11 +137,8 @@ export function MatterReviewInbox({
         pageSlug: page.slug,
       }));
 
-    const deadlineItems = (matter.suggestedDeadlines ?? [])
-      .map((deadline, originalIndex) => ({ deadline, originalIndex }))
-      .filter(({ deadline }) => !deadline.confirmed)
-      .slice(0, 3)
-      .map<ReviewItem>(({ deadline, originalIndex }) => ({
+    const deadlineItems = openSuggestions(matter.suggestedDeadlines).map<ReviewItem>(
+      ({ item: deadline, index: originalIndex }) => ({
         id: `deadline-${originalIndex}-${deadline.title}`,
         kind: "suggested_deadline",
         title: deadline.title,
@@ -151,13 +149,11 @@ export function MatterReviewInbox({
         actionLabel: "Übernehmen",
         secondaryLabel: "Verwerfen",
         index: originalIndex,
-      }));
+      })
+    );
 
-    const partyItems = (matter.suggestedParties ?? [])
-      .map((party, originalIndex) => ({ party, originalIndex }))
-      .filter(({ party }) => !party.confirmed)
-      .slice(0, 3)
-      .map<ReviewItem>(({ party, originalIndex }) => ({
+    const partyItems = openSuggestions(matter.suggestedParties).map<ReviewItem>(
+      ({ item: party, index: originalIndex }) => ({
         id: `party-${originalIndex}-${party.name}`,
         kind: "suggested_party",
         title: party.name,
@@ -167,7 +163,8 @@ export function MatterReviewInbox({
         actionLabel: "Kontakt anlegen",
         secondaryLabel: "Verwerfen",
         index: originalIndex,
-      }));
+      })
+    );
 
     const factItems = pendingFacts.map<ReviewItem>((fact) => ({
       id: `fact-${fact.id}`,
