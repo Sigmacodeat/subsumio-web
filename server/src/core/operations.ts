@@ -17,7 +17,7 @@ import {
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
-import { encodePageCursor } from "./types.ts";
+import { encodePageCursor, normalizeFrontmatterFilter } from "./types.ts";
 import { importFromContent } from "./import-file.ts";
 import { writePageThrough } from "./write-through.ts";
 import { hybridSearch, hybridSearchCached, stampContentFlags } from "./search/hybrid.ts";
@@ -2259,6 +2259,31 @@ const page_array_mutate: Operation = {
   },
 };
 
+/**
+ * list_pages `frontmatter_any` → PageFilters.frontmatterAny. Rejects anything
+ * that is not a flat { key: string|number|boolean } object — an unusable
+ * filter must fail, never silently widen the listing to the whole type.
+ * Key validation happens in normalizeFrontmatterFilter (engine side).
+ */
+function frontmatterAnyParam(raw: unknown): Array<[string, string]> | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    throw new OperationError("invalid_params", "frontmatter_any must be an object");
+  }
+  const pairs: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+      throw new OperationError("invalid_params", "frontmatter_any values must be scalars");
+    }
+    pairs.push([key, String(value)]);
+  }
+  try {
+    return normalizeFrontmatterFilter(pairs);
+  } catch (e) {
+    throw new OperationError("invalid_params", e instanceof Error ? e.message : "invalid filter");
+  }
+}
+
 const LIST_PAGES_SORT_VALUES = ["updated_desc", "updated_asc", "created_desc", "slug"] as const;
 type ListPagesSort = (typeof LIST_PAGES_SORT_VALUES)[number];
 
@@ -2303,6 +2328,11 @@ const list_pages: Operation = {
       description:
         "When true, return { pages, has_more, next_cursor } instead of a bare array. has_more reflects rows scanned BEFORE matter-scope/ACL filtering, so a short filtered page does not look like the end of the list.",
     },
+    frontmatter_any: {
+      type: "object",
+      description:
+        "Frontmatter equality filter as { key: value } (string values, snake_case keys, max 5). A page matches when ANY pair matches (frontmatter->>key = value) — e.g. { case_slug: 'legal/cases/x' } lists one matter's pages in SQL instead of scanning the type.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
@@ -2330,6 +2360,7 @@ const list_pages: Operation = {
       updated_after: typeof p.updated_after === "string" ? p.updated_after : undefined,
       sort,
       cursor: typeof p.cursor === "string" ? p.cursor : undefined,
+      frontmatterAny: frontmatterAnyParam(p.frontmatter_any),
       ...scope,
     });
     // Pagination metadata is computed on the UNFILTERED SQL window: matter

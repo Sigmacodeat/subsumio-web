@@ -160,6 +160,35 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
     expect(pgResult?.slug).toBe("originals/talks/article-outline-fat-code");
   });
 
+  test("listPages frontmatterAny: same rows on both engines", async () => {
+    for (const eng of [pgEngine, pgliteEngine] as BrainEngine[]) {
+      for (const [slug, fm] of [
+        ["test/parity-fm-a", { case_slug: "legal/cases/parity-a" }],
+        ["test/parity-fm-b", { case_title: "Parity B" }],
+        ["test/parity-fm-c", { case_slug: "legal/cases/parity-c" }],
+      ] as const) {
+        await eng.putPage(slug, {
+          type: "note",
+          title: slug,
+          compiled_truth: "fm parity",
+          frontmatter: { ...fm },
+        });
+      }
+    }
+    const filter = {
+      type: "note" as const,
+      limit: 100,
+      frontmatterAny: [
+        ["case_slug", "legal/cases/parity-a"],
+        ["case_title", "Parity B"],
+      ] as Array<[string, string]>,
+    };
+    const pg = (await pgEngine.listPages(filter)).map((p) => p.slug).sort();
+    const pl = (await pgliteEngine.listPages(filter)).map((p) => p.slug).sort();
+    expect(pg).toEqual(["test/parity-fm-a", "test/parity-fm-b"]);
+    expect(pl).toEqual(pg);
+  });
+
   test("searchVector: top result matches between engines", async () => {
     const queryVec = basisEmbedding(7); // article direction
     const pgResults = await pgEngine.searchVector(queryVec, { limit: 5 });

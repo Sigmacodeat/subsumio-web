@@ -2,7 +2,6 @@ import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
 import { ENGINE_URL } from "@/lib/engine";
-import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
@@ -15,6 +14,7 @@ import {
   type MatterConflictOutcome,
 } from "@/lib/conflict-gate";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
+import { refreshAktenblatt, refreshAktenblattForDeadline } from "@/lib/aktenblatt-refresh";
 import {
   FRONTMATTER_IN_CONTENT_REJECTION,
   GUARD_READ_FAILED,
@@ -49,18 +49,31 @@ const pagesQuerySchema = z.object({
   include_tombstoned: z.string().optional(),
   /**
    * Pages of `type` that belong to one matter — linked by frontmatter
-   * case_slug, case_title or case_number (any of them). The engine cannot
-   * filter by frontmatter and caps a list at 100 rows, so the server pages
-   * through the whole type and filters; the result is complete, not the
-   * newest N of the firm.
+   * case_slug, case_title or case_number (any of them). The engine filters
+   * by these frontmatter fields in SQL (indexed for case_slug), so only the
+   * matter's own rows are read; the server pages through them and the
+   * result is complete, not the newest N of the firm.
    */
   case_slug: z.string().max(500).optional(),
   case_title: z.string().max(500).optional(),
   case_number: z.string().max(200).optional(),
 });
 
-/** Upper bound for a matter-scoped scan (pages of one type, firm-wide). */
+/** Safety stop for one matter's pages of one type (engine-filtered). */
 const MATTER_SCAN_MAX = 50_000;
+
+/** The engine-side frontmatter filter for a matter query (any key matches). */
+function matterFrontmatterFilter(q: {
+  case_slug?: string;
+  case_title?: string;
+  case_number?: string;
+}): Record<string, string> {
+  const fm: Record<string, string> = {};
+  if (q.case_slug) fm.case_slug = q.case_slug;
+  if (q.case_title) fm.case_title = q.case_title;
+  if (q.case_number) fm.case_number = q.case_number;
+  return fm;
+}
 
 function belongsToMatter(
   fm: Record<string, unknown> | undefined,
@@ -111,9 +124,14 @@ export const GET = createHandler(
         return apiError("type_required", "Für eine Aktenfilterung ist type erforderlich", 400);
       }
       try {
+        // Engine filters in SQL; the Node-side check stays as a guard so a
+        // filter the engine could not apply never widens the result.
         const all = await listEnginePages(ctx.headers, query.type, MATTER_SCAN_MAX, {
           includeTombstoned: query.include_tombstoned === "1",
           timeoutMs: 15_000,
+          strict: true,
+          failOnTruncate: true,
+          frontmatter: matterFrontmatterFilter(query),
         });
         return Response.json(
           redactPageSecrets(all.filter((p) => belongsToMatter(p.frontmatter, query)))
@@ -153,78 +171,6 @@ export const GET = createHandler(
     }
   }
 );
-
-/**
- * Re-render the Aktenblatt after a metadata merge. Best-effort: a failure here
- * leaves the matter with a stale (but still valid) Aktenblatt.
- */
-async function refreshAktenblatt(headers: Record<string, string>, slug: string): Promise<void> {
-  try {
-    const path = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return;
-    const page = (await res.json()) as {
-      title?: string;
-      content?: string;
-      frontmatter?: Record<string, unknown>;
-    };
-    // Deadlines are usually standalone pages linked by case_slug.
-    const allDeadlines = (await listEnginePages(headers, "legal_deadline", 10_000, {
-      timeoutMs: 10_000,
-    })) as unknown as Array<Record<string, unknown>>;
-    const linkedDeadlines = allDeadlines.filter(
-      (d) => ((d.frontmatter ?? {}) as Record<string, unknown>).case_slug === slug
-    );
-    const next = caseContentWithAktenblatt(
-      page.content ?? "",
-      page.title ?? "",
-      page.frontmatter ?? {},
-      {
-        linkedDeadlines,
-      }
-    );
-    if (next === (page.content ?? "").trim()) return;
-    // Best effort, but a refused write is logged instead of passing silently.
-    await engineWriteBestEffort(
-      `${ENGINE_URL}/api/pages`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({ slug, merge: true, content: next }),
-        signal: AbortSignal.timeout(15_000),
-      },
-      "Aktenblatt"
-    );
-  } catch (e) {
-    log.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
-  }
-}
-
-async function refreshAktenblattForDeadline(
-  headers: Record<string, string>,
-  deadlineSlug: string,
-  fm: Record<string, unknown> | undefined
-): Promise<void> {
-  try {
-    let caseSlug = typeof fm?.case_slug === "string" ? fm.case_slug : "";
-    if (!caseSlug) {
-      const path = deadlineSlug.split("/").map(encodeURIComponent).join("/");
-      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-        headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!res.ok) return;
-      const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-      caseSlug = typeof page.frontmatter?.case_slug === "string" ? page.frontmatter.case_slug : "";
-    }
-    if (isCaseSlug(caseSlug)) await refreshAktenblatt(headers, caseSlug);
-  } catch {
-    /* best-effort */
-  }
-}
 
 /**
  * Check-out enforcement: a merge/update on a document locked by another
