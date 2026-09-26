@@ -48,13 +48,19 @@ const ensureSchema = createSchemaInit([
   `CREATE INDEX IF NOT EXISTS idx_ai_literacy_brain ON subsumio_ai_literacy_records(brain_id, user_id)`,
 ]);
 
+function localDay(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function rowToRecord(r: Record<string, unknown>): AiLiteracyRecord {
   const d = r.trained_on;
   return {
     id: String(r.id),
     brain_id: String(r.brain_id),
     user_id: String(r.user_id),
-    trained_on: d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10),
+    // pg returns DATE as local midnight: read the local calendar day, not UTC.
+    trained_on: d instanceof Date ? localDay(d) : String(d).slice(0, 10),
     topic: String(r.topic),
     confirmed_by: String(r.confirmed_by),
     recorded_by: String(r.recorded_by),
