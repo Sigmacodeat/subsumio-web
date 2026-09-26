@@ -17,6 +17,15 @@ vi.mock("@/lib/engine", () => ({
   ),
 }));
 const listEnginePages = vi.fn();
+const health = vi.hoisted(() => ({
+  reset: vi.fn(async (..._a: unknown[]) => undefined),
+  streaks: vi.fn(async (..._a: unknown[]): Promise<Record<string, number>> => ({})),
+}));
+vi.mock("@/lib/webhook-health", () => ({
+  WEBHOOK_AUTO_DISABLE_THRESHOLD: 10,
+  resetWebhookFailures: (...a: unknown[]) => health.reset(...a),
+  getWebhookFailureStreaks: (...a: unknown[]) => health.streaks(...a),
+}));
 vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: (...a: unknown[]) => listEnginePages(...a),
 }));
@@ -35,7 +44,9 @@ vi.mock("@/lib/api-handler", async (orig) => {
       async (req: Request) => {
         const url = new URL(req.url);
         const body =
-          req.method === "POST" && opts.body ? opts.body.parse(await req.json()) : undefined;
+          (req.method === "POST" || req.method === "PATCH") && opts.body
+            ? opts.body.parse(await req.json())
+            : undefined;
         const query = opts.query ? opts.query.parse(Object.fromEntries(url.searchParams)) : {};
         return handler(
           { brainId: "brain_1", headers: { "x-subsumio-source": "brain_1" }, user: {} },
@@ -46,7 +57,7 @@ vi.mock("@/lib/api-handler", async (orig) => {
   };
 });
 
-import { DELETE, GET, POST } from "./route";
+import { DELETE, GET, PATCH, POST } from "./route";
 import { setEgressHostResolver } from "@/lib/security/egress";
 
 const SECRET = "super-geheimer-signaturschluessel";
@@ -137,5 +148,70 @@ describe("/api/webhooks/outgoing", () => {
       slug: "settings/webhooks/wh-1",
       frontmatter: { status: "tombstoned", secret: null, secret_enc: null },
     });
+  });
+
+  const reactivate = (id = "wh-1") =>
+    PATCH(
+      new Request("http://x/api/webhooks/outgoing", {
+        method: "PATCH",
+        body: JSON.stringify({ id, action: "reactivate" }),
+      }) as never
+    );
+
+  it("lists an auto-disabled webhook with reason and failure streak", async () => {
+    listEnginePages.mockResolvedValueOnce([
+      {
+        slug: "settings/webhooks/wh-1",
+        frontmatter: {
+          id: "wh-1",
+          url: "u",
+          secret_enc: "x",
+          status: "disabled",
+          disabled_reason: "auto_failures",
+          disabled_failures: 10,
+        },
+      },
+    ]);
+    health.streaks.mockResolvedValueOnce({ "wh-1": 10 });
+    const json = await (await GET(new Request("http://x/api/webhooks/outgoing") as never)).json();
+    expect(json.data.webhooks[0]).toMatchObject({
+      status: "disabled",
+      disabled_reason: "auto_failures",
+      disabled_failures: 10,
+      consecutive_failures: 10,
+    });
+  });
+
+  it("reactivate switches a disabled webhook back on and resets its failure streak", async () => {
+    listEnginePages.mockResolvedValueOnce([
+      {
+        slug: "settings/webhooks/wh-1",
+        frontmatter: { id: "wh-1", status: "disabled", secret_enc: "x" },
+      },
+    ]);
+    const res = await reactivate();
+    expect(res.status).toBe(200);
+    expect(patches[0]).toMatchObject({
+      slug: "settings/webhooks/wh-1",
+      frontmatter: { status: "active", disabled_reason: null },
+    });
+    expect(health.reset).toHaveBeenCalledWith("brain_1", "wh-1");
+  });
+
+  it("a deleted webhook cannot be reactivated", async () => {
+    listEnginePages.mockResolvedValueOnce([
+      {
+        slug: "settings/webhooks/wh-1",
+        frontmatter: { id: "wh-1", status: "tombstoned", secret_enc: null },
+      },
+    ]);
+    const res = await reactivate();
+    expect(res.status).toBe(409);
+    expect(patches).toHaveLength(0);
+  });
+
+  it("an unknown webhook is 404", async () => {
+    listEnginePages.mockResolvedValueOnce([]);
+    expect((await reactivate("wh-x")).status).toBe(404);
   });
 });

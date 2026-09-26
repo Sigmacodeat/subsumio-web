@@ -40,6 +40,10 @@ export default function WebhooksPage() {
       status: string;
       created_at: string;
       needs_reregistration?: boolean;
+      disabled_reason?: string | null;
+      disabled_at?: string | null;
+      disabled_failures?: number | null;
+      disabled_last_error?: string | null;
       delivery?: {
         pending: number;
         exhausted: number;
@@ -52,6 +56,7 @@ export default function WebhooksPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reactivating, setReactivating] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     url: "",
@@ -133,6 +138,31 @@ export default function WebhooksPage() {
       addToast({ type: "error", title: t("webhooks.err_delete") });
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function reactivateWebhook(id: string) {
+    setReactivating(id);
+    try {
+      const res = await csrfFetch("/api/webhooks/outgoing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action: "reactivate" }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { error?: string } | null;
+        addToast({
+          type: "error",
+          title: err?.error ?? L("Reaktivieren fehlgeschlagen", "Reactivation failed"),
+        });
+        return;
+      }
+      addToast({ type: "success", title: L("Webhook reaktiviert", "Webhook reactivated") });
+      await load();
+    } catch {
+      addToast({ type: "error", title: L("Reaktivieren fehlgeschlagen", "Reactivation failed") });
+    } finally {
+      setReactivating(null);
     }
   }
 
@@ -294,6 +324,34 @@ export default function WebhooksPage() {
                 <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   {t("webhooks.created")} {formatDateTime(wh.created_at)}
                 </div>
+                {wh.status === "disabled" && (
+                  <div
+                    className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2"
+                    role="status"
+                  >
+                    <Badge variant="warning">{L("Deaktiviert", "Disabled")}</Badge>
+                    <p className="min-w-0 flex-1 text-xs text-[color:var(--ds-danger-text)]">
+                      {wh.disabled_reason === "auto_failures"
+                        ? L(
+                            `Automatisch deaktiviert${wh.disabled_at ? ` am ${formatDateTime(wh.disabled_at)}` : ""}: ${wh.disabled_failures ?? "mehrere"} Zustellungen in Folge sind endgültig gescheitert${wh.disabled_last_error ? ` (zuletzt: ${wh.disabled_last_error})` : ""}. Prüfen Sie das Zielsystem und reaktivieren Sie den Webhook danach.`,
+                            `Disabled automatically${wh.disabled_at ? ` on ${formatDateTime(wh.disabled_at)}` : ""}: ${wh.disabled_failures ?? "several"} deliveries in a row failed for good${wh.disabled_last_error ? ` (last: ${wh.disabled_last_error})` : ""}. Check the target system, then reactivate the webhook.`
+                          )
+                        : L(
+                            "Deaktiviert: dieser Webhook erhält keine Ereignisse.",
+                            "Disabled: this webhook receives no events."
+                          )}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void reactivateWebhook(wh.id)}
+                      disabled={reactivating === wh.id}
+                      loading={reactivating === wh.id}
+                    >
+                      {L("Reaktivieren", "Reactivate")}
+                    </Button>
+                  </div>
+                )}
                 {wh.needs_reregistration && (
                   <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
                     {L(

@@ -291,6 +291,8 @@ export type AuditAction =
   | "corpus.law_refetch"
   | "acl.group_create"
   | "docusign.connect"
+  | "webhook.auto_disable"
+  | "webhook.reactivate"
   | "docusign.disconnect"
   | "copilot.explain"
   | "copilot.memory_create"
@@ -622,6 +624,8 @@ const ACTION_LABELS: Record<string, string> = {
   "corpus.law_refetch": "Gesetz zum Nachladen vorgemerkt",
   "acl.group_create": "ACL-Gruppe erstellt",
   "docusign.connect": "DocuSign verbunden",
+  "webhook.auto_disable": "Webhook automatisch deaktiviert",
+  "webhook.reactivate": "Webhook reaktiviert",
   "docusign.disconnect": "DocuSign getrennt",
   "copilot.explain": "Assistent: Begründung abgerufen",
   "copilot.memory_create": "Assistent: Erinnerung erstellt",

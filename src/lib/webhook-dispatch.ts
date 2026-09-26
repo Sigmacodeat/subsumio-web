@@ -12,7 +12,7 @@
  */
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 import { decrypt } from "@/lib/encryption";
@@ -23,6 +23,14 @@ import {
   finishWebhookDelivery,
   recordWebhookRetryFailure,
 } from "@/lib/webhook-delivery-queue";
+import {
+  recordWebhookFinalFailure,
+  releaseWebhookDisableClaim,
+  resetWebhookFailures,
+} from "@/lib/webhook-health";
+import { logAudit } from "@/lib/audit";
+import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { createWebhookDisabledNotification } from "@/lib/comments";
 
 const log = logger("webhook-dispatch");
 
@@ -147,6 +155,7 @@ export async function dispatchWebhookEvent(
       if (result.ok) {
         dispatched++;
         log.info("Webhook delivered", { webhookId: webhook.id, eventType });
+        await noteWebhookDelivered(brainId, webhook.id);
         return;
       }
       failed++;
@@ -156,7 +165,10 @@ export async function dispatchWebhookEvent(
         error: result.error,
         retryable: result.retryable,
       });
-      if (!result.retryable) return;
+      if (!result.retryable) {
+        await noteWebhookFinalFailure(brainId, webhook, result.error);
+        return;
+      }
       const queued = await enqueueWebhookRetry({
         brainId,
         webhookId: webhook.id,
@@ -170,7 +182,10 @@ export async function dispatchWebhookEvent(
         });
         return false;
       });
-      if (!queued) log.warn("Webhook event not queued for retry", { webhookId: webhook.id });
+      if (!queued) {
+        log.warn("Webhook event not queued for retry", { webhookId: webhook.id });
+        await noteWebhookFinalFailure(brainId, webhook, result.error);
+      }
     })
   );
 
@@ -257,13 +272,105 @@ export async function retryDueWebhookDeliveries(
     const result = await deliverOnce(webhook, item.event, item.body);
     if (result.ok) {
       await finishWebhookDelivery(item.id, "delivered");
+      await noteWebhookDelivered(item.brainId, webhook.id);
       stats.delivered++;
     } else {
-      await recordWebhookRetryFailure(item.id, item.attempts + 1, result.error, result.retryable);
+      const state = await recordWebhookRetryFailure(
+        item.id,
+        item.attempts + 1,
+        result.error,
+        result.retryable
+      );
+      if (state === "exhausted") {
+        const disabled = await noteWebhookFinalFailure(item.brainId, webhook, result.error);
+        // Switched off: the other hooks of this firm stay cached, this one is gone.
+        if (disabled) hooksByBrain.set(item.brainId, hooks.filter((w) => w.id !== webhook.id));
+      }
       stats.failed++;
     }
   }
   return stats;
+}
+
+/** A delivery went through: the failure streak of this webhook ends. */
+async function noteWebhookDelivered(brainId: string, webhookId: string): Promise<void> {
+  await resetWebhookFailures(brainId, webhookId).catch((err) =>
+    log.warn("Webhook health reset failed", { webhookId, error: String(err) })
+  );
+}
+
+/**
+ * A delivery failed for good. After WEBHOOK_AUTO_DISABLE_THRESHOLD of them in
+ * a row the webhook is switched off (status "disabled", reason
+ * "auto_failures"), the firm's admins get an in-app notice and the protocol
+ * an entry. Returns true when this call switched it off.
+ */
+export async function noteWebhookFinalFailure(
+  brainId: string,
+  webhook: Pick<RegisteredWebhook, "id" | "url">,
+  error: string
+): Promise<boolean> {
+  let verdict: Awaited<ReturnType<typeof recordWebhookFinalFailure>>;
+  try {
+    verdict = await recordWebhookFinalFailure(brainId, webhook.id, error);
+  } catch (err) {
+    log.warn("Webhook health not recorded", { webhookId: webhook.id, error: String(err) });
+    return false;
+  }
+  if (!verdict?.disable) return false;
+
+  const disabledAt = new Date().toISOString();
+  const res = await enginePatchPage(
+    engineHeadersForBrain(brainId),
+    {
+      slug: `settings/webhooks/${webhook.id}`,
+      frontmatter: {
+        status: "disabled",
+        disabled_reason: "auto_failures",
+        disabled_at: disabledAt,
+        disabled_failures: verdict.failures,
+        disabled_last_error: error.slice(0, 300),
+      },
+    },
+    { timeoutMs: 10_000 }
+  ).catch(() => null);
+  if (!res?.ok) {
+    // Not switched off: the next final failure tries again.
+    await releaseWebhookDisableClaim(brainId, webhook.id).catch(() => {});
+    log.error("Webhook auto-disable could not be saved", { brainId, webhookId: webhook.id });
+    return false;
+  }
+  log.warn("Webhook auto-disabled after repeated failures", {
+    brainId,
+    webhookId: webhook.id,
+    failures: verdict.failures,
+  });
+
+  void logAudit("webhook.auto_disable", "webhook", {
+    brainId,
+    entityId: webhook.id,
+    details: { failures: verdict.failures, last_error: error.slice(0, 300) },
+  });
+
+  try {
+    const users = (await getRecipientsByBrain()).get(brainId) ?? [];
+    const admins = users.filter((u) => !u.deactivatedAt && u.role === "admin");
+    await Promise.allSettled(
+      admins.map((u) =>
+        createWebhookDisabledNotification({
+          userId: u.id,
+          brainId,
+          webhookId: webhook.id,
+          url: webhook.url,
+          failures: verdict.failures,
+          disabledAt,
+        })
+      )
+    );
+  } catch (err) {
+    log.warn("Webhook auto-disable notice failed", { webhookId: webhook.id, error: String(err) });
+  }
+  return true;
 }
 
 /**

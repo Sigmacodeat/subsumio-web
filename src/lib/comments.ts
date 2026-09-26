@@ -761,6 +761,38 @@ export async function deleteAllReadNotifications(opts: {
   return deleted;
 }
 
+/**
+ * An outgoing webhook was switched off after repeated failed deliveries.
+ * One notice per switch-off and admin; reactivation happens in
+ * Einstellungen → Webhooks.
+ */
+export async function createWebhookDisabledNotification(opts: {
+  userId: string;
+  brainId: string;
+  webhookId: string;
+  url: string;
+  failures: number;
+  /** Time of the switch-off — a later switch-off is a new notice. */
+  disabledAt: string;
+}): Promise<void> {
+  const idPart = opts.webhookId.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
+  const notif: Notification = {
+    id: `notif_webhook_disabled_${idPart}_${opts.disabledAt.replace(/[^0-9]/g, "")}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "system",
+    data: {
+      webhookId: opts.webhookId,
+      url: opts.url,
+      failures: opts.failures,
+      message: `Webhook an ${opts.url} wurde nach ${opts.failures} fehlgeschlagenen Zustellungen in Folge automatisch deaktiviert. Unter Einstellungen → Webhooks prüfen und reaktivieren.`,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
 export async function createNotificationFailureNotification(opts: {
   userId: string;
   brainId: string;
