@@ -25,7 +25,8 @@ const meState = vi.hoisted(() => ({
 vi.mock("@/lib/queries/auth", () => ({
   useMe: () => meState.current,
 }));
-vi.mock("@/lib/csrf", () => ({ csrfFetch: vi.fn() }));
+const csrfFetchMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/csrf", () => ({ csrfFetch: csrfFetchMock }));
 
 const suggestion = (id: string, extra: Record<string, unknown>) => ({
   id,
@@ -67,6 +68,7 @@ describe("time suggestions", () => {
     mockFetch.mockReset();
     createPage.mockReset().mockResolvedValue({});
     timeCreate.mockReset().mockResolvedValue({ id: "t1" });
+    csrfFetchMock.mockReset().mockResolvedValue(Response.json({ data: {} }, { status: 201 }));
   });
 
   it("hides colleagues' suggestions", async () => {
@@ -86,19 +88,27 @@ describe("time suggestions", () => {
     fireEvent.change(screen.getByLabelText("Minuten"), { target: { value: "30" } });
     fireEvent.change(screen.getByLabelText("Tätigkeit"), { target: { value: "Klage entworfen" } });
     fireEvent.click(screen.getByRole("button", { name: /Übernehmen/ }));
-    await waitFor(() => expect(timeCreate).toHaveBeenCalled());
-    expect(timeCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        minutes: 30,
-        description: "Klage entworfen",
-        case_slug: "legal/cases/a",
-      })
-    );
-    await waitFor(() => expect(createPage).toHaveBeenCalled());
-    const fm = createPage.mock.calls[0][0].frontmatter;
-    expect(fm.status).toBe("modified");
-    expect(fm.time_entry_id).toBe("t1");
-    expect(fm.original).toMatchObject({ duration_minutes: 45, description: "Schriftsatz" });
+    // One server-side accept call books and marks; no separate client writes.
+    await waitFor(() => expect(csrfFetchMock).toHaveBeenCalled());
+    const [url, init] = csrfFetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/time-suggestions/s1/accept");
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      minutes: 30,
+      description: "Klage entworfen",
+      case_slug: "legal/cases/a",
+    });
+    expect(timeCreate).not.toHaveBeenCalled();
+    expect(createPage).not.toHaveBeenCalled();
+  });
+
+  it("does not book again when the server reports the suggestion as taken", async () => {
+    stubSuggestions([suggestion("s1", { case_slug: "legal/cases/a" })]);
+    csrfFetchMock.mockResolvedValueOnce(Response.json({ error: "x" }, { status: 409 }));
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /vor dem Übernehmen ändern/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Übernehmen/ }));
+    await waitFor(() => expect(csrfFetchMock).toHaveBeenCalledTimes(1));
+    expect(timeCreate).not.toHaveBeenCalled();
   });
 
   it("requires a matter before booking a suggestion without one", async () => {
