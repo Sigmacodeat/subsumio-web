@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { validateEnv } from "@/lib/env-validate";
+import { sentryPrivacyOptions } from "@/lib/sentry-scrub";
 
 export function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -23,6 +24,8 @@ export function register() {
       dsn: serverSentryDsn(),
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+      // No PII, scrubbed messages/URLs/breadcrumbs (src/lib/sentry-scrub.ts).
+      ...sentryPrivacyOptions,
     });
 
     // Global error handlers — catch unhandled promise rejections and uncaught
@@ -55,6 +58,8 @@ export function register() {
       dsn: serverSentryDsn(),
       environment: process.env.NODE_ENV,
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+      // No PII, scrubbed messages/URLs/breadcrumbs (src/lib/sentry-scrub.ts).
+      ...sentryPrivacyOptions,
     });
   }
 
