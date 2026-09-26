@@ -4986,12 +4986,30 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       const sourceId = requestSourceId(req);
       const pageForScope = await engine.getPage(slug, { sourceId, includeDeleted: true });
-      await assertPageMatterAccess(engine, req, slug, { stored: pageForScope });
+      // Irreversible: needs write access to the matter, like deleting the page.
+      await assertPageMatterAccess(engine, req, slug, { stored: pageForScope, write: true });
+      // A legal hold on the document or its matter overrides any erasure.
+      const fm = (pageForScope?.frontmatter ?? {}) as Record<string, unknown>;
+      const caseSlug = typeof fm.case_slug === "string" && fm.case_slug ? fm.case_slug : null;
+      const casePage = caseSlug ? await engine.getPage(caseSlug, { sourceId }) : null;
+      if (fm.legal_hold === true || casePage?.frontmatter?.legal_hold === true) {
+        apiError(
+          res,
+          409,
+          "legal_hold_active",
+          "The document or its matter is under legal hold; lift the hold before purging files."
+        );
+        return;
+      }
       const { purgeStoredFilesForPage } = await import("../core/file-store.ts");
       const deleted = await purgeStoredFilesForPage(slug, sourceId, ctx(req).config.storage);
       res.json({ ok: true, deleted });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      if (e instanceof OperationError && e.code === "matter_read_only") {
+        res.status(403).json({ error: e.code, message: msg });
+        return;
+      }
       const status = e instanceof EngineNotFoundError ? 404 : 500;
       res.status(status).json({ error: "file_purge_failed", message: msg });
     }
@@ -11436,6 +11454,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const v = Array.isArray(src) ? src[0] : src;
     return v && /^[a-z0-9:_-]{1,200}$/i.test(v) ? v : null;
   };
+  // A firm's tokens are named `web-mcp:<source>:<label>` (labels carry no
+  // colon). Exact prefix comparison — never LIKE, where `_` in a source id
+  // would match any character — plus no further colon, so a source never
+  // matches the tokens of a source whose id merely starts with it.
+  const MCP_TOKEN_OF_SOURCE = `left(name, length($PREFIX)) = $PREFIX
+       AND position(':' in substr(name, length($PREFIX) + 1)) = 0`;
+  const mcpTokenOfSource = (param: string) => MCP_TOKEN_OF_SOURCE.replaceAll("$PREFIX", param);
 
   app.get("/api/mcp-tokens", guard, async (req: Request, res: Response) => {
     const src = mcpSource(req);
@@ -11453,8 +11478,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         revoked_at: string | null;
       }>(
         `SELECT id, name, permissions, created_at, last_used_at, revoked_at FROM access_tokens
-          WHERE name LIKE $1 ORDER BY created_at DESC LIMIT 100`,
-        [`web-mcp:${src}:%`]
+          WHERE ${mcpTokenOfSource("$1::text")} ORDER BY created_at DESC LIMIT 100`,
+        [`web-mcp:${src}:`]
       );
       res.json({
         tokens: rows.map((r) => {
@@ -11525,9 +11550,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const updated = await engine.executeRaw<{ id: string }>(
         `UPDATE access_tokens SET revoked_at = now()
-          WHERE id = $1 AND name LIKE $2 AND revoked_at IS NULL
+          WHERE id = $1 AND ${mcpTokenOfSource("$2::text")} AND revoked_at IS NULL
           RETURNING id`,
-        [String(req.params.id), `web-mcp:${src}:%`]
+        [String(req.params.id), `web-mcp:${src}:`]
       );
       if (updated.length === 0) {
         apiError(res, 404, "mcp_token_not_found");

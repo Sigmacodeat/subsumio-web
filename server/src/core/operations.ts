@@ -7883,7 +7883,7 @@ const acl_create_group: Operation = {
       description: "Group name (e.g. 'Familienrecht', 'Assistenten')",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { createAccessGroup } = await import("./acl.ts");
     return createAccessGroup(ctx.engine, ctx.sourceId, String(p.name));
@@ -7897,7 +7897,7 @@ const acl_delete_group: Operation = {
   params: {
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { deleteAccessGroup } = await import("./acl.ts");
     const ok = await deleteAccessGroup(ctx.engine, String(p.group_id), ctx.sourceId);
@@ -7913,7 +7913,7 @@ const acl_add_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { addGroupMember } = await import("./acl.ts");
     const ok = await addGroupMember(
@@ -7937,7 +7937,7 @@ const acl_remove_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removeGroupMember } = await import("./acl.ts");
     const ok = await removeGroupMember(
@@ -7978,7 +7978,7 @@ const acl_set_page_permission: Operation = {
       description: "Permission level: 'read' or 'write'",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { setPagePermission } = await import("./acl.ts");
     const slug = String(p.slug);
@@ -8011,7 +8011,7 @@ const acl_remove_page_permission: Operation = {
     slug: { type: "string", required: true, description: "Page slug" },
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removePagePermission } = await import("./acl.ts");
     const slug = String(p.slug);
