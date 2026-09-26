@@ -820,4 +820,46 @@ describeBoth("Engine parity — page array ops", () => {
       { id: "t3", minutes: 15, billed: true, invoice_number: "INV-2" },
     ]);
   });
+
+  test("contradiction runs: source_id is stored and loadContradictionsTrend filters by source", async () => {
+    const row = (run_id: string, source_id?: string) => ({
+      run_id,
+      judge_model: "parity",
+      prompt_version: "1",
+      queries_evaluated: 1,
+      queries_with_contradiction: 0,
+      total_contradictions_flagged: 0,
+      wilson_ci_lower: 0,
+      wilson_ci_upper: 1,
+      judge_errors_total: 0,
+      cost_usd_total: 0.25,
+      duration_ms: 1,
+      source_tier_breakdown: {},
+      report_json: { per_query: [] },
+      ...(source_id ? { source_id } : {}),
+    });
+    const load = async (eng: BrainEngine) => {
+      await eng.writeContradictionsRun(row("parity-run-a", "parity-firm-a"));
+      await eng.writeContradictionsRun(row("parity-run-b", "parity-firm-b"));
+      await eng.writeContradictionsRun(row("parity-run-host"));
+      const scoped = await eng.loadContradictionsTrend(1, { sourceIds: ["parity-firm-a"] });
+      const all = await eng.loadContradictionsTrend(1);
+      return {
+        scoped: scoped.map((r) => [r.run_id, r.source_id, r.cost_usd_total]),
+        all: all
+          .filter((r) => r.run_id.startsWith("parity-run-"))
+          .map((r) => [r.run_id, r.source_id])
+          .sort(),
+      };
+    };
+    const pg = await load(pgEngine);
+    const pl = await load(pgliteEngine);
+    expect(pg.scoped).toEqual([["parity-run-a", "parity-firm-a", 0.25]]);
+    expect(pg.all).toEqual([
+      ["parity-run-a", "parity-firm-a"],
+      ["parity-run-b", "parity-firm-b"],
+      ["parity-run-host", null],
+    ]);
+    expect(pl).toEqual(pg);
+  });
 });

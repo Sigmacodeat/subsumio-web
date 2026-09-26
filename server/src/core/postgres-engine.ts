@@ -5321,6 +5321,7 @@ export class PostgresEngine implements BrainEngine {
     duration_ms: number;
     source_tier_breakdown: Record<string, unknown>;
     report_json: Record<string, unknown>;
+    source_id?: string | null;
   }): Promise<boolean> {
     const sql = this.sql;
     const result = await sql`
@@ -5329,14 +5330,15 @@ export class PostgresEngine implements BrainEngine {
         queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
         wilson_ci_lower, wilson_ci_upper, judge_errors_total,
         cost_usd_total, duration_ms,
-        source_tier_breakdown, report_json
+        source_tier_breakdown, report_json, source_id
       ) VALUES (
         ${row.run_id}, ${row.judge_model}, ${row.prompt_version},
         ${row.queries_evaluated}, ${row.queries_with_contradiction}, ${row.total_contradictions_flagged},
         ${row.wilson_ci_lower}, ${row.wilson_ci_upper}, ${row.judge_errors_total},
         ${row.cost_usd_total}, ${row.duration_ms},
         ${sql.json(row.source_tier_breakdown as Parameters<typeof sql.json>[0])},
-        ${sql.json(row.report_json as Parameters<typeof sql.json>[0])}
+        ${sql.json(row.report_json as Parameters<typeof sql.json>[0])},
+        ${row.source_id ?? null}
       )
       ON CONFLICT (run_id) DO NOTHING
     `;
@@ -5347,10 +5349,14 @@ export class PostgresEngine implements BrainEngine {
    * v0.32.6 — load probe runs from the last N days, newest first (M5).
    * Used by `trend` sub-subcommand and the doctor `contradictions` check.
    */
-  async loadContradictionsTrend(days: number): Promise<
+  async loadContradictionsTrend(
+    days: number,
+    opts?: { sourceIds?: string[] }
+  ): Promise<
     Array<{
       run_id: string;
       ran_at: string;
+      source_id: string | null;
       judge_model: string;
       queries_evaluated: number;
       queries_with_contradiction: number;
@@ -5366,19 +5372,24 @@ export class PostgresEngine implements BrainEngine {
   > {
     const sql = this.sql;
     const cutoff = new Date(Date.now() - Math.max(0, days) * 86400000);
+    const scope = Array.isArray(opts?.sourceIds)
+      ? sql`AND source_id = ANY(${opts!.sourceIds}::text[])`
+      : sql``;
     const rows = await sql`
-      SELECT run_id, ran_at, judge_model,
+      SELECT run_id, ran_at, source_id, judge_model,
              queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
              wilson_ci_lower, wilson_ci_upper, judge_errors_total,
              cost_usd_total, duration_ms,
              source_tier_breakdown, report_json
       FROM eval_contradictions_runs
       WHERE ran_at >= ${cutoff}
+        ${scope}
       ORDER BY ran_at DESC
     `;
     return rows.map((r) => ({
       run_id: r.run_id as string,
       ran_at: r.ran_at instanceof Date ? r.ran_at.toISOString() : String(r.ran_at),
+      source_id: typeof r.source_id === "string" ? r.source_id : null,
       judge_model: r.judge_model as string,
       queries_evaluated: Number(r.queries_evaluated),
       queries_with_contradiction: Number(r.queries_with_contradiction),

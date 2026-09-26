@@ -4774,7 +4774,19 @@ const find_contradictions: Operation = {
     const slugFilter = typeof p.slug === "string" ? p.slug.toLowerCase() : null;
     const sevFilter =
       p.severity === "low" || p.severity === "medium" || p.severity === "high" ? p.severity : null;
-    const rows = await ctx.engine.loadContradictionsTrend(30);
+    // Probe runs are bound to one source. An untrusted caller reads the
+    // latest run of its own sources only; trusted local callers see all.
+    const runSources = [
+      ...new Set(
+        [ctx.sourceId, ...(ctx.auth?.allowedSources ?? [])].filter(
+          (x): x is string => typeof x === "string" && x.length > 0
+        )
+      ),
+    ];
+    const rows = await ctx.engine.loadContradictionsTrend(
+      30,
+      ctx.remote === false ? undefined : { sourceIds: runSources }
+    );
     if (rows.length === 0) {
       return {
         contradictions: [],

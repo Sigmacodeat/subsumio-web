@@ -74,6 +74,12 @@ export interface RunnerOpts {
   maxPairChars?: number;
   /** Disable the persistent cache (P2). Useful for benchmark runs. */
   noCache?: boolean;
+  /**
+   * Bind the run to one source (firm): retrieval searches only this source
+   * and results from any other source are dropped, so no pair ever spans two
+   * firms. Omitted = brain-wide (trusted local CLI only).
+   */
+  sourceId?: string;
   /** Test hooks: override the judge and the search functions. */
   judgeFn?: JudgeFn;
   searchFn?: (
@@ -272,8 +278,19 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
   const budgetUsd = opts.budgetUsd ?? 5.0;
   const maxPairChars = opts.maxPairChars ?? DEFAULT_MAX_PAIR_CHARS;
   const judgeFn = opts.judgeFn ?? judgeContradiction;
-  const searchFn =
-    opts.searchFn ?? ((engine, query, o) => hybridSearch(engine, query, { limit: o.limit }));
+  const sourceId = opts.sourceId;
+  const baseSearch =
+    opts.searchFn ??
+    ((engine: BrainEngine, query: string, o: { limit: number }) =>
+      hybridSearch(engine, query, { limit: o.limit, ...(sourceId ? { sourceId } : {}) }));
+  // A source-bound run keeps only hits of its own source, whatever the
+  // search returned.
+  const searchFn = sourceId
+    ? async (engine: BrainEngine, query: string, o: { limit: number }) =>
+        (await baseSearch(engine, query, o)).filter(
+          (r) => (r.source_id ?? "default") === sourceId
+        )
+    : baseSearch;
 
   const errs = new JudgeErrorCollector();
   const tracker = new CostTracker({ capUsd: budgetUsd });

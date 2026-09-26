@@ -22,7 +22,10 @@ import {
   timingSafeEqual as cryptoTimingSafeEqual,
 } from "crypto";
 import { safeStringEqual } from "../core/timing-safe.ts";
-import { parseContradictionProbeBody } from "../core/eval-contradictions/probe-request.ts";
+import {
+  parseContradictionProbeBody,
+  probeDailyBudgetUsd,
+} from "../core/eval-contradictions/probe-request.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -11057,8 +11060,26 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     guard,
     express.json({ limit: "64kb" }),
     async (req: Request, res: Response) => {
-      const parsed = parseContradictionProbeBody(req.body);
+      // Every run is bound to the calling firm's source — the probe searches
+      // only that source and its run row is recorded for it — and costs at
+      // most what the firm has left of its daily probe budget.
+      const sourceId = requestSourceId(req);
+      let remaining: number;
+      try {
+        const today = await engine.loadContradictionsTrend(1, { sourceIds: [sourceId] });
+        const spent = today.reduce((sum, r) => sum + (Number(r.cost_usd_total) || 0), 0);
+        remaining = probeDailyBudgetUsd() - spent;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        res.status(503).json({ error: "contradiction_probe_budget_unavailable", message: msg });
+        return;
+      }
+      const parsed = parseContradictionProbeBody(req.body, { sourceId, maxBudgetUsd: remaining });
       if ("error" in parsed) {
+        if (parsed.error === "probe_budget_exhausted") {
+          apiError(res, 429, parsed.error);
+          return;
+        }
         apiError(res, 400, parsed.error);
         return;
       }

@@ -1779,6 +1779,8 @@ export interface BrainEngine {
     duration_ms: number;
     source_tier_breakdown: Record<string, unknown>;
     report_json: Record<string, unknown>;
+    /** The firm source the run probed; omitted/null for a host run (CLI). */
+    source_id?: string | null;
   }): Promise<boolean>;
 
   /**
@@ -1786,11 +1788,18 @@ export interface BrainEngine {
    * newest first. Used by `gbrain eval suspected-contradictions trend` and
    * by the doctor `contradictions` check. `report_json` and
    * `source_tier_breakdown` are parsed JSONB columns.
+   *
+   * `opts.sourceIds` limits the result to runs of those sources (a host run
+   * without source is never included then); omitted = every run.
    */
-  loadContradictionsTrend(days: number): Promise<
+  loadContradictionsTrend(
+    days: number,
+    opts?: { sourceIds?: string[] }
+  ): Promise<
     Array<{
       run_id: string;
       ran_at: string;
+      source_id: string | null;
       judge_model: string;
       queries_evaluated: number;
       queries_with_contradiction: number;

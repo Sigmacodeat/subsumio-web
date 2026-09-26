@@ -5120,6 +5120,7 @@ export class PGLiteEngine implements BrainEngine {
     duration_ms: number;
     source_tier_breakdown: Record<string, unknown>;
     report_json: Record<string, unknown>;
+    source_id?: string | null;
   }): Promise<boolean> {
     const result = await this.db.query(
       `INSERT INTO eval_contradictions_runs (
@@ -5127,13 +5128,13 @@ export class PGLiteEngine implements BrainEngine {
          queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
          wilson_ci_lower, wilson_ci_upper, judge_errors_total,
          cost_usd_total, duration_ms,
-         source_tier_breakdown, report_json
+         source_tier_breakdown, report_json, source_id
        ) VALUES (
          $1, $2, $3,
          $4, $5, $6,
          $7, $8, $9,
          $10, $11,
-         $12::jsonb, $13::jsonb
+         $12::jsonb, $13::jsonb, $14
        )
        ON CONFLICT (run_id) DO NOTHING`,
       [
@@ -5150,16 +5151,21 @@ export class PGLiteEngine implements BrainEngine {
         row.duration_ms,
         row.source_tier_breakdown,
         row.report_json,
+        row.source_id ?? null,
       ]
     );
     return (result.affectedRows ?? 0) > 0;
   }
 
   /** v0.32.6 M5 — read probe runs from the last N days. */
-  async loadContradictionsTrend(days: number): Promise<
+  async loadContradictionsTrend(
+    days: number,
+    opts?: { sourceIds?: string[] }
+  ): Promise<
     Array<{
       run_id: string;
       ran_at: string;
+      source_id: string | null;
       judge_model: string;
       queries_evaluated: number;
       queries_with_contradiction: number;
@@ -5174,20 +5180,23 @@ export class PGLiteEngine implements BrainEngine {
     }>
   > {
     const cutoff = new Date(Date.now() - Math.max(0, days) * 86400000);
+    const scoped = Array.isArray(opts?.sourceIds);
     const { rows } = await this.db.query(
-      `SELECT run_id, ran_at, judge_model,
+      `SELECT run_id, ran_at, source_id, judge_model,
               queries_evaluated, queries_with_contradiction, total_contradictions_flagged,
               wilson_ci_lower, wilson_ci_upper, judge_errors_total,
               cost_usd_total, duration_ms,
               source_tier_breakdown, report_json
        FROM eval_contradictions_runs
        WHERE ran_at >= $1
+         ${scoped ? "AND source_id = ANY($2::text[])" : ""}
        ORDER BY ran_at DESC`,
-      [cutoff]
+      scoped ? [cutoff, opts!.sourceIds] : [cutoff]
     );
     return (rows as Record<string, unknown>[]).map((r) => ({
       run_id: r.run_id as string,
       ran_at: r.ran_at instanceof Date ? (r.ran_at as Date).toISOString() : String(r.ran_at),
+      source_id: typeof r.source_id === "string" ? r.source_id : null,
       judge_model: r.judge_model as string,
       queries_evaluated: Number(r.queries_evaluated),
       queries_with_contradiction: Number(r.queries_with_contradiction),
