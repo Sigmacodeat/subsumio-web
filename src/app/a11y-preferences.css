@@ -1,0 +1,93 @@
+/* ── Darstellungs-/Barrierefreiheits-Einstellungen ──────────────────────────
+   Gelesen aus data-Attributen auf <html>, die src/lib/theme-init-script.ts
+   (A11Y_INIT_SCRIPT) vor dem ersten Frame und src/lib/a11y-preferences.ts
+   zur Laufzeit setzen. Nur Überschreibungen — Basis-Tokens bleiben in
+   globals.css. Einstellungsseite: /dashboard/settings/darstellung. */
+
+/* ── Schriftgröße ────────────────────────────────────────────────────────────
+   Die Wurzel-Schriftgröße skaliert alle rem-basierten Tailwind-Größen
+   (Text, Abstände, Zielgrößen) gemeinsam — WCAG 1.4.4 ohne Layoutbruch. */
+:root[data-font-scale="112"] {
+  font-size: 112.5%;
+}
+:root[data-font-scale="125"] {
+  font-size: 125%;
+}
+
+/* ── Erhöhter Kontrast ───────────────────────────────────────────────────────
+   Sekundärtext und Rahmen auf ≥ 4,5:1 bzw. ≥ 3:1 gegen die jeweilige Fläche.
+   Dashboard hell: Flächen weiß/hsl(40 8% 98%). */
+:root[data-contrast="high"] [data-app="dashboard"],
+:root[data-contrast="high"] [data-app="dashboard"][data-theme="light"] {
+  /* ≈ 12:1 / 10:1 auf Weiß */
+  --ds-text-muted: hsl(40, 10%, 22%);
+  --ds-text-subtle: hsl(40, 8%, 28%);
+  --ds-text-secondary: var(--ds-text-muted);
+  /* ≈ 3,5:1 / 5:1 auf Weiß */
+  --ds-border: hsl(40, 5%, 55%);
+  --ds-border-strong: hsl(40, 5%, 42%);
+  --ds-border-hover: hsl(40, 5%, 42%);
+  --ds-control-border: hsl(40, 5%, 38%);
+}
+
+/* Dashboard dunkel: Flächen hsl(222 14% 10.5%) / hsl(222 12% 14%). */
+:root[data-contrast="high"] [data-app="dashboard"][data-theme="dark"] {
+  /* ≈ 12:1 / 9:1 auf der Karte */
+  --ds-text-muted: hsl(222, 12%, 86%);
+  --ds-text-subtle: hsl(222, 10%, 78%);
+  --ds-text-secondary: var(--ds-text-muted);
+  /* deckend statt transluzent, damit der Wert unabhängig vom Untergrund ≥ 3:1 bleibt */
+  --ds-border: hsl(222, 12%, 46%);
+  --ds-border-strong: hsl(222, 14%, 58%);
+  --ds-border-hover: hsl(222, 14%, 58%);
+  --ds-control-border: hsl(222, 14%, 62%);
+}
+
+/* Marketing-Töne (subsum.io): dieselbe Regel auf die --mk-Tokens. */
+:root[data-contrast="high"] [data-tone="light"] {
+  --mk-text-muted: var(--neutral-800);
+  --mk-text-subtle: var(--neutral-700);
+  --mk-border: var(--neutral-400);
+  --mk-border-strong: var(--neutral-500);
+  --mk-control-border: var(--neutral-600);
+}
+:root[data-contrast="high"] [data-tone="slate"],
+:root[data-contrast="high"] [data-tone="dark"] {
+  --mk-text-muted: var(--neutral-100);
+  --mk-text-subtle: var(--neutral-200);
+  --mk-border: var(--neutral-500);
+  --mk-border-strong: var(--neutral-400);
+}
+
+/* Fokusring kräftiger, wenn erhöhter Kontrast gewählt ist (WCAG 2.4.13). */
+:root[data-contrast="high"] :focus-visible {
+  outline: 3px solid var(--ds-ring, var(--brand-600)) !important;
+  outline-offset: 2px;
+}
+
+/* ── Bewegung reduzieren ─────────────────────────────────────────────────────
+   Spiegelt die prefers-reduced-motion-Regeln aus globals.css, damit die
+   Einstellung auch ohne OS-Schalter greift. `data-motion="allow"` setzt
+   nichts — die OS-Regeln bleiben bewusst unangetastet. */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion="reduce"] .orb,
+:root[data-motion="reduce"] .orb-slow,
+:root[data-motion="reduce"] .pulse-ring::before,
+:root[data-motion="reduce"] .shimmer,
+:root[data-motion="reduce"] .msg-in,
+:root[data-motion="reduce"] .typing-dot,
+:root[data-motion="reduce"] .widget-fade-in,
+:root[data-motion="reduce"] .sidebar-item-in,
+:root[data-motion="reduce"] .gradient-text-animated,
+:root[data-motion="reduce"] .hero-gradient-text,
+:root[data-motion="reduce"] .badge-pulse,
+:root[data-motion="reduce"] .route-transition {
+  animation: none !important;
+}

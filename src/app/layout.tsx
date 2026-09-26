@@ -12,7 +12,9 @@ import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { CspNonceProvider } from "@/components/providers/csp-nonce";
 import LayoutShell from "@/components/marketing/layout-shell";
+import { A11Y_INIT_SCRIPT } from "@/lib/theme-init-script";
 import "./globals.css";
+import "./a11y-preferences.css";
 
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
@@ -160,6 +162,14 @@ export default async function RootLayout({
     >
       <head>
         <meta httpEquiv="content-language" content={htmlLang} />
+        {/* Darstellungs-Einstellungen (Schriftgröße, Kontrast, Bewegung) aus
+            localStorage auf <html> setzen, bevor der erste Frame gemalt wird —
+            sonst springt die Schrift nach der Hydration. Nonce für die CSP. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: A11Y_INIT_SCRIPT }}
+        />
         <link
           rel="alternate"
           type="application/rss+xml"
