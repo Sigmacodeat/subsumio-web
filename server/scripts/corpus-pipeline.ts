@@ -68,6 +68,7 @@ import {
 } from "fs";
 import { join, dirname, resolve } from "path";
 import { forwardAlert } from "./pipeline-alert";
+import { runPsqlFile } from "./psql-env";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
@@ -569,7 +570,11 @@ function psqlQuery(query: string): string {
   const tmpFile = `/tmp/psql_query_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
+    // Credentials via env (never argv/logs); failures are logged masked
+    // instead of silently turning into an empty result.
+    const r = runPsqlFile(tmpFile, dbUrl());
+    if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+    return r.out;
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -823,6 +828,9 @@ function sh(cmd: string): string {
   try {
     return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
   } catch {
+    // Only file/process helpers (find, grep, bun scripts) run here; a
+    // non-zero exit is routine for grep. Database access goes through
+    // psqlQuery → runPsqlFile, which logs its failures (masked).
     return "";
   }
 }

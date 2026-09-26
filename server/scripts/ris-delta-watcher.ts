@@ -34,7 +34,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
 import { dump as yamlDump } from "js-yaml";
 
 import {
@@ -48,6 +47,7 @@ import {
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { forwardAlert } from "./pipeline-alert";
+import { runPsqlFile } from "./psql-env";
 import {
   clearFailure,
   isQuarantined,
@@ -99,16 +99,6 @@ const GAP_ALERT_THRESHOLD = 50;
 
 // ── DB Helpers (gleicher Pattern wie corpus-pipeline.ts) ───────────────
 
-function sh(cmd: string): string {
-  try {
-    return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
-  } catch (err) {
-    // Never silent: a failed state write (cursor, alert) must show in the log.
-    console.error(`  ❌ Befehl fehlgeschlagen: ${(err as Error).message.split("\n")[0]}`);
-    return "";
-  }
-}
-
 function dbUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   try {
@@ -125,7 +115,10 @@ function psqlQuery(query: string): string {
   const tmpFile = `/tmp/psql_delta_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
+    // Credentials via env (never argv/logs); failures are logged masked.
+    const r = runPsqlFile(tmpFile, dbUrl());
+    if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+    return r.out;
   } finally {
     try {
       unlinkSync(tmpFile);
