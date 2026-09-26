@@ -304,6 +304,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     closeAll: closeAllOverlays,
   });
   const [presetCaseSlug, setPresetCaseSlug] = useState<string | undefined>(undefined);
+  /** Prefilled text for the deadline dialog (e.g. from a Posteingang entry). */
+  const [presetDescription, setPresetDescription] = useState<string | undefined>(undefined);
   const copilotPersistenceReady = useRef(false);
 
   // Auto-collapse sidebar when copilot opens on medium screens to maximize content space
@@ -569,8 +571,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     const handlers = Object.entries(eventMap).map(([eventName, overlay]) => {
       const handler = (event: Event) => {
-        const detail = (event as CustomEvent<{ caseSlug?: string }>).detail;
+        const detail = (event as CustomEvent<{ caseSlug?: string; description?: string }>).detail;
         setPresetCaseSlug(detail?.caseSlug);
+        setPresetDescription(
+          typeof detail?.description === "string" ? detail.description : undefined
+        );
         setOverlay(overlay, true);
       };
       window.addEventListener(eventName, handler);
@@ -908,6 +913,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         open={globalDeadlineCreateOpen}
         onOpenChange={setGlobalDeadlineCreateOpen}
         presetCaseSlug={presetCaseSlug}
+        presetDescription={presetDescription}
       />
 
       <InvoiceQuickCreateDialog

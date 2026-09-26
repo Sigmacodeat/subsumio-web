@@ -6,7 +6,7 @@
  * Pendant to the Fristenbuch, fed by existing audit events.
  */
 
-export type OutboundChannel = "email" | "bea" | "post" | "fax" | "whatsapp" | "portal";
+export type OutboundChannel = "email" | "erv" | "bea" | "post" | "fax" | "whatsapp" | "portal";
 
 export type DeliveryStatus = "sent" | "delivered" | "failed" | "bounced" | "complained" | "pending";
 
@@ -80,12 +80,28 @@ export function updateDeliveryStatus(
 
 export const CHANNEL_LABELS: Record<OutboundChannel, { de: string; en: string }> = {
   email: { de: "E-Mail", en: "Email" },
+  erv: { de: "webERV (manuell erfasst)", en: "webERV (recorded manually)" },
   bea: { de: "beA", en: "beA" },
   post: { de: "Post", en: "Mail" },
   fax: { de: "Fax", en: "Fax" },
   whatsapp: { de: "WhatsApp", en: "WhatsApp" },
   portal: { de: "Portal", en: "Portal" },
 };
+
+/**
+ * Channels offered for a manual entry: Austrian (and Swiss/unknown) firms
+ * file court documents through webERV, German firms through beA — each only
+ * sees its own court channel. Existing entries keep their label either way.
+ */
+export function outboundChannelsFor(jurisdiction: unknown): OutboundChannel[] {
+  const german =
+    String(jurisdiction ?? "")
+      .trim()
+      .toUpperCase() === "DE";
+  return (Object.keys(CHANNEL_LABELS) as OutboundChannel[]).filter((c) =>
+    german ? c !== "erv" : c !== "bea"
+  );
+}
 
 export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, { de: string; en: string }> = {
   sent: { de: "Versendet", en: "Sent" },

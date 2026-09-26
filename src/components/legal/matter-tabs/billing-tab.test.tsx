@@ -79,3 +79,17 @@ describe("BillingTab — Zeiteinträge löschen (UIS-3-4)", () => {
     confirm.mockRestore();
   });
 });
+
+describe("BillingTab — Rechnung aus der Akte (W4-01)", () => {
+  it("opens the invoice dialog with this matter preset instead of leaving the Akte", () => {
+    const events: Array<{ caseSlug?: string }> = [];
+    const listener = (e: Event) => events.push((e as CustomEvent<{ caseSlug?: string }>).detail);
+    window.addEventListener("subsumio:create-invoice", listener);
+    const before = window.location.href;
+    render(<BillingTab />);
+    fireEvent.click(screen.getByRole("button", { name: /billingtab.create_invoice/ }));
+    window.removeEventListener("subsumio:create-invoice", listener);
+    expect(events).toEqual([{ caseSlug: "cases/a" }]);
+    expect(window.location.href).toBe(before);
+  });
+});

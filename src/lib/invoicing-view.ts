@@ -142,6 +142,29 @@ export function invoiceCaseFromPage(p: InvoicingPageLike): InvoiceCase {
   };
 }
 
+/**
+ * Deep link into the invoice list: `?case=<slug>` opens the create dialog
+ * with that matter preset, `?invoice=<number>` narrows the list to that
+ * invoice (links from a matter's billed entries).
+ */
+export function invoicingDeepLink(params: { get(name: string): string | null }): {
+  presetCaseSlug?: string;
+  invoiceQuery?: string;
+} {
+  const caseSlug = params.get("case")?.trim();
+  const invoice = params.get("invoice")?.trim();
+  return {
+    ...(caseSlug ? { presetCaseSlug: caseSlug } : {}),
+    ...(invoice ? { invoiceQuery: invoice } : {}),
+  };
+}
+
+/** The matter an invoice was issued for (first of `case_slugs`). */
+export function invoiceCaseSlug(inv: Pick<Invoice, "caseSlugs">): string | undefined {
+  const slug = inv.caseSlugs?.find((s) => typeof s === "string" && s.trim());
+  return slug || undefined;
+}
+
 /** Sum of invoice totals, added in cents so the overview never drifts by a float remainder. */
 export function sumOfTotals(list: Invoice[]): number {
   const cents = list.reduce((s, i) => s + Math.round((Number(i.total) || 0) * 100), 0);
@@ -196,6 +219,7 @@ export function eInvoicePayload(inv: Invoice) {
 export function invoiceErrorText(code: unknown, fallback: string): string {
   switch (code) {
     case "smtp_not_configured":
+    case "mail_not_configured":
       return "E-Mail-Versand ist nicht eingerichtet. Bitte hinterlegen Sie den Postausgang in den Einstellungen.";
     case "validation_failed":
       return "Die E-Rechnung ist unvollständig. Bitte prüfen Sie Mandantenadresse, Kanzleidaten und Positionen.";

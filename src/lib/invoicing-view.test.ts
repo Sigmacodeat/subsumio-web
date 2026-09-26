@@ -8,6 +8,7 @@ import {
   sumOfTotals,
   type Invoice,
 } from "./invoicing-view";
+import * as mod from "./invoicing-view";
 
 const page = (frontmatter: Record<string, unknown>) => ({
   slug: "invoice/r-1",
@@ -98,5 +99,25 @@ describe("eInvoicePayload / invoiceErrorText (QA-13)", () => {
   it("never shows a raw code", () => {
     expect(invoiceErrorText("smtp_not_configured", "x")).toMatch(/E-Mail-Versand/);
     expect(invoiceErrorText("some_code", "Standardtext")).toBe("Standardtext");
+  });
+});
+
+describe("invoicingDeepLink / invoiceCaseSlug (W4-01, W4-12)", () => {
+  it("reads the matter to preset and the invoice to show from the link", () => {
+    const { invoicingDeepLink } = mod;
+    expect(invoicingDeepLink(new URLSearchParams("case=legal%2Fcases%2Fa"))).toEqual({
+      presetCaseSlug: "legal/cases/a",
+    });
+    expect(invoicingDeepLink(new URLSearchParams("invoice=R-2026-0001"))).toEqual({
+      invoiceQuery: "R-2026-0001",
+    });
+    expect(invoicingDeepLink(new URLSearchParams("case=%20"))).toEqual({});
+  });
+
+  it("links an invoice to the matter it was issued for", () => {
+    const { invoiceCaseSlug } = mod;
+    expect(invoiceCaseSlug({ caseSlugs: ["legal/cases/a"] })).toBe("legal/cases/a");
+    expect(invoiceCaseSlug({ caseSlugs: [] })).toBeUndefined();
+    expect(invoiceCaseSlug({})).toBeUndefined();
   });
 });

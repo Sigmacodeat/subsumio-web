@@ -4,18 +4,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type Fm = Record<string, unknown>;
 const pages = new Map<string, Fm>();
 const updates: Array<{ slug: string; frontmatter: Fm }> = [];
-const sendMail = vi.fn(async (..._a: unknown[]) => ({ messageId: "m" }));
+type MailResult = { sent: boolean; via: string; id?: string; error?: string };
+const sendMail = vi.fn(
+  async (..._a: unknown[]): Promise<MailResult> => ({ sent: true, via: "smtp", id: "m" })
+);
+let firmSettings: Record<string, unknown> = {
+  smtpHost: "smtp.test",
+  smtpUser: "u",
+  smtpPassword: "p",
+  kanzleiName: "Kanzlei X",
+};
 
-vi.mock("nodemailer", () => ({
-  default: { createTransport: () => ({ sendMail: (...a: unknown[]) => sendMail(...a) }) },
+vi.mock("@/lib/firm-mail", () => ({
+  sendFirmMail: (...a: unknown[]) => sendMail(...a),
 }));
 vi.mock("@/lib/kanzlei-settings-server", () => ({
-  loadKanzleiSettingsForBrain: async () => ({
-    smtpHost: "smtp.test",
-    smtpUser: "u",
-    smtpPassword: "p",
-    kanzleiName: "Kanzlei X",
-  }),
+  loadKanzleiSettingsForBrain: async () => firmSettings,
 }));
 vi.mock("@/lib/server-brain", () => ({
   createServerBrainClient: () => ({
@@ -74,6 +78,12 @@ beforeEach(() => {
   pages.clear();
   updates.length = 0;
   sendMail.mockClear();
+  firmSettings = {
+    smtpHost: "smtp.test",
+    smtpUser: "u",
+    smtpPassword: "p",
+    kanzleiName: "Kanzlei X",
+  };
 });
 
 describe("POST /api/invoices/send (QA-14 / GELD-2)", () => {
@@ -97,5 +107,32 @@ describe("POST /api/invoices/send (QA-14 / GELD-2)", () => {
     expect(sendMail).toHaveBeenCalledOnce();
     expect(updates[0].frontmatter.status).toBe("sent");
     expect(updates[0].frontmatter.total).toBeUndefined();
+  });
+
+  it("a firm without its own SMTP sends through the same fallback as matter e-mails", async () => {
+    firmSettings = { kanzleiName: "Kanzlei X", emailFrom: "office@kanzlei.example" };
+    sendMail.mockResolvedValueOnce({ sent: true, via: "resend", id: "rs-1" });
+    pages.set(INV, draft);
+    const res = await send();
+    expect(res.status).toBe(200);
+    expect(sendMail).toHaveBeenCalledOnce();
+    const [settingsArg, input] = sendMail.mock.calls[0] as [
+      Record<string, unknown>,
+      Record<string, unknown>,
+    ];
+    expect(settingsArg).toBe(firmSettings);
+    expect(input.to).toBe("m@example.at");
+    expect(input.replyTo).toBe("office@kanzlei.example");
+    expect(updates[0].frontmatter.status).toBe("sent");
+  });
+
+  it("no mail channel at all: honest error, the draft stays a draft", async () => {
+    firmSettings = { kanzleiName: "Kanzlei X" };
+    sendMail.mockResolvedValueOnce({ sent: false, via: "none", error: "mail_not_configured" });
+    pages.set(INV, draft);
+    const res = await send();
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("mail_not_configured");
+    expect(updates).toHaveLength(0);
   });
 });

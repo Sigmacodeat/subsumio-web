@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckSquare, CalendarClock, Briefcase, CheckCircle2, RotateCcw, User } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,14 @@ export default function TasksPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("open");
+  // "Meine Aufgaben" on the Übersicht and the notification link here.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const wanted = searchParams.get("filter");
+    if (wanted === "mine" || wanted === "all" || wanted === "open" || wanted === "done") {
+      setFilter(wanted);
+    }
+  }, [searchParams]);
   const [busyTask, setBusyTask] = useState<string | null>(null);
   const { addToast } = useToast();
   const { data: meData } = useMe();

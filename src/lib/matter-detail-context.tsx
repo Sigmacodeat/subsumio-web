@@ -1013,6 +1013,9 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           claims: updates.claims ?? caseData.claims,
           defenses: updates.defenses ?? caseData.defenses,
           tags: updates.tags ?? caseData.tags,
+          // null clears a Streitwert that was removed on purpose.
+          dispute_value:
+            "disputeValue" in updates ? (updates.disputeValue ?? null) : caseData.disputeValue,
           tasks: updates.tasks ?? tasks,
           time_entries: updates.timeEntries ?? timeEntries,
           expenses: updates.expenses ?? expensesList,

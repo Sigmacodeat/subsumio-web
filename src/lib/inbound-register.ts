@@ -37,7 +37,58 @@ export interface InboundEntry {
   /** Automatische Aktenzuordnung — Vorschlag, noch nicht bestätigt. */
   case_suggested?: boolean;
   case_suggest_reason?: string;
+  /** Who confirmed or corrected the matter, and when. */
+  case_confirmed_by?: string;
+  case_confirmed_at?: string;
+  /** Every change of the assignment — the receipt stamp itself never changes. */
+  assignment_history?: InboundAssignmentChange[];
   created_at: string;
+}
+
+export interface InboundAssignmentChange {
+  from?: string;
+  to: string;
+  by: string;
+  by_id?: string;
+  at: string;
+  /** confirmed = the suggestion was accepted as is. */
+  kind: "confirmed" | "reassigned";
+}
+
+export function isInboundEntryPage(page: {
+  type?: unknown;
+  frontmatter?: Record<string, unknown>;
+}): boolean {
+  return page.type === "inbound_entry" || page.frontmatter?.type === "inbound_entry";
+}
+
+/**
+ * Frontmatter merge for confirming or correcting a register entry's matter.
+ * Only the assignment fields — never the receipt stamp (date, channel,
+ * sender, subject). The previous matter stays visible in the history.
+ */
+export function inboundAssignmentUpdate(
+  entry: Pick<InboundEntry, "case_slug" | "assignment_history">,
+  input: { caseSlug: string; by: string; byId?: string; at: string }
+): Pick<
+  InboundEntry,
+  "case_slug" | "case_suggested" | "case_confirmed_by" | "case_confirmed_at" | "assignment_history"
+> {
+  const change: InboundAssignmentChange = {
+    ...(entry.case_slug ? { from: entry.case_slug } : {}),
+    to: input.caseSlug,
+    by: input.by,
+    ...(input.byId ? { by_id: input.byId } : {}),
+    at: input.at,
+    kind: entry.case_slug === input.caseSlug ? "confirmed" : "reassigned",
+  };
+  return {
+    case_slug: input.caseSlug,
+    case_suggested: false,
+    case_confirmed_by: input.by,
+    case_confirmed_at: input.at,
+    assignment_history: [...(entry.assignment_history ?? []), change],
+  };
 }
 
 export interface InboundCaseCandidate {
@@ -193,4 +244,13 @@ export function exportInboundRegister(entries: InboundEntry[]): string {
       .join(";")
   );
   return header + rows.join("\n") + (rows.length > 0 ? "\n" : "");
+}
+
+/** Prefilled text of a deadline created from a register entry. */
+export function inboundDeadlineDescription(
+  entry: Pick<InboundEntry, "subject" | "received_at">
+): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.received_at ?? "");
+  const day = m ? `${m[3]}.${m[2]}.${m[1]}` : "";
+  return `Frist aus Posteingang: ${entry.subject}${day ? ` (eingelangt ${day})` : ""}`;
 }

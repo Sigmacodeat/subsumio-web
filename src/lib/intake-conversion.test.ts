@@ -78,4 +78,40 @@ describe("buildCaseFromIntake", () => {
     expect(page.frontmatter.priority).toBe("high");
     expect(page.frontmatter.portal_enabled).toBe(true);
   });
+
+  it("carries the opponent, the Streitwert and the engagement letter into the matter (W4-03/W4-13)", () => {
+    const page = buildCaseFromIntake(
+      intake({
+        opponent: "  Gegner GmbH ",
+        acceptance: {
+          ...defaultAcceptanceWorkflow(),
+          engagement_letter: {
+            status: "sent",
+            document_slug: "intake/legal/intake/2026-06-20/max/engagement-letter-1",
+            generated_at: "2026-06-20T11:00:00.000Z",
+          },
+        },
+      }),
+      { caseNumber: "MK-26-0042", disputeValue: 12000, at: new Date("2026-06-20T12:00:00.000Z") }
+    );
+    expect(page.frontmatter.opponent_name).toBe("Gegner GmbH");
+    expect(page.frontmatter.dispute_value).toBe(12000);
+    expect(page.frontmatter.documents).toEqual([
+      expect.objectContaining({
+        slug: "intake/legal/intake/2026-06-20/max/engagement-letter-1",
+        name: "Mandatsannahme-Schreiben",
+        portal_visible: false,
+      }),
+    ]);
+    // A firm prefix yields a lower-case slug the engine stores as such.
+    expect(page.slug).toBe("legal/cases/mk-26-0042-max-muster-arbeitsrecht");
+    expect(page.frontmatter.case_number).toBe("MK-26-0042");
+  });
+
+  it("without opponent or Streitwert no empty fields are written", () => {
+    const page = buildCaseFromIntake(intake(), { caseNumber: "26-0001" });
+    expect(page.frontmatter).not.toHaveProperty("opponent_name");
+    expect(page.frontmatter).not.toHaveProperty("dispute_value");
+    expect(page.frontmatter.documents).toEqual([]);
+  });
 });

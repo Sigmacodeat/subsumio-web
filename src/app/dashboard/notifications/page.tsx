@@ -60,6 +60,11 @@ const TYPE_META: Record<string, { icon: typeof Bell; label: string; color: strin
     color: "text-[color:var(--ds-category-purple-text)]",
   },
   autonomous_task: { icon: Bot, label: "Assistent", color: "text-[color:var(--ds-success-text)]" },
+  task_assigned: {
+    icon: Check,
+    label: "Aufgabe",
+    color: "text-[color:var(--ds-info-text)]",
+  },
   inbox_triage: { icon: Inbox, label: "Posteingang", color: "text-[color:var(--ds-info-text)]" },
 };
 
@@ -151,6 +156,18 @@ function getNotificationMessage(n: NotificationItem): {
         title: "Aufgabe des Assistenten",
         message: `Status: ${statusLabel}`,
         href: caseSlug ? `/dashboard/cases/${encodeURIComponent(caseSlug)}` : undefined,
+      };
+    }
+    case "task_assigned": {
+      const caseSlug = data?.caseSlug as string | undefined;
+      return {
+        title: "Aufgabe zugewiesen",
+        message: `${String(data?.taskText ?? "Aufgabe")}${data?.title ? ` — ${String(data.title)}` : ""}${
+          data?.assignedBy ? ` (von ${String(data.assignedBy)})` : ""
+        }`,
+        href: caseSlug
+          ? `/dashboard/cases/${encodeURIComponent(caseSlug)}?tab=deadlines`
+          : "/dashboard/tasks?filter=mine",
       };
     }
     case "inbox_triage": {

@@ -72,7 +72,7 @@ vi.mock("@/lib/api-handler", () => ({
   apiSuccess: (data: unknown, _meta?: unknown, status = 200) => Response.json({ data }, { status }),
 }));
 
-import { GET, POST } from "./route";
+import { GET, PATCH, POST } from "./route";
 
 function post(body: unknown) {
   return POST(
@@ -416,5 +416,102 @@ describe("GET /api/inbound-register", () => {
       channel: "email",
       attempts: 3,
     });
+  });
+});
+
+describe("PATCH /api/inbound-register — Zuordnung bestätigen/korrigieren (W4-06)", () => {
+  const stored = {
+    slug: "legal/inbound-register/in-1",
+    title: "Posteingang: Ladung",
+    type: "inbound_entry",
+    frontmatter: {
+      id: "in-1",
+      received_at: "2026-09-21T08:00:00.000Z",
+      channel: "erv",
+      direction: "inbound",
+      subject: "Ladung",
+      sender_name: "Bezirksgericht",
+      case_slug: "legal/cases/falsch",
+      case_suggested: true,
+      created_at: "2026-09-21T08:00:00.000Z",
+    },
+  };
+  const patch = (body: unknown) =>
+    PATCH(
+      new Request("http://localhost/api/inbound-register", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }) as unknown as NextRequest
+    );
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListEnginePages.mockReset();
+    mockFetch.mockReset();
+    caseUniverse = undefined;
+  });
+
+  test("confirming keeps the matter, drops the suggestion mark and records who confirmed", async () => {
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(stored), { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await patch({ id: "in-1", action: "confirm" });
+    expect(res.status).toBe(200);
+    const [, init] = mockFetch.mock.calls[1] as [string, RequestInit];
+    const payload = JSON.parse(String(init.body));
+    expect(payload.merge).toBe(true);
+    expect(payload.frontmatter).toMatchObject({
+      case_slug: "legal/cases/falsch",
+      case_suggested: false,
+      case_confirmed_by: "Anwalt",
+    });
+    expect(payload.frontmatter.assignment_history).toHaveLength(1);
+    expect(payload.frontmatter.assignment_history[0].kind).toBe("confirmed");
+  });
+
+  test("a correction moves the entry to the named matter, the receipt stamp stays untouched", async () => {
+    mockListEnginePages.mockResolvedValueOnce([
+      { slug: "legal/cases/richtig", frontmatter: { case_number: "MK-26-0009" } },
+    ]);
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(stored), { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await patch({ id: "in-1", action: "assign", case_slug: "MK-26-0009" });
+    expect(res.status).toBe(200);
+    const [, init] = mockFetch.mock.calls[1] as [string, RequestInit];
+    const fm = JSON.parse(String(init.body)).frontmatter;
+    expect(fm.case_slug).toBe("legal/cases/richtig");
+    expect(fm.assignment_history[0]).toMatchObject({
+      from: "legal/cases/falsch",
+      to: "legal/cases/richtig",
+      kind: "reassigned",
+    });
+    for (const key of ["received_at", "channel", "subject", "sender_name"]) {
+      expect(fm).not.toHaveProperty(key);
+    }
+  });
+
+  test("an unknown Aktenzeichen is refused and nothing is written", async () => {
+    mockListEnginePages.mockResolvedValueOnce([]);
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(stored), { status: 200 }));
+    const res = await patch({ id: "in-1", action: "assign", case_slug: "XX-1" });
+    expect(res.status).toBe(422);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("only register entries can be reassigned", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...stored, type: "legal_case" }), { status: 200 })
+    );
+    const res = await patch({ id: "in-1", action: "confirm" });
+    expect(res.status).toBe(404);
+  });
+
+  test("an unreadable entry is not written (fail closed)", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("busy", { status: 503 }));
+    const res = await patch({ id: "in-1", action: "confirm" });
+    expect(res.status).toBe(502);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -15,8 +15,16 @@ import { formalNameOf } from "@/lib/person-name";
 import type { Lang } from "@/content/site";
 import type { BrainStats } from "@/lib/types";
 import { SecretaryGateWarning } from "@/components/dashboard/secretary-gate-warning";
-import { buildAgenda, fristenToAgendaPages, type AgendaEntry } from "@/lib/overview-agenda";
+import {
+  appointmentsToAgendaPages,
+  buildAgenda,
+  fristenToAgendaPages,
+  type AgendaEntry,
+} from "@/lib/overview-agenda";
 import { useFristen } from "@/lib/queries/legal";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { ownOutlookEvents } from "@/lib/calendar/outlook-events";
 import {
   ATTENTION_ICONS,
   ActiveMatters,
@@ -47,6 +55,46 @@ function greetingFor(hour: number, lang: Lang): string {
 }
 
 const AGENDA_WINDOW_DAYS = 14;
+/** Same completeness bound as the calendar (CALENDAR_LIST_MAX). */
+const APPOINTMENT_LIST_MAX = 10_000;
+
+/**
+ * Calendar appointments for "Fristen & Termine": the firm's appointments
+ * (Verhandlungen, Besprechungen) and the user's own Outlook appointments.
+ */
+function useAgendaAppointments() {
+  const me = useMe();
+  const query = useQuery({
+    queryKey: ["overview", "appointments"],
+    queryFn: async () => {
+      const batch = await api.brain.batchListPagesDetailed(
+        ["appointment", "calendar_event"],
+        APPOINTMENT_LIST_MAX
+      );
+      if (batch.errors.includes("appointment")) throw new Error("appointments unavailable");
+      return {
+        appointments: batch.results["appointment"] ?? [],
+        outlook: batch.results["calendar_event"] ?? [],
+      };
+    },
+    staleTime: 60_000,
+  });
+  const pages = useMemo(() => {
+    if (!query.data) return [];
+    const mirrored = new Set(
+      query.data.appointments
+        .map((p) => (p.frontmatter as Record<string, unknown> | undefined)?.outlook_event_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    );
+    const outlook = ownOutlookEvents(
+      query.data.outlook,
+      { id: me.data?.user?.id, email: me.data?.user?.email },
+      mirrored
+    );
+    return appointmentsToAgendaPages(query.data.appointments, outlook);
+  }, [query.data, me.data?.user?.id, me.data?.user?.email]);
+  return { pages, isError: query.isError, isLoading: query.isLoading };
+}
 
 function MyDay({ role }: { role?: string }) {
   const cockpit = useKanzleiCockpitData();
@@ -61,21 +109,25 @@ function MyDay({ role }: { role?: string }) {
   const deadlinesIncomplete =
     fristenQuery.isError || fristenQuery.data?.partial === true || (!fristen && cockpit.degraded);
 
+  const appointments = useAgendaAppointments();
   const agenda = useMemo(
     () =>
       buildAgenda(
-        fristen ? fristenToAgendaPages(fristen) : cockpit.deadlines.map((d) => d.page),
+        [
+          ...(fristen ? fristenToAgendaPages(fristen) : cockpit.deadlines.map((d) => d.page)),
+          ...appointments.pages,
+        ],
         cockpit.cases,
         { windowDays: AGENDA_WINDOW_DAYS }
       ),
-    [fristen, cockpit.deadlines, cockpit.cases]
+    [fristen, cockpit.deadlines, cockpit.cases, appointments.pages]
   );
 
   // Next open deadline per matter, for the "Aktive Akten" register.
   const nextDeadlineBySlug = useMemo(() => {
     const map = new Map<string, AgendaEntry>();
     for (const e of [...agenda.overdue, ...agenda.upcoming]) {
-      if (e.kind === "vorfrist" || !e.caseSlug) continue;
+      if (e.kind === "vorfrist" || e.appointment || !e.caseSlug) continue;
       if (!map.has(e.caseSlug)) map.set(e.caseSlug, e);
     }
     return map;
@@ -85,8 +137,9 @@ function MyDay({ role }: { role?: string }) {
     () => [...agenda.overdue, ...agenda.days.flatMap((d) => d.entries)],
     [agenda]
   );
+  // Deadlines only — an appointment is never counted as a Frist.
   const dueThisWeek = allEntries.filter(
-    (e) => e.kind !== "vorfrist" && e.days >= 0 && e.days <= 7
+    (e) => e.kind !== "vorfrist" && !e.appointment && e.days >= 0 && e.days <= 7
   ).length;
   const unreviewed = fristen
     ? fristen.filter((f) => f.status !== "done" && f.review_status === "unreviewed").length
@@ -99,7 +152,7 @@ function MyDay({ role }: { role?: string }) {
     {
       label: "Fällig in 7 Tagen",
       value: dueThisWeek,
-      hint: "Fristen und Termine",
+      hint: "Fristen",
       href: "/dashboard/deadlines",
       tone: "warning",
     },
@@ -126,7 +179,19 @@ function MyDay({ role }: { role?: string }) {
     },
   ];
 
+  const myTasks = badges.data?.["/dashboard/tasks"];
   const attention: AttentionItem[] = [
+    {
+      // Tasks colleagues assigned to me (same number as the sidebar badge).
+      key: "tasks",
+      label: "Meine Aufgaben",
+      hint: "Mir zugewiesen, offen",
+      count: myTasks?.count ?? 0,
+      capped: myTasks?.degraded === true,
+      href: "/dashboard/tasks?filter=mine",
+      icon: ATTENTION_ICONS.task,
+      tone: "warning",
+    },
     {
       key: "inbox",
       label: "Eingänge zuordnen",
@@ -216,6 +281,15 @@ function MyDay({ role }: { role?: string }) {
 
   return (
     <div className="space-y-6">
+      {appointments.isError && !deadlinesIncomplete && (
+        <div
+          role="status"
+          className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2 text-xs text-[color:var(--ds-warning-text)]"
+        >
+          Kalendertermine konnten nicht geladen werden — Verhandlungen und Besprechungen bitte im
+          Kalender prüfen.
+        </div>
+      )}
       {(deadlinesIncomplete || cockpit.degraded) && (
         <div
           role="alert"

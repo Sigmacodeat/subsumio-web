@@ -8,6 +8,8 @@ vi.mock("@/lib/auth/rate-limit", () => ({
 }));
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
 vi.mock("@/lib/auth/store", () => ({ markOnboardingProgress: vi.fn() }));
+const notifyTasks = vi.hoisted(() => vi.fn(async () => 0));
+vi.mock("@/lib/task-assignment-notify", () => ({ notifyTaskAssignments: notifyTasks }));
 vi.mock("@/lib/engine", async () => ({
   ENGINE_URL: "http://engine.test",
   engineConfigurationResponse: () => null,
@@ -87,6 +89,41 @@ describe("POST /api/pages", () => {
     const actions = vi.mocked(logAudit).mock.calls.map((c) => c[0]);
     expect(actions).toContain("case.update");
     expect(actions).not.toContain("case.create");
+  });
+
+  it("a matter task assigned to a colleague is handed to the notification (W4-08)", async () => {
+    const storedTasks = [{ id: "t1", text: "Ladung an Mandantin", done: false }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        engineCalls.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        if (init?.body === undefined) {
+          return Response.json({
+            slug: "legal/cases/a",
+            type: "legal_case",
+            title: "Muster",
+            frontmatter: { type: "legal_case", tasks: storedTasks, version: 1 },
+          });
+        }
+        return Response.json({ slug: "legal/cases/a", success: true });
+      })
+    );
+    const incoming = [{ ...storedTasks[0], assigneeId: "sek", assigneeName: "Sekretariat" }];
+    const res = await post({
+      slug: "legal/cases/a",
+      merge: true,
+      frontmatter: { tasks: incoming },
+    });
+    expect(res.status).toBe(200);
+    expect(notifyTasks).toHaveBeenCalledWith(
+      expect.objectContaining({
+        brainId: "brain_a",
+        caseSlug: "legal/cases/a",
+        storedTasks,
+        incomingTasks: incoming,
+        actor: expect.objectContaining({ id: "u1" }),
+      })
+    );
   });
 
   it("rejects a merge on a document checked out by another user (409)", async () => {

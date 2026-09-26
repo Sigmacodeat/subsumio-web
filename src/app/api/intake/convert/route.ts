@@ -13,6 +13,14 @@ import {
   intakeParties,
 } from "@/lib/conflict-gate";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { ensureCaseContacts } from "@/lib/case-contacts";
+import {
+  IntakeCaseNumberError,
+  checkSignedPoa,
+  relinkIntakeRecords,
+  resolveIntakeCaseNumber,
+  type RelinkResult,
+} from "@/lib/intake-case-links";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
@@ -29,6 +37,8 @@ const convertSchema = z.object({
   priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   portal_enabled: z.boolean().default(false),
   send_document_request: z.boolean().default(false),
+  /** Streitwert in Euro, entered at acceptance (RATG/AHK basis). */
+  dispute_value: z.number().min(0).max(1_000_000_000_000).optional(),
 });
 
 function encodeSlug(slug: string): string {
@@ -95,6 +105,14 @@ export const POST = createHandler(
       }
     }
 
+    // "Vollmacht unterschrieben" must be a signed, unexpired record.
+    const poaCheck = await checkSignedPoa(ctx.headers, workflow);
+    if (!poaCheck.ok) {
+      return poaCheck.code === "poa_unreadable"
+        ? apiError("poa_unreadable", poaCheck.message, 503)
+        : apiError("acceptance_incomplete", poaCheck.message, 422, { code: poaCheck.code });
+    }
+
     // Kollisionsprüfung (§ 10 Abs 1 RAO): the stored check must come from the
     // server (real user id), and the check runs AGAIN now — a conflict that
     // appeared after the check, or one no justified waiver covers, blocks.
@@ -149,9 +167,30 @@ export const POST = createHandler(
       );
     }
 
+    // One number range for every matter: the firm's Aktenzeichen, reserved on
+    // the intake so a retry lands on the same matter.
+    let caseNumber: string;
+    try {
+      caseNumber = await resolveIntakeCaseNumber(
+        ctx.headers,
+        ctx.brainId,
+        intakePage,
+        body.case_number
+      );
+    } catch (err) {
+      if (!(err instanceof IntakeCaseNumberError)) throw err;
+      log.error("[intake/convert] case number not allocated:", err.message);
+      return apiError(
+        "case_number_unavailable",
+        "Aktenzeichen konnte nicht vergeben werden. Akte wurde nicht angelegt.",
+        503
+      );
+    }
+
     const casePage = buildCaseFromIntake(intakePage, {
       caseSlug: body.case_slug,
-      caseNumber: body.case_number,
+      caseNumber,
+      disputeValue: body.dispute_value,
       title: body.title,
       priority: body.priority,
       portalEnabled: body.portal_enabled,
@@ -215,6 +254,14 @@ export const POST = createHandler(
     }
 
     if (!caseAlreadyCreated) {
+      // Client and opponent become contacts linked to the matter (same as a
+      // matter created in the wizard) — the opponent is then found by the
+      // conflict check of every later mandate.
+      const links = await ensureCaseContacts(ctx.headers, casePage.frontmatter);
+      if (Object.keys(links).length > 0) Object.assign(casePage.frontmatter, links);
+    }
+
+    if (!caseAlreadyCreated) {
       // Paket C5 ("Akte sicher anlegen") replaces this direct engine write.
       // The conflict gate above must stay BEFORE that call and hand over
       // `casePage.frontmatter` (conflict_status + mandate_acceptance) as-is.
@@ -260,6 +307,21 @@ export const POST = createHandler(
     });
     if (!updateRes.ok)
       return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);
+
+    // Power of attorney, fee agreement and engagement letter were filed
+    // under the intake; they belong to the matter now.
+    let relinked: RelinkResult | undefined;
+    try {
+      relinked = await relinkIntakeRecords(ctx.headers, {
+        intakeSlug: body.slug,
+        caseSlug: casePage.slug,
+        engagementLetterSlug: workflow.engagement_letter.document_slug,
+      });
+    } catch (err) {
+      log.warn("intake records not moved", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     // Missing documents noted at intake become a real document_request draft
     // (visible in cockpit and sendable to the client), not just inert case
@@ -372,6 +434,7 @@ export const POST = createHandler(
       case: casePage,
       intake_slug: body.slug,
       document_request_slug: documentRequestSlug,
+      ...(relinked ? { relinked } : {}),
       ...(body.send_document_request ? { document_request_sent: requestSent } : {}),
     });
   }

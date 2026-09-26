@@ -13,6 +13,7 @@ import {
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
+import { notifyTaskAssignments } from "@/lib/task-assignment-notify";
 import {
   SERVER_OWNED_CONFLICT_KEYS,
   canWaiveConflict,
@@ -564,6 +565,21 @@ export const POST = createHandler(
         at: new Date().toISOString(),
         action: isMerge ? "updated" : "created",
       });
+
+      // A task assigned to a colleague reaches them as a notification.
+      if (
+        Array.isArray(body.frontmatter?.tasks) &&
+        (body.type === "legal_case" || current?.type === "legal_case" || isCaseSlug(body.slug))
+      ) {
+        void notifyTaskAssignments({
+          brainId: ctx.brainId,
+          actor: { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email },
+          caseSlug: body.slug,
+          caseTitle: body.title ?? current?.title,
+          storedTasks: current?.frontmatter?.tasks,
+          incomingTasks: body.frontmatter?.tasks,
+        });
+      }
 
       return Response.json({ ...redactPageSecrets(result), conflictWarning });
     } catch (e) {

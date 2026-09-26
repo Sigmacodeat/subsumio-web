@@ -269,6 +269,7 @@ export interface Notification {
     | "document_request"
     | "retention"
     | "autonomous_task"
+    | "task_assigned"
     | "inbox_triage"
     | "copilot_stale_case"
     | "copilot_missing_time_entries"
@@ -889,6 +890,42 @@ export async function createAutonomousTaskNotification(opts: {
       status: opts.status,
       caseSlug: opts.caseSlug,
       result: opts.result,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
+/**
+ * A matter task was assigned to someone. One notification per task and
+ * assignee (deterministic id) — saving the matter again does not repeat it.
+ */
+export async function createTaskAssignedNotification(opts: {
+  userId: string;
+  brainId: string;
+  caseSlug: string;
+  caseTitle?: string;
+  taskId: string;
+  taskText: string;
+  dueDate?: string;
+  assignedBy: string;
+}): Promise<void> {
+  const slugPart = opts.caseSlug.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60);
+  const taskPart = opts.taskId.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const notif: Notification = {
+    id: `notif_task_${slugPart}_${taskPart}_${opts.userId}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "task_assigned",
+    data: {
+      caseSlug: opts.caseSlug,
+      title: opts.caseTitle,
+      taskId: opts.taskId,
+      taskText: opts.taskText,
+      dueDate: opts.dueDate,
+      assignedBy: opts.assignedBy,
+      message: `${opts.assignedBy} hat Ihnen eine Aufgabe zugewiesen: ${opts.taskText}`,
     },
     readAt: null,
     createdAt: new Date().toISOString(),

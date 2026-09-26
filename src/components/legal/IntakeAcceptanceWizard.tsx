@@ -15,6 +15,7 @@ import {
   Shield,
   PenTool,
   Send,
+  Wallet,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,12 +31,16 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { KYCVerification } from "@/lib/kyc";
+import { isPoAValid, type PowerOfAttorney } from "@/lib/power-of-attorney";
+import type { FeeAgreement, FeeModelType } from "@/lib/fee-agreements";
+import { disputeValueFromInput } from "@/lib/dispute-value";
+import { csrfFetch } from "@/lib/csrf";
 import { encodeSlugPath } from "@/lib/utils";
 import { canAcceptMandate, type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 import type { ConflictCheckResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export type AcceptanceStep = "conflict" | "kyc" | "poa" | "engagement" | "convert";
+export type AcceptanceStep = "conflict" | "kyc" | "poa" | "engagement" | "fee" | "convert";
 
 export interface IntakeAcceptanceItem {
   slug: string;
@@ -45,6 +50,8 @@ export interface IntakeAcceptanceItem {
     email?: string;
     phone_hash?: string;
     legal_area?: string;
+    /** Gegenseite laut Erstanfrage — wird als Gegner in die Akte übernommen. */
+    opponent?: string;
     summary: string;
     acceptance?: IntakeAcceptanceWorkflow;
     source?: string;
@@ -66,8 +73,22 @@ const STEPS: Array<{ id: AcceptanceStep; label: string; icon: React.ElementType 
   { id: "kyc", label: "Identitätsprüfung", icon: UserCheck },
   { id: "poa", label: "Vollmacht", icon: PenTool },
   { id: "engagement", label: "Mandatsbrief", icon: FileText },
+  { id: "fee", label: "Honorar", icon: Wallet },
   { id: "convert", label: "Akte anlegen", icon: FileCheck },
 ];
+
+const FEE_MODEL_LABELS: Record<FeeModelType, string> = {
+  hourly: "Stundensatz",
+  flat: "Pauschale",
+  rvg: "Tarif (RATG/AHK)",
+  capped: "Stundensatz mit Obergrenze",
+};
+
+/** Whether the acceptance may go past the POA step: signed = a linked, valid record. */
+export function poaStepComplete(poa: IntakeAcceptanceWorkflow["poa"]): boolean {
+  if (!poa.required || poa.status === "not_required") return true;
+  return poa.status === "signed" && Boolean(poa.poa_slug);
+}
 
 export function IntakeAcceptanceWizard({
   open,
@@ -102,6 +123,15 @@ export function IntakeAcceptanceWizard({
   const [kycRecords, setKycRecords] = useState<KYCVerification[] | null>(null);
   const [sendDocRequest, setSendDocRequest] = useState(false);
   const [portalEnabled, setPortalEnabled] = useState(false);
+  const [poaRecords, setPoaRecords] = useState<PowerOfAttorney[] | null>(null);
+  const [feeAgreements, setFeeAgreements] = useState<FeeAgreement[] | null>(null);
+  const [feeForm, setFeeForm] = useState<{ model: FeeModelType; amount: string; note: string }>({
+    model: "hourly",
+    amount: "",
+    note: "",
+  });
+  const [savingFee, setSavingFee] = useState(false);
+  const [disputeValue, setDisputeValue] = useState("");
 
   useEffect(() => {
     setWorkflow(
@@ -118,7 +148,91 @@ export function IntakeAcceptanceWizard({
     setDirty(false);
     setSendDocRequest(false);
     setPortalEnabled(false);
+    setDisputeValue("");
   }, [item, open]);
+
+  // Powers of attorney recorded for this intake (created on the POA page
+  // under the intake). Reloaded whenever the step is shown.
+  useEffect(() => {
+    if (!open || step !== "poa") return;
+    let cancelled = false;
+    setPoaRecords(null);
+    fetch(`/api/power-of-attorney?case_slug=${encodeURIComponent(item.slug)}`, {
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((json: { data?: { items?: PowerOfAttorney[] } }) => {
+        if (!cancelled) setPoaRecords(json.data?.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setPoaRecords([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, step, item.slug]);
+
+  const loadFeeAgreements = useCallback(async () => {
+    setFeeAgreements(null);
+    try {
+      const r = await fetch(`/api/fee-agreements?case_slug=${encodeURIComponent(item.slug)}`, {
+        cache: "no-store",
+      });
+      const json = (await r.json()) as { data?: { items?: FeeAgreement[] } };
+      setFeeAgreements(r.ok ? (json.data?.items ?? []) : []);
+    } catch {
+      setFeeAgreements([]);
+    }
+  }, [item.slug]);
+
+  useEffect(() => {
+    if (!open || step !== "fee") return;
+    void loadFeeAgreements();
+  }, [open, step, loadFeeAgreements]);
+
+  async function saveFeeAgreement() {
+    const amount = Number(feeForm.amount.replace(/\./g, "").replace(",", "."));
+    const needsAmount = feeForm.model !== "rvg";
+    if (needsAmount && (!Number.isFinite(amount) || amount <= 0)) {
+      addToast({ type: "error", title: "Bitte einen Betrag angeben" });
+      return;
+    }
+    setSavingFee(true);
+    try {
+      const res = await csrfFetch("/api/fee-agreements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Filed under the intake; moved to the matter when it is created.
+          case_slug: item.slug,
+          model: feeForm.model,
+          ...(feeForm.model === "hourly" || feeForm.model === "capped"
+            ? { hourly_rate: amount }
+            : {}),
+          ...(feeForm.model === "flat" ? { flat_amount: amount } : {}),
+          ...(feeForm.model === "rvg" && feeForm.note.trim()
+            ? { rvg_area: feeForm.note.trim() }
+            : {}),
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+        throw new Error(err.message || err.error || "save_failed");
+      }
+      setFeeForm({ model: "hourly", amount: "", note: "" });
+      addToast({ type: "success", title: "Honorarvereinbarung erfasst" });
+      await loadFeeAgreements();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: "Honorarvereinbarung nicht gespeichert",
+        description:
+          err instanceof Error && err.message !== "save_failed" ? err.message : undefined,
+      });
+    } finally {
+      setSavingFee(false);
+    }
+  }
 
   // Identification checks recorded for this intake (the KYC page stores them
   // under the intake slug). Reloaded whenever the step is shown, so a check
@@ -147,14 +261,17 @@ export function IntakeAcceptanceWizard({
       case "kyc":
         return workflow.kyc.status === "verified" || workflow.kyc.status === "not_required";
       case "poa":
-        return workflow.poa.status === "signed" || workflow.poa.status === "not_required";
+        return poaStepComplete(workflow.poa);
       case "engagement":
         return (
           workflow.engagement_letter.status === "sent" ||
           workflow.engagement_letter.status === "draft"
         );
+      case "fee":
+        // Optional: without an agreement the firm's own rate applies.
+        return true;
       case "convert":
-        return canAcceptMandate(workflow).ok;
+        return canAcceptMandate(workflow).ok && poaStepComplete(workflow.poa);
       default:
         return false;
     }
@@ -317,6 +434,11 @@ export function IntakeAcceptanceWizard({
 
   async function handleConvert() {
     const result = canAcceptMandate(workflow);
+    const parsedDispute = disputeValueFromInput(disputeValue);
+    if (!parsedDispute.ok) {
+      addToast({ type: "error", title: "Streitwert ungültig", description: "z. B. 12.000,50" });
+      return;
+    }
     if (!result.ok) {
       addToast({
         type: "error",
@@ -337,6 +459,7 @@ export function IntakeAcceptanceWizard({
         priority: "medium",
         portal_enabled: portalEnabled,
         send_document_request: sendDocRequest,
+        ...(parsedDispute.value !== null ? { dispute_value: parsedDispute.value } : {}),
       });
       addToast({
         type: "success",
@@ -664,22 +787,71 @@ export function IntakeAcceptanceWizard({
                   </label>
                   {workflow.poa.required && (
                     <>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={workflow.poa.status === "signed"}
-                          onChange={(e) =>
-                            updateWorkflow({
-                              poa: {
-                                ...workflow.poa,
-                                status: e.target.checked ? "signed" : "pending",
-                              },
-                            })
-                          }
-                          className="rounded border-[color:var(--ds-border)]"
-                        />
-                        Vollmacht unterschrieben vorhanden
-                      </label>
+                      {poaRecords === null ? (
+                        <p className="text-xs text-[color:var(--ds-text-muted)]">
+                          Vollmachten werden geladen…
+                        </p>
+                      ) : poaRecords.length === 0 ? (
+                        <p className="text-sm text-[color:var(--ds-warning-text)]">
+                          Für diese Anfrage gibt es noch keine Vollmacht. Bitte auf der
+                          Vollmacht-Seite anlegen und unterschreiben lassen.
+                        </p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {poaRecords.map((p) => {
+                            const slug = `legal/poa/${p.id}`;
+                            const linked = workflow.poa.poa_slug === slug;
+                            const valid = isPoAValid(p);
+                            return (
+                              <li
+                                key={p.id}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm"
+                              >
+                                <span>
+                                  {p.client_name} ·{" "}
+                                  {valid
+                                    ? "unterschrieben"
+                                    : p.status === "sent"
+                                      ? "zur Unterschrift versandt"
+                                      : p.status === "signed"
+                                        ? "abgelaufen"
+                                        : "noch nicht unterschrieben"}
+                                </span>
+                                {valid &&
+                                  (linked ? (
+                                    <span className="flex items-center gap-1 text-[color:var(--ds-success-text)]">
+                                      <CheckCircle2 size={14} aria-hidden /> verknüpft
+                                    </span>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() =>
+                                        updateWorkflow({
+                                          poa: {
+                                            ...workflow.poa,
+                                            status: "signed",
+                                            poa_slug: slug,
+                                            type: p.type,
+                                          },
+                                        })
+                                      }
+                                    >
+                                      Mit dieser Vollmacht annehmen
+                                    </Button>
+                                  ))}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      {workflow.poa.status === "signed" && !workflow.poa.poa_slug && (
+                        <p className="text-xs text-[color:var(--ds-warning-text)]">
+                          Als unterschrieben markiert, aber keine Vollmacht verknüpft. Bitte die
+                          unterschriebene Vollmacht oben auswählen.
+                        </p>
+                      )}
                       <Button
                         type="button"
                         variant="outline"
@@ -759,6 +931,105 @@ export function IntakeAcceptanceWizard({
               </div>
             )}
 
+            {step === "fee" && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Honorarvereinbarung</h3>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Optional. Die Vereinbarung wird mit der Akte verknüpft und bei der Abrechnung
+                  verwendet; ohne Vereinbarung gilt der Kanzlei-Stundensatz.
+                </p>
+                {feeAgreements === null ? (
+                  <p className="text-xs text-[color:var(--ds-text-muted)]">Wird geladen…</p>
+                ) : feeAgreements.length > 0 ? (
+                  <ul className="space-y-2">
+                    {feeAgreements.map((a) => (
+                      <li
+                        key={a.id}
+                        className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm"
+                      >
+                        <CheckCircle2
+                          size={14}
+                          className="text-[color:var(--ds-success-text)]"
+                          aria-hidden
+                        />
+                        {FEE_MODEL_LABELS[a.model] ?? a.model}
+                        {a.hourly_rate ? ` · ${a.hourly_rate} €/h` : ""}
+                        {a.flat_amount ? ` · ${a.flat_amount} €` : ""}
+                        {a.rvg_area ? ` · ${a.rvg_area}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-[color:var(--ds-text-muted)]">
+                    Noch keine Honorarvereinbarung erfasst.
+                  </p>
+                )}
+                <div className="grid grid-cols-1 gap-3 rounded-lg border border-[color:var(--ds-border)] p-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="fee-model" className="text-xs">
+                      Modell
+                    </Label>
+                    <select
+                      id="fee-model"
+                      value={feeForm.model}
+                      onChange={(e) =>
+                        setFeeForm({ ...feeForm, model: e.target.value as FeeModelType })
+                      }
+                      className="w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-2 text-sm"
+                    >
+                      {(Object.keys(FEE_MODEL_LABELS) as FeeModelType[]).map((m) => (
+                        <option key={m} value={m}>
+                          {FEE_MODEL_LABELS[m]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {feeForm.model === "rvg" ? (
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="fee-note" className="text-xs">
+                        Tarif / Tarifpost (optional)
+                      </Label>
+                      <Input
+                        id="fee-note"
+                        value={feeForm.note}
+                        onChange={(e) => setFeeForm({ ...feeForm, note: e.target.value })}
+                        placeholder="z. B. RATG, Einheitssatz"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="fee-amount" className="text-xs">
+                        {feeForm.model === "flat" ? "Pauschale (€)" : "Stundensatz (€)"}
+                      </Label>
+                      <Input
+                        id="fee-amount"
+                        inputMode="decimal"
+                        value={feeForm.amount}
+                        onChange={(e) => setFeeForm({ ...feeForm, amount: e.target.value })}
+                        placeholder={feeForm.model === "flat" ? "z. B. 1.500" : "z. B. 280"}
+                      />
+                    </div>
+                  )}
+                  <div className="sm:col-span-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void saveFeeAgreement()}
+                      disabled={savingFee}
+                      className="gap-2"
+                    >
+                      {savingFee ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Wallet size={14} />
+                      )}
+                      Honorarvereinbarung erfassen
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {step === "convert" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Zusammenfassung</h3>
@@ -775,14 +1046,31 @@ export function IntakeAcceptanceWizard({
                       workflow.kyc.status === "verified" || workflow.kyc.status === "not_required"
                     }
                   />
-                  <StatusRow
-                    label="Vollmacht"
-                    ok={workflow.poa.status === "signed" || workflow.poa.status === "not_required"}
-                  />
+                  <StatusRow label="Vollmacht" ok={poaStepComplete(workflow.poa)} />
                   <StatusRow
                     label="Mandatsbrief"
                     ok={workflow.engagement_letter.status === "sent"}
                   />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Gegner</Label>
+                    <p className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm">
+                      {item.frontmatter.opponent?.trim() || "—"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="intake-dispute-value" className="text-xs">
+                      Streitwert (€, optional)
+                    </Label>
+                    <Input
+                      id="intake-dispute-value"
+                      inputMode="decimal"
+                      value={disputeValue}
+                      onChange={(e) => setDisputeValue(e.target.value)}
+                      placeholder="z. B. 12.000"
+                    />
+                  </div>
                 </div>
                 {!canAcceptMandate(workflow).ok && (
                   <p className="text-xs text-[color:var(--ds-danger-text)]">
@@ -840,7 +1128,9 @@ export function IntakeAcceptanceWizard({
                 <Button
                   type="button"
                   onClick={() => void handleConvert()}
-                  disabled={submitting || !canAcceptMandate(workflow).ok}
+                  disabled={
+                    submitting || !canAcceptMandate(workflow).ok || !poaStepComplete(workflow.poa)
+                  }
                   className="brand-bg gap-2 text-white"
                 >
                   {submitting ? (

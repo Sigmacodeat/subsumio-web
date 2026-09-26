@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mockGetPage = vi.fn();
 const mockUpdatePage = vi.fn();
+const mockAppend = vi.fn(async (..._a: unknown[]) => ({}));
 
 vi.mock("@/lib/server-brain", () => ({
   createServerBrainClient: () => ({
     getPage: (...args: unknown[]) => mockGetPage(...args),
     updatePage: (...args: unknown[]) => mockUpdatePage(...args),
+    appendPageArray: (...args: unknown[]) => mockAppend(...args),
   }),
 }));
 
@@ -46,7 +48,7 @@ vi.mock("@/lib/api-handler", () => ({
   apiSuccess: (data: unknown, _meta?: unknown, status = 200) => Response.json({ data }, { status }),
 }));
 
-import { PATCH, DELETE } from "./route";
+import { PATCH, DELETE, POST } from "./route";
 
 function call(fn: (req: NextRequest) => Promise<Response>, method: string, body: unknown) {
   return fn(
@@ -193,6 +195,65 @@ describe("DELETE /api/time — standalone time_entry pages", () => {
 
   test("matter entries still require case_slug", async () => {
     const res = await del({ id: "e1" });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/time — Tarifleistung (W4-09)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetPage.mockResolvedValue({ slug: "legal/cases/a", frontmatter: {} });
+  });
+  const post = (body: unknown) => call(POST, "POST", body);
+  const base = {
+    case_slug: "legal/cases/a",
+    description: "Klage — BG 12.000 €",
+    date: "2026-09-24",
+  };
+
+  test("a Tarifleistung is stored with its amount and without an hourly rate", async () => {
+    const res = await post({
+      ...base,
+      minutes: 90,
+      rate: 250,
+      tariff: { system: "ratg", amount: 431.104, basis: 12000, label: "Klage TP 3A" },
+    });
+    expect(res.status).toBe(201);
+    const [, field, entries] = mockAppend.mock.calls[0] as [
+      string,
+      string,
+      Array<Record<string, unknown>>,
+    ];
+    expect(field).toBe("time_entries");
+    expect(entries[0]).toMatchObject({
+      minutes: 90,
+      billed: false,
+      tariff: { system: "ratg", amount: 431.1, basis: 12000, label: "Klage TP 3A" },
+    });
+    expect(entries[0].rate).toBeUndefined();
+  });
+
+  test("a Tarifleistung may be recorded without time spent", async () => {
+    const res = await post({
+      ...base,
+      minutes: 0,
+      tariff: { system: "ahk", amount: 120, label: "Einheitssatz" },
+    });
+    expect(res.status).toBe(201);
+  });
+
+  test("an hourly entry still needs minutes", async () => {
+    const res = await post({ ...base, minutes: 0 });
+    expect(res.status).toBe(400);
+    expect(mockAppend).not.toHaveBeenCalled();
+  });
+
+  test("a tariff without a positive amount is refused", async () => {
+    const res = await post({
+      ...base,
+      minutes: 10,
+      tariff: { system: "ratg", amount: 0, label: "x" },
+    });
     expect(res.status).toBe(400);
   });
 });
