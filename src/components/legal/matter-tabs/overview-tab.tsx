@@ -54,7 +54,7 @@ import {
 import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import type { DashboardKey } from "@/content/dashboard";
-import type { CaseDetail } from "@/lib/matter-detail-types";
+import type { CaseContact, CaseDetail } from "@/lib/matter-detail-types";
 import { MatterWorkflowCockpit } from "@/components/legal/MatterWorkflowCockpit";
 import { ActIntelligencePanel } from "@/components/legal/ActIntelligencePanel";
 import { CaseNextStepsPanel } from "@/components/legal/CaseNextStepsPanel";
@@ -63,10 +63,16 @@ import { QuestionnairesPanel } from "@/components/legal/QuestionnairesPanel";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 import { useGroundedAnswer } from "@/lib/use-grounded-answer";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { ContactSearchPicker } from "@/components/legal/ContactSearchPicker";
 
 export function OverviewTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  /** A contact picked by search joins the matter's contact list. */
+  const rememberContact = (contact: CaseContact) =>
+    ctx.setContactsList((prev) =>
+      prev.some((c) => c.slug === contact.slug) ? prev : [...prev, contact]
+    );
   const router = useRouter();
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [investigationLoading, setInvestigationLoading] = useState(false);
@@ -627,7 +633,10 @@ export function OverviewTab() {
           {/* Client */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="matter-client-picker"
+                className="text-xs text-[color:var(--ds-text-muted)]"
+              >
                 {t("cases.detail_client")}
               </label>
               <button
@@ -644,13 +653,17 @@ export function OverviewTab() {
                 <Plus size={12} /> erstellen
               </button>
             </div>
-            <select
-              value={caseData.clientSlug || ""}
-              onChange={(e) => {
-                const selected = ctx.contacts.find((c) => c.slug === e.target.value);
+            <ContactSearchPicker
+              id="matter-client-picker"
+              label={t("cases.detail_client")}
+              role="client"
+              value={caseData.clientSlug}
+              valueName={caseData.clientName}
+              onSelect={(selected) => {
+                if (selected) rememberContact(selected);
                 const updated: CaseDetail = {
                   ...caseData,
-                  clientSlug: e.target.value || undefined,
+                  clientSlug: selected?.slug,
                   clientName: selected?.name ?? caseData.clientName,
                 };
                 ctx.setCaseData(updated);
@@ -659,22 +672,15 @@ export function OverviewTab() {
                   clientName: updated.clientName,
                 });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-            >
-              <option value="">{t("cases.detail_select_placeholder")}</option>
-              {ctx.contacts
-                .filter((c) => c.role === "client")
-                .map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
+            />
           </div>
           {/* Opponent */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="matter-opponent-picker"
+                className="text-xs text-[color:var(--ds-text-muted)]"
+              >
                 {t("cases.detail_opponent")}
               </label>
               <button
@@ -691,14 +697,17 @@ export function OverviewTab() {
                 <Plus size={12} /> erstellen
               </button>
             </div>
-            <select
-              value={(caseData.opponentSlugs ?? [])[0] || ""}
-              onChange={(e) => {
-                const selected = ctx.contacts.find((c) => c.slug === e.target.value);
-                const slugs = e.target.value ? [e.target.value] : undefined;
+            <ContactSearchPicker
+              id="matter-opponent-picker"
+              label={t("cases.detail_opponent")}
+              role="opponent"
+              value={(caseData.opponentSlugs ?? [])[0]}
+              valueName={caseData.opponentName}
+              onSelect={(selected) => {
+                if (selected) rememberContact(selected);
                 const updated: CaseDetail = {
                   ...caseData,
-                  opponentSlugs: slugs,
+                  opponentSlugs: selected ? [selected.slug] : undefined,
                   opponentName: selected?.name ?? caseData.opponentName,
                 };
                 ctx.setCaseData(updated);
@@ -707,22 +716,15 @@ export function OverviewTab() {
                   opponentName: updated.opponentName,
                 });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-            >
-              <option value="">{t("cases.detail_select_placeholder")}</option>
-              {ctx.contacts
-                .filter((c) => c.role === "opponent")
-                .map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
+            />
           </div>
           {/* Court */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-[color:var(--ds-text-muted)]">
+              <label
+                htmlFor="matter-court-picker"
+                className="text-xs text-[color:var(--ds-text-muted)]"
+              >
                 {t("cases.detail_court")}
               </label>
               <button
@@ -739,44 +741,25 @@ export function OverviewTab() {
                 <Plus size={12} /> erstellen
               </button>
             </div>
-            <select
-              value={caseData.courtSlug || ""}
-              onChange={(e) => {
-                const selected = ctx.contacts.find((c) => c.slug === e.target.value);
+            <ContactSearchPicker
+              id="matter-court-picker"
+              label={t("cases.detail_court")}
+              role="court"
+              value={caseData.courtSlug}
+              valueName={caseData.courtName}
+              onSelect={(selected) => {
+                if (selected) rememberContact(selected);
                 const updated: CaseDetail = {
                   ...caseData,
-                  courtSlug: e.target.value || undefined,
+                  courtSlug: selected?.slug,
                   courtName: selected?.name ?? caseData.courtName,
                 };
                 ctx.setCaseData(updated);
                 ctx.saveCaseUpdate({ courtSlug: updated.courtSlug, courtName: updated.courtName });
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
-            >
-              <option value="">{t("cases.detail_select_placeholder")}</option>
-              {ctx.contacts
-                .filter((c) => c.role === "court")
-                .map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
+            />
           </div>
         </div>
-        {ctx.contactsLoading && (
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("cases.detail_contacts_loading")}
-          </p>
-        )}
-        {ctx.contacts.length === 0 && !ctx.contactsLoading && (
-          <p className="text-xs text-[color:var(--ds-warning-text)]">
-            {t("cases.detail_no_contacts")}{" "}
-            <Link href="/dashboard/contacts" className="brand-text hover:underline">
-              {t("cases.detail_create_contact")}
-            </Link>
-          </p>
-        )}
       </div>
 
       {/* Inline contact creation dialog */}

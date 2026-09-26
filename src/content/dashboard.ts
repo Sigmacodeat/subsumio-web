@@ -3161,6 +3161,10 @@ export const D = {
     en: "No contacts created yet.",
   },
   "cases.detail_create_contact": { de: "Kontakt anlegen →", en: "Create contact →" },
+  "cases.detail_no_linked_contacts": {
+    de: "Mit dieser Akte sind noch keine Kontakte verknüpft.",
+    en: "No contacts are linked to this matter yet.",
+  },
   "cases.detail_stammdaten": { de: "Stammdaten", en: "Master data" },
   "cases.detail_facts": { de: "Sachverhalt", en: "Facts" },
   "cases.detail_claims": { de: "Ansprüche / Klageanträge", en: "Claims / motions" },

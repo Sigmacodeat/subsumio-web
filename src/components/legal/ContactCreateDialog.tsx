@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
   type ContactRef,
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
+import { useContactSearch } from "@/lib/matter-contacts";
 
 type ContactRole = NonNullable<ContactFrontmatter["role"]>;
 
@@ -49,6 +50,20 @@ interface ContactCreateDialogProps {
     role: string;
   }>;
   onCreated: (contact: ContactCreateResult) => void;
+}
+
+/**
+ * The term the duplicate/conflict check searches the firm's contacts with:
+ * the longest word of the name, so reordered or slightly misspelt names
+ * still come back as candidates for the fuzzy comparison.
+ */
+export function conflictSearchTerm(name: string): string {
+  const words = name
+    .trim()
+    .split(/[\s,.;]+/)
+    .filter((w) => w.length >= 3);
+  if (words.length === 0) return name.trim();
+  return words.reduce((a, b) => (b.length > a.length ? b : a));
 }
 
 function slugifyContact(name: string): string {
@@ -96,14 +111,24 @@ export function ContactCreateDialog({
 
   // P2.2: Conflict re-check — uses the § 43a BRAO-aware checkContactConflict util.
   // Detects exact/fuzzy name matches, company matches AND critical role conflicts
-  // (e.g. creating an opponent who already exists as a client).
+  // (e.g. creating an opponent who already exists as a client). Candidates are
+  // the matter's contacts plus a server-side search over every contact of the
+  // firm — not a preloaded, capped list.
+  const { results: searchHits, state: searchState } = useContactSearch(
+    open ? conflictSearchTerm(name) : ""
+  );
+  const candidates = useMemo(() => {
+    const bySlug = new Map(existingContacts.map((c) => [c.slug, c]));
+    for (const c of searchHits ?? []) if (!bySlug.has(c.slug)) bySlug.set(c.slug, c);
+    return [...bySlug.values()];
+  }, [existingContacts, searchHits]);
   const runConflictCheck = useCallback(
     (candidateName: string, candidateRole: ContactRole, candidateCompany: string) => {
       if (!candidateName.trim()) {
         setConflict(null);
         return;
       }
-      const existingRefs: ContactRef[] = existingContacts.map((c) => ({
+      const existingRefs: ContactRef[] = candidates.map((c) => ({
         slug: c.slug,
         name: c.name,
         role: (c.role as ContactRef["role"]) ?? "other",
@@ -118,8 +143,12 @@ export function ContactCreateDialog({
       );
       setConflict(result.hasConflict ? result : null);
     },
-    [existingContacts]
+    [candidates]
   );
+  // Re-check when the search answers (the name may have been typed before).
+  useEffect(() => {
+    if (open) runConflictCheck(name, role, company);
+  }, [open, name, role, company, runConflictCheck]);
 
   async function handleSubmit() {
     setError(null);
@@ -186,7 +215,7 @@ export function ContactCreateDialog({
   function useExistingContact() {
     const topHit = conflict?.hits[0];
     if (!topHit?.contact.slug) return;
-    const existing = existingContacts.find((c) => c.slug === topHit.contact.slug);
+    const existing = candidates.find((c) => c.slug === topHit.contact.slug);
     if (!existing) return;
     onCreated({
       slug: existing.slug,
@@ -210,6 +239,13 @@ export function ContactCreateDialog({
           <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
             <AlertTriangle size={14} /> {error}
           </div>
+        )}
+
+        {searchState === "failed" && (
+          <p role="status" className="text-xs text-[color:var(--ds-warning-text)]">
+            Die Kontaktsuche ist derzeit nicht verfügbar — die Dublettenprüfung sieht nur die
+            Kontakte dieser Akte.
+          </p>
         )}
 
         {conflict && (
@@ -259,7 +295,6 @@ export function ContactCreateDialog({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                runConflictCheck(e.target.value, role, company);
               }}
               placeholder="Vor- und Nachname"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
@@ -274,7 +309,6 @@ export function ContactCreateDialog({
               onChange={(e) => {
                 const next = e.target.value as ContactRole;
                 setRole(next);
-                runConflictCheck(name, next, company);
               }}
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
             >
@@ -295,7 +329,6 @@ export function ContactCreateDialog({
                 value={company}
                 onChange={(e) => {
                   setCompany(e.target.value);
-                  runConflictCheck(name, role, e.target.value);
                 }}
                 placeholder="Firma"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"

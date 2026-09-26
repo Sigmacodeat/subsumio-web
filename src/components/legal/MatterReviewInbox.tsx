@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { cn, formatDate as formatDateUtil } from "@/lib/utils";
 import { sourceLabel, urgencyLabel } from "@/components/legal/matter-tabs/format";
 import { useMatterDetail } from "@/lib/matter-detail-context";
+import { matterClientContact } from "@/lib/matter-contacts";
 import { DocumentRequestComposer } from "@/components/legal/DocumentRequestComposer";
 import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
@@ -497,7 +498,9 @@ export function MatterReviewInbox({
     }
   }
 
-  const clientContact = ctx.contacts.find((c) => c.role === "client" || c.role === "mandant");
+  // The recipient is this matter's client (loaded by slug with the matter) —
+  // never just any contact of the firm with the role "client".
+  const clientContact = matterClientContact(matter, ctx.contacts);
   const composerRequest = bundle?.document_requests?.find((r) => r.slug === composerSlug);
 
   return (
