@@ -18,22 +18,39 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { SupportSession } from "@/lib/support-session";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 
+/**
+ * Writes the entry and reports whether it was stored. The start route treats
+ * `false` as fatal (the session is ended again): a firm is never entered
+ * without the entry in its own audit trail.
+ */
 export async function writeFirmVisibleSupportAuditEntry(
   orgBrainId: string,
   action: "support.session_start" | "support.session_end",
   session: SupportSession
-): Promise<void> {
+): Promise<boolean> {
   const now = new Date().toISOString();
   const slug = `audit/${now.slice(0, 10)}/${action.replace(/\./g, "-")}-${Date.now()}`;
   const details =
     action === "support.session_start"
-      ? { reason: session.reason, expiresAt: session.expiresAt, by: session.operatorEmail }
-      : { reason: session.reason, endedAt: session.endedAt, by: session.operatorEmail };
+      ? {
+          reason: session.reason,
+          mode: session.mode,
+          expiresAt: session.expiresAt,
+          by: session.operatorEmail,
+        }
+      : {
+          reason: session.reason,
+          mode: session.mode,
+          endedAt: session.endedAt,
+          by: session.operatorEmail,
+        };
   const title =
     action === "support.session_start"
-      ? "Subsumio-Support: Zugriff gestartet"
+      ? session.mode === "write"
+        ? "Subsumio-Support: Zugriff mit Schreibrecht gestartet"
+        : "Subsumio-Support: Lesezugriff gestartet"
       : "Subsumio-Support: Zugriff beendet";
-  await engineWriteBestEffort(
+  return engineWriteBestEffort(
     `${ENGINE_URL}/api/pages`,
     {
       method: "POST",

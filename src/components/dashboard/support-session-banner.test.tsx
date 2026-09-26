@@ -30,6 +30,8 @@ describe("SupportSessionBanner", () => {
     renderBanner();
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.getByText("Support-Zugriff aktiv")).toBeInTheDocument();
+    // Read-only is the default the firm sees.
+    expect(screen.getByText("nur lesend")).toBeInTheDocument();
     expect(screen.getByText("Kanzlei Test & Partner")).toBeInTheDocument();
     expect(screen.getByText(/Fristen-Export schlägt fehl/)).toBeInTheDocument();
     expect(screen.getByText(/Endet spätestens um/)).toBeInTheDocument();

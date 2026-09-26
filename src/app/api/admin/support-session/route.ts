@@ -3,6 +3,7 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getTenant } from "@/lib/tenants";
 import { logAudit } from "@/lib/audit";
 import {
+  endSupportSession,
   getActiveSupportSession,
   startSupportSession,
   type SupportSession,
@@ -11,17 +12,26 @@ import { writeFirmVisibleSupportAuditEntry } from "@/lib/support-session-audit";
 
 export const dynamic = "force-dynamic";
 
-const startSchema = z.object({
-  orgId: z.string().min(1),
-  reason: z
-    .string()
-    .trim()
-    .min(10, "Bitte einen aussagekräftigen Grund angeben (min. 10 Zeichen).")
-    .max(500),
-});
+const startSchema = z
+  .object({
+    orgId: z.string().min(1),
+    reason: z
+      .string()
+      .trim()
+      .min(10, "Bitte einen aussagekräftigen Grund angeben (min. 10 Zeichen).")
+      .max(500),
+    // Read-only unless write access is asked for explicitly, with its own reason.
+    mode: z.enum(["read", "write"]).default("read"),
+    writeReason: z.string().trim().max(500).optional(),
+  })
+  .refine((b) => b.mode !== "write" || (b.writeReason?.length ?? 0) >= 10, {
+    message: "Schreibzugriff braucht eine eigene Begründung (min. 10 Zeichen).",
+    path: ["writeReason"],
+  });
 
 function publicSession(s: SupportSession) {
   return {
+    mode: s.mode,
     orgId: s.orgId,
     orgName: s.orgName,
     reason: s.reason,
@@ -60,22 +70,45 @@ export const POST = createHandler(
     const tenant = await getTenant(body.orgId);
     if (!tenant) return apiError("org_not_found", "Kanzlei nicht gefunden", 404);
 
+    const reason =
+      body.mode === "write" ? `${body.reason} — Schreibzugriff: ${body.writeReason}` : body.reason;
     const session = await startSupportSession({
       operatorId: ctx.user.id,
       operatorEmail: ctx.user.email,
       orgId: tenant.id,
       orgName: tenant.name,
-      reason: body.reason,
+      reason,
+      mode: body.mode,
     });
+
+    // Fail closed: without the entry in the firm's own audit trail the
+    // session does not stay open.
+    const recorded = await writeFirmVisibleSupportAuditEntry(
+      tenant.brainId,
+      "support.session_start",
+      session
+    );
+    if (!recorded) {
+      await endSupportSession(ctx.user.id);
+      return apiError(
+        "support_audit_unavailable",
+        "Support-Zugriff nicht gestartet: Der Protokolleintrag für die Kanzlei konnte nicht gespeichert werden.",
+        503
+      );
+    }
 
     void logAudit("support.session_start", "org", {
       entityId: tenant.id,
       brainId: tenant.brainId,
       userId: ctx.user.id,
       userEmail: ctx.user.email,
-      details: { reason: session.reason, orgName: tenant.name, expiresAt: session.expiresAt },
+      details: {
+        reason: session.reason,
+        mode: session.mode,
+        orgName: tenant.name,
+        expiresAt: session.expiresAt,
+      },
     });
-    void writeFirmVisibleSupportAuditEntry(tenant.brainId, "support.session_start", session);
 
     return apiSuccess({ session: publicSession(session) }, undefined, 201);
   }

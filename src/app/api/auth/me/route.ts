@@ -24,6 +24,7 @@ export const GET = createHandler(
     // sent here (the firm sees it separately, in its own audit trail).
     const supportSession = ctx.supportSession
       ? {
+          mode: ctx.supportSession.mode,
           orgName: ctx.supportSession.orgName,
           reason: ctx.supportSession.reason,
           startedAt: ctx.supportSession.startedAt,

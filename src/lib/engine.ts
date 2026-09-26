@@ -31,6 +31,7 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
+import { supportSessionBlocksRequest } from "@/lib/support-session-policy";
 import { getTenant } from "@/lib/tenants";
 import { billingAccountFor, type BillingAccount } from "@/lib/billing/billing-account";
 
@@ -583,6 +584,18 @@ export async function requireEngineContext(
   // 1. RBAC
   if (!can(ctx.user, action)) {
     return forbidden(action);
+  }
+
+  // 1b. A read-only support session changes nothing in the firm.
+  if (supportSessionBlocksRequest(ctx.supportSession, req.method, action)) {
+    return Response.json(
+      {
+        error: "support_read_only",
+        message:
+          "Support-Zugriff ist nur lesend. Für Änderungen eine Sitzung mit Schreibzugriff (eigene Begründung) starten.",
+      },
+      { status: 403 }
+    );
   }
 
   const guard = await applyUsageGuards(ctx, rateTier, quotaField, creditOp);

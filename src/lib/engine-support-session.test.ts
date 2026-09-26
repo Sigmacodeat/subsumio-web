@@ -54,7 +54,7 @@ vi.mock("@/lib/support-session", () => ({
   getActiveSupportSession: (id: string) => getActiveSupportSession(id),
 }));
 
-import { engineContext } from "./engine";
+import { engineContext, requireEngineContext } from "./engine";
 
 describe("engineContext — support session override", () => {
   test("a platform operator with no active session gets their own (org-less) context", async () => {
@@ -136,5 +136,55 @@ describe("engineContext — support session override", () => {
     const ctx = await engineContext();
     expect(ctx?.brainId).toBe(OPERATOR.brainId);
     expect(ctx?.supportSession).toBeUndefined();
+  });
+});
+
+vi.mock("@/lib/rate-limit-api", () => ({ requireApiRate: vi.fn(async () => null) }));
+
+describe("requireEngineContext — support sessions are read-only by default", () => {
+  const base = {
+    id: "sess_ro",
+    operatorId: OPERATOR.id,
+    operatorEmail: OPERATOR.email,
+    orgId: ORG.id,
+    orgName: ORG.name,
+    reason: "Ticket #7 — Ansicht prüfen",
+    startedAt: "2026-01-01T10:00:00.000Z",
+    expiresAt: "2099-01-01T11:00:00.000Z",
+    endedAt: null,
+  };
+  const req = (method: string) => new Request("http://localhost/api/legal/cases", { method });
+
+  test("a read session may read but not change anything", async () => {
+    getActiveSupportSession.mockResolvedValue({ ...base, mode: "read" });
+    const read = await requireEngineContext(req("GET"), "brain.read", "standard");
+    expect(read).not.toBeInstanceOf(Response);
+
+    const write = await requireEngineContext(req("POST"), "brain.write", "standard");
+    expect(write).toBeInstanceOf(Response);
+    expect((write as Response).status).toBe(403);
+    expect((await (write as Response).json()).error).toBe("support_read_only");
+
+    const del = await requireEngineContext(req("DELETE"), "brain.delete", "standard");
+    expect((del as Response).status).toBe(403);
+  });
+
+  test("a session without a recorded mode counts as read-only", async () => {
+    getActiveSupportSession.mockResolvedValue({ ...base });
+    const write = await requireEngineContext(req("PATCH"), "brain.write", "standard");
+    expect((write as Response).status).toBe(403);
+  });
+
+  test("ending the session stays possible in read mode", async () => {
+    getActiveSupportSession.mockResolvedValue({ ...base, mode: "read" });
+    const end = await requireEngineContext(req("POST"), "platform.support_session", "standard");
+    expect(end).not.toBeInstanceOf(Response);
+  });
+
+  test("a write session may change data", async () => {
+    getActiveSupportSession.mockResolvedValue({ ...base, mode: "write" });
+    const write = await requireEngineContext(req("POST"), "brain.write", "standard");
+    expect(write).not.toBeInstanceOf(Response);
+    getActiveSupportSession.mockReset();
   });
 });

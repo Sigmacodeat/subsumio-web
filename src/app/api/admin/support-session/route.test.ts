@@ -12,7 +12,7 @@ vi.mock("@/lib/engine", async () => ({
   requireEngineContext: vi.fn(),
 }));
 vi.mock("@/lib/support-session-audit", () => ({
-  writeFirmVisibleSupportAuditEntry: vi.fn().mockResolvedValue(undefined),
+  writeFirmVisibleSupportAuditEntry: vi.fn().mockResolvedValue(true),
 }));
 
 const ORG = { id: "org_a", name: "Kanzlei A", brainId: "brain_org_a", ownerId: "owner_1" };
@@ -23,9 +23,11 @@ vi.mock("@/lib/auth/store", () => ({
 
 const startSupportSession = vi.fn(async (_input: unknown) => ({}) as unknown);
 const getActiveSupportSession = vi.fn(async (_id: string) => null as unknown);
+const endSupportSession = vi.fn(async (_id: string) => null as unknown);
 vi.mock("@/lib/support-session", () => ({
   startSupportSession: (input: unknown) => startSupportSession(input),
   getActiveSupportSession: (id: string) => getActiveSupportSession(id),
+  endSupportSession: (id: string) => endSupportSession(id),
 }));
 
 import { GET, POST } from "./route";
@@ -104,6 +106,46 @@ describe("POST /api/admin/support-session (start)", () => {
       "support.session_start",
       session
     );
+  });
+
+  it("starts read-only unless write access is asked for", async () => {
+    startSupportSession.mockResolvedValue({ id: "s1", mode: "read", orgId: ORG.id });
+    await POST(postRequest({ orgId: ORG.id, reason: "Ticket #100 — Ansicht prüfen" }));
+    expect(startSupportSession).toHaveBeenCalledWith(expect.objectContaining({ mode: "read" }));
+  });
+
+  it("write access needs its own reason, which lands in the recorded reason", async () => {
+    const missing = await POST(
+      postRequest({ orgId: ORG.id, reason: "Ticket #101 — Import reparieren", mode: "write" })
+    );
+    expect(missing.status).toBe(400);
+    expect(startSupportSession).not.toHaveBeenCalled();
+
+    startSupportSession.mockResolvedValue({ id: "s2", mode: "write", orgId: ORG.id });
+    const ok = await POST(
+      postRequest({
+        orgId: ORG.id,
+        reason: "Ticket #101 — Import reparieren",
+        mode: "write",
+        writeReason: "Fehlerhafte Importzeilen korrigieren",
+      })
+    );
+    expect(ok.status).toBe(201);
+    expect(startSupportSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "write",
+        reason: expect.stringContaining("Fehlerhafte Importzeilen korrigieren"),
+      })
+    );
+  });
+
+  it("ends the session again and answers 503 when the firm's audit entry cannot be stored", async () => {
+    startSupportSession.mockResolvedValue({ id: "s3", mode: "read", orgId: ORG.id });
+    vi.mocked(writeFirmVisibleSupportAuditEntry).mockResolvedValueOnce(false);
+    const res = await POST(postRequest({ orgId: ORG.id, reason: "Ticket #102 — Ansicht prüfen" }));
+    expect(res.status).toBe(503);
+    expect(endSupportSession).toHaveBeenCalledWith(OPERATOR.id);
+    expect(logAudit).not.toHaveBeenCalled();
   });
 
   it("404s for an org that does not exist, without creating a session", async () => {

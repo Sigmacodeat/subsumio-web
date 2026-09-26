@@ -7,10 +7,20 @@
 // is the actual enforcement point: it swaps ctx.brainId/ctx.user for the
 // duration of an active session and stops doing so the instant it expires —
 // there is no background job, expiry is just "the session row is stale".
+//
+// Sessions are READ-ONLY by default: requireEngineContext() refuses every
+// state-changing request (anything but GET/HEAD/OPTIONS) while a read session
+// is active. Write access is a separate mode that needs its own reason and is
+// named in both audit trails. The firm-visible start entry is written before
+// the session is handed out; if it cannot be stored, the session is ended
+// again (see the start route).
 import { randomUUID } from "node:crypto";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
+import type { SupportSessionMode } from "@/lib/support-session-policy";
+
+export type { SupportSessionMode };
 
 const log = logger("support-session");
 
@@ -18,6 +28,8 @@ export const SUPPORT_SESSION_TTL_MS = 60 * 60 * 1000; // 60 minutes, fixed — n
 
 export interface SupportSession {
   id: string;
+  /** "read" (default) or "write" — write needs its own, separately given reason. */
+  mode: SupportSessionMode;
   operatorId: string;
   operatorEmail: string;
   orgId: string;
@@ -42,6 +54,8 @@ const ensureSchema = createSchemaInit([
   )`,
   "CREATE INDEX IF NOT EXISTS subsumio_support_sessions_operator_idx ON subsumio_support_sessions (operator_id, started_at DESC)",
   "CREATE INDEX IF NOT EXISTS subsumio_support_sessions_org_idx ON subsumio_support_sessions (org_id, started_at DESC)",
+  // Default 'read': rows from before the mode existed are treated read-only.
+  "ALTER TABLE subsumio_support_sessions ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'read'",
 ]);
 
 // In-memory fallback for local dev / unit tests without Postgres. Never used
@@ -52,6 +66,7 @@ const memoryStore: SupportSession[] = [];
 function rowToSession(row: Record<string, unknown>): SupportSession {
   return {
     id: String(row.id),
+    mode: row.mode === "write" ? "write" : "read",
     operatorId: String(row.operator_id),
     operatorEmail: String(row.operator_email),
     orgId: String(row.org_id),
@@ -75,6 +90,7 @@ export async function startSupportSession(input: {
   orgId: string;
   orgName: string;
   reason: string;
+  mode?: SupportSessionMode;
 }): Promise<SupportSession> {
   await ensureSchema();
   await endSupportSession(input.operatorId);
@@ -83,6 +99,7 @@ export async function startSupportSession(input: {
   const expiresAt = new Date(now.getTime() + SUPPORT_SESSION_TTL_MS);
   const session: SupportSession = {
     id: randomUUID(),
+    mode: input.mode === "write" ? "write" : "read",
     operatorId: input.operatorId,
     operatorEmail: input.operatorEmail,
     orgId: input.orgId,
@@ -101,8 +118,8 @@ export async function startSupportSession(input: {
   try {
     await pool.query(
       `INSERT INTO subsumio_support_sessions
-        (id, operator_id, operator_email, org_id, org_name, reason, started_at, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        (id, operator_id, operator_email, org_id, org_name, reason, started_at, expires_at, mode)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [
         session.id,
         session.operatorId,
@@ -112,6 +129,7 @@ export async function startSupportSession(input: {
         session.reason,
         session.startedAt,
         session.expiresAt,
+        session.mode,
       ]
     );
   } catch (err) {
