@@ -60,6 +60,27 @@ describe("computeFrist (AT)", () => {
     expect(() => computeFrist("zpo-berufung", "2026-10-05", { country: "AT" })).toThrow(/Fristart/);
     expect(() => computeFrist("steuer_einspruch_de", "2026-10-05", { country: "AT" })).toThrow();
   });
+
+  it("§ 73 ZPO: passes a Verfahrenshilfeantrag through to the engine and reports the interruption", () => {
+    const withoutVh = computeFrist("rekurs", "2026-03-02", { country: "AT" });
+    expect(withoutVh.verfahrenshilfeUnterbrochen).toBe(false);
+
+    const stillOpen = computeFrist("rekurs", "2026-03-02", {
+      country: "AT",
+      verfahrenshilfe: { antragAm: "2026-03-10" },
+    });
+    expect(stillOpen.verfahrenshilfeUnterbrochen).toBe(true);
+    expect(stillOpen.dueDate).toBe(withoutVh.dueDate); // ruht — kein neues Fristende bekannt
+    expect(stillOpen.hinweise.some((h) => h.includes("§ 73 Abs 1 ZPO"))).toBe(true);
+
+    const resumed = computeFrist("rekurs", "2026-03-02", {
+      country: "AT",
+      verfahrenshilfe: { antragAm: "2026-03-10", fortsetzungAm: "2026-04-01" },
+    });
+    const direct = computeFrist("rekurs", "2026-04-01", { country: "AT" });
+    expect(resumed.verfahrenshilfeUnterbrochen).toBe(true);
+    expect(resumed.dueDate).toBe(direct.dueDate); // voller Neustart, nicht bloß der Rest
+  });
 });
 
 describe("computeFrist (DE)", () => {

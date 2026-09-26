@@ -15,6 +15,7 @@ import {
   resolveFristArt,
   toISODate,
   vorigerWerktag,
+  wendeVerfahrenshilfeUnterbrechungAn,
   zustellungERV,
   zustellungHinterlegung,
   zustellungOhneNachweis,
@@ -547,5 +548,80 @@ describe("§ 222 Abs 1 und 2 ZPO — Jahreswechsel und Ferialsache (FRI-21)", ()
 
   it("§ 464 Abs 1 ZPO: Berufung ab Mo 2026-03-02 → Mo 2026-03-30 (4 Wochen, nicht 1 Monat)", () => {
     expect(berechneFristAuto("berufung", "2026-03-02").fristende).toBe("2026-03-30");
+  });
+});
+
+describe("§ 73 ZPO — Fristunterbrechung durch Verfahrenshilfeantrag (FRI-73)", () => {
+  it("Antrag innerhalb der offenen Frist, noch keine Entscheidung — Frist ruht, Fristende bleibt vorerst das ursprüngliche", () => {
+    const basis = berechneFristAuto("rekurs", "2026-03-02");
+    const r = berechneFristAuto("rekurs", "2026-03-02", {
+      verfahrenshilfe: { antragAm: "2026-03-10" },
+    });
+    expect(r.verfahrenshilfeUnterbrochen).toBe(true);
+    expect(r.fristende).toBe(basis.fristende);
+    expect(r.hinweise.some((h) => h.includes("§ 73 Abs 1 ZPO"))).toBe(true);
+    expect(r.hinweise.some((h) => h.includes("noch nicht rechtskräftig"))).toBe(true);
+  });
+
+  it("Antrag innerhalb der offenen Frist + Fortsetzung (Rechtskraft/Beigebung) — Frist beginnt in VOLLER Dauer neu, nicht nur um den Rest", () => {
+    const basis = berechneFristAuto("rekurs", "2026-03-02");
+    const direktAbFortsetzung = berechneFristAuto("rekurs", "2026-04-01");
+    const r = berechneFristAuto("rekurs", "2026-03-02", {
+      verfahrenshilfe: { antragAm: "2026-03-10", fortsetzungAm: "2026-04-01" },
+    });
+    expect(r.verfahrenshilfeUnterbrochen).toBe(true);
+    // Voller Neustart ab dem Fortsetzungsdatum — identisch mit einer frischen
+    // 14-Tage-Berechnung ab diesem Datum, NICHT bloß der Rest der alten Frist.
+    expect(r.fristende).toBe(direktAbFortsetzung.fristende);
+    expect(r.fristende).not.toBe(basis.fristende);
+    expect(r.hinweise.some((h) => h.includes("in voller Dauer neu zu laufen"))).toBe(true);
+  });
+
+  it("verspätet — erst NACH Fristablauf gestellter Antrag hat keine Unterbrechungswirkung", () => {
+    const basis = berechneFristAuto("rekurs", "2026-03-02");
+    const r = berechneFristAuto("rekurs", "2026-03-02", {
+      verfahrenshilfe: { antragAm: addDays(basis.fristende, 1) },
+    });
+    expect(r.verfahrenshilfeUnterbrochen).toBe(false);
+    expect(r.fristende).toBe(basis.fristende);
+    expect(r.hinweise.some((h) => h.includes("keine Unterbrechungswirkung"))).toBe(true);
+  });
+
+  it("weitere Verfahrenshilfeanträge unterbrechen dieselbe Frist kein zweites Mal (§ 73 Abs 3 ZPO)", () => {
+    const r = berechneFristAuto("rekurs", "2026-03-02", {
+      verfahrenshilfe: {
+        antragAm: "2026-03-10",
+        fortsetzungAm: "2026-04-01",
+        weitereAntraegeAm: ["2026-03-20"],
+      },
+    });
+    expect(r.hinweise.some((h) => h.includes("§ 73 Abs 3 ZPO"))).toBe(true);
+  });
+
+  it("Neustart prüft § 222 Abs 1 ZPO Hemmung erneut ab dem NEUEN Auslöser (nicht dem ursprünglichen Zustelldatum)", () => {
+    // Berufung (4 Wochen), Fortsetzung genau am Beginn der Sommer-vhfZ — muss
+    // dieselbe Hemmung erhalten wie eine frische Berufungsfrist ab diesem Tag.
+    const direktAbFortsetzung = berechneFristAuto("berufung", "2026-07-20");
+    const r = berechneFristAuto("berufung", "2026-03-02", {
+      verfahrenshilfe: { antragAm: "2026-03-10", fortsetzungAm: "2026-07-20" },
+    });
+    expect(r.fristende).toBe(direktAbFortsetzung.fristende);
+    expect(r.hinweise.some((h) => h.includes("§ 222 Abs 1 ZPO"))).toBe(true);
+  });
+
+  it("wendeVerfahrenshilfeUnterbrechungAn direkt: Basis + Opts getrennt von der Registry aufrufbar", () => {
+    const opts = {
+      ausloeser: "2026-03-02",
+      dauer: { tage: 14 },
+      regime: "zpo" as const,
+      gehemmtInVhfz: true,
+    };
+    const basis = berechneFrist(opts);
+    const r = wendeVerfahrenshilfeUnterbrechungAn(basis, opts, {
+      antragAm: "2026-03-05",
+      fortsetzungAm: "2026-05-01",
+    });
+    expect(r.verfahrenshilfeUnterbrochen).toBe(true);
+    expect(r.fristende).toBe(berechneFrist({ ...opts, ausloeser: "2026-05-01" }).fristende);
   });
 });

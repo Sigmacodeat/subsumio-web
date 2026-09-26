@@ -780,8 +780,12 @@ export interface FristAutoErgebnis extends FristErgebnis {
 export function berechneFristAuto(
   artKey: string,
   zustellungIso: string,
-  opts?: { ferialsache?: boolean; vorfristTage?: number }
-): FristAutoErgebnis {
+  opts?: {
+    ferialsache?: boolean;
+    vorfristTage?: number;
+    verfahrenshilfe?: VerfahrenshilfeUnterbrechung;
+  }
+): FristAutoErgebnis & { verfahrenshilfeUnterbrochen?: boolean } {
   const art = resolveFristArt(artKey);
   if (!art) {
     throw new Error(
@@ -844,7 +848,110 @@ export function berechneFristAuto(
     );
   }
 
+  if (opts?.verfahrenshilfe) {
+    const mitVh = wendeVerfahrenshilfeUnterbrechungAn(
+      result,
+      {
+        ausloeser,
+        dauer: art.dauer,
+        regime: art.regime,
+        gehemmtInVhfz: art.gehemmtInVhfz,
+        ferialsache: opts.ferialsache,
+        vorfristTage: opts.vorfristTage,
+      },
+      opts.verfahrenshilfe
+    );
+    return {
+      ...mitVh,
+      hinweise: [...hinweiseExtra, ...mitVh.hinweise],
+      art,
+      verfahrenshilfeUnterbrochen: mitVh.verfahrenshilfeUnterbrochen,
+    };
+  }
+
   return { ...result, hinweise: [...hinweiseExtra, ...result.hinweise], art };
+}
+
+/** Von einem (fristgerechten) Verfahrenshilfeantrag ausgelöste Unterbrechung
+ *  einer Rechtsmittel- oder Rechtsmittelbeantwortungsfrist (§ 73 ZPO). */
+export interface VerfahrenshilfeUnterbrechung {
+  /** Tag des (ersten fristgerecht gestellten) Verfahrenshilfeantrags. */
+  antragAm: string;
+  /** Tag, an dem die Frist wieder zu laufen beginnt: Rechtskraft der die
+   *  Verfahrenshilfe abweisenden Entscheidung, oder — bei Bewilligung —
+   *  Zustellung des Beigebungsbeschlusses an den bestellten Rechtsanwalt
+   *  (§ 73 Abs 1 ZPO). Fehlt dieses Datum, ruht die Frist und wird (noch)
+   *  nicht neu berechnet. */
+  fortsetzungAm?: string;
+  /** Weitere, nach dem ersten Antrag gestellte Verfahrenshilfeanträge — sie
+   *  unterbrechen dieselbe Frist kein zweites Mal (§ 73 Abs 3 ZPO); dient
+   *  nur der Dokumentation im Fristenbuch. */
+  weitereAntraegeAm?: string[];
+}
+
+/**
+ * § 73 Abs 1 ZPO: Wird die Verfahrenshilfe innerhalb einer noch offenen
+ * Rechtsmittel- oder Rechtsmittelbeantwortungsfrist beantragt, wird deren
+ * Lauf unterbrochen. Die Frist beginnt erst mit Rechtskraft der (abweisenden)
+ * Entscheidung — bzw. bei Bewilligung mit Zustellung des Beigebungsbeschlusses
+ * an den bestellten Rechtsanwalt — in VOLLER Dauer NEU zu laufen (kein
+ * Fortlaufen des Rests, deshalb erneuter Aufruf von `berechneFrist` mit dem
+ * neuen Auslöser, inkl. erneuter § 222-Hemmungsprüfung). Nur der ERSTE
+ * innerhalb der noch offenen Frist gestellte Antrag wirkt unterbrechend; ein
+ * weiterer Antrag hemmt dieselbe Frist kein zweites Mal (§ 73 Abs 3 ZPO). Ein
+ * VERSPÄTET — also erst nach Ablauf von `basis.fristende` — gestellter Antrag
+ * bleibt ohne Unterbrechungswirkung.
+ */
+export function wendeVerfahrenshilfeUnterbrechungAn(
+  basis: FristErgebnis,
+  opts: BerechneFristOpts,
+  vh: VerfahrenshilfeUnterbrechung
+): FristErgebnis & { verfahrenshilfeUnterbrochen: boolean } {
+  parseISODate(vh.antragAm);
+
+  if (vh.antragAm > basis.fristende) {
+    return {
+      ...basis,
+      hinweise: [
+        ...basis.hinweise,
+        `Verfahrenshilfeantrag vom ${vh.antragAm} erst nach Fristablauf (${basis.fristende}) gestellt — keine Unterbrechungswirkung (§ 73 ZPO)`,
+      ],
+      verfahrenshilfeUnterbrochen: false,
+    };
+  }
+
+  const hinweise = [
+    ...basis.hinweise,
+    `Frist durch Verfahrenshilfeantrag vom ${vh.antragAm} unterbrochen (§ 73 Abs 1 ZPO); ursprüngliches Fristende ${basis.fristende} entfällt`,
+  ];
+  if (vh.weitereAntraegeAm?.length) {
+    hinweise.push(
+      `Weitere Verfahrenshilfeanträge (${vh.weitereAntraegeAm.join(", ")}) unterbrechen dieselbe Frist nicht erneut (§ 73 Abs 3 ZPO)`
+    );
+  }
+
+  if (!vh.fortsetzungAm) {
+    return {
+      ...basis,
+      hinweise: [
+        ...hinweise,
+        "Verfahrenshilfeverfahren noch nicht rechtskräftig abgeschlossen — Fristende erst nach Rechtskraft der Entscheidung (bzw. Zustellung des Beigebungsbeschlusses) neu berechenbar",
+      ],
+      verfahrenshilfeUnterbrochen: true,
+    };
+  }
+
+  parseISODate(vh.fortsetzungAm);
+  const neu = berechneFrist({ ...opts, ausloeser: vh.fortsetzungAm });
+  return {
+    ...neu,
+    hinweise: [
+      ...hinweise,
+      `Frist beginnt mit ${vh.fortsetzungAm} in voller Dauer neu zu laufen (§ 73 Abs 1 ZPO) — neues Fristende ${neu.fristende}`,
+      ...neu.hinweise,
+    ],
+    verfahrenshilfeUnterbrochen: true,
+  };
 }
 
 // ── Fristenbuch-Klassifikation ──────────────────────────────

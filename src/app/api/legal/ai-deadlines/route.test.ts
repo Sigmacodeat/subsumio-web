@@ -290,4 +290,62 @@ describe("POST /api/legal/ai-deadlines", () => {
     // Only successful deadline is pushed
     expect(body.created).toHaveLength(1);
   });
+
+  test("stores a deterministic Notfrist under is_notfrist — the key the write guard and read model actually check", async () => {
+    vi.mocked(detectDeadlines).mockReturnValueOnce([
+      {
+        type: "frist",
+        description: "Rekursfrist",
+        date: "2026-12-15",
+        confidence: "high",
+        matchedRule: "zpo_rekurs",
+        sourceSnippet: "Rekurs binnen 14 Tagen",
+        daysFromNow: undefined,
+        zustellungsdatum: "2026-12-01",
+        fristResult: {
+          fristbeginn: "2026-12-01",
+          fristendeRoh: "2026-12-15",
+          fristende: "2026-12-15",
+          vorfrist: "2026-12-08",
+          kalendertage: 14,
+          hinweise: [],
+          art: {
+            key: "rekurs",
+            bezeichnung: "Rekurs",
+            dauer: { tage: 14 },
+            regime: "zpo",
+            rechtsgrundlage: "§ 521 Abs 1 ZPO",
+            notfrist: true,
+            gehemmtInVhfz: true,
+            verfahrenstyp: "zivil",
+          },
+        },
+      },
+    ]);
+
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response("{}", { status: 201 })
+    );
+
+    const req = new Request("http://localhost/api/legal/ai-deadlines", {
+      method: "POST",
+      body: JSON.stringify({
+        text: "Rekurs binnen 14 Tagen ab Zustellung vom 2026-12-01",
+        caseSlug: "legal/cases/test",
+      }),
+    }) as unknown as NextRequest;
+
+    await POST(req);
+
+    const createCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c) => c[1]?.method === "POST"
+    );
+    expect(createCall).toBeDefined();
+    const createBody = JSON.parse(createCall![1]?.body as string);
+    // isNotfrist() (page-write-guards.ts) and the read model only ever check
+    // `is_notfrist` — a plain `notfrist` key silently loses the four-eyes
+    // protection for this Notfrist.
+    expect(createBody.frontmatter.is_notfrist).toBe(true);
+    expect(createBody.frontmatter.notfrist).toBeUndefined();
+  });
 });

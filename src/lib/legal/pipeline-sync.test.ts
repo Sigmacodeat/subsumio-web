@@ -138,6 +138,29 @@ describe("E2: Pipeline-Sync — deadline_calendar → legal_deadline", () => {
     expect(result.created).toBe(1); // Only the valid one
     expect(result.skipped).toBe(1); // Invalid date skipped
   });
+
+  it("stores a Notfrist under is_notfrist — the key the write guard and read model actually check", async () => {
+    setMockPages("deadline_calendar", [DEADLINE_CALENDAR_PAGE]);
+    setMockPages("legal_deadline", []);
+
+    await syncPipelineDeadlines("test-brain");
+
+    const postCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([url, init]) =>
+        String(url).includes("/api/pages") && (init as RequestInit | undefined)?.method === "POST"
+    );
+    const berufungCall = postCalls.find((call) => {
+      const body = JSON.parse(String((call[1] as RequestInit).body));
+      return body.frontmatter?.frist_art === "berufung";
+    });
+    expect(berufungCall).toBeDefined();
+    const body = JSON.parse(String((berufungCall![1] as RequestInit).body));
+    // isNotfrist() (page-write-guards.ts) and the read model only ever check
+    // `is_notfrist` — a plain `notfrist` key silently loses the four-eyes
+    // protection for this Notfrist.
+    expect(body.frontmatter.is_notfrist).toBe(true);
+    expect(body.frontmatter.notfrist).toBeUndefined();
+  });
 });
 
 describe("E2: Digest classification — pipeline deadlines reach reminder", () => {

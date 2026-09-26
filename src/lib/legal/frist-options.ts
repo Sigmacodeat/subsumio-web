@@ -16,6 +16,7 @@ import {
   resolveFristArt,
   zustellungERV,
   type FristArt,
+  type VerfahrenshilfeUnterbrechung,
 } from "@/lib/legal/frist-engine";
 import {
   FRISTEN_REGISTRY_DE,
@@ -60,6 +61,9 @@ export interface FristComputation {
   /** True when § 222 Abs 1 ZPO extended the period — only correct if the
    *  matter is NOT a Ferialsache; callers flag it for a second check. */
   vhfzVerlaengert: boolean;
+  /** § 73 ZPO: a Verfahrenshilfeantrag interrupted this run (AT only, ZPO
+   *  Rechtsmittel-/Rechtsmittelbeantwortungsfristen). */
+  verfahrenshilfeUnterbrochen: boolean;
 }
 
 /** Hinweis, der jede durch die verhandlungsfreie Zeit verlängerte Frist
@@ -158,6 +162,9 @@ export function computeFrist(
     ervEinlangen?: boolean;
     /** § 222 Abs 2 ZPO: no suspension by the verhandlungsfreie Zeit. */
     ferialsache?: boolean;
+    /** § 73 ZPO: a Verfahrenshilfeantrag filed against this (still open)
+     *  Rechtsmittel-/Rechtsmittelbeantwortungsfrist. AT only. */
+    verfahrenshilfe?: VerfahrenshilfeUnterbrechung;
   } = {}
 ): FristComputation {
   const country = resolveFristCountry(opts.country);
@@ -168,7 +175,10 @@ export function computeFrist(
     }
     const applyErv = opts.ervEinlangen && !art.zustellungs_trigger;
     const zustellung = applyErv ? zustellungERV(startIso) : startIso;
-    const result = berechneFristAuto(key, zustellung, { ferialsache: opts.ferialsache === true });
+    const result = berechneFristAuto(key, zustellung, {
+      ferialsache: opts.ferialsache === true,
+      verfahrenshilfe: opts.verfahrenshilfe,
+    });
     const vhfzVerlaengert = vhfzHatVerlaengert(result.hinweise);
     const hinweise = [
       ...(applyErv
@@ -188,6 +198,7 @@ export function computeFrist(
       hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
       ferialsacheRelevant: art.regime === "zpo" && art.gehemmtInVhfz,
       vhfzVerlaengert,
+      verfahrenshilfeUnterbrochen: result.verfahrenshilfeUnterbrochen === true,
     };
   }
 
@@ -215,6 +226,7 @@ export function computeFrist(
         hinweise: art.hinweis ? [...hinweise, art.hinweis] : hinweise,
         ferialsacheRelevant: false,
         vhfzVerlaengert: false,
+        verfahrenshilfeUnterbrochen: false,
       };
     }
   }
@@ -238,5 +250,6 @@ export function computeFrist(
     hinweise: note ? [note] : [],
     ferialsacheRelevant: false,
     vhfzVerlaengert: false,
+    verfahrenshilfeUnterbrochen: false,
   };
 }
