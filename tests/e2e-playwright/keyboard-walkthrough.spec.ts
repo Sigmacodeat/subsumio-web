@@ -191,21 +191,36 @@ test.describe("Keyboard-Only Walkthrough", () => {
     const context = await browser.newContext({
       storageState: "/tmp/kbd-auth-state.json",
     });
+    // Start from a known state: the panel's initial state otherwise depends
+    // on the viewport width and on what an earlier run stored.
+    await context.addInitScript(() => {
+      try {
+        window.localStorage.setItem("subsumio-copilot-open-v2", "false");
+      } catch {
+        // storage unavailable — the viewport default (closed below 1680 px) applies
+      }
+    });
     const page = await context.newPage();
+    // ⌘ on macOS, Ctrl elsewhere — the handler accepts either modifier.
+    const TOGGLE = "ControlOrMeta+Shift+C";
     try {
       await page.goto("/dashboard", { waitUntil: "load" });
       await expect(page.locator("#main-content")).toBeVisible();
 
-      // Toggle copilot via ⌘+⇧+C — panel may start open for fresh users,
-      // so assert the state FLIPS instead of assuming closed→open.
       const copilotPanel = page.locator('[data-tour="copilot-panel"]');
-      const initiallyVisible = await copilotPanel.isVisible().catch(() => false);
-      await page.keyboard.press("Meta+Shift+c");
-      await page.waitForTimeout(800);
-      expect(await copilotPanel.isVisible().catch(() => false)).toBe(!initiallyVisible);
+      await expect(copilotPanel).toBeHidden();
 
-      // Toggle back to the initial state
-      await page.keyboard.press("Meta+Shift+c");
+      // The shortcut listener is attached after hydration, which can lag
+      // behind "load": a press before that is dropped. Re-press only while
+      // the panel is still closed, so a slow toggle can't be undone.
+      await expect(async () => {
+        if (!(await copilotPanel.isVisible())) await page.keyboard.press(TOGGLE);
+        await expect(copilotPanel).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
+
+      // Hydrated now: one press closes it again.
+      await page.keyboard.press(TOGGLE);
+      await expect(copilotPanel).toBeHidden();
     } finally {
       await page.close();
       await context.close();
