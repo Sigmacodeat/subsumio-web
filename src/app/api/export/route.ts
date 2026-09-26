@@ -19,6 +19,14 @@ export const GET = createHandler(
     action: "brain.read",
     rateTier: "heavy",
     maxDuration: 120,
+    // A full export (for solo accounts: the whole brain with client data)
+    // must be traceable in the audit log like every other data export.
+    audit: (ctx) => ({
+      action: "admin.data_export" as const,
+      entityType: "account_export",
+      entityId: ctx.user.id,
+      details: { brain_included: !ctx.user.orgId },
+    }),
   },
   async (ctx) => {
     const firmMember = Boolean(ctx.user.orgId);
