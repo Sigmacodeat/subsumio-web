@@ -1,6 +1,20 @@
-import { describe, it, expect } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, it, expect } from "bun:test";
 import { encodePageCursor, parsePageCursor } from "../src/core/types.ts";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+
+let engine: PGLiteEngine;
+beforeAll(async () => {
+  engine = new PGLiteEngine();
+  await engine.connect({});
+  await engine.initSchema();
+});
+afterAll(async () => {
+  await engine.disconnect();
+});
+beforeEach(async () => {
+  await resetPgliteState(engine);
+});
 
 describe("page cursor codec", () => {
   it("round-trips a cursor", () => {
@@ -21,10 +35,6 @@ describe("page cursor codec", () => {
 
 describe("PGLiteEngine.listPages keyset paging", () => {
   it("walks every row with no duplicates and no skips", async () => {
-    const engine = new PGLiteEngine();
-    await engine.connect({});
-    await engine.initSchema();
-
     for (let i = 0; i < 7; i++) {
       await engine.putPage(`test/cursor-${i}`, {
         title: `Cursor ${i}`,
@@ -51,15 +61,9 @@ describe("PGLiteEngine.listPages keyset paging", () => {
     const ours = seen.filter((s) => s.startsWith("test/cursor-"));
     expect(ours).toHaveLength(7);
     expect(new Set(ours).size).toBe(7);
-
-    await engine.disconnect();
   });
 
   it("does not re-serve a row that was updated mid-scan", async () => {
-    const engine = new PGLiteEngine();
-    await engine.connect({});
-    await engine.initSchema();
-
     for (let i = 0; i < 4; i++) {
       await engine.putPage(`test/midscan-${i}`, {
         title: `Midscan ${i}`,
@@ -88,17 +92,11 @@ describe("PGLiteEngine.listPages keyset paging", () => {
     const slugs = rest.map((p) => p.slug);
     expect(slugs).not.toContain(first[0].slug);
     expect(slugs).not.toContain(first[1].slug);
-
-    await engine.disconnect();
   });
 });
 
 describe("PGLiteEngine.listPages keyset paging — sub-millisecond timestamps", () => {
   it("never skips rows written within the same millisecond as a page boundary", async () => {
-    const engine = new PGLiteEngine();
-    await engine.connect({});
-    await engine.initSchema();
-
     for (let i = 0; i < 9; i++) {
       await engine.putPage(`test/micro-${i}`, {
         title: `Micro ${i}`,
@@ -128,7 +126,5 @@ describe("PGLiteEngine.listPages keyset paging — sub-millisecond timestamps", 
     const ours = seen.filter((s) => s.startsWith("test/micro-"));
     expect(new Set(ours).size).toBe(9);
     expect(ours).toHaveLength(9);
-
-    await engine.disconnect();
   });
 });

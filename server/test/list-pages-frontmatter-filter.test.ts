@@ -6,10 +6,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import { operations, type OperationContext } from "../src/core/operations.ts";
-import {
-  UPDATED_DESC_KEYSET_ORDER,
-  normalizeFrontmatterFilter,
-} from "../src/core/types.ts";
+import { UPDATED_DESC_KEYSET_ORDER, normalizeFrontmatterFilter } from "../src/core/types.ts";
 
 let engine: PGLiteEngine;
 const list_pages = operations.find((o) => o.name === "list_pages")!;

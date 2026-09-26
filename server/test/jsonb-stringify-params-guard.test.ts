@@ -119,7 +119,9 @@ describe("JSONB stringify-param guard", () => {
       )
     ).toEqual([]);
     expect(
-      findStringifiedJsonbParams("await engine.executeRaw(`INSERT INTO t VALUES ($1::jsonb)`, [o]);")
+      findStringifiedJsonbParams(
+        "await engine.executeRaw(`INSERT INTO t VALUES ($1::jsonb)`, [o]);"
+      )
     ).toEqual([]);
   });
 

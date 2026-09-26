@@ -1609,10 +1609,7 @@ export class PostgresEngine implements BrainEngine {
     let fmCondition = sql``;
     fmPairs.forEach(([key, value], i) => {
       const term = sql`${sql.unsafe(`p.frontmatter->>'${key}'`)} = ${value}`;
-      fmCondition =
-        i === 0
-          ? sql`AND (${term}`
-          : sql`${fmCondition} OR ${term}`;
+      fmCondition = i === 0 ? sql`AND (${term}` : sql`${fmCondition} OR ${term}`;
     });
     if (fmPairs.length > 0) fmCondition = sql`${fmCondition})`;
 

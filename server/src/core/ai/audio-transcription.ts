@@ -111,7 +111,11 @@ export async function transcribeAudio(
   if ("ok" in choice) return choice;
 
   const form = new FormData();
-  form.append("file", new Blob([new Uint8Array(input.bytes)], { type: input.mimeType }), input.filename);
+  form.append(
+    "file",
+    new Blob([new Uint8Array(input.bytes)], { type: input.mimeType }),
+    input.filename
+  );
   let url: string;
   const headers: Record<string, string> = { Authorization: `Bearer ${choice.apiKey}` };
   if (choice.provider === "mistral") {

@@ -17,7 +17,9 @@ function longText(chars: number): string {
   const paras: string[] = [];
   let n = 0;
   while (paras.join("\n\n").length < chars) {
-    paras.push(`Absatz ${++n}: ` + "Der Vertrag regelt die Pflichten der Parteien. ".repeat(20).trim());
+    paras.push(
+      `Absatz ${++n}: ` + "Der Vertrag regelt die Pflichten der Parteien. ".repeat(20).trim()
+    );
   }
   return paras.join("\n\n");
 }

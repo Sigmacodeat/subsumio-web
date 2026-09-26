@@ -1925,14 +1925,7 @@ async function persistToolExecFailed(
      VALUES ($1, $2, $3, $4, $5::text::jsonb, 'failed', $6, now())
      ON CONFLICT (job_id, tool_use_id) DO UPDATE
        SET status = 'failed', error = EXCLUDED.error, ended_at = now()`,
-    [
-      jobId,
-      messageIdx,
-      toolUseId,
-      toolName,
-      jsonText(input),
-      error,
-    ]
+    [jobId, messageIdx, toolUseId, toolName, jsonText(input), error]
   );
 }
 

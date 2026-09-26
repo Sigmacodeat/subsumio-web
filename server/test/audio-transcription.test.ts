@@ -83,7 +83,11 @@ describe("transcribeAudio", () => {
       { SUBSUMIO_EU_ONLY: "1", MISTRAL_API_KEY: "m-key", OPENROUTER_API_KEY: "or" },
       impl
     );
-    expect(out).toMatchObject({ ok: true, text: "Sehr geehrte Damen", provider: "mistral-voxtral" });
+    expect(out).toMatchObject({
+      ok: true,
+      text: "Sehr geehrte Damen",
+      provider: "mistral-voxtral",
+    });
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe(MISTRAL_TRANSCRIBE_URL);
     const headers = calls[0].init.headers as Record<string, string>;
@@ -97,7 +101,11 @@ describe("transcribeAudio", () => {
 
   test("EU-only without Mistral key → 403 refusal and no request", async () => {
     const { impl, calls } = mockFetch(() => new Response("{}"));
-    const out = await transcribeAudio(audio, { SUBSUMIO_EU_ONLY: "1", OPENROUTER_API_KEY: "x" }, impl);
+    const out = await transcribeAudio(
+      audio,
+      { SUBSUMIO_EU_ONLY: "1", OPENROUTER_API_KEY: "x" },
+      impl
+    );
     expect(out).toMatchObject({ ok: false, status: 403, error: "eu_only_refused" });
     expect(calls).toHaveLength(0);
   });
@@ -131,7 +139,11 @@ describe("transcribeAudio", () => {
 
   test("empty or oversized audio → audio_size_invalid without request", async () => {
     const { impl, calls } = mockFetch(() => new Response("{}"));
-    const empty = await transcribeAudio({ ...audio, bytes: new Uint8Array() }, { MISTRAL_API_KEY: "m" }, impl);
+    const empty = await transcribeAudio(
+      { ...audio, bytes: new Uint8Array() },
+      { MISTRAL_API_KEY: "m" },
+      impl
+    );
     const big = await transcribeAudio(
       { ...audio, bytes: new Uint8Array(MAX_TRANSCRIBE_BYTES + 1) },
       { MISTRAL_API_KEY: "m" },

@@ -41,7 +41,7 @@ function makeRelease(dir: string, opts: { complete?: boolean } = {}) {
   writeFileSync(join(dir, H, "docker-compose.yml"), "services: {}\n");
   if (opts.complete !== false) {
     writeFileSync(join(dir, H, "crontab"), "0 6 * * * true\n");
-    writeFileSync(join(dir, H, "cronjob.sh"), "#!/bin/sh\nexec \"$@\"\n", { mode: 0o755 });
+    writeFileSync(join(dir, H, "cronjob.sh"), '#!/bin/sh\nexec "$@"\n', { mode: 0o755 });
   }
 }
 
