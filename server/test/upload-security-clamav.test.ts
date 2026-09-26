@@ -30,7 +30,7 @@ function startFakeClamd(reply: string): Promise<{
   const server: Server = createServer((socket) => {
     let buf = Buffer.alloc(0);
     socket.on("data", (chunk) => {
-      buf = Buffer.concat([buf, chunk]);
+      buf = Buffer.concat([buf, Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)]);
       const header = "zINSTREAM\0";
       if (buf.subarray(0, header.length).toString("latin1") === header) {
         // Parse length-prefixed chunks until the zero-length terminator.
