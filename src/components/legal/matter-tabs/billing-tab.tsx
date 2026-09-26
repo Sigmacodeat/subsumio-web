@@ -648,7 +648,14 @@ export function BillingTab() {
               variant="secondary"
               size="sm"
               onClick={() => {
-                window.location.href = `/dashboard/invoicing?case=${encodeURIComponent(caseData.slug)}`;
+                // The dashboard layout owns the invoice dialog and presets this
+                // matter — the lawyer stays in the Akte instead of landing in
+                // the firm-wide invoice list.
+                window.dispatchEvent(
+                  new CustomEvent("subsumio:create-invoice", {
+                    detail: { caseSlug: caseData.slug },
+                  })
+                );
               }}
               className="gap-1.5 border border-[color:var(--ds-warning-border)] text-xs text-[color:var(--ds-warning-text)] hover:bg-[color:var(--ds-warning-bg)]"
             >

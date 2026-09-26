@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
-import { formatDate, formatEur } from "@/lib/utils";
+import Link from "next/link";
+import { encodeSlugPath, formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
@@ -510,8 +511,18 @@ function TimeEntriesInner() {
                       {entry.description}
                     </div>
                     <div className="truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                      {formatDate(entry.date)} · {entry.case_title || caseTitle(entry.case_slug)} ·{" "}
-                      {formatHours(entry.minutes)}
+                      {formatDate(entry.date)} ·{" "}
+                      {entry.case_slug ? (
+                        <Link
+                          href={`/dashboard/cases/${encodeSlugPath(entry.case_slug)}`}
+                          className="hover:text-[color:var(--brand-primary)] hover:underline"
+                        >
+                          {entry.case_title || caseTitle(entry.case_slug)}
+                        </Link>
+                      ) : (
+                        entry.case_title || caseTitle(entry.case_slug)
+                      )}{" "}
+                      · {formatHours(entry.minutes)}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">

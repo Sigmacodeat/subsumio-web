@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FileText,
   Send,
@@ -19,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatDate, formatEur } from "@/lib/utils";
+import { cn, encodeSlugPath, formatDate, formatEur } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,8 +37,10 @@ import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
   invoiceCaseFromPage,
   invoiceErrorText,
+  invoiceCaseSlug,
   invoiceFromPage,
   invoiceOverview,
+  invoicingDeepLink,
   sumOfTotals,
   type Invoice,
   type InvoiceCase,
@@ -70,6 +74,9 @@ export default function InvoicingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [cases, setCases] = useState<InvoiceCase[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  /** Matter preset by a deep link (`?case=`) from the Akte. */
+  const [presetCaseSlug, setPresetCaseSlug] = useState<string | undefined>(undefined);
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   /** The list could not be loaded and no offline copy exists — never shown as "no invoices". */
   const [loadError, setLoadError] = useState(false);
@@ -109,6 +116,17 @@ export default function InvoicingPage() {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Links from a matter: "Rechnung erstellen" (?case=) opens the dialog with
+  // the matter preset, an invoice number (?invoice=) narrows the list to it.
+  useEffect(() => {
+    const link = invoicingDeepLink(searchParams);
+    if (link.invoiceQuery) setSearchQuery(link.invoiceQuery);
+    if (link.presetCaseSlug) {
+      setPresetCaseSlug(link.presetCaseSlug);
+      setQuickCreateOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const handler = () => setQuickCreateOpen(true);
@@ -554,7 +572,7 @@ export default function InvoicingPage() {
         }
       } else {
         setStatusMessage(
-          data.error === "smtp_not_configured"
+          data.error === "smtp_not_configured" || data.error === "mail_not_configured"
             ? t("inv.email_smtp_error")
             : invoiceErrorText(data.error, t("inv.email_fail")),
           "error"
@@ -835,13 +853,19 @@ export default function InvoicingPage() {
       {/* Quick create dialog */}
       <InvoiceQuickCreateDialog
         open={quickCreateOpen}
-        onOpenChange={setQuickCreateOpen}
+        onOpenChange={(open) => {
+          setQuickCreateOpen(open);
+          if (!open) setPresetCaseSlug(undefined);
+        }}
+        presetCaseSlug={presetCaseSlug}
         onCreated={() => void loadAll()}
       />
 
       {/* Search — only useful once there is something to search */}
       {(invoices.length > 0 || searchQuery) && (
         <SearchBar
+          key={searchQuery ? "q" : "empty"}
+          defaultValue={searchQuery}
           placeholder={t("inv.search")}
           onSearch={setSearchQuery}
           onClear={() => setSearchQuery("")}
@@ -927,6 +951,14 @@ export default function InvoicingPage() {
                       .filter(Boolean)
                       .join(" · ")}
                   </div>
+                  {invoiceCaseSlug(inv) && (
+                    <Link
+                      href={`/dashboard/cases/${encodeSlugPath(invoiceCaseSlug(inv)!)}`}
+                      className="mt-0.5 inline-block max-w-full truncate text-xs text-[color:var(--brand-primary)] hover:underline"
+                    >
+                      {en ? "Matter" : "Akte"} {inv.caseNumber || ""}
+                    </Link>
+                  )}
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-[color:var(--ds-text)] tabular-nums">
