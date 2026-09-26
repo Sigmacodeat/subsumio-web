@@ -53,6 +53,8 @@ export interface ContradictionFinding {
 }
 
 export interface CaseDetail {
+  /** Write-only: reason for removing deadlines in this save (server audit). */
+  deadlineDeleteReason?: string;
   slug: string;
   title: string;
   caseNumber: string;

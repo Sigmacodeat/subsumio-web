@@ -996,6 +996,9 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           portal_summary: updates.portalSummary ?? caseData.portalSummary,
           portal_workflows: updates.portalWorkflows ?? caseData.portalWorkflows,
           audit_log: newAudit,
+          ...(updates.deadlineDeleteReason
+            ? { deadline_delete_reason: updates.deadlineDeleteReason }
+            : {}),
         };
         if (isOnline()) {
           const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");

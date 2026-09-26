@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
 vi.mock("@/lib/queries/settings", () => ({ useTeam: () => ({ data: { members: [] } }) }));
+vi.mock("@/lib/queries/auth", () => ({ useMe: () => ({ data: { user: { role: "lawyer" } } }) }));
 vi.mock("@/components/legal/CommentThread", () => ({ default: () => null }));
 const confirmMock = vi.fn(async () => false);
 vi.mock("@/components/ui/confirm-dialog", () => ({ useConfirm: () => confirmMock }));

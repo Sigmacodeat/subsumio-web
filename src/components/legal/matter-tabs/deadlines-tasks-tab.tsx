@@ -49,6 +49,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import CommentThread from "@/components/legal/CommentThread";
 import { useTeam } from "@/lib/queries/settings";
+import { useMe } from "@/lib/queries/auth";
 
 /** Pseudo-Assignee-Wert im Zuständig-Select für den KI-Agenten (WP-7.42). */
 const AGENT_ASSIGNEE = "__agent__";
@@ -105,6 +106,12 @@ export function DeadlinesTasksTab() {
   const [aiDetectError, setAiDetectError] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  // Sekretariat: removing an open deadline needs a written reason (server rule).
+  const [deleteReasonTarget, setDeleteReasonTarget] = useState<number | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const meQuery = useMe();
+  const myRole = meQuery.data?.user?.role;
+  const deleteNeedsReason = myRole !== "admin" && myRole !== "lawyer";
 
   // KI-Fristvorschläge are AI output: grounding + citation panel are mandatory.
   const { grounding: aiGrounding, groundAnswer: groundAiDeadlines } = useGroundedAnswer();
@@ -184,6 +191,13 @@ export function DeadlinesTasksTab() {
       setCancelTarget(index);
       return;
     }
+    const status = String(dl.status ?? "");
+    const open = status !== "done" && status !== "cancelled" && status !== "storniert";
+    if (deleteNeedsReason && open) {
+      setDeleteReason("");
+      setDeleteReasonTarget(index);
+      return;
+    }
     void confirm({
       title: "Frist löschen?",
       message: `„${dl.title ?? ""}“ (${formatDate(dl.due_date)}) wird aus der Akte entfernt.`,
@@ -195,6 +209,17 @@ export function DeadlinesTasksTab() {
       ctx.setDeadlinesList(updated);
       ctx.saveCaseUpdate({ deadlines: updated });
     });
+  }
+
+  function confirmDeleteWithReason() {
+    if (deleteReasonTarget === null) return;
+    const reason = deleteReason.trim();
+    if (reason.length < 5) return;
+    const updated = ctx.deadlinesList.filter((_, idx) => idx !== deleteReasonTarget);
+    ctx.setDeadlinesList(updated);
+    ctx.saveCaseUpdate({ deadlines: updated, deadlineDeleteReason: reason });
+    setDeleteReasonTarget(null);
+    setDeleteReason("");
   }
 
   function confirmCancelNotfrist() {
@@ -1283,6 +1308,58 @@ export function DeadlinesTasksTab() {
           </div>
         )}
       </div>
+
+      {/* Sekretariat: deleting an open deadline needs a reason (logged) */}
+      {deleteReasonTarget !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="deadline-delete-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
+            <h3
+              id="deadline-delete-title"
+              className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+            >
+              Frist löschen?
+            </h3>
+            <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
+              „{ctx.deadlinesList[deleteReasonTarget]?.title ?? ""}“ (
+              {formatDate(ctx.deadlinesList[deleteReasonTarget]?.due_date ?? "")}) wird aus der Akte
+              entfernt. Bitte begründen — die Begründung wird im Fristen-Protokoll festgehalten.
+            </p>
+            <label htmlFor="deadline-delete-reason" className="mb-1 block text-xs font-medium">
+              Begründung *
+            </label>
+            <input
+              id="deadline-delete-reason"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDeleteReasonTarget(null)}
+                className="text-xs"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={deleteReason.trim().length < 5}
+                onClick={confirmDeleteWithReason}
+                className="text-xs"
+              >
+                Löschen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notfrist: cancel with a mandatory reason instead of deleting */}
       {cancelTarget !== null && (

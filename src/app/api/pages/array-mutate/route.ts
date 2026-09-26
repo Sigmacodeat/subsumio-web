@@ -45,6 +45,8 @@ const mutateSchema = z.object({
   set: z.record(z.unknown()).optional(),
   unset: z.array(z.string()).optional(),
   remove: z.boolean().optional(),
+  /** Written reason for removing open deadlines (required from the Sekretariat). */
+  reason: z.string().max(1000).optional(),
   unless: z.object({ eq: scalarMap.optional(), ne: scalarMap.optional() }).optional(),
 });
 
