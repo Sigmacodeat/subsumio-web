@@ -16,10 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { csrfFetch } from "@/lib/csrf";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { AI_FRONTMATTER } from "@/lib/ai-act";
 import { useLang } from "@/lib/use-lang";
+import { useAiDocxExport } from "@/components/legal/use-ai-docx-export";
 import type {
   ActAnalysis,
   BerufungsGrund,
@@ -54,6 +54,12 @@ export function ExportStep({
   const { addToast } = useToast();
   const { t } = useLang();
 
+  // AI brief: exported only after the citation check and a lawyer's release
+  // (the release dialog opens when the server asks for it).
+  const { exportDocx: exportReleasedDocx, dialog: releaseDialog } = useAiDocxExport({
+    onError: (msg) => addToast({ type: "error", title: "Export fehlgeschlagen", description: msg }),
+  });
+
   const exportDocx = useCallback(async () => {
     if (!draftContent.trim()) {
       addToast({
@@ -65,10 +71,8 @@ export function ExportStep({
     }
     setExportingDocx(true);
     try {
-      const res = await csrfFetch("/api/word-export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const ok = await exportReleasedDocx(
+        {
           title: exportTitle,
           markdown: draftContent,
           formData: {
@@ -78,33 +82,28 @@ export function ExportStep({
             selected_gruende: selectedGruende.length,
             opponent_findings: opponentFindings.length,
           },
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { message?: string }).message || `HTTP ${res.status}`);
+        },
+        `${exportTitle.replace(/[^a-zA-Z0-9-_]/g, "_")}.docx`
+      );
+      if (ok) {
+        addToast({
+          type: "success",
+          title: "DOCX exportiert",
+          description: "Die Datei wurde heruntergeladen.",
+        });
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${exportTitle.replace(/[^a-zA-Z0-9-_]/g, "_")}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      addToast({
-        type: "success",
-        title: "DOCX exportiert",
-        description: "Die Datei wurde heruntergeladen.",
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      addToast({ type: "error", title: "Export fehlgeschlagen", description: msg });
     } finally {
       setExportingDocx(false);
     }
-  }, [draftContent, exportTitle, caseSlug, selectedGruende, opponentFindings, addToast]);
+  }, [
+    draftContent,
+    exportTitle,
+    caseSlug,
+    selectedGruende,
+    opponentFindings,
+    addToast,
+    exportReleasedDocx,
+  ]);
 
   const saveAsBrainPage = useCallback(async () => {
     if (!draftContent.trim()) return;
@@ -159,6 +158,7 @@ export function ExportStep({
 
   return (
     <div className="space-y-6">
+      {releaseDialog}
       <div>
         <h2 className="flex items-center gap-2 text-xl font-semibold">
           <Download className="h-5 w-5 text-[color:var(--brand-primary)]" />

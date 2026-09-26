@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import type { Chronology, ChronologyEntry } from "@/lib/legal/chronology-builder";
 import { exportChronologyMarkdown } from "@/lib/legal/chronology-builder";
-import { csrfFetch } from "@/lib/csrf";
+import { useAiDocxExport } from "@/components/legal/use-ai-docx-export";
 import { EmptyState } from "@/components/dashboard/empty-state";
 
 const CATEGORY_ICONS: Record<string, typeof Calendar> = {
@@ -62,6 +62,9 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [filterImportance, setFilterImportance] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [exportError, setExportError] = useState<string | null>(null);
+  // Built from AI analysis: Word export only after citation check + lawyer release.
+  const { exportDocx, dialog: releaseDialog } = useAiDocxExport({ onError: setExportError });
 
   const filteredEntries = useMemo(() => {
     return chronology.entries.filter((e) => {
@@ -103,31 +106,24 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
   };
 
   const handleExportWord = async () => {
-    const md = exportChronologyMarkdown(chronology);
-    try {
-      const res = await csrfFetch("/api/word-export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          markdown: md,
-          title: `Chronologie — ${chronology.case_slug}`,
-        }),
-      });
-      if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Chronologie_${chronology.case_slug}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Word export failed:", err);
-    }
+    setExportError(null);
+    await exportDocx(
+      {
+        markdown: exportChronologyMarkdown(chronology),
+        title: `Chronologie — ${chronology.case_slug}`,
+      },
+      `Chronologie_${chronology.case_slug}.docx`
+    );
   };
 
   return (
     <div className="space-y-4">
+      {releaseDialog}
+      {exportError && (
+        <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+          {exportError}
+        </p>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

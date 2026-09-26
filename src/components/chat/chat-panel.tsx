@@ -101,6 +101,7 @@ import { useGroundedAnswer, withSupportCheck } from "@/lib/use-grounded-answer";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import type { TFunc } from "@/content/dashboard";
 import type { ReactNode } from "react";
+import { useAiDocxExport } from "@/components/legal/use-ai-docx-export";
 
 interface ChatPanelProps {
   context?: {
@@ -2364,8 +2365,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     [refreshSessions]
   );
 
-  // Export chat — Word document with the checked citations and the AI notice;
-  // falls back to Markdown if the DOCX endpoint is unavailable.
+  // Export chat — Word document with the checked citations and the AI notice.
+  // AI text leaves the firm only after the citation check and a lawyer's
+  // release (the release dialog opens when the server asks for it); there is
+  // no client-side fallback that would bypass it.
+  const { exportDocx: exportAiDocx, dialog: exportReleaseDialog } = useAiDocxExport({
+    onError: setError,
+  });
   const handleExport = useCallback(async () => {
     const docTitle = title ?? t("chat.title");
     const markdown = buildChatExportMarkdown(messages, {
@@ -2377,29 +2383,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       locale: lang === "en" ? "en-GB" : "de-DE",
     });
     const stamp = new Date().toISOString().slice(0, 10);
-    const download = (blob: Blob, name: string) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    };
-    try {
-      const res = await csrfFetch("/api/word-export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: docTitle, markdown }),
-      });
-      if (!res.ok) throw new Error(`word-export ${res.status}`);
-      download(await res.blob(), `chat-${stamp}.docx`);
-    } catch {
-      download(
-        new Blob([`# ${docTitle}\n\n${markdown}`], { type: "text/markdown;charset=utf-8" }),
-        `chat-${stamp}.md`
-      );
-    }
-  }, [messages, title, t, lang]);
+    await exportAiDocx({ title: docTitle, markdown }, `chat-${stamp}.docx`);
+  }, [messages, title, t, lang, exportAiDocx]);
 
   // Share chat (read-only link via base64 encoding)
   // Share: the conversation is saved on the server and shared with colleagues
@@ -2535,6 +2520,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       role="region"
       aria-label={title ?? t("chat.title")}
     >
+      {exportReleaseDialog}
       <ChatHeader
         isStreaming={isStreaming}
         features={{
