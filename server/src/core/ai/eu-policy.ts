@@ -10,12 +10,13 @@
  * the feature degrades to its non-LLM path (query expansion → original query,
  * reranker → RRF order).
  *
- * Embeddings are a separate decision: the stored vectors belong to one model,
- * so switching provider means re-embedding the corpus. With SUBSUMIO_EU_ONLY
- * alone, embeddings keep using the configured provider (logged once). Adding
- * SUBSUMIO_EU_ONLY_EMBEDDINGS=1 refuses a non-EU provider for document-side
- * embeddings (new ingestion); query embeddings stay allowed so search keeps
- * working against the existing index.
+ * Embeddings are covered by the same switch: document text AND query text are
+ * client data, so SUBSUMIO_EU_ONLY=1 refuses a non-EU embedding provider on
+ * both sides (fail-closed; the error names the EU embedding options). The
+ * stored vectors belong to one model, so switching provider means re-embedding
+ * the corpus — an operator who has not migrated yet must opt out EXPLICITLY
+ * with SUBSUMIO_EU_ONLY_EMBEDDINGS=0 (logged once per model). Any other value,
+ * including unset, keeps embeddings inside the EU-only policy.
  */
 
 import { AIConfigError } from "./errors.ts";
@@ -40,10 +41,31 @@ export function isEuOnly(env: Env): boolean {
   return truthy(env.SUBSUMIO_EU_ONLY);
 }
 
-/** Document-side embedding refusal: needs BOTH switches. */
-export function isEuOnlyEmbeddings(env: Env): boolean {
-  return isEuOnly(env) && truthy(env.SUBSUMIO_EU_ONLY_EMBEDDINGS);
+function falsy(v: string | undefined): boolean {
+  return /^(0|false|no|off)$/i.test((v ?? "").trim());
 }
+
+/**
+ * Explicit opt-out of the embedding gate: only SUBSUMIO_EU_ONLY_EMBEDDINGS=0
+ * (or false/no/off) lets a non-EU embedding provider through under EU-only.
+ */
+export function isEuOnlyEmbeddingsOptOut(env: Env): boolean {
+  return falsy(env.SUBSUMIO_EU_ONLY_EMBEDDINGS);
+}
+
+/**
+ * Embedding refusal is part of EU-only: on unless the operator opted out
+ * explicitly with SUBSUMIO_EU_ONLY_EMBEDDINGS=0.
+ */
+export function isEuOnlyEmbeddings(env: Env): boolean {
+  return isEuOnly(env) && !isEuOnlyEmbeddingsOptOut(env);
+}
+
+const EMBEDDING_HINT =
+  "Set SUBSUMIO_EMBEDDING_MODEL to an EU embedding provider (mistral:mistral-embed, " +
+  "a self-hosted model attested with SUBSUMIO_SELF_HOSTED_RESIDENCY=eu, or a Bedrock " +
+  "embedding in eu-central-1) and re-embed the corpus; until that migration is done, " +
+  "opt out explicitly with SUBSUMIO_EU_ONLY_EMBEDDINGS=0. See docs/architecture/LLM_GATEWAY.md.";
 
 export class EuResidencyError extends AIConfigError {
   readonly touchpoint: EuTouchpoint;
@@ -53,9 +75,11 @@ export class EuResidencyError extends AIConfigError {
     super(
       `EU-only mode (SUBSUMIO_EU_ONLY=1) refused ${touchpoint} via "${target}": ` +
         `processing is not in the EU/EEA (${verdict.basis}). No request was sent.`,
-      "Point this purpose at an EU route (bedrock:eu.anthropic.* in eu-central-1, mistral:*), " +
-        "or attest an EU endpoint via the provider's SUBSUMIO_*_RESIDENCY=eu variable. " +
-        "See docs/architecture/LLM_GATEWAY.md."
+      touchpoint === "embedding"
+        ? EMBEDDING_HINT
+        : "Point this purpose at an EU route (bedrock:eu.anthropic.* in eu-central-1, mistral:*), " +
+            "or attest an EU endpoint via the provider's SUBSUMIO_*_RESIDENCY=eu variable. " +
+            "See docs/architecture/LLM_GATEWAY.md."
     );
     this.name = "EuResidencyError";
     this.touchpoint = touchpoint;
@@ -98,10 +122,10 @@ export function assertEuResidency(target: string, touchpoint: EuTouchpoint, env:
 const _embeddingExceptionLogged = new Set<string>();
 
 /**
- * Embedding gate. `inputType === "query"` is always allowed (the query must
- * land in the existing vector space). Document-side embeddings of a non-EU
- * provider are refused only with SUBSUMIO_EU_ONLY_EMBEDDINGS=1; with
- * SUBSUMIO_EU_ONLY alone they pass and the exception is logged once per model.
+ * Embedding gate. Query text and document text are both client data, so a
+ * non-EU embedding provider is refused for either side under SUBSUMIO_EU_ONLY.
+ * Only the explicit opt-out SUBSUMIO_EU_ONLY_EMBEDDINGS=0 lets it through, and
+ * that exception is logged once per model. `inputType` is kept for the log line.
  */
 export function assertEuEmbedding(
   target: string,
@@ -111,14 +135,15 @@ export function assertEuEmbedding(
   if (!isEuOnly(env)) return;
   const verdict = residencyOf(target, env);
   if (verdict.residency === "eu") return;
-  if (inputType !== "query" && isEuOnlyEmbeddings(env)) {
+  if (!isEuOnlyEmbeddingsOptOut(env)) {
     throw new EuResidencyError("embedding", target, verdict);
   }
   if (!_embeddingExceptionLogged.has(target)) {
     _embeddingExceptionLogged.add(target);
     console.warn(
-      `[eu-policy] embeddings via non-EU "${target}" allowed: SUBSUMIO_EU_ONLY_EMBEDDINGS is off ` +
-        `(existing vector index; re-embedding with an EU model is a separate migration).`
+      `[eu-policy] ${inputType ?? "document"} embeddings via non-EU "${target}" allowed by explicit ` +
+        `opt-out SUBSUMIO_EU_ONLY_EMBEDDINGS=0 (existing vector index; re-embedding with an EU ` +
+        `model ends the exception).`
     );
   }
 }

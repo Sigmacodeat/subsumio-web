@@ -45,8 +45,10 @@ services:
     environment:
       # Keep ClamAV's INSTREAM ceiling aligned with the application's 500 MB
       # document limit. The image default is only 100 MB and otherwise causes
-      # valid large uploads to fail closed as "scanner unavailable".
-      CLAMD_CONF_StreamMaxLength: "524288000"
+      # valid large uploads to fail closed as "scanner unavailable". The same
+      # value is handed to the engine (CLAMAV_STREAM_MAX_BYTES) so it refuses
+      # larger files up front instead of streaming them into a rejection.
+      CLAMD_CONF_StreamMaxLength: ${CLAMAV_STREAM_MAX_BYTES:-524288000}
       CLAMD_CONF_MaxFileSize: "524288000"
       CLAMD_CONF_MaxScanSize: "1073741824"
     volumes:
@@ -134,6 +136,10 @@ services:
       SUBSUMIO_HOME: /data
       GBRAIN_HOME: /data # legacy alias for engine internals
       CLAMAV_HOST: clamav:3310
+      # Uploads are streamed to clamd (INSTREAM); there is no shared upload
+      # volume, so the path-based SCAN stays off. Same ceiling as clamd's
+      # StreamMaxLength above.
+      CLAMAV_STREAM_MAX_BYTES: ${CLAMAV_STREAM_MAX_BYTES:-524288000}
       SUBSUMIO_PRESIGNED_UPLOAD_ENABLED: ${SUBSUMIO_PRESIGNED_UPLOAD_ENABLED:-false}
       # Unified corpus root — engine reads law files from here
       LAW_CORPUS_ROOT: /law-corpus

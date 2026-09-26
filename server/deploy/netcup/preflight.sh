@@ -112,9 +112,34 @@ if [ "$(value SUBSUMIO_EU_ONLY)" = "1" ]; then
     failed=1
   fi
   require_value SUBSUMIO_ENSEMBLE_CRITIC_MODELS
-  if [ "$(value SUBSUMIO_EU_ONLY_EMBEDDINGS)" != "1" ]; then
-    echo "[preflight] WARN     Embeddings laufen weiter über einen Nicht-EU-Anbieter (SUBSUMIO_EU_ONLY_EMBEDDINGS nicht gesetzt)." >&2
-  fi
+  # Embeddings (Dokument- UND Suchtext) sind Teil von EU_ONLY. Nur der
+  # ausdrückliche Opt-out =0 lässt einen Nicht-EU-Anbieter zu; sonst würde die
+  # Engine jeden Embedding-Aufruf ablehnen — das fängt der Preflight hier ab.
+  case "$(value SUBSUMIO_EU_ONLY_EMBEDDINGS | tr '[:upper:]' '[:lower:]')" in
+    0 | false | no | off)
+      echo "[preflight] WARN     Embeddings laufen per Opt-out (SUBSUMIO_EU_ONLY_EMBEDDINGS=0) weiter über den konfigurierten Anbieter — Dokument- und Suchtexte verlassen die EU." >&2
+      ;;
+    *)
+      case "$(value SUBSUMIO_EMBEDDING_MODEL)" in
+        openrouter:* | openai:* | voyage:* | google:* | cohere:* | together:* | dashscope:* | zeroentropyai:*)
+          echo "[preflight] INVALID  SUBSUMIO_EU_ONLY=1 schließt Embeddings ein: SUBSUMIO_EMBEDDING_MODEL='$(value SUBSUMIO_EMBEDDING_MODEL)' verarbeitet nicht in der EU. EU-Embedding wählen (mistral:mistral-embed, selbst gehostet mit SUBSUMIO_SELF_HOSTED_RESIDENCY=eu) und neu einbetten, oder ausdrücklich mit SUBSUMIO_EU_ONLY_EMBEDDINGS=0 abwählen." >&2
+          failed=1
+          ;;
+        ollama:* | llama-server:*)
+          if [ "$(value SUBSUMIO_SELF_HOSTED_RESIDENCY)" != "eu" ]; then
+            echo "[preflight] INVALID  Selbst gehostetes Embedding unter SUBSUMIO_EU_ONLY=1 braucht SUBSUMIO_SELF_HOSTED_RESIDENCY=eu (sonst lehnt die Engine jedes Embedding ab)." >&2
+            failed=1
+          fi
+          ;;
+        litellm-proxy:*)
+          if [ "$(value SUBSUMIO_LITELLM_RESIDENCY)" != "eu" ]; then
+            echo "[preflight] INVALID  LiteLLM-Embedding unter SUBSUMIO_EU_ONLY=1 braucht SUBSUMIO_LITELLM_RESIDENCY=eu (sonst lehnt die Engine jedes Embedding ab)." >&2
+            failed=1
+          fi
+          ;;
+      esac
+      ;;
+  esac
 elif [ "$ai_provider" = "bedrock-eu" ]; then
   echo "[preflight] WARN     bedrock-eu ohne SUBSUMIO_EU_ONLY=1: EU-Verarbeitung wird nicht erzwungen." >&2
 fi
