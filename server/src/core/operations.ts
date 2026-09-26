@@ -2344,6 +2344,11 @@ const list_pages: Operation = {
       description:
         "Frontmatter equality filter as { key: value } (string values, snake_case keys, max 5). A page matches when ANY pair matches (frontmatter->>key = value) — e.g. { case_slug: 'legal/cases/x' } lists one matter's pages in SQL instead of scanning the type.",
     },
+    match: {
+      type: "string",
+      description:
+        "Case-insensitive substring search over the title and the name / email / company / case_number frontmatter fields (min 2, max 100 chars) — e.g. find a contact by name or e-mail.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
@@ -2372,6 +2377,7 @@ const list_pages: Operation = {
       sort,
       cursor: typeof p.cursor === "string" ? p.cursor : undefined,
       frontmatterAny: frontmatterAnyParam(p.frontmatter_any),
+      ...(typeof p.match === "string" ? { textMatch: p.match } : {}),
       ...scope,
     });
     // Pagination metadata is computed on the UNFILTERED SQL window: matter

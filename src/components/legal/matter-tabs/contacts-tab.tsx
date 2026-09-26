@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   UserCircle,
   Pencil,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import {
 } from "@/components/legal/ContactCreateDialog";
 import { WhatsAppClientInvitePanel } from "@/components/legal/WhatsAppClientInvitePanel";
 import type { CaseDetail } from "@/lib/matter-detail-types";
+import type { BrainPage } from "@/lib/types";
 
 const ROLE_LABELS_DE: Record<string, string> = {
   client: "Mandant",
@@ -59,6 +61,22 @@ const ROLE_COLORS: Record<string, string> = {
   other: "bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]",
 };
 
+/** Firm contacts are searched on the server from this many characters on. */
+export const CONTACT_SEARCH_MIN = 2;
+const CONTACT_SEARCH_LIMIT = 50;
+const CONTACT_SEARCH_DEBOUNCE_MS = 300;
+
+function toContact(p: BrainPage) {
+  const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+  return {
+    slug: p.slug,
+    name: String(fm.name ?? p.title ?? ""),
+    role: String(fm.role ?? "other"),
+    email: fm.email as string | undefined,
+    phone: fm.phone as string | undefined,
+  };
+}
+
 /** Slugs of the contacts a matter links to (client, opponents, court, own lawyer). */
 function linkedContactSlugs(caseData: CaseDetail | null | undefined): string[] {
   if (!caseData) return [];
@@ -74,6 +92,42 @@ export function ContactsTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
   const [linkedLoadFailed, setLinkedLoadFailed] = useState(false);
+  // "Alle Kontakte": a server-side search over every contact of the firm
+  // (name, e-mail) — not the firm-wide list the matter view preloads, which
+  // holds only the most recently edited contacts.
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<ReturnType<typeof toContact>[] | null>(
+    null
+  );
+  const [searchState, setSearchState] = useState<"idle" | "loading" | "failed">("idle");
+  const searchTerm = search.trim();
+  useEffect(() => {
+    if (searchTerm.length < CONTACT_SEARCH_MIN) {
+      setSearchResults(null);
+      setSearchState("idle");
+      return;
+    }
+    let cancelled = false;
+    setSearchState("loading");
+    const timer = setTimeout(() => {
+      api.brain
+        .listPages({ type: "legal_contact", q: searchTerm, limit: CONTACT_SEARCH_LIMIT })
+        .then((pages) => {
+          if (cancelled) return;
+          setSearchResults(pages.map(toContact));
+          setSearchState("idle");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setSearchResults(null);
+          setSearchState("failed");
+        });
+    }, CONTACT_SEARCH_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
   // The matter's own contacts are loaded by slug — the firm-wide contact list
   // in the context is only the most recently edited ones, so the client,
@@ -93,16 +147,7 @@ export function ContactsTab() {
         setLinkedLoadFailed(false);
         const loaded = Object.values(pages ?? {})
           .filter((p) => p?.slug)
-          .map((p) => {
-            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-            return {
-              slug: p.slug,
-              name: String(fm.name ?? p.title ?? ""),
-              role: String(fm.role ?? "other"),
-              email: fm.email as string | undefined,
-              phone: fm.phone as string | undefined,
-            };
-          });
+          .map(toContact);
         if (loaded.length === 0) return;
         setContactsList((prev) => {
           const have = new Set(prev.map((c) => c.slug));
@@ -129,7 +174,7 @@ export function ContactsTab() {
   if (caseData.ownLawyerSlug) caseLinkedSlugs.add(caseData.ownLawyerSlug);
 
   const caseContacts = ctx.contacts.filter((c) => caseLinkedSlugs.has(c.slug));
-  const otherContacts = ctx.contacts.filter((c) => !caseLinkedSlugs.has(c.slug));
+  const otherContacts = (searchResults ?? []).filter((c) => !caseLinkedSlugs.has(c.slug));
   const clientContact = ctx.contacts.find((c) => c.slug === caseData.clientSlug);
 
   const handleCreated = (contact: ContactCreateResult) => {
@@ -339,13 +384,63 @@ export function ContactsTab() {
           </div>
         )}
 
-        {/* Other Contacts */}
-        {!ctx.contactsLoading && otherContacts.length > 0 && (
+        {/* All contacts of the firm — searched on the server */}
+        {!ctx.contactsLoading && (
           <div className="space-y-2">
             <h4 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
               {t("contactstab.all_contacts")}
             </h4>
+            <label className="relative block">
+              <span className="sr-only">
+                {lang === "en" ? "Search all contacts" : "Alle Kontakte durchsuchen"}
+              </span>
+              <Search
+                size={14}
+                aria-hidden
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={
+                  lang === "en" ? "Search by name or e-mail…" : "Nach Name oder E-Mail suchen…"
+                }
+                className="h-9 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pr-3 pl-8 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)]"
+              />
+            </label>
+            {searchTerm.length < CONTACT_SEARCH_MIN && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {lang === "en"
+                  ? "Type at least two characters to search every contact of the firm."
+                  : "Mindestens zwei Zeichen eingeben, um alle Kontakte der Kanzlei zu durchsuchen."}
+              </p>
+            )}
+            {searchState === "loading" && (
+              <p role="status" className="text-xs text-[color:var(--ds-text-muted)]">
+                {lang === "en" ? "Searching…" : "Suche läuft…"}
+              </p>
+            )}
+            {searchState === "failed" && (
+              <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+                {lang === "en"
+                  ? "The search is currently unavailable."
+                  : "Die Suche ist derzeit nicht verfügbar."}
+              </p>
+            )}
+            {searchState === "idle" && searchResults !== null && otherContacts.length === 0 && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {lang === "en" ? "No further contacts found." : "Keine weiteren Kontakte gefunden."}
+              </p>
+            )}
             {otherContacts.map(renderContactCard)}
+            {searchResults !== null && searchResults.length >= CONTACT_SEARCH_LIMIT && (
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {lang === "en"
+                  ? `Showing the first ${CONTACT_SEARCH_LIMIT} matches — refine the search.`
+                  : `Die ersten ${CONTACT_SEARCH_LIMIT} Treffer — Suche verfeinern.`}
+              </p>
+            )}
           </div>
         )}
 

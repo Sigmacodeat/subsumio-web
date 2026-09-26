@@ -105,6 +105,8 @@ import {
   GBrainError,
   PAGE_SORT_SQL,
   normalizeFrontmatterFilter,
+  textMatchPattern,
+  TEXT_MATCH_FIELDS,
   ENRICH_ORDER_SQL,
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
@@ -1621,6 +1623,18 @@ export class PostgresEngine implements BrainEngine {
           : sql`${fmCondition} OR ${term}`;
     });
     if (fmPairs.length > 0) fmCondition = sql`${fmCondition})`;
+    // Substring search over title + TEXT_MATCH_FIELDS (literal keys).
+    // Parity with PGLiteEngine.listPages.
+    const textPattern = textMatchPattern(filters?.textMatch);
+    let textCondition = sql``;
+    if (textPattern) {
+      const cols = ["p.title", ...TEXT_MATCH_FIELDS.map((k) => `p.frontmatter->>'${k}'`)];
+      cols.forEach((col, i) => {
+        const term = sql`${sql.unsafe(col)} ILIKE ${textPattern} ESCAPE '\\'`;
+        textCondition = i === 0 ? sql`AND (${term}` : sql`${textCondition} OR ${term}`;
+      });
+      textCondition = sql`${textCondition})`;
+    }
 
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
     // postgres.js sql.unsafe lets us splice the literal fragment safely.
@@ -1641,7 +1655,7 @@ export class PostgresEngine implements BrainEngine {
     const rows = await sql`
       SELECT p.* FROM pages p
       ${tagJoin}
-      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition} ${fmCondition} ${cursorCondition}
+      WHERE 1=1 ${typeCondition} ${tagCondition} ${updatedCondition} ${slugCondition} ${sourceCondition} ${deletedCondition} ${fmCondition} ${textCondition} ${cursorCondition}
       ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}
     `;
 

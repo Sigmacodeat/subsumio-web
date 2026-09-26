@@ -965,4 +965,33 @@ describeBoth("Engine parity — page array ops", () => {
     expect(pg.find((r) => r.status === "tombstoned")).toBeUndefined();
     expect(await read(pgliteEngine)).toEqual(pg);
   });
+
+  test("listPages textMatch: same substring matches on both engines", async () => {
+    const src = "parity-textmatch";
+    const seed = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [src]
+      );
+      for (const [slug, title, fm] of [
+        ["ptm/otto", "Otto", { name: "Otto Altgegner", email: "otto@example.test" }],
+        ["ptm/firma", "Firma", { company: "Acme 100% GmbH" }],
+        ["ptm/case", "Akte", { case_number: "3 Cg 12/30" }],
+      ] as const) {
+        await eng.putPage(
+          slug,
+          { type: "note", title, compiled_truth: "t", timeline: "", frontmatter: { ...fm } },
+          { sourceId: src }
+        );
+      }
+    };
+    const read = async (eng: BrainEngine, q: string) =>
+      (await eng.listPages({ sourceId: src, textMatch: q, limit: 50 })).map((p) => p.slug).sort();
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    for (const q of ["OTTO", "example.test", "100%", "cg 12", "%%"]) {
+      expect(await read(pgliteEngine, q)).toEqual(await read(pgEngine, q));
+    }
+    expect(await read(pgEngine, "100%")).toEqual(["ptm/firma"]);
+  });
 });

@@ -4856,6 +4856,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const slugPrefix = req.query.slug_prefix ? String(req.query.slug_prefix) : undefined;
       // Keyset cursor wins over offset (they don't compose meaningfully).
       const cursor = req.query.cursor ? String(req.query.cursor) : undefined;
+      // Substring search over title / name / e-mail (engine-side, see
+      // PageFilters.textMatch) — e.g. a contact picker searching all contacts.
+      const match = typeof req.query.q === "string" ? req.query.q.slice(0, 100) : undefined;
       // Frontmatter equality filter: `fm.<key>=<value>` (any pair matches),
       // e.g. `fm.case_slug=legal/cases/x` — one matter's pages in SQL
       // instead of the caller scanning the whole type.
@@ -4883,6 +4886,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(tag ? { tag } : {}),
           ...(slugPrefix ? { slug_prefix: slugPrefix } : {}),
           ...(Object.keys(frontmatterAny).length > 0 ? { frontmatter_any: frontmatterAny } : {}),
+          ...(match ? { match } : {}),
           sort: "updated_desc",
           include_frontmatter: true,
           envelope: true,

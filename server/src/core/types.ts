@@ -359,6 +359,26 @@ export interface PageFilters {
    * `pages_list_case_slug_keyset_idx` (migration v151).
    */
   frontmatterAny?: Array<[string, string]>;
+  /**
+   * Case-insensitive substring search over the title and the frontmatter
+   * fields in TEXT_MATCH_FIELDS (name, e-mail, company, case number) — e.g.
+   * finding a contact by name or e-mail without reading every contact.
+   * LIKE metacharacters are matched literally. Ignored when shorter than
+   * TEXT_MATCH_MIN; longer than TEXT_MATCH_MAX is cut.
+   */
+  textMatch?: string;
+}
+
+/** Frontmatter fields `textMatch` searches besides the title. */
+export const TEXT_MATCH_FIELDS = ["name", "email", "company", "case_number"] as const;
+export const TEXT_MATCH_MIN = 2;
+export const TEXT_MATCH_MAX = 100;
+
+/** The ILIKE pattern for `textMatch`, or null when no text filter applies. */
+export function textMatchPattern(q: string | undefined): string | null {
+  const text = (q ?? "").trim().slice(0, TEXT_MATCH_MAX);
+  if (text.length < TEXT_MATCH_MIN) return null;
+  return `%${text.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
 }
 
 /** Allowed frontmatter filter keys (plain snake_case identifiers). */

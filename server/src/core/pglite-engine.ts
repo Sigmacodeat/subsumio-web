@@ -122,6 +122,8 @@ import {
   GBrainError,
   PAGE_SORT_SQL,
   normalizeFrontmatterFilter,
+  textMatchPattern,
+  TEXT_MATCH_FIELDS,
   ENRICH_ORDER_SQL,
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
@@ -1517,6 +1519,14 @@ export class PGLiteEngine implements BrainEngine {
         return `p.frontmatter->>'${key}' = $${params.length}`;
       });
       where.push(`(${ors.join(" OR ")})`);
+    }
+    // Substring search over title + TEXT_MATCH_FIELDS (literal keys).
+    const textPattern = textMatchPattern(filters?.textMatch);
+    if (textPattern) {
+      params.push(textPattern);
+      const n = `$${params.length}`;
+      const cols = ["p.title", ...TEXT_MATCH_FIELDS.map((k) => `p.frontmatter->>'${k}'`)];
+      where.push(`(${cols.map((c) => `${c} ILIKE ${n} ESCAPE '\\'`).join(" OR ")})`);
     }
 
     // v0.29: ORDER BY threading via PAGE_SORT_SQL whitelist (no SQL injection).
