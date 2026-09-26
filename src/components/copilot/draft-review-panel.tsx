@@ -228,10 +228,12 @@ export function DraftReviewPanel({
             </span>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            aria-label={isEn ? "Close review" : "Review schließen"}
+            className="inline-flex h-6 w-6 items-center justify-center rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
         <div className="flex items-center gap-2 py-4" role="status" aria-live="polite">
@@ -253,10 +255,12 @@ export function DraftReviewPanel({
             {isEn ? "Review failed" : "Review fehlgeschlagen"}: {error}
           </span>
           <button
+            type="button"
             onClick={onClose}
-            className="ml-auto rounded p-0.5 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            aria-label={isEn ? "Close review" : "Review schließen"}
+            className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -278,10 +282,12 @@ export function DraftReviewPanel({
           </span>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          aria-label={isEn ? "Close review" : "Review schließen"}
+          className="inline-flex h-6 w-6 items-center justify-center rounded text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
         >
-          <X size={12} />
+          <X size={12} aria-hidden="true" />
         </button>
       </div>
 

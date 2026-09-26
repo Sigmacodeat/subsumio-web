@@ -256,10 +256,12 @@ export function WhatsAppInbox() {
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
           <button
+            type="button"
             onClick={() => setSelectedHash(null)}
-            className="text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
+            aria-label="Zurück zur Übersicht"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} aria-hidden="true" />
           </button>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--ds-surface-2)] text-xs font-medium text-[color:var(--ds-text)]">
             {selectedConversation.senderName.slice(0, 2).toUpperCase()}

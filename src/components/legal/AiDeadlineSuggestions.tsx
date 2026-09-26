@@ -386,7 +386,8 @@ export function AiDeadlineSuggestions() {
                 <button
                   onClick={() => toggleSelection(s.slug)}
                   className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
+                    // 16 px Optik, 24 px Klickfläche via unsichtbarem ::before (WCAG 2.5.8).
+                    "relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color] before:absolute before:-inset-1 before:content-[''] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none",
                     isSelected
                       ? "brand-bg border-[color:var(--brand-primary)] text-white"
                       : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]"

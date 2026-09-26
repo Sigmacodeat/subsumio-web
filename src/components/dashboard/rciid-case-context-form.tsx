@@ -410,8 +410,9 @@ export function RciidCaseContextForm({
                   size="sm"
                   onClick={() => removeTimelineEntry(i)}
                   className="h-8 w-8 p-0"
+                  aria-label={`Ereignis ${i + 1} entfernen`}
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={12} aria-hidden="true" />
                 </Button>
               </div>
             ))}
@@ -458,8 +459,9 @@ export function RciidCaseContextForm({
                 size="sm"
                 onClick={() => removeTargetAddress(i)}
                 className="h-8 w-8 p-0"
+                aria-label={`Target-Adresse ${i + 1} entfernen`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} aria-hidden="true" />
               </Button>
             </div>
           ))}
@@ -513,8 +515,9 @@ export function RciidCaseContextForm({
                 size="sm"
                 onClick={() => removeVictimDeposit(i)}
                 className="h-8 w-8 p-0"
+                aria-label={`Opfer-Einzahlung ${i + 1} entfernen`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} aria-hidden="true" />
               </Button>
             </div>
           ))}
@@ -557,8 +560,9 @@ export function RciidCaseContextForm({
                 size="sm"
                 onClick={() => removeKnownRecipient(i)}
                 className="h-8 w-8 p-0"
+                aria-label={`Empfänger ${i + 1} entfernen`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} aria-hidden="true" />
               </Button>
             </div>
           ))}
@@ -601,8 +605,9 @@ export function RciidCaseContextForm({
                 size="sm"
                 onClick={() => removeExchangeLink(i)}
                 className="h-8 w-8 p-0"
+                aria-label={`Exchange-Verknüpfung ${i + 1} entfernen`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} aria-hidden="true" />
               </Button>
             </div>
           ))}
@@ -648,8 +653,9 @@ export function RciidCaseContextForm({
                 size="sm"
                 onClick={() => removeEvidenceRef(i)}
                 className="mt-1 h-8 w-8 p-0"
+                aria-label={`Beweismittel ${i + 1} entfernen`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={12} aria-hidden="true" />
               </Button>
             </div>
           ))}

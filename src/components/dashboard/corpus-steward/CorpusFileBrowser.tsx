@@ -962,6 +962,17 @@ export function CorpusFileBrowser({ onSelectFile, selectedCorpus, onCorpusChange
                             isSelected && "bg-[color:var(--ds-accent)]/5"
                           )}
                           onClick={() => onSelectFile(entry.path)}
+                          tabIndex={0}
+                          aria-label={`Datei ${entry.name} öffnen`}
+                          onKeyDown={(e) => {
+                            // Nur auf der Zeile selbst reagieren, nicht auf Enter/Space
+                            // in der Checkbox oder anderen Kindelementen.
+                            if (e.target !== e.currentTarget) return;
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onSelectFile(entry.path);
+                            }
+                          }}
                         >
                           <td
                             className="px-3 py-2"

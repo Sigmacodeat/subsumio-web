@@ -277,15 +277,16 @@ function TreeNode({
             type="button"
             onClick={() => toggleOpen(node.path)}
             aria-label={`${open ? "Zuklappen" : "Aufklappen"}: ${node.name}`}
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
           >
             <ChevronRight
               size={12}
+              aria-hidden="true"
               className={`transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`}
             />
           </button>
         ) : (
-          <span className="w-5 shrink-0" aria-hidden="true" />
+          <span className="w-6 shrink-0" aria-hidden="true" />
         )}
         <TreeRowButton
           icon={open && hasChildren ? <FolderOpen size={13} /> : <Folder size={13} />}

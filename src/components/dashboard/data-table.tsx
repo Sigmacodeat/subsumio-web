@@ -73,6 +73,8 @@ interface DataTableProps<T> {
   enableVirtualization?: boolean;
   /** "dense" tightens row padding for registers (Akten, Fristen). */
   density?: "comfortable" | "dense";
+  /** Name der Tabelle für den scrollbaren Bereich (aria-label der Region). */
+  tableLabel?: string;
 }
 
 export function DataTable<T>({
@@ -96,6 +98,7 @@ export function DataTable<T>({
   rowKey,
   enableVirtualization = false,
   density = "comfortable",
+  tableLabel = "Tabelle",
 }: DataTableProps<T>) {
   const cellPad = density === "dense" ? "px-3 py-2" : "px-4 py-3";
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -144,6 +147,21 @@ export function DataTable<T>({
 
   const tableBodyRef = useRef<HTMLDivElement>(null);
   const shouldVirtualize = enableVirtualization && rows.length > 50;
+
+  // Horizontaler Überlauf: nur dann einen dezenten Scroll-Hinweis zeigen,
+  // wenn die Tabelle tatsächlich breiter als ihr Container ist.
+  const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
+  useEffect(() => {
+    const el = tableBodyRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setHasHorizontalOverflow(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    const table = el.querySelector("table");
+    if (table) observer.observe(table);
+    return () => observer.disconnect();
+  }, [rows.length, columns.length]);
 
   const rowVirtualizer = useVirtualizer({
     count: shouldVirtualize ? rows.length : 0,
@@ -367,9 +385,27 @@ export function DataTable<T>({
 
       {/* Desktop table */}
       <div className="card-shadow hidden overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block">
+        {hasHorizontalOverflow && (
+          <p
+            className="flex items-center justify-end gap-1 border-b border-[color:var(--ds-border)] px-4 py-1 text-[11px] text-[color:var(--ds-text-subtle)]"
+            aria-hidden="true"
+          >
+            <ChevronLeft className="h-3 w-3" />
+            Tabelle seitlich scrollbar
+            <ChevronRight className="h-3 w-3" />
+          </p>
+        )}
+        {/* Scrollbarer Bereich ist per Tastatur erreichbar (tabIndex) und als
+            benannte Region ausgezeichnet (WCAG 2.1.1 / 4.1.2). */}
         <div
           ref={tableBodyRef}
-          className={cn("overflow-x-auto", shouldVirtualize && "overflow-y-auto")}
+          role="region"
+          aria-label={tableLabel}
+          tabIndex={0}
+          className={cn(
+            "overflow-x-auto focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset",
+            shouldVirtualize && "overflow-y-auto"
+          )}
           style={shouldVirtualize ? { maxHeight: "70vh" } : undefined}
         >
           <table className="w-full text-sm text-[color:var(--ds-text)]">

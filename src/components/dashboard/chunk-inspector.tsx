@@ -743,8 +743,9 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
+                    aria-label="Vorherige Seite"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                   </Button>
                   <span className="text-xs tabular-nums">
                     {page} / {totalPages}
@@ -754,8 +755,9 @@ export function ChunkInspector({ initialSource = "all" }: { initialSource?: stri
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
+                    aria-label="Nächste Seite"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               </div>

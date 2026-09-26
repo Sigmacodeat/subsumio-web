@@ -362,8 +362,11 @@ export function CryptoForensicsPanel({
                   size="sm"
                   onClick={() => removeWallet(i)}
                   className="h-6 w-6 p-0"
+                  aria-label={
+                    lang === "en" ? `Remove wallet ${w.address}` : `Wallet ${w.address} entfernen`
+                  }
                 >
-                  <Trash2 size={10} />
+                  <Trash2 size={10} aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -443,8 +446,13 @@ export function CryptoForensicsPanel({
                       size="sm"
                       onClick={() => removeWallet(i)}
                       className="h-6 w-6 p-0"
+                      aria-label={
+                        lang === "en"
+                          ? `Remove wallet ${w.address}`
+                          : `Wallet ${w.address} entfernen`
+                      }
                     >
-                      <Trash2 size={10} />
+                      <Trash2 size={10} aria-hidden="true" />
                     </Button>
                   </div>
                 ))}
@@ -481,8 +489,9 @@ export function CryptoForensicsPanel({
                 size="sm"
                 onClick={addWallet}
                 disabled={!newWalletAddress.trim()}
+                aria-label={lang === "en" ? "Add wallet" : "Wallet hinzufügen"}
               >
-                <Plus size={14} />
+                <Plus size={14} aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -567,8 +576,13 @@ export function CryptoForensicsPanel({
                       size="sm"
                       onClick={() => addDetectedToSubmit(w)}
                       className="h-6 px-2"
+                      aria-label={
+                        lang === "en"
+                          ? `Add detected wallet ${w.address}`
+                          : `Erkannte Wallet ${w.address} übernehmen`
+                      }
                     >
-                      <Plus size={10} />
+                      <Plus size={10} aria-hidden="true" />
                     </Button>
                   </div>
                 ))}

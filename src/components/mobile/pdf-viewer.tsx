@@ -85,21 +85,25 @@ export function PdfViewer({ url, filename, open, onOpenChange }: PdfViewerProps)
         {numPages > 1 && (
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => setPageNum((p) => Math.max(1, p - 1))}
               disabled={pageNum <= 1}
+              aria-label="Vorherige Seite"
               className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-30 motion-reduce:transition-none"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} aria-hidden="true" />
             </button>
             <span className="text-xs text-[color:var(--ds-text-muted)]">
               {pageNum} / {numPages}
             </span>
             <button
+              type="button"
               onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
               disabled={pageNum >= numPages}
+              aria-label="Nächste Seite"
               className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-surface-2)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.99] disabled:opacity-30 motion-reduce:transition-none"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={18} aria-hidden="true" />
             </button>
           </div>
         )}

@@ -1428,15 +1428,21 @@ export default function DeadlinesPage() {
                       </div>
                     )}
                   </div>
+                  {/* Konfidenz sichtbar als Text (WCAG 1.4.1): Der Farbpunkt links ist
+                      nur Dekoration; der Kurztext hoch/mittel/niedrig trägt die Aussage. */}
                   <Badge
                     variant="default"
-                    className={`shrink-0 text-xs whitespace-nowrap ${r.confidence === "high" ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]" : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"}`}
+                    className={`shrink-0 text-xs whitespace-nowrap ${
+                      r.confidence === "high"
+                        ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                        : r.confidence === "medium"
+                          ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                          : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                    }`}
                   >
-                    {r.confidence === "high"
-                      ? "Sicher erkannt"
-                      : r.confidence === "medium"
-                        ? "Wahrscheinlich"
-                        : "Unsicher"}
+                    {lang === "en"
+                      ? `Confidence ${r.confidence === "high" ? "high" : r.confidence === "medium" ? "medium" : "low"}`
+                      : `Konfidenz ${r.confidence === "high" ? "hoch" : r.confidence === "medium" ? "mittel" : "niedrig"}`}
                   </Badge>
                   <Button
                     size="sm"

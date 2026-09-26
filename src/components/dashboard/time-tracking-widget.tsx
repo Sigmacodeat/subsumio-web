@@ -157,6 +157,13 @@ export function TimeTrackingWidget() {
     }
   }
 
+  // Minuten-Ansage: Der Text ändert sich nur, wenn eine volle Minute vergangen
+  // ist — die polite-Region spricht also alle 60 s, nicht jede Sekunde.
+  const elapsedMinutes = Math.floor(elapsed / 60);
+  const minuteAnnouncement = currentActivity
+    ? `Laufende Zeiterfassung: ${elapsedMinutes} ${elapsedMinutes === 1 ? "Minute" : "Minuten"}`
+    : "";
+
   function formatElapsed(seconds: number): string {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -201,8 +208,20 @@ export function TimeTrackingWidget() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-[color:var(--ds-info-text)]" />
-              <div className="font-mono text-2xl font-bold">{formatElapsed(elapsed)}</div>
+              <Clock className="h-4 w-4 text-[color:var(--ds-info-text)]" aria-hidden="true" />
+              {/* Sekundentakt bleibt für Screenreader stumm (aria-live="off");
+                  die Minuten werden separat einmal pro Minute höflich angesagt. */}
+              <div
+                role="timer"
+                aria-label="Laufende Zeiterfassung"
+                aria-live="off"
+                className="font-mono text-2xl font-bold"
+              >
+                {formatElapsed(elapsed)}
+              </div>
+              <span className="sr-only" aria-live="polite" aria-atomic="true">
+                {minuteAnnouncement}
+              </span>
             </div>
             <Button onClick={handleStop} variant="danger" size="sm" className="w-full">
               <Square className="mr-2 h-4 w-4" />

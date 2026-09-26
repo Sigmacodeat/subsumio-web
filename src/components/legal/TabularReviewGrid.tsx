@@ -354,11 +354,20 @@ export function TabularReviewGrid({
           return (
             <td
               key={i}
+              // Zugänglicher Name = sichtbarer Zellinhalt (kein aria-label, das ihn überschreibt).
+              role="button"
+              tabIndex={0}
               className={cn(
-                "max-w-[320px] min-w-[240px] cursor-pointer border-l border-[color:var(--ds-border)]/60 px-4 py-3 align-top transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] motion-reduce:transition-none",
+                "max-w-[320px] min-w-[240px] cursor-pointer border-l border-[color:var(--ds-border)]/60 px-4 py-3 align-top transition-[background-color,border-color,color] hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none focus-visible:ring-inset motion-reduce:transition-none",
                 !notFound && cell.citations.length === 0 && "bg-[color:var(--ds-warning-bg)]/40"
               )}
               onClick={() => setSelected({ slug: original.slug, qIndex: i })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelected({ slug: original.slug, qIndex: i });
+                }
+              }}
             >
               {notFound ? (
                 <span className="inline-flex items-center rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)] italic">

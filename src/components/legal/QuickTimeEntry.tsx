@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Timer, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,20 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
   const [description, setDescription] = useState("");
   const [activityType, setActivityType] = useState("other");
   const [billable, setBillable] = useState(true);
+  const [minutesTouched, setMinutesTouched] = useState(false);
+  const idBase = useId();
+  const minutesId = `${idBase}-minutes`;
+  const activityId = `${idBase}-activity`;
+  const billableId = `${idBase}-billable`;
+  const descriptionId = `${idBase}-description`;
+  const parsedMinutes = parseInt(minutes, 10);
+  const minutesInvalid = minutes.trim() !== "" && (!parsedMinutes || parsedMinutes <= 0);
+  const minutesError =
+    minutesTouched && minutesInvalid
+      ? lang === "en"
+        ? "Enter a whole number of minutes greater than 0."
+        : "Bitte eine ganze Minutenzahl größer 0 eingeben."
+      : undefined;
 
   async function submit() {
     const mins = parseInt(minutes, 10);
@@ -90,27 +104,40 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
             {lang === "en" ? "Quick time entry" : "Schnelle Zeiterfassung"}
           </span>
         </div>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setOpen(false)}>
-          <X size={14} />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={() => setOpen(false)}
+          aria-label={lang === "en" ? "Close" : "Schließen"}
+        >
+          <X size={14} aria-hidden="true" />
         </Button>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div>
-          <Label className="text-xs">{lang === "en" ? "Minutes" : "Minuten"}</Label>
+          <Label htmlFor={minutesId} className="text-xs">
+            {lang === "en" ? "Minutes" : "Minuten"}
+          </Label>
           <Input
+            id={minutesId}
             type="number"
             inputMode="numeric"
             min={1}
             value={minutes}
             onChange={(e) => setMinutes(e.target.value)}
+            onBlur={() => setMinutesTouched(true)}
+            error={minutesError}
             className="mt-1 h-9 text-sm"
           />
         </div>
         <div>
-          <Label className="text-xs">{lang === "en" ? "Activity" : "Tätigkeit"}</Label>
+          <Label htmlFor={activityId} className="text-xs">
+            {lang === "en" ? "Activity" : "Tätigkeit"}
+          </Label>
           <Select value={activityType} onValueChange={setActivityType}>
-            <SelectTrigger className="mt-1 h-9 text-sm">
+            <SelectTrigger id={activityId} className="mt-1 h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -123,9 +150,11 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
           </Select>
         </div>
         <div>
-          <Label className="text-xs">{lang === "en" ? "Billable" : "Abrechenbar"}</Label>
+          <Label htmlFor={billableId} className="text-xs">
+            {lang === "en" ? "Billable" : "Abrechenbar"}
+          </Label>
           <Select value={billable ? "yes" : "no"} onValueChange={(v) => setBillable(v === "yes")}>
-            <SelectTrigger className="mt-1 h-9 text-sm">
+            <SelectTrigger id={billableId} className="mt-1 h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -137,8 +166,11 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
       </div>
 
       <div>
-        <Label className="text-xs">{lang === "en" ? "Description" : "Beschreibung"}</Label>
+        <Label htmlFor={descriptionId} className="text-xs">
+          {lang === "en" ? "Description" : "Beschreibung"}
+        </Label>
         <Input
+          id={descriptionId}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={lang === "en" ? "What did you work on?" : "Womit haben Sie gearbeitet?"}
