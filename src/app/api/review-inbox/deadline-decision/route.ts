@@ -47,6 +47,15 @@ export const POST = createHandler(
     return apiSuccess({
       deadline_slug: result.deadlineSlug,
       already_decided: result.alreadyDecided,
+      ...(result.engineCheck
+        ? {
+            engine_check: {
+              engine_due_date: result.engineCheck.engineDueDate,
+              matches: result.engineCheck.matches,
+              message: result.engineCheck.message,
+            },
+          }
+        : {}),
     });
   }
 );

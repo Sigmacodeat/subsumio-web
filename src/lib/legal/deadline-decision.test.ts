@@ -6,6 +6,7 @@ vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine" }));
 import {
   decideSuggestedDeadline,
   deadlineSlugForSuggestion,
+  engineGegenrechnung,
   isValidIsoDate,
 } from "./deadline-decision";
 
@@ -170,5 +171,80 @@ describe("helpers", () => {
     const a = deadlineSlugForSuggestion("legal/cases/x", suggestions[0]!, 0);
     expect(a).toBe(deadlineSlugForSuggestion("legal/cases/x", suggestions[0]!, 0));
     expect(a).not.toBe(deadlineSlugForSuggestion("legal/cases/x", suggestions[1]!, 1));
+  });
+});
+
+describe("W1-18: Gegenrechnung mit der Frist-Engine bei der Freigabe", () => {
+  const engineSuggestion = {
+    title: "Berufungsfrist (§ 464 Abs 1 ZPO)",
+    due_date: "2026-05-04",
+    confirmed: false,
+    zustellungsdatum: "2026-04-03",
+    frist_art: "berufung",
+    rechtsgrundlage: "§ 464 Abs 1 ZPO",
+    notfrist: true,
+  };
+
+  test("confirmed date = engine date → stored as match, Notfrist flagged for Vier-Augen", async () => {
+    const { calls, fetchFn } = engineMock({
+      frontmatter: { suggested_deadlines: [engineSuggestion] },
+    });
+    const r = await decideSuggestedDeadline(
+      {},
+      { caseSlug: "legal/cases/akte-1", index: 0, action: "approve", reviewer: "ra@kanzlei.at" },
+      fetchFn
+    );
+    expect(r.ok && r.engineCheck?.matches).toBe(true);
+    const fm = calls.find((c) => c.method === "POST")!.body!.frontmatter as Record<string, unknown>;
+    expect(fm).toMatchObject({
+      engine_due_date: "2026-05-04",
+      engine_check: "match",
+      law: "§ 464 Abs 1 ZPO",
+      zustellungsdatum: "2026-04-03",
+      is_notfrist: true,
+      second_check_required: true,
+    });
+  });
+
+  test("a different confirmed date is saved but returned and stored as Abweichung", async () => {
+    const { calls, fetchFn } = engineMock({
+      frontmatter: { suggested_deadlines: [engineSuggestion] },
+    });
+    const r = await decideSuggestedDeadline(
+      {},
+      {
+        caseSlug: "legal/cases/akte-1",
+        index: 0,
+        action: "approve",
+        dueDate: "2026-05-11",
+        reviewer: "ra@kanzlei.at",
+      },
+      fetchFn
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.engineCheck?.matches).toBe(false);
+    expect(r.engineCheck?.message).toContain("2026-05-04");
+    const fm = calls.find((c) => c.method === "POST")!.body!.frontmatter as Record<string, unknown>;
+    expect(fm).toMatchObject({
+      due_date: "2026-05-11",
+      engine_due_date: "2026-05-04",
+      engine_check: "abweichung",
+    });
+  });
+
+  test("the later vhfZ date in a possible Ferialsache is flagged as such", () => {
+    const check = engineGegenrechnung(
+      { zustellungsdatum: "2026-07-20", frist_art: "berufung", ferialsache: "zweifel" },
+      "2026-09-14"
+    );
+    expect(check?.matches).toBe(false);
+    expect(check?.engineDueDate).toBe("2026-08-17");
+    expect(check?.message).toContain("KEINE Ferialsache");
+  });
+
+  test("without Zustelldatum or Fristart there is no re-check", () => {
+    expect(engineGegenrechnung({ frist_art: "berufung" }, "2026-05-04")).toBeNull();
+    expect(engineGegenrechnung({ zustellungsdatum: "2026-04-03" }, "2026-05-04")).toBeNull();
   });
 });

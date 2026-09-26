@@ -643,15 +643,24 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       // legal_deadline page is written and checked BEFORE the suggestion is
       // marked approved. Errors propagate so callers never report success
       // for a Frist that did not reach the Fristenbuch.
-      await decideDeadlineSuggestion({
+      const outcome = await decideDeadlineSuggestion({
         caseSlug: caseData.slug,
         index,
         action: confirmed ? "approve" : "reject",
         dueDate: opts?.dueDate,
       });
+      // The engine's re-check disagrees with the confirmed date: the deadline
+      // is saved as confirmed, the lawyer sees the difference.
+      if (outcome.engineWarning) {
+        addToast({
+          type: "warning",
+          title: "Frist-Engine: bitte prüfen",
+          description: outcome.engineWarning,
+        });
+      }
       await refreshCaseData();
     },
-    [caseData, t, refreshCaseData]
+    [caseData, t, refreshCaseData, addToast]
   );
 
   // ── Confirm suggested party ─────────────────────────────────────────

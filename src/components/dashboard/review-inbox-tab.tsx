@@ -259,14 +259,14 @@ export function ReviewInboxTab() {
         if (item.arrayIndex !== null && item.caseSlug) {
           // Server-side, atomic: the deadline is written and checked BEFORE
           // the suggestion is marked approved (src/lib/legal/deadline-decision.ts).
-          await decideDeadlineSuggestion({
+          const outcome = await decideDeadlineSuggestion({
             caseSlug: item.caseSlug,
             index: item.arrayIndex,
             action: action === "approve" ? "approve" : "reject",
             dueDate:
               action === "approve" ? (params.dueDate ?? item.dueDate ?? undefined) : undefined,
           });
-          return { ok: true };
+          return { ok: true, engineWarning: outcome.engineWarning };
         }
         return api.brain.updatePage({
           slug: item.pageSlug,
@@ -345,9 +345,17 @@ export function ReviewInboxTab() {
       }
       throw new Error("unknown_type");
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: ["review-inbox"] });
       qc.invalidateQueries({ queryKey: ["sidebar-badges"] });
+      const engineWarning = (data as { engineWarning?: string } | undefined)?.engineWarning;
+      if (engineWarning) {
+        addToast({
+          type: "warning",
+          title: "Frist-Engine: bitte prüfen",
+          description: engineWarning,
+        });
+      }
       const toastMap: Record<string, string> = {
         approve: "toast_approved",
         reject: "toast_rejected",

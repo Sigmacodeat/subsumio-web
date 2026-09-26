@@ -14,9 +14,16 @@ export interface DeadlineDecisionRequest {
  * message is the server's German, user-facing text — callers show it in a
  * toast instead of reporting success.
  */
+export interface DeadlineDecisionOutcome {
+  deadlineSlug: string | null;
+  /** Set when the Frist-Engine computes a different date than the confirmed
+   *  one — show it as a warning; the deadline was saved as confirmed. */
+  engineWarning?: string;
+}
+
 export async function decideDeadlineSuggestion(
   req: DeadlineDecisionRequest
-): Promise<{ deadlineSlug: string | null }> {
+): Promise<DeadlineDecisionOutcome> {
   const res = await csrfFetch("/api/review-inbox/deadline-decision", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,7 +36,10 @@ export async function decideDeadlineSuggestion(
     }),
   });
   const payload = (await res.json().catch(() => null)) as {
-    data?: { deadline_slug?: string | null };
+    data?: {
+      deadline_slug?: string | null;
+      engine_check?: { matches?: boolean; message?: string };
+    };
     error?: string;
   } | null;
   if (!res.ok) {
@@ -40,5 +50,9 @@ export async function decideDeadlineSuggestion(
           : "Fristvorschlag konnte nicht verworfen werden.")
     );
   }
-  return { deadlineSlug: payload?.data?.deadline_slug ?? null };
+  const check = payload?.data?.engine_check;
+  return {
+    deadlineSlug: payload?.data?.deadline_slug ?? null,
+    ...(check && check.matches === false && check.message ? { engineWarning: check.message } : {}),
+  };
 }
