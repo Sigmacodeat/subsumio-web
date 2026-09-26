@@ -142,7 +142,8 @@ for f in "${files[@]}"; do
   # idempotent + fast (~50ms); on the first iteration there's nothing to
   # terminate so it's effectively free.
   if [ -n "${DATABASE_URL:-}" ]; then
-    psql "$DATABASE_URL" -At -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid != pg_backend_pid() AND datname = current_database()" >/dev/null 2>&1 || true
+    # psql-env.ts passes the connection as libpq env, never on the command line.
+    bun scripts/psql-env.ts -At -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid != pg_backend_pid() AND datname = current_database()" >/dev/null 2>&1 || true
   fi
   # Hard outer timeout (180s per file). bun's --timeout is per-test; if a
   # PGLite WASM call hangs in beforeAll/afterAll, --timeout never fires and

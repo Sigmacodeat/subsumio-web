@@ -47,7 +47,7 @@ import {
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { forwardAlert } from "./pipeline-alert";
-import { runPsqlFile } from "./psql-env";
+import { jsonAggRows, runPsqlFile, type PsqlResult } from "./psql-env";
 import {
   clearFailure,
   isQuarantined,
@@ -112,13 +112,17 @@ function dbUrl(): string {
 }
 
 function psqlQuery(query: string): string {
+  const r = psqlRun(query);
+  if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+  return r.out;
+}
+
+function psqlRun(query: string): PsqlResult {
   const tmpFile = `/tmp/psql_delta_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    // Credentials via env (never argv/logs); failures are logged masked.
-    const r = runPsqlFile(tmpFile, dbUrl());
-    if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
-    return r.out;
+    // Credentials via env (never argv/logs); the error text is masked.
+    return runPsqlFile(tmpFile, dbUrl());
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -137,14 +141,9 @@ function psqlQuery(query: string): string {
  * `corpus-pipeline.ts`: auto-wrap in `json_agg`.
  */
 function psqlJSON(query: string): Record<string, unknown>[] {
-  const raw = psqlQuery(`SELECT json_agg(t) FROM (${query}) t`);
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  // A failed read throws: an unreadable cursor must not look like "no cursor"
+  // (that would re-fetch the whole last month from RIS).
+  return jsonAggRows<Record<string, unknown>>(psqlRun(`SELECT json_agg(t) FROM (${query}) t`));
 }
 
 function ensureSourceRow(key: string): void {

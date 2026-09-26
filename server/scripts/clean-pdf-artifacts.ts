@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
@@ -186,7 +187,7 @@ async function main() {
     order by p.slug ${limitFilter}`;
 
   const sep = "\x1f";
-  const raw = (await $`psql ${URL_} -tAF${sep} -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, URL_, { fieldSeparator: sep });
   const entries: { slug: string; sourceId: string }[] = [];
   for (const line of raw.split("\n")) {
     if (!line.trim()) continue;

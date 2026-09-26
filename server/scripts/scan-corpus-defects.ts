@@ -18,6 +18,7 @@
  */
 
 import { $ } from "bun";
+import { psqlQueryOrThrow, runPsqlQuery } from "./psql-env";
 
 const args = process.argv.slice(2);
 const SOURCE = args.find((a) => a.startsWith("--source="))?.split("=")[1];
@@ -168,22 +169,23 @@ async function main() {
   console.log("Starte Scan...");
   const start = Date.now();
 
-  const result = await $`psql ${URL_} -v ON_ERROR_STOP=1 -c ${SQL}`.quiet();
+  // Credentials via env (never argv); the error text is masked.
+  const result = runPsqlQuery(SQL, URL_, { tuplesOnly: false });
   const duration = ((Date.now() - start) / 1000).toFixed(1);
 
-  if (result.exitCode !== 0) {
-    console.error("Fehler:", result.stderr.toString());
+  if (!result.ok) {
+    console.error("Fehler:", result.error);
     process.exit(1);
   }
 
   console.log(`Scan fertig in ${duration}s`);
 
   // Ergebnis anzeigen
-  const summary = (
-    await $`psql ${URL_} -tAF| -c ${"select defect_type, count(*) from corpus_defects group by 1 order by 2 desc"}`.quiet()
-  ).stdout
-    .toString()
-    .trim();
+  const summary = psqlQueryOrThrow(
+    "select defect_type, count(*) from corpus_defects group by 1 order by 2 desc",
+    URL_,
+    { fieldSeparator: "|" }
+  ).trim();
 
   console.log("\nDefekte:");
   for (const line of summary.split("\n")) {
