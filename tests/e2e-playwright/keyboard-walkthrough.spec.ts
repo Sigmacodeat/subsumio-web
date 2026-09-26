@@ -65,6 +65,13 @@ test.describe("Keyboard-Only Walkthrough", () => {
             industry: "legal",
           }),
         });
+        // Signup does not sign in by itself; the E2E harness returns the
+        // confirmation link, and opening it creates the account + session.
+        const body = (await res.json().catch(() => ({}))) as { e2eVerifyUrl?: string };
+        if (body.e2eVerifyUrl) {
+          const link = new URL(body.e2eVerifyUrl);
+          await fetch(`${link.pathname}${link.search}`, { redirect: "manual" });
+        }
         return { status: res.status, ok: res.ok };
       },
       { email, name: TEST_USER.name, password: TEST_USER.password }

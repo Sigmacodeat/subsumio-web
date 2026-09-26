@@ -14,6 +14,7 @@
 
 import { test, expect } from "@playwright/test";
 import { createHmac } from "node:crypto";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = { password: "DocuSignTest1234!", name: "DocuSign Tester" };
@@ -26,7 +27,7 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
       acceptTerms: true,
       acceptDpa: true,
