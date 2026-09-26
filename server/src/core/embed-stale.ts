@@ -20,6 +20,8 @@
 import type { BrainEngine } from "./engine.ts";
 import type { ChunkInput } from "./types.ts";
 import { embedBatchWithBackoff } from "../commands/embed.ts";
+import { EMBEDDING_STATUS_BLOCKED_EU_ONLY, EuResidencyError } from "./ai/eu-policy.ts";
+import { runEuScopedForSource } from "./ai/request-eu-policy.ts";
 
 /** Last visited (page_id, chunk_index) for keyset-resume across runs. */
 export interface StaleCursor {
@@ -46,7 +48,10 @@ export interface EmbedStaleOpts {
    * Test seam: lets unit tests inject a deterministic fake without mocking
    * the gateway. Production callers leave it unset.
    */
-  embedFn?: (texts: string[], opts: { abortSignal?: AbortSignal }) => Promise<Float32Array[]>;
+  embedFn?: (
+    texts: string[],
+    opts: { abortSignal?: AbortSignal; sourceId?: string }
+  ) => Promise<Float32Array[]>;
   /**
    * v0.41.31: current embedding provenance signature (`<provider:model>:<dims>`).
    * When set, embeddings stamped under a DIFFERENT signature are invalidated
@@ -70,6 +75,12 @@ export interface EmbedStaleResult {
   done: boolean;
   /** True iff the loop exited because `signal.aborted` fired. */
   aborted: boolean;
+  /**
+   * Pages left without vectors because EU-only refused the (non-EU)
+   * embedding provider for their text. They stay keyword-searchable and are
+   * marked `embedding_status: blocked_eu_only`.
+   */
+  blockedEuOnly: number;
 }
 
 /**
@@ -101,7 +112,8 @@ export async function embedStaleForSource(
   const signal = opts.signal;
   const embedFn =
     opts.embedFn ??
-    ((texts, fnOpts) => embedBatchWithBackoff(texts, { abortSignal: fnOpts.abortSignal }));
+    ((texts, fnOpts) =>
+      embedBatchWithBackoff(texts, { abortSignal: fnOpts.abortSignal, sourceId: fnOpts.sourceId }));
 
   let afterPageId = opts.cursor?.afterPageId ?? 0;
   let afterChunkIndex = opts.cursor?.afterChunkIndex ?? -1;
@@ -113,6 +125,7 @@ export async function embedStaleForSource(
     lastCursor: null,
     done: false,
     aborted: false,
+    blockedEuOnly: 0,
   };
   const signature = opts.embeddingSignature;
 
@@ -170,9 +183,13 @@ export async function embedStaleForSource(
       const keySourceId = stale[0]?.source_id ?? sourceId;
       const slug = stale[0].slug;
       try {
-        const embeddings = await embedFn(
-          stale.map((c) => c.chunk_text),
-          { abortSignal: signal }
+        // A firm's "Nur EU" follows its documents into this run even when it
+        // was started outside the firm's request (cron, CLI).
+        const embeddings = await runEuScopedForSource(engine, keySourceId, () =>
+          embedFn(
+            stale.map((c) => c.chunk_text),
+            { abortSignal: signal, sourceId: keySourceId }
+          )
         );
         const existing = await engine.getChunks(slug, { sourceId: keySourceId });
         const staleIdxToEmbedding = new Map<number, Float32Array>();
@@ -214,6 +231,19 @@ export async function embedStaleForSource(
       } catch (e: unknown) {
         // Aborted mid-fetch is expected; treat as graceful exit.
         if (signal?.aborted) return;
+        if (e instanceof EuResidencyError) {
+          // Nothing was sent. Keep the page keyword-searchable and make the
+          // missing vectors visible instead of retrying silently forever.
+          result.blockedEuOnly += 1;
+          await markEmbeddingBlockedEuOnly(engine, keySourceId, slug, e).catch(() => {
+            /* the stderr line below still reports it */
+          });
+          process.stderr.write(
+            `\n  [embed-stale] ${keySourceId}/${slug}: not embedded — EU-only policy ` +
+              `refused "${e.target}" (keyword search only)\n`
+          );
+          return;
+        }
         // Otherwise log and skip — the chunk stays NULL and next call retries.
         process.stderr.write(
           `\n  [embed-stale] error on ${keySourceId}/${slug}: ${
@@ -247,4 +277,31 @@ export async function embedStaleForSource(
       return result;
     }
   }
+}
+
+/**
+ * Mark a page as "not embedded: EU-only refused the provider". The page keeps
+ * its chunks (keyword search) and a later run with an EU embedding model
+ * embeds it (its chunks stay `embedding IS NULL`).
+ */
+export async function markEmbeddingBlockedEuOnly(
+  engine: Pick<BrainEngine, "executeRaw">,
+  sourceId: string,
+  slug: string,
+  err: EuResidencyError
+): Promise<void> {
+  await engine.executeRaw(
+    `UPDATE pages
+        SET frontmatter = COALESCE(frontmatter, '{}'::jsonb) || $1::jsonb,
+            updated_at = now()
+      WHERE source_id = $2 AND slug = $3`,
+    [
+      {
+        embedding_status: EMBEDDING_STATUS_BLOCKED_EU_ONLY,
+        embedding_error: `eu_only_policy: ${err.target} is not an EU embedding provider`,
+      },
+      sourceId,
+      slug,
+    ]
+  );
 }

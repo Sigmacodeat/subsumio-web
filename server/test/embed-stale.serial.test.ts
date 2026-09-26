@@ -76,6 +76,7 @@ describe("embedStaleForSource", () => {
       lastCursor: null,
       done: true,
       aborted: false,
+      blockedEuOnly: 0,
     });
   });
 

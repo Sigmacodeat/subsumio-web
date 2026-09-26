@@ -126,6 +126,11 @@ export interface EmbedBatchOptions {
    * and amplify rate-limit pressure.
    */
   maxRetries?: number;
+  /**
+   * Source the texts belong to. Decides the EU-only rule: `law-*` is the
+   * public corpus, every other source client data (ai/eu-policy.ts).
+   */
+  sourceId?: string | null;
 }
 
 /**
@@ -145,6 +150,7 @@ export async function embedBatch(
   const gwOpts = {
     ...(options.abortSignal !== undefined && { abortSignal: options.abortSignal }),
     ...(options.maxRetries !== undefined && { maxRetries: options.maxRetries }),
+    ...(options.sourceId !== undefined && { sourceId: options.sourceId }),
   };
   // Fast path: small batch, no progress callback — single gateway call.
   if (texts.length <= BATCH_SIZE && !options.onBatchComplete) {

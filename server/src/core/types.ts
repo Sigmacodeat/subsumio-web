@@ -840,6 +840,12 @@ export interface SearchResult {
    */
   content_flag?: { reason: string; detail: string };
   /**
+   * Set on every result of a search whose vector branch EU-only skipped
+   * (see HybridSearchMeta.vector_skipped_reason): the list is keyword-only,
+   * semantic matches without the search words may be missing.
+   */
+  retrieval_limited?: "eu_only_keyword_only";
+  /**
    * v0.36 (cross-modal wave): the chunk's modality discriminator from
    * content_chunks.modality. 'text' for the existing text-embedding rows,
    * 'image' for rows populated by importImageFile. Surfaced so callers /
@@ -1802,6 +1808,13 @@ export interface EvalCaptureFailure {
 export interface HybridSearchMeta {
   /** True iff vector search actually ran. False when OPENAI_API_KEY missing or embed failed. */
   vector_enabled: boolean;
+  /**
+   * Why the vector branch did not run, when it was a policy decision rather
+   * than a failure: `eu_only` = EU-only (firm "Nur EU" or deployment switch)
+   * refused sending the query to the non-EU embedding provider; the results
+   * are keyword-only.
+   */
+  vector_skipped_reason?: "eu_only";
   /** Post-auto-detect detail level. */
   detail_resolved: "low" | "medium" | "high" | null;
   /** True iff multi-query expansion (Haiku) actually fired and produced variants. */

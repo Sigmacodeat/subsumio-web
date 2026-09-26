@@ -62,8 +62,13 @@ import { queryInstructionFor } from "./embedding-instructions.ts";
 import { hasAnthropicKey } from "./anthropic-key.ts";
 import { AIConfigError, AITransientError, normalizeAIError } from "./errors.ts";
 import { providerFailoverModel } from "./provider-failover.ts";
-import { assertEuEmbedding, assertEuResidency, EuResidencyError } from "./eu-policy.ts";
-import { withRequestEuPolicy } from "./request-eu-policy.ts";
+import {
+  assertEuEmbedding,
+  assertEuResidency,
+  embeddingOriginOfSource,
+  EuResidencyError,
+} from "./eu-policy.ts";
+import { isRequestEuOnly, withRequestEuPolicy } from "./request-eu-policy.ts";
 import { bedrockRuntimeBaseUrl, resolveBedrockRegion } from "./bedrock-config.ts";
 import { runGuardrails, hasGuardrails, type GuardrailHook } from "../guardrails.ts";
 
@@ -1472,6 +1477,12 @@ export interface EmbedOpts {
    * rejects the insert/search. NULL preserves the global-default.
    */
   dimensions?: number;
+  /**
+   * Source the (document-side) texts belong to. Decides the EU-only rule:
+   * `law-*` is the public corpus, every other source is client data
+   * (eu-policy.ts assertEuEmbedding). Omit when unknown.
+   */
+  sourceId?: string | null;
 }
 
 export async function embed(texts: string[], opts?: EmbedOpts): Promise<Float32Array[]> {
@@ -1483,7 +1494,12 @@ export async function embed(texts: string[], opts?: EmbedOpts): Promise<Float32A
   // global default. resolveEmbeddingProvider validates the override at the
   // recipe layer — bad model strings throw AIConfigError with a clear hint.
   const resolveTarget = opts?.embeddingModel ?? getEmbeddingModel();
-  assertEuEmbedding(resolveTarget, opts?.inputType, cfg.env);
+  // policyEnv(): a firm's "Nur EU" (request/job scope) applies here exactly
+  // like the deployment switch.
+  assertEuEmbedding(resolveTarget, opts?.inputType, policyEnv(), {
+    firmScope: isRequestEuOnly(),
+    origin: embeddingOriginOfSource(opts?.sourceId),
+  });
   const tracker = __budgetStore.getStore() ?? null;
   const { model, recipe, modelId } = await resolveEmbeddingProvider(resolveTarget);
   // Instruction-tuned models (Qwen3-Embedding) need their query prefix on
@@ -1839,7 +1855,10 @@ export async function embedMultimodal(
   // text embeddings can route multimodal to Voyage without changing the
   // primary embedding_model. Falls back to embedding_model for single-model setups.
   const modelStr = cfg.embedding_multimodal_model ?? cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL;
-  assertEuEmbedding(modelStr, opts.inputType, cfg.env);
+  assertEuEmbedding(modelStr, opts.inputType, policyEnv(), {
+    firmScope: isRequestEuOnly(),
+    origin: embeddingOriginOfSource(opts.sourceId),
+  });
   const { parsed, recipe } = resolveRecipe(modelStr);
   const touchpoint = recipe.touchpoints.embedding;
   if (!touchpoint?.supports_multimodal) {

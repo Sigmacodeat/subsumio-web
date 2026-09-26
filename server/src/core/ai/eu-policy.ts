@@ -10,12 +10,20 @@
  * the feature degrades to its non-LLM path (query expansion → original query,
  * reranker → RRF order).
  *
- * Embeddings are a separate decision: the stored vectors belong to one model,
- * so switching provider means re-embedding the corpus. With SUBSUMIO_EU_ONLY
- * alone, embeddings keep using the configured provider (logged once). Adding
- * SUBSUMIO_EU_ONLY_EMBEDDINGS=1 refuses a non-EU provider for document-side
- * embeddings (new ingestion); query embeddings stay allowed so search keeps
- * working against the existing index.
+ * Embeddings depend on WHOSE text is embedded (assertEuEmbedding):
+ *   - Client text never leaves the EU under EU-only: a search query (it
+ *     carries the matter's facts) and a document of a firm source are refused
+ *     on a non-EU provider. Callers degrade instead of failing: search runs
+ *     keyword-only with a visible flag, a document stays keyword-searchable
+ *     and is marked `embedding_status: blocked_eu_only`.
+ *   - The public statute/case-law corpus (`law-*` sources) is not client
+ *     data. Its vectors belong to one model, so switching provider means
+ *     re-embedding the corpus: with SUBSUMIO_EU_ONLY alone it keeps using the
+ *     configured provider (logged once); SUBSUMIO_EU_ONLY_EMBEDDINGS=1 also
+ *     refuses it.
+ *   - A document of unknown origin counts as client text inside a firm's
+ *     EU-only scope (request-eu-policy.ts); under the deployment switch alone
+ *     it follows the corpus rule (the unlabelled bulk paths are corpus runs).
  */
 
 import { AIConfigError } from "./errors.ts";
@@ -98,27 +106,58 @@ export function assertEuResidency(target: string, touchpoint: EuTouchpoint, env:
 const _embeddingExceptionLogged = new Set<string>();
 
 /**
- * Embedding gate. `inputType === "query"` is always allowed (the query must
- * land in the existing vector space). Document-side embeddings of a non-EU
- * provider are refused only with SUBSUMIO_EU_ONLY_EMBEDDINGS=1; with
- * SUBSUMIO_EU_ONLY alone they pass and the exception is logged once per model.
+ * Page frontmatter `embedding_status` when EU-only refused the embedding
+ * provider for the page's text: keyword-searchable, no vectors.
+ */
+export const EMBEDDING_STATUS_BLOCKED_EU_ONLY = "blocked_eu_only";
+
+/** Whose text an embedding call carries. */
+export type EmbeddingOrigin = "public_corpus" | "client";
+
+/**
+ * Origin of a page's text by its source: the shared statute/case-law corpus
+ * lives in `law-*` sources; every other source (a firm's, the host
+ * `default` brain) holds client data. Unknown source → undefined.
+ */
+export function embeddingOriginOfSource(
+  sourceId: string | null | undefined
+): EmbeddingOrigin | undefined {
+  if (typeof sourceId !== "string" || sourceId.trim() === "") return undefined;
+  return sourceId.startsWith("law-") ? "public_corpus" : "client";
+}
+
+export interface EuEmbeddingContext {
+  /** True inside a firm's EU-only request/job scope (request-eu-policy.ts). */
+  firmScope?: boolean;
+  /** Whose text this is; see embeddingOriginOfSource. */
+  origin?: EmbeddingOrigin;
+}
+
+/**
+ * Embedding gate (see the header): query text and client documents are
+ * refused on a non-EU provider whenever EU-only applies; public-corpus
+ * documents only with SUBSUMIO_EU_ONLY_EMBEDDINGS=1 (otherwise allowed and
+ * logged once per model).
  */
 export function assertEuEmbedding(
   target: string,
   inputType: "query" | "document" | undefined,
-  env: Env
+  env: Env,
+  ctx: EuEmbeddingContext = {}
 ): void {
   if (!isEuOnly(env)) return;
   const verdict = residencyOf(target, env);
   if (verdict.residency === "eu") return;
-  if (inputType !== "query" && isEuOnlyEmbeddings(env)) {
-    throw new EuResidencyError("embedding", target, verdict);
-  }
+  const origin: EmbeddingOrigin | undefined =
+    inputType === "query" ? "client" : (ctx.origin ?? (ctx.firmScope ? "client" : undefined));
+  if (origin === "client") throw new EuResidencyError("embedding", target, verdict);
+  if (isEuOnlyEmbeddings(env)) throw new EuResidencyError("embedding", target, verdict);
   if (!_embeddingExceptionLogged.has(target)) {
     _embeddingExceptionLogged.add(target);
     console.warn(
-      `[eu-policy] embeddings via non-EU "${target}" allowed: SUBSUMIO_EU_ONLY_EMBEDDINGS is off ` +
-        `(existing vector index; re-embedding with an EU model is a separate migration).`
+      `[eu-policy] public-corpus embeddings via non-EU "${target}" allowed: ` +
+        `SUBSUMIO_EU_ONLY_EMBEDDINGS is off (existing vector index; re-embedding with an EU ` +
+        `model is a separate migration). Client text is never embedded outside the EU.`
     );
   }
 }

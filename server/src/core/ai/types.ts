@@ -133,6 +133,8 @@ export type MultimodalInput =
  */
 export interface EmbedMultimodalOpts {
   inputType?: "document" | "query";
+  /** Source the inputs belong to (EU-only rule, see gateway EmbedOpts.sourceId). */
+  sourceId?: string | null;
 }
 
 /**

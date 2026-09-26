@@ -125,14 +125,30 @@ Was mit dem Schalter passiert — immer **Ablehnung vor dem Request**, nie still
 
 ### Embeddings unter EU-only
 
-Die gespeicherten Vektoren gehören zu einem Modell (`openrouter:openai/text-embedding-3-small`,
-1536 Dimensionen). Ein anderes Modell heißt: ganzer Korpus neu einbetten. Deshalb:
+Entscheidend ist, **wessen Text** eingebettet wird (`assertEuEmbedding` in
+`server/src/core/ai/eu-policy.ts`). EU-only gilt, wenn `SUBSUMIO_EU_ONLY=1` gesetzt ist oder
+die Kanzlei „Nur EU“ verlangt (Request-/Job-Scope bzw. gemerkte Quelle, `request-eu-policy.ts`).
 
-- `SUBSUMIO_EU_ONLY=1` allein sperrt Embeddings **nicht** (einmalige Warnung im Log).
-- `SUBSUMIO_EU_ONLY_EMBEDDINGS=1` zusätzlich: dokumentseitige Embeddings (neue Aufnahme) über
-  einen Nicht-EU-Anbieter werden abgelehnt; Such-Embeddings bleiben erlaubt, damit die Suche
-  gegen den bestehenden Index weiter funktioniert. Korpus-Läufe mit öffentlichem Gesetzestext
-  können den Schalter in ihrer Umgebung auf `0` setzen.
+- **Mandantentext verlässt die EU nicht:** Suchanfragen (Query-Embeddings) und Dokumente einer
+  Kanzlei-Quelle (jede Quelle außer `law-*`, auch `default`) werden bei einem Nicht-EU-Anbieter
+  abgelehnt — es wird nichts gesendet.
+  - Suche: Vektorzweig entfällt, Stichwortsuche läuft weiter; `HybridSearchMeta`
+    trägt `vector_skipped_reason: "eu_only"`, jedes Ergebnis `retrieval_limited:
+"eu_only_keyword_only"`.
+  - Dokumente: Aufnahme gelingt ohne Vektoren (per Stichwort auffindbar), die Seite trägt
+    `embedding_status: blocked_eu_only` + `embedding_error`; `embed-backfill` meldet
+    `blockedEuOnly`. Ein späterer Lauf mit EU-Embedding-Modell bettet die NULL-Chunks ein.
+  - Die Kanzlei-Vorgabe folgt den Daten: Import, `embed-backfill` und der Standalone-Worker
+    prüfen die gemerkte Quelle auch außerhalb einer Anfrage der Kanzlei.
+- **Öffentlicher Rechtskorpus (`law-*`):** Die gespeicherten Vektoren gehören zu einem Modell
+  (`openrouter:openai/text-embedding-3-small`, 1536 Dimensionen); ein anderes Modell heißt
+  ganzer Korpus neu einbetten. `SUBSUMIO_EU_ONLY=1` allein sperrt Korpus-Embeddings daher
+  **nicht** (einmalige Warnung im Log); `SUBSUMIO_EU_ONLY_EMBEDDINGS=1` sperrt sie zusätzlich.
+  Aufrufe ohne Quellenangabe (Korpus-Massenläufe) folgen außerhalb eines Kanzlei-Scopes dieser
+  Korpus-Regel, innerhalb eines Kanzlei-Scopes gelten sie als Mandantentext.
+- `server/scripts/embed-worker-standalone.ts` bettet über das Gateway ein (ZDR/`deny`,
+  EU-Prüfung) und standardmäßig nur `law-*`; eine Kanzlei-Quelle nur mit
+  `--source <id> --allow-firm-source`.
 
 Migrationsoptionen (nicht umgesetzt):
 
