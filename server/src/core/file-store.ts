@@ -600,6 +600,8 @@ export interface PurgeWithFilesResult {
   filesDeleted: number;
   /** Storage objects that could not be removed (row already gone) — logged by the caller. */
   fileErrors: string[];
+  /** Search-cache rows dropped because they contained a purged page. */
+  cacheRowsDeleted: number;
 }
 
 /**
@@ -621,6 +623,15 @@ export async function purgeDeletedPagesWithFiles(
   storageConfig?: unknown
 ): Promise<PurgeWithFilesResult> {
   const result = await engine.purgeDeletedPages(olderThanHours);
+  // The search cache keeps matched chunk texts — purged pages leave it too.
+  let cacheRowsDeleted = 0;
+  if (engine.executeRaw && result.slugs.length > 0) {
+    const { deleteCachedResultsForSlugs } = await import("./search/query-cache.ts");
+    cacheRowsDeleted = await deleteCachedResultsForSlugs(
+      engine as Parameters<typeof deleteCachedResultsForSlugs>[0],
+      result.slugs
+    );
+  }
   const files = result.files ?? [];
   const fileErrors: string[] = [];
   let filesDeleted = 0;
@@ -651,7 +662,7 @@ export async function purgeDeletedPagesWithFiles(
       }
     }
   }
-  return { slugs: result.slugs, count: result.count, filesDeleted, fileErrors };
+  return { slugs: result.slugs, count: result.count, filesDeleted, fileErrors, cacheRowsDeleted };
 }
 
 /** Permanently delete every original object owned by one tenant source. */

@@ -1352,6 +1352,10 @@ async function runPhasePurge(engine: BrainEngine, dryRun: boolean): Promise<Phas
       loadConfig()?.storage
     );
     const purgedClones = await purgeOrphanClones(SOFT_DELETE_TTL_HOURS_FOR_PURGE);
+    // Search cache: expired rows carry query texts and chunk texts — delete
+    // them instead of only skipping them on read. Best-effort (0 on error).
+    const { SemanticQueryCache } = await import("./search/query-cache.ts");
+    const prunedCacheRows = await new SemanticQueryCache(engine).prune();
     // v0.36+ folded scope item +C: GC stale op_checkpoints rows.
     // 7-day TTL is deliberately generous; any reasonable long-running op
     // finishes inside that window. Cheap (few KB per row).
@@ -1404,6 +1408,7 @@ async function runPhasePurge(engine: BrainEngine, dryRun: boolean): Promise<Phas
         purged_sources: purgedSources,
         purged_page_slugs: purgedPages.slugs,
         purged_files_count: purgedPages.filesDeleted,
+        purged_cache_rows_count: prunedCacheRows + purgedPages.cacheRowsDeleted,
         purged_file_errors: purgedPages.fileErrors,
         purged_checkpoints_count: purgedCheckpoints,
         purged_brainstorm_checkpoints_count: purgedBrainstormCheckpoints,
