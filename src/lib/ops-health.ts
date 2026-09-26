@@ -53,18 +53,78 @@ export function describeBackupAge(
   return { ok: hours <= BACKUP_MAX_AGE_HOURS, detail };
 }
 
+export interface BackupStatus {
+  at: Date | null;
+  /** The run reached the offsite repository. null: not recorded (older format). */
+  offsite: boolean | null;
+  /** Where the original files went: offsite | local | none | not_mounted. */
+  files: string | null;
+}
+
 /**
- * The backup writes an ISO timestamp to BACKUP_STATUS_FILE after a successful
- * run; this reads it. Without the variable the check reports "not set up".
+ * Reads the status line of backup/run.sh: `{"at","offsite","files"}`. An
+ * older plain timestamp is still read, but without offsite information.
+ */
+export function parseBackupStatus(raw: string): BackupStatus {
+  const text = raw.trim();
+  try {
+    const obj = JSON.parse(text) as { at?: unknown; offsite?: unknown; files?: unknown };
+    if (obj && typeof obj === "object") {
+      const at = typeof obj.at === "string" ? new Date(obj.at) : null;
+      return {
+        at: at && !Number.isNaN(at.getTime()) ? at : null,
+        offsite: typeof obj.offsite === "boolean" ? obj.offsite : null,
+        files: typeof obj.files === "string" ? obj.files : null,
+      };
+    }
+  } catch {
+    /* older format: a bare timestamp */
+  }
+  const at = new Date(text);
+  return { at: Number.isNaN(at.getTime()) ? null : at, offsite: null, files: null };
+}
+
+/**
+ * Age plus coverage: a backup counts as ok only when it is recent, reached
+ * the offsite repository and holds the original files (or those live in
+ * object storage). A local copy on the same server is reported, not "ok".
+ */
+export function describeBackupStatus(
+  status: BackupStatus | null,
+  now: Date,
+  configured: boolean
+): CheckResult {
+  const age = describeBackupAge(status?.at ?? null, now, configured);
+  if (!status || !status.at) return age;
+  const problems: string[] = [];
+  if (status.offsite !== true) {
+    problems.push(
+      status.offsite === false
+        ? "kein Offsite-Backup (nur lokale Kopie auf demselben Server)"
+        : "Offsite-Sicherung nicht nachgewiesen"
+    );
+  }
+  if (status.files !== "offsite" && status.files !== "not_mounted") {
+    problems.push(
+      status.files === "local"
+        ? "Originaldokumente nur lokal gesichert"
+        : "Originaldokumente nicht gesichert"
+    );
+  }
+  if (problems.length === 0) return age;
+  return { ok: false, detail: [age.detail, ...problems].filter(Boolean).join("; ") };
+}
+
+/**
+ * The backup writes its status to BACKUP_STATUS_FILE after a successful run;
+ * this reads it. Without the variable the check reports "not set up".
  */
 export async function checkBackup(now = new Date()): Promise<CheckResult> {
   const file = process.env.BACKUP_STATUS_FILE;
   if (!file) return describeBackupAge(null, now, false);
   try {
     const { readFile } = await import("node:fs/promises");
-    const raw = (await readFile(file, "utf8")).trim();
-    const parsed = new Date(raw);
-    return describeBackupAge(Number.isNaN(parsed.getTime()) ? null : parsed, now, true);
+    return describeBackupStatus(parseBackupStatus(await readFile(file, "utf8")), now, true);
   } catch {
     return describeBackupAge(null, now, true);
   }

@@ -288,6 +288,9 @@ services:
       BACKUP_LOCAL_DIR: ${BACKUP_LOCAL_DIR:-/backups}
       BACKUP_LOCAL_PASSPHRASE: ${BACKUP_LOCAL_PASSPHRASE:-}
       BACKUP_LOCAL_KEEP_DAYS: ${BACKUP_LOCAL_KEEP_DAYS:-14}
+      # The local archive also holds the original files (/data); needs disk
+      # space for them per retained day. 0 = database only (health then warns).
+      BACKUP_LOCAL_INCLUDE_FILES: ${BACKUP_LOCAL_INCLUDE_FILES:-1}
       # Read by /api/cron/health to alert when backups stop running.
       BACKUP_STATUS_FILE: /backup-status/last-success
     volumes:

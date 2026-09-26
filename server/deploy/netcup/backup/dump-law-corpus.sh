@@ -24,6 +24,9 @@
 #
 # Env: PGHOST PGUSER PGPASSWORD PGDATABASE (standard libpq), OUT_DIR.
 set -eu
+# A failing command inside a pipe (psql \copy | gzip, tar | openssl) must fail
+# the run; without pipefail the last command's 0 hides it. busybox ash has it.
+set -o pipefail
 
 OUT_DIR="${OUT_DIR:?set OUT_DIR}"
 mkdir -p "$OUT_DIR"

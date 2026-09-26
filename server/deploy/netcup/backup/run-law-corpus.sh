@@ -9,6 +9,9 @@
 # too big to back up before) but still worth keeping off the daily critical
 # path. Runs Saturday so it lands before Sunday's restore-verification slot.
 set -eu
+# A failing command inside a pipe (psql \copy | gzip, tar | openssl) must fail
+# the run; without pipefail the last command's 0 hides it. busybox ash has it.
+set -o pipefail
 # shellcheck source=lib.sh
 . "$(dirname "$0")/lib.sh"
 
