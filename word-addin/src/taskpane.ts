@@ -4,6 +4,16 @@
  * Akte-Kontext, Chronologie, Export — direkt in Word.
  */
 
+import {
+  clearStoredSession,
+  msUntilRenewal,
+  openSignInDialog,
+  readStoredSession,
+  safeSessionStorage,
+  storeSession,
+  type AddinSession,
+  type OfficeDialogHost,
+} from "./addin-auth";
 import { buildContractDraftRequest, readContractDraftResponse } from "./contract-draft";
 import { listAllCases, playbooksFrom, type PageBatch } from "./lists";
 import { applyRedlines, redlineSummary, type Redline } from "./redlines";
@@ -62,7 +72,10 @@ function sourcesOf(result: AnalysisResult): string[] {
 }
 
 const API_BASE = "https://subsum.io";
-let token = "";
+/** Short-lived add-in token from the sign-in dialog — memory + sessionStorage only. */
+let session: AddinSession | null = null;
+let renewTimer: ReturnType<typeof setTimeout> | undefined;
+let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
 // ── Utils ─────────────────────────────────────────────────────────────
 
@@ -113,13 +126,26 @@ async function insertTextAtCursor(text: string): Promise<void> {
   });
 }
 
+/**
+ * Every API call authenticates with the add-in token only: cookies of a web
+ * session on the same origin are never sent (they would bypass the token and
+ * trip the browser CSRF check). A 401 ends the session in the pane.
+ */
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!session) throw new Error("Nicht angemeldet — bitte zuerst anmelden.");
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${session.token}`);
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers, credentials: "omit" });
+  if (res.status === 401) {
+    endSession("Ihr Add-in-Zugang ist abgelaufen oder wurde widerrufen. Bitte erneut anmelden.");
+  }
+  return res;
+}
+
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await apiFetch(path, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -133,9 +159,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(path);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -151,9 +175,8 @@ async function uploadTextDocument(
   form.append("title", safeTitle);
   form.append("source", caseSlug ? "documents" : "kanzleiwissen");
   if (caseSlug) form.append("case_slug", caseSlug);
-  const res = await fetch(`${API_BASE}/api/upload`, {
+  const res = await apiFetch("/api/upload", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
     body: form,
   });
   if (!res.ok) {
@@ -180,35 +203,107 @@ function switchTab(tab: string) {
 
 // ── Auth ──────────────────────────────────────────────────────────────
 
+/** Sign in through the Office dialog (normal web sign-in incl. 2FA). */
+async function signIn() {
+  setLoading("signInBtn", true, "Anmelden");
+  try {
+    const next = await openSignInDialog(Office as unknown as OfficeDialogHost, {
+      apiBase: API_BASE,
+      client: "word",
+    });
+    await startSession(next);
+  } catch (e) {
+    showStatus(e instanceof Error ? e.message : "Anmeldung fehlgeschlagen.", false);
+  } finally {
+    setLoading("signInBtn", false, "Anmelden");
+  }
+}
+
+/** Fallback for Office versions without the dialog: a pasted add-in token. */
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
-  token = input.value.trim();
-  if (!token) {
-    showStatus("Bitte Add-in-Zugang eingeben (sk_addin_…).", false);
-    return;
-  }
+  const value = input.value.trim();
+  input.value = "";
   // Only short-lived add-in tokens (24 h, revocable) — never a permanent API key.
-  if (!token.startsWith("sk_addin_")) {
-    token = "";
+  if (!value.startsWith("sk_addin_")) {
     showStatus(
-      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“). Erstellen unter Subsumio → Word-Add-in → „Add-in-Zugang erstellen“.",
+      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“) oder „Anmelden“ nutzen.",
       false
     );
     return;
   }
   setLoading("connectBtn", true, "Verbinden");
   try {
-    await apiGet<unknown>("/api/pages?limit=1");
-    showStatus("Erfolgreich verbunden.", true);
-    document.getElementById("mainContent")!.style.display = "block";
-    document.getElementById("authSection")!.style.display = "none";
-    // Both lists need the token — they are loaded once connected.
-    await Promise.all([loadRecentCases(), loadPlaybooks()]);
+    // A pasted token lives at most 24 hours; the server enforces the real expiry.
+    await startSession({ token: value, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Verbindung fehlgeschlagen.", false);
   } finally {
     setLoading("connectBtn", false, "Verbinden");
   }
+}
+
+async function startSession(next: AddinSession) {
+  session = next;
+  try {
+    await apiGet<unknown>("/api/pages?limit=1");
+  } catch (e) {
+    endSession(null);
+    throw e;
+  }
+  storeSession(safeSessionStorage(), next);
+  scheduleRenewal(next);
+  showStatus("Erfolgreich verbunden.", true);
+  document.getElementById("mainContent")!.style.display = "block";
+  document.getElementById("authSection")!.style.display = "none";
+  // Both lists need the token — they are loaded once connected.
+  await Promise.all([loadRecentCases(), loadPlaybooks()]);
+}
+
+/** Ask for a new sign-in shortly before the token expires; sign out at expiry. */
+function scheduleRenewal(current: AddinSession) {
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
+  renewTimer = setTimeout(() => {
+    if (notice) notice.style.display = "block";
+  }, msUntilRenewal(current));
+  expiryTimer = setTimeout(
+    () => endSession("Ihr Add-in-Zugang ist abgelaufen. Bitte erneut anmelden."),
+    Math.max(0, current.expiresAt - Date.now())
+  );
+}
+
+/** Ends the session in this pane (memory, sessionStorage, timers, UI). */
+function endSession(message: string | null) {
+  session = null;
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  clearStoredSession(safeSessionStorage());
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
+  document.getElementById("mainContent")!.style.display = "none";
+  document.getElementById("authSection")!.style.display = "block";
+  if (message) showStatus(message, false);
+}
+
+/** Sign out: revoke this add-in's token on the server, then forget it. */
+async function signOut() {
+  let revoked = false;
+  try {
+    const res = await apiFetch("/api/addin-token", { method: "DELETE" });
+    revoked = res.ok;
+  } catch {
+    revoked = false;
+  }
+  endSession(null);
+  showStatus(
+    revoked
+      ? "Abgemeldet — der Zugang dieses Add-ins wurde widerrufen."
+      : "Lokal abgemeldet. Der Zugang konnte nicht widerrufen werden; bitte in Subsumio unter Word-Add-in widerrufen.",
+    revoked
+  );
 }
 
 async function loadRecentCases() {
@@ -394,9 +489,9 @@ async function draftContract() {
       showStatus(request.error, false, "contractStatus");
       return;
     }
-    const res = await fetch(`${API_BASE}/api/legal/contract-draft`, {
+    const res = await apiFetch("/api/legal/contract-draft", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request.body),
     });
     const raw = await res.text();
@@ -474,7 +569,7 @@ async function insertDraftIntoWord() {
 
 async function loadPlaybooks() {
   const sel = document.getElementById("redlinePlaybook") as HTMLSelectElement | null;
-  if (!sel || !token) return;
+  if (!sel || !session) return;
   try {
     const items = playbooksFrom(await apiGet<unknown>("/api/legal/playbooks"));
     // Keep the first ("optional") entry, replace earlier results.
@@ -774,9 +869,9 @@ async function exportDocx() {
   }
   setLoading("exportBtn", true, "Exportiere…");
   try {
-    const res = await fetch(`${API_BASE}/api/word-export`, {
+    const res = await apiFetch("/api/word-export", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -934,11 +1029,21 @@ Office.onReady(() => {
     btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab") ?? "analyze"));
   });
   switchTab("analyze");
+  // Reopened pane in the same Office session: continue while the token is valid.
+  const storage = safeSessionStorage();
+  const stored = readStoredSession(storage);
+  if (stored) {
+    void startSession(stored).catch(() => undefined);
+  } else {
+    clearStoredSession(storage);
+  }
 });
 
 // Expose to global scope for HTML onclick handlers
 const g = window as unknown as Record<string, unknown>;
 g.connect = connect;
+g.signIn = signIn;
+g.signOut = signOut;
 g.switchTab = switchTab;
 g.analyzeSelection = analyzeSelection;
 g.summarizeSelection = summarizeSelection;

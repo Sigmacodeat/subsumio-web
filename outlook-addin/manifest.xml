@@ -5,13 +5,15 @@
   xmlns:mailapp="http://schemas.microsoft.com/office/mailappversionoverrides"
   xsi:type="MailApp">
   <Id>subsumio-outlook-addin</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>Subsumio</ProviderName>
   <DefaultLocale>de-DE</DefaultLocale>
   <DisplayName DefaultValue="Subsumio für Outlook"/>
   <Description DefaultValue="E-Mails in Subsumio-Akten importieren und Brain-Query direkt aus Outlook ausführen."/>
   <IconUrl DefaultValue="https://subsum.io/icon-192.png"/>
   <SupportUrl DefaultValue="https://subsum.io/support"/>
+  <!-- The task pane and the sign-in dialog (/addin-connect) both live on
+       this origin; the dialog hands the add-in token back only to it. -->
   <AppDomains>
     <AppDomain>https://subsum.io</AppDomain>
   </AppDomains>

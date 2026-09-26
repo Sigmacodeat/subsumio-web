@@ -6,6 +6,15 @@
    2. Brain-Query: Frage an das Brain stellen (via /api/think)
 */
 
+import {
+  clearStoredSession,
+  msUntilRenewal,
+  openSignInDialog,
+  readStoredSession,
+  safeSessionStorage,
+  storeSession,
+  type AddinSession,
+} from "./addin-auth";
 import { createThinkStreamParser } from "./think-stream";
 
 interface CaseSuggestion {
@@ -23,9 +32,10 @@ interface AttachmentMeta {
 }
 
 const API_BASE = "https://subsum.io";
-let token = "";
-const _tokenName = "";
-let _connected = false;
+/** Short-lived add-in token from the sign-in dialog — memory + sessionStorage only. */
+let session: AddinSession | null = null;
+let renewTimer: ReturnType<typeof setTimeout> | undefined;
+let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
 let currentAttachments: AttachmentMeta[] = [];
@@ -114,9 +124,9 @@ async function showAiNoticeAndGround(
   }
   slot.textContent = "Fundstellen werden geprüft…";
   try {
-    const res = await fetch(`${API_BASE}/api/legal/ground`, {
+    const res = await apiFetch("/api/legal/ground", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text.slice(0, 50_000) }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -131,72 +141,131 @@ function withAiNotice(draft: string): string {
   return `${draft.trim()}\n\n— ${AI_BADGE_LABEL}: ${AI_NOTICE}`;
 }
 
+/**
+ * Every API call authenticates with the add-in token only: cookies of a web
+ * session on the same origin are never sent (they would bypass the token and
+ * trip the browser CSRF check). A 401 ends the session in the pane.
+ */
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!session) throw new Error("Nicht angemeldet — bitte zuerst anmelden.");
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${session.token}`);
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers, credentials: "omit" });
+  if (res.status === 401) {
+    endSession("Ihr Add-in-Zugang ist abgelaufen oder wurde widerrufen. Bitte erneut anmelden.");
+  }
+  return res;
+}
+
+function setButtonBusy(id: string, busy: boolean, label: string, busyLabel: string) {
+  const btn = document.getElementById(id) as HTMLButtonElement | null;
+  if (!btn) return;
+  btn.disabled = busy;
+  if (busy) btn.innerHTML = `<div class="spinner"></div> ${busyLabel}`;
+  else btn.textContent = label;
+}
+
+/** Sign in through the Office dialog (normal web sign-in incl. 2FA). */
+async function signIn() {
+  setButtonBusy("signInBtn", true, "Anmelden", "Anmeldung läuft…");
+  try {
+    const next = await openSignInDialog(Office, { apiBase: API_BASE, client: "outlook" });
+    await startSession(next);
+  } catch (e) {
+    showStatus(e instanceof Error ? e.message : "Anmeldung fehlgeschlagen.", "err");
+  } finally {
+    setButtonBusy("signInBtn", false, "Anmelden", "");
+  }
+}
+
+/** Fallback for Outlook versions without the dialog: a pasted add-in token. */
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
-  token = input.value.trim();
-  if (!token) {
-    showStatus("Bitte Add-in-Zugang eingeben (sk_addin_…).", "err");
-    return;
-  }
-
+  const value = input.value.trim();
+  input.value = "";
   // Only short-lived add-in tokens (24 h, revocable) — never a permanent API key.
-  if (!token.startsWith("sk_addin_")) {
-    token = "";
+  if (!value.startsWith("sk_addin_")) {
     showStatus(
-      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“). Erstellen unter Subsumio → Word-Add-in → „Add-in-Zugang erstellen“.",
+      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“) oder „Anmelden“ nutzen.",
       "err"
     );
     return;
   }
-
-  const btn = document.getElementById("connectBtn") as HTMLButtonElement;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Wird verbunden…';
-
+  setButtonBusy("connectBtn", true, "Verbinden", "Wird verbunden…");
   try {
-    const res = await fetch(`${API_BASE}/api/brains`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showStatus("Verbunden.", "ok");
-    _connected = true;
-    // The key stays in memory for this taskpane only (like the Word add-in):
-    // browser storage belongs to the whole app origin, not to this page.
-    document.getElementById("mainSection")!.style.display = "block";
-    document.getElementById("authSection")!.style.display = "none";
-    document.getElementById("connectedSection")!.style.display = "flex";
-    loadCurrentMail();
+    // A pasted token lives at most 24 hours; the server enforces the real expiry.
+    await startSession({ token: value, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Verbindung fehlgeschlagen.", "err");
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = "Verbinden";
+    setButtonBusy("connectBtn", false, "Verbinden", "");
   }
 }
 
-function disconnect() {
-  token = "";
-  _connected = false;
-  forgetStoredApiKey();
+async function startSession(next: AddinSession) {
+  session = next;
+  try {
+    const res = await apiFetch("/api/brains");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (e) {
+    endSession(null);
+    throw e;
+  }
+  storeSession(safeSessionStorage(), next);
+  scheduleRenewal(next);
+  showStatus("Verbunden.", "ok");
+  document.getElementById("mainSection")!.style.display = "block";
+  document.getElementById("authSection")!.style.display = "none";
+  document.getElementById("connectedSection")!.style.display = "flex";
+  loadCurrentMail();
+}
+
+/** Ask for a new sign-in shortly before the token expires; sign out at expiry. */
+function scheduleRenewal(current: AddinSession) {
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
+  renewTimer = setTimeout(() => {
+    if (notice) notice.style.display = "block";
+  }, msUntilRenewal(current));
+  expiryTimer = setTimeout(
+    () => endSession("Ihr Add-in-Zugang ist abgelaufen. Bitte erneut anmelden."),
+    Math.max(0, current.expiresAt - Date.now())
+  );
+}
+
+/** Ends the session in this pane (memory, sessionStorage, timers, UI). */
+function endSession(message: string | null) {
+  session = null;
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  clearStoredSession(safeSessionStorage());
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
   document.getElementById("mainSection")!.style.display = "none";
   document.getElementById("authSection")!.style.display = "block";
   document.getElementById("connectedSection")!.style.display = "none";
-  (document.getElementById("token") as HTMLInputElement).value = "";
-  showStatus("Getrennt.", "info");
+  if (message) showStatus(message, "err");
 }
 
-/**
- * Older versions kept the API key in localStorage. It is removed on every
- * start and never read back; the user connects again per session.
- */
-const LEGACY_API_KEY_STORAGE_KEY = "subsumio_api_key";
-
-function forgetStoredApiKey(): void {
+/** Sign out: revoke this add-in's token on the server, then forget it. */
+async function disconnect() {
+  let revoked = false;
   try {
-    localStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
-    sessionStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
+    const res = await apiFetch("/api/addin-token", { method: "DELETE" });
+    revoked = res.ok;
   } catch {
-    /* storage blocked — nothing stored either */
+    revoked = false;
+  }
+  endSession(null);
+  if (revoked) {
+    showStatus("Abgemeldet — der Zugang dieses Add-ins wurde widerrufen.", "info");
+  } else {
+    showStatus(
+      "Lokal abgemeldet. Der Zugang konnte nicht widerrufen werden; bitte in Subsumio widerrufen.",
+      "err"
+    );
   }
 }
 
@@ -276,9 +345,9 @@ async function importMail() {
   btnText.innerHTML = '<div class="spinner"></div> Importiere…';
 
   try {
-    const res = await fetch(`${API_BASE}/api/email-import`, {
+    const res = await apiFetch("/api/email-import", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -335,9 +404,9 @@ async function importToSpecificCase(slug: string) {
   showStatus("Importiere in ausgewählte Akte…", "info");
 
   try {
-    const res = await fetch(`${API_BASE}/api/email-import`, {
+    const res = await apiFetch("/api/email-import", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -381,9 +450,9 @@ async function runQuery() {
   hideAiNotice("queryNotice");
 
   try {
-    const res = await fetch(`${API_BASE}/api/think`, {
+    const res = await apiFetch("/api/think", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, mode: currentMode }),
     });
 
@@ -467,9 +536,9 @@ async function draftReply() {
   resultEl.textContent = "Der Assistent liest die E-Mail und entwirft eine Antwort…";
 
   try {
-    const res = await fetch(`${API_BASE}/api/email/draft-reply`, {
+    const res = await apiFetch("/api/email/draft-reply", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -558,9 +627,7 @@ async function loadAttachCases() {
   const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement | null;
   if (!sel) return;
   try {
-    const res = await fetch(`${API_BASE}/api/pages?type=legal_case&limit=200`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch("/api/pages?type=legal_case&limit=200");
     if (!res.ok) return;
     const raw = (await res.json()) as unknown;
     const pages = (
@@ -651,9 +718,8 @@ async function fileAttachments() {
       fd.append("file", new File([blob], att.name, { type: att.contentType }));
       fd.append("case_slug", caseSlug);
       fd.append("source", "legal_case");
-      const res = await fetch(`${API_BASE}/api/upload`, {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -699,12 +765,14 @@ function escapeHtml(text: string): string {
 /**
  * Wire every handler via addEventListener instead of inline onclick=""
  * attributes. This is what lets taskpane.html ship a CSP with no
- * 'unsafe-inline' in script-src — a defense for the API key held in memory
- * while the taskpane is open: a strict script-src means an injected <script>
+ * 'unsafe-inline' in script-src — a defense for the add-in token held while
+ * the taskpane is open: a strict script-src means an injected <script>
  * or onerror= payload can't execute even if it lands in the DOM somewhere,
  * since no inline JS runs.
  */
 function wireUpHandlers() {
+  document.getElementById("signInBtn")?.addEventListener("click", signIn);
+  document.getElementById("renewBtn")?.addEventListener("click", signIn);
   document.getElementById("connectBtn")?.addEventListener("click", connect);
   document.getElementById("disconnectBtn")?.addEventListener("click", disconnect);
   document.getElementById("importBtn")?.addEventListener("click", importMail);
@@ -731,5 +799,12 @@ function wireUpHandlers() {
 // Office initialization
 Office.onReady(() => {
   wireUpHandlers();
-  forgetStoredApiKey();
+  // Reopened pane in the same Office session: continue while the token is valid.
+  const storage = safeSessionStorage();
+  const stored = readStoredSession(storage);
+  if (stored) {
+    void startSession(stored).catch(() => undefined);
+  } else {
+    clearStoredSession(storage);
+  }
 });

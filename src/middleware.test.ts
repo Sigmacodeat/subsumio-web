@@ -522,3 +522,58 @@ describe("middleware firm-wide 2FA on the API (must2fa sessions)", () => {
     expect(res.headers.get("location")).toContain("/dashboard/settings/security?require2fa=1");
   });
 });
+
+describe("middleware Office add-in sign-in dialog", () => {
+  it("lets add-in token requests without a session cookie through to the token check", async () => {
+    const headers = new Headers({ authorization: "Bearer sk_addin_example" });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("still requires CSRF when an add-in token comes with a session cookie", async () => {
+    const headers = new Headers({
+      authorization: "Bearer sk_addin_example",
+      cookie: "sb_session=anything",
+    });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("sends a visitor without session to the sign-in, keeping the add-in and marking the dialog", async () => {
+    const res = await run("/addin-connect?client=word");
+    const location = new URL(res.headers.get("location") ?? "https://invalid.test");
+
+    expect(location.pathname).toBe("/at/login");
+    expect(location.searchParams.get("next")).toBe("/addin-connect?client=word");
+    expect(location.searchParams.get("addin_dialog")).toBe("1");
+  });
+
+  it("confines a session that still has to set up 2FA to the setup page", async () => {
+    const token = await signSession({
+      uid: "member",
+      email: "member@firm.at",
+      role: "lawyer",
+      must2fa: true,
+    });
+    const res = await run("/addin-connect?client=word", {
+      headers: new Headers({ cookie: `sb_session=${token}` }),
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(300);
+    expect(res.headers.get("location")).not.toContain("/addin-connect");
+  });
+
+  it("allows Office.js only on the dialog page", async () => {
+    const token = await signSession({ uid: "member", email: "member@firm.at", role: "lawyer" });
+    const headers = new Headers({ cookie: `sb_session=${token}` });
+    const dialog = await run("/addin-connect?client=word", { headers });
+    const other = await run("/dashboard", { headers });
+    const scriptSrc = (res: Response) =>
+      (res.headers.get("Content-Security-Policy") ?? "").match(/script-src([^;]*)/)?.[1] ?? "";
+
+    expect(scriptSrc(dialog)).toContain("https://appsforoffice.microsoft.com");
+    expect(scriptSrc(other)).not.toContain("appsforoffice");
+  });
+});

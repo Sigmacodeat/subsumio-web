@@ -99,3 +99,21 @@ describe("CORS origin reflection (api-handler.ts)", () => {
     expect(handlerSource).not.toMatch(/"Access-Control-Allow-Origin"\s*:\s*"\*"/);
   });
 });
+
+describe("Office add-in sign-in dialog headers", () => {
+  it("relaxes COOP only for the dialog page and the marked sign-in page", async () => {
+    const { default: config } = await import("../../next.config");
+    const rules = (await config.headers?.()) ?? [];
+    const coop = (source: string) =>
+      rules
+        .filter((r) => r.source === source)
+        .flatMap((r) => r.headers)
+        .find((h) => h.key === "Cross-Origin-Opener-Policy")?.value;
+    expect(coop("/addin-connect")).toBe("unsafe-none");
+    const login = rules.find((r) => r.source === "/:market(at|de)/login");
+    expect(login?.has).toEqual([{ type: "query", key: "addin_dialog", value: "1" }]);
+    // The relaxed rules come after the global one, so they win for these paths only.
+    const globalIndex = rules.findIndex((r) => r.source === "/((?!word-addin/|outlook-addin/).*)");
+    expect(rules.findIndex((r) => r.source === "/addin-connect")).toBeGreaterThan(globalIndex);
+  });
+});

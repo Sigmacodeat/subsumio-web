@@ -4,8 +4,10 @@ import {
   ADDIN_TOKEN_SCOPES,
   issueAddinToken,
   isStoredKeyUsable,
+  revokeAddinToken,
   revokeAddinTokens,
 } from "@/lib/addin-token";
+import { parseAddinClient } from "@/lib/addin-dialog";
 import type { EngineContext } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +32,11 @@ export const GET = createHandler({ action: "brain.read", rateTier: "standard" },
   });
 });
 
-/** Issue a 24-hour add-in token (replaces an earlier one). */
+/**
+ * Issue a 24-hour add-in token. Called from the dashboard panel and from the
+ * Office dialog page (/addin-connect), which names the add-in; a new token
+ * replaces the earlier one of the same add-in.
+ */
 export const POST = createHandler(
   {
     action: "brain.read",
@@ -41,13 +47,17 @@ export const POST = createHandler(
       details: { kind: "addin", owner: ctx.user.id },
     }),
   },
-  async (ctx) => {
+  async (ctx, body) => {
     const refused = sessionOnly(ctx);
     if (refused) return refused;
-    const issued = await issueAddinToken(getApiKeyStore(), {
-      id: ctx.user.id,
-      email: ctx.user.email,
-    });
+    // Optional `{ client: "word" | "outlook" }`; anything else means "shared".
+    const client = parseAddinClient((body as { client?: unknown } | undefined)?.client);
+    const issued = await issueAddinToken(
+      getApiKeyStore(),
+      { id: ctx.user.id, email: ctx.user.email },
+      Date.now(),
+      client
+    );
     return Response.json(
       {
         token: issued.token,
@@ -59,7 +69,11 @@ export const POST = createHandler(
   }
 );
 
-/** Revoke all of the caller's add-in tokens (e.g. lost or shared computer). */
+/**
+ * Revoke add-in tokens. From a browser session: all of the caller's add-in
+ * tokens (e.g. lost or shared computer). From an add-in ("Abmelden"): only
+ * the presented add-in token itself. A permanent API key cannot revoke.
+ */
 export const DELETE = createHandler(
   {
     action: "brain.read",
@@ -71,6 +85,10 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx) => {
+    if (ctx.apiKey?.kind === "addin") {
+      const revoked = await revokeAddinToken(getApiKeyStore(), ctx.user.id, ctx.apiKey.id);
+      return Response.json({ revoked });
+    }
     const refused = sessionOnly(ctx);
     if (refused) return refused;
     const revoked = await revokeAddinTokens(getApiKeyStore(), ctx.user.id);

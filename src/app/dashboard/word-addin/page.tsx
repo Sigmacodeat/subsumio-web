@@ -142,9 +142,11 @@ export default function WordAddinPage() {
           </Step>
           <Step n={3} title="Mit Ihrem Konto verbinden">
             <p>
-              Erstellen Sie einen Add-in-Zugang und fügen Sie ihn im Word- oder Outlook-Add-in unter
-              „Verbinden“ ein. Er gilt 24 Stunden, erlaubt nur Lesen und Schreiben (keine
-              Verwaltung) und lässt sich hier jederzeit widerrufen.
+              Klicken Sie im Word- oder Outlook-Add-in auf „Anmelden“ und melden Sie sich im
+              Subsumio-Fenster wie gewohnt an (mit Zwei-Faktor-Anmeldung). Das Add-in erhält einen
+              Zugang, der 24 Stunden gilt, nur Lesen und Schreiben erlaubt (keine Verwaltung) und
+              sich hier jederzeit widerrufen lässt. Nur falls das Anmeldefenster nicht verfügbar
+              ist: Zugang hier erstellen und im Add-in einfügen.
             </p>
             <AddinTokenPanel />
           </Step>

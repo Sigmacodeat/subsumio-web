@@ -10,15 +10,29 @@
  * Tokens live in the API-key store (kind "addin", `expiresAt`) and are
  * verified by the same path as API keys (src/lib/auth/api-key-auth.ts), so
  * role rights, scope checks, rate limits and credits apply unchanged.
+ *
+ * The add-ins obtain their token through the Office dialog: it opens
+ * /addin-connect, the person signs in normally (incl. 2FA) and confirms, and
+ * the page hands the token to the task pane via `messageParent`. Each add-in
+ * (Word, Outlook) holds its own token, so connecting one does not sign the
+ * other out.
  */
 import { b64url } from "@/lib/auth/session";
 import { getApiKeyPrefix, hashApiKey } from "@/lib/api-keys";
 import type { ApiKeyStore, StoredApiKey } from "@/lib/api-key-store";
+import type { AddinClient } from "@/lib/addin-dialog";
 
 export const ADDIN_TOKEN_PREFIX = "sk_addin_";
 export const ADDIN_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 /** What the add-ins need: reading and writing matters/documents, no admin. */
 export const ADDIN_TOKEN_SCOPES: readonly string[] = ["write"];
+
+/** Name of tokens issued without a client (manual panel) — shared by both add-ins. */
+const SHARED_TOKEN_NAME = "Office-Add-in (Word/Outlook)";
+const CLIENT_TOKEN_NAMES: Record<AddinClient, string> = {
+  word: "Office-Add-in (Word)",
+  outlook: "Office-Add-in (Outlook)",
+};
 
 export function generateAddinToken(): { token: string; id: string } {
   const random = crypto.getRandomValues(new Uint8Array(32));
@@ -53,21 +67,43 @@ export async function revokeAddinTokens(store: ApiKeyStore, ownerId: string): Pr
   return keys.length;
 }
 
+/** Revokes one add-in token of the owner (sign-out from a single add-in). */
+export async function revokeAddinToken(
+  store: ApiKeyStore,
+  ownerId: string,
+  keyId: string
+): Promise<number> {
+  const key = (await store.listByOwner(ownerId)).find((k) => k.kind === "addin" && k.id === keyId);
+  if (!key) return 0;
+  await store.delete(key.id);
+  return 1;
+}
+
 /**
  * Issues a new add-in token for the signed-in person. Earlier add-in tokens
- * of this person (active or expired) are removed first.
+ * of this person (active or expired) are removed first — all of them when no
+ * client is named, otherwise those of the same add-in and the shared one.
  */
 export async function issueAddinToken(
   store: ApiKeyStore,
   owner: { id: string; email: string },
-  now: number = Date.now()
+  now: number = Date.now(),
+  client: AddinClient | null = null
 ): Promise<{ token: string; id: string; expiresAt: string }> {
-  await revokeAddinTokens(store, owner.id);
+  const name = client ? CLIENT_TOKEN_NAMES[client] : SHARED_TOKEN_NAME;
+  if (client) {
+    const replaced = (await store.listByOwner(owner.id)).filter(
+      (k) => k.kind === "addin" && (k.name === name || k.name === SHARED_TOKEN_NAME)
+    );
+    for (const k of replaced) await store.delete(k.id);
+  } else {
+    await revokeAddinTokens(store, owner.id);
+  }
   const { token, id } = generateAddinToken();
   const expiresAt = new Date(now + ADDIN_TOKEN_TTL_MS).toISOString();
   await store.create({
     id,
-    name: "Office-Add-in (Word/Outlook)",
+    name,
     prefix: getApiKeyPrefix(token),
     secretHash: await hashApiKey(token),
     scopes: [...ADDIN_TOKEN_SCOPES],
