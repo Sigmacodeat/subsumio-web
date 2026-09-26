@@ -98,6 +98,51 @@ Output schema:
 
 The "row_num" field is required for take citations and MUST be null for page-only citations.`;
 
+// Citation-style examples per jurisdiction. Placeholders in <…> are format
+// markers, never real references — the model fills them only from sources.
+interface LegalCitationStyle {
+  statute: string;
+  caseLaw: string;
+  crossBorder: string;
+}
+
+const LEGAL_CITATION_STYLES: Record<string, LegalCitationStyle> = {
+  AT: {
+    statute: `"§ 1295 ABGB (idF BGBl I Nr <Nr>/<Jahr>)" or "§ 1295 ABGB (Fassung vom <Datum>)"`,
+    caseLaw: `"OGH <TT.MM.JJJJ>, <Geschäftszahl>" and for a legal principle "RIS-Justiz RS<Nummer>"; VwGH/VfGH analog with their Geschäftszahl`,
+    crossBorder: `"Hinweis: Dies gilt im österreichischen Recht; im deutschen Recht abweichend (§ … BGB)."`,
+  },
+  DE: {
+    statute: `"§ 823 BGB (Fassung vom <Datum>)"`,
+    caseLaw: `"BGH, Urteil vom <Datum>, Az. <Aktenzeichen>"`,
+    crossBorder: `"Hinweis: Dies gilt im deutschen Recht; in Österreich vgl. § … ABGB."`,
+  },
+  CH: {
+    statute: `"Art. 41 OR (Stand <Datum>)"`,
+    caseLaw: `"BGer, Urteil vom <Datum>, <Verfahrensnummer>" or "BGE <Band> <Abteilung> <Seite>"`,
+    crossBorder: `"Hinweis: Dies gilt im schweizerischen Recht; in Österreich/Deutschland abweichend."`,
+  },
+  EU: {
+    statute: `"Art. 82 DSGVO"`,
+    caseLaw: `"EuGH, Urteil vom <Datum>, C-<Nr>/<Jahr>"`,
+    crossBorder: `"Hinweis: Unionsrecht; nationale Durchführung (AT/DE/CH) gesondert prüfen."`,
+  },
+};
+
+/** Jurisdiction-matched citation examples; without a jurisdiction show AT and DE side by side. */
+export function legalCitationStyle(jurisdiction: string | undefined): LegalCitationStyle {
+  const jur = jurisdiction?.trim().toUpperCase();
+  const style = jur ? LEGAL_CITATION_STYLES[jur] : undefined;
+  if (style) return style;
+  const at = LEGAL_CITATION_STYLES.AT;
+  const de = LEGAL_CITATION_STYLES.DE;
+  return {
+    statute: `AT ${at.statute}; DE ${de.statute}`,
+    caseLaw: `AT ${at.caseLaw}; DE ${de.caseLaw}`,
+    crossBorder: `name the jurisdiction a rule belongs to (AT/DE/CH) whenever it differs between them.`,
+  };
+}
+
 // T1.4 — Jurisdiction-specific collision warnings (server-side mirror of
 // src/lib/legal-jurisdiction-config.ts). Kept inline because the engine
 // cannot import from the frontend src/ tree.
@@ -119,7 +164,7 @@ const JURISDICTION_COLLISION_WARNINGS: Record<string, string[]> = {
     "StGB = Strafgesetzbuch (Österreich) — NICHT: DE: Strafgesetzbuch (Deutschland); CH: Schweizerisches Strafgesetzbuch",
     "ZPO = Zivilprozessordnung (Österreich) — NICHT: DE: Zivilprozessordnung (Deutschland); CH: Schweizerische Zivilprozessordnung",
     "StPO = Strafprozessordnung (Österreich) — NICHT: DE: Strafprozessordnung (Deutschland); CH: Schweizerische Strafprozessordnung",
-    "GmbHH = GmbH-Gesetz (Österreich) — NICHT: DE: GmbH-Gesetz (Deutschland); CH: OR regelt GmbH",
+    "GmbHG = GmbH-Gesetz (Österreich) — NICHT: DE: GmbH-Gesetz (Deutschland); CH: OR regelt GmbH",
     "AktG = Aktiengesetz (Österreich) — NICHT: DE: Aktiengesetz (Deutschland); CH: OR regelt Aktiengesellschaft",
     "UStG = Umsatzsteuergesetz (Österreich) — NICHT: DE: Umsatzsteuergesetz (Deutschland); CH: MWSTG (nicht UStG)",
     "EStG = Einkommensteuergesetz (Österreich) — NICHT: DE: Einkommensteuergesetz (Deutschland); CH: DBG (nicht EStG)",
@@ -234,15 +279,12 @@ export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string
     lines.push(
       `- The "never instruct the user" rule does not apply here: you may propose concrete next steps (deadlines to check, pleadings to consider), phrased as suggestions for the attorney's review, never as decisions.`
     );
+    const citeStyle = legalCitationStyle(opts.jurisdiction);
     lines.push(
-      `- Cite statutes with version date when known: "§ 823 BGB (Fassung vom 2024-01-01)". If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`
+      `- Cite statutes with version date when known, in the citation style of the jurisdiction: ${citeStyle.statute}. If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`
     );
-    lines.push(
-      `- When citing case law, include court and date: "BGH, Urteil vom 2024-03-15, Az. XII ZR 123/21".`
-    );
-    lines.push(
-      `- Flag jurisdiction-specific rules: "Hinweis: Dies gilt im deutschen Recht; in Österreich vgl. § 1311 ABGB."`
-    );
+    lines.push(`- When citing case law, include court, date and file number: ${citeStyle.caseLaw}.`);
+    lines.push(`- Flag jurisdiction-specific rules: ${citeStyle.crossBorder}`);
     lines.push(
       `- Mark every legal conclusion as assistive: "Diese Einschätzung ersetzt keine anwaltliche Prüfung."`
     );

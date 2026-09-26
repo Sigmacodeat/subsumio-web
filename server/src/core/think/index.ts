@@ -427,6 +427,35 @@ export function conversationContextBlock(context: string | undefined): string {
   ].join("\n");
 }
 
+/**
+ * Prompt modes for synthesis.
+ *
+ * Legal mode: explicit, or auto-detected from gathered page types (any page
+ * typed 'legal_*', 'evidence', or a statute section — type 'law' with slug
+ * 'legal/statutes/…').
+ *
+ * Tax mode (Steuerberater persona + tax disclaimer) is ONLY switched on
+ * explicitly by the caller. Taxumio is archived
+ * (docs/archive/TAXUMIO_ARCHIVE_MANIFEST.md); tax law remains a legal practice
+ * area, so hits from the tax-law corpus must not silently flip the persona.
+ */
+export function detectThinkModes(
+  opts: { legalMode?: boolean; taxMode?: boolean },
+  pages: readonly unknown[]
+): { legalMode: boolean; taxMode: boolean } {
+  const autoLegalMode = pages.some((p) => {
+    const page = p as Record<string, unknown>;
+    const pageType = typeof page.type === "string" ? page.type : "";
+    const pageSlug = typeof page.slug === "string" ? page.slug : "";
+    return (
+      pageType.startsWith("legal_") ||
+      (pageType === "law" && pageSlug.startsWith("legal/statutes/")) ||
+      pageType === "evidence"
+    );
+  });
+  return { legalMode: opts.legalMode === true || autoLegalMode, taxMode: opts.taxMode === true };
+}
+
 export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise<ThinkResult> {
   const rounds = Math.max(1, opts.rounds ?? 1);
   const warnings: string[] = [];
@@ -748,52 +777,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
 
   // SYNTHESIZE
   const intent = inferIntent(opts.question, opts.anchor);
-  // v0.43: Auto-detect legal mode from gathered page types. If any gathered
-  // page has a type starting with 'legal_' or is a statute section (type 'law'
-  // with slug starting 'legal/statutes/'), activate legal-aware prompt.
-  const autoLegalMode = gather.pages.some((p) => {
-    const page = p as unknown as Record<string, unknown>;
-    const pageType = typeof page.type === "string" ? page.type : "";
-    const pageSlug = typeof page.slug === "string" ? page.slug : "";
-    return (
-      pageType.startsWith("legal_") ||
-      (pageType === "law" && pageSlug.startsWith("legal/statutes/")) ||
-      pageType === "evidence"
-    );
-  });
-  const legalMode = opts.legalMode || autoLegalMode;
-  // Auto-detect tax mode from gathered page slugs. Tax law pages
-  // have slugs starting with 'law/de/' + tax law slug (estg, ustg, kstg, etc.),
-  // 'law/ch/' + tax law slug (dbg, mwstg, sthg, zg), or 'law/eu/' + tax law slug.
-  const TAX_SLUG_PREFIXES = [
-    "law/de/estg",
-    "law/de/ustg",
-    "law/de/kstg",
-    "law/de/gewstg",
-    "law/de/erbstg",
-    "law/de/bewg",
-    "law/de/grestg",
-    "law/de/lstdv",
-    "law/de/stbvv",
-    "law/de/stberg",
-    "law/de/solzg",
-    "law/de/astg",
-    "law/de/estdv",
-    "law/de/ustdv",
-    "law/de/ao",
-    "law/ch/dbg",
-    "law/ch/mwstg",
-    "law/ch/sthg",
-    "law/ch/zg",
-    "law/eu/mwst-systemrichtlinie",
-    "law/eu/dac6",
-    "law/eu/uzk",
-  ];
-  const autoTaxMode = gather.pages.some((p) => {
-    const pageSlug = String((p as unknown as { slug?: string }).slug ?? "");
-    return TAX_SLUG_PREFIXES.some((prefix) => pageSlug.startsWith(prefix));
-  });
-  const taxMode = opts.taxMode || autoTaxMode;
+  const { legalMode, taxMode } = detectThinkModes(opts, gather.pages);
   const systemPrompt =
     buildThinkSystemPrompt({
       intent,
