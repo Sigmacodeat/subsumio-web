@@ -11,6 +11,7 @@ import {
 } from "@/lib/efiling-architecture";
 import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
+import { completeDeadlineAfterFiling } from "@/lib/deadline-guarded-write";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
@@ -240,27 +241,17 @@ export const POST = createHandler(
 
       // Update deadline if linked (best effort — reported as deadline_updated)
       let deadlineUpdated: boolean | null = null;
+      let deadlineSecondCheckRequired = false;
       if (body.deadline_id && receipt.is_success) {
-        deadlineUpdated = await engineWriteBestEffort(
-          `${ENGINE_URL}/api/pages`,
-          {
-            // No PATCH route for pages in the engine: merge write via POST.
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
-              slug: body.deadline_id,
-              merge: true,
-              frontmatter: {
-                status: "done",
-                done_at: new Date().toISOString(),
-                done_by: ctx.user.email,
-                filing_id: sendingPkg.id,
-              },
-            }),
-            signal: AbortSignal.timeout(10_000),
-          },
-          "Frist-Erledigung nach beA-Versand"
+        // Same deadline rules as the Fristen view: a Notfrist stays open
+        // (filing recorded) until the second check by another person.
+        const outcome = await completeDeadlineAfterFiling(
+          { headers: ctx.headers, user: ctx.user, brainId: ctx.brainId },
+          body.deadline_id,
+          { filing_id: sendingPkg.id }
         );
+        deadlineUpdated = outcome.updated;
+        deadlineSecondCheckRequired = outcome.second_check_required;
       }
 
       broadcastSseEvent(ctx.brainId, "bea.send.completed", {
@@ -289,6 +280,7 @@ export const POST = createHandler(
         retry_count: sendingPkg.retry_count,
         package_persisted: packagePersisted,
         deadline_updated: deadlineUpdated,
+        deadline_second_check_required: deadlineSecondCheckRequired,
       });
     } catch (err) {
       const failedPkg: FilingPackage = {

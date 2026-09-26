@@ -23,7 +23,12 @@
  * Pure functions — the routes read the stored page, call these and do the I/O.
  */
 
-import { type GuardRejection, embeddedDeadlineKey, isNotfrist } from "@/lib/page-write-guards";
+import {
+  type GuardRejection,
+  embeddedDeadlineKey,
+  guardSecondCheckWrite,
+  isNotfrist,
+} from "@/lib/page-write-guards";
 
 export interface PolicyUser {
   id?: string;
@@ -602,4 +607,29 @@ export function auditActionFor(
   if (kind === "create") return "deadline.create";
   if (kind === "delete") return "deadline.delete";
   return "deadline.update";
+}
+
+// ── One entry point for every deadline write ────────────────────────────
+
+/**
+ * The complete rule set for a write that may touch a Frist — the four-eyes
+ * rule for Notfristen (second-check fields are server-owned; no `done`
+ * without the stamped second check) plus identity stamping, Notfrist change
+ * protection and the audit trail. The generic page routes apply the same two
+ * steps; every other writer (Copilot, beA, WhatsApp, automations) calls this
+ * so it cannot skip one of them.
+ */
+export function guardDeadlineWrite(args: {
+  slug: string;
+  type?: unknown;
+  incoming: Record<string, unknown>;
+  current: { type?: unknown; frontmatter?: Record<string, unknown> } | null;
+  user: PolicyUser;
+  now?: string;
+}):
+  | { frontmatter: Record<string, unknown>; events: DeadlineChangeEvent[] }
+  | { reject: GuardRejection } {
+  const guarded = guardSecondCheckWrite(args.incoming, args.current?.frontmatter ?? null);
+  if ("reject" in guarded) return guarded;
+  return applyDeadlineWritePolicy({ ...args, incoming: guarded.frontmatter });
 }
