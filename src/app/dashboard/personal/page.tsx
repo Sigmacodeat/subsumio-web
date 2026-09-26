@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, formatDate } from "@/lib/utils";
 import type { StaffMember, StaffRole, VacationAccount } from "@/lib/staff";
@@ -52,6 +53,7 @@ const EMPTY_FORM = {
  */
 export default function PersonalPage() {
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const [members, setMembers] = useState<StaffWithVacation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -156,6 +158,18 @@ export default function PersonalPage() {
   }
 
   async function toggleActive(m: StaffWithVacation) {
+    if (m.active) {
+      // The personnel file is not the login account: say so before anyone
+      // believes an offboarding is done.
+      const ok = await confirm({
+        title: `${m.name} im Personalstamm deaktivieren?`,
+        message:
+          "Das ändert nur die Personalakte. Ein Subsumio-Zugang dieser Person bleibt bestehen — entziehen Sie ihn unter Team → Mitglied entfernen.",
+        confirmLabel: "Deaktivieren",
+        variant: "danger",
+      });
+      if (!ok) return;
+    }
     try {
       const res = await csrfFetch("/api/staff", {
         method: "PATCH",
@@ -168,7 +182,9 @@ export default function PersonalPage() {
       if (!res.ok) throw new Error();
       addToast({
         type: "success",
-        title: m.active ? `${m.name} deaktiviert.` : `${m.name} reaktiviert.`,
+        title: m.active
+          ? `${m.name} im Personalstamm deaktiviert. Der Login-Zugang bleibt bestehen.`
+          : `${m.name} reaktiviert.`,
       });
       void load();
     } catch {

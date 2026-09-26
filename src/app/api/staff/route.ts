@@ -32,9 +32,11 @@ async function enginePostPage(ctx: { headers: Record<string, string> }, page: un
   if (!res.ok) throw new Error(`engine write failed: ${res.status}`);
 }
 
+// Personnel files (vacation entitlement, contract dates) are HR records:
+// only firm admins create or change them — like other firm settings.
 export const POST = createHandler(
   {
-    action: "brain.write",
+    action: "settings.write",
     rateTier: "standard",
     body: createSchema,
     audit: (_ctx, body) => ({
@@ -124,19 +126,55 @@ const patchSchema = z.object({
   }),
 });
 
+/** Changed fields of a PATCH, before → after, for the audit entry. */
+const staffChanges = new WeakMap<object, Record<string, { before: unknown; after: unknown }>>();
+
+const AUDITED_FIELDS = [
+  "name",
+  "email",
+  "role",
+  "hired_at",
+  "contract_until",
+  "vacation_days_per_year",
+  "vacation_carryover_days",
+  "active",
+] as const;
+
+async function engineGetStaff(
+  ctx: { headers: Record<string, string> },
+  id: string
+): Promise<Partial<StaffMember> | null> {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(`legal/staff/${id}`)}`, {
+    headers: ctx.headers,
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!res?.ok) return null;
+  const page = (await res.json().catch(() => null)) as { frontmatter?: StaffMember } | null;
+  return page?.frontmatter ?? null;
+}
+
 export const PATCH = createHandler(
   {
-    action: "brain.write",
+    action: "settings.write",
     rateTier: "standard",
     body: patchSchema,
     audit: (_ctx, body) => ({
       action: "settings.update" as const,
       entityType: "staff_member",
       entityId: body.id,
-      details: { active: body.member.active },
+      details: { changes: staffChanges.get(body) ?? null },
     }),
   },
   async (ctx, body) => {
+    const before = await engineGetStaff(ctx, body.id);
+    const changes: Record<string, { before: unknown; after: unknown }> = {};
+    for (const key of AUDITED_FIELDS) {
+      const prev = before?.[key] ?? null;
+      const next = body.member[key] ?? null;
+      if (prev !== next) changes[key] = { before: prev, after: next };
+    }
+    staffChanges.set(body, changes);
+
     const member: StaffMember = {
       id: body.id,
       ...body.member,
