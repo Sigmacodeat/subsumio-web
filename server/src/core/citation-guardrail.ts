@@ -161,6 +161,21 @@ export const KNOWN_LAWS = new Set<string>([
   "ZGB",
   "ZPO",
   "ZustG",
+  // Austrian procedural + special statutes not (yet) in the corpus
+  "AlVG",
+  "ASGG",
+  "AußStrG",
+  "BTVG",
+  "BVwGG",
+  "FinStrG",
+  "GGG",
+  "JN",
+  "RATG",
+  "UVG",
+  "VfGG",
+  "VwGG",
+  "VwGVG",
+  "WGG",
   // Swiss laws (from law-corpus/ch/)
   "BDSG",
   "BVG",
@@ -221,9 +236,11 @@ export interface GuardrailResult {
 export function extractCitations(text: string): string[] {
   const citations: string[] = [];
 
-  // Pattern: § or §§ + number(+optional letter) + optional Abs./Satz + optional law abbreviation
+  // Pattern: § or §§ + number(+optional letter) + optional Abs./Satz + optional law abbreviation.
+  // "Abs" may come without the dot (Austrian citation style: "§ 7 Abs 4 VwGVG");
+  // law abbreviations may carry umlauts/ß ("AußStrG").
   const pattern =
-    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/g;
+    /§§?\s*(\d+[a-z]?)\s*(?:Abs\.?\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,12})?/g;
 
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -257,7 +274,7 @@ export function extractLawAbbreviations(text: string): string[] {
   // Pattern 1: After § citations: "§ 12 BGB" → "BGB"
   // This is the only reliable pattern — law abbreviations after § are unambiguous
   const afterPara =
-    /§§?\s*\d+[a-z]?\s*(?:Abs\.\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-Z][A-Za-z]{1,10})\b/g;
+    /§§?\s*\d+[a-z]?\s*(?:Abs\.?\s*\d+)?\s*(?:Satz\s*\d+)?\s*([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,12})(?![A-Za-zÄÖÜäöüß])/g;
   let m: RegExpExecArray | null;
   while ((m = afterPara.exec(text)) !== null) {
     laws.add(m[1]);
@@ -265,7 +282,7 @@ export function extractLawAbbreviations(text: string): string[] {
 
   // Pattern 2: Explicit law references in parentheses: "(BGB)", "(AO)"
   // These are reliable because the parentheses signal an abbreviation
-  const parenLaw = /\(([A-Z][A-Za-z]{1,10})\)/g;
+  const parenLaw = /\(([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,12})\)/g;
   while ((m = parenLaw.exec(text)) !== null) {
     const candidate = m[1];
     if (KNOWN_LAWS.has(candidate)) {
@@ -338,7 +355,8 @@ export function extractNonParagraphReferences(text: string): string[] {
   }
 
   // Article references (Art. X or Artikel X) — only if not "Art." within a § context
-  const artPattern = /(?:Art\.|Artikel)\s+(\d+(?:\s*Abs\.\s*\d+)?)\s*([A-Z][A-Za-z]{1,10})?/gi;
+  const artPattern =
+    /(?:Art\.|Artikel)\s+(\d+(?:\s*Abs\.?\s*\d+)?)\s*([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,12})?/gi;
   while ((m = artPattern.exec(text)) !== null) {
     // Skip if it's "Art." as abbreviation for "Artikel" in a citation context we already handle
     const full = m[0];
@@ -450,7 +468,7 @@ export function extractContextCitations(contextText: string): string[] {
 function citationInContext(citation: string, contextText: string): boolean {
   // Parse the citation
   const match = citation.match(
-    /§\s*(\d+[a-z]?)\s*(?:Abs\.\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-Z][A-Za-z]{1,10})?/
+    /§\s*(\d+[a-z]?)\s*(?:Abs\.?\s*(\d+))?\s*(?:Satz\s*(\d+))?\s*([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,12})?/
   );
   if (!match) return false;
 
