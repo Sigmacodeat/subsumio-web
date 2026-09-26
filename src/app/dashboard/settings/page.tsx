@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { integrationReturnToast, withoutIntegrationReturn } from "@/lib/integration-return";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -240,6 +241,19 @@ function SettingsPageInner() {
   const searchParams = useSearchParams();
   // Derived from the URL so hub links (?tab=…) switch the view on client-side navigation.
   const activeTab = searchParams.get("tab");
+  const router = useRouter();
+  const pathname = usePathname();
+  const { addToast: addReturnToast } = useToast();
+  // Result of an Outlook/DocuSign connection round trip: shown once, then
+  // removed from the URL so a reload does not repeat it.
+  useEffect(() => {
+    const toast = integrationReturnToast(new URLSearchParams(searchParams.toString()));
+    if (!toast) return;
+    addReturnToast(toast);
+    router.replace(
+      `${pathname}${withoutIntegrationReturn(new URLSearchParams(searchParams.toString()))}`
+    );
+  }, [searchParams, addReturnToast, router, pathname]);
   const [referralUrl, setReferralUrl] = useState("");
   const [referrals, setReferrals] = useState<number | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "checking" | "online" | "offline">(
