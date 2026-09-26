@@ -46,6 +46,7 @@ export const DEMO_BLOCKED_ACTIONS: ReadonlySet<RouteAction> = new Set([
   "invoice.write",
   "invoice.e_invoice",
   "settings.write",
+  "staff.write",
   "onboarding.complete",
   "onboarding.progress",
   // The dashboard copilot can dispatch tools with side effects; the demo

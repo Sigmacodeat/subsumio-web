@@ -260,6 +260,9 @@ export interface MatterCoverageStatus {
   overall_freshness: "fresh" | "stale" | "unknown";
   completeness_score: number; // 0..1 — weighted: connected + fresh + ocr
   warnings: string[];
+  /** A list (deadlines, documents, requests) failed to load or hit its read
+   *  budget — the bundle may be missing entries. */
+  partial?: boolean;
 }
 
 // ── Gap Detection ─────────────────────────────────────────────────────

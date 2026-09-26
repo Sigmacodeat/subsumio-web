@@ -21,7 +21,13 @@ interface CockpitResponse {
    *  counts (Fristen, Akten, …) may be incomplete instead of reading "0". */
   degraded: boolean;
   failed_types: string[];
+  /** Types with more pages than were read — their counts are lower bounds
+   *  and the UI shows them as "N+", never as a total. */
+  capped_types: string[];
 }
+
+/** Upper bound for a caller-chosen read budget (`types=legal_case:NNN`). */
+const MAX_TYPE_LIMIT = 2000;
 
 export const GET = createHandler(
   {
@@ -38,7 +44,9 @@ export const GET = createHandler(
       ? Object.fromEntries(
           typesParam.split(",").map((t) => {
             const [type, limitStr] = t.split(":");
-            return [type, limitStr ? parseInt(limitStr, 10) : 50];
+            const parsed = limitStr ? parseInt(limitStr, 10) : 50;
+            const limit = Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
+            return [type, Math.min(limit, MAX_TYPE_LIMIT)];
           })
         )
       : DEFAULT_TYPES;
@@ -53,11 +61,13 @@ export const GET = createHandler(
 
     const pages: Record<string, BrainPage[]> = {};
     const failedTypes: string[] = [];
+    const cappedTypes: string[] = [];
     const typeKeys = Object.keys(typesMap);
     for (let i = 0; i < typeKeys.length; i++) {
       const result = pageResults[i];
       pages[typeKeys[i]] = result?.pages ?? [];
       if (!result?.ok) failedTypes.push(typeKeys[i]);
+      if (result?.capped) cappedTypes.push(typeKeys[i]);
     }
 
     const response: CockpitResponse = {
@@ -66,6 +76,7 @@ export const GET = createHandler(
       pages,
       degraded: failedTypes.length > 0,
       failed_types: failedTypes,
+      capped_types: cappedTypes,
     };
     return Response.json(response);
   }

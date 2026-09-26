@@ -82,6 +82,8 @@ export interface CockpitData {
   /** A page list failed to load — counts may be incomplete. */
   degraded?: boolean;
   failed_types?: string[];
+  /** Lists with more pages than were read — counts are lower bounds. */
+  capped_types?: string[];
 }
 
 export function useCockpitData(opts?: { types?: string; recentLimit?: number; enabled?: boolean }) {

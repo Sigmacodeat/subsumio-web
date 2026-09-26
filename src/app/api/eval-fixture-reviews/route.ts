@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -194,16 +194,12 @@ export const PATCH = createHandler(
 
       const updatedFrontmatter = { ...review.frontmatter, ...decision };
 
-      const updateRes = await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "PUT",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: body.slug,
-          title: review.title,
-          frontmatter: updatedFrontmatter,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      // The engine has no PUT /api/pages — updates are a merge POST.
+      const updateRes = await enginePatchPage(
+        ctx.headers,
+        { slug: body.slug, title: review.title, frontmatter: updatedFrontmatter },
+        { timeoutMs: 15_000 }
+      );
 
       if (!updateRes.ok) {
         return apiError(

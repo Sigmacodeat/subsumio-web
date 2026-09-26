@@ -65,10 +65,9 @@ describe("GET /api/time-suggestions", () => {
     expect(body.data.suggestions.map((s: { id: string }) => s.id)).toEqual(["s3"]);
   });
 
-  test("Engine-Fehler → leere Liste statt Exception", async () => {
+  test("Engine-Lesefehler → 500, nie eine leere Liste", async () => {
     mockListPages.mockRejectedValue(new Error("engine down"));
     const res = await get();
-    expect(res.status).toBe(200);
-    expect((await res.json()).data.suggestions).toEqual([]);
+    expect(res.status).toBe(500);
   });
 });

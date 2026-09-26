@@ -25,9 +25,8 @@ export const GET = createHandler(
       const brain = createServerBrainClient(ctx.headers);
       const myEmail = ctx.user.email.toLowerCase();
       // Cursor-paginated: listPages stops silently at the 100-row engine cap.
-      const pages = await listAllPagesOfType(brain, "time_suggestion", 10_000).catch(
-        () => [] as unknown[]
-      );
+      // A failed read answers 500 — never an empty "keine Vorschläge" list.
+      const pages = await listAllPagesOfType(brain, "time_suggestion", 10_000);
       const suggestions = (Array.isArray(pages) ? pages : [])
         .map((p) => (p as { frontmatter?: Record<string, unknown> }).frontmatter)
         .filter(

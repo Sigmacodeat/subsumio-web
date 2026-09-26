@@ -127,4 +127,12 @@ describe("createIdempotencyStore — additional edge cases", () => {
     expect(await store.isProcessed("evt_1234")).toBe(false);
     expect(await store.isProcessed("evt_123")).toBe(true);
   });
+
+  it("claim is granted once; release allows a retry", async () => {
+    const store = createIdempotencyStore("test_idem_claim");
+    expect(await store.claim("k1")).toBe(true);
+    expect(await store.claim("k1")).toBe(false);
+    await store.release("k1");
+    expect(await store.claim("k1")).toBe(true);
+  });
 });

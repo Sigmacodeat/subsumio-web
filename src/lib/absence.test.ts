@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  absenceDisplayStatus,
   activeDelegateFor,
   createAbsence,
+  delegateLabel,
+  findOverlappingAbsence,
   deadlineSlugsCoveredByAbsence,
   isAbsenceActive,
   type AbsenceRecord,
@@ -125,5 +128,75 @@ describe("deadlineSlugsCoveredByAbsence", () => {
   it("matches the absent user by e-mail as well", () => {
     const byEmail = new Map([["legal/cases/1", "huber@kanzlei.at"]]);
     expect(deadlineSlugsCoveredByAbsence(absence(), [dl("d/1")], byEmail)).toEqual(["d/1"]);
+  });
+});
+
+describe("absenceDisplayStatus", () => {
+  const NOW = new Date("2026-09-26T10:00:00+02:00");
+  const running = { start_date: "2026-09-20", end_date: "2026-10-05" };
+
+  it("gespeichertes 'completed' bei laufendem Zeitraum → Abgeschlossen (kein 'Aktiv')", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "completed" }), NOW)).toBe(
+      "completed"
+    );
+  });
+
+  it("storniert gewinnt immer", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "cancelled" }), NOW)).toBe(
+      "cancelled"
+    );
+  });
+
+  it("gespeichert 'planned' → Status nach Zeitraum (Europe/Vienna, letzter Tag zählt)", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "planned" }), NOW)).toBe("active");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-09-01", end_date: "2026-09-26", status: "planned" }),
+        new Date("2026-09-26T23:30:00+02:00")
+      )
+    ).toBe("active");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-09-01", end_date: "2026-09-25", status: "planned" }),
+        NOW
+      )
+    ).toBe("completed");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-10-01", end_date: "2026-10-05", status: "planned" }),
+        NOW
+      )
+    ).toBe("planned");
+  });
+});
+
+describe("externe Vertretung (§ 34 RAO)", () => {
+  it("Fristen/Erinnerungen nennen den externen Namen samt Kanzlei", () => {
+    const a = absence({
+      start_date: "2020-01-01",
+      end_date: "2099-12-31",
+      delegate_name: "Dr. Substitut",
+      delegate_email: "",
+      substitute_external: true,
+      delegate_firm: "Kanzlei Beispiel",
+    });
+    expect(delegateLabel(a)).toBe("Dr. Substitut (extern, Kanzlei Beispiel)");
+    const d = activeDelegateFor(a.user_email, [a]);
+    expect(d?.name).toBe("Dr. Substitut (extern, Kanzlei Beispiel)");
+    expect(d?.email).toBe("");
+  });
+
+  it("Kanzleimitglied bleibt beim bloßen Namen", () => {
+    expect(delegateLabel(absence({ delegate_name: "RA Vertreter" }))).toBe("RA Vertreter");
+  });
+});
+
+describe("findOverlappingAbsence", () => {
+  const base = absence({ id: "a1", start_date: "2026-10-01", end_date: "2026-10-10" });
+  it("findet Überschneidung derselben Person, ignoriert sich selbst und Stornierte", () => {
+    const other = absence({ id: "a2", start_date: "2026-10-10", end_date: "2026-10-12" });
+    expect(findOverlappingAbsence([base, other], base)?.id).toBe("a2");
+    expect(findOverlappingAbsence([base], base)).toBeUndefined();
+    expect(findOverlappingAbsence([base, { ...other, status: "cancelled" }], base)).toBeUndefined();
   });
 });

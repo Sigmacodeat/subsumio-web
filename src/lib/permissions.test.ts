@@ -55,6 +55,14 @@ describe("PERMISSIONS helper functions", () => {
 });
 
 describe("can (RBAC matrix)", () => {
+  test("Personalstamm: nur admin ändert, client_viewer liest nicht", () => {
+    expect(can(mockUser("admin"), "staff.write")).toBe(true);
+    expect(can(mockUser("lawyer"), "staff.write")).toBe(false);
+    expect(can(mockUser("assistant"), "staff.write")).toBe(false);
+    expect(can(mockUser("assistant"), "staff.read")).toBe(true);
+    expect(can(mockUser("client_viewer"), "staff.read")).toBe(false);
+  });
+
   test("only lawyers and admins start a case scan", () => {
     expect(can(mockUser("admin"), "legal.case_scanner")).toBe(true);
     expect(can(mockUser("lawyer"), "legal.case_scanner")).toBe(true);

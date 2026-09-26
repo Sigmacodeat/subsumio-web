@@ -1,11 +1,13 @@
 /**
  * GET /api/insights — Returns generated insights for the current brain.
  *
- * TODO 8: Insights-Engine API endpoint.
- * Collects cases, judgements, and documents from the engine,
- * then runs the rule-based insights generator.
+ * Collects cases, judgements, documents and the Fristen read model from the
+ * engine, then runs the rule-based insights generator. `partial: true` when a
+ * list failed to load.
  */
 import { listEnginePages } from "@/lib/engine-pages";
+import { getEnginePage } from "@/lib/engine-page-io";
+import { DEADLINE_SOURCES, loadFristenReadModel } from "@/lib/fristen-read-model";
 import { NextResponse } from "next/server";
 import { createHandler } from "@/lib/api-handler";
 import { generateInsights, type InsightInput } from "@/lib/insights-engine";
@@ -30,41 +32,65 @@ export const GET = createHandler(
   },
   async (ctx, _body, query) => {
     try {
-      // Fetch cases, judgements, and documents in parallel. The engine has no
-      // /api/pages/batch-list and answers /api/pages with a bare array — the
-      // old calls silently produced an empty insights page.
-      const [casePages, judgementPages, legalDocs, plainDocs] = await Promise.all([
-        listEnginePages(ctx.headers, "legal_case", 200),
-        listEnginePages(ctx.headers, "legal_judgement", 50),
-        listEnginePages(ctx.headers, "legal_document", 100),
-        listEnginePages(ctx.headers, "document", 100),
+      // A failed read is never passed off as "no insights": every list is
+      // read strictly and a failure sets `partial: true` for the UI.
+      let partial = false;
+      const strictList = async (type: string, limit: number) => {
+        try {
+          return await listEnginePages(ctx.headers, type, limit, { strict: true });
+        } catch {
+          partial = true;
+          return [];
+        }
+      };
+      // One matter: read exactly that matter, not the most recently edited
+      // matters of the firm filtered afterwards.
+      const loadCases = async (): Promise<BrainPage[]> => {
+        if (!query.caseSlug) return (await strictList("legal_case", 5_000)) as BrainPage[];
+        try {
+          const page = await getEnginePage(ctx.headers, query.caseSlug);
+          return page ? [page] : [];
+        } catch {
+          partial = true;
+          return [];
+        }
+      };
+      // Deadline insights come from the Fristen read model (Fristenbuch,
+      // deadline pages, deadlines in matters) with its central status rules.
+      const [casePages, judgementPages, legalDocs, plainDocs, fristenModel] = await Promise.all([
+        loadCases(),
+        strictList("legal_judgement", 50),
+        strictList("legal_document", 100),
+        strictList("document", 100),
+        loadFristenReadModel(ctx.headers, { caseFilter: query.caseSlug }),
       ]);
-      const casesData = { results: { legal_case: casePages } };
-      const judgementsData = { pages: judgementPages };
-      const docsData = { results: { legal_document: legalDocs, document: plainDocs } };
+      const deadlinesIncomplete = fristenModel.failedSources.some((src) =>
+        DEADLINE_SOURCES.includes(src)
+      );
+      if (deadlinesIncomplete) partial = true;
 
-      const cases = ((casesData.results?.legal_case ?? []) as BrainPage[]).map((p) => ({
+      const cases = casePages.map((p) => ({
         slug: p.slug,
         title: p.title,
         frontmatter: p.frontmatter,
       }));
 
-      const judgements = ((judgementsData.pages ?? []) as BrainPage[]).map((p) => ({
+      const judgements = (judgementPages as BrainPage[]).map((p) => ({
         slug: p.slug,
         title: p.title,
         frontmatter: p.frontmatter,
       }));
 
-      const docs = [
-        ...((docsData.results?.legal_document ?? []) as BrainPage[]),
-        ...((docsData.results?.document ?? []) as BrainPage[]),
-      ].map((p) => ({
+      const docs = [...(legalDocs as BrainPage[]), ...(plainDocs as BrainPage[])].map((p) => ({
         slug: p.slug,
         title: p.title,
         frontmatter: p.frontmatter,
       }));
 
       const input: InsightInput = {
+        // Incomplete deadline data: no "Keine Fristen gesetzt" from a list
+        // that is missing entries — fall back to the matters' own deadlines.
+        deadlines: deadlinesIncomplete ? undefined : fristenModel.fristen,
         cases,
         judgements,
         recentDocuments: docs,
@@ -75,7 +101,11 @@ export const GET = createHandler(
         ? allInsights.filter((i) => i.caseSlug === query.caseSlug)
         : allInsights;
 
-      return NextResponse.json({ insights, count: insights.length });
+      return NextResponse.json({
+        insights,
+        count: insights.length,
+        ...(partial ? { partial: true } : {}),
+      });
     } catch (err) {
       log.error("[insights] Failed to generate:", err);
       return NextResponse.json(

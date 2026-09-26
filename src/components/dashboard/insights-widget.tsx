@@ -59,10 +59,11 @@ export function InsightsWidget() {
   const { data, loading, error, refetch } = useApiQuery<{
     insights: Insight[];
     count: number;
+    partial?: boolean;
   }>(async () => {
     const res = await csrfFetch("/api/insights", { method: "GET" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return (await res.json()) as { insights: Insight[]; count: number };
+    return (await res.json()) as { insights: Insight[]; count: number; partial?: boolean };
   }, []);
 
   const handleDismiss = useCallback((id: string) => {
@@ -102,6 +103,16 @@ export function InsightsWidget() {
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>
       </div>
+
+      {data?.partial && !loading && (
+        <p
+          role="status"
+          className="mb-2 flex items-start gap-1.5 text-xs text-[color:var(--ds-warning-text)]"
+        >
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden />
+          Einzelne Daten konnten nicht geladen werden — Hinweise können unvollständig sein.
+        </p>
+      )}
 
       {/* Loading */}
       {loading && !data && (

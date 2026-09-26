@@ -215,6 +215,54 @@ describe("GET /api/legal/fristen", () => {
     expect(body.zusammenfassung.overdue).toBe(1);
   });
 
+  it("treats erledigt/completed as done and leaves out rejected or deleted entries", async () => {
+    engine({
+      "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
+      "/api/pages?type=legal_case&limit=100&offset=0": [
+        {
+          slug: "cases/c",
+          title: "C",
+          frontmatter: {
+            deadlines: [
+              {
+                id: "d1",
+                title: "Erledigt eingebettet",
+                due_date: "2020-01-01",
+                status: "erledigt",
+              },
+              {
+                id: "d2",
+                title: "Verworfen eingebettet",
+                due_date: "2020-01-02",
+                review_status: "rejected",
+              },
+            ],
+          },
+        },
+      ],
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [
+        {
+          slug: "legal/deadlines/a",
+          title: "A",
+          frontmatter: { due_date: "2020-01-03", status: "completed", description: "Completed" },
+        },
+        {
+          slug: "legal/deadlines/b",
+          title: "B",
+          frontmatter: { due_date: "2020-01-04", status: "tombstoned", description: "Gelöscht" },
+        },
+      ],
+      "/api/pages?type=absence_record&limit=100&offset=0": [],
+    });
+    const body = await (
+      await GET(new NextRequest("http://localhost:3000/api/legal/fristen"))
+    ).json();
+    const titles = body.fristen.map((f: { title: string }) => f.title).sort();
+    expect(titles).toEqual(["Completed", "Erledigt eingebettet"]);
+    expect(body.fristen.every((f: { status: string }) => f.status === "done")).toBe(true);
+    expect(body.zusammenfassung.overdue).toBe(0);
+  });
+
   it("gives legacy embedded deadlines (no id) a title + due_date reference", async () => {
     engine({
       "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },

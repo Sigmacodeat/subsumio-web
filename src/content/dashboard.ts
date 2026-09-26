@@ -9167,7 +9167,10 @@ export const D = {
     en: "Plan an absence to automatically forward deadlines.",
   },
   "absence.delegate_label": { de: "Vertreter:", en: "Delegate:" },
-  "absence.deadlines_forwarded": { de: "Frist(en) weitergeleitet", en: "deadline(s) forwarded" },
+  "absence.deadlines_forwarded": {
+    de: "Frist(en) von der Vertretung gedeckt",
+    en: "deadline(s) covered by the stand-in",
+  },
   "absence.rundown_reassigned": {
     de: "Rundown-Item(s) neu zugewiesen",
     en: "rundown item(s) reassigned",

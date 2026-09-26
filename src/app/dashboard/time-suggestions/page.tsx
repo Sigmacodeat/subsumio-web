@@ -99,16 +99,42 @@ export default function TimeSuggestionsPage() {
       draft.description.trim() !== suggestion.description ||
       !draft.billable;
     setActing(suggestion.id);
-    let entryId: string | undefined;
+    // One server-side flow books the entry and marks the suggestion; it
+    // refuses a second booking of the same suggestion (409).
     try {
-      const entry = await api.time.create({
-        date: suggestion.date,
-        minutes,
-        description: draft.description.trim(),
+      const res = await csrfFetch(
+        `/api/time-suggestions/${encodeURIComponent(suggestion.id)}/accept`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            case_slug: draft.case_slug,
+            minutes,
+            description: draft.description.trim(),
+            billable: draft.billable,
+          }),
+        }
+      );
+      if (res.status === 409) {
+        addToast({
+          type: "info",
+          title: "Vorschlag bereits übernommen",
+          description: "Für diesen Vorschlag ist schon ein Zeiteintrag gebucht.",
+        });
+        void load();
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated: TimeSuggestion = {
+        ...suggestion,
+        status: modified ? "modified" : "accepted",
         case_slug: draft.case_slug,
-        billable: draft.billable,
-      });
-      entryId = entry.id;
+        duration_minutes: minutes,
+        description: draft.description.trim(),
+      };
+      setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
+      setEditing(null);
+      addToast({ type: "success", title: "Zeiteintrag übernommen" });
     } catch (e) {
       console.error("[time-suggestions] accept failed:", e instanceof Error ? e.message : e);
       addToast({
@@ -116,49 +142,9 @@ export default function TimeSuggestionsPage() {
         title: "Vorschlag konnte nicht übernommen werden",
         description: "Bitte versuchen Sie es erneut oder erfassen Sie die Zeit manuell.",
       });
+    } finally {
       setActing(null);
-      return;
     }
-
-    // The entry is booked. Record that on the suggestion so it cannot be
-    // booked twice; if this write fails the booking still stands.
-    const updated: TimeSuggestion = {
-      ...suggestion,
-      status: modified ? "modified" : "accepted",
-      case_slug: draft.case_slug,
-      duration_minutes: minutes,
-      description: draft.description.trim(),
-    };
-    try {
-      await api.brain.createPage({
-        slug: `legal/time-suggestions/${suggestion.id}`,
-        title: `Zeitvorschlag: ${suggestion.date} ${suggestion.start_time}-${suggestion.end_time}`,
-        type: "time_suggestion",
-        frontmatter: {
-          ...(updated as unknown as Record<string, unknown>),
-          time_entry_id: entryId,
-          original: modified
-            ? {
-                case_slug: suggestion.case_slug ?? null,
-                duration_minutes: suggestion.duration_minutes,
-                description: suggestion.description,
-              }
-            : undefined,
-        },
-      });
-      addToast({ type: "success", title: "Zeiteintrag übernommen" });
-    } catch (e) {
-      console.error("[time-suggestions] mark failed:", e instanceof Error ? e.message : e);
-      addToast({
-        type: "error",
-        title: "Zeit gebucht, Vorschlag nicht aktualisiert",
-        description:
-          "Der Zeiteintrag ist gespeichert. Bitte übernehmen Sie diesen Vorschlag nicht noch einmal.",
-      });
-    }
-    setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
-    setEditing(null);
-    setActing(null);
   }
 
   async function rejectSuggestion(suggestion: TimeSuggestion) {

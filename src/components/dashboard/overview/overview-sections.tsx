@@ -99,6 +99,13 @@ export interface OverviewKpi {
   hint: string;
   href: string;
   tone?: "neutral" | "danger" | "warning";
+  /** The value is a lower bound (more records than were read) — shown "N+". */
+  capped?: boolean;
+}
+
+/** "N+" for a lower bound, never a bare number that reads like a total. */
+export function countLabel(value: number, capped?: boolean): string {
+  return capped ? `${value}+` : String(value);
 }
 
 export function OverviewKpis({ items, loading }: { items: OverviewKpi[]; loading?: boolean }) {
@@ -126,7 +133,7 @@ export function OverviewKpis({ items, loading }: { items: OverviewKpi[]; loading
                   !alert && "text-[color:var(--ds-text)]"
                 )}
               >
-                {kpi.value}
+                {countLabel(kpi.value, kpi.capped)}
               </span>
             )}
             <span className="mt-0.5 block truncate text-[11px] text-[color:var(--ds-text-subtle)]">
@@ -299,6 +306,8 @@ export interface AttentionItem {
   label: string;
   hint: string;
   count: number;
+  /** `count` is a lower bound — shown "N+". */
+  capped?: boolean;
   href: string;
   icon: LucideIcon;
   tone: "danger" | "warning" | "neutral";
@@ -364,7 +373,7 @@ export function AttentionList({ items, loading }: { items: AttentionItem[]; load
                 </span>
               </span>
               <span className="min-w-6 rounded-md bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-center text-xs font-semibold text-[color:var(--ds-text)] tabular-nums">
-                {item.count}
+                {countLabel(item.count, item.capped)}
               </span>
               <ChevronRight
                 size={14}

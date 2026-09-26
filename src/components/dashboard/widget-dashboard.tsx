@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useBrainStats, useCockpitData } from "@/lib/queries/brain";
+import { useFristen } from "@/lib/queries/legal";
+import { isClosedDeadline } from "@/lib/deadline-reminders";
+import { deadlineItemsFromFristen, type CockpitDeadlineItem } from "@/lib/cockpit-deadlines";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
@@ -102,6 +105,7 @@ export type CockpitData = ReturnType<typeof useKanzleiCockpitData>;
 
 export function useKanzleiCockpitData() {
   const cockpitQuery = useCockpitData({ recentLimit: 5 });
+  const fristenQuery = useFristen();
   const statsQuery = useBrainStats();
   const queryClient = useQueryClient();
 
@@ -112,6 +116,7 @@ export function useKanzleiCockpitData() {
   const invalidateCockpit = () => {
     queryClient.invalidateQueries({ queryKey: ["brain", "cockpit"] });
     queryClient.invalidateQueries({ queryKey: ["brain", "stats"] });
+    queryClient.invalidateQueries({ queryKey: ["legal", "fristen"] });
   };
 
   useRealtime("case.updated", invalidateCockpit);
@@ -162,22 +167,32 @@ export function useKanzleiCockpitData() {
   const stats = (statsQuery.data ?? cockpitQuery.data?.stats ?? null) as BrainStats | null;
 
   const activeCases = cases.filter((p) => isOpenStatus(p.frontmatter?.status));
-  const deadlineItems = deadlines
+  // Deadlines come from the Fristen read model (same as the Fristen view and
+  // "Mein Tag"): every source, fully paged. The cockpit's own deadline list is
+  // only the fallback while the read model has not answered.
+  const fristen = fristenQuery.data?.fristen;
+  const deadlinesIncomplete = fristenQuery.isError || fristenQuery.data?.partial === true;
+  const fallbackDeadlineItems = deadlines
     .map((p) => {
       const fm = p.frontmatter ?? {};
       const due = dateFrom(fm.due_date ?? fm.date ?? p.created_at);
       if (!due) return null;
       const delta = daysUntil(due);
+      // Central closed set (erledigt, storniert, verworfen, gelöscht, …).
+      const open = !isClosedDeadline(fm);
       return {
         page: p,
         due,
         daysLeft: delta,
-        overdue: delta < 0 && isOpenStatus(fm.status),
-        critical: delta >= 0 && delta <= 3 && isOpenStatus(fm.status),
+        overdue: delta < 0 && open,
+        critical: delta >= 0 && delta <= 3 && open,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
     .sort((a, b) => a.daysLeft - b.daysLeft);
+  const deadlineItems: CockpitDeadlineItem[] = fristen
+    ? deadlineItemsFromFristen(fristen)
+    : fallbackDeadlineItems;
 
   const criticalDeadlines = deadlineItems.filter((item) => item.overdue || item.critical);
   const unassignedDocs = docs.filter((d) => {
@@ -226,8 +241,12 @@ export function useKanzleiCockpitData() {
 
   // A failed page list is reported by the route (not thrown), so a partial
   // cockpit is degraded too — never a silent "0 Fristen".
-  const degraded = cockpitQuery.isError || cockpitQuery.data?.degraded === true;
+  const degraded =
+    cockpitQuery.isError || cockpitQuery.data?.degraded === true || deadlinesIncomplete;
   const loading = cockpitQuery.isLoading;
+  // Lists with more records than were read: their counts are lower bounds.
+  const cappedTypes = cockpitQuery.data?.capped_types ?? [];
+  const isCapped = (...types: string[]) => types.some((type) => cappedTypes.includes(type));
 
   return {
     stats,
@@ -247,6 +266,8 @@ export function useKanzleiCockpitData() {
     overdueReconciliations,
     loading,
     degraded,
+    deadlinesIncomplete,
+    isCapped,
   };
 }
 
@@ -1019,7 +1040,7 @@ export function SecondaryStats({
   items,
 }: {
   loading: boolean;
-  items: Array<{ label: string; value: number; href: string }>;
+  items: Array<{ label: string; value: number; href: string; capped?: boolean }>;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[color:var(--ds-text-muted)]">
@@ -1030,7 +1051,7 @@ export function SecondaryStats({
           className="inline-flex items-center gap-1 transition-[background-color,border-color,color] hover:underline motion-reduce:transition-none"
         >
           <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-            {loading ? "—" : item.value}
+            {loading ? "—" : item.capped ? `${item.value}+` : item.value}
           </span>
           <span>{item.label}</span>
           {i < items.length - 1 && <span className="text-[color:var(--ds-text-subtle)]">·</span>}
@@ -1053,21 +1074,25 @@ export function WidgetDashboard() {
     {
       label: t("cockpit.stat_cases"),
       value: data.activeCases.length,
+      capped: data.isCapped("legal_case"),
       href: "/dashboard/cases",
     },
     {
       label: t("cockpit.stat_inbox"),
       value: data.inboxItems.length,
+      capped: data.isCapped("intake_request"),
       href: "/dashboard/intake",
     },
     {
       label: t("cockpit.stat_reviews"),
       value: reviewCount,
+      capped: data.isCapped("review_item", "agent_action"),
       href: "/dashboard/review-queue",
     },
     {
       label: t("cockpit.stat_billing"),
       value: openInvoiceCount,
+      capped: data.isCapped("invoice"),
       href: "/dashboard/invoicing",
     },
   ];
