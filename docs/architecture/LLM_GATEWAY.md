@@ -11,7 +11,7 @@ Web-Container. Jeder Modellaufruf geht an die Engine:
 | -------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
 | Juristische Antwort mit Retrieval, Zitaten, Guardrails, Cross-Verify | `POST /api/think`          | Assistent, Strategie, Briefing-Text, Drafting, Recherche                                            |
 | Kleine strukturierte Aufgabe ohne Retrieval                          | `POST /api/llm/complete`   | Copilot-Gedächtnis, WhatsApp-Intent, LLM-Fristen-Fallback, Empfehlungs-Politur im WhatsApp-Briefing |
-| Sprache → Text                                                       | `POST /api/llm/transcribe` | WhatsApp-Sprachnachrichten                                                                          |
+| Sprache → Text                                                       | `POST /api/llm/transcribe` | Diktat, WhatsApp-Sprachnachrichten (`audio-transcription.ts`: EU-only → Mistral Voxtral, sonst OpenRouter Whisper) |
 | Embeddings                                                           | `POST /api/embed`          | Suche, Grounding                                                                                    |
 
 Web-seitiger Client: `src/lib/engine-llm.ts` (`engineComplete`, `engineTranscribe`,
@@ -119,7 +119,7 @@ Was mit dem Schalter passiert — immer **Ablehnung vor dem Request**, nie still
 | Anbieter-Failover (Anthropic → OpenRouter)                    | findet nicht statt; der Originalfehler bleibt                              |
 | Query-Expansion, Bild-OCR                                     | Expansion fällt auf die Originalanfrage zurück, OCR liefert keinen Text    |
 | Reranker (`gateway.rerank`, LLM-Reranker-Kette)               | Nicht-EU-Modelle werden übersprungen; Ergebnis bleibt in RRF-Reihenfolge   |
-| Transkription (`/api/llm/transcribe`, `transcription.ts`)     | abgelehnt (HTTP 403 `eu_only_refused`) — es gibt keinen EU-Weg für Sprache |
+| Transkription (`/api/llm/transcribe`, `audio-transcription.ts`) | läuft über Mistral Voxtral (EU, `MISTRAL_API_KEY`); ohne Schlüssel HTTP 403 `eu_only_refused` |
 | Subagent-Tier (`models.tier.subagent`)                        | Auflösung schlägt fehl (der Direktweg umgeht sonst das Gateway)            |
 | Embeddings                                                    | siehe unten                                                                |
 

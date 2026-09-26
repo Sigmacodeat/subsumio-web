@@ -25,6 +25,7 @@ describe("Datenschutzerklärung und AVV — Auftragsverarbeiter", () => {
     "netcup",
     "Anthropic",
     "OpenRouter",
+    "Mistral",
     "Stripe",
     "Resend",
     "Sentry",

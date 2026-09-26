@@ -61,9 +61,17 @@ export const PROCESSORS: readonly Processor[] = [
   {
     name: "OpenRouter",
     purpose:
-      "Vermittlung an weitere KI-Modellanbieter: Aufbereitung von Texten für die Suche (über OpenAI); Ausweichweg für KI-Antworten und für das Sortieren von Suchergebnissen, wenn der Hauptanbieter nicht erreichbar ist (u. a. über Google und Anbieter des Modells Qwen)",
-    data: "Suchanfragen und Textausschnitte aus Dokumenten und Rechtsquellen",
+      "Vermittlung an weitere KI-Modellanbieter: Aufbereitung von Texten für die Suche (über OpenAI); Verschriftung von Diktaten und Sprachnachrichten außerhalb des EU-Datenmodus (über OpenAI Whisper); Ausweichweg für KI-Antworten und für das Sortieren von Suchergebnissen, wenn der Hauptanbieter nicht erreichbar ist (u. a. über Google und Anbieter des Modells Qwen)",
+    data: "Suchanfragen, Textausschnitte aus Dokumenten und Rechtsquellen, Sprachaufnahmen zur Verschriftung",
     location: `USA; die weitergeleiteten Modellanbieter können ihren Sitz ebenfalls außerhalb der EU haben — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Mistral AI",
+    purpose:
+      "Verschriftung von Diktaten und Sprachnachrichten mit Verarbeitung in der EU (im EU-Datenmodus der einzige Weg dafür)",
+    data: "Sprachaufnahme; sie wird nur zur Verschriftung übermittelt und bei uns nicht gespeichert",
+    location: "Frankreich (EU)",
+    condition: "nur wenn der EU-Verschriftungsdienst eingerichtet ist",
   },
   {
     name: "Stripe",

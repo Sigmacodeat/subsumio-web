@@ -3848,66 +3848,38 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "missing_audio");
           return;
         }
-        // EU-only: OpenRouter Whisper is not an EU route (eu-policy.ts).
-        const { euRefusal } = await import("../core/ai/eu-policy.ts");
-        const euBlock = euRefusal("openrouter:whisper-1", "transcription", process.env);
-        if (euBlock) return void res.status(403).json(euBlock);
-        const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_FALLBACK;
-        if (!apiKey) {
-          res
-            .status(503)
-            .json({ error: "transcription_not_configured", message: "No OpenRouter key" });
-          return;
-        }
+        // Provider choice + EU-only policy live in audio-transcription.ts:
+        // EU-only → Mistral Voxtral (EU) or refusal; otherwise OpenRouter.
+        // The firm's own "Nur EU" demand (request scope) counts like the
+        // deployment switch.
+        const { transcribeAudio } = await import("../core/ai/audio-transcription.ts");
+        const { withRequestEuPolicy } = await import("../core/ai/request-eu-policy.ts");
         const bytes = Buffer.from(b64, "base64");
-        if (bytes.byteLength === 0 || bytes.byteLength > 25 * 1024 * 1024) {
-          apiError(res, 400, "audio_size_invalid");
-          return;
-        }
         const mime =
           typeof body.mime_type === "string" && body.mime_type ? body.mime_type : "audio/ogg";
         const filename =
           typeof body.filename === "string" && body.filename
             ? body.filename.slice(0, 120)
             : "voice-message.ogg";
-        const form = new FormData();
-        form.append("file", new Blob([bytes], { type: mime }), filename);
-        form.append(
-          "model",
-          typeof body.model === "string" && body.model ? body.model : "whisper-1"
-        );
-        form.append(
-          "language",
-          typeof body.language === "string" && body.language ? body.language : "de"
-        );
-        const upstream = await fetch("https://openrouter.ai/api/v1/audio/transcriptions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "HTTP-Referer": "https://subsum.io",
-            "X-Title": "Subsumio",
+        const outcome = await transcribeAudio(
+          {
+            bytes,
+            mimeType: mime,
+            filename,
+            language: typeof body.language === "string" && body.language ? body.language : "de",
+            model: typeof body.model === "string" && body.model ? body.model : undefined,
           },
-          body: form,
-          signal: AbortSignal.timeout(60_000),
-        });
-        if (!upstream.ok) {
-          const detail = await upstream.text().catch(() => "");
-          res.status(502).json({
-            error: "transcription_failed",
-            message: detail.slice(0, 300) || `HTTP ${upstream.status}`,
-          });
+          withRequestEuPolicy(process.env)
+        );
+        if (!outcome.ok) {
+          res.status(outcome.status).json({ error: outcome.error, message: outcome.message });
           return;
         }
-        const data = (await upstream.json().catch(() => ({}))) as {
-          text?: string;
-          language?: string;
-          duration?: number;
-        };
         res.json({
-          text: (data.text ?? "").trim(),
-          language: data.language,
-          duration_seconds: data.duration,
-          provider: "openrouter-whisper",
+          text: outcome.text,
+          language: outcome.language,
+          duration_seconds: outcome.duration_seconds,
+          provider: outcome.provider,
         });
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "unknown";
