@@ -6181,6 +6181,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
       }
 
+      // P0-SECR-002: case uploads require the caller to be scoped to the
+      // target case with write access — checked before anything is written,
+      // for beA exports and ordinary documents alike.
+      const caseSlug = fields.case_slug?.trim();
+      if (caseSlug) {
+        await assertSlugMatterScope(engine, req, caseSlug);
+        assertMatterWritable(req, caseSlug);
+      }
+
       const opCtx = ctx(req);
       const tenantSource = opCtx.sourceId ?? "default";
       await ensureSource(tenantSource);
@@ -6215,6 +6224,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
               slugFromUpload(source, file.filename, title);
             beaSlug = await versionUploadSlug(beaSlug, getFileData(), tenantSource);
+            // The target page itself must be in the caller's scope before it
+            // is written (not after).
+            await assertSlugMatterScope(engine, req, beaSlug);
             await importFromContent(engine, beaSlug, event.content, {
               noEmbed,
               sourceId: tenantSource,
@@ -6225,7 +6237,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             // Stamp case_slug on the BEA page so discoverAllCaseDocuments
             // can find it. Without this stamp, the BEA message is invisible
             // to the legal pipeline's case-accumulation logic.
-            const beaCaseSlug = fields.case_slug?.trim() || undefined;
+            const beaCaseSlug = caseSlug || undefined;
             if (beaCaseSlug) {
               try {
                 await patchPageFrontmatter(engine, beaSlug, tenantSource, {
@@ -6254,7 +6266,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               });
               return;
             }
-            await assertSlugMatterScope(engine, req, beaSlug);
             const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
             // E2: Trigger legal-pipeline for beA XML imports.
             // Use the real case_slug (not beaSlug) so the pipeline
@@ -6292,6 +6303,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
           // Not a beA export — fall through to generic document import.
         } catch (err) {
+          // An access refusal is final, never a reason to import generically.
+          if (err instanceof EngineNotFoundError || err instanceof OperationError) throw err;
           console.error(
             `[web-api] beA XML parse failed, falling back to generic import: ${err instanceof Error ? err.message : String(err)}`
           );
@@ -6300,13 +6313,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       let slug = slugFromUpload(source, file.filename, title);
       slug = await versionUploadSlug(slug, getFileData(), tenantSource);
-
-      // P0-SECR-002: case uploads require the caller to be scoped to the target case.
-      const caseSlug = fields.case_slug?.trim();
-      if (caseSlug) {
-        await assertSlugMatterScope(engine, req, caseSlug);
-        assertMatterWritable(req, caseSlug);
-      }
       // G18 fix: validate matter scope against the document slug BEFORE
       // persistence. Pre-fix, this check was after runExtractionAndImport,
       // so a matter-scoped caller could persist a document on the wrong
@@ -6460,6 +6466,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // error — return 415 with the actionable guidance so the UI can show it.
       if (e instanceof UnsupportedUploadError) {
         res.status(415).json({ error: "unsupported_format", message: msg });
+        return;
+      }
+      if (e instanceof EngineNotFoundError) {
+        res.status(404).json({ error: "page_not_found", message: "Page not found." });
         return;
       }
       if (e instanceof OperationError && e.code === "matter_read_only") {

@@ -4,6 +4,7 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { isSupportedUploadName, SUPPORTED_UPLOAD_MIME_TYPES } from "@/lib/upload-formats";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
 
 export const maxDuration = 10;
 
@@ -160,6 +161,21 @@ export const POST = createHandler(
           return Response.json(
             { error: "case_not_found", message: "Die angegebene Akte existiert nicht." },
             { status: 404 }
+          );
+        }
+        // Filing a document changes the matter: read access is not enough.
+        // (The direct upload the token authorises carries no session, so
+        // this is where write access is decided.)
+        const permissions = casePage.frontmatter?.permissions as MatterPermissions | undefined;
+        if (
+          matterAccessLevel({ userId: ctx.user.id, role: ctx.user.role }, permissions) !== "write"
+        ) {
+          return Response.json(
+            {
+              error: "matter_read_only",
+              message: "Sie haben für diese Akte nur Leserechte.",
+            },
+            { status: 403 }
           );
         }
         // An archived matter is closed: nothing is filed into it any more.
