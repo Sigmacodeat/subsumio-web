@@ -20,6 +20,7 @@
  */
 
 import { randomBytes } from "node:crypto";
+import { caseNumberKey } from "@/lib/legal/geschaeftszahl";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { readCurrentPage, type CurrentPageRead } from "@/lib/page-write-guards";
@@ -105,8 +106,9 @@ export function generateCaseSlug(hint: string | undefined): string {
 }
 
 /** Aktenzeichen compared the way people read them: case and spacing do not matter. */
+/** Duplicate key of a case number (shared Geschäftszahl normalisation). */
 export function normalizeCaseNumber(value: unknown): string {
-  return typeof value === "string" ? value.trim().replace(/\s+/g, " ").toLowerCase() : "";
+  return caseNumberKey(value);
 }
 
 /**

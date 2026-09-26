@@ -212,5 +212,8 @@ describe("normalizeCaseNumber", () => {
   it("ignores case and spacing but keeps separators", () => {
     expect(normalizeCaseNumber("  1  Cg 12/24 ")).toBe(normalizeCaseNumber("1 cg 12/24"));
     expect(normalizeCaseNumber("1 Cg 12/24")).not.toBe(normalizeCaseNumber("1-Cg-12-24"));
+    // Geschäftszahl: spacing, case and the written Prüfbuchstabe (lower/upper) are one key.
+    expect(normalizeCaseNumber("12Cg34/25X")).toBe(normalizeCaseNumber("12 Cg 34/25x"));
+    expect(normalizeCaseNumber("12 Cg 34/25a")).not.toBe(normalizeCaseNumber("12 Cg 34/25b"));
   });
 });
