@@ -22,14 +22,19 @@ Befund.
 
 ## Wichtig vorab
 
-- **Neu geholt wird immer an den Pfad der vorhandenen Rohdatei.** Der
-  Normalizer behält pro `doc_id` genau eine Datei und wählt sie nach
-  Textqualität, nicht nach Alter. Eine frische Kopie daneben kann verlieren —
-  dann bleibt der alte Text in der Datenbank. Genau daran scheitert der
-  bisherige automatische Reparaturlauf `repair-known-bad-generation.ts` (er
-  schreibt nach `<land>/gnr-<land>-<nr>/` statt `<land>/gnr-<nr>/`, und
-  Fehlschläge werden nie wiederholt). Mit diesem Branch startet die Pipeline
-  ihn nicht mehr.
+- **Landesrecht repariert die Pipeline selbst.** `repair-known-bad-generation.ts`
+  läuft in jedem Pipeline-Zyklus (8-Minuten-Häppchen, 2 s je Anfrage) und
+  schreibt an den normalen Pfad `<land>/gnr-<nr>/` (am 26.09. auf dem Server
+  nachgeprüft: 22.049 Dateien vom 23.–25.09. liegen dort, die Stichprobe
+  LBG40016037 ist mit `retrieved_at` 2026-09-24 in der Datenbank). Er hatte
+  sich aber zu früh für fertig erklärt: Sein Zähler verglich die Zahl
+  bearbeiteter Nummern mit der **schrumpfenden** Menge noch schlechter Seiten
+  — 25.327 Seiten wurden nie angefasst. Checkpoint v2 behebt das (Fertig erst,
+  wenn die Generation aus der Datenbank verschwunden ist; Fehlschläge und
+  Seiten, die nach 48 h noch schlecht sind, werden bis zu dreimal wiederholt).
+  Nach dem Deploy setzt der Lauf von selbst fort; ein v1-„fertig“ zählt nicht.
+  Schritt 2 unten ist nur nötig, wenn es schneller gehen soll — **nie
+  gleichzeitig** mit dem Pipeline-Lauf.
 - **RIS-Regeln** (`server/scripts/ris-pace.ts`): höchstens 0,5 Anfragen/s pro
   Prozess (2 s Pause, fest eingebaut), höchstens zwei Download-Prozesse
   gleichzeitig, Massendownloads nur 20–05 Uhr, am Wochenende und an
@@ -52,8 +57,8 @@ P="docker exec subsumio-engine-corpus-pipeline-1"
 ## Schritt 0 — Stand prüfen
 
 ```bash
-# 1. Dieser Branch ist deployt (sonst startet die Pipeline den alten Reparaturlauf weiter):
-$P grep -c "ABGELÖST" scripts/repair-known-bad-generation.ts   # erwartet: 1
+# 1. Dieser Branch ist deployt (Checkpoint v2 der Landesrecht-Reparatur):
+$P grep -c "repair-known-bad-checkpoint" scripts/repair-known-bad-generation.ts   # erwartet: 1
 
 # 2. Keine anderen RIS-Abrufe laufen (höchstens EIN weiterer Prozess erlaubt):
 $P sh -c 'ps -eo pid,etime,args | grep -E "fetch-|refetch|repair-known|ris-delta|ris-inforce|ris-xml" | grep -v grep'
@@ -63,9 +68,9 @@ $P cat /law-corpus/_state/repair-law-at-landesrecht-2026-08-03.json 2>/dev/null 
 $P sh -c 'find /law-corpus/at-landesrecht -mindepth 2 -maxdepth 2 -type d -name "gnr-*-*" | wc -l'
 ```
 
-Die Verzeichnisse `gnr-<land>-<nr>` stammen vom alten Reparaturlauf. Sie
-werden nicht gelöscht: Schritt 2 überschreibt jede Kopie eines Dokuments mit
-dem frischen Text, egal welche der Normalizer danach wählt.
+Erwartet: 0 Verzeichnisse `gnr-<land>-<nr>` (am 26.09. so gemessen). Falls
+doch welche da sind: Schritt 2 überschreibt jede Kopie eines Dokuments mit dem
+frischen Text, egal welche der Normalizer danach wählt.
 
 ## Schritt 1 — Id-Listen erzeugen (nur lesend, keine RIS-Anfrage)
 
@@ -89,7 +94,11 @@ $P bun scripts/fetch-ris-pdf-corpus.ts --corpus Bezirke --dry-run \
    --ids /law-corpus/_state/rejected-law-at-bezirke-generation-known_bad.txt
 ```
 
-## Schritt 2 — Landesrecht neu holen (XML)
+## Schritt 2 — Landesrecht neu holen (XML) — optional, statt des Pipeline-Laufs
+
+Nur wenn es schneller gehen soll als die 8-Minuten-Häppchen der Pipeline.
+Vorher den Pipeline-Lauf anhalten (Pipeline pausieren), sonst holen zwei
+Prozesse dieselben Nummern.
 
 Aufwand: eine Anfrage je Dokumentnummer, bei 25.327 Nummern ≈ 25.300
 Anfragen × 2 s ≈ **14 h reine Pausenzeit** (mit Antwortzeiten ≈ 15–16 h),

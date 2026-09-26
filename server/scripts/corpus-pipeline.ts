@@ -1655,22 +1655,20 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
 // other fetcher here.
 
 //
-// 2026-09-26: switched off. The job writes the fresh file to
-// `<land>/gnr-<land>-<nr>/` (docFilePath with the land-qualified statute_id)
-// while the fetcher's file sits at `<land>/gnr-<nr>/`; the normalizer keeps
-// ONE file per doc_id chosen by text quality, not recency, so the fresh copy
-// can lose and the page stays known_bad. It also marks failed fetches as
-// processed and never retries them. Replaced by the operator runbook
-// docs/guides/korpus-reparatur-0803.md (list-rejected-pages.ts →
-// fetch-at-landesrecht-xml.ts --ids, which overwrites the existing file).
-const KNOWN_BAD_REPAIR_JOBS: { sourceId: string; generation: string }[] = [];
+// 2026-09-26: the job had stopped as "done" with 25,327 pages untouched
+// (its v1 checkpoint compared a growing id list with a shrinking known-bad
+// set). Checkpoint v2 fixes that; a v1 checkpoint's "done" is ignored below.
+const KNOWN_BAD_REPAIR_JOBS = [{ sourceId: "law-at-landesrecht", generation: "2026-08-03" }];
 
 function knownBadRepairDone(sourceId: string, generation: string): boolean {
   const checkpointPath = join(CORPUS, "_state", `repair-${sourceId}-${generation}.json`);
   if (!existsSync(checkpointPath)) return false;
   try {
-    const cp = JSON.parse(readFileSync(checkpointPath, "utf-8")) as { done?: boolean };
-    return cp.done === true;
+    const cp = JSON.parse(readFileSync(checkpointPath, "utf-8")) as {
+      done?: boolean;
+      version?: number;
+    };
+    return cp.version === 2 && cp.done === true;
   } catch {
     return false;
   }

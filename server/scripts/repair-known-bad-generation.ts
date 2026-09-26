@@ -3,14 +3,6 @@
  * Repairs the 2026-08-03 Landesrecht fetch generation instead of leaving it
  * blanket-flagged forever.
  *
- * ABGELÖST (2026-09-26) — no longer started by corpus-pipeline.ts. It writes
- * the fresh file beside the old one (docFilePath uses the land-qualified
- * statute_id, "gnr-tir-10000001" instead of "gnr-10000001"), and the
- * normalizer's per-doc_id winner choice goes by text quality, not recency,
- * so the repair can silently lose. Failed fetches are checkpointed as
- * processed and never retried. Use docs/guides/korpus-reparatur-0803.md
- * (fetch-at-landesrecht-xml.ts --ids) instead.
- *
  * audit-plausibility-full.ts marks every page whose `frontmatter.retrieved_at
  * === "2026-08-03"` as `generation:known_bad` — a whole-generation flag, not
  * a per-page verdict. That flag was set because a 55-document sample of this
@@ -54,6 +46,12 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
+import {
+  duePending,
+  repairDone,
+  type Attempt,
+  type Checkpoint,
+} from "./repair-known-bad-checkpoint.ts";
 import { parseArgs } from "util";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
@@ -128,30 +126,37 @@ export function coverage(expected: string[], actual: string[]): number {
   return hit / expected.length;
 }
 
-interface Checkpoint {
-  source: string;
-  generation: string;
-  processedIds: string[];
-  written: number;
-  unchanged: number;
-  failed: number;
-  startedAt: string;
-  updatedAt: string;
-  done: boolean;
-}
-
 function loadCheckpoint(): Checkpoint {
   try {
     if (existsSync(CHECKPOINT_FILE)) {
-      return JSON.parse(readFileSync(CHECKPOINT_FILE, "utf-8")) as Checkpoint;
+      const raw = JSON.parse(readFileSync(CHECKPOINT_FILE, "utf-8")) as Record<string, unknown>;
+      if (raw.version === 2) return raw as unknown as Checkpoint;
+      // v1: its ids were attempted once; its "done" is not trusted.
+      const at = typeof raw.updatedAt === "string" ? raw.updatedAt : new Date().toISOString();
+      const attempts: Record<string, Attempt> = {};
+      for (const id of (raw.processedIds as string[] | undefined) ?? [])
+        attempts[id] = { n: 1, at, ok: true };
+      return {
+        version: 2,
+        source: SOURCE_ID,
+        generation: GENERATION,
+        attempts,
+        written: Number(raw.written) || 0,
+        unchanged: Number(raw.unchanged) || 0,
+        failed: Number(raw.failed) || 0,
+        startedAt: typeof raw.startedAt === "string" ? raw.startedAt : at,
+        updatedAt: at,
+        done: false,
+      };
     }
   } catch {
     /* corrupt or missing — start fresh */
   }
   return {
+    version: 2,
     source: SOURCE_ID,
     generation: GENERATION,
-    processedIds: [],
+    attempts: {},
     written: 0,
     unchanged: 0,
     failed: 0,
@@ -217,15 +222,8 @@ async function main() {
   await engine.connect(cfg);
 
   const cp = loadCheckpoint();
-  if (cp.done) {
-    console.log(`Bereits abgeschlossen (siehe ${CHECKPOINT_FILE}). Nichts zu tun.`);
-    await engine.disconnect();
-    return;
-  }
-  const alreadyDone = new Set(cp.processedIds);
-
   console.log(
-    `Reparatur ${SOURCE_ID} / Generation ${GENERATION}: ${alreadyDone.size.toLocaleString("de-AT")} bereits verarbeitet.`
+    `Reparatur ${SOURCE_ID} / Generation ${GENERATION}: ${Object.keys(cp.attempts).length.toLocaleString("de-AT")} Nummern schon versucht.`
   );
 
   const allRows = (await engine.executeRaw(
@@ -241,7 +239,10 @@ async function main() {
     [SOURCE_ID, GENERATION]
   )) as DbRow[];
 
-  const pending = allRows.filter((r) => !alreadyDone.has(r.doc_id));
+  // The set comes from the DB each run: a page leaves it once its repaired
+  // file is re-imported with a fresh retrieved_at — that, not our own
+  // bookkeeping, is what "repaired" means.
+  const pending = duePending(allRows, cp.attempts);
   console.log(
     `Insgesamt ${allRows.length.toLocaleString("de-AT")} Seiten in dieser Generation, ${pending.length.toLocaleString("de-AT")} offen.`
   );
@@ -270,8 +271,13 @@ async function main() {
     });
 
     processedThisRun++;
-    alreadyDone.add(row.doc_id);
-    cp.processedIds.push(row.doc_id);
+    const prevAttempt = cp.attempts[row.doc_id];
+    const attempt: Attempt = {
+      n: (prevAttempt?.n ?? 0) + 1,
+      at: new Date().toISOString(),
+      ok: false,
+    };
+    cp.attempts[row.doc_id] = attempt;
 
     if (!res || !res.ok) {
       cp.failed++;
@@ -307,6 +313,7 @@ async function main() {
       atomicWrite(filepath, markdown);
     }
 
+    attempt.ok = true;
     if (changed) {
       cp.written++;
       console.log(
@@ -322,19 +329,17 @@ async function main() {
     if (processedThisRun % 50 === 0) {
       saveCheckpoint(cp);
       console.log(
-        `  … ${cp.processedIds.length.toLocaleString("de-AT")}/${allRows.length.toLocaleString("de-AT")} — ${cp.written} repariert, ${cp.unchanged} bestätigt, ${cp.failed} fehlgeschlagen`
+        `  … ${processedThisRun.toLocaleString("de-AT")}/${pending.length.toLocaleString("de-AT")} dieses Laufs — ${cp.written} repariert, ${cp.unchanged} bestätigt, ${cp.failed} fehlgeschlagen`
       );
     }
   }
 
-  if (cp.processedIds.length >= allRows.length) {
-    cp.done = true;
-  }
+  cp.done = repairDone(allRows, cp.attempts);
   saveCheckpoint(cp);
 
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log(
-    `  ${cp.done ? "FERTIG" : "Zyklus beendet — Fortsetzung nächster Lauf"}: ${cp.processedIds.length.toLocaleString("de-AT")}/${allRows.length.toLocaleString("de-AT")} verarbeitet`
+    `  ${cp.done ? "FERTIG" : "Zyklus beendet — Fortsetzung nächster Lauf"}: ${allRows.length.toLocaleString("de-AT")} Seiten noch in dieser Generation, ${processedThisRun.toLocaleString("de-AT")} in diesem Lauf versucht`
   );
   console.log(
     `  Repariert: ${cp.written.toLocaleString("de-AT")} · Bestätigt: ${cp.unchanged.toLocaleString("de-AT")} · Fehlgeschlagen (bleibt markiert): ${cp.failed.toLocaleString("de-AT")}`
