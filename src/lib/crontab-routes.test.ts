@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // The server crontab (server/deploy/netcup/crontab) calls every job with
-// `curl -fsS … || true`: a plain GET, and a failure is swallowed. A route that
+// the wrapper cronjob.sh (curl -fsS): a plain GET unless -X POST is given. A route that
 // only exports POST therefore never runs in production, silently. This guard
 // keeps every scheduled path callable the way the crontab calls it.
 const root = process.cwd();
@@ -25,7 +25,10 @@ const calls = crontab
   .split("\n")
   .filter((line) => line.trim() && !line.trim().startsWith("#"))
   .flatMap((line) => {
-    const m = line.match(/http:\/\/web:3000(\/api\/[^\s"'|]+)/);
+    // Jobs run through the wrapper: `sh /etc/cronjob.sh <name> <path> [curl opts]`.
+    const m =
+      line.match(/cronjob\.sh\s+\S+\s+(\/api\/[^\s"'|]+)/) ??
+      line.match(/http:\/\/web:3000(\/api\/[^\s"'|]+)/);
     if (!m) return [];
     const method = /-X\s*POST|--request\s+POST|-d\s|--data/.test(line) ? "POST" : "GET";
     return [{ path: m[1].split("?")[0], method }];
