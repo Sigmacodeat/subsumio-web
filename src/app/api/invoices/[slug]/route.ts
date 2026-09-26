@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { can } from "@/lib/permissions";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -108,6 +109,15 @@ export const PATCH = createHandler(
         409
       );
     }
+    // Stellen (Entwurf → gestellt) ist eine anwaltliche Entscheidung; das
+    // Sekretariat bereitet den Entwurf vor und bucht Zahlungen.
+    if (issuing && !can(ctx.user, "invoice.issue")) {
+      return apiError(
+        "invoice_issue_forbidden",
+        "Rechnungen stellen nur Anwältinnen/Anwälte oder Administratoren. Der Entwurf bleibt gespeichert.",
+        403
+      );
+    }
     if (issuing) {
       const problem = invoiceIssueProblem({
         ...((currentRead.page.frontmatter ?? {}) as Record<string, unknown>),
@@ -176,7 +186,7 @@ export const PATCH = createHandler(
 
 export const DELETE = createHandler(
   {
-    action: "invoice.write",
+    action: "invoice.cancel",
     rateTier: "standard",
     audit: (_ctx, _body) => ({
       action: "invoice.delete" as const,

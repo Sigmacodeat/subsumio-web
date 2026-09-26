@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import { PERMISSIONS, can, forbidden, auditActionFor, type RouteAction } from "./permissions";
+import { can, forbidden, auditActionFor, type RouteAction } from "./permissions";
 import type { User } from "./auth/store";
 
 function mockUser(role: User["role"]): User {
@@ -21,36 +21,21 @@ function mockUser(role: User["role"]): User {
   };
 }
 
-describe("PERMISSIONS helper functions", () => {
-  test("canCreateInvoice — admin and lawyer only", () => {
-    expect(PERMISSIONS.canCreateInvoice("admin")).toBe(true);
-    expect(PERMISSIONS.canCreateInvoice("lawyer")).toBe(true);
-    expect(PERMISSIONS.canCreateInvoice("assistant")).toBe(false);
-    expect(PERMISSIONS.canCreateInvoice("client_viewer")).toBe(false);
+describe("Rechnungen: Sekretariat bereitet vor, Anwalt stellt", () => {
+  test("drafts: admin, lawyer, assistant", () => {
+    for (const role of ["admin", "lawyer", "assistant"] as const) {
+      expect(can(mockUser(role), "invoice.write")).toBe(true);
+    }
+    expect(can(mockUser("client_viewer"), "invoice.write")).toBe(false);
   });
 
-  test("canEditSettings — admin only", () => {
-    expect(PERMISSIONS.canEditSettings("admin")).toBe(true);
-    expect(PERMISSIONS.canEditSettings("lawyer")).toBe(false);
-  });
-
-  test("canManageTeam — admin only", () => {
-    expect(PERMISSIONS.canManageTeam("admin")).toBe(true);
-    expect(PERMISSIONS.canManageTeam("lawyer")).toBe(false);
-  });
-
-  test("canViewBrain — not client_viewer", () => {
-    expect(PERMISSIONS.canViewBrain("admin")).toBe(true);
-    expect(PERMISSIONS.canViewBrain("lawyer")).toBe(true);
-    expect(PERMISSIONS.canViewBrain("assistant")).toBe(true);
-    expect(PERMISSIONS.canViewBrain("client_viewer")).toBe(false);
-  });
-
-  test("canUseAI — admin, lawyer, assistant", () => {
-    expect(PERMISSIONS.canUseAI("admin")).toBe(true);
-    expect(PERMISSIONS.canUseAI("lawyer")).toBe(true);
-    expect(PERMISSIONS.canUseAI("assistant")).toBe(true);
-    expect(PERMISSIONS.canUseAI("client_viewer")).toBe(false);
+  test("issue/send and cancel/delete: admin and lawyer only", () => {
+    for (const action of ["invoice.issue", "invoice.cancel"] as const) {
+      expect(can(mockUser("admin"), action)).toBe(true);
+      expect(can(mockUser("lawyer"), action)).toBe(true);
+      expect(can(mockUser("assistant"), action)).toBe(false);
+      expect(can(mockUser("client_viewer"), action)).toBe(false);
+    }
   });
 });
 

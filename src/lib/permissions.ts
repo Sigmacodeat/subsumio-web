@@ -1,6 +1,6 @@
 /**
- * Berechtigungs-Matrix für Kanzlei-Rollen.
- * Jede Funktion prüft, ob die gegebene Rolle eine Aktion ausführen darf.
+ * Berechtigungs-Matrix für Kanzlei-Rollen. ACTION_ROLES ist die einzige
+ * Quelle: Server-Routen prüfen über can(), die Oberfläche richtet sich danach.
  *
  * Route-Level Actions: jede API-Route deklariert eine requiredAction;
  * engineContext() bzw. ein Route-Wrapper prüft diese zentral.
@@ -9,34 +9,6 @@
 import type { KanzleiRole, User } from "./auth/store";
 import type { AuditAction } from "./audit";
 import { isPlatformOperator } from "./auth/platform-operator";
-
-export const PERMISSIONS = {
-  canCreateInvoice: (role: KanzleiRole) => role === "admin" || role === "lawyer",
-
-  canCancelInvoice: (role: KanzleiRole) => role === "admin" || role === "lawyer",
-
-  canSendInvoice: (role: KanzleiRole) =>
-    role === "admin" || role === "lawyer" || role === "assistant",
-
-  canCreateTimeEntry: (role: KanzleiRole) =>
-    role === "admin" || role === "lawyer" || role === "assistant",
-
-  canEditDeadlines: (role: KanzleiRole) =>
-    role === "admin" || role === "lawyer" || role === "assistant",
-
-  canManageContacts: (role: KanzleiRole) =>
-    role === "admin" || role === "lawyer" || role === "assistant",
-
-  canGeneratePortalLink: (role: KanzleiRole) => role === "admin" || role === "lawyer",
-
-  canEditSettings: (role: KanzleiRole) => role === "admin",
-
-  canManageTeam: (role: KanzleiRole) => role === "admin",
-
-  canViewBrain: (role: KanzleiRole) => role !== "client_viewer",
-
-  canUseAI: (role: KanzleiRole) => role === "admin" || role === "lawyer" || role === "assistant",
-} as const;
 
 /** API-Route-Level Actions für RBAC + Audit */
 export type RouteAction =
@@ -66,7 +38,9 @@ export type RouteAction =
   | "settings.read" // GET /api/settings/*
   | "settings.write" // POST /api/settings/*
   | "invoice.read"
-  | "invoice.write"
+  | "invoice.write" // Rechnungsentwürfe anlegen/bearbeiten, Zahlungen buchen
+  | "invoice.issue" // Rechnung stellen oder versenden — nur admin, lawyer
+  | "invoice.cancel" // Rechnung stornieren oder Entwurf löschen — nur admin, lawyer
   | "invoice.e_invoice"
   | "expenses.read" // GET /api/expenses
   | "expenses.create" // POST /api/expenses
@@ -170,7 +144,11 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "settings.read": ["admin", "lawyer", "assistant"],
   "settings.write": ["admin"],
   "invoice.read": ["admin", "lawyer", "assistant"],
+  // Sekretariat legt Entwürfe an und bearbeitet sie; stellen, versenden,
+  // stornieren und löschen bleibt bei Anwalt/Admin.
   "invoice.write": ["admin", "lawyer", "assistant"],
+  "invoice.issue": ["admin", "lawyer"],
+  "invoice.cancel": ["admin", "lawyer"],
   "invoice.e_invoice": ["admin", "lawyer", "assistant"],
   "expenses.read": ["admin", "lawyer", "assistant"],
   "expenses.create": ["admin", "lawyer", "assistant"],
@@ -302,6 +280,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "settings.write": "settings.update",
     "invoice.read": "invoice.create",
     "invoice.write": "invoice.create",
+    "invoice.issue": "invoice.send",
+    "invoice.cancel": "invoice.update",
     "invoice.e_invoice": "invoice.e_invoice_generate",
     "expenses.read": "case.view",
     "expenses.create": "expense.create",

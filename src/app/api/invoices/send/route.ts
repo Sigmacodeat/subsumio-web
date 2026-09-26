@@ -33,7 +33,9 @@ const sendSchema = z.object({
 
 export const POST = createHandler(
   {
-    action: "invoice.write",
+    // Versenden stellt die Rechnung (oder schickt eine gestellte erneut):
+    // nur Anwalt/Admin.
+    action: "invoice.issue",
     rateTier: "standard",
     body: sendSchema,
     audit: (_ctx, body) => ({
