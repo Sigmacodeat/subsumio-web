@@ -41,7 +41,7 @@ vi.mock("@/lib/auth/store", () => ({
 
 import { POST } from "./route";
 import { requireEngineContext } from "@/lib/engine";
-import { verifyActionToken } from "@/lib/auth/tokens";
+import { bindFragment, verifyActionToken } from "@/lib/auth/tokens";
 
 function join(userId: string) {
   vi.mocked(requireEngineContext).mockResolvedValue({
@@ -64,12 +64,13 @@ describe("POST /api/org/join", () => {
     update.mockClear();
     delete orgA.inviteRevokedAt;
     vi.mocked(verifyActionToken).mockResolvedValue({ bind: "bound" } as never);
+    vi.mocked(bindFragment).mockImplementation(async () => "bound");
   });
 
-  it("an invited colleague joins as lawyer, not as administrator", async () => {
+  it("an invite link without a role joins with the least privileged staff role, not as administrator", async () => {
     const res = await join("invitee");
     expect(res.status).toBe(200);
-    expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "lawyer" });
+    expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "assistant" });
   });
 
   it("the owner keeps the admin role when joining their own firm", async () => {
@@ -105,6 +106,56 @@ describe("POST /api/org/join", () => {
     } as never);
     const res = await join("invitee");
     expect(res.status).toBe(200);
-    expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "lawyer" });
+    expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "assistant" });
+  });
+});
+
+describe("POST /api/org/join — role from the signed invite", () => {
+  function joinWithRole(role: string | undefined) {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      headers: {},
+      brainId: "b",
+      plan: "team",
+      user: users.invitee,
+    } as any);
+    return POST(
+      new NextRequest("http://localhost:3000/api/org/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": "t", cookie: "sb_csrf=t" },
+        body: JSON.stringify({
+          token: "tok",
+          org: "org_a",
+          email: users.invitee.email,
+          ...(role ? { role } : {}),
+        }),
+      })
+    );
+  }
+
+  beforeEach(() => {
+    update.mockClear();
+    delete orgA.inviteRevokedAt;
+    vi.mocked(bindFragment).mockImplementation(async (v: string) => `bound:${v}`);
+    // The invite was issued for a read-only client account.
+    vi.mocked(verifyActionToken).mockResolvedValue({
+      bind: "bound:org_a:kollegin@kanzlei.at:client_viewer",
+    } as never);
+  });
+
+  it("joins with the role the invite was issued for", async () => {
+    const res = await joinWithRole("client_viewer");
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "client_viewer" });
+  });
+
+  it("a role changed in the link does not match the signed invite", async () => {
+    expect((await joinWithRole("lawyer")).status).toBe(400);
+    expect((await joinWithRole(undefined)).status).toBe(400);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("admin can never be requested", async () => {
+    expect((await joinWithRole("admin")).status).toBe(400);
+    expect(update).not.toHaveBeenCalled();
   });
 });

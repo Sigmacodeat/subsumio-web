@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function JoinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string; org?: string; email?: string }>;
+  searchParams: Promise<{ token?: string; org?: string; email?: string; role?: string }>;
 }) {
   const params = await searchParams;
   const me = await getSessionUser();
@@ -27,6 +27,7 @@ export default async function JoinPage({
       token: params.token ?? "",
       org: params.org ?? "",
       email: params.email ?? "",
+      ...(params.role ? { role: params.role } : {}),
     }).toString();
     redirect(`/de/signup?next=${encodeURIComponent(`/de/join?${qs}`)}`);
   }
@@ -35,6 +36,7 @@ export default async function JoinPage({
       token={params.token ?? ""}
       org={params.org ?? ""}
       email={params.email ?? ""}
+      role={params.role ?? ""}
       myEmail={me.email}
     />
   );

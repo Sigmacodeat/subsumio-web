@@ -20,13 +20,22 @@ import { Skeleton, RowSkeleton } from "@/components/dashboard/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { teamErrorText } from "./team-errors";
+import { DEFAULT_INVITE_ROLE, INVITE_ROLES, isInviteRole, type InviteRole } from "@/lib/invite-roles";
 
 interface Member {
   id: string;
   name: string;
   email: string;
+  role?: string;
   isOwner: boolean;
 }
+
+const ROLE_LABEL_KEYS: Record<string, DashboardKey> = {
+  admin: "settings.role_admin",
+  lawyer: "settings.role_lawyer",
+  assistant: "settings.role_assistant",
+  client_viewer: "settings.role_client_viewer",
+};
 
 interface OrgState {
   org: { id: string; name: string; ownerId: string } | null;
@@ -48,6 +57,8 @@ export default function TeamPage() {
   const [devJoinUrl, setDevJoinUrl] = useState<string | null>(null);
   const [orgName, setOrgName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  // Least privileged staff role by default; never admin (the owner promotes later).
+  const [inviteRole, setInviteRole] = useState<InviteRole>(DEFAULT_INVITE_ROLE);
 
   const loading = orgQuery.isLoading;
   const state = (orgQuery.data ?? { org: null }) as OrgState;
@@ -234,6 +245,9 @@ export default function TeamPage() {
                       </p>
                       <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
                         {m.email}
+                        {m.role && ROLE_LABEL_KEYS[m.role] && (
+                          <> · {t(ROLE_LABEL_KEYS[m.role])}</>
+                        )}
                       </p>
                     </div>
                     {state.isOwner && !m.isOwner && (
@@ -282,7 +296,7 @@ export default function TeamPage() {
                 </div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
                   Die eingeladene Person erhält per E-Mail einen Link, mit dem sie dem Team
-                  beitritt. Der Link ist 7 Tage gültig.
+                  mit der gewählten Rolle beitritt. Der Link ist 7 Tage gültig.
                 </p>
                 <form
                   className="flex flex-col gap-3 sm:flex-row"
@@ -292,10 +306,14 @@ export default function TeamPage() {
                     setNotice(null);
                     setDevJoinUrl(null);
                     try {
-                      const data = await inviteMutation.mutateAsync(inviteEmail);
+                      const data = await inviteMutation.mutateAsync({
+                        email: inviteEmail,
+                        role: inviteRole,
+                      });
                       setNotice(t("team.invite_sent"));
                       if (data?.devJoinUrl) setDevJoinUrl(data.devJoinUrl);
                       setInviteEmail("");
+                      setInviteRole(DEFAULT_INVITE_ROLE);
                     } catch (err) {
                       handleErr(err);
                     }
@@ -312,6 +330,23 @@ export default function TeamPage() {
                       placeholder="kollegin@kanzlei.at"
                       required
                     />
+                  </label>
+                  <label className="sm:w-56">
+                    <span className="sr-only">Rolle im Team</span>
+                    <select
+                      aria-label="Rolle im Team"
+                      value={inviteRole}
+                      onChange={(e) => {
+                        if (isInviteRole(e.target.value)) setInviteRole(e.target.value);
+                      }}
+                      className="h-full w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                    >
+                      {INVITE_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {t(ROLE_LABEL_KEYS[r])}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <Button type="submit" disabled={busy}>
                     Einladen

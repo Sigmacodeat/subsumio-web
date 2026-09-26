@@ -4,11 +4,19 @@ import { effectivePlan } from "@/lib/billing/trial";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { limitsFor } from "@/lib/plans";
 import { createHandler, apiError } from "@/lib/api-handler";
+import {
+  DEFAULT_INVITE_ROLE,
+  INVITE_ROLES,
+  inviteBinding,
+  type InviteRole,
+} from "@/lib/invite-roles";
 
 const joinSchema = z.object({
   token: z.string().min(1, "token_required"),
   org: z.string().min(1, "org_required"),
   email: z.string().email("invalid_email"),
+  /** The role the invite was issued for — checked against the signed binding. */
+  role: z.enum(INVITE_ROLES).optional(),
 });
 
 export const POST = createHandler(
@@ -31,7 +39,11 @@ export const POST = createHandler(
     }
 
     const payload = await verifyActionToken(body.token, "invite");
-    if (!payload || payload.bind !== (await bindFragment(`${orgId}:${email}`))) {
+    // The role comes only from the signed invite. Links from before roles were
+    // bound carry none and join with the least privileged role.
+    const role: InviteRole = body.role ?? DEFAULT_INVITE_ROLE;
+    const expectedBind = inviteBinding(orgId, email, body.role ?? null);
+    if (!payload || payload.bind !== (await bindFragment(expectedBind))) {
       return apiError("invalid_or_expired_invite", "Invite ungültig oder abgelaufen", 400);
     }
 
@@ -80,10 +92,10 @@ export const POST = createHandler(
 
     // A joining member is NOT an administrator of the firm they join. Their own
     // signup made them admin of their (now unused) personal workspace; inside
-    // the firm the owner assigns roles (/api/team/role).
+    // the firm they get the role the owner chose in the invite.
     await store.update(ctx.user.id, {
       orgId: org.id,
-      ...(org.ownerId === ctx.user.id ? {} : { role: "lawyer" as const }),
+      ...(org.ownerId === ctx.user.id ? {} : { role }),
     });
     return Response.json({ ok: true, org: { name: org.name } });
   }

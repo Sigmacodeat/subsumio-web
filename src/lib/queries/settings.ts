@@ -208,11 +208,12 @@ export function useCreateOrg() {
 export function useInviteMemberOrg() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (email: string) =>
+    // `role` defaults server-side to the least privileged staff role.
+    mutationFn: (input: string | { email: string; role?: string }) =>
       csrfFetch("/api/org/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(typeof input === "string" ? { email: input } : input),
       }).then((r) => jsonOrThrow<{ ok?: boolean; devJoinUrl?: string }>(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
