@@ -16,7 +16,9 @@ import {
 } from "@/lib/conflict-gate";
 import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 import {
+  FRONTMATTER_IN_CONTENT_REJECTION,
   GUARD_READ_FAILED,
+  hasLeadingFrontmatter,
   checkCreateOverExisting,
   checkInvoiceWrite,
   guardProtectedPageWrite,
@@ -276,6 +278,11 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, req) => {
     try {
+      // Metadata travels only in title/type/frontmatter, where the guards
+      // below see it — never as a YAML block inside the content.
+      if (hasLeadingFrontmatter(body.content)) {
+        return rejectionResponse(FRONTMATTER_IN_CONTENT_REJECTION);
+      }
       // Every write — merge or create — is judged against the stored page, so
       // a create over an existing slug cannot slip past the guards. Fail
       // closed: an unreadable page is not written.

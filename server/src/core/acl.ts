@@ -7,7 +7,16 @@
  *   - Pages WITH page_permissions rows are restricted to members of those groups.
  *   - aclGroups = undefined or "all" → no filtering (trusted admin / legacy).
  *   - aclGroups = string[] → only pages where the caller's groups have a matching row.
+ *   - aclGroups = [] (a user in no group) → only open pages. An empty list is
+ *     NOT "no filter": leaving a user's last group must never widen access.
  */
+
+/** True when `aclGroups` asks for no document-level filtering at all. */
+export function aclUnrestricted(
+  aclGroups: string[] | "all" | undefined
+): aclGroups is "all" | undefined {
+  return aclGroups === undefined || aclGroups === "all";
+}
 
 import type { BrainEngine } from "./engine.ts";
 
@@ -33,14 +42,20 @@ export interface PagePermission {
  *   - aclGroups is undefined or "all" (no enforcement)
  *   - The page has no page_permissions rows (open-by-default)
  *   - The page has a permission row matching one of the caller's groups
+ * An empty group list sees open pages only.
  */
 export async function isPageAccessible(
   engine: BrainEngine,
   pageId: number,
   aclGroups: string[] | "all" | undefined
 ): Promise<boolean> {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return true;
+  if (aclUnrestricted(aclGroups)) return true;
+  if (aclGroups.length === 0) {
+    const [row] = await engine.executeRaw<{ count: number }>(
+      `SELECT count(*)::int AS count FROM page_permissions WHERE page_id = $1`,
+      [pageId]
+    );
+    return !row || Number(row.count) === 0;
   }
 
   const [row] = await engine.executeRaw<{ count: number; matching: number }>(
@@ -52,24 +67,32 @@ export async function isPageAccessible(
 
   if (!row) return true;
   // No permissions rows = open access
-  if (row.count === 0) return true;
+  if (Number(row.count) === 0) return true;
   // Has permissions → must match at least one group
-  return row.matching > 0;
+  return Number(row.matching) > 0;
 }
 
 /**
  * Filter page IDs by ACL accessibility. Returns the subset of pageIds
- * that the caller's groups can access.
+ * that the caller's groups can access (an empty group list: open pages only).
  */
 export async function filterPagesByACL(
   engine: BrainEngine,
   pageIds: number[],
   aclGroups: string[] | "all" | undefined
 ): Promise<number[]> {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return pageIds;
-  }
+  if (aclUnrestricted(aclGroups)) return pageIds;
   if (pageIds.length === 0) return [];
+  if (aclGroups.length === 0) {
+    const open = await engine.executeRaw<{ page_id: number }>(
+      `SELECT p.id AS page_id
+       FROM pages p
+       WHERE p.id = ANY($1::int[])
+         AND NOT EXISTS (SELECT 1 FROM page_permissions pp WHERE pp.page_id = p.id)`,
+      [pageIds]
+    );
+    return open.map((r) => Number(r.page_id));
+  }
 
   const accessible = await engine.executeRaw<{ page_id: number }>(
     `SELECT p.id AS page_id
@@ -85,7 +108,7 @@ export async function filterPagesByACL(
     [pageIds, aclGroups]
   );
 
-  return accessible.map((r) => r.page_id);
+  return accessible.map((r) => Number(r.page_id));
 }
 
 /**
@@ -96,9 +119,13 @@ export async function filterPagesByACL(
 export function aclFilterClause(
   aclGroups: string[] | "all" | undefined,
   paramOffset: number
-): { clause: string; params: string[] } | null {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return null;
+): { clause: string; params: string[][] } | null {
+  if (aclUnrestricted(aclGroups)) return null;
+  if (aclGroups.length === 0) {
+    return {
+      clause: `AND NOT EXISTS (SELECT 1 FROM page_permissions pp WHERE pp.page_id = p.id)`,
+      params: [],
+    };
   }
 
   return {
@@ -109,7 +136,7 @@ export function aclFilterClause(
         WHERE pp.page_id = p.id AND pp.group_id = ANY($${paramOffset}::uuid[])
       )
     )`,
-    params: [JSON.stringify(aclGroups)],
+    params: [aclGroups],
   };
 }
 

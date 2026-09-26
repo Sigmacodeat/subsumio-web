@@ -12,12 +12,22 @@ function createFakeFetch(pages: Record<string, PageResponse>) {
     const path = urlObj.pathname;
     // Handle POST to /api/pages (create/update page — used by record())
     if (init?.method === "POST" && path === "/api/pages") {
-      const body = JSON.parse(init.body ?? "{}") as { slug?: string; content?: string };
+      const body = JSON.parse(init.body ?? "{}") as {
+        slug?: string;
+        content?: string;
+        frontmatter?: { original_slug?: string; original_name?: string };
+      };
+      // Like the engine: metadata only as structured frontmatter.
+      if ((body.content ?? "").startsWith("---")) {
+        return new Response(JSON.stringify({ error: "frontmatter_in_content" }), { status: 400 });
+      }
       const slug = body.slug ?? "";
-      const content = body.content ?? "";
-      const originalSlug = content.match(/original_slug: "([^"]+)"/)?.[1];
-      const originalName = content.match(/original_name: "([^"]+)"/)?.[1];
-      pages[slug] = { frontmatter: { original_slug: originalSlug, original_name: originalName } };
+      pages[slug] = {
+        frontmatter: {
+          original_slug: body.frontmatter?.original_slug,
+          original_name: body.frontmatter?.original_name,
+        },
+      };
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }
     const match = path.match(/\/api\/pages\/(.+)$/);

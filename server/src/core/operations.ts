@@ -425,6 +425,11 @@ export interface AuthInfo {
   webUserId?: string;
   /** Matters the bound web user may read but not change. */
   matterReadOnly?: string[];
+  /**
+   * Document-level ACL groups of the bound web user (core/acl.ts): "all" for
+   * admins, otherwise the user's groups ([] = open pages only).
+   */
+  aclGroups?: string[] | "all";
 }
 
 export interface OperationContext {
@@ -569,12 +574,21 @@ export interface OperationContext {
   /**
    * Subsumio R3: Document-level ACL groups for this caller.
    * undefined / "all" = no ACL filtering (trusted admin, legacy).
-   * string[] = only pages accessible to these group UUIDs are visible.
+   * string[] = only pages accessible to these group UUIDs are visible;
+   * [] (a user in no group) = open pages only.
    *
    * Set by buildOperationContext from opts.aclGroups, populated by the
    * web-api middleware from the caller's access_group_members rows.
    */
   aclGroups?: string[] | "all";
+  /**
+   * Set by the web API for every op it runs for a signed-in user: the call
+   * itself is trusted (remote: false), but the written content and
+   * frontmatter come from an end user. Engine-owned frontmatter markers
+   * (content-sanity gate: quarantine, content_flag, embed_skip) are then
+   * dropped exactly as for remote callers — only the gate sets them.
+   */
+  endUserWrite?: boolean;
   /**
    * Subsumio Ethical Wall: Web-app user ID of the caller.
    * Set by the web-api middleware from the session user.
@@ -753,14 +767,15 @@ export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolea
  * Subsumio R3: Async document-level ACL filter for search results.
  * Filters results by page_id against page_permissions + access_group_members.
  * Pages with NO permission rows are open-by-default.
- * Returns the input array unchanged when aclGroups is undefined/"all"/empty.
+ * Returns the input array unchanged when aclGroups is undefined/"all"; an
+ * empty group list keeps open pages only.
  */
 export async function aclFilter<T extends { page_id?: number }>(
   results: T[],
   ctx: OperationContext
 ): Promise<T[]> {
   const groups = ctx.aclGroups;
-  if (!groups || groups === "all" || groups.length === 0) return results;
+  if (groups === undefined || groups === "all") return results;
   if (results.length === 0) return results;
   const { filterPagesByACL } = await import("./acl.ts");
   const pageIds = results.map((r) => r.page_id).filter((id): id is number => id != null);
@@ -1045,7 +1060,7 @@ const get_page: Operation = {
     // set, verify the page is accessible. Pages with no permission rows
     // are open-by-default. Denied pages throw the same error as not-found
     // to prevent information leakage.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all") {
       const { isPageAccessible } = await import("./acl.ts");
       const accessible = await isPageAccessible(ctx.engine, page.id, ctx.aclGroups);
       if (!accessible) {
@@ -1320,7 +1335,8 @@ const put_page: Operation = {
         // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
         // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
         // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
-        remote: ctx.remote !== false,
+        // The web API's end-user writes are treated the same way.
+        remote: ctx.remote !== false || ctx.endUserWrite === true,
         ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
         // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
         // inferType behavior when undefined).
@@ -1913,11 +1929,29 @@ const purge_deleted_pages: Operation = {
  */
 const FRONTMATTER_ARRAY_FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+/**
+ * Frontmatter keys no array op may touch: the content-sanity gate's markers
+ * (only the gate sets them) and a matter's access rules (only the matter
+ * access route changes them).
+ */
+const RESERVED_ARRAY_FIELDS: ReadonlySet<string> = new Set([
+  "quarantine",
+  "content_flag",
+  "embed_skip",
+  "permissions",
+]);
+
 function assertFrontmatterArrayField(value: unknown, param: string): string {
   if (typeof value !== "string" || !FRONTMATTER_ARRAY_FIELD_RE.test(value)) {
     throw new OperationError(
       "invalid_params",
       `${param} must be a plain top-level frontmatter key (letters, digits, underscore).`
+    );
+  }
+  if (RESERVED_ARRAY_FIELDS.has(value)) {
+    throw new OperationError(
+      "invalid_params",
+      `${param} '${value}' is managed by the engine and cannot be changed with an array operation.`
     );
   }
   return value;
@@ -2290,7 +2324,7 @@ const list_pages: Operation = {
     }));
 
     // Subsumio R3: Filter by document-level ACLs.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all" && pages.length > 0) {
       const { filterPagesByACL } = await import("./acl.ts");
       const accessibleIds = new Set(
         await filterPagesByACL(
@@ -2854,6 +2888,8 @@ const takes_search: Operation = {
     return ctx.engine.searchTakes(p.query as string, {
       limit: p.limit as number | undefined,
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only the caller's own sources (several firms share one database).
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-search", positional: ["query"] },
@@ -3765,7 +3801,8 @@ const resolve_slugs: Operation = {
     partial: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
-    return ctx.engine.resolveSlugs(p.partial as string);
+    // Several firms share one database: only the caller's own sources.
+    return ctx.engine.resolveSlugs(p.partial as string, sourceScopeOpts(ctx));
   },
   scope: "read",
 };
@@ -3800,6 +3837,8 @@ const log_ingest: Operation = {
   handler: async (ctx, p) => {
     if (ctx.dryRun) return { dry_run: true, action: "log_ingest" };
     await ctx.engine.logIngest({
+      // The entry belongs to the caller's source, not to the host default.
+      ...(ctx.sourceId ? { source_id: ctx.sourceId } : {}),
       source_type: p.source_type as string,
       source_ref: p.source_ref as string,
       pages_updated: p.pages_updated as string[],
@@ -5290,7 +5329,17 @@ const forget_fact: Operation = {
     const id = p.id as number;
     const reason = typeof p.reason === "string" ? p.reason : undefined;
     const { forgetFactInFence } = await import("./facts/forget.ts");
-    const result = await forgetFactInFence(ctx.engine, id, { reason });
+    // Untrusted callers may only forget facts of their own sources; a fact
+    // of another source behaves exactly like a missing one.
+    const scope = sourceScopeOpts(ctx);
+    const allowedSourceIds =
+      ctx.remote === false
+        ? undefined
+        : (scope.sourceIds ?? (scope.sourceId ? [scope.sourceId] : ["default"]));
+    const result = await forgetFactInFence(ctx.engine, id, {
+      reason,
+      ...(allowedSourceIds ? { allowedSourceIds } : {}),
+    });
     if (!result.ok && result.path === "not_found") {
       throw new OperationError("fact_not_found", `Fact id ${id} not found.`);
     }
@@ -7169,7 +7218,7 @@ const statute_currency_check: Operation = {
     compare_live: {
       type: "boolean",
       description:
-        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI",
+        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Local callers only (default: true); ignored for remote callers.",
     },
   },
   scope: "read",
@@ -7179,7 +7228,9 @@ const statute_currency_check: Operation = {
     const statuteFilter = typeof p.statute_id === "string" ? p.statute_id.toLowerCase() : undefined;
     const isLocal = ctx.remote === false;
     const compareCorpus = typeof p.compare_corpus === "boolean" ? p.compare_corpus : isLocal;
-    const compareLive = typeof p.compare_live === "boolean" ? p.compare_live : isLocal;
+    // Live lookups hit public law portals with strict rate limits (RIS-OGD):
+    // only trusted local callers may trigger them, never a remote client.
+    const compareLive = isLocal && (typeof p.compare_live === "boolean" ? p.compare_live : true);
 
     // Query law pages from the brain. The slug pattern is:
     //   legal/statutes/<jur>/<abbr>/<section-id>
@@ -7832,7 +7883,7 @@ const acl_create_group: Operation = {
       description: "Group name (e.g. 'Familienrecht', 'Assistenten')",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { createAccessGroup } = await import("./acl.ts");
     return createAccessGroup(ctx.engine, ctx.sourceId, String(p.name));
@@ -7846,7 +7897,7 @@ const acl_delete_group: Operation = {
   params: {
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { deleteAccessGroup } = await import("./acl.ts");
     const ok = await deleteAccessGroup(ctx.engine, String(p.group_id), ctx.sourceId);
@@ -7862,7 +7913,7 @@ const acl_add_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { addGroupMember } = await import("./acl.ts");
     const ok = await addGroupMember(
@@ -7886,7 +7937,7 @@ const acl_remove_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removeGroupMember } = await import("./acl.ts");
     const ok = await removeGroupMember(
@@ -7927,7 +7978,7 @@ const acl_set_page_permission: Operation = {
       description: "Permission level: 'read' or 'write'",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { setPagePermission } = await import("./acl.ts");
     const slug = String(p.slug);
@@ -7960,7 +8011,7 @@ const acl_remove_page_permission: Operation = {
     slug: { type: "string", required: true, description: "Page slug" },
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removePagePermission } = await import("./acl.ts");
     const slug = String(p.slug);

@@ -389,12 +389,31 @@ async function storedDuplicateByHash(
   return findStoredDocumentReferenceByHash(hash, sourceId, caseSlug);
 }
 
-async function versionUploadSlug(slug: string, data: Buffer, sourceId: string): Promise<string> {
+/**
+ * The slug an upload is written to: `slug` while nothing lives there yet,
+ * otherwise `slug-<content hash>` — an upload never overwrites an existing
+ * page (any state), whether or not that page has a stored original.
+ */
+export async function versionedUploadSlug(
+  engine: BrainEngine,
+  slug: string,
+  contentHash: string,
+  sourceId: string
+): Promise<string> {
+  const versioned = `${slug}-${contentHash.slice(0, 10)}`;
+  if (await engine.getPage(slug, { sourceId, includeDeleted: true })) return versioned;
   const { findStoredUploadForPage } = await import("../core/file-store.ts");
-  const existing = await findStoredUploadForPage(slug, sourceId);
-  if (!existing) return slug;
-  const hash = createHash("sha256").update(data).digest("hex").slice(0, 10);
-  return `${slug}-${hash}`;
+  return (await findStoredUploadForPage(slug, sourceId)) ? versioned : slug;
+}
+
+async function versionUploadSlug(
+  engine: BrainEngine,
+  slug: string,
+  data: Buffer,
+  sourceId: string
+): Promise<string> {
+  const hash = createHash("sha256").update(data).digest("hex");
+  return versionedUploadSlug(engine, slug, hash, sourceId);
 }
 
 interface ParsedMultipart {
@@ -1696,7 +1715,7 @@ export async function graphVisibleSlugs(
     visible = await filterByMatterScope(engine, req, visible, scope);
   }
   const groups = req.aclGroups;
-  if (groups && groups !== "all" && groups.length > 0 && visible.length > 0) {
+  if (groups !== undefined && groups !== "all" && visible.length > 0) {
     const { filterPagesByACL } = await import("../core/acl.ts");
     const accessible = new Set(
       await filterPagesByACL(
@@ -1715,16 +1734,92 @@ export async function graphVisibleSlugs(
  * binding counts (case_slug, case_ref, …; core/matter-binding.ts): rows
  * without frontmatter get their current binding from the database in bulk.
  */
-function filterByMatterScope<T extends BindingRow>(
+async function filterByMatterScope<T extends BindingRow>(
   engine: BrainEngine,
   req: Request,
   results: T[],
   scope: string[] | "all"
 ): Promise<T[]> {
-  return filterRowsByMatterBinding(engine, results, scope, {
+  const inScope = await filterRowsByMatterBinding(engine, results, scope, {
     sourceId: requestSourceId(req),
     sources: readSourcesFor(req),
   });
+  return filterRowsByAcl(engine, req, inScope);
+}
+
+/** True when the caller's document-level ACL restricts what they may see. */
+function aclRestricted(req: Request): boolean {
+  return req.aclGroups !== undefined && req.aclGroups !== "all";
+}
+
+/**
+ * The slugs (of `slugs`) the caller's document-level ACL groups do NOT reach:
+ * a slug is denied when any stored copy in the caller's read sources carries
+ * page_permissions none of the caller's groups match. Empty for unrestricted
+ * callers (admins, trusted calls without an identity token).
+ */
+async function aclDeniedSlugs(
+  engine: BrainEngine,
+  req: Request,
+  slugs: ReadonlyArray<string | null | undefined>
+): Promise<Set<string>> {
+  const groups = req.aclGroups;
+  const denied = new Set<string>();
+  if (groups === undefined || groups === "all") return denied;
+  const list = [
+    ...new Set(slugs.filter((x): x is string => typeof x === "string" && x.length > 0)),
+  ];
+  if (list.length === 0) return denied;
+  const sources = readSourcesFor(req) ?? [requestSourceId(req)];
+  const rows = await engine.executeRaw<{ id: number; slug: string }>(
+    `SELECT id, slug FROM pages WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[])`,
+    [list, sources]
+  );
+  if (rows.length === 0) return denied;
+  const { filterPagesByACL } = await import("../core/acl.ts");
+  const ok = new Set(
+    await filterPagesByACL(
+      engine,
+      rows.map((r) => Number(r.id)),
+      groups
+    )
+  );
+  for (const r of rows) if (!ok.has(Number(r.id))) denied.add(r.slug);
+  return denied;
+}
+
+/** Drop rows whose page the caller's document-level ACL does not reach. */
+async function filterRowsByAcl<T extends { slug?: string }>(
+  engine: BrainEngine,
+  req: Request,
+  rows: T[]
+): Promise<T[]> {
+  if (!aclRestricted(req) || rows.length === 0) return rows;
+  const denied = await aclDeniedSlugs(
+    engine,
+    req,
+    rows.map((r) => r.slug)
+  );
+  if (denied.size === 0) return rows;
+  return rows.filter((r) => !(typeof r.slug === "string" && denied.has(r.slug)));
+}
+
+/**
+ * Document-level ACL guard for page-bound routes: a page restricted to groups
+ * the caller is not in behaves exactly like a missing page.
+ */
+async function assertSlugsAclAccess(
+  engine: BrainEngine,
+  req: Request,
+  slugs: ReadonlyArray<string | null | undefined>
+): Promise<void> {
+  if (!aclRestricted(req)) return;
+  const denied = await aclDeniedSlugs(engine, req, slugs);
+  for (const slug of denied) {
+    throw new EngineNotFoundError(
+      `Page ${slug} is outside the caller's matter scope. This is intentionally indistinguishable from not found.`
+    );
+  }
 }
 
 /**
@@ -1745,6 +1840,8 @@ async function assertPageMatterAccess(
     write?: boolean;
   } = {}
 ): Promise<void> {
+  // Document-level ACL first: it applies whatever the matter scope says.
+  await assertSlugsAclAccess(engine, req, [slug]);
   const scope = req.matterScope;
   const readOnly = req.matterReadOnly ?? [];
   const restricted = scope !== undefined && scope !== "all";
@@ -1829,6 +1926,7 @@ async function assertSlugsMatterScope(
     ...new Set(slugs.filter((x): x is string => typeof x === "string" && x.length > 0)),
   ];
   for (const slug of list) assertMatterScope(scope, slug, caseSlug);
+  await assertSlugsAclAccess(engine, req, list);
   if (scope === undefined || scope === "all" || list.length === 0) return;
   const bindings = await resolveRowBindings(
     engine,
@@ -1877,7 +1975,8 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * Subsumio R3: Middleware that resolves the caller's document-level ACL groups.
  * Reads the user_id from the identity token, queries access_group_members for
  * the caller's source, and attaches the group UUIDs to req.aclGroups.
- * "all" = no ACL filtering (admin or no groups configured).
+ * "all" = no ACL filtering (admins and trusted calls without an identity token);
+ * a user in no group gets [] and sees only pages without page_permissions.
  */
 /**
  * The access rules of every matter in a source that has any, cached briefly:
@@ -1994,8 +2093,9 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
         return;
       }
       const { getUserGroups } = await import("../core/acl.ts");
-      const groupIds = await getUserGroups(engine, payload.userId, sourceId);
-      req.aclGroups = groupIds.length > 0 ? groupIds : "all";
+      // A user in no group gets an empty list (open pages only), never "all":
+      // leaving the last group must not widen what the user can see.
+      req.aclGroups = await getUserGroups(engine, payload.userId, sourceId);
       next();
     } catch (e) {
       // Fail-closed: if ACL resolution fails, do NOT widen to "all".
@@ -2092,6 +2192,41 @@ function readSourcesFor(req: Request): string[] | undefined {
   return [own];
 }
 
+/**
+ * Stub page for an upload whose extraction runs in the background, so the
+ * document is visible (with its matter, type and `processing` status) right
+ * away; the extract-document worker overwrites it on completion. put_page
+ * reads metadata only from the YAML block of `content`, so the block is
+ * built here.
+ */
+export async function putProcessingPlaceholder(
+  engine: BrainEngine,
+  slug: string,
+  title: string,
+  frontmatter: Record<string, unknown>,
+  sourceId: string = "default",
+  allowedSources?: string[],
+  matterScope?: string[] | "all",
+  aclGroups?: string[] | "all"
+): Promise<unknown> {
+  const fm: Record<string, unknown> = { ...frontmatter, title };
+  for (const key of Object.keys(fm)) {
+    if (fm[key] === undefined || fm[key] === null) delete fm[key];
+  }
+  const { dump } = await import("js-yaml");
+  const yamlBlock = dump(fm, { lineWidth: -1, noRefs: true }).trimEnd();
+  const content = `---\n${yamlBlock}\n---\n\n> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n`;
+  return invokeOp(
+    engine,
+    "put_page",
+    { slug, content },
+    sourceId,
+    allowedSources,
+    matterScope,
+    aclGroups
+  );
+}
+
 export async function invokeOp(
   engine: BrainEngine,
   name: string,
@@ -2104,6 +2239,9 @@ export async function invokeOp(
 ): Promise<unknown> {
   const result = await dispatchToolCall(engine, name, params, {
     remote: false,
+    // Trusted server-to-server call, but page content and frontmatter come
+    // from a web user: engine-owned markers are dropped as for remote writes.
+    endUserWrite: true,
     sourceId,
     ...(allowedSources ? { allowedSources } : {}),
     ...(matterScope ? { matterScope } : {}),
@@ -2824,7 +2962,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               let beaSlug =
                 String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
                 slugFromUpload(source, file.filename, title);
-              beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
+              beaSlug = await versionUploadSlug(engine, beaSlug, file.data, tenantSource);
               await importFromContent(engine, beaSlug, event.content, {
                 noEmbed,
                 sourceId: tenantSource,
@@ -2928,7 +3066,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         let slug = slugFromUpload(source, file.filename, title);
-        slug = await versionUploadSlug(slug, file.data, tenantSource);
+        slug = await versionUploadSlug(engine, slug, file.data, tenantSource);
         const caseSlug = payload.case_slug?.trim();
 
         const uploadFrontmatter: Record<string, unknown> = {
@@ -3043,21 +3181,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // Stub page so the document is visible as `processing` immediately.
           // The extract-document worker overwrites it with the extracted
           // content (and the terminal extraction_status) on completion.
-          await invokeOp(
+          await putProcessingPlaceholder(
             engine,
-            "put_page",
+            slug,
+            title ?? file.filename.replace(/\.[^.]+$/, ""),
             {
-              slug,
-              title: title ?? file.filename.replace(/\.[^.]+$/, ""),
-              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-              frontmatter: {
-                ...uploadFrontmatter,
-                type: uploadFrontmatter.type ?? "document",
-                extraction_status: "processing",
-                extraction_queued_at: new Date().toISOString(),
-                upload_size: file.data.byteLength,
-              },
-              merge: false,
+              ...uploadFrontmatter,
+              type: uploadFrontmatter.type ?? "document",
+              extraction_status: "processing",
+              extraction_queued_at: new Date().toISOString(),
+              upload_size: file.data.byteLength,
             },
             tenantSource
           );
@@ -3966,7 +4099,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         .map(gapSlug)
         .filter((g): g is string => typeof g === "string" && g.length > 0);
       const visibleGaps =
-        matterScope !== "all" && gapSlugs.length > 0
+        (matterScope !== "all" || aclRestricted(req)) && gapSlugs.length > 0
           ? new Set(
               (
                 await filterByMatterScope(
@@ -4539,8 +4672,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "old_slug_and_new_slug_required");
           return;
         }
-        await assertSlugMatterScope(engine, req, oldSlug);
-        await assertSlugMatterScope(engine, req, newSlug);
+        // Marking changes both pages: they must be visible and writable.
+        await assertPageMatterAccess(engine, req, oldSlug, { loadStored: true, write: true });
+        await assertPageMatterAccess(engine, req, newSlug, { loadStored: true, write: true });
         const { markSuperseded } = await import("../core/matter-scope.ts");
         await markSuperseded(engine, oldSlug, newSlug, requestSourceId(req));
         res.json({ success: true });
@@ -4563,8 +4697,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "slug_a_and_slug_b_required");
           return;
         }
-        await assertSlugMatterScope(engine, req, slugA);
-        await assertSlugMatterScope(engine, req, slugB);
+        await assertPageMatterAccess(engine, req, slugA, { loadStored: true, write: true });
+        await assertPageMatterAccess(engine, req, slugB, { loadStored: true, write: true });
         const { markContradiction } = await import("../core/matter-scope.ts");
         await markContradiction(engine, slugA, slugB, requestSourceId(req));
         res.json({ success: true });
@@ -4853,12 +4987,30 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       const sourceId = requestSourceId(req);
       const pageForScope = await engine.getPage(slug, { sourceId, includeDeleted: true });
-      await assertPageMatterAccess(engine, req, slug, { stored: pageForScope });
+      // Irreversible: needs write access to the matter, like deleting the page.
+      await assertPageMatterAccess(engine, req, slug, { stored: pageForScope, write: true });
+      // A legal hold on the document or its matter overrides any erasure.
+      const fm = (pageForScope?.frontmatter ?? {}) as Record<string, unknown>;
+      const caseSlug = typeof fm.case_slug === "string" && fm.case_slug ? fm.case_slug : null;
+      const casePage = caseSlug ? await engine.getPage(caseSlug, { sourceId }) : null;
+      if (fm.legal_hold === true || casePage?.frontmatter?.legal_hold === true) {
+        apiError(
+          res,
+          409,
+          "legal_hold_active",
+          "The document or its matter is under legal hold; lift the hold before purging files."
+        );
+        return;
+      }
       const { purgeStoredFilesForPage } = await import("../core/file-store.ts");
       const deleted = await purgeStoredFilesForPage(slug, sourceId, ctx(req).config.storage);
       res.json({ ok: true, deleted });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
+      if (e instanceof OperationError && e.code === "matter_read_only") {
+        res.status(403).json({ error: e.code, message: msg });
+        return;
+      }
       const status = e instanceof EngineNotFoundError ? 404 : 500;
       res.status(status).json({ error: "file_purge_failed", message: msg });
     }
@@ -5110,14 +5262,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
          LIMIT 10000`,
         [sourceId]
       );
+      // Same visibility as every other read: matter scope and document ACL.
+      const truncated = rows.length === 10000;
+      const visible = await filterByMatterScope(engine, req, rows, req.matterScope ?? "all");
 
       res.json({
         format: "subsumio-export-v1",
         exported_at: new Date().toISOString(),
         source: sourceId,
-        page_count: rows.length,
-        truncated: rows.length === 10000,
-        pages: rows.map((r) => ({
+        page_count: visible.length,
+        truncated,
+        pages: visible.map((r) => ({
           slug: r.slug,
           title: r.title,
           type: r.type,
@@ -5171,12 +5326,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       let existingContent: string | undefined;
       let existingTitle: string | undefined;
       let existingType: string | undefined;
-      // A case page's access rules (frontmatter.permissions) are loaded for
-      // every case write, so they survive a full overwrite and only change
-      // through the web app's matter-access route (header below).
-      const touchesAccess =
-        merge || type === "legal_case" || Object.hasOwn(bodyFrontmatter, "permissions");
-      if (touchesAccess) {
+      if (merge) {
         try {
           const existingRaw = await invokeOp(
             engine,
@@ -5206,10 +5356,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // page doesn't exist yet — merge degrades to create
         }
       }
-      // Only a merge builds on the stored page; a full write keeps nothing of
-      // it except the access rules applied below.
-      const existingPermissions = existingFrontmatter.permissions;
-      const storedType = existingType;
+      // A page's access rules (frontmatter.permissions — walls, team,
+      // grants) are taken from the STORED page on every write, whatever the
+      // write says about the page type (body.type, frontmatter.type or none),
+      // so they survive a full overwrite and only change through the web
+      // app's matter-access route (header below). Read directly, not through
+      // the caller's scope: a page hidden from the caller is refused below.
+      const storedPage = await engine.getPage(slug, { sourceId, includeDeleted: true });
+      const storedFrontmatter =
+        storedPage?.frontmatter && typeof storedPage.frontmatter === "object"
+          ? (storedPage.frontmatter as Record<string, unknown>)
+          : {};
+      const existingPermissions = storedFrontmatter.permissions;
+      const storedType = storedPage?.type ?? existingType;
       if (!merge) {
         existingFrontmatter = {};
         existingContent = undefined;
@@ -5253,14 +5412,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         if (canonical) frontmatter.case_slug = canonical;
       }
 
-      let markdown = content;
-      if (Object.keys(frontmatter).length > 0) {
-        // js-yaml handles quoting/escaping (colons, newlines, unicode) so
-        // user-supplied values can't break out of the frontmatter block.
-        const { dump } = await import("js-yaml");
-        const yamlBlock = dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
-        markdown = `---\n${yamlBlock}\n---\n\n${content}`;
-      }
+      // Page metadata comes only from `title`/`type`/`frontmatter`, where the
+      // web app's write guards see it. The page always gets our own YAML
+      // block (also when empty), so a YAML block the caller put at the start
+      // of `content` is stored as body text and never read as metadata.
+      // js-yaml handles quoting/escaping (colons, newlines, unicode) so
+      // user-supplied values can't break out of the frontmatter block.
+      const { dump } = await import("js-yaml");
+      const yamlBlock = dump(frontmatter, { lineWidth: -1, noRefs: true }).trimEnd();
+      const markdown = `---\n${yamlBlock}\n---\n\n${content}`;
 
       // The new frontmatter and the stored page (whatever the caller's scope —
       // a page hidden from them must not be overwritten as if it were new)
@@ -6060,6 +6220,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
       }
 
+      // P0-SECR-002: case uploads require the caller to be scoped to the
+      // target case with write access — checked before anything is written,
+      // for beA exports and ordinary documents alike.
+      const caseSlug = fields.case_slug?.trim();
+      if (caseSlug) {
+        await assertSlugMatterScope(engine, req, caseSlug);
+        assertMatterWritable(req, caseSlug);
+      }
+
       const opCtx = ctx(req);
       const tenantSource = opCtx.sourceId ?? "default";
       await ensureSource(tenantSource);
@@ -6093,7 +6262,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             let beaSlug =
               String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
               slugFromUpload(source, file.filename, title);
-            beaSlug = await versionUploadSlug(beaSlug, getFileData(), tenantSource);
+            beaSlug = await versionUploadSlug(engine, beaSlug, getFileData(), tenantSource);
+            // The target page itself must be in the caller's scope before it
+            // is written (not after).
+            await assertSlugMatterScope(engine, req, beaSlug);
             await importFromContent(engine, beaSlug, event.content, {
               noEmbed,
               sourceId: tenantSource,
@@ -6104,7 +6276,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             // Stamp case_slug on the BEA page so discoverAllCaseDocuments
             // can find it. Without this stamp, the BEA message is invisible
             // to the legal pipeline's case-accumulation logic.
-            const beaCaseSlug = fields.case_slug?.trim() || undefined;
+            const beaCaseSlug = caseSlug || undefined;
             if (beaCaseSlug) {
               try {
                 await patchPageFrontmatter(engine, beaSlug, tenantSource, {
@@ -6133,7 +6305,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               });
               return;
             }
-            await assertSlugMatterScope(engine, req, beaSlug);
             const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
             // E2: Trigger legal-pipeline for beA XML imports.
             // Use the real case_slug (not beaSlug) so the pipeline
@@ -6171,6 +6342,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
           // Not a beA export — fall through to generic document import.
         } catch (err) {
+          // An access refusal is final, never a reason to import generically.
+          if (err instanceof EngineNotFoundError || err instanceof OperationError) throw err;
           console.error(
             `[web-api] beA XML parse failed, falling back to generic import: ${err instanceof Error ? err.message : String(err)}`
           );
@@ -6178,14 +6351,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       let slug = slugFromUpload(source, file.filename, title);
-      slug = await versionUploadSlug(slug, getFileData(), tenantSource);
-
-      // P0-SECR-002: case uploads require the caller to be scoped to the target case.
-      const caseSlug = fields.case_slug?.trim();
-      if (caseSlug) {
-        await assertSlugMatterScope(engine, req, caseSlug);
-        assertMatterWritable(req, caseSlug);
-      }
+      slug = await versionUploadSlug(engine, slug, getFileData(), tenantSource);
       // G18 fix: validate matter scope against the document slug BEFORE
       // persistence. Pre-fix, this check was after runExtractionAndImport,
       // so a matter-scoped caller could persist a document on the wrong
@@ -6240,21 +6406,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         // Stub page so the document is visible as `processing` immediately;
         // the extract-document worker overwrites it on completion.
-        await invokeOp(
+        await putProcessingPlaceholder(
           engine,
-          "put_page",
+          slug,
+          title ?? file.filename.replace(/\.[^.]+$/, ""),
           {
-            slug,
-            title: title ?? file.filename.replace(/\.[^.]+$/, ""),
-            content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-            frontmatter: {
-              ...uploadFrontmatter,
-              type: uploadFrontmatter.type ?? "document",
-              extraction_status: "processing",
-              extraction_queued_at: new Date().toISOString(),
-              upload_size: file.size,
-            },
-            merge: false,
+            ...uploadFrontmatter,
+            type: uploadFrontmatter.type ?? "document",
+            extraction_status: "processing",
+            extraction_queued_at: new Date().toISOString(),
+            upload_size: file.size,
           },
           tenantSource,
           undefined,
@@ -6344,6 +6505,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // error — return 415 with the actionable guidance so the UI can show it.
       if (e instanceof UnsupportedUploadError) {
         res.status(415).json({ error: "unsupported_format", message: msg });
+        return;
+      }
+      if (e instanceof EngineNotFoundError) {
+        res.status(404).json({ error: "page_not_found", message: "Page not found." });
         return;
       }
       if (e instanceof OperationError && e.code === "matter_read_only") {
@@ -7249,9 +7414,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           pending.title
         );
         // Version check uses hash, not full buffer
-        const { findStoredUploadForPage } = await import("../core/file-store.ts");
-        const existingPage = await findStoredUploadForPage(slug, pending.sourceId);
-        const versionedSlug = existingPage ? `${slug}-${contentHash.slice(0, 10)}` : slug;
+        const versionedSlug = await versionedUploadSlug(
+          engine,
+          slug,
+          contentHash,
+          pending.sourceId
+        );
 
         const uploadFrontmatter: Record<string, unknown> = {
           source: "upload",
@@ -7365,21 +7533,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         let stampFailures: string[] | undefined;
         if (asyncExtract) {
           // Stub page
-          await invokeOp(
+          await putProcessingPlaceholder(
             engine,
-            "put_page",
+            versionedSlug,
+            pending.title ?? pending.filename.replace(/\.[^.]+$/, ""),
             {
-              slug: versionedSlug,
-              title: pending.title ?? pending.filename.replace(/\.[^.]+$/, ""),
-              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
-              frontmatter: {
-                ...uploadFrontmatter,
-                type: uploadFrontmatter.type ?? "document",
-                extraction_status: "processing",
-                extraction_queued_at: new Date().toISOString(),
-                upload_size: fileSize,
-              },
-              merge: false,
+              ...uploadFrontmatter,
+              type: uploadFrontmatter.type ?? "document",
+              extraction_status: "processing",
+              extraction_queued_at: new Date().toISOString(),
+              upload_size: fileSize,
             },
             pending.sourceId,
             undefined,
@@ -8940,8 +9103,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const response = tabularRunToApiResponse(state);
       // Matter-scope: Zeilen außerhalb des Scopes werden ausgefiltert —
       // dieselbe Postur wie bei der Suchergebnis-Filterung.
-      if (req.matterScope && req.matterScope !== "all") {
-        response.rows = await filterByMatterScope(engine, req, state.rows, req.matterScope);
+      if ((req.matterScope && req.matterScope !== "all") || aclRestricted(req)) {
+        response.rows = await filterByMatterScope(
+          engine,
+          req,
+          state.rows,
+          req.matterScope ?? "all"
+        );
       }
       res.json(response);
     } catch (e) {
@@ -9368,6 +9536,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
         matterScope: req.matterScope ?? "all",
+        aclGroups: req.aclGroups ?? "all",
       });
       res.json(buch);
     } catch (e) {
@@ -9389,6 +9558,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         sourceId: requestSourceId(req),
         caseSlug: typeof req.query.case === "string" ? req.query.case : undefined,
         matterScope: req.matterScope ?? "all",
+        aclGroups: req.aclGroups ?? "all",
       });
       const ics = baueIcs(buch);
       res.setHeader("Content-Type", "text/calendar; charset=utf-8");
@@ -10691,6 +10861,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     express.json({ limit: "1mb" }),
     async (req: Request, res: Response) => {
       try {
+        // The dream cycle works on the whole installation (every firm's
+        // pages, model calls): in multi-tenant mode only the operator's cron
+        // (a shared law source, no user identity) may start it — never a
+        // firm, not even a firm admin.
+        if (requireTenant && (req.userId !== undefined || !/^law-/.test(requestSourceId(req)))) {
+          res.status(403).json({
+            error: "host_admin_only",
+            message:
+              "Der Lernzyklus ist installationsweit und in Multi-Tenant-Deployments dem Betreiber vorbehalten.",
+          });
+          return;
+        }
         const { runDream } = await import("../commands/dream.ts");
         // The nightly web cron sends the COMPLETE list of firms that switched
         // "Kanzlei-Gehirn lernt mit" off. Reconcile the persisted flags to it
@@ -10746,12 +10928,31 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         ...(q.severity ? { severity: q.severity } : {}),
         limit,
       })) as {
-        contradictions?: unknown[];
+        contradictions?: Array<{ a?: { slug?: string }; b?: { slug?: string } }>;
         run_id?: string;
         ran_at?: string;
       };
+      // A finding is shown only when the caller may see BOTH documents:
+      // matter scope (walls, restricted matters, grants) and document ACL.
+      const all = result.contradictions ?? [];
+      const slugs = [...new Set(all.flatMap((f) => [f.a?.slug ?? "", f.b?.slug ?? ""]))].filter(
+        (x) => x.length > 0
+      );
+      const visible = new Set(
+        (
+          await filterByMatterScope(
+            engine,
+            req,
+            slugs.map((slug) => ({ slug })),
+            req.matterScope ?? "all"
+          )
+        ).map((r) => r.slug)
+      );
+      const findings = all.filter(
+        (f) => visible.has(f.a?.slug ?? "") && visible.has(f.b?.slug ?? "")
+      );
       res.json({
-        findings: result.contradictions ?? [],
+        findings,
         last_run: result.run_id ? { run_id: result.run_id, ran_at: result.ran_at ?? null } : null,
       });
     } catch (e) {
@@ -11254,6 +11455,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const v = Array.isArray(src) ? src[0] : src;
     return v && /^[a-z0-9:_-]{1,200}$/i.test(v) ? v : null;
   };
+  // A firm's tokens are named `web-mcp:<source>:<label>` (labels carry no
+  // colon). Exact prefix comparison — never LIKE, where `_` in a source id
+  // would match any character — plus no further colon, so a source never
+  // matches the tokens of a source whose id merely starts with it.
+  const MCP_TOKEN_OF_SOURCE = `left(name, length($PREFIX)) = $PREFIX
+       AND position(':' in substr(name, length($PREFIX) + 1)) = 0`;
+  const mcpTokenOfSource = (param: string) => MCP_TOKEN_OF_SOURCE.replaceAll("$PREFIX", param);
 
   app.get("/api/mcp-tokens", guard, async (req: Request, res: Response) => {
     const src = mcpSource(req);
@@ -11271,8 +11479,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         revoked_at: string | null;
       }>(
         `SELECT id, name, permissions, created_at, last_used_at, revoked_at FROM access_tokens
-          WHERE name LIKE $1 ORDER BY created_at DESC LIMIT 100`,
-        [`web-mcp:${src}:%`]
+          WHERE ${mcpTokenOfSource("$1::text")} ORDER BY created_at DESC LIMIT 100`,
+        [`web-mcp:${src}:`]
       );
       res.json({
         tokens: rows.map((r) => {
@@ -11343,9 +11551,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const updated = await engine.executeRaw<{ id: string }>(
         `UPDATE access_tokens SET revoked_at = now()
-          WHERE id = $1 AND name LIKE $2 AND revoked_at IS NULL
+          WHERE id = $1 AND ${mcpTokenOfSource("$2::text")} AND revoked_at IS NULL
           RETURNING id`,
-        [String(req.params.id), `web-mcp:${src}:%`]
+        [String(req.params.id), `web-mcp:${src}:`]
       );
       if (updated.length === 0) {
         apiError(res, 404, "mcp_token_not_found");

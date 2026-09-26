@@ -34,8 +34,9 @@ interface MockAclContext {
 // ── Mock ACL Engine (mirrors server/src/core/acl.ts logic) ───────────
 
 function mockIsPageAccessible(ctx: MockAclContext, pageId: number): boolean {
-  // Open-by-default: no ACL groups defined → no filtering
-  if (ctx.aclGroups === undefined || ctx.aclGroups === "all" || ctx.aclGroups.length === 0) {
+  // No filtering only for undefined / "all". An empty list (a user in no
+  // group) sees open pages only — leaving the last group never widens access.
+  if (ctx.aclGroups === undefined || ctx.aclGroups === "all") {
     return true;
   }
 
@@ -119,14 +120,15 @@ describe("ACL Runtime: Open-by-Default", () => {
     expect(mockIsPageAccessible(ctx, 101)).toBe(true);
   });
 
-  it("empty aclGroups array means no filtering", () => {
+  it("empty aclGroups array (user in no group) sees open pages only", () => {
     const ctx: MockAclContext = {
       pagePermissions: PAGE_PERMISSIONS,
       userGroups: [],
       role: "user",
       aclGroups: [],
     };
-    expect(mockIsPageAccessible(ctx, 101)).toBe(true);
+    expect(mockIsPageAccessible(ctx, 101)).toBe(false);
+    expect(mockIsPageAccessible(ctx, 104)).toBe(true);
   });
 });
 

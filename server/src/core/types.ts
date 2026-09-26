@@ -378,9 +378,20 @@ export const PAGE_SORT_SQL: Record<NonNullable<PageFilters["sort"]>, string> = {
  * microseconds — ordering and comparing on the millisecond-truncated value
  * keeps rows written within the same millisecond from being skipped at a
  * page boundary; p.id breaks ties so the order is total.
+ *
+ * The key is taken in UTC (`AT TIME ZONE 'UTC'` gives a plain timestamp), so
+ * the expression is immutable and matches the list index
+ * `pages_list_updated_keyset_idx` (migration v150) — a list page reads the
+ * index in order instead of sorting the whole firm.
  */
-export const UPDATED_DESC_KEYSET_KEY = "date_trunc('milliseconds', p.updated_at)";
+export const UPDATED_DESC_KEYSET_KEY =
+  "date_trunc('milliseconds', p.updated_at AT TIME ZONE 'UTC')";
 export const UPDATED_DESC_KEYSET_ORDER = `${UPDATED_DESC_KEYSET_KEY} DESC, p.id DESC`;
+
+/** The cursor timestamp in the key's form (UTC, no time zone). */
+export function updatedDescKeysetCursor(param: string): string {
+  return `(${param}::timestamptz AT TIME ZONE 'UTC')`;
+}
 
 /**
  * Encode a keyset cursor for `updated_desc` list paging

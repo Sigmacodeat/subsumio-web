@@ -61,6 +61,23 @@ describe("POST /api/upload-token", () => {
     expect((await res.json()).error).toBe("case_archived");
   });
 
+  it("refuses a matter the user may only read with 403 matter_read_only", async () => {
+    casePage = {
+      slug: "legal/cases/m1",
+      type: "legal_case",
+      frontmatter: {
+        status: "active",
+        permissions: {
+          visibility: "confidential",
+          grants: [{ user_id: "u1", level: "read" }],
+        },
+      },
+    };
+    const res = await request();
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("matter_read_only");
+  });
+
   it("issues a token for an active matter", async () => {
     casePage = { slug: "legal/cases/m1", type: "legal_case", frontmatter: { status: "active" } };
     const res = await request();

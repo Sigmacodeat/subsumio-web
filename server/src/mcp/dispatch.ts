@@ -98,6 +98,11 @@ export interface DispatchOpts {
    */
   aclGroups?: string[] | "all";
   /**
+   * The web API writes on behalf of an end user (see
+   * OperationContext.endUserWrite).
+   */
+  endUserWrite?: boolean;
+  /**
    * Subsumio Ethical Wall: Web-app user ID of the caller.
    * Set by the web-api middleware from the session user.
    * Threaded through to OperationContext.userId for engine-layer
@@ -273,7 +278,9 @@ export function buildOperationContext(
     // (OAuth token permissions). Undefined = no enforcement (legacy/CLI).
     matterScope: opts.matterScope ?? opts.auth?.matterScope,
     // Subsumio R3: Thread document-level ACL groups into the context.
-    aclGroups: opts.aclGroups,
+    // A web MCP token carries its user's groups on the auth record.
+    aclGroups: opts.aclGroups ?? opts.auth?.aclGroups,
+    ...(opts.endUserWrite === true ? { endUserWrite: true } : {}),
     userId: opts.userId,
   };
 }

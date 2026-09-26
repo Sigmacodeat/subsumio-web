@@ -594,7 +594,7 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // Subsumio R3: Filter gathered pages by document-level ACLs.
   // Pages with NO permission rows are open-by-default.
   const aclGroups = opts.aclGroups;
-  if (aclGroups && aclGroups !== "all" && aclGroups.length > 0 && gather.pages.length > 0) {
+  if (aclGroups !== undefined && aclGroups !== "all" && gather.pages.length > 0) {
     const { filterPagesByACL } = await import("../acl.ts");
     const pageIds = gather.pages
       .map((p) => (p as unknown as { page_id?: number }).page_id)

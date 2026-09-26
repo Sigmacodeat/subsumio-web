@@ -306,6 +306,45 @@ describe("tool calls under the owner's matter guard", () => {
   });
 });
 
+describe("document ACL of the token owner", () => {
+  test("a lawyer in no group sees no group-restricted page; the admin does", async () => {
+    const { createAccessGroup, setPagePermission } = await import("../src/core/acl.ts");
+    const g = await createAccessGroup(engine, SOURCE, "Nur Partner");
+    const open = await engine.getPage("cases/open", { sourceId: SOURCE });
+    await setPagePermission(engine, open!.id, g.id, "read", SOURCE);
+    try {
+      const lawyer = await resolveWebMcpToken(
+        engine,
+        { sourceId: SOURCE, userId: "u-lawyer" },
+        statusOf
+      );
+      const adm = await resolveWebMcpToken(
+        engine,
+        { sourceId: SOURCE, userId: "u-admin" },
+        statusOf
+      );
+      expect(typeof lawyer === "object" && lawyer.aclGroups).toEqual([]);
+      expect(typeof adm === "object" && adm.aclGroups).toBe("all");
+      const call = (aclGroups: string[] | "all", name: string, params: Record<string, unknown>) =>
+        dispatchToolCall(engine, name, params, {
+          remote: true,
+          sourceId: SOURCE,
+          matterScope: ["*"],
+          matterGuard: { scope: ["*"], readOnly: [] },
+          aclGroups,
+        });
+      expect((await call([], "get_page", { slug: "cases/open" })).isError).toBe(true);
+      const listed = await call([], "list_pages", { limit: 50 });
+      expect(listed.content[0]!.text).not.toContain("cases/open");
+      const resolved = await call([], "resolve_slugs", { partial: "cases/open" });
+      expect(resolved.content[0]!.text).not.toContain("cases/open");
+      expect((await call("all", "get_page", { slug: "cases/open" })).isError).toBeFalsy();
+    } finally {
+      await engine.executeRaw(`DELETE FROM page_permissions WHERE page_id = $1`, [open!.id]);
+    }
+  });
+});
+
 describe("token management routes", () => {
   test("creating a token needs a signed identity and binds it to that user", async () => {
     const anon = await fetch(`${base}/api/mcp-tokens`, {

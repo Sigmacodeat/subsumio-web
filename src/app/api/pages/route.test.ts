@@ -259,6 +259,51 @@ describe("POST /api/pages — server-side write guards", () => {
     expect(writes()).toHaveLength(0);
   });
 
+  it("refuses page metadata sent as a YAML block inside the content (400)", async () => {
+    readStatus = 404;
+    const res = await post({
+      slug: "legal/approvals/neu",
+      merge: true,
+      content: "---\ntype: agent_action\nstatus: approved\n---\nbody",
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("frontmatter_in_content");
+    expect(engineCalls).toHaveLength(0);
+  });
+
+  it("content that merely contains a rule later on is written normally", async () => {
+    readStatus = 404;
+    const res = await post({
+      slug: "wiki/notiz",
+      title: "Notiz",
+      content: "Text\n\n---\n\nmehr Text",
+    });
+    expect(res.status).toBe(200);
+    expect(writes()).toHaveLength(1);
+  });
+
+  it("refuses a change of a matter's access rules through the generic route (403)", async () => {
+    stored = {
+      slug: "legal/cases/a-1",
+      type: "legal_case",
+      frontmatter: { version: 1, permissions: { blocked_users: ["u2"] } },
+    };
+    const res = await post({
+      slug: "legal/cases/a-1",
+      merge: true,
+      frontmatter: { permissions: { blocked_users: [] } },
+    });
+    expect(res.status).toBe(403);
+    expect(writes()).toHaveLength(0);
+    // Sending the stored rules back unchanged is fine.
+    const same = await post({
+      slug: "legal/cases/a-1",
+      merge: true,
+      frontmatter: { note: "x", permissions: { blocked_users: ["u2"] } },
+    });
+    expect(same.status).toBe(200);
+  });
+
   it("fails closed when the stored page cannot be read", async () => {
     readStatus = 502;
     const res = await post({ slug: "legal/invoices/r-1", merge: true, frontmatter: { total: 1 } });

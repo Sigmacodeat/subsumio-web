@@ -29,7 +29,11 @@ import { GBrainOAuthProvider, validateTokenEndpointAuthMethod } from "../core/oa
 import type { SqlQuery } from "../core/oauth-provider.ts";
 import { hasScope, ALLOWED_SCOPES_LIST, normalizeScopesInput } from "../core/scope.ts";
 import { summarizeMcpParams, dispatchToolCall } from "../mcp/dispatch.ts";
-import { MATTER_SCOPED_TOOLS } from "../core/minions/tools/brain-allowlist.ts";
+import {
+  MATTER_SCOPED_TOOLS,
+  TENANT_UNSAFE_TOOLS,
+  isTenantBoundClient,
+} from "../core/minions/tools/brain-allowlist.ts";
 import { makeWebUserStatusFetcher, resolveWebMcpToken } from "../core/web-mcp-token.ts";
 import { paramDefToSchema } from "../mcp/tool-defs.ts";
 import { getBrainHotMemoryMeta } from "../core/facts/meta-hook.ts";
@@ -2146,9 +2150,14 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               readOnly: authInfo.matterReadOnly ?? [],
             }
           : undefined;
+      // A client bound to a firm's source never sees tools that read across
+      // sources (see TENANT_UNSAFE_TOOLS).
+      const tenantClient = isTenantBoundClient(authInfo);
       const callableOperations = webMatterGuard
         ? mcpOperations.filter((op) => MATTER_SCOPED_TOOLS.has(op.name))
-        : mcpOperations;
+        : tenantClient
+          ? mcpOperations.filter((op) => !TENANT_UNSAFE_TOOLS.has(op.name))
+          : mcpOperations;
 
       // Create a fresh MCP server per request (stateless)
       const server = new Server(
@@ -2338,7 +2347,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               sourceId: tokenSourceId,
               // Hot memory is firm-wide; a user-bound token does not get it.
               ...(webMatterGuard
-                ? { matterGuard: webMatterGuard }
+                ? {
+                    matterGuard: webMatterGuard,
+                    // The bound user's document ACL; absent groups fail closed.
+                    aclGroups: authInfo.aclGroups ?? [],
+                  }
                 : { metaHook: getBrainHotMemoryMeta }),
               // v0.31 follow-up fix: thread auth so the whoami op (and any
               // future scope-aware handlers) can introspect the caller. The
