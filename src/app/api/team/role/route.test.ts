@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+vi.mock("@/lib/auth/session", () => ({ revokeAllSessions: vi.fn(async () => undefined) }));
 vi.mock("@/lib/auth/rate-limit", () => ({
   hit: vi.fn().mockResolvedValue({ ok: true, retryAfterSeconds: 0 }),
 }));
@@ -18,6 +19,7 @@ const users: Record<string, any> = {
   foreign: { id: "foreign", role: "admin", orgId: "org_b" },
   solo: { id: "solo", role: "admin", orgId: null },
 };
+const baseUsers = structuredClone(users);
 const update = vi.fn(async (id: string, patch: Record<string, unknown>) => ({
   ...users[id],
   ...patch,
@@ -41,6 +43,7 @@ vi.mock("@/lib/auth/store", () => ({
 
 import { POST } from "./route";
 import { requireEngineContext } from "@/lib/engine";
+import { logAudit } from "@/lib/audit";
 
 function as(userId: string) {
   vi.mocked(requireEngineContext).mockResolvedValue({
@@ -60,7 +63,11 @@ function body(userId: string, role: string) {
 }
 
 describe("POST /api/team/role", () => {
-  beforeEach(() => update.mockClear());
+  beforeEach(() => {
+    update.mockClear();
+    for (const k of Object.keys(users)) delete users[k];
+    Object.assign(users, structuredClone(baseUsers));
+  });
 
   it("lets the firm owner change a member's role", async () => {
     as("owner");
@@ -79,5 +86,37 @@ describe("POST /api/team/role", () => {
     as("solo");
     expect((await POST(body("member", "admin"))).status).toBe(403);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("the owner cannot give up the admin role, even with a second admin", async () => {
+    users.admin2 = { id: "admin2", role: "admin", orgId: "org_a" };
+    as("owner");
+    const res = await POST(body("owner", "lawyer"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("owner_must_stay_admin");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("a deactivated admin does not count as the remaining admin", async () => {
+    // Legacy record: the owner is not an admin.
+    users.owner.role = "lawyer";
+    users.admin2 = { id: "admin2", role: "admin", orgId: "org_a" };
+    users.admin3 = { id: "admin3", role: "admin", orgId: "org_a", deactivatedAt: "2026-01-01" };
+    as("owner");
+    const res = await POST(body("admin2", "lawyer"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("last_admin");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("records the old and the new role", async () => {
+    as("owner");
+    await POST(body("member", "assistant"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(vi.mocked(logAudit)).toHaveBeenCalledWith(
+      "team.role_change",
+      "user",
+      expect.objectContaining({ details: { oldRole: "lawyer", newRole: "assistant" } })
+    );
   });
 });

@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { getStore, getOrgStore, type KanzleiRole } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
+import { getTenant } from "@/lib/tenants";
+import { TenantAdminFailure, setMemberRole, tenantAdminMessage } from "@/lib/tenant-admin";
 
 const VALID_ROLES: KanzleiRole[] = ["admin", "lawyer", "assistant", "client_viewer"];
 
@@ -9,6 +10,9 @@ const roleChangeSchema = z.object({
   userId: z.string().min(1, "userId_and_role_required"),
   role: z.enum(VALID_ROLES as [KanzleiRole, ...KanzleiRole[]], { message: "invalid_role" }),
 });
+
+/** The role before the change, for the audit entry (set by the handler). */
+const previousRole = new WeakMap<object, string>();
 
 const handler = createHandler(
   {
@@ -19,7 +23,7 @@ const handler = createHandler(
       action: "team.role_change" as const,
       entityType: "user",
       entityId: body.userId,
-      details: { newRole: body.role },
+      details: { oldRole: previousRole.get(body) ?? null, newRole: body.role },
     }),
   },
   async (ctx, body, _query, _req) => {
@@ -46,21 +50,20 @@ const handler = createHandler(
       return apiError("not_in_your_org", "Diese Person gehört nicht zu Ihrer Kanzlei", 403);
     }
 
-    if (targetUser.id === ctx.user.id && targetUser.role === "admin" && body.role !== "admin") {
-      const orgMembers = await store.listByOrg(ctx.user.orgId);
-      const adminCount = orgMembers.filter((u) => u.role === "admin").length;
-      if (adminCount <= 1) {
-        return apiError(
-          "last_admin_cannot_change_role",
-          "Letzter Admin kann nicht degradiert werden",
-          409
-        );
+    // Same rules as the operator path (src/lib/tenant-admin.ts): the owner
+    // stays admin and the firm keeps at least one ACTIVE admin. The member's
+    // sessions are renewed so the new role applies at once.
+    previousRole.set(body, targetUser.role);
+    const tenant = await getTenant(org.id);
+    if (!tenant) return apiError("org_not_found", "Kanzlei nicht gefunden", 404);
+    try {
+      await setMemberRole(tenant, targetUser.id, body.role);
+    } catch (err) {
+      if (err instanceof TenantAdminFailure) {
+        return apiError(err.code, tenantAdminMessage(err.code), 409);
       }
+      throw err;
     }
-
-    await store.update(body.userId, { role: body.role });
-    // Open realtime streams were opened with the old role.
-    closeSseConnectionsForUser(body.userId);
     return Response.json({ ok: true, userId: body.userId, role: body.role });
   }
 );
