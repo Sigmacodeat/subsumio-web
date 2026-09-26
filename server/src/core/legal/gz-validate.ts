@@ -361,3 +361,77 @@ export function pruefeGZKonsistenz(
     befundeProGZ,
   };
 }
+
+// ── Zuordnung: tolerant normalisation + text search ─────────
+//
+// Same rules as the web app's src/lib/legal/geschaeftszahl.ts (a parity test
+// there imports this file): whitespace and case do not matter, the
+// Prüfbuchstabe is kept, a number written without it still matches the same
+// number with it, and text search takes whole tokens only ("11 Cg 3/25a"
+// never contains "1 Cg 3/25a"). File names may use "-" or "_" instead of "/".
+
+export interface GZTeile {
+  abteilung: string;
+  gattung: string;
+  aktenzahl: string;
+  jahr: string;
+  pruefzeichen: string | null;
+}
+
+export interface GZFund extends GZTeile {
+  raw: string;
+  index: number;
+  formatted: string;
+}
+
+const GZ_CORE =
+  "(\\d{1,4})\\s*([A-Za-zÄÖÜäöü]{1,4})\\s*(\\d{1,6})\\s*[/_-]\\s*(\\d{4}|\\d{2})([A-Za-z])?";
+const GZ_FULL_TOLERANT = new RegExp(`^\\s*${GZ_CORE}\\s*(?:-\\s*\\d+(?:\\.\\d+)*)?\\s*$`);
+const GZ_SEARCH = new RegExp(`(?<![\\p{L}\\p{N}])${GZ_CORE}(?![\\p{L}\\p{N}])`, "gu");
+
+function gzTeile(m: RegExpExecArray | RegExpMatchArray): GZTeile {
+  return {
+    abteilung: String(Number(m[1])),
+    gattung: m[2]!,
+    aktenzahl: String(Number(m[3])),
+    jahr: m[4]!,
+    pruefzeichen: m[5] ? m[5].toLowerCase() : null,
+  };
+}
+
+/** Tolerant parse of a whole value ("1Cg3/25a", "12 CG 34 / 25 X"). */
+export function normalisiereGZ(raw: unknown): GZTeile | null {
+  if (typeof raw !== "string") return null;
+  const m = GZ_FULL_TOLERANT.exec(raw);
+  return m ? gzTeile(m) : null;
+}
+
+export function formatiereGZ(t: GZTeile): string {
+  return `${t.abteilung} ${t.gattung} ${t.aktenzahl}/${t.jahr}${t.pruefzeichen ?? ""}`;
+}
+
+function gzStamm(t: GZTeile): string {
+  return `${t.abteilung}${t.gattung.toLowerCase()}${t.aktenzahl}/${t.jahr}`;
+}
+
+/** "12cg34/25x" — key incl. Prüfbuchstabe. */
+export function gzSchluessel(t: GZTeile): string {
+  return `${gzStamm(t)}${t.pruefzeichen ?? ""}`;
+}
+
+export function gleicheGZ(a: GZTeile, b: GZTeile): boolean {
+  if (gzStamm(a) !== gzStamm(b)) return false;
+  if (a.pruefzeichen && b.pruefzeichen) return a.pruefzeichen === b.pruefzeichen;
+  return true;
+}
+
+/** Every Geschäftszahl in a text as whole tokens, in order of appearance. */
+export function findeGZImText(text: string): GZFund[] {
+  if (!text) return [];
+  const out: GZFund[] = [];
+  for (const m of text.matchAll(GZ_SEARCH)) {
+    const t = gzTeile(m);
+    out.push({ ...t, raw: m[0], index: m.index ?? 0, formatted: formatiereGZ(t) });
+  }
+  return out;
+}
