@@ -32,6 +32,13 @@ interface Signer {
   name: string;
 }
 
+class DocumentFetchError extends Error {
+  constructor(readonly documentName: string) {
+    super(`document fetch failed: ${documentName}`);
+    this.name = "DocumentFetchError";
+  }
+}
+
 export function DocuSignSendDialog({
   open,
   onOpenChange,
@@ -95,6 +102,9 @@ export function DocuSignSendDialog({
           .filter((d) => d.url)
           .map(async (d, i) => {
             const res = await fetch(d.url!);
+            // A failed download (expired session, missing file) must never be
+            // sent as the "document".
+            if (!res.ok) throw new DocumentFetchError(d.name);
             const blob = await res.blob();
             const buffer = await blob.arrayBuffer();
             const bytes = new Uint8Array(buffer);
@@ -153,8 +163,16 @@ export function DocuSignSendDialog({
           type: "error",
         });
       }
-    } catch {
-      addToast({ title: t("docusign.sent_error"), type: "error" });
+    } catch (err) {
+      addToast({
+        title: t("docusign.sent_error"),
+        ...(err instanceof DocumentFetchError
+          ? {
+              description: `Das Dokument „${err.documentName}" konnte nicht geladen werden. Es wurde nichts versendet.`,
+            }
+          : {}),
+        type: "error",
+      });
     } finally {
       setSending(false);
     }

@@ -7,6 +7,7 @@ import {
   type EnvelopeRequest,
 } from "@/lib/docusign";
 import { buildEnvelopeCustomFields } from "@/lib/docusign-connect";
+import { checkSignableDocument } from "@/lib/docusign-documents";
 import { ENGINE_URL } from "@/lib/engine";
 import {
   assertOutputActionAllowed,
@@ -115,10 +116,25 @@ export const POST = createHandler(
       );
     }
 
+    // Only real PDF/DOCX files go out for signature (never an error page a
+    // failed download produced); DocuSign gets the type explicitly.
+    const documents: EnvelopeRequest["documents"] = [];
+    for (const doc of body.documents) {
+      const check = checkSignableDocument(doc.documentBase64);
+      if (!check.ok) {
+        return apiError(
+          "invalid_document",
+          `Das Dokument „${doc.name}" ${check.reason} und kann nicht zur Unterschrift gesendet werden.`,
+          400
+        );
+      }
+      documents.push({ ...doc, fileExtension: check.type });
+    }
+
     const req: EnvelopeRequest = {
       emailSubject: body.emailSubject,
       emailBlurb: body.emailBlurb || "",
-      documents: body.documents,
+      documents,
       recipients: {
         signers: body.recipients.signers.map((s, i) => ({
           email: s.email,

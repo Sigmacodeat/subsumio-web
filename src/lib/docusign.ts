@@ -34,7 +34,13 @@ export const DOCUSIGN_OAUTH_HOST = docusignOAuthHost(BASE, env("DOCUSIGN_OAUTH_H
 export interface EnvelopeRequest {
   emailSubject: string;
   emailBlurb: string;
-  documents: Array<{ documentBase64: string; name: string; documentId: string }>;
+  documents: Array<{
+    documentBase64: string;
+    name: string;
+    documentId: string;
+    /** "pdf" | "docx" — DocuSign would otherwise guess from the name. */
+    fileExtension?: string;
+  }>;
   recipients: {
     signers: Array<{
       email: string;
