@@ -30,6 +30,8 @@ const SESSIONLESS_ROUTES: Record<string, string> = {
   "signature/qes/pdf/[token]/route.ts": "signing provider fetch, token auth",
   "data-rooms/[id]/document/route.ts":
     "guest of another firm reads a document the host explicitly shared",
+  "data-rooms/[id]/route.ts":
+    "guest view checks which shared documents of the host matter still exist",
   "legal/contradictions/route.ts": "only on the x-internal-secret branch",
 };
 
