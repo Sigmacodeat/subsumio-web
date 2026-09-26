@@ -68,7 +68,18 @@ export const POST = createHandler(
   async (ctx, _body, _query, req) => {
     // Pre-check Content-Length against our limit so we return a meaningful
     // error instead of letting the framework silently abort with a bare 413.
-    const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
+    const rawLength = req.headers.get("content-length");
+    const contentLength = parseInt(rawLength ?? "0", 10);
+    // Without a declared length (chunked body) neither the size limit nor the
+    // concurrency slot below could apply before the whole body is buffered —
+    // browsers always declare it for a form upload, so refuse the rest.
+    if (rawLength === null || !Number.isFinite(contentLength) || contentLength <= 0) {
+      return apiError(
+        "length_required",
+        "Upload ohne Größenangabe (Content-Length) wird nicht angenommen.",
+        411
+      );
+    }
     if (contentLength > MAX_FILE_SIZE) {
       return apiError(
         "file_too_large",
