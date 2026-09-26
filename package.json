@@ -32,6 +32,7 @@
     "test:identity": "npx vitest run --config vitest.config.identity.ts",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e-playwright/smoke.spec.ts",
+    "test:e2e:functional": "playwright test tests/e2e-playwright/case-management-flow.spec.ts tests/e2e-playwright/case-close-checklist-flow.spec.ts tests/e2e-playwright/fristen-sync-flow.spec.ts tests/e2e-playwright/invoicing-flow.spec.ts tests/e2e-playwright/invoice-billing.spec.ts tests/e2e-playwright/upload-flow.spec.ts tests/e2e-playwright/portal-flow.spec.ts tests/e2e-playwright/portal-upload-flow.spec.ts tests/e2e-playwright/account-lockout.spec.ts tests/e2e-playwright/two-factor-flow.spec.ts tests/e2e-playwright/api-guard-chain.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:load": "npx tsx scripts/load-test.ts --duration=10 --concurrency=5",
     "test:load:heavy": "npx tsx scripts/load-test.ts --duration=30 --concurrency=20 --p95=1000",

@@ -1,10 +1,13 @@
 #!/usr/bin/env bun
 /**
- * E2E Workflow Simulation — Anwaltlicher Alltag
+ * Workflow-Mock-Selbsttest — Anwaltlicher Alltag
  * ==============================================
- * Vollständige Simulation eines Anwalts-Workflows über die API.
- * 42 Schritte: Intake → Case → Upload/OCR → Analyse → Litigation →
- * Review Sets → Trust Accounting → Analytics → Strategy → Archive
+ * ACHTUNG, Reichweite: Alle Requests gehen DIREKT an die Workflow-Mock-Engine
+ * (tests/e2e-workflow-mock-engine.ts). Weder Next.js-Routen noch src/lib noch
+ * die echte Engine werden ausgeführt — der Lauf prüft nur, dass die Mock-Engine
+ * einen Anwalts-Workflow (Intake → Akte → Upload → … → Archiv) in sich stimmig
+ * durchspielt. Er ist KEIN Nachweis für die Produktabläufe; die liefern die
+ * Playwright-Abläufe gegen `next start` (npm run test:e2e:functional).
  *
  * Usage: bun run tests/e2e-workflow-simulation.ts
  */
@@ -1130,7 +1133,7 @@ async function main() {
     `${BOLD}║  Edge Cases: 8/8 ✅                                                    ║${RESET}`
   );
   console.log(
-    `${BOLD}║  Status: ${failCount === 0 ? GREEN + "PRODUKTIONSREIF" + RESET : RED + "FEHLER VORHANDEN" + RESET}${" ".repeat(failCount === 0 ? 39 : 37)}║${RESET}`
+    `${BOLD}║  Status: ${failCount === 0 ? GREEN + "MOCK-SELBSTTEST OK" + RESET : RED + "FEHLER VORHANDEN" + RESET}${" ".repeat(failCount === 0 ? 36 : 37)}║${RESET}`
   );
   console.log(
     `${BOLD}╚══════════════════════════════════════════════════════════════════════╝${RESET}`

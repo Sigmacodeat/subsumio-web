@@ -108,14 +108,16 @@ jobs:
       # corpus-pipeline-Integrität u.a.) — nicht nur deploy-code.
       - run: npx vitest run --config vitest.config.scripts.ts
 
+  # Mock self-test: requests go straight to tests/e2e-workflow-mock-engine.ts,
+  # no product route runs. Product workflows: playwright-functional.
   workflow-simulation:
-    name: E2E Workflow Simulation (42-step legal workflow)
+    name: Workflow mock self-test (no product routes)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - name: Run 42-step workflow simulation (mock engine)
+      - name: Run workflow mock self-test
         run: bun run test:workflow
       - name: Upload workflow report
         if: always()
@@ -157,6 +159,44 @@ jobs:
           CI: "true"
           # Service container is TCP-only — PG* steer dropdb/createdb +
           # the app DB URL off the unix socket (scripts/e2e-pg-setup.sh).
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          SUBSUMIO_E2E_DB_URL: postgres://postgres:postgres@127.0.0.1:5432/subsumio_e2e?sslmode=disable
+
+  # The core workflows end to end (matter incl. conflict check, deadlines,
+  # invoice → issue → storno, upload, portal, login lockout / 2FA) against the
+  # mock engine, whose answers are pinned to the real engine's by
+  # src/test/e2e-mock-contract.test.ts. Spec list: `test:e2e:functional` in
+  # package.json. Not yet part of production-gate: add it there once the job
+  # has run green on main.
+  playwright-functional:
+    name: Playwright functional workflows (mock engine)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun install
+        working-directory: server # e2e-pg-setup.sh runs server/src/cli.ts
+      - run: bunx playwright install --with-deps chromium
+      - name: Run functional Playwright workflows
+        run: bun run test:e2e:functional
+        env:
+          CI: "true"
           PGHOST: 127.0.0.1
           PGUSER: postgres
           PGPASSWORD: postgres
