@@ -35,6 +35,8 @@ docs/
 scripts/
 # The web build bundles the Office add-ins into public/ (package.json "build").
 !scripts/build-office-addins.ts
+# Bundled into the web image as the post-deploy smoke test (Dockerfile.web).
+!scripts/post-deploy-smoke.ts
 tests/
 test/
 test-results/
