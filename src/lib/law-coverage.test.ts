@@ -15,6 +15,7 @@ import {
   type DbLawPage,
   lawKeyFor,
 } from "./law-coverage";
+import type { FetchOutcome } from "./corpus-sync-inventory";
 import { corpusFileCandidatesForSlug, corpusFileForSlug } from "./law-coverage-server";
 
 const INDEX_SAMPLE = [
@@ -138,6 +139,90 @@ describe("computeLawCoverage", () => {
     expect(big.missingCount).toBe(60);
     expect(big.missingDocs).toHaveLength(50);
     expect(big.missingTruncated).toBe(true);
+  });
+});
+
+describe("Abruf-Ledger: unerreichbare und abgedeckte Dokumente", () => {
+  // Gesetze wie im Korpus: Text-§§ vorhanden, Bild-Anlagen bei RIS ohne Text,
+  // eine Fassungs-Nummer durch die Folgefassung abgedeckt.
+  const OUTCOME_INDEX = [
+    { nor: "A1", gnr: "50001", kurztitel: "Mit Lücke", abk: "ML", apa: "§ 1" },
+    { nor: "A2", gnr: "50001", kurztitel: "Mit Lücke", abk: "ML", apa: "Anl. 1" },
+    { nor: "A3", gnr: "50001", kurztitel: "Mit Lücke", abk: "ML", apa: "Anl. 2" },
+    { nor: "B1", gnr: "50002", kurztitel: "Nur Bild-Anlage", abk: "BA", apa: "Art. 1" },
+    { nor: "B2", gnr: "50002", kurztitel: "Nur Bild-Anlage", abk: "BA", apa: "Anl. 1" },
+    { nor: "C1", gnr: "50003", kurztitel: "Alte Fassung", abk: "AF", apa: "§ 1" },
+    { nor: "C2", gnr: "50003", kurztitel: "Alte Fassung", abk: "AF", apa: "§ 1" },
+    { nor: "D1", gnr: "50004", kurztitel: "Nur Anlage", abk: "NA", apa: "Anl. 1" },
+  ]
+    .map((d) => JSON.stringify(d))
+    .join("\n");
+  const index = parseRisInforceIndex(OUTCOME_INDEX);
+  const outcomes = new Map<string, FetchOutcome>([
+    ["A2", "no_text"],
+    ["A3", "failed"],
+    ["B2", "no_text"],
+    ["C1", "superseded"],
+    ["D1", "no_text"],
+  ]);
+  const docs: DbLawDoc[] = [
+    { key: "50001", doc: "A1" },
+    { key: "50002", doc: "B1" },
+    { key: "50003", doc: "C2" },
+  ];
+  const { rows, totals } = computeLawCoverage(index, docs, [], outcomes);
+  const byKey = new Map(rows.map((r) => [r.key, r]));
+
+  test("no_text/not_found landen in unreachable, nicht in missing", () => {
+    const l1 = byKey.get("50001")!;
+    expect(l1.missingCount).toBe(1); // nur A3 (failed bleibt echte Arbeit)
+    expect(l1.missingDocs[0]).toMatchObject({ nor: "A3", outcome: "failed" });
+    expect(l1.unreachableCount).toBe(1); // A2
+    expect(l1.status).toBe("partial");
+  });
+
+  test("Gesetz mit nur Bild-Anlagen gilt als vollständig", () => {
+    const l2 = byKey.get("50002")!;
+    expect(l2.missingCount).toBe(0);
+    expect(l2.unreachableCount).toBe(1);
+    expect(l2.status).toBe("complete"); // 1 von 2 §§, 1 bei RIS ohne Text
+  });
+
+  test("superseded-Nummern verlassen das Soll — die Folgefassung deckt die Position", () => {
+    const l3 = byKey.get("50003")!;
+    expect(l3.wanted).toBe(1); // C1 (superseded, nicht in DB) zählt nicht
+    expect(l3.have).toBe(1); // C2
+    expect(l3.status).toBe("complete");
+  });
+
+  test("Gesetz, dessen einziges Dokument bei RIS ohne Text ist, bleibt „fehlt“", () => {
+    const l4 = byKey.get("50004")!;
+    expect(l4.have).toBe(0);
+    expect(l4.missingCount).toBe(0);
+    expect(l4.unreachableCount).toBe(1);
+    expect(l4.status).toBe("missing");
+    expect(totals.docsUnreachable).toBe(3); // A2 + B2 + D1
+    expect(totals.docsMissing).toBe(1); // A3
+  });
+
+  test("computeLawDetail trennt missing und unreachable gleich", () => {
+    const page = (doc: string): DbLawPage => ({
+      doc,
+      label: null,
+      slug: `legal/statutes/at/x/${doc}`,
+      title: null,
+      chunks: 1,
+      embedded: 1,
+      updated_at: null,
+    });
+    const d = computeLawDetail(index.get("50001")!, [page("A1")], outcomes)!;
+    expect(d.missing.map((m) => m.nor)).toEqual(["A3"]);
+    expect(d.unreachable.map((m) => m.nor)).toEqual(["A2"]);
+    expect(d.wanted).toBe(3);
+    const d3 = computeLawDetail(index.get("50003")!, [page("C2")], outcomes)!;
+    expect(d3.wanted).toBe(1);
+    expect(d3.missing).toHaveLength(0);
+    expect(d3.status).toBe("complete");
   });
 });
 

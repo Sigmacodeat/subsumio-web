@@ -561,10 +561,18 @@ export function CorpusLawList() {
                             <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums md:hidden">
                               {haveWantedText(l.have, l.wanted)}
                               {l.missingCount > 0 ? ` · ${fmt(l.missingCount)} fehlen` : ""}
+                              {l.unreachableCount > 0
+                                ? ` · ${fmt(l.unreachableCount)} bei RIS ohne Text`
+                                : ""}
                             </span>
                           </div>
                           <span className="hidden text-sm tabular-nums md:block">
                             {haveWantedText(l.have, l.wanted)}
+                            {l.unreachableCount > 0 && (
+                              <span className="block text-xs text-[color:var(--ds-text-subtle)]">
+                                davon {fmt(l.unreachableCount)} bei RIS ohne Text
+                              </span>
+                            )}
                           </span>
                           <span
                             className={cn(

@@ -14,6 +14,7 @@ import {
 import {
   corpusFileCandidatesForSlug,
   LAW_SOURCE_CFG,
+  loadFetchOutcomes,
   loadLawFetchState,
   loadRisIndex,
 } from "@/lib/law-coverage-server";
@@ -53,6 +54,7 @@ export const GET = createHandler(
     const cfg = LAW_SOURCE_CFG[source];
     try {
       const indexResult = cfg.indexFile ? await loadRisIndex(cfg.indexFile) : null;
+      const outcomes = cfg.corpus ? await loadFetchOutcomes(cfg.corpus) : null;
       // Auch Seiten ohne (passende) statute_id zählen, wenn ihre
       // Dokumentnummer zum Soll des Gesetzes gehört — dieselbe Regel wie in
       // computeLawCoverage, sonst widerspräche die Detailseite der Liste.
@@ -101,7 +103,7 @@ export const GET = createHandler(
       }));
 
       const entry = indexResult?.entries.get(key) ?? null;
-      const detail = computeLawDetail(entry, pages);
+      const detail = computeLawDetail(entry, pages, outcomes);
       if (!detail) return apiError("not_found", "Gesetz nicht gefunden", 404);
 
       // Datei je gespeichertem § — nur Pfade, die es auf der Platte gibt,
@@ -160,6 +162,7 @@ export const GET = createHandler(
         wanted: detail.wanted,
         have: present.length,
         missing: detail.missing,
+        unreachable: detail.unreachable,
         present,
         extra,
         chunks,

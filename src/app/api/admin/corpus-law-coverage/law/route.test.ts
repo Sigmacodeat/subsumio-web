@@ -104,9 +104,21 @@ beforeAll(() => {
       { nor: "NOR2", gnr: "10001", kurztitel: "Testgesetz", abk: "TG", apa: "§ 2" },
       { nor: "NOR10", gnr: "10001", kurztitel: "Testgesetz", abk: "TG", apa: "§ 10" },
       { nor: "NOR3", gnr: "10001", kurztitel: "Testgesetz", abk: "TG", apa: "§ 3" },
+      { nor: "E1", gnr: "10002", kurztitel: "Emblemgesetz", abk: "EG", apa: "Art. 1" },
+      { nor: "E2", gnr: "10002", kurztitel: "Emblemgesetz", abk: "EG", apa: "Anl. 1" },
     ]
       .map((l) => JSON.stringify(l))
       .join("\n")
+  );
+  // Abruf-Ledger: E2 ist eine Bild-Anlage — RIS liefert keinen Text.
+  writeFileSync(
+    join(ROOT, "_state", "ris-fetch-outcomes.jsonl"),
+    JSON.stringify({
+      corpus: "at-normen",
+      id: "E2",
+      outcome: "no_text",
+      at: "2026-09-26T00:00:00.000Z",
+    }) + "\n"
   );
   // Nur § 1 hat eine Textdatei auf der Platte.
   writeFileSync(join(ROOT, "_normalized", "at-normen", "tg", "p-1.md"), "---\n---\n# § 1\n");
@@ -163,6 +175,18 @@ describe("GET /api/admin/corpus-law-coverage/law", () => {
     expect(d.embed_pct).toBe(50); // 3 von 6
     expect(d.fetch).toEqual({ supported: true, queued: true, running: false, unavailable: false });
     expect(d.index.available).toBe(true);
+  });
+
+  it("lists no-text annexes as unreachable instead of missing", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx(OPERATOR) as any);
+    dbReturns({ pages: [page("E1", "eg/art-1", "Art. 1")] });
+    const res = await get("source=law-at-normen&key=10002");
+    expect(res.status).toBe(200);
+    const d = (await res.json()).data;
+    expect(d.status).toBe("complete");
+    expect(d.wanted).toBe(2);
+    expect(d.missing).toHaveLength(0);
+    expect(d.unreachable).toEqual([{ nor: "E2", apa: "Anl. 1", outcome: "no_text" }]);
   });
 
   it("marks a law that is currently being fetched", async () => {

@@ -13,11 +13,14 @@ import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { Pool } from "pg";
 import { lawCorpusDir } from "@/lib/corpus-paths";
+import type { FetchOutcome } from "@/lib/corpus-sync-inventory";
 import { parseRisInforceIndex, type LawFetchState, type RisIndexEntry } from "@/lib/law-coverage";
 
 export interface LawSourceCfg {
   /** Index-Datei unter <corpus>/_state/ — null = kein Upstream-Soll. */
   indexFile: string | null;
+  /** Korpus-Name im Abruf-Ledger (ris-fetch-outcomes.jsonl) — null = kein Abruf-Stand. */
+  corpus: string | null;
   /** SQL-Ausdruck für den Gesetzes-Key (gnr bzw. Slug-Segment). */
   keyExpr: string;
   /** SQL-Ausdruck für die Dokument-ID je Page (nor bzw. §-Segment). */
@@ -35,18 +38,21 @@ export interface LawSourceCfg {
 export const LAW_SOURCE_CFG: Record<string, LawSourceCfg> = {
   "law-at-normen": {
     indexFile: "ris-inforce.jsonl",
+    corpus: "at-normen",
     keyExpr: "p.frontmatter->>'statute_id'",
     docExpr: "p.frontmatter->>'doc_id'",
     files: { slugPrefix: "legal/statutes/at/", dir: "at-normen" },
   },
   "law-at-landesrecht": {
     indexFile: "ris-inforce-landesrecht.jsonl",
+    corpus: "at-landesrecht",
     keyExpr: "p.frontmatter->>'statute_id'",
     docExpr: "p.frontmatter->>'doc_id'",
     files: { slugPrefix: "legal/statutes/at/landesrecht/", dir: "at-landesrecht" },
   },
   "law-de": {
     indexFile: null,
+    corpus: null,
     keyExpr: "split_part(p.slug, '/', 4)",
     docExpr: "split_part(p.slug, '/', 5)",
     titleLookup: "gii",
@@ -54,6 +60,7 @@ export const LAW_SOURCE_CFG: Record<string, LawSourceCfg> = {
 };
 
 const indexCache = new Map<string, { mtimeMs: number; entries: Map<string, RisIndexEntry> }>();
+const outcomeCache = new Map<string, { mtimeMs: number; outcomes: Map<string, FetchOutcome> }>();
 
 /** Lädt den RIS-In-force-Index (gecacht bis sich die Datei ändert). */
 export async function loadRisIndex(
@@ -69,6 +76,40 @@ export async function loadRisIndex(
   const entries = parseRisInforceIndex(await readFile(path, "utf-8"));
   indexCache.set(path, { mtimeMs, entries });
   return { entries, mtime: new Date(mtimeMs).toISOString() };
+}
+
+/**
+ * Abruf-Ergebnisse der Fetcher (ris-fetch-outcomes.jsonl, append-only — die
+ * letzte Zeile pro Dokument zählt): welche Index-Dokumente bei RIS keinen
+ * Text haben, nicht gefunden wurden oder deren Position eine neuere Fassung
+ * abdeckt. Ohne diesen Stand würde die Gesetzesliste Bild-Anlagen dauerhaft
+ * als „fehlt" ausweisen. Leere Map = noch keine Messung.
+ */
+export async function loadFetchOutcomes(corpus: string): Promise<Map<string, FetchOutcome>> {
+  const path = join(lawCorpusDir(), "_state", "ris-fetch-outcomes.jsonl");
+  const out = new Map<string, FetchOutcome>();
+  if (!existsSync(path)) return out;
+  const mtimeMs = (await stat(path)).mtimeMs;
+  let cached = outcomeCache.get(path);
+  if (!cached || cached.mtimeMs !== mtimeMs) {
+    const all = new Map<string, FetchOutcome>();
+    for (const raw of (await readFile(path, "utf-8")).split("\n")) {
+      if (!raw.trim()) continue;
+      try {
+        const l = JSON.parse(raw) as { corpus?: string; id?: string; outcome?: FetchOutcome };
+        if (l.corpus && l.id && l.outcome) all.set(`${l.corpus}|${l.id}`, l.outcome);
+      } catch {
+        // Kaputte Zeile überspringen — Append-Log darf nie vollständig vertrauenswürdig sein.
+      }
+    }
+    cached = { mtimeMs, outcomes: all };
+    outcomeCache.set(path, cached);
+  }
+  const prefix = `${corpus}|`;
+  for (const [k, v] of cached.outcomes) {
+    if (k.startsWith(prefix)) out.set(k.slice(prefix.length), v);
+  }
+  return out;
 }
 
 /**

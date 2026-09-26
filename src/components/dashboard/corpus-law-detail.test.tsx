@@ -36,6 +36,7 @@ function detail(over: Partial<LawDetailResponse> = {}): LawDetailResponse {
       { nor: "NOR40000003", apa: "§ 3" },
       { nor: "NOR40000010", apa: "§ 10" },
     ],
+    unreachable: [],
     present: [
       {
         doc: "NOR40000001",
