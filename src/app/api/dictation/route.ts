@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
-import { engineTranscribe } from "@/lib/engine-llm";
+import { engineTranscribeDetailed } from "@/lib/engine-llm";
+import { EU_ONLY_REFUSAL_CODE } from "@/lib/eu-policy-refusal";
 import {
   createDictationEntry,
   transitionDictationStatus,
@@ -58,14 +59,23 @@ export const POST = createHandler(
       : body.mime_type.includes("ogg")
         ? "ogg"
         : "webm";
-    const result = await engineTranscribe(ctx.headers, {
+    const outcome = await engineTranscribeDetailed(ctx.headers, {
       bytes,
       mimeType: body.mime_type,
       filename: `diktat.${ext}`,
       language: body.language,
       model: "openai/whisper-1",
     });
-    const transcript = result?.text?.trim() ?? "";
+    if (!outcome.ok && outcome.code === EU_ONLY_REFUSAL_CODE) {
+      // No EU transcription route exists yet: in EU-only mode dictation is
+      // unavailable — say so instead of asking for a pointless retry.
+      return apiError(
+        "transcription_unavailable_eu",
+        "Das Diktat ist im EU-Datenmodus derzeit nicht verfügbar: Es gibt noch keinen Verschriftungsdienst mit Verarbeitung in der EU. Die Aufnahme wurde an keinen externen Dienst übermittelt.",
+        503
+      );
+    }
+    const transcript = outcome.ok ? (outcome.result.text?.trim() ?? "") : "";
     // `credits` on createHandler only checks the balance. Without this the
     // transcription would be free forever (see credit-coverage.test.ts).
     if (transcript) void recordCreditConsumption(ctx, "think", body.case_slug || undefined);
@@ -118,7 +128,11 @@ export const POST = createHandler(
 const querySchema = z.object({
   case_slug: z.string().max(300).optional(),
   status: z.enum(["recording", "transcribed", "corrected", "filed", "failed"]).optional(),
-  pending_corrections: z.boolean().optional(),
+  // Query values are strings: "?pending_corrections=true".
+  pending_corrections: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
 });
 
 export const GET = createHandler(
