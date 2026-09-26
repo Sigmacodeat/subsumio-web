@@ -161,11 +161,16 @@ async function decryptPdfIfNeeded(buf: Buffer, password?: string): Promise<Buffe
       writeFile(input, buf, { mode: 0o600 }),
       writeFile(passwordFile, password, { mode: 0o600 }),
     ]);
+    const { converterEnv, limitedArgv } = await import("./converter-sandbox.ts");
     const proc = Bun.spawn(
-      ["qpdf", `--password-file=${passwordFile}`, "--decrypt", input, output],
-      { stdout: "ignore", stderr: "pipe" }
+      limitedArgv(["qpdf", `--password-file=${passwordFile}`, "--decrypt", input, output], {
+        cpuSeconds: 120,
+        maxFileBytes: 2 * MAX_DOCUMENT_FILE_SIZE,
+      }),
+      { stdout: "ignore", stderr: "pipe", env: converterEnv(dir) }
     );
-    const exitCode = await proc.exited;
+    const timeout = setTimeout(() => proc.kill("SIGKILL"), 120_000);
+    const exitCode = await proc.exited.finally(() => clearTimeout(timeout));
     if (exitCode !== 0) throw new InvalidDocumentPasswordError("pdf");
     return await readFile(output);
   } finally {
@@ -1056,12 +1061,19 @@ async function extractPst(
   const input = join(dir, basename(filename).replace(/[^a-zA-Z0-9._-]/g, "_") || "archive.pst");
   await writeFile(input, buf, { mode: 0o600 });
   try {
-    const proc = Bun.spawn(["readpst", "-e", "-8", "-j", "1", "-q", "-o", outputDir, input], {
-      stdout: "pipe",
-      stderr: "pipe",
-      env: process.env,
-    });
-    const timeout = setTimeout(() => proc.kill(), 5 * 60_000);
+    const { converterEnv, limitedArgv } = await import("./converter-sandbox.ts");
+    const proc = Bun.spawn(
+      limitedArgv(["readpst", "-e", "-8", "-j", "1", "-q", "-o", outputDir, input], {
+        cpuSeconds: 10 * 60,
+        maxFileBytes: MAX_PST_BYTES,
+      }),
+      {
+        stdout: "pipe",
+        stderr: "pipe",
+        env: converterEnv(dir),
+      }
+    );
+    const timeout = setTimeout(() => proc.kill("SIGKILL"), 5 * 60_000);
     const exitCode = await proc.exited;
     clearTimeout(timeout);
     const stderr = await new Response(proc.stderr).text();
@@ -1309,23 +1321,27 @@ async function convertWithLibreOffice(
   );
   await writeFile(input, buf);
   try {
+    const { converterEnv, limitedArgv } = await import("./converter-sandbox.ts");
     const proc = Bun.spawn(
-      [
-        "soffice",
-        "--headless",
-        "--nologo",
-        "--nodefault",
-        "--nofirststartwizard",
-        `-env:UserInstallation=file://${profileDir}`,
-        "--convert-to",
-        target,
-        "--outdir",
-        outputDir,
-        input,
-      ],
-      { stdout: "pipe", stderr: "pipe", env: { ...process.env, HOME: dir } }
+      limitedArgv(
+        [
+          "soffice",
+          "--headless",
+          "--nologo",
+          "--nodefault",
+          "--nofirststartwizard",
+          `-env:UserInstallation=file://${profileDir}`,
+          "--convert-to",
+          target,
+          "--outdir",
+          outputDir,
+          input,
+        ],
+        { cpuSeconds: 120, maxFileBytes: 2 * MAX_DOCUMENT_FILE_SIZE }
+      ),
+      { stdout: "pipe", stderr: "pipe", env: converterEnv(dir) }
     );
-    const timeout = setTimeout(() => proc.kill(), 60_000);
+    const timeout = setTimeout(() => proc.kill("SIGKILL"), 60_000);
     const [exitCode, stderr] = await Promise.all([
       proc.exited,
       new Response(proc.stderr).text(),

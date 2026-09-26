@@ -61,3 +61,60 @@ describe("edge network: web and engine are reachable only via the proxy", () => 
     );
   });
 });
+
+const dockerfile = readFileSync(join(SERVER, "Dockerfile"), "utf8");
+const webDockerfile = readFileSync(join(SERVER, "..", "Dockerfile.web"), "utf8");
+
+describe("engine image: unprivileged and reproducible", () => {
+  test("the final user is a non-root engine user", () => {
+    const users = [...dockerfile.matchAll(/^USER\s+(\S+)/gm)].map((m) => m[1]);
+    expect(users.length).toBeGreaterThan(0);
+    const last = users[users.length - 1];
+    expect(["root", "0", "0:0"]).not.toContain(last);
+    expect(dockerfile).toMatch(/useradd[^\n]*--uid 10001/);
+    // Nothing after USER runs as root again.
+    const afterUser = dockerfile.slice(dockerfile.lastIndexOf(`USER ${last}`));
+    expect(afterUser).not.toMatch(/^RUN\s/m);
+  });
+
+  test("base image is pinned to the same Bun as the web image", () => {
+    const engineFrom = dockerfile.match(/^FROM\s+(\S+)/m)?.[1];
+    const webFrom = webDockerfile.match(/^FROM\s+(oven\/bun:\S+)/m)?.[1];
+    expect(engineFrom).toMatch(/^oven\/bun:\d+\.\d+\.\d+$/);
+    expect(engineFrom).toBe(webFrom);
+  });
+
+  test("dependency install has no lockfile-ignoring fallback", () => {
+    expect(dockerfile).toContain("bun install --frozen-lockfile --production");
+    expect(dockerfile).not.toMatch(/\|\|\s*bun install/);
+    expect(webDockerfile).not.toMatch(/\|\|\s*bun install/);
+  });
+});
+
+describe("engine and pipeline services are confined", () => {
+  test("engine: no capabilities, no privilege gain, bounded resources", () => {
+    const e = compose.services.engine;
+    expect(e.security_opt).toContain("no-new-privileges:true");
+    expect(e.cap_drop).toEqual(["ALL"]);
+    expect(e.mem_limit).toBeTruthy();
+    expect(e.cpus).toBeTruthy();
+    expect(e.pids_limit).toBeTruthy();
+    expect(e.user).toBeUndefined(); // image default: uid 10001
+  });
+
+  test("pipeline: explicit user, no privilege gain, bounded resources", () => {
+    const p = compose.services["corpus-pipeline"];
+    expect(p.user).toBe("0:0");
+    expect(p.security_opt).toContain("no-new-privileges:true");
+    expect(p.mem_limit).toBeTruthy();
+  });
+
+  test("deploy hands the data volume to uid 10001 and proves write access before switching", () => {
+    const sw = deployScript.indexOf('echo "[deploy] umschalten');
+    const chown = deployScript.indexOf("chown -h 10001:10001");
+    const probe = deployScript.indexOf("touch /data/.write-check");
+    expect(chown).toBeGreaterThan(0);
+    expect(probe).toBeGreaterThan(chown);
+    expect(probe).toBeLessThan(sw);
+  });
+});

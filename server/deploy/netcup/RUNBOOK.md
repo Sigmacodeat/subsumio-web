@@ -46,6 +46,28 @@ Erwartet: nur `subsumio-engine-web-1`, `subsumio-engine-engine-1` und der Proxy.
 Der Dienst `caddy` in der Compose-Datei läuft nur mit `--profile standalone-proxy` (neue Box
 ohne `/opt/caddy`, Notfall) und wird im Normalbetrieb nie gestartet.
 
+### Engine ohne root, Ressourcengrenzen
+
+Die Engine verarbeitet hochgeladene Dokumente (LibreOffice, Ghostscript, qpdf, readpst) und läuft
+deshalb als Nutzer `engine` (uid 10001), ohne Linux-Capabilities und mit `no-new-privileges`. Sie
+darf `/data` (Volume), ihr Home und `/tmp` schreiben, nicht aber den Code unter `/app`.
+Konverter bekommen nur eine Minimal-Umgebung (keine Schlüssel/DB-Zugänge) und laufen unter
+`prlimit` (CPU-Zeit, Dateigröße) mit hartem Abbruch nach Zeitlimit. Ein eigenes Netz ohne
+Internetzugang für die Konvertierung ist erst mit einem separaten Konverter-Dienst möglich.
+
+`deploy-code.sh` übergibt vor dem Umschalten alle noch root-eigenen Dateien in `/data` an uid 10001
+und prüft, dass das neue Abbild `/data` schreiben und `/law-corpus` lesen kann; sonst wird nicht
+umgeschaltet. Der ADVOKAT-Spiegel (`ADVOKAT_IMPORT_HOST_PATH`) muss für uid 10001 lesbar sein.
+Der Rückweg auf eine ältere (root-)Version bleibt möglich.
+
+Die Korpus-Pipeline nutzt dasselbe Abbild, läuft aber ausdrücklich als root (`user: "0:0"`),
+weil sie in das root-eigene Korpusverzeichnis schreibt; sie verarbeitet nur den öffentlichen
+Rechtskorpus.
+
+Speicher/CPU/Prozesse sind pro Dienst begrenzt und in `.env` einstellbar (`ENGINE_MEM_LIMIT`,
+`ENGINE_CPUS`, `PIPELINE_MEM_LIMIT`, …; Standardwerte in `docker-compose.yml`). Nach dem ersten
+Deploy mit Grenzen `docker stats --no-stream` prüfen und die Werte bei Bedarf anpassen.
+
 ## Neuen Code ausrollen
 
 Vom Mac aus dem Repository — rollt den gepushten Stand (`origin/main`) aus:

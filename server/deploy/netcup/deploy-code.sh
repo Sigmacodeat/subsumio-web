@@ -177,6 +177,25 @@ if ! docker exec "$PROXY" grep -q 'X-Real-IP {remote_host}' /etc/caddy/Caddyfile
 fi
 REMOTE
 
+# ── Engine runs unprivileged ────────────────────────────────────────────
+# The engine image runs as uid 10001 (server/Dockerfile). Files on the data
+# volume written by earlier root-run releases are handed over (only those not
+# yet owned, so repeat deploys cost one scan), then the new image proves it
+# can write its volume and read the corpus before anything is switched.
+case " $BUILD " in
+  *" engine "*)
+    echo "[deploy] Engine-Datenvolume für den Engine-Nutzer vorbereiten …"
+    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --user 0:0 --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --entrypoint sh engine -c 'find /data ( ! -user 10001 -o ! -group 10001 ) -exec chown -h 10001:10001 {} +'" || {
+      echo "[deploy] Übergabe des Datenvolumes fehlgeschlagen — nichts umgeschaltet." >&2
+      exit 1
+    }
+    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --entrypoint sh engine -c 'test \"\$(id -u)\" = 10001 && touch /data/.write-check && rm /data/.write-check && test -r /law-corpus'" || {
+      echo "[deploy] Engine kann als Nutzer 10001 /data nicht schreiben oder den Korpus nicht lesen — nichts umgeschaltet." >&2
+      exit 1
+    }
+    ;;
+esac
+
 echo "[deploy] umschalten …"
 ssh "$HOST" "APP=$APP H=$H APP_SERVICES='$APP_SERVICES'" 'sh -s' <<'REMOTE'
 set -eu

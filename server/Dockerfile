@@ -8,7 +8,9 @@
 # Build context is the server/ directory. Deploy on Netcup via
 # server/deploy/netcup/deploy-code.sh (compose: deploy/netcup/docker-compose.yml), or any Docker host.
 
-FROM oven/bun:1
+# Same Bun as the web image and CI — a floating `oven/bun:1` pulled whatever
+# 1.x was current at build time.
+FROM oven/bun:1.3.13
 
 WORKDIR /app
 
@@ -27,7 +29,9 @@ RUN apt-get update \
 # points at patch files that bun resolves during install.
 COPY package.json bun.lock ./
 COPY patches ./patches
-RUN bun install --frozen-lockfile --production || bun install --production
+# No fallback: a lockfile that does not match package.json fails the build
+# instead of silently resolving newer dependency versions.
+RUN bun install --frozen-lockfile --production
 
 # App source (skills/, schema packs, src/ …).
 COPY . .
@@ -40,11 +44,23 @@ ENV NODE_ENV=production \
 # DATABASE_URL is provided. Mount a volume here in production. Some migration
 # smoke checks invoke `gbrain` directly, so expose the same CLI path used by the
 # entrypoint.
-RUN mkdir -p /data \
+#
+# The engine parses untrusted uploads (LibreOffice, Ghostscript, qpdf,
+# readpst), so it runs as an unprivileged user: it can write /data (its
+# volume), its home and /tmp, but not the application code under /app.
+# deploy-code.sh hands ownership of the existing data volume to this uid
+# before the first switch (ENGINE_UID must match there).
+RUN groupadd --system --gid 10001 engine \
+  && useradd --system --uid 10001 --gid engine --create-home --home-dir /home/engine \
+    --shell /usr/sbin/nologin engine \
+  && mkdir -p /data \
+  && chown engine:engine /data \
   && chmod +x docker-entrypoint.sh \
   && printf '%s\n' '#!/usr/bin/env sh' 'exec bun run /app/src/cli.ts "$@"' > /usr/local/bin/gbrain \
   && chmod +x /usr/local/bin/gbrain
 VOLUME ["/data"]
+USER engine
+ENV HOME=/home/engine
 
 EXPOSE 3131
 

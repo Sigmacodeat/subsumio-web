@@ -106,6 +106,18 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     shm_size: 1gb
+    # The engine parses untrusted uploads (LibreOffice, Ghostscript, qpdf,
+    # readpst). It runs as uid 10001 (server/Dockerfile), holds no
+    # capabilities, cannot gain privileges through setuid binaries, and is
+    # bounded in memory, CPU and processes so a runaway conversion cannot pull
+    # the database down with it. Limits are tunable in .env.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${ENGINE_MEM_LIMIT:-16g}
+    cpus: ${ENGINE_CPUS:-8}
+    pids_limit: ${ENGINE_PIDS_LIMIT:-4096}
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}
@@ -338,6 +350,17 @@ services:
         condition: service_healthy
     networks:
       - default
+    # Same image as the engine, but the pipeline writes into the host corpus
+    # directory and /root/subsumio-pipeline-logs (root-owned), so it keeps
+    # running as root — explicitly, since the image default is uid 10001. It
+    # handles the public law corpus, not firm uploads. No privilege gain,
+    # bounded resources.
+    user: "0:0"
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${PIPELINE_MEM_LIMIT:-12g}
+    cpus: ${PIPELINE_CPUS:-6}
+    pids_limit: ${PIPELINE_PIDS_LIMIT:-4096}
     environment:
       # DB connection (same network as db)
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
