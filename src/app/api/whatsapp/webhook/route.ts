@@ -36,6 +36,10 @@ import {
 } from "@/lib/whatsapp/approval-channel";
 import { hasPendingWhatsAppChatAction } from "@/lib/legal-chat/actions";
 import { readCurrentPage } from "@/lib/page-write-guards";
+import { WhatsAppMediaRejectedError } from "@/lib/whatsapp/media";
+import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
+import { loadPublicFirm, resolvePublicFormBrainId } from "@/lib/public-firm";
+import { siteUrl } from "@/lib/mail";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
 import {
@@ -119,11 +123,25 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
 
     const sender = await resolveSenderIdentity(message.from);
     if (!sender) {
-      // Deny unknown/suspended/revoked senders. Audit by phone hash only — never log the raw number.
+      // Unknown (or blocked) number: no firm processing. Audit by phone hash
+      // only — never log the raw number. A first contact gets one friendly
+      // answer and, where a firm receives public enquiries, an intake entry.
       await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
         brainId: SYSTEM_BRAIN,
         details: { phoneHash: phoneHash(message.from), messageId: message.id },
       });
+      await handleUnknownSender(message).catch((err) =>
+        log.error(
+          "[whatsapp-webhook] unknown sender handling failed:",
+          err instanceof Error ? err.message : String(err)
+        )
+      );
+      await markMessageProcessed(
+        message.id,
+        phoneHash(message.from),
+        message.type,
+        "unknown_sender"
+      );
       results.push({ id: message.id, status: "ignored", error: "sender_not_allowed" });
       continue;
     }
@@ -135,14 +153,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     // reaktiviert sie. Läuft vor dem Orchestrator, damit ein Widerruf nie
     // in die Kanzlei-Verarbeitung rutscht.
     if (message.type === "text") {
-      const body = message.text.trim().toLowerCase();
-      if (/^(stopp?|abbestellen|unsubscribe|opt.?out)\b/.test(body)) {
+      if (isStopKeyword(message.text)) {
         await withdrawWhatsAppConsent(message.from, sender);
         await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_out");
         results.push({ id: message.id, status: "opt_out" });
         continue;
       }
-      if (/^(start|anmelden|subscribe|opt.?in)\b/.test(body)) {
+      if (isStartKeyword(message.text)) {
         await reinstateWhatsAppConsent(message.from, sender);
         await markMessageProcessed(message.id, phoneHash(message.from), message.type, "opt_in");
         results.push({ id: message.id, status: "opt_in" });
@@ -209,7 +226,10 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         try {
           const errSendResult = await sendWhatsAppText(
             message.from,
-            "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
+            // A refused file (too large, unsafe) will not work on retry — say why.
+            err instanceof WhatsAppMediaRejectedError
+              ? err.userMessage
+              : "Ihre Nachricht konnte gerade nicht verarbeitet werden. Bitte versuchen Sie es später erneut."
           );
           if (errSendResult.messageId && sender.brainId) {
             void recordOutboundMessage(errSendResult.messageId, sender.brainId);
@@ -503,4 +523,68 @@ async function reinstateWhatsAppConsent(phone: string, sender: WhatsAppIdentity)
   if (res.messageId && sender.brainId) {
     void recordOutboundMessage(res.messageId, sender.brainId);
   }
+}
+
+// ── Consent keywords: only a message that IS the keyword ───────────────────
+
+/**
+ * STOPP/START count only as the whole message ("Stopp", "STOP!", "Abmelden")
+ * — a client writing "Stopp, bitte die Klage noch nicht einbringen!" or
+ * "Start der Verhandlung ist am 3.10." is a message for the firm, not an
+ * opt-out or opt-in.
+ */
+function isStopKeyword(text: string): boolean {
+  return /^\s*(?:stopp?|abmelden|abbestellen|unsubscribe|opt[- ]?out)\s*[.!]*\s*$/i.test(text);
+}
+
+function isStartKeyword(text: string): boolean {
+  return /^\s*(?:start|anmelden|subscribe|opt[- ]?in)\s*[.!]*\s*$/i.test(text);
+}
+
+// ── Unknown senders ─────────────────────────────────────────────────────────
+
+const UNKNOWN_SENDER_REPLY_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A number without identity (prospect, client with a new phone) gets one
+ * friendly answer per day — without any firm data — and, when this instance
+ * receives public enquiries for a named firm (SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID,
+ * same rule as /erstanfrage), the message is filed there as an intake
+ * request without a matter. Media are not downloaded.
+ */
+async function handleUnknownSender(message: WhatsAppIncomingMessage): Promise<void> {
+  const hash = phoneHash(message.from);
+  const windowStore = getWhatsAppWindowStore();
+  const lastInbound = await windowStore.getLastInbound(hash).catch(() => null);
+  await windowStore.touch(hash);
+  if (lastInbound && Date.now() - lastInbound.getTime() < UNKNOWN_SENDER_REPLY_INTERVAL_MS) {
+    return;
+  }
+
+  const brainId = resolvePublicFormBrainId("intake");
+  const firm = brainId ? await loadPublicFirm(brainId) : null;
+  if (brainId && firm) {
+    const text = message.type === "text" ? message.text.trim() : "";
+    const intake = buildIntakeRequest({
+      source: "whatsapp",
+      summary: text || `[WhatsApp-${message.type}]`,
+      phoneHash: hash,
+      status: "new",
+    });
+    await writeIntakeRequest(brainId, intake);
+  }
+
+  const reply = firm
+    ? [
+        `Guten Tag, danke für Ihre Nachricht an ${firm.name}.`,
+        "Ihre Nummer ist bei uns noch nicht hinterlegt. Wir haben Ihre Anfrage aufgenommen und melden uns.",
+        `Sie können Ihr Anliegen auch hier schildern: ${siteUrl()}/erstanfrage`,
+        "Bitte senden Sie über WhatsApp noch keine vertraulichen Unterlagen.",
+      ].join("\n")
+    : [
+        "Guten Tag, danke für Ihre Nachricht.",
+        "Diese WhatsApp-Nummer ist für Mandant:innen vorgesehen, deren Nummer die Kanzlei bestätigt hat.",
+        "Bitte wenden Sie sich direkt an Ihre Kanzlei — sie meldet sich bei Ihnen.",
+      ].join("\n");
+  await sendWhatsAppText(message.from, reply);
 }
