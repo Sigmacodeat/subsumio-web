@@ -5,8 +5,18 @@ import {
   markPortalLinkRevoked,
   MAX_PORTAL_LINKS,
   portalLinkStatus,
+  portalLinksLockKey,
   readPortalLinks,
 } from "./portal-links";
+
+describe("portalLinksLockKey", () => {
+  it("scopes the registry lock by firm, so equal matter slugs don't contend", () => {
+    const a = portalLinksLockKey({ "x-subsumio-source": "brain-a" }, "legal/case-1");
+    const b = portalLinksLockKey({ "x-subsumio-source": "brain-b" }, "legal/case-1");
+    expect(a).not.toBe(b);
+    expect(a).toContain("brain-a");
+  });
+});
 import { isPortalTokenSuperseded, portalTokenHash, signPortalToken } from "./portal-token";
 
 const fm = (links: unknown) => ({ portal_links: links }) as Record<string, unknown>;

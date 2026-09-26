@@ -410,9 +410,12 @@ function authPool(): Pool {
     });
   }
   if (!globalThis.__subsumioAuthPool) {
+    // Serves every request's session/revocation check, logins, audit rows and
+    // rate limits. Keyed locks use a pool of their own (src/lib/keyed-lock.ts).
+    const max = parseInt(env("SUBSUMIO_AUTH_DB_POOL_MAX") ?? "", 10);
     const config: PoolConfig = {
       connectionString: AUTH_DB_URL,
-      max: 5,
+      max: Number.isFinite(max) && max > 0 ? max : 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
     };

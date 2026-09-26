@@ -26,6 +26,7 @@ import {
   confirmPortalNotify,
   lookupPortalNotifyCode,
   mailPortalClients,
+  portalNotifyLockKey,
   requestPortalNotify,
 } from "./portal-notify";
 
@@ -99,5 +100,13 @@ describe("portal e-mail notifications", () => {
     const entries = state.fm.portal_notify as Array<{ email: string; status: string }>;
     expect(entries.find((e) => e.email === "mandant@example.at")?.status).toBe("active");
     expect(entries.filter((e) => e.status === "pending")).toHaveLength(5);
+  });
+});
+
+describe("portalNotifyLockKey", () => {
+  it("scopes the notify-list lock by firm", () => {
+    expect(portalNotifyLockKey({ "x-subsumio-source": "brain-a" }, "legal/case-1")).not.toBe(
+      portalNotifyLockKey({ "x-subsumio-source": "brain-b" }, "legal/case-1")
+    );
   });
 });

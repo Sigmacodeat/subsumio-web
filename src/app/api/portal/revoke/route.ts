@@ -5,7 +5,12 @@ import {
   verifyPortalToken,
   portalTokenHash,
 } from "@/lib/portal-token";
-import { markPortalLinkRevoked, readPortalLinks, portalLinkStatus } from "@/lib/portal-links";
+import {
+  markPortalLinkRevoked,
+  readPortalLinks,
+  portalLinkStatus,
+  portalLinksLockKey,
+} from "@/lib/portal-links";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { withKeyedLock } from "@/lib/keyed-lock";
@@ -101,11 +106,14 @@ export const POST = createHandler(
       let registryUpdated = true;
       if (payload?.case_slug) {
         const caseSlug = payload.case_slug;
-        registryUpdated = await withKeyedLock(`portal-links:${caseSlug}`, async () => {
-          const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });
-          const marked = fm && markPortalLinkRevoked(fm, portalTokenHash(token));
-          return marked ? persistLinks(ctx.headers, caseSlug, marked) : true;
-        });
+        registryUpdated = await withKeyedLock(
+          portalLinksLockKey(ctx.headers, caseSlug),
+          async () => {
+            const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });
+            const marked = fm && markPortalLinkRevoked(fm, portalTokenHash(token));
+            return marked ? persistLinks(ctx.headers, caseSlug, marked) : true;
+          }
+        );
       }
       return apiSuccess(registryUpdated ? { revoked: 1 } : { revoked: 1, registry_updated: false });
     }
@@ -113,7 +121,7 @@ export const POST = createHandler(
     const caseSlug = body.case_slug!;
     // Same lock as registerPortalLink: a link issued meanwhile is neither
     // lost from the registry nor left out of "revoke all".
-    return withKeyedLock(`portal-links:${caseSlug}`, async () => {
+    return withKeyedLock(portalLinksLockKey(ctx.headers, caseSlug), async () => {
       // Read the matter AS THE CALLER: ethical walls apply, and a caller
       // without access learns nothing about the link registry.
       const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });

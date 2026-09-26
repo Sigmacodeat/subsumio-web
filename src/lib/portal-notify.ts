@@ -124,9 +124,20 @@ async function writeEntries(
   return res.ok;
 }
 
-/** Read-modify-write of the matter's list, serialised per matter. */
-function withNotifyLock<T>(caseSlug: string, fn: () => Promise<T>): Promise<T> {
-  return withKeyedLock(`portal-notify:${caseSlug}`, fn);
+/**
+ * Read-modify-write of the matter's list, serialised per matter of one firm
+ * (engine source header) — equal slugs in different firms don't contend.
+ */
+export function portalNotifyLockKey(headers: Record<string, string>, caseSlug: string): string {
+  return `portal-notify:${headers["x-subsumio-source"] ?? ""}:${caseSlug}`;
+}
+
+function withNotifyLock<T>(
+  headers: Record<string, string>,
+  caseSlug: string,
+  fn: () => Promise<T>
+): Promise<T> {
+  return withKeyedLock(portalNotifyLockKey(headers, caseSlug), fn);
 }
 
 /**
@@ -149,7 +160,7 @@ export async function requestPortalNotify(input: {
 }): Promise<boolean> {
   const email = input.email.trim().toLowerCase();
   const code = randomBytes(24).toString("base64url");
-  const saved = await withNotifyLock(input.caseSlug, async () => {
+  const saved = await withNotifyLock(input.headers, input.caseSlug, async () => {
     const current = await readEntries(input.headers, input.caseSlug);
     // A confirmed address stays confirmed; asking again changes nothing.
     if (current.some((e) => e.email === email && e.status === "active")) return "active";
@@ -182,7 +193,7 @@ export async function confirmPortalNotify(
   caseSlug: string,
   code: string
 ): Promise<boolean> {
-  const ok = await withNotifyLock(caseSlug, async () => {
+  const ok = await withNotifyLock(headers, caseSlug, async () => {
     const entries = await readEntries(headers, caseSlug);
     const entry = entries.find((e) => e.status === "pending" && e.code_hash === hash(code));
     if (!entry) return false;
@@ -201,7 +212,7 @@ export async function removePortalNotify(
   email: string
 ): Promise<boolean> {
   const target = email.trim().toLowerCase();
-  return withNotifyLock(caseSlug, async () => {
+  return withNotifyLock(headers, caseSlug, async () => {
     const entries = await readEntries(headers, caseSlug);
     return writeEntries(
       headers,
