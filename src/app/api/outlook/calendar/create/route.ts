@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { createCalendarEvent, isMsGraphConfigured } from "@/lib/msgraph";
+import { createCalendarEvent, isAppGraphFirm, isMsGraphConfigured } from "@/lib/msgraph";
 import {
   createUserCalendarEvent,
   isDelegatedMs365Configured,
@@ -66,9 +66,15 @@ export const POST = createHandler(
     if (!delegated && !isMsGraphConfigured()) {
       return apiError(
         "msgraph_not_configured",
-        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID",
+        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID, MS365_MAILBOX",
         400
       );
+    }
+    // Without a personal connection the only other target is the service
+    // mailbox, which belongs to one firm (MS365_BRAIN_ID). Everyone else's
+    // appointment simply stays in Subsumio.
+    if (!delegated && !isAppGraphFirm(ctx.brainId)) {
+      return apiSuccess({ ok: true, delegated: false, skipped: "not_connected" });
     }
 
     try {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { syncCalendar, isMsGraphConfigured } from "@/lib/msgraph";
+import { isAppGraphFirm, isMsGraphConfigured, syncCalendar } from "@/lib/msgraph";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -16,12 +16,20 @@ export const GET = createHandler(
     rateTier: "standard",
     query: calendarQuerySchema,
   },
-  async (_ctx, _body, query) => {
+  async (ctx, _body, query) => {
     if (!isMsGraphConfigured()) {
       return apiError(
         "msgraph_not_configured",
-        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID",
+        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID, MS365_MAILBOX",
         400
+      );
+    }
+    // The installation-wide Microsoft 365 access belongs to one firm only.
+    if (!isAppGraphFirm(ctx.brainId)) {
+      return apiError(
+        "msgraph_not_for_firm",
+        "Das Microsoft-365-Dienstpostfach ist dieser Kanzlei nicht zugeordnet.",
+        403
       );
     }
 
