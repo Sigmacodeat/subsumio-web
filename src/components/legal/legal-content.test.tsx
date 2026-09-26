@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import {
+  ACCESSIBILITY_FEEDBACK_EMAIL,
+  AccessibilityContent,
   DpaContent,
   ImprintContent,
   PrivacyContent,
@@ -127,5 +129,57 @@ describe("Rechtstexte — keine Entwurfsvermerke/Platzhalter, elektronischer AVV
 
   it("imprint shows no UID placeholder", () => {
     expect(textOf(<ImprintContent home="/at" />)).not.toMatch(/wird nach Zuteilung/);
+  });
+});
+
+describe("Barrierefreiheitserklärung", () => {
+  it("nennt Geltungsbereich, Konformitätsstand, Einschränkungen, Methode, Feedback und Durchsetzung", () => {
+    const { container } = render(<AccessibilityContent home="/at" market="at" />);
+    const text = container.textContent ?? "";
+    for (const needle of [
+      "subsum.io",
+      "Dashboard",
+      "Mandantenportal",
+      "Mobile Hülle",
+      "teilweise vereinbar",
+      "WCAG",
+      "2.2",
+      "PDF",
+      "horizontalem Scrollen",
+      "Symbolschaltflächen",
+      "axe-core",
+      "70",
+      "jsx-a11y",
+      "Tastaturprüfung",
+      "26. September 2026",
+      ACCESSIBILITY_FEEDBACK_EMAIL,
+      "Kontaktformular",
+      "BaFG",
+      "anwaltlich zu prüfen",
+    ]) {
+      expect(text).toContain(needle);
+    }
+    // Überschriftenhierarchie: genau eine h1, Abschnitte als h2.
+    expect(container.querySelectorAll("h1")).toHaveLength(1);
+    expect(container.querySelectorAll("h2").length).toBeGreaterThanOrEqual(6);
+    // Feedback-Weg: E-Mail aus dem Impressum + Formular-Link im Markt.
+    expect(
+      container.querySelector(`a[href="mailto:${ACCESSIBILITY_FEEDBACK_EMAIL}"]`)
+    ).not.toBeNull();
+    expect(container.querySelector('a[href="/at/contact"]')).not.toBeNull();
+    // Die Feedback-Adresse ist dieselbe wie im Impressum.
+    expect(textOf(<ImprintContent home="/at" />)).toContain(ACCESSIBILITY_FEEDBACK_EMAIL);
+  });
+
+  it("nennt für Deutschland das BFSG-Verfahren und verlinkt die DE-Seiten", () => {
+    const { container } = render(<AccessibilityContent home="/de" market="de" />);
+    expect(container.textContent).toContain("BFSG");
+    expect(container.querySelector('a[href="/de/contact"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/de/imprint"]')).not.toBeNull();
+  });
+
+  it("wird von den übrigen Rechtstexten verlinkt", () => {
+    const { container } = render(<ImprintContent home="/at" />);
+    expect(container.querySelector('a[href="/at/barrierefreiheit"]')).not.toBeNull();
   });
 });

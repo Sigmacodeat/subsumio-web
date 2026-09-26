@@ -453,6 +453,10 @@ export const FOOTER: {
           label: "Datenschutz",
           href: "/privacy",
         },
+        {
+          label: "Barrierefreiheit",
+          href: "/barrierefreiheit",
+        },
       ],
     },
   ],
