@@ -39,6 +39,7 @@ import {
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
 import { PortalLinksPanel } from "@/components/legal/PortalLinksPanel";
+import { DisputeValueField } from "@/components/legal/DisputeValueField";
 import { PortalSummaryEditor } from "@/components/legal/PortalSummaryEditor";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
@@ -763,6 +764,14 @@ export function OverviewTab() {
                 ))}
             </select>
           </div>
+          <DisputeValueField
+            value={caseData.disputeValue}
+            disabled={caseData.status === "archived"}
+            onSave={(next) => {
+              ctx.setCaseData({ ...caseData, disputeValue: next ?? undefined });
+              ctx.saveCaseUpdate({ disputeValue: next ?? undefined });
+            }}
+          />
         </div>
         {ctx.contactsLoading && (
           <p className="text-xs text-[color:var(--ds-text-muted)]">

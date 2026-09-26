@@ -84,6 +84,8 @@ export interface CaseDetail {
   strategy?: StrategyInfo;
   outcome?: Record<string, unknown>;
   estimatedValue?: { min: number; max: number; currency: string };
+  /** Streitwert in Euro (RATG/AHK-Bemessungsgrundlage). */
+  disputeValue?: number;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -192,6 +194,10 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     outcome: (fm.outcome as Record<string, unknown>) || undefined,
     estimatedValue:
       (fm.estimated_value as { min: number; max: number; currency: string }) || undefined,
+    disputeValue:
+      typeof fm.dispute_value === "number" && Number.isFinite(fm.dispute_value)
+        ? fm.dispute_value
+        : undefined,
     tags: (fm.tags as string[]) || [],
     createdAt: page.created_at,
     updatedAt: page.updated_at,
