@@ -8,6 +8,7 @@ import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/ver
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone, type WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
+import { recordWhatsAppOutboundEvent } from "@/lib/whatsapp-kanzlei-os/events";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/whatsapp/send");
@@ -141,7 +142,16 @@ export const POST = createHandler(
     const storedIdentity = requestedHash
       ? await identityStore.getByPhoneHash(requestedHash).catch(() => null)
       : await identityStore.getByPhoneHash(phoneHash(normalizePhone(body.to!))).catch(() => null);
-    const normalizedTo = storedIdentity?.phone ?? normalizePhone(body.to!);
+    // Identities keep the number only encrypted and fill it in on the
+    // person's first message — an empty value is "unknown", not a number.
+    const normalizedTo = storedIdentity?.phone || (body.to ? normalizePhone(body.to) : "");
+    if (!normalizedTo) {
+      return apiError(
+        "recipient_phone_unknown",
+        "Für diesen Kontakt ist noch keine Nummer hinterlegt. Sie wird mit der ersten Nachricht des Kontakts übernommen.",
+        409
+      );
+    }
     const envSender = resolveSender(normalizedTo);
     const storedAllowed = Boolean(
       storedIdentity &&
@@ -177,6 +187,27 @@ export const POST = createHandler(
               "whatsapp_blocked",
               `WhatsApp-Versand geblockt: ${result.decision.reason ?? "blocked"}`,
               403
+            );
+          }
+          // A reply to a client is part of the matter's communication history.
+          if (storedIdentity?.role === "client") {
+            const scope = Array.isArray(storedIdentity.matterScope)
+              ? storedIdentity.matterScope
+              : [];
+            await recordWhatsAppOutboundEvent({
+              brainId: ctx.brainId,
+              orgId: ctx.user.orgId ?? undefined,
+              caseSlug: scope.length === 1 ? scope[0] : undefined,
+              toPhone: normalizedTo,
+              text: body.message,
+              messageId: result.messageId,
+              actorId: ctx.user.id,
+              actorName: ctx.user.name || ctx.user.email,
+            }).catch((err) =>
+              log.error(
+                "[whatsapp/send] outbound protocol failed:",
+                err instanceof Error ? err.message : String(err)
+              )
             );
           }
           return Response.json({

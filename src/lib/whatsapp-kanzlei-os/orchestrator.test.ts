@@ -225,9 +225,14 @@ describe("orchestrateWhatsAppMessage", () => {
     });
 
     expect(result.status).toBe("routed");
-    expect(result.reply).toContain("Bitte nennen Sie das Aktenzeichen");
+    // W3-10: asked, and the message is kept for assignment (nothing to resend).
+    expect(result.reply).toContain("Zu welcher Akte gehört sie?");
+    expect(result.reply).toContain("akt 2026-099");
     expect(handleText).not.toHaveBeenCalled();
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const submission = fetchImpl.mock.calls
+      .map(([, init]) => (init?.body ? JSON.parse(String(init.body)) : null))
+      .find((b) => b?.type === "client_submission");
+    expect(submission?.frontmatter).toMatchObject({ needs_case_assignment: true });
   });
 
   it("routes an existing client's appointment request to the approval queue, linked to their known matter — not a generic new-contact intake", async () => {
@@ -580,6 +585,66 @@ describe("orchestrateWhatsAppMessage", () => {
       expect(result.notificationEvent?.recipient_phone).toBeUndefined();
       expect(result.notificationEvent?.recipient_user_ids).toEqual([]);
       expect(result.notificationEvent?.case_slug).toBe("legal/cases/2026-014");
+    });
+  });
+
+  describe("matter link and replies", () => {
+    function bodies(fetchImpl: ReturnType<typeof caseFetch>) {
+      return fetchImpl.mock.calls
+        .map(([, init]) => (init?.body ? JSON.parse(String(init.body)) : null))
+        .filter(Boolean) as Array<{ type?: string; frontmatter?: Record<string, unknown> }>;
+    }
+
+    // W3-11: a confirmed client's message belongs to the matter's history.
+    it("stamps the client's matter on the conversation event", async () => {
+      const fetchImpl = caseFetch();
+      const client = { ...identity("client"), matterScope: ["legal/cases/2026-014"] };
+      await orchestrateWhatsAppMessage(
+        { id: "wamid.C1", from: "+491701234567", type: "text", text: "Anbei die Vollmacht." },
+        client,
+        { fetchImpl: fetchImpl as unknown as typeof fetch }
+      );
+      const event = bodies(fetchImpl).find((b) => b.type === "conversation_event");
+      expect(event?.frontmatter?.case_slug).toBe("legal/cases/2026-014");
+    });
+
+    // W3-20: an unconfirmed number creates no Freigabe tied to a matter.
+    it("an unconfirmed client's request is an intake, not a matter-linked Freigabe", async () => {
+      const fetchImpl = caseFetch();
+      const unverified = {
+        ...identity("client"),
+        verifiedAt: null,
+        matterScope: ["legal/cases/2026-014"],
+      };
+      const result = await orchestrateWhatsAppMessage(
+        { id: "wamid.C2", from: "+491701234567", type: "text", text: "Termin nächste Woche?" },
+        unverified,
+        { fetchImpl: fetchImpl as unknown as typeof fetch }
+      );
+      expect(result.notificationEvent?.case_slug).toBeUndefined();
+      const approval = bodies(fetchImpl).find((b) => b.type === "agent_action");
+      expect(
+        (approval?.frontmatter?.payload as Record<string, unknown>)?.case_slug
+      ).toBeUndefined();
+      expect(bodies(fetchImpl).some((b) => b.type === "intake_request")).toBe(true);
+    });
+
+    // W3-16: a firm member gets a note with the reference, not the client wording.
+    it("a firm member's Freigabe-Vorlage is confirmed with its reference", async () => {
+      const fetchImpl = caseFetch();
+      const result = await orchestrateWhatsAppMessage(
+        {
+          id: "wamid.C3",
+          from: "+491701234567",
+          type: "text",
+          text: "Fordere bei Akt 2026-014 Vollmacht und Bescheid an",
+        },
+        identity("assistant"),
+        { fetchImpl: fetchImpl as unknown as typeof fetch }
+      );
+      expect(result.status).toBe("pending_approval");
+      expect(result.reply).toContain("Vorgang zur Freigabe vorgelegt");
+      expect(result.reply).not.toContain("ungepruefte Rechtsauskunft");
     });
   });
 });

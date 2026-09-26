@@ -23,6 +23,7 @@ import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
 import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
+import { recordWhatsAppOutboundEvent } from "@/lib/whatsapp-kanzlei-os/events";
 
 import { logger } from "@/lib/logger";
 import {
@@ -751,7 +752,12 @@ interface CaseCandidate {
 }
 
 async function findCaseCandidates(brainId: string, caseRef: string): Promise<CaseCandidate[]> {
-  const pages = await listPages(brainId, "legal_case", 300);
+  // Every matter, not the newest few hundred — older matters must be found
+  // too. Deleted matters are left out; the engine applies the caller's
+  // matter access to the listing.
+  const pages = (await listEnginePages(engineHeadersForBrain(brainId), "legal_case", 50_000, {
+    strict: true,
+  })) as unknown as BrainPage[];
   const needle = caseRef.trim().toLowerCase();
   if (!needle) return [];
   return pages
@@ -1376,6 +1382,22 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       return `Nachricht an Mandant konnte nicht gesendet werden (${result.decision.reason ?? "blockiert"}). Bitte im Portal oder per E-Mail senden.`;
     }
     await markAction(ctx, action, "executed");
+    // Documented in the matter's communication history (best-effort).
+    await recordWhatsAppOutboundEvent({
+      brainId: ctx.sender.brainId,
+      orgId: ctx.sender.orgId,
+      caseSlug: targetSlug,
+      toPhone: phone,
+      text: message,
+      messageId: result.messageId,
+      actorId: ctx.sender.userId,
+      actorName: ctx.sender.name,
+    }).catch((err) =>
+      log.error(
+        "[legal-chat] outbound protocol failed:",
+        err instanceof Error ? err.message : String(err)
+      )
+    );
     return `✅ Nachricht an Mandant (Akte "${casePage.title}") wurde gesendet.`;
   }
 
@@ -2220,6 +2242,17 @@ export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> 
 
 export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<string> {
   if (intent.kind === "help") {
+    // Examples follow the firm's country (AT unless the firm is set to DE/CH):
+    // Austrian number format, courts and deadline keys; the RVG calculator
+    // is German law and only offered to German firms.
+    let country = "AT";
+    try {
+      country =
+        getRechtsraumParams(await loadKanzleiSettingsForBrain(ctx.sender.brainId)).country ?? "AT";
+    } catch {
+      // settings unreadable — Austrian examples
+    }
+    const de = country === "DE";
     return [
       "Kanzlei OS WhatsApp-Befehle:",
       "",
@@ -2235,7 +2268,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "  abschließen akt 2026-014 — Akte archivieren",
       "",
       "👤 Mandanten:",
-      "  neuer mandant Thomas Müller +49 170 1234567 — anlegen",
+      `  neuer mandant Thomas Müller ${de ? "0170 1234567" : "0664 1234567"} — anlegen`,
       "  sende mandant akt 2026-014: Bitte bringen Sie die Vollmacht mit — WhatsApp-Nachricht an den Mandanten (braucht hinterlegte Telefonnummer, JA zum Bestätigen)",
       "",
       "⏱️ Erfassen:",
@@ -2251,7 +2284,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "  frist streichen akt 2026-014: Berufung",
       "  erledigt akt 2026-014: klageentwurf — als erledigt markieren",
       "  rechnung akt 2026-014: 2500 eur für Klageentwurf",
-      "  termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung",
+      `  termin akt 2026-014: 15.07.2026 14:00 ${de ? "LG München" : "LG für ZRS Wien"} Verhandlung`,
       "  termin verschieben akt 2026-014: Verhandlung auf 16.07.2026 09:30",
       "  termin absagen akt 2026-014: Verhandlung",
       "  termine — alle anstehenden Termine auflisten",
@@ -2263,8 +2296,8 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       "  aufgaben — alle offenen Aufgaben",
       "  fristen — alle offenen Fristen",
       "  finanzen — finanzielle Übersicht (offene Zeit, Auslagen, Rechnungen)",
-      "  frist berechnen zpo-berufung 2026-03-15 BY",
-      "  rvg 50000 — RVG-Kosten berechnen",
+      de ? "  frist berechnen zpo-berufung 2026-03-15 BY" : "  frist berechnen berufung 2026-03-15",
+      ...(de ? ["  rvg 50000 — RVG-Kosten berechnen"] : []),
       "  konflikt Müller — Konflikt-Check",
       "",
       "🧠 Brain:",

@@ -122,6 +122,17 @@ describe("send_to_client — WhatsApp lawyer command", () => {
       })
     );
     expect(reply).toContain("gesendet");
+    // W3-11: documented in the matter's communication history.
+    const outbound = Object.values(pages).find(
+      (p) =>
+        p.type === "conversation_event" &&
+        (p.frontmatter as Record<string, unknown>).direction === "outbound"
+    );
+    expect(outbound?.frontmatter).toMatchObject({
+      channel: "whatsapp",
+      case_slug: CASE_SLUG,
+      normalized_text: "Bitte bringen Sie die Vollmacht mit.",
+    });
   });
 
   it("refuses to create a pending action when the case has no phone on file", async () => {

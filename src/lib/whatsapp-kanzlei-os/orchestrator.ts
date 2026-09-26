@@ -303,6 +303,8 @@ function caseSlugFromText(text: string): string | undefined {
 function resolveClientCaseSlug(sender: WhatsAppIdentity, text: string): string | undefined {
   const explicit = caseSlugFromText(text);
   if (!isClientRole(sender.role)) return explicit;
+  // An unconfirmed number is not yet the client of any matter.
+  if (!sender.verifiedAt) return undefined;
   const scope = Array.isArray(sender.matterScope) ? sender.matterScope.filter(Boolean) : [];
   if (explicit && scope.includes(explicit)) return explicit;
   return scope.length === 1 ? scope[0] : undefined;
@@ -354,6 +356,9 @@ export async function orchestrateWhatsAppMessage(
     sender,
     normalizedText,
     risk,
+    // A confirmed client's message belongs to their matter's communication
+    // history (only within their own scope).
+    caseSlug: isClientRole(sender.role) ? resolveClientCaseSlug(sender, normalizedText) : undefined,
     status: risk.requiresApproval ? "pending_approval" : "received",
     details: storedMedia ? { media: storedMedia } : undefined,
   });
