@@ -40,10 +40,13 @@ import {
   type JudikaturDoc,
 } from "./judikatur-file";
 import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
+import { COURT_CONFIGS, type CourtConfig } from "./ris-jud-courts";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const MAX_RETRIES = 3;
-const RETRY_BASE_MS = 1000;
+// Retry backoff starts at the RIS pace, never below it: a retry is a request
+// like any other and the 0.5 req/s ceiling applies to it too.
+const RETRY_BASE_MS = RIS_PAUSE_MS;
 
 /** Check if current time is within RIS-recommended off-hours (18:00–06:00 or weekend). */
 function isRisOffHours(): boolean {
@@ -60,112 +63,15 @@ const _scriptDir = dirname(fileURLToPath(import.meta.url));
 // Env first (corpus-paths.ts convention; the pipeline container sets
 // LAW_CORPUS_ROOT=/law-corpus) — the ../../ fallback keeps bare checkouts
 // working where law-corpus is a sibling of the repo.
-const CORPUS_ROOT =
+export const CORPUS_ROOT =
   process.env.LAW_CORPUS_ROOT ??
   process.env.SUBSUMIO_LAW_CORPUS_DIR ??
   join(_scriptDir, "..", "..", "law-corpus");
 
-interface CourtConfig {
-  applikation: string;
-  outDir: string;
-  label: string;
-  defaultFrom: number;
-  knownTotal: number;
-}
-
-const COURT_CONFIGS: Record<string, CourtConfig> = {
-  ogh: {
-    applikation: "Justiz",
-    outDir: "at-judikatur",
-    label: "OGH",
-    defaultFrom: 2000,
-    knownTotal: 58326,
-  },
-  vwgh: {
-    applikation: "Vwgh",
-    outDir: "at-judikatur-vwgh",
-    label: "VwGH",
-    defaultFrom: 1990,
-    knownTotal: 248840,
-  },
-  vfgh: {
-    applikation: "Vfgh",
-    outDir: "at-judikatur-vfgh",
-    label: "VfGH",
-    defaultFrom: 1980,
-    knownTotal: 17806,
-  },
-  bvwg: {
-    applikation: "Bvwg",
-    outDir: "at-judikatur-bvwg",
-    label: "BVwG",
-    defaultFrom: 2014,
-    knownTotal: 287209,
-  },
-  lvwg: {
-    applikation: "Lvwg",
-    outDir: "at-judikatur-lvwg",
-    label: "LVwG",
-    defaultFrom: 2014,
-    knownTotal: 76154,
-  },
-  asylgh: {
-    applikation: "AsylGH",
-    outDir: "at-judikatur-asylgh",
-    label: "AsylGH",
-    defaultFrom: 2008,
-    knownTotal: 53113,
-  },
-  uvs: {
-    applikation: "Uvs",
-    outDir: "at-judikatur-uvs",
-    label: "UVS",
-    defaultFrom: 1991,
-    knownTotal: 25939,
-  },
-  dsk: {
-    applikation: "Dsk",
-    outDir: "at-judikatur-dsk",
-    label: "DSB",
-    defaultFrom: 2010,
-    knownTotal: 5000,
-  },
-  gbk: {
-    applikation: "Gbk",
-    outDir: "at-judikatur-gbk",
-    label: "GBK",
-    defaultFrom: 2004,
-    knownTotal: 500,
-  },
-  pvak: {
-    applikation: "Pvak",
-    outDir: "at-judikatur-pvak",
-    label: "PVAK",
-    defaultFrom: 2002,
-    knownTotal: 2000,
-  },
-  dok: {
-    applikation: "Dok",
-    outDir: "at-judikatur-dok",
-    label: "DOK",
-    defaultFrom: 2000,
-    knownTotal: 3000,
-  },
-  ubas: {
-    applikation: "Ubas",
-    outDir: "at-judikatur-ubas",
-    label: "UBAS",
-    defaultFrom: 2000,
-    knownTotal: 4052,
-  },
-  umse: {
-    applikation: "Umse",
-    outDir: "at-judikatur-umse",
-    label: "UmSE",
-    defaultFrom: 2001,
-    knownTotal: 742,
-  },
-};
+// The court table lives in a leaf module (no network, no src/ imports) so
+// corpus-pipeline.ts and the index crawler can share it without loading this
+// script; re-exported here for callers that import it from the fetcher.
+export { COURT_CONFIGS, type CourtConfig };
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -197,7 +103,7 @@ async function fetchWithRetry(url: string, maxRetries: number = MAX_RETRIES): Pr
   throw lastErr ?? new Error("fetchWithRetry exhausted");
 }
 
-function extractHtmlUrl(ref: Record<string, unknown>): string {
+export function extractHtmlUrl(ref: Record<string, unknown>): string {
   const data = (ref.Data ?? {}) as Record<string, unknown>;
   const dl = (data.Dokumentliste ?? {}) as Record<string, unknown>;
   const cr = (dl.ContentReference ?? {}) as Record<string, unknown>;
@@ -259,6 +165,28 @@ function contentMatchesDocument(text: string, caseNum: string, ecli: string): bo
   return false;
 }
 
+/** What fetchRisFullText's attempts saw (see its `opts.diag`). */
+export interface FullTextDiag {
+  /** HTTP status of every completed attempt, in order. */
+  statuses: number[];
+  /** Attempts that threw (timeout, DNS, retries exhausted). */
+  errors: number;
+  /** 200 responses whose text was too short or did not match the document. */
+  rejected: number;
+}
+
+export function newFullTextDiag(): FullTextDiag {
+  return { statuses: [], errors: 0, rejected: 0 };
+}
+
+/** Why no text came back, in ris-fetch-outcomes.ts vocabulary. */
+export function classifyNoText(diag: FullTextDiag): "not_found" | "no_text" | "failed" {
+  if (diag.rejected > 0) return "no_text";
+  if (diag.statuses.length > 0 && diag.errors === 0 && diag.statuses.every((s) => s === 404))
+    return "not_found";
+  return "failed";
+}
+
 /** Fetch full text for a RIS judikatur document using the same robust
  *  3-strategy approach as backfill-corpus-text.ts:
  *  1. Deterministic XML URL (structured nutzdaten, cleanest source)
@@ -266,13 +194,39 @@ function contentMatchesDocument(text: string, caseNum: string, ecli: string): bo
  *  3. API-provided HTML URL (from ContentReference, original approach)
  *
  *  Each candidate passes contentMatchesDocument() — no silent mislabeling.
- *  Returns empty string only if ALL strategies fail (placeholder will be written). */
-async function fetchRisFullText(
+ *  Returns empty string only if ALL strategies fail (placeholder will be written).
+ *
+ *  `opts.pause` runs before every strategy after the first, so a caller that
+ *  must keep the RIS pace per request (not just per document) can pass
+ *  risMassPause. `opts.diag` collects what each attempt saw, so the caller
+ *  can tell "RIS has no such document" (all 404) from "RIS has it but
+ *  without usable text" (a 200 that failed the checks) from a transport
+ *  failure. Both are optional; fullScanCourt passes neither. */
+export async function fetchRisFullText(
   htmlUrl: string,
   sourceUrl: string,
   caseNum: string,
-  ecli: string
+  ecli: string,
+  opts: { pause?: () => Promise<void>; diag?: FullTextDiag } = {}
 ): Promise<string> {
+  let attempts = 0;
+  const attempt = async (url: string, toText: (body: string) => string): Promise<string> => {
+    if (attempts++ > 0 && opts.pause) await opts.pause();
+    try {
+      const res = await fetchWithRetry(url);
+      opts.diag?.statuses.push(res.status);
+      if (res.ok) {
+        const candidate = toText(await res.text());
+        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
+          return candidate;
+        }
+        if (opts.diag) opts.diag.rejected++;
+      }
+    } catch {
+      if (opts.diag) opts.diag.errors++;
+    }
+    return "";
+  };
   // Extract Abfrage and DokNr from source_url for deterministic URLs.
   // Supports both API-style URLs (?Abfrage=X&Dokumentnummer=Y) and
   // direct document URLs (/Dokumente/{Abfrage}/{DokNr}/{DokNr}.html).
@@ -297,17 +251,8 @@ async function fetchRisFullText(
   // to ## headers, and NO sr-only duplicate text (that's only in HTML).
   if (abfrage && dokNr) {
     const xmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.xml`;
-    try {
-      const res = await fetchWithRetry(xmlUrl);
-      if (res.ok) {
-        const candidate = risXmlToText(await res.text());
-        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
-          return candidate;
-        }
-      }
-    } catch {
-      /* try next */
-    }
+    const text = await attempt(xmlUrl, risXmlToText);
+    if (text) return text;
   }
 
   // Strategy 2: Deterministic HTML URL.
@@ -317,38 +262,20 @@ async function fetchRisFullText(
   //   - Decodes all HTML entities properly
   if (abfrage && dokNr) {
     const directHtmlUrl = `https://www.ris.bka.gv.at/Dokumente/${abfrage}/${dokNr}/${dokNr}.html`;
-    try {
-      const res = await fetchWithRetry(directHtmlUrl);
-      if (res.ok) {
-        const candidate = stripHtmlComplete(await res.text());
-        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
-          return candidate;
-        }
-      }
-    } catch {
-      /* try next */
-    }
+    const text = await attempt(directHtmlUrl, stripHtmlComplete);
+    if (text) return text;
   }
 
   // Strategy 3: API-provided HTML URL (original approach — least reliable)
   if (htmlUrl) {
-    try {
-      const res = await fetchWithRetry(htmlUrl);
-      if (res.ok) {
-        const candidate = stripHtmlComplete(await res.text());
-        if (candidate.length >= 50 && contentMatchesDocument(candidate, caseNum, ecli)) {
-          return candidate;
-        }
-      }
-    } catch {
-      /* all strategies failed */
-    }
+    const text = await attempt(htmlUrl, stripHtmlComplete);
+    if (text) return text;
   }
 
   return ""; // All strategies failed — placeholder will be written
 }
 
-function slugify(s: string): string {
+export function slugify(s: string): string {
   return (
     s
       .toLowerCase()
@@ -611,12 +538,16 @@ async function main() {
   console.log(`  3. Embed:          bun scripts/embed-pending-at.ts --source <source_id>`);
 }
 
-main()
-  .then(() => {
-    releaseRisLock();
-  })
-  .catch((err) => {
-    console.error("Fatal:", err);
-    releaseRisLock();
-    process.exit(1);
-  });
+// Guarded so fetch-jud-from-index.ts can import fetchRisFullText & co.
+// without starting a full scan.
+if (import.meta.main) {
+  main()
+    .then(() => {
+      releaseRisLock();
+    })
+    .catch((err) => {
+      console.error("Fatal:", err);
+      releaseRisLock();
+      process.exit(1);
+    });
+}

@@ -69,6 +69,7 @@ import {
 import { join, dirname, resolve } from "path";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
+import { COURT_CONFIGS } from "./ris-jud-courts";
 import { spawn, execSync } from "child_process";
 
 const _dir = dirname(fileURLToPath(import.meta.url));
@@ -2565,6 +2566,17 @@ async function cycle(): Promise<void> {
           "--keep-xml",
           "/law-corpus/_xml/at-normen",
         ],
+        // Document-exact Judikatur index (manual trigger only): jud-index-<court>
+        // lists every RIS document of a court into
+        // _state/ris-index-jud-<court>.jsonl; jud-fromindex-<court> then fetches
+        // exactly the ones missing on disk. --resume lets a respawn after a
+        // kill continue from the finished windows instead of from zero.
+        ...Object.fromEntries(
+          Object.keys(COURT_CONFIGS).flatMap((c) => [
+            [`jud-index-${c}`, ["scripts/ris-jud-index-crawl.ts", "--court", c, "--resume"]],
+            [`jud-fromindex-${c}`, ["scripts/fetch-jud-from-index.ts", "--court", c]],
+          ])
+        ),
       };
       const cmd = fetchCmd[key];
       if (!cmd) {
