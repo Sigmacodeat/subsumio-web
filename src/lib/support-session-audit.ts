@@ -74,3 +74,50 @@ export async function writeFirmVisibleSupportAuditEntry(
     "Support-Protokolleintrag"
   );
 }
+
+/**
+ * One firm-visible entry per accessed path inside a support session (see
+ * requireEngineContext). Records method, path and route action — never
+ * query strings or bodies. Returns whether it was stored; the caller refuses
+ * the request otherwise.
+ */
+export async function writeSupportAccessAuditEntry(
+  orgBrainId: string,
+  session: SupportSession,
+  access: { method: string; path: string; action: string }
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  const action = "support.access";
+  const slug = `audit/${now.slice(0, 10)}/support-access-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const details = {
+    method: access.method,
+    path: access.path,
+    route_action: access.action,
+    mode: session.mode,
+    session_id: session.id,
+    by: session.operatorEmail,
+  };
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...engineHeadersForBrain(orgBrainId) },
+      body: JSON.stringify({
+        slug,
+        title: `Subsumio-Support: Zugriff ${access.method} ${access.path}`,
+        type: "audit_log",
+        content: JSON.stringify({ action, entityType: "org", details, timestamp: now }),
+        frontmatter: {
+          action,
+          entity_type: "org",
+          entity_id: session.orgId,
+          details,
+          timestamp: now,
+          date: now.split("T")[0],
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    },
+    "Support-Zugriffsprotokoll"
+  );
+}

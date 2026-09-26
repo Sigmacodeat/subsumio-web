@@ -43,7 +43,31 @@ vi.mock("@/lib/auth/store", () => ({
   getOrgStore: () => ({ getById: getOrgById }),
 }));
 
-vi.mock("@/lib/env", () => ({ env: () => undefined }));
+vi.mock("@/lib/env", () => ({
+  env: (k: string) => (k === "SUBSUMIO_WEB_API_KEY" ? "test-web-key" : undefined),
+}));
+
+// Firm-visible access log written for every access inside a support session.
+const auditEntries = vi.hoisted(() => ({
+  list: [] as Array<{ brainId: string; method: string; path: string }>,
+  ok: true,
+}));
+vi.mock("@/lib/support-session-audit", () => ({
+  writeSupportAccessAuditEntry: async (
+    brainId: string,
+    _s: unknown,
+    a: { method: string; path: string }
+  ) => {
+    auditEntries.list.push({ brainId, method: a.method, path: a.path });
+    return auditEntries.ok;
+  },
+}));
+
+function identityRole(headers: Record<string, string> | undefined): string | undefined {
+  const token = headers?.["x-subsumio-identity-token"];
+  if (!token) return undefined;
+  return JSON.parse(Buffer.from(token.split(".")[0]!, "base64url").toString("utf8")).role;
+}
 
 vi.mock("@/lib/auth/platform-operator", () => ({
   isPlatformOperator: (u: { email?: string }) => u?.email === OPERATOR.email,
@@ -85,6 +109,9 @@ describe("engineContext — support session override", () => {
     expect(ctx?.headers["x-subsumio-source"]).toBe(ORG.brainId);
     expect(ctx?.supportSession?.orgId).toBe(ORG.id);
     expect(ctx?.supportSession?.reason).toBe("Fehlerticket #42");
+    // The engine — enforcement point for restricted matters and document
+    // ACLs — never sees "admin" for a support session.
+    expect(identityRole(ctx?.headers)).toBe("support");
   });
 
   test("the operator's REAL stored record is never mutated by the override", async () => {
@@ -185,6 +212,59 @@ describe("requireEngineContext — support sessions are read-only by default", (
     getActiveSupportSession.mockResolvedValue({ ...base, mode: "write" });
     const write = await requireEngineContext(req("POST"), "brain.write", "standard");
     expect(write).not.toBeInstanceOf(Response);
+    expect(identityRole((write as { headers: Record<string, string> }).headers)).toBe("lawyer");
+    getActiveSupportSession.mockReset();
+  });
+});
+
+describe("requireEngineContext — support access is recorded in the firm's audit trail", () => {
+  const session = {
+    id: "sess_log",
+    mode: "read",
+    operatorId: OPERATOR.id,
+    operatorEmail: OPERATOR.email,
+    orgId: ORG.id,
+    orgName: ORG.name,
+    reason: "Ticket #9",
+    startedAt: "2026-01-01T10:00:00.000Z",
+    expiresAt: "2099-01-01T11:00:00.000Z",
+    endedAt: null,
+  };
+
+  test("reading a matter writes one entry into the firm's brain (once per path)", async () => {
+    auditEntries.list.length = 0;
+    auditEntries.ok = true;
+    getActiveSupportSession.mockResolvedValue({ ...session });
+    const r = new Request("http://localhost/api/legal/cases/akt-1?q=x", { method: "GET" });
+    expect(await requireEngineContext(r, "brain.read", "standard")).not.toBeInstanceOf(Response);
+    expect(await requireEngineContext(r, "brain.read", "standard")).not.toBeInstanceOf(Response);
+    expect(auditEntries.list).toEqual([
+      { brainId: ORG.brainId, method: "GET", path: "/api/legal/cases/akt-1" },
+    ]);
+  });
+
+  test("if the entry cannot be stored, the access is refused", async () => {
+    auditEntries.list.length = 0;
+    auditEntries.ok = false;
+    getActiveSupportSession.mockResolvedValue({ ...session, id: "sess_log_2" });
+    const res = await requireEngineContext(
+      new Request("http://localhost/api/documents/d-1", { method: "GET" }),
+      "brain.read",
+      "standard"
+    );
+    expect((res as Response).status).toBe(503);
+    auditEntries.ok = true;
+  });
+
+  test("a firm member's own requests are not logged as support access", async () => {
+    auditEntries.list.length = 0;
+    getActiveSupportSession.mockResolvedValue(null);
+    await requireEngineContext(
+      new Request("http://localhost/api/legal/cases", { method: "GET" }),
+      "brain.read",
+      "standard"
+    );
+    expect(auditEntries.list).toHaveLength(0);
     getActiveSupportSession.mockReset();
   });
 });
