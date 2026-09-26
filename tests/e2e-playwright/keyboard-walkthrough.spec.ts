@@ -270,15 +270,26 @@ test.describe("Keyboard-Only Walkthrough", () => {
     const context = await browser.newContext({
       storageState: "/tmp/kbd-auth-state.json",
     });
+    // Start closed, as in the toggle test above.
+    await context.addInitScript(() => {
+      try {
+        window.localStorage.setItem("subsumio-copilot-open-v2", "false");
+      } catch {
+        // storage unavailable — the viewport default (closed below 1680 px) applies
+      }
+    });
     const page = await context.newPage();
+    const TOGGLE = "ControlOrMeta+Shift+C";
     try {
       await page.goto("/dashboard", { waitUntil: "load" });
       await expect(page.locator("#main-content")).toBeVisible();
 
-      // Open copilot
-      await page.keyboard.press("Meta+Shift+c");
+      // Open copilot (re-press only while closed: the listener attaches after hydration)
       const copilotPanel = page.locator('[data-tour="copilot-panel"]');
-      await expect(copilotPanel).toBeVisible({ timeout: 3_000 });
+      await expect(async () => {
+        if (!(await copilotPanel.isVisible())) await page.keyboard.press(TOGGLE);
+        await expect(copilotPanel).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
 
       // Tab through the panel — should not get trapped
       for (let i = 0; i < 20; i++) {
@@ -289,8 +300,9 @@ test.describe("Keyboard-Only Walkthrough", () => {
       // Verify panel is still open
       await expect(copilotPanel).toBeVisible();
 
-      // Close via Cmd+J
-      await page.keyboard.press("Meta+Shift+c");
+      // Close again
+      await page.keyboard.press(TOGGLE);
+      await expect(copilotPanel).toBeHidden();
     } finally {
       await page.close();
       await context.close();

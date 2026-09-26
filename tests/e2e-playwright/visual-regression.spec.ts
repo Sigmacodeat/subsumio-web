@@ -122,15 +122,13 @@ test.describe("Visual Regression — Both Themes", () => {
       });
 
       // Open copilot (already open by default — toggle only if input hidden)
-      if (
-        !(await page
-          .locator("textarea[data-chat-input]")
-          .first()
-          .isVisible()
-          .catch(() => false))
-      ) {
-        await page.keyboard.press("Meta+Shift+c");
-      }
+      // Open the panel (re-press only while closed: the shortcut listener
+      // attaches after hydration).
+      const panel = page.locator('[data-tour="copilot-panel"]');
+      await expect(async () => {
+        if (!(await panel.isVisible())) await page.keyboard.press("ControlOrMeta+Shift+C");
+        await expect(panel).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
       await page.waitForTimeout(500);
       await page.screenshot({
         path: "tests/screenshots/copilot-open.png",
