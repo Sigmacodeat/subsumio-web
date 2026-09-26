@@ -571,8 +571,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     const handlers = Object.entries(eventMap).map(([eventName, overlay]) => {
       const handler = (event: Event) => {
-        const detail = (event as CustomEvent<{ caseSlug?: string; description?: string }>)
-          .detail;
+        const detail = (event as CustomEvent<{ caseSlug?: string; description?: string }>).detail;
         setPresetCaseSlug(detail?.caseSlug);
         setPresetDescription(
           typeof detail?.description === "string" ? detail.description : undefined

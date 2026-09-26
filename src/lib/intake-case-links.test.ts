@@ -123,7 +123,11 @@ describe("checkSignedPoa (W4-04)", () => {
   it("a signed, valid record passes; not required passes", async () => {
     pages.set("legal/poa/p1", { type: "power_of_attorney", frontmatter: { status: "signed" } });
     expect(
-      await checkSignedPoa({}, wf({ required: true, status: "signed", poa_slug: "legal/poa/p1" }), now)
+      await checkSignedPoa(
+        {},
+        wf({ required: true, status: "signed", poa_slug: "legal/poa/p1" }),
+        now
+      )
     ).toEqual({ ok: true });
     expect(await checkSignedPoa({}, wf({ required: false, status: "not_required" }), now)).toEqual({
       ok: true,

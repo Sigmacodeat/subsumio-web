@@ -10,7 +10,12 @@ describe("tariffEntriesFor (W4-09)", () => {
       system: "ratg",
       basis: 12000,
       lines: [
-        { id: "ratg-1-0", description: "Klage TP 3A — BG 12.000 €", date: "2026-09-24", amount: 287.4 },
+        {
+          id: "ratg-1-0",
+          description: "Klage TP 3A — BG 12.000 €",
+          date: "2026-09-24",
+          amount: 287.4,
+        },
         { id: "ratg-1-1", description: "Einheitssatz 50 %", date: "2026-09-24", amount: 143.7 },
       ],
     });

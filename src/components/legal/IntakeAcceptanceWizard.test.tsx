@@ -9,9 +9,9 @@ describe("poaStepComplete (W4-04)", () => {
     expect(poaStepComplete({ required: true, status: "signed" })).toBe(false);
   });
   it("a linked, signed power of attorney completes the step", () => {
-    expect(
-      poaStepComplete({ required: true, status: "signed", poa_slug: "legal/poa/poa-1" })
-    ).toBe(true);
+    expect(poaStepComplete({ required: true, status: "signed", poa_slug: "legal/poa/poa-1" })).toBe(
+      true
+    );
   });
   it("no power of attorney needed completes the step", () => {
     expect(poaStepComplete({ required: false, status: "not_required" })).toBe(true);

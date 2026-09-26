@@ -29,10 +29,7 @@ import {
   type AhkStrafVerfahren,
 } from "@/lib/legal/ahk-tariff-data";
 import type { RatgTariffItem } from "@/lib/legal/ratg";
-import {
-  basisInputFromValue,
-  type TariffInvoiceLine,
-} from "@/components/legal/RatgTariffForm";
+import { basisInputFromValue, type TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
 
 const ITEM_OPTIONS: Array<{ value: RatgTariffItem; label: string }> = [
   { value: "TP1", label: "TP 1 – Anzeigen, Mitteilungen, Fristansuchen" },

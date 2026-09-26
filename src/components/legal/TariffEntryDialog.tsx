@@ -116,8 +116,7 @@ export function TariffEntryDialog({
       }
       addToast({
         type: "success",
-        title:
-          saved === 1 ? "Tarifleistung erfasst" : `${saved} Tarifleistungen erfasst`,
+        title: saved === 1 ? "Tarifleistung erfasst" : `${saved} Tarifleistungen erfasst`,
         description: "Sie stehen in der Akte offen, bis sie abgerechnet werden.",
       });
       onSaved?.();

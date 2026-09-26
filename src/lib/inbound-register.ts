@@ -72,11 +72,7 @@ export function inboundAssignmentUpdate(
   input: { caseSlug: string; by: string; byId?: string; at: string }
 ): Pick<
   InboundEntry,
-  | "case_slug"
-  | "case_suggested"
-  | "case_confirmed_by"
-  | "case_confirmed_at"
-  | "assignment_history"
+  "case_slug" | "case_suggested" | "case_confirmed_by" | "case_confirmed_at" | "assignment_history"
 > {
   const change: InboundAssignmentChange = {
     ...(entry.case_slug ? { from: entry.case_slug } : {}),
@@ -251,7 +247,9 @@ export function exportInboundRegister(entries: InboundEntry[]): string {
 }
 
 /** Prefilled text of a deadline created from a register entry. */
-export function inboundDeadlineDescription(entry: Pick<InboundEntry, "subject" | "received_at">): string {
+export function inboundDeadlineDescription(
+  entry: Pick<InboundEntry, "subject" | "received_at">
+): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(entry.received_at ?? "");
   const day = m ? `${m[3]}.${m[2]}.${m[1]}` : "";
   return `Frist aus Posteingang: ${entry.subject}${day ? ` (eingelangt ${day})` : ""}`;

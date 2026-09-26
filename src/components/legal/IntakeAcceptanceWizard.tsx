@@ -226,13 +226,13 @@ export function IntakeAcceptanceWizard({
       addToast({
         type: "error",
         title: "Honorarvereinbarung nicht gespeichert",
-        description: err instanceof Error && err.message !== "save_failed" ? err.message : undefined,
+        description:
+          err instanceof Error && err.message !== "save_failed" ? err.message : undefined,
       });
     } finally {
       setSavingFee(false);
     }
   }
-
 
   // Identification checks recorded for this intake (the KYC page stores them
   // under the intake slug). Reloaded whenever the step is shown, so a check

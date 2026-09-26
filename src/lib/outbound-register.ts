@@ -94,7 +94,10 @@ export const CHANNEL_LABELS: Record<OutboundChannel, { de: string; en: string }>
  * sees its own court channel. Existing entries keep their label either way.
  */
 export function outboundChannelsFor(jurisdiction: unknown): OutboundChannel[] {
-  const german = String(jurisdiction ?? "").trim().toUpperCase() === "DE";
+  const german =
+    String(jurisdiction ?? "")
+      .trim()
+      .toUpperCase() === "DE";
   return (Object.keys(CHANNEL_LABELS) as OutboundChannel[]).filter((c) =>
     german ? c !== "erv" : c !== "bea"
   );

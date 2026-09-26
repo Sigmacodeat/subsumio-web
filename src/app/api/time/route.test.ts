@@ -219,7 +219,11 @@ describe("POST /api/time — Tarifleistung (W4-09)", () => {
       tariff: { system: "ratg", amount: 431.104, basis: 12000, label: "Klage TP 3A" },
     });
     expect(res.status).toBe(201);
-    const [, field, entries] = mockAppend.mock.calls[0] as [string, string, Array<Record<string, unknown>>];
+    const [, field, entries] = mockAppend.mock.calls[0] as [
+      string,
+      string,
+      Array<Record<string, unknown>>,
+    ];
     expect(field).toBe("time_entries");
     expect(entries[0]).toMatchObject({
       minutes: 90,

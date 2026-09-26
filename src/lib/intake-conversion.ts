@@ -68,8 +68,7 @@ export function buildCaseFromIntake(
   // Lower-case slug parts: the engine stores slugs lower-cased, and a firm
   // prefix ("MK-26-0042") must not produce a link that misses the matter.
   const slug =
-    options.caseSlug?.trim() ||
-    `legal/cases/${safeSlugPart(caseNumber)}-${safeSlugPart(title)}`;
+    options.caseSlug?.trim() || `legal/cases/${safeSlugPart(caseNumber)}-${safeSlugPart(title)}`;
   const missingDocs = fm.missing_documents ?? [];
   const opponent = typeof fm.opponent === "string" ? fm.opponent.trim() : "";
   const engagementLetter = fm.acceptance?.engagement_letter;

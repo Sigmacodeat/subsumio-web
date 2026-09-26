@@ -72,7 +72,8 @@ async function loadBilledTimeRecords(
   const mfm = (matter?.frontmatter ?? {}) as Record<string, unknown>;
   const wanted = new Set(timeEntryIds);
   const toEntry = (id: string, e: Record<string, unknown>): TimeEntryLike => {
-    const tariff = e.tariff && typeof e.tariff === "object" ? (e.tariff as Record<string, unknown>) : null;
+    const tariff =
+      e.tariff && typeof e.tariff === "object" ? (e.tariff as Record<string, unknown>) : null;
     return {
       id,
       description: String(e.description ?? ""),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { tariffJurisdictionOf } from "./tariff-jurisdiction";
 
 describe("tariffJurisdictionOf (W4-09 Nebenbefund)", () => {
-  it("a German firm as stored (\"DE\") gets the German tariffs", () => {
+  it('a German firm as stored ("DE") gets the German tariffs', () => {
     expect(tariffJurisdictionOf("DE")).toBe("de");
     expect(tariffJurisdictionOf("de")).toBe("de");
   });

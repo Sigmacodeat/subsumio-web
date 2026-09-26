@@ -65,29 +65,34 @@ vi.mock("@/lib/intake-conversion", () => ({
   buildCaseFromIntake: (
     intake: { slug: string; frontmatter: Record<string, unknown> },
     options: Record<string, unknown>
-  ) => (builderOptions.push(options), {
-    slug: `legal/cases/2026-12345-max-muster`,
-    title: "Max Muster - Arbeitsrecht",
-    type: "legal_case",
-    content: "",
-    frontmatter: {
+  ) => (
+    builderOptions.push(options),
+    {
+      slug: `legal/cases/2026-12345-max-muster`,
+      title: "Max Muster - Arbeitsrecht",
       type: "legal_case",
-      case_number: "2026-12345",
-      status: "open",
-      priority: "medium",
-      legal_area: intake.frontmatter.legal_area,
-      client_name: intake.frontmatter.client_name,
-      source: "intake",
-      source_intake_slug: intake.slug,
-      version: 0,
-    },
-  }),
+      content: "",
+      frontmatter: {
+        type: "legal_case",
+        case_number: "2026-12345",
+        status: "open",
+        priority: "medium",
+        legal_area: intake.frontmatter.legal_area,
+        client_name: intake.frontmatter.client_name,
+        source: "intake",
+        source_intake_slug: intake.slug,
+        version: 0,
+      },
+    }
+  ),
 }));
 
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
 const mockResolveNumber = vi.fn(async (..._a: unknown[]) => "26-0001");
 const mockCheckPoa = vi.fn(
-  async (..._a: unknown[]): Promise<{ ok: true } | { ok: false; code: string; message: string }> => ({
+  async (
+    ..._a: unknown[]
+  ): Promise<{ ok: true } | { ok: false; code: string; message: string }> => ({
     ok: true,
   })
 );
@@ -106,7 +111,9 @@ vi.mock("@/lib/intake-case-links", () => ({
   checkSignedPoa: (...a: unknown[]) => mockCheckPoa(...a),
   relinkIntakeRecords: (...a: unknown[]) => mockRelink(...a),
 }));
-const mockEnsureContacts = vi.fn(async (..._a: unknown[]): Promise<Record<string, unknown>> => ({}));
+const mockEnsureContacts = vi.fn(
+  async (..._a: unknown[]): Promise<Record<string, unknown>> => ({})
+);
 vi.mock("@/lib/case-contacts", () => ({
   ensureCaseContacts: (...a: unknown[]) => mockEnsureContacts(...a),
 }));

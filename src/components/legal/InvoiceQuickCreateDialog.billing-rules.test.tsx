@@ -93,10 +93,7 @@ function serverRecordCheck(fm: Record<string, unknown>) {
   const stored = new Map(
     entries.map((e) => {
       const tariff = (e as { tariff?: { amount: number; label: string } }).tariff;
-      return [
-        e.id,
-        tariff ? { ...e, tariffAmount: tariff.amount, tariffLabel: tariff.label } : e,
-      ];
+      return [e.id, tariff ? { ...e, tariffAmount: tariff.amount, tariffLabel: tariff.label } : e];
     })
   );
   return checkTimeItemsAgainstEntries(fm, stored, activeBillingRules(state.settings), {

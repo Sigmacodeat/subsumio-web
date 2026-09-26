@@ -94,7 +94,8 @@ export async function checkSignedPoa(
       message: "Die Vollmacht konnte nicht geprüft werden. Akte wurde nicht angelegt.",
     };
   }
-  const record = read.kind === "found" ? (read.page.frontmatter as unknown as PowerOfAttorney) : null;
+  const record =
+    read.kind === "found" ? (read.page.frontmatter as unknown as PowerOfAttorney) : null;
   const isPoaPage =
     read.kind === "found" &&
     (read.page.type === "power_of_attorney" || read.page.frontmatter?.type === "power_of_attorney");
