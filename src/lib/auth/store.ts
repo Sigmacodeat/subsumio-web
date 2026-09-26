@@ -192,6 +192,12 @@ export interface Org {
   /** Result of this firm's last manual directory sync (SCIM settings page). */
   scimLastSync?: { at: string; result: unknown } | null;
   /**
+   * Directory group → role, set by a firm admin in the SCIM settings. Key:
+   * the group's display name, trimmed and lower-cased. Never "admin" — a
+   * directory group cannot make anyone a firm admin (src/lib/scim-groups.ts).
+   */
+  scimGroupRoles?: Record<string, "lawyer" | "assistant" | "client_viewer"> | null;
+  /**
    * Per-email cutoff for org invites: when a member is removed (or leaves),
    * invites minted before this timestamp must not be usable to (re-)join —
    * invite tokens are stateless, so removal alone would not stop a still-
