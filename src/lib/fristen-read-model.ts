@@ -8,6 +8,7 @@ import {
   type DeadlineStatus,
 } from "@/lib/legal-deadlines";
 import { caseFrontmatter } from "@/lib/legal-types";
+import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
 
 /**
  * Unified Fristen Read-Model — shared by GET /api/legal/fristen and the
@@ -387,4 +388,20 @@ export async function loadFristenReadModel(
   }
 
   return { fristen, failedSources };
+}
+
+/**
+ * Polling surfaces (topbar warnings, copilot deadline alerts) ask for the
+ * read model on every dashboard page, in every tab, every minute. They share
+ * one build per caller (brain + access) and options for 30 s — the
+ * Fristenbuch itself reads uncached.
+ */
+const pollingCache = createTtlCache<FristenReadModel>(30_000);
+
+export function loadFristenReadModelCached(
+  headers: Record<string, string>,
+  opts: { caseFilter?: string; heute?: string } = {}
+): Promise<FristenReadModel> {
+  const key = [headersCacheKey(headers), opts.caseFilter ?? "", opts.heute ?? ""].join("\u0000");
+  return pollingCache.get(key, () => loadFristenReadModel(headers, opts));
 }

@@ -155,6 +155,22 @@ describe("PATCH /api/absences", () => {
     expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/d-in", "legal/wv/w-1"]);
   });
 
+  test("der Fristen-Scan liest vollständig oder gar nicht (R11-8)", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith(ABSENCE));
+    mockList.mockResolvedValue([]);
+    await patch({ id: "absence-1", action: "activate" });
+    for (const call of mockList.mock.calls) {
+      expect(call[2]).toBeGreaterThanOrEqual(100_000);
+      expect(call[3]).toMatchObject({ strict: true, failOnTruncate: true });
+    }
+    expect(mockList.mock.calls.map((c) => c[1]).sort()).toEqual([
+      "legal_case",
+      "legal_deadline",
+      "legal_follow_up",
+    ]);
+    mockList.mockReset();
+  });
+
   test("activate bleibt erfolgreich wenn Fristen-Scan fehlschlägt", async () => {
     mockFetch.mockResolvedValueOnce(pageWith(ABSENCE));
     mockList.mockRejectedValue(new Error("engine down"));

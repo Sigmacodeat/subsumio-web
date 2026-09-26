@@ -14,6 +14,9 @@ import {
 import { logger } from "@/lib/logger";
 const log = logger("api/absences");
 
+/** Safety stop per type for the forwarded-deadline count. */
+const ABSENCE_SCAN_MAX = 100_000;
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const createAbsenceSchema = z.object({
@@ -151,10 +154,13 @@ export const PATCH = createHandler(
     // the transition itself.
     if (body.action === "activate") {
       try {
+        // Complete lists or no count at all: a cut list (newest first) would
+        // report too few forwarded deadlines without saying so.
+        const complete = { strict: true, failOnTruncate: true } as const;
         const [deadlinePages, followUpPages, casePages] = await Promise.all([
-          listEnginePages(ctx.headers, "legal_deadline", 5000),
-          listEnginePages(ctx.headers, "legal_follow_up", 5000),
-          listEnginePages(ctx.headers, "legal_case", 2000),
+          listEnginePages(ctx.headers, "legal_deadline", ABSENCE_SCAN_MAX, complete),
+          listEnginePages(ctx.headers, "legal_follow_up", ABSENCE_SCAN_MAX, complete),
+          listEnginePages(ctx.headers, "legal_case", ABSENCE_SCAN_MAX, complete),
         ]);
         const responsibleByCase = new Map<string, string>();
         for (const c of casePages) {

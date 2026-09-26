@@ -4,9 +4,8 @@ import type { DeadlineStatus } from "@/lib/legal-deadlines";
 import {
   DEADLINE_SOURCES,
   loadFristenReadModel,
-  type FristenReadModel,
+  loadFristenReadModelCached,
 } from "@/lib/fristen-read-model";
-import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
 import { topbarDeadlineWarnings } from "@/lib/topbar-deadline-warnings";
 import { firmToday } from "@/lib/datetime";
 import { z } from "zod";
@@ -23,12 +22,7 @@ const querySchema = z.object({
   view: z.enum(["warnings"]).optional(),
 });
 
-/**
- * The topbar asks for its warnings on every dashboard page, in every tab,
- * every minute. Those requests share one read-model build per caller
- * (brain + access) and day for 30 s — the Fristenbuch itself stays uncached.
- */
-const warningsCache = createTtlCache<FristenReadModel>(30_000);
+
 
 /**
  * GET /api/legal/fristen — the unified Fristen read model
@@ -57,12 +51,10 @@ export const GET = createHandler(
       });
     const model =
       query.view === "warnings"
-        ? await warningsCache.get(
-            [headersCacheKey(ctx.headers), query.case ?? "", query.heute ?? firmToday()].join(
-              "\u0000"
-            ),
-            load
-          )
+        ? await loadFristenReadModelCached(ctx.headers, {
+            caseFilter: query.case,
+            heute: query.heute ?? firmToday(),
+          })
         : await load();
     const failedSources = model.failedSources;
     const fristen =
