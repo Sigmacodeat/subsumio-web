@@ -12,6 +12,14 @@ const computeSchema = z
     days: z.number().int().min(-365).max(365).optional(),
     law: z.string().max(50).optional(),
     case_slug: z.string().max(500).optional(),
+    // Gap FRI-73: § 73 ZPO — Fristunterbrechung durch Verfahrenshilfeantrag.
+    verfahrenshilfe: z
+      .object({
+        antragAm: z.string().max(20),
+        fortsetzungAm: z.string().max(20).optional(),
+        weitereAntraegeAm: z.array(z.string().max(20)).max(20).optional(),
+      })
+      .optional(),
   })
   .passthrough();
 

@@ -9951,6 +9951,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           zustellungIso?: string;
           ferialsache?: boolean;
           vorfristTage?: number;
+          // Gap FRI-73: § 73 ZPO — Fristunterbrechung durch Verfahrenshilfeantrag.
+          verfahrenshilfe?: {
+            antragAm?: string;
+            fortsetzungAm?: string;
+            weitereAntraegeAm?: string[];
+          };
         };
         if (!b.artKey || !b.zustellungIso) {
           res
@@ -9958,11 +9964,25 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             .json({ error: "missing_params", message: "artKey and zustellungIso required" });
           return;
         }
+        if (b.verfahrenshilfe && !b.verfahrenshilfe.antragAm) {
+          res.status(400).json({
+            error: "missing_params",
+            message: "verfahrenshilfe.antragAm required when verfahrenshilfe is set",
+          });
+          return;
+        }
         const { berechneFristAuto, FRISTEN_REGISTRY } =
           await import("../core/legal/frist-engine.ts");
         const result = berechneFristAuto(b.artKey, b.zustellungIso, {
           ferialsache: b.ferialsache,
           vorfristTage: b.vorfristTage,
+          verfahrenshilfe: b.verfahrenshilfe?.antragAm
+            ? {
+                antragAm: b.verfahrenshilfe.antragAm,
+                fortsetzungAm: b.verfahrenshilfe.fortsetzungAm,
+                weitereAntraegeAm: b.verfahrenshilfe.weitereAntraegeAm,
+              }
+            : undefined,
         });
         res.json({
           ok: true,
@@ -9973,6 +9993,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             vorfrist: result.vorfrist,
             kalendertage: result.kalendertage,
             hinweise: result.hinweise,
+            verfahrenshilfeUnterbrochen: result.verfahrenshilfeUnterbrochen ?? false,
             art: {
               key: result.art.key,
               bezeichnung: result.art.bezeichnung,
