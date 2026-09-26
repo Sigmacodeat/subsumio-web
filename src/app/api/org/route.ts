@@ -23,7 +23,7 @@ export const GET = createHandler(
     const org = await getOrgStore().getById(ctx.user.orgId);
     if (!org) return Response.json({ org: null });
 
-    const orgUsers = (await getStore().list()).filter((u) => u.orgId === org.id);
+    const orgUsers = await getStore().listByOrg(org.id);
     const members = visibleOrgMembers(ctx.user, orgUsers).map((u) => ({
       ...toPublic(u),
       isOwner: u.id === org.ownerId,
@@ -116,7 +116,7 @@ export const DELETE = createHandler(
     }
 
     if (ctx.user.id === org.ownerId) {
-      const memberCount = (await getStore().list()).filter((u) => u.orgId === org.id).length;
+      const memberCount = (await getStore().listByOrg(org.id)).length;
       if (memberCount > 1) {
         return apiError("owner_must_remove_members_first", "Zuerst Mitglieder entfernen", 409);
       }

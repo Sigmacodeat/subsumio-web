@@ -9,7 +9,8 @@ import { verifySecondFactor } from "@/lib/auth/second-factor";
 export const dynamic = "force-dynamic";
 
 const disableSchema = z.object({
-  password: z.string().min(1).max(1000),
+  /** Required for accounts with a local password; SSO accounts have none. */
+  password: z.string().max(1000).optional(),
   /** Current TOTP or backup code — the second factor itself must confirm. */
   code: z.string().min(1).max(20).optional(),
 });
@@ -42,7 +43,13 @@ export const POST = createHandler(
       return Response.json({ error: "2fa_not_enabled" }, { status: 400 });
     }
 
-    if (!user.passwordHash || !(await verifyPassword(body.password, user.passwordHash))) {
+    // Same rule as re-running the setup: an account with a local password
+    // proves it; an SSO account (no local password) proves itself with the
+    // current code below — otherwise it could never switch 2FA off again.
+    if (
+      user.passwordHash &&
+      !(body.password && (await verifyPassword(body.password, user.passwordHash)))
+    ) {
       return Response.json({ error: "password_required" }, { status: 403 });
     }
 
