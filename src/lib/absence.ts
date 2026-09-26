@@ -79,6 +79,32 @@ export function isAbsenceActive(absence: AbsenceRecord, date?: Date): boolean {
   return day >= start && day <= end && absence.status !== "cancelled";
 }
 
+/**
+ * What the absences page shows. The stored status is not advanced by date, so
+ * the period decides between planned / active / completed — except that an
+ * explicit completion (early return) or cancellation always wins: the
+ * deadline lists stop naming the stand-in at that moment, and the page must
+ * not keep saying "läuft gerade". Calendar days on the firm calendar
+ * (Europe/Vienna), last day inclusive.
+ */
+export function absenceDisplayStatus(absence: AbsenceRecord, now?: Date): AbsenceRecord["status"] {
+  if (absence.status === "cancelled" || absence.status === "completed") return absence.status;
+  const day = zonedDateString(now ?? new Date());
+  const start = absence.start_date.slice(0, 10);
+  const end = absence.end_date.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+    return absence.status;
+  }
+  if (day > end) return "completed";
+  if (day >= start) return "active";
+  return "planned";
+}
+
+/** Whether the absence period has begun (firm calendar day). */
+export function absenceHasStarted(absence: AbsenceRecord, now?: Date): boolean {
+  return zonedDateString(now ?? new Date()) >= absence.start_date.slice(0, 10);
+}
+
 export function activateAbsence(absence: AbsenceRecord): AbsenceRecord {
   return {
     ...absence,

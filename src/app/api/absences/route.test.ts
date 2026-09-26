@@ -52,6 +52,7 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 import { GET, PATCH, POST } from "./route";
+import { zonedDateString } from "@/lib/datetime";
 
 function patch(body: unknown) {
   return PATCH(
@@ -240,6 +241,29 @@ describe("POST /api/absences", () => {
     const body = await res.json();
     expect(body.data.absence.user_email).toBe("ra@example.com");
     expect(body.data.absence.status).toBe("planned");
+  });
+
+  test("Anlegen mit Start heute → aktiv und forwarded_deadlines enthält die passende Frist", async () => {
+    const today = zonedDateString(new Date());
+    mockList
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/deadlines/heute",
+          frontmatter: { case_slug: "legal/cases/1", due_date: today },
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { slug: "legal/cases/1", frontmatter: { own_lawyer_name: "RA Müller" } },
+      ]);
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post({ ...baseBody, start_date: today, end_date: "2099-12-31" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.status).toBe("active");
+    expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
+    const written = JSON.parse(String(mockFetch.mock.calls[0]![1].body));
+    expect(written.frontmatter.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
   });
 
   test("Freitext-Datum wird abgelehnt (400) — solche Records aktivierten nie", async () => {

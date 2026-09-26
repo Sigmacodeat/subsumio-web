@@ -25,25 +25,14 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
-import { cn, daysUntil, formatDate } from "@/lib/utils";
-import type { AbsenceRecord } from "@/lib/absence";
+import { cn, formatDate } from "@/lib/utils";
+import { absenceDisplayStatus, type AbsenceRecord } from "@/lib/absence";
 import type { DashboardKey } from "@/content/dashboard";
 
 type DisplayStatus = AbsenceRecord["status"];
 
-/**
- * Der gespeicherte Status wird nicht automatisch fortgeschrieben; maßgeblich für die
- * Anzeige ist der Zeitraum (Kalendertage, Ortszeit — der letzte Tag zählt mit).
- */
-function displayStatus(a: AbsenceRecord): DisplayStatus {
-  if (a.status === "cancelled") return "cancelled";
-  const fromStart = daysUntil(a.start_date);
-  const toEnd = daysUntil(a.end_date);
-  if (fromStart === null || toEnd === null) return a.status;
-  if (toEnd < 0) return "completed";
-  if (fromStart <= 0) return "active";
-  return "planned";
-}
+/** Anzeige-Status: Zeitraum, aber gespeichertes „abgeschlossen“/„storniert“ gewinnt. */
+const displayStatus = (a: AbsenceRecord): DisplayStatus => absenceDisplayStatus(a);
 
 const STATUS_BADGE: Record<DisplayStatus, { labelKey: DashboardKey; className: string }> = {
   planned: {

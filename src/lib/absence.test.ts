@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  absenceDisplayStatus,
   activeDelegateFor,
   createAbsence,
   deadlineSlugsCoveredByAbsence,
@@ -125,5 +126,44 @@ describe("deadlineSlugsCoveredByAbsence", () => {
   it("matches the absent user by e-mail as well", () => {
     const byEmail = new Map([["legal/cases/1", "huber@kanzlei.at"]]);
     expect(deadlineSlugsCoveredByAbsence(absence(), [dl("d/1")], byEmail)).toEqual(["d/1"]);
+  });
+});
+
+describe("absenceDisplayStatus", () => {
+  const NOW = new Date("2026-09-26T10:00:00+02:00");
+  const running = { start_date: "2026-09-20", end_date: "2026-10-05" };
+
+  it("gespeichertes 'completed' bei laufendem Zeitraum → Abgeschlossen (kein 'Aktiv')", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "completed" }), NOW)).toBe(
+      "completed"
+    );
+  });
+
+  it("storniert gewinnt immer", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "cancelled" }), NOW)).toBe(
+      "cancelled"
+    );
+  });
+
+  it("gespeichert 'planned' → Status nach Zeitraum (Europe/Vienna, letzter Tag zählt)", () => {
+    expect(absenceDisplayStatus(absence({ ...running, status: "planned" }), NOW)).toBe("active");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-09-01", end_date: "2026-09-26", status: "planned" }),
+        new Date("2026-09-26T23:30:00+02:00")
+      )
+    ).toBe("active");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-09-01", end_date: "2026-09-25", status: "planned" }),
+        NOW
+      )
+    ).toBe("completed");
+    expect(
+      absenceDisplayStatus(
+        absence({ start_date: "2026-10-01", end_date: "2026-10-05", status: "planned" }),
+        NOW
+      )
+    ).toBe("planned");
   });
 });

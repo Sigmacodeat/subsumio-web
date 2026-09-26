@@ -8,6 +8,7 @@ import {
   completeAbsence,
   cancelAbsence,
   deadlineSlugsCoveredByAbsence,
+  absenceHasStarted,
   type AbsenceRecord,
 } from "@/lib/absence";
 
@@ -29,6 +30,54 @@ const createAbsenceSchema = z.object({
   auto_route_enabled: z.boolean().default(true),
   notes: z.string().max(2000).optional(),
 });
+
+/**
+ * Which open deadlines / follow-ups the delegate covers: the matter's
+ * responsible lawyer is the absent person and the due date falls inside the
+ * absence. Best-effort — a failed listing must not block the absence itself.
+ */
+async function forwardedDeadlinesFor(
+  headers: Record<string, string>,
+  absence: AbsenceRecord
+): Promise<string[]> {
+  try {
+    const [deadlinePages, followUpPages, casePages] = await Promise.all([
+      listEnginePages(headers, "legal_deadline", 5000),
+      listEnginePages(headers, "legal_follow_up", 5000),
+      listEnginePages(headers, "legal_case", 2000),
+    ]);
+    const responsibleByCase = new Map<string, string>();
+    for (const c of casePages) {
+      const lawyer = c.frontmatter?.own_lawyer_name;
+      if (typeof lawyer === "string" && lawyer.trim()) {
+        responsibleByCase.set(c.slug, lawyer);
+      }
+    }
+    const items = [...deadlinePages, ...followUpPages].map((p) => {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      return {
+        slug: p.slug,
+        case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+        due_date:
+          typeof fm.due_date === "string"
+            ? fm.due_date
+            : typeof fm.date === "string"
+              ? fm.date
+              : undefined,
+        status: typeof fm.status === "string" ? fm.status : undefined,
+        review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
+        completed: fm.completed === true,
+      };
+    });
+    return deadlineSlugsCoveredByAbsence(absence, items, responsibleByCase);
+  } catch (err) {
+    log.error(
+      "[absences] forwarded-deadline scan failed:",
+      err instanceof Error ? err.message : String(err)
+    );
+    return absence.forwarded_deadlines ?? [];
+  }
+}
 
 export const POST = createHandler(
   {
@@ -57,7 +106,14 @@ export const POST = createHandler(
       );
     }
 
-    const absence = createAbsence(body);
+    let absence = createAbsence(body);
+    // Already under way (e.g. entered on the first sick day): active from the
+    // start, with the covered deadlines recorded right away — there is no
+    // separate "activate" step for a running absence.
+    if (absenceHasStarted(absence)) {
+      absence = activateAbsence(absence);
+      absence.forwarded_deadlines = await forwardedDeadlinesFor(ctx.headers, absence);
+    }
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -145,51 +201,9 @@ export const PATCH = createHandler(
           ? completeAbsence(record)
           : cancelAbsence(record);
 
-    // On activation, record which open reminders the delegate is covering —
-    // the absences page already renders forwarded_deadlines.length, it was
-    // simply never populated. Best-effort: a failed listing must not block
-    // the transition itself.
+    // On activation, record which open reminders the delegate is covering.
     if (body.action === "activate") {
-      try {
-        const [deadlinePages, followUpPages, casePages] = await Promise.all([
-          listEnginePages(ctx.headers, "legal_deadline", 5000),
-          listEnginePages(ctx.headers, "legal_follow_up", 5000),
-          listEnginePages(ctx.headers, "legal_case", 2000),
-        ]);
-        const responsibleByCase = new Map<string, string>();
-        for (const c of casePages) {
-          const lawyer = c.frontmatter?.own_lawyer_name;
-          if (typeof lawyer === "string" && lawyer.trim()) {
-            responsibleByCase.set(c.slug, lawyer);
-          }
-        }
-        const items = [...deadlinePages, ...followUpPages].map((p) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            slug: p.slug,
-            case_slug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
-            due_date:
-              typeof fm.due_date === "string"
-                ? fm.due_date
-                : typeof fm.date === "string"
-                  ? fm.date
-                  : undefined,
-            status: typeof fm.status === "string" ? fm.status : undefined,
-            review_status: typeof fm.review_status === "string" ? fm.review_status : undefined,
-            completed: fm.completed === true,
-          };
-        });
-        updated.forwarded_deadlines = deadlineSlugsCoveredByAbsence(
-          updated,
-          items,
-          responsibleByCase
-        );
-      } catch (err) {
-        log.error(
-          "[absences] forwarded-deadline scan failed:",
-          err instanceof Error ? err.message : String(err)
-        );
-      }
+      updated.forwarded_deadlines = await forwardedDeadlinesFor(ctx.headers, updated);
     }
 
     const patch = await enginePatchPage(ctx.headers, {
