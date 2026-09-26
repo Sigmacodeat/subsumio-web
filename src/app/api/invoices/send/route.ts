@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { createServerBrainClient } from "@/lib/server-brain";
-import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
+import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
+import { sendFirmMail } from "@/lib/firm-mail";
 import { createOpenItemForInvoice } from "@/lib/open-items";
 import { invoiceIssueProblem } from "@/lib/invoice-issue";
 import { recordInvoiceOutbound } from "@/lib/invoice-outbound.server";
@@ -45,10 +45,9 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       const brain = createServerBrainClient(ctx.headers);
+      // Same channel choice as the matter e-mails: the firm's SMTP when it
+      // is configured, the platform mail service otherwise.
       const settings = await loadKanzleiSettingsForBrain(ctx.brainId);
-      if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
-        return apiError("smtp_not_configured", "SMTP nicht konfiguriert", 400);
-      }
 
       const page = await brain.getPage(body.invoiceSlug);
       const fm = page.frontmatter as Record<string, unknown>;
@@ -79,14 +78,7 @@ export const POST = createHandler(
         return apiError("no_recipient_email", "Keine Empfänger-E-Mail", 400);
       }
 
-      const transporter = nodemailer.createTransport({
-        host: settings.smtpHost,
-        port: parseInt(settings.smtpPort ?? "587", 10),
-        secure: settings.smtpSecure ?? false,
-        auth: { user: settings.smtpUser, pass: settings.smtpPassword },
-      });
-
-      const fromAddr = settings.emailFrom ?? settings.smtpUser;
+      const replyTo = settings.emailFrom || settings.smtpUser || undefined;
       const esc = (s: unknown) =>
         String(s).replace(
           /[&<>"']/g,
@@ -98,7 +90,6 @@ export const POST = createHandler(
       const rawHtml = `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
 <p>anbei finden Sie die Rechnung <strong>${invoiceNumber}</strong>.</p>
 <p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`;
-      const html = injectTracking(rawHtml, trackingId);
 
       let attachments: Array<{ filename: string; content: Buffer; contentType: string }> = [];
       if (body.pdfBase64) {
@@ -115,13 +106,36 @@ export const POST = createHandler(
         ];
       }
 
-      await transporter.sendMail({ from: fromAddr, to: recipient, subject, html, attachments });
+      const result = await sendFirmMail(settings, {
+        to: recipient,
+        subject,
+        html: rawHtml,
+        ...(replyTo ? { replyTo } : {}),
+        trackingId,
+        attachments,
+      });
+      if (!result.sent) {
+        // Nothing left the office: the invoice stays as it was.
+        return result.error === "mail_not_configured"
+          ? apiError(
+              "mail_not_configured",
+              "E-Mail-Versand ist nicht eingerichtet. Bitte den Postausgang in den Einstellungen hinterlegen.",
+              400
+            )
+          : apiError("send_failed", "Rechnung konnte nicht gesendet werden", 502);
+      }
 
       // Log tracking event for the outbound email
       void logTrackingEvent({
         trackingId,
         eventType: "sent",
-        raw: { source: "smtp", route: "invoice.send", recipient },
+        raw: {
+          source: result.via,
+          route: "invoice.send",
+          recipient,
+          brain_id: ctx.brainId,
+          resend_id: result.id ?? null,
+        },
       });
 
       // Postausgangsbuch: the invoice mail with matter and invoice number.
@@ -132,7 +146,8 @@ export const POST = createHandler(
         caseSlug: caseSlugs.length > 0 ? String(caseSlugs[0]) : undefined,
         subject: `Rechnung ${String(fm.invoice_number ?? body.invoiceSlug)}`,
         sentBy: ctx.user.email ?? ctx.user.id,
-        trackingId,
+        trackingId: result.trackingId ?? trackingId,
+        providerId: result.id,
       });
 
       // Merge only the delivery bookkeeping — never the whole (possibly
