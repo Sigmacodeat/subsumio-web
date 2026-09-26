@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { groups } from "./scim-groups";
+import { applyGroupPatch, groups } from "./scim-groups";
 import { SCIM_SCHEMA_GROUP, type SCIMGroup } from "@/lib/scim";
 
 describe("scim-groups", () => {
@@ -115,5 +115,38 @@ describe("scim-groups", () => {
     });
     const entries = Array.from(groups.entries());
     expect(entries).toHaveLength(2);
+  });
+});
+
+describe("applyGroupPatch — removing members", () => {
+  const base = (): SCIMGroup => ({
+    schemas: [SCIM_SCHEMA_GROUP],
+    id: "g1",
+    displayName: "Sekretariat",
+    members: [{ value: "u1" }, { value: "u2" }, { value: "u3" }],
+  });
+
+  test("a value list removes only the named members", () => {
+    const g = base();
+    applyGroupPatch(g, { op: "remove", path: "members", value: [{ value: "u1" }] });
+    expect(g.members?.map((m) => m.value)).toEqual(["u2", "u3"]);
+  });
+
+  test("a members[value eq] filter removes only that member", () => {
+    const g = base();
+    applyGroupPatch(g, { op: "remove", path: 'members[value eq "u2"]' });
+    expect(g.members?.map((m) => m.value)).toEqual(["u1", "u3"]);
+  });
+
+  test("a bare remove clears the list", () => {
+    const g = base();
+    applyGroupPatch(g, { op: "remove", path: "members" });
+    expect(g.members).toEqual([]);
+  });
+
+  test("a path-less replace applies each attribute", () => {
+    const g = base();
+    applyGroupPatch(g, { op: "replace", value: { displayName: "Assistenz" } });
+    expect(g.displayName).toBe("Assistenz");
   });
 });

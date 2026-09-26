@@ -8606,8 +8606,8 @@ export const D = {
     en: "No directory is connected for this firm yet — ask Subsumio support to set it up",
   },
   "scim.feature_auto_update": {
-    de: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
-    en: "Auto-update: changes to names, email or roles are synchronized.",
+    de: "Auto-Update: Namensänderungen werden übernommen; E-Mail und Rolle werden in Subsumio gepflegt.",
+    en: "Auto-update: name changes are applied; email and role are managed in Subsumio.",
   },
   "scim.feature_auto_deprovision": {
     de: "Auto-Deprovisioning: Gelöschte Benutzer werden deaktiviert (nicht gelöscht) — für Audit-Trail.",
@@ -8654,8 +8654,8 @@ export const D = {
     en: "Auto-provisioning: new users in IdP are automatically created in Subsumio.",
   },
   "scim.feature_group_sync": {
-    de: "Gruppen-Sync: AD/LDAP-Gruppen werden als SCIM-Gruppen abgebildet.",
-    en: "Group sync: AD/LDAP groups are mapped as SCIM groups.",
+    de: "Gruppen: werden vom Verzeichnis angenommen, vergeben aber keine Rechte und werden nicht dauerhaft gespeichert.",
+    en: "Groups: accepted from the directory, but grant no rights and are not stored permanently.",
   },
   "casesdetail.error_save": {
     de: "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar.",
