@@ -41,7 +41,7 @@ vi.mock("@/lib/api-handler", async (orig) => {
           {
             brainId: "brain_1",
             headers: { "x-subsumio-source": "brain_1" },
-            user: { id: "u1", email: "anwalt@kanzlei.at" },
+            user: { id: "u1", email: "anwalt@kanzlei.at", role: "lawyer" },
           },
           opts.body ? opts.body.parse(await req.json()) : undefined
         ),

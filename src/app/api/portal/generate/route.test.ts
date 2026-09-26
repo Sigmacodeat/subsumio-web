@@ -17,7 +17,7 @@ vi.mock("@/lib/api-handler", () => ({
       const ctx = {
         headers: { "x-subsumio-source": "firm-a", "x-matter-scope": "caller-scope" },
         brainId: "firm-a",
-        user: { id: "u1", email: "assistant@firm.example" },
+        user: { id: "u1", email: "assistant@firm.example", role: "assistant" },
       };
       const body = opts.body ? opts.body.parse(await req.json()) : null;
       return handler(ctx, body, null, req);
@@ -68,6 +68,22 @@ describe("POST /api/portal/generate", () => {
     const res = await POST(req("cases/a") as never);
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("portal_disabled");
+    expect(signPortalToken).not.toHaveBeenCalled();
+  });
+
+  it("the assistant issues links only on matters it may write (not with a read-only grant)", async () => {
+    stubCase(200, {
+      frontmatter: {
+        portal_enabled: true,
+        permissions: {
+          visibility: "restricted",
+          grants: [{ user_id: "u1", level: "read" }],
+        },
+      },
+    });
+    const res = await POST(req("cases/a") as never);
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("portal_link_forbidden");
     expect(signPortalToken).not.toHaveBeenCalled();
   });
 

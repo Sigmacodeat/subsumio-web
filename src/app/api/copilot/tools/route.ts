@@ -67,6 +67,9 @@ import {
 
 import { logger } from "@/lib/logger";
 import { getEnginePage } from "@/lib/engine-page-io";
+import { isSecondCheckRejection, writeDeadlineGuarded } from "@/lib/deadline-guarded-write";
+import { guardDeadlineWrite } from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 import {
   hideForeignPersonalEventHits,
   hideForeignPersonalEvents,
@@ -2038,31 +2041,36 @@ async function executeSearchCalendar(
 // ── Deadline Mark Done ─────────────────────────────────────────────────
 
 async function executeDeadlineMarkDone(
-  ctx: { headers: Record<string, string> },
+  ctx: {
+    headers: Record<string, string>;
+    brainId?: string;
+    user: { id?: string; email?: string; name?: string; role?: string };
+  },
   params: z.infer<typeof deadlineMarkDoneSchema>
 ): Promise<ToolResponse> {
   try {
-    // Update the deadline page frontmatter via engine
-    // The engine has no PATCH route for pages — merge writes are POST + merge.
-    const res = await enginePatchPage(
-      ctx.headers,
-      {
-        slug: params.deadline_slug,
-        frontmatter: { status: "done", done_at: new Date().toISOString() },
-      },
-      { timeoutMs: 15_000 }
+    // Same rules as the Fristen view: only a deadline page, and a Notfrist
+    // is completed only through the second check by another person.
+    const result = await writeDeadlineGuarded(
+      { headers: ctx.headers, user: ctx.user, brainId: ctx.brainId },
+      params.deadline_slug,
+      { status: "done", done_at: new Date().toISOString() }
     );
 
-    if (!res.ok) {
-      // Fallback: try to at least confirm
+    if (!result.ok) {
+      const secondCheck = isSecondCheckRejection(result.rejection);
       return {
         success: false,
-        error: `HTTP ${res.status}`,
+        error: result.rejection.error,
         display: {
           kind: "confirmation",
-          title: "Frist konnte nicht markiert werden",
-          message:
-            "Engine hat den Status nicht aktualisiert. Bitte auf der Fristenseite manuell erledigen.",
+          title: secondCheck
+            ? "Notfrist: Zweitprüfung erforderlich"
+            : "Frist konnte nicht markiert werden",
+          message: secondCheck
+            ? "Eine Notfrist wird nur über die Zweitprüfung durch eine zweite Person erledigt. Bitte in der Fristenansicht „Zweitprüfung“ verwenden."
+            : result.rejection.message,
+          href: "/dashboard/deadlines",
         },
       };
     }
@@ -2175,7 +2183,11 @@ async function executeCreateTask(
 }
 
 async function executeCreateDeadline(
-  ctx: { headers: Record<string, string> },
+  ctx: {
+    headers: Record<string, string>;
+    brainId?: string;
+    user: { id?: string; email?: string; name?: string; role?: string };
+  },
   params: z.infer<typeof createDeadlineSchema>
 ): Promise<ToolResponse> {
   try {
@@ -2209,11 +2221,34 @@ async function executeCreateDeadline(
       review_status: "unreviewed",
       created_at: new Date().toISOString(),
     };
+    // Same deadline rules as the Fristen view (identity stamps, audit trail).
+    const verdict = guardDeadlineWrite({
+      slug: page.slug,
+      type: "legal_case",
+      incoming: { deadlines: [...current, deadline] },
+      current: page,
+      user: ctx.user,
+    });
+    if ("reject" in verdict) {
+      return {
+        success: false,
+        error: verdict.reject.error,
+        display: {
+          kind: "confirmation",
+          title: "Frist konnte nicht angelegt werden",
+          message: verdict.reject.message,
+        },
+      };
+    }
     const res = await enginePatchPage(ctx.headers, {
       slug: page.slug,
-      frontmatter: { deadlines: [...current, deadline] },
+      frontmatter: verdict.frontmatter,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await logDeadlineEvents(
+      { brainId: ctx.brainId, user: { id: ctx.user.id, email: ctx.user.email } },
+      verdict.events
+    );
     return {
       success: true,
       data: { deadline },

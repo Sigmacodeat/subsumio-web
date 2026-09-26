@@ -81,6 +81,9 @@ vi.mock("@/lib/matter-detail-context", () => ({
   }),
 }));
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k, lang: "de" }) }));
+vi.mock("@/lib/queries/auth", () => ({
+  useMe: () => ({ data: { user: { role: "lawyer" } } }),
+}));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
 vi.mock("@/components/ui/confirm-dialog", () => ({ useConfirm: () => vi.fn() }));
 vi.mock("next/navigation", () => ({

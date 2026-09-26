@@ -4,6 +4,7 @@
 // is marked for manual submission — never "sending".
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const actorRole = vi.hoisted(() => ({ value: "lawyer" }));
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
@@ -36,7 +37,7 @@ vi.mock("@/lib/api-handler", async (orig) => {
           {
             brainId: "brain_1",
             headers: { "x-subsumio-source": "brain_1" },
-            user: { id: "u1", email: "anwalt@kanzlei.at" },
+            user: { id: "u1", email: "anwalt@kanzlei.at", role: actorRole.value },
           },
           opts.body ? opts.body.parse(await req.json()) : undefined
         ),
@@ -87,7 +88,13 @@ beforeEach(() => {
   vi.stubEnv("BEA_MIDDLEWARE_API_KEY", "");
   settings.kanzleiName = "Kanzlei Muster & Partner";
   draftFm = {};
-  filingFm = { draft_slug: DRAFT, package: approvedPkg() };
+  actorRole.value = "lawyer";
+  const pkg = approvedPkg();
+  filingFm = {
+    draft_slug: DRAFT,
+    package: pkg,
+    filing_approval: { by_id: "u-lawyer", by: "a", role: "lawyer", package_id: pkg.id },
+  };
   writes = [];
   vi.stubGlobal(
     "fetch",
@@ -174,6 +181,15 @@ describe("POST /api/bea/send — file_court policy", () => {
     expect(res.status).toBe(200);
   });
 
+  it("the override is an attorney decision — refused for the assistant role", async () => {
+    actorRole.value = "assistant";
+    const res = await send(
+      body({ verification_override: { reason: "Schriftsatz vollständig selbst geprüft." } })
+    );
+    expect(res.status).toBe(403);
+    expect(writes).toHaveLength(0);
+  });
+
   it("a verified draft whose content changed after the check is refused", async () => {
     draftFm = { verification_state: "VERIFIED", verification_content_hash: "0".repeat(64) };
     const res = await send(body());
@@ -184,6 +200,13 @@ describe("POST /api/bea/send — file_court policy", () => {
 describe("POST /api/bea/send — sender, court, manual export", () => {
   beforeEach(() => {
     draftFm = { verification_state: "VERIFIED", verification_content_hash: DRAFT_HASH };
+  });
+
+  it("a package marked approved without the server-side release is not sent", async () => {
+    delete filingFm.filing_approval;
+    const res = await send(body());
+    expect(res.status).toBe(422);
+    expect(writes).toHaveLength(0);
   });
 
   it("without middleware the package is export_manual (not sending) and the sender is the firm", async () => {

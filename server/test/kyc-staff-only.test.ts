@@ -138,36 +138,23 @@ afterAll(async () => {
 });
 
 describe("KYC records are firm staff only", () => {
-  test("a client account with a grant on the matter never lists or reads them", async () => {
+  test("a client account never reads the brain directly — not list, read, file or search", async () => {
     const client = headers("u-client", "client_viewer");
-    expect(await listSlugs(client, "type=kyc_verification")).toEqual([]);
-    const docs = await listSlugs(client, "type=document");
-    expect(docs).toContain("documents/vollmacht");
-    expect(docs).not.toContain("documents/scan-reisepass");
-    expect(docs).not.toContain("documents/lichtbildausweis");
-    expect(await getStatus(client, "legal/kyc/kyc-1")).toBe(404);
-    expect(await getStatus(client, "documents/scan-reisepass")).toBe(404);
-    expect(await getStatus(client, "documents/lichtbildausweis")).toBe(404);
-    expect(await getStatus(client, "documents/geldwaesche-notiz")).toBe(404);
-    expect(await getStatus(client, "documents/vollmacht")).toBe(200);
-  }, 60_000);
-
-  test("the original-file route refuses the ID copy for a client account", async () => {
-    const res = await fetch(`${base}/api/files/documents/scan-reisepass`, {
-      headers: headers("u-client", "client_viewer"),
-    });
-    await res.body?.cancel();
-    expect(res.status).toBe(404);
-  }, 60_000);
-
-  test("keyword search never returns them to a client account", async () => {
-    const res = await fetch(`${base}/api/search?q=Kormoranweg&mode=keyword`, {
-      headers: headers("u-client", "client_viewer"),
-    });
-    const text = await res.text();
-    expect(text).not.toContain("legal/kyc/kyc-1");
-    expect(text).not.toContain("documents/scan-reisepass");
-    expect(text).not.toContain("documents/lichtbildausweis");
+    for (const path of [
+      "/api/pages?type=kyc_verification",
+      "/api/pages?type=document",
+      "/api/pages/legal/kyc/kyc-1",
+      "/api/pages/documents/vollmacht",
+      "/api/pages/cases/mandant",
+      "/api/files/documents/scan-reisepass",
+      "/api/search?q=Kormoranweg&mode=keyword",
+    ]) {
+      const res = await fetch(`${base}${path}`, { headers: client });
+      const text = await res.text();
+      expect(res.status).toBe(403);
+      expect(text).toContain("client_account_portal_only");
+      expect(text).not.toContain("Kormoranweg");
+    }
   }, 60_000);
 
   test("firm staff still see the records", async () => {
@@ -176,8 +163,8 @@ describe("KYC records are firm staff only", () => {
     expect(await getStatus(lawyer, "documents/scan-reisepass")).toBe(200);
   }, 60_000);
 
-  test("a record filed a moment ago is hidden from a client account at once", async () => {
-    const client = headers("u-client", "client_viewer");
+  test("a record filed a moment ago is hidden from a non-staff caller at once", async () => {
+    const other = headers("u-ext", "external");
     // Warm the staff cache, then file a new ID copy.
     expect(await getStatus(headers("u-lawyer", "lawyer"), "documents/vollmacht")).toBe(200);
     await putPage(headers("u-admin", "admin"), {
@@ -187,22 +174,28 @@ describe("KYC records are firm staff only", () => {
       content: "Ausweis",
       frontmatter: { case_slug: "cases/mandant", doc_type: "ausweiskopie" },
     });
-    expect(await getStatus(client, "documents/ausweis-neu")).toBe(404);
+    expect(await getStatus(other, "documents/ausweis-neu")).toBe(404);
   }, 60_000);
 
-  test("an MCP token of a client account carries the same exclusion", async () => {
+  test("an MCP token of a client account is refused", async () => {
     const access = await resolveWebMcpToken(
       engine,
       { sourceId: SOURCE, userId: "u-client" },
       async () => ({ active: true, role: "client_viewer" })
     );
+    expect(access).toBe("owner_inactive");
+  }, 60_000);
+
+  test("an MCP token of an unknown role carries the staff-only exclusion", async () => {
+    const access = await resolveWebMcpToken(
+      engine,
+      { sourceId: SOURCE, userId: "u-client" },
+      async () => ({ active: true, role: "external" })
+    );
     if (typeof access === "string") throw new Error(access);
     expect(matterScopeAllows(access.matterScope, "legal/kyc/kyc-1", "cases/mandant")).toBe(false);
     expect(matterScopeAllows(access.matterScope, "documents/scan-reisepass", "cases/mandant")).toBe(
       false
-    );
-    expect(matterScopeAllows(access.matterScope, "documents/vollmacht", "cases/mandant")).toBe(
-      true
     );
   }, 60_000);
 

@@ -8,6 +8,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { siteUrl } from "@/lib/mail";
 import { signPortalToken, verifyPortalToken } from "@/lib/portal-token";
 import { registerPortalLink } from "@/lib/portal-links";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
 
 /**
  * A new portal link for `caseSlug`, or null when the matter cannot be read,
@@ -42,3 +43,30 @@ export async function issueRegisteredPortalLink(input: {
   });
   return `${siteUrl()}/portal/${token}`;
 }
+
+/**
+ * Who may create or send a portal link for a matter: a lawyer or admin, or a
+ * member with WRITE access to the matter (team entry / write grant; a
+ * read-only grant is not enough). What the link shows was already released
+ * by a lawyer (portal switch, summary and documents are lawyer/admin-only),
+ * so the Sekretariat may hand the link out on the matters it works on.
+ */
+export function mayIssuePortalLink(
+  user: { id: string; role: string },
+  caseFrontmatter: Record<string, unknown> | undefined
+): boolean {
+  if (user.role === "admin" || user.role === "lawyer") return true;
+  if (user.role !== "assistant") return false;
+  return (
+    matterAccessLevel(
+      { userId: user.id, role: user.role },
+      (caseFrontmatter?.permissions ?? null) as MatterPermissions | null
+    ) === "write"
+  );
+}
+
+export const PORTAL_LINK_FORBIDDEN = {
+  error: "portal_link_forbidden",
+  message:
+    "Portal-Links erstellen Anwältinnen/Anwälte, Administratoren oder Mitglieder mit Schreibzugriff auf die Akte.",
+} as const;

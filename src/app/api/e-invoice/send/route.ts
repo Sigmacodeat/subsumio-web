@@ -92,7 +92,8 @@ async function claimSendLock(
  */
 export const POST = createHandler(
   {
-    action: "invoice.e_invoice",
+    // Übermitteln stellt/versendet die Rechnung: nur Anwalt/Admin.
+    action: "invoice.issue",
     rateTier: "standard",
     body: sendSchema,
     audit: (_ctx, body) => ({

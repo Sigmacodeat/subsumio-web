@@ -8920,6 +8920,10 @@ export const D = {
     de: "Nur intern sichtbar — klicken, um für den Mandanten im Portal freizugeben.",
     en: "Internal only — click to release to the client portal.",
   },
+  "docstab.portal_release_lawyer_only": {
+    de: "Freigabe für den Mandanten nur durch Anwältin/Anwalt oder Administrator.",
+    en: "Only a lawyer or administrator can release documents to the client.",
+  },
   "docstab.portal_blocked_privileged": {
     de: "Privilegierte Dokumente können nicht für das Mandantenportal freigegeben werden.",
     en: "Privileged documents cannot be released to the client portal.",

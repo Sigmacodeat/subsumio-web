@@ -12,8 +12,9 @@ import {
 import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { resolveFilingTransport } from "@/lib/legal/filing-transport";
 import { logAudit } from "@/lib/audit";
+import { completeDeadlineAfterFiling } from "@/lib/deadline-guarded-write";
+import { hasServerFilingApproval } from "@/lib/bea-filing";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import { engineWriteBestEffort } from "@/lib/engine-write";
 import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +69,11 @@ function getMiddlewareConfig(): MiddlewareConfig | null {
 async function fetchFilingPackage(
   ctx: { headers: Record<string, string>; brainId: string },
   filingSlug: string
-): Promise<{ pkg: FilingPackage | null; draftSlug: string | null } | null> {
+): Promise<{
+  pkg: FilingPackage | null;
+  draftSlug: string | null;
+  frontmatter: Record<string, unknown>;
+} | null> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(filingSlug)}`, {
       headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -80,6 +85,7 @@ async function fetchFilingPackage(
     return {
       pkg: (fm.package as FilingPackage) ?? null,
       draftSlug: typeof fm.draft_slug === "string" ? fm.draft_slug : null,
+      frontmatter: fm,
     };
   } catch {
     return null;
@@ -159,6 +165,15 @@ export const POST = createHandler(
     // 2. Validate: must be approved
     if (existingPkg.status !== "approved") {
       return apiError("filing_not_approved", "Filing-Paket muss freigegeben sein vor Versand", 422);
+    }
+    // The release must come from the filing route (lawyer/admin, stamped
+    // with the approver) — a status written any other way does not count.
+    if (!hasServerFilingApproval(filing?.frontmatter, existingPkg)) {
+      return apiError(
+        "filing_not_approved",
+        "Die Freigabe des Filing-Pakets durch eine Anwältin/einen Anwalt fehlt.",
+        422
+      );
     }
 
     const validation = validateFilingPackage(existingPkg);
@@ -247,27 +262,17 @@ export const POST = createHandler(
       // 7. Update deadline if linked (best effort — the filing is sent; a
       // failed update is reported as `deadline_updated: false`).
       let deadlineUpdated: boolean | null = null;
+      let deadlineSecondCheckRequired = false;
       if (body.deadline_id && receipt.is_success) {
-        deadlineUpdated = await engineWriteBestEffort(
-          `${ENGINE_URL}/api/pages`,
-          {
-            // No PATCH route for pages in the engine: merge write via POST.
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...ctx.headers },
-            body: JSON.stringify({
-              slug: body.deadline_id,
-              merge: true,
-              frontmatter: {
-                status: "done",
-                done_at: new Date().toISOString(),
-                done_by: ctx.user.email,
-                filing_id: sendingPkg.id,
-              },
-            }),
-            signal: AbortSignal.timeout(10_000),
-          },
-          "Frist-Erledigung nach beA-Versand"
+        // Same deadline rules as the Fristen view: a Notfrist stays open
+        // (filing recorded) until the second check by another person.
+        const outcome = await completeDeadlineAfterFiling(
+          { headers: ctx.headers, user: ctx.user, brainId: ctx.brainId },
+          body.deadline_id,
+          { filing_id: sendingPkg.id }
         );
+        deadlineUpdated = outcome.updated;
+        deadlineSecondCheckRequired = outcome.second_check_required;
       }
 
       // 8. Broadcast SSE event
@@ -301,6 +306,7 @@ export const POST = createHandler(
         // Sent, but the status record / linked deadline may lag behind.
         package_persisted: packagePersisted,
         deadline_updated: deadlineUpdated,
+        deadline_second_check_required: deadlineSecondCheckRequired,
       });
     } catch (err) {
       const failedPkg: FilingPackage = {

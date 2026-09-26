@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { isOnline } from "@/lib/offline-store";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
@@ -51,6 +52,10 @@ interface DocJurisdiction {
 export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t } = useLang();
+  // Releasing to the client is a lawyer/admin decision (server-enforced too).
+  const meQuery = useMe();
+  const myRole = meQuery.data?.user?.role;
+  const mayReleaseToClient = myRole === "admin" || myRole === "lawyer";
   const { addToast } = useToast();
   const confirm = useConfirm();
   const searchParams = useSearchParams();
@@ -1273,7 +1278,11 @@ export function DocumentsTab() {
                 </div>
                 <button
                   type="button"
-                  disabled={caseData?.status === "archived" || doc.privileged === true}
+                  disabled={
+                    caseData?.status === "archived" ||
+                    doc.privileged === true ||
+                    !mayReleaseToClient
+                  }
                   aria-pressed={doc.portal_visible === true}
                   onClick={() => {
                     const next = !(doc.portal_visible === true);
@@ -1292,9 +1301,11 @@ export function DocumentsTab() {
                   title={
                     doc.privileged === true
                       ? t("docstab.portal_blocked_privileged")
-                      : doc.portal_visible === true
-                        ? t("docstab.portal_visible_hint")
-                        : t("docstab.portal_hidden_hint")
+                      : !mayReleaseToClient
+                        ? t("docstab.portal_release_lawyer_only")
+                        : doc.portal_visible === true
+                          ? t("docstab.portal_visible_hint")
+                          : t("docstab.portal_hidden_hint")
                   }
                 >
                   {doc.portal_visible === true ? <Eye size={12} /> : <EyeOff size={12} />}

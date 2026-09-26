@@ -21,3 +21,16 @@ export function isInviteRole(value: unknown): value is InviteRole {
 export function inviteBinding(orgId: string, email: string, role: InviteRole | null): string {
   return role ? `${orgId}:${email}:${role}` : `${orgId}:${email}`;
 }
+
+/**
+ * Who manages the firm's members (invite, remove): the owner and the firm's
+ * administrators. A support session never does, whatever role it carries.
+ */
+export function mayManageTeam(
+  org: { ownerId: string },
+  user: { id: string; role?: string },
+  supportSession?: unknown
+): boolean {
+  if (supportSession) return false;
+  return org.ownerId === user.id || user.role === "admin";
+}

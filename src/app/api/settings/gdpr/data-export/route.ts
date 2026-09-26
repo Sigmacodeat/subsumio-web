@@ -6,6 +6,7 @@ import { decrypt } from "@/lib/encryption";
 import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { listMemories } from "@/lib/copilot-memory";
+import { isStaffRole } from "@/lib/team-visibility";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 import { logger } from "@/lib/logger";
@@ -59,7 +60,7 @@ async function listAllPages(brain: ReturnType<typeof createServerBrainClient>) {
 
 export const GET = createHandler(
   {
-    action: "settings.read",
+    action: "account.read",
     rateTier: "heavy",
   },
   async (ctx, _body, _query, _req) => {
@@ -102,7 +103,10 @@ export const GET = createHandler(
     let contactRequests: Awaited<ReturnType<typeof leadsForEmail>>;
     try {
       [copilotMemories, contactRequests] = await Promise.all([
-        listMemories({ userId: ctx.user.id, ownedOnly: true }, ctx.headers),
+        // A client account has no Copilot (and no brain access): nothing stored.
+        isStaffRole(ctx.user.role)
+          ? listMemories({ userId: ctx.user.id, ownedOnly: true }, ctx.headers)
+          : Promise.resolve([] as Awaited<ReturnType<typeof listMemories>>),
         leadsForEmail(user.email),
       ]);
     } catch (err) {

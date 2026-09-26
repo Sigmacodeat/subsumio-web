@@ -15,7 +15,7 @@ const updateProfileSchema = z
 
 export const GET = createHandler(
   {
-    action: "settings.read",
+    action: "account.read",
   },
   async (ctx) => {
     const referrals = await getStore().countReferrals(ctx.user.referralCode);

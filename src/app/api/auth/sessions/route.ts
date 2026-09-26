@@ -9,7 +9,7 @@ import { listActiveSessions } from "@/lib/auth/session-registry";
  */
 export const GET = createHandler(
   {
-    action: "settings.read",
+    action: "auth.sessions",
   },
   async (ctx) => {
     const rows = await listActiveSessions(ctx.user.id);

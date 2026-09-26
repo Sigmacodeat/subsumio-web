@@ -21,14 +21,9 @@ import { api, ApiRequestError } from "@/lib/api";
 import { AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
-import {
-  createFilingPackage,
-  submitForApproval,
-  approveFiling,
-  cancelFiling,
-  getFilingStatusLabel,
-  type FilingPackage,
-} from "@/lib/efiling-architecture";
+import { getFilingStatusLabel, type FilingPackage } from "@/lib/efiling-architecture";
+import { filingSlugForDraft } from "@/lib/bea-filing";
+import { useMe } from "@/lib/queries/auth";
 import { JurisdictionGate } from "@/components/dashboard/jurisdiction-gate";
 import { csrfFetch } from "@/lib/csrf";
 
@@ -39,11 +34,6 @@ interface BeaDraft {
   caseNumber?: string;
   createdAt: string;
   aiGenerated?: boolean;
-}
-
-/** Brain-page slug for a draft's filing package — one package per draft. */
-function filingSlugForDraft(draftSlug: string): string {
-  return draftSlug.replace("legal/bea-drafts/", "legal/bea-filings/");
 }
 
 interface BeaImported {
@@ -64,6 +54,10 @@ export default function BeaPage() {
 
 function BeaPageInner() {
   const { t } = useLang();
+  // Releasing a filing for sending: lawyer/admin (checked on the server too).
+  const meQuery = useMe();
+  const myRole = meQuery.data?.user?.role;
+  const mayApproveFiling = myRole === "admin" || myRole === "lawyer";
   const [drafts, setDrafts] = useState<BeaDraft[]>([]);
   const [imported, setImported] = useState<BeaImported[]>([]);
   const [filings, setFilings] = useState<Record<string, FilingPackage>>({});
@@ -240,29 +234,41 @@ function BeaPageInner() {
     }
   }
 
-  /** Persist a FilingPackage (create-or-update) as its dedicated brain page. */
-  async function saveFilingPackage(draftSlug: string, pkg: FilingPackage): Promise<void> {
-    await api.brain.createPage({
-      slug: filingSlugForDraft(draftSlug),
-      title: `Filing-Paket: ${pkg.court_case_number ?? draftSlug}`,
-      type: "filing_package",
-      frontmatter: { draft_slug: draftSlug, package: pkg },
+  /** Filing packages change state only on the server (acting person from the
+   *  session; release for sending is a lawyer/admin decision). */
+  async function filingStep(
+    draftSlug: string,
+    action: "create" | "submit" | "approve" | "cancel",
+    extra: { case_number?: string } = {}
+  ): Promise<FilingPackage> {
+    const res = await csrfFetch("/api/bea/filing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draft_slug: draftSlug, action, ...extra }),
     });
+    const json = (await res.json().catch(() => null)) as {
+      data?: { package?: FilingPackage };
+      error?: unknown;
+      message?: string;
+    } | null;
+    if (!res.ok || !json?.data?.package) {
+      const msg =
+        typeof json?.error === "string"
+          ? json.error
+          : (json?.message ?? t("bea.filing_update_failed"));
+      throw new Error(msg);
+    }
+    const pkg = json.data.package;
     setFilings((prev) => ({ ...prev, [draftSlug]: pkg }));
+    return pkg;
   }
 
   async function createPackageForDraft(draft: BeaDraft): Promise<void> {
     setFilingBusy(draft.slug);
     try {
-      const pkg = createFilingPackage({
-        case_slug: draft.caseNumber ?? draft.slug,
-        brain_id: "default",
-        org_id: "default",
-        channel: "beA",
-        court_case_number: draft.caseNumber,
-        created_by: "dashboard-user",
+      await filingStep(draft.slug, "create", {
+        ...(draft.caseNumber ? { case_number: draft.caseNumber } : {}),
       });
-      await saveFilingPackage(draft.slug, pkg);
       setStatusMessage(t("bea.filing_created"));
     } catch (e) {
       setStatusMessage(e instanceof Error ? e.message : t("bea.filing_create_failed"));
@@ -275,17 +281,10 @@ function BeaPageInner() {
     draftSlug: string,
     action: "submit" | "approve" | "cancel"
   ): Promise<void> {
-    const pkg = filings[draftSlug];
-    if (!pkg) return;
+    if (!filings[draftSlug]) return;
     setFilingBusy(draftSlug);
     try {
-      const next =
-        action === "submit"
-          ? submitForApproval(pkg, "dashboard-user")
-          : action === "approve"
-            ? approveFiling(pkg, "dashboard-user")
-            : cancelFiling(pkg, "dashboard-user", "Manuell verworfen im Dashboard");
-      await saveFilingPackage(draftSlug, next);
+      const next = await filingStep(draftSlug, action);
       setStatusMessage(`${t("bea.filing_status")} ${getFilingStatusLabel(next.status)}.`);
     } catch (e) {
       setStatusMessage(e instanceof Error ? e.message : t("bea.filing_update_failed"));
@@ -803,14 +802,16 @@ function BeaPageInner() {
                             )}
                             {filings[msg.slug].status === "pending_approval" && (
                               <>
-                                <Button
-                                  variant="secondary"
-                                  className="h-7 gap-1 px-2 text-xs"
-                                  disabled={filingBusy === msg.slug}
-                                  onClick={() => void advanceFiling(msg.slug, "approve")}
-                                >
-                                  {t("bea.approve")}
-                                </Button>
+                                {mayApproveFiling && (
+                                  <Button
+                                    variant="secondary"
+                                    className="h-7 gap-1 px-2 text-xs"
+                                    disabled={filingBusy === msg.slug}
+                                    onClick={() => void advanceFiling(msg.slug, "approve")}
+                                  >
+                                    {t("bea.approve")}
+                                  </Button>
+                                )}
                                 <Button
                                   variant="secondary"
                                   className="h-7 gap-1 px-2 text-xs"

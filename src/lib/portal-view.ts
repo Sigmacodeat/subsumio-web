@@ -60,6 +60,18 @@ export interface PortalCaseView {
   };
 }
 
+/** Invoice statuses a client may see: issued ones — never drafts or cancelled. */
+export const PORTAL_INVOICE_STATUSES: ReadonlySet<string> = new Set(["sent", "overdue", "paid"]);
+
+/** An issued invoice of this matter — what the portal and the client view list. */
+export function isPortalVisibleInvoice(
+  fm: { case_slugs?: unknown; status?: unknown } | null | undefined,
+  caseSlug: string
+): boolean {
+  if (!fm || !Array.isArray(fm.case_slugs) || !fm.case_slugs.includes(caseSlug)) return false;
+  return typeof fm.status === "string" && PORTAL_INVOICE_STATUSES.has(fm.status);
+}
+
 export function isPortalVisibleDocument(doc: Partial<DocumentEntry> | null | undefined): boolean {
   return !!doc && doc.portal_visible === true && doc.privileged !== true;
 }

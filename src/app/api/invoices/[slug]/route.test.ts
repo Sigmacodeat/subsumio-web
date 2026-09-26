@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPatch = vi.fn();
+const actor = vi.hoisted(() => ({ role: "lawyer" }));
 
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine.test",
@@ -26,7 +27,12 @@ vi.mock("@/lib/api-handler", () => ({
   ) => {
     return async (req: Request) => {
       const body = req.method === "PATCH" ? await req.json() : {};
-      return handler({ headers: {}, brainId: "b", user: { id: "u1" } }, body, {}, req);
+      return handler(
+        { headers: {}, brainId: "b", user: { id: "u1", role: actor.role } },
+        body,
+        {},
+        req
+      );
     };
   },
   apiError: (code: string, message: string, status: number) =>
@@ -40,6 +46,7 @@ let readStatus = 200;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  actor.role = "lawyer";
   readStatus = 200;
   mockPatch.mockResolvedValue(Response.json({ success: true }));
   vi.stubGlobal(
@@ -203,5 +210,20 @@ describe("/api/invoices/[slug] — Storno-Note (GELD-10)", () => {
     const res = await call("DELETE");
     expect(res.status).toBe(409);
     expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it("the assistant prepares drafts but does not issue them", async () => {
+    actor.role = "assistant";
+    stored = {
+      slug: "legal/invoices/r-1",
+      type: "invoice",
+      frontmatter: { status: "draft", total: 1 },
+    };
+    const res = await call("PATCH", { status: "sent" });
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("invoice_issue_forbidden");
+    expect(mockPatch).not.toHaveBeenCalled();
+    // Editing the draft stays possible.
+    expect((await call("PATCH", { notes: "Zahlbar binnen 14 Tagen" })).status).toBe(200);
   });
 });

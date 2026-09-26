@@ -52,6 +52,8 @@ interface AccessState {
   my_level: "none" | "read" | "write";
   can_manage: boolean;
   can_grant: boolean;
+  /** Lawyer/admin with write access: may open the matter to a client account. */
+  can_grant_clients?: boolean;
   me: string;
   members: Member[];
   audit: Array<{ at: string; by: string; details: Record<string, unknown> }>;
@@ -177,8 +179,22 @@ function MatterAccessContent() {
       level: grantLevel,
       ...(grantUntil ? { expires_at: new Date(`${grantUntil}T23:59:59`).toISOString() } : {}),
     };
+    // A client account sees the released client view of this matter: that is
+    // a deliberate decision, confirmed here and recorded by the server.
+    const isClient = memberById.get(grantUser)?.role === "client_viewer";
+    if (isClient) {
+      const confirmed = await confirmDialog({
+        title: L("Mandantenkonto freigeben", "Share with client account"),
+        message: L(
+          `${name(grantUser)} ist ein Mandantenkonto und sieht danach die für den Mandanten freigegebenen Inhalte dieser Akte. Nur bestätigen, wenn es der Mandant dieser Akte ist.`,
+          `${name(grantUser)} is a client account and will see the content released to the client for this matter. Confirm only if this is the matter's client.`
+        ),
+        confirmLabel: L("Freigeben", "Share"),
+      });
+      if (!confirmed) return;
+    }
     const ok = await put(
-      { grants: [...grants, next] },
+      { grants: [...grants, next], ...(isClient ? { confirm_client_access: true } : {}) },
       L(`${name(grantUser)} hat jetzt Zugriff`, `${name(grantUser)} now has access`)
     );
     if (ok) {
@@ -236,8 +252,12 @@ function MatterAccessContent() {
 
   const caseHref = `/dashboard/cases/${caseSlug.split("/").map(encodeURIComponent).join("/")}`;
   const manage = state?.can_manage ?? false;
+  // Client accounts are offered only to those the server lets open a matter
+  // to a client (lawyer/admin).
   const candidates = (exclude: string[]) =>
-    (state?.members ?? []).filter((m) => !exclude.includes(m.id));
+    (state?.members ?? []).filter(
+      (m) => !exclude.includes(m.id) && (m.role !== "client_viewer" || state?.can_grant_clients)
+    );
 
   return (
     <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
