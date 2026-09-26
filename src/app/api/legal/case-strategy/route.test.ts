@@ -84,7 +84,28 @@ describe("POST /api/legal/case-strategy", () => {
     expect(res.status).toBe(200);
     for (const d of ["own-1", "own-2", "own-3"]) expect(prompt).toContain(`docs/${d}`);
     expect((await res.json()).documentsConsidered).toBe(3);
-    expect(pages.list.mock.calls[0][3]).toMatchObject({ strict: true });
+    expect(pages.list.mock.calls[0][3]).toMatchObject({
+      strict: true,
+      failOnTruncate: true,
+      frontmatter: { case_slug: "cases/acme-old" },
+    });
+  });
+
+  it("a truncated document list stops before any model call or credit (R11-5)", async () => {
+    pages.list.mockRejectedValue(new Error("list document truncated at 10000"));
+    const thinkCalls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/api/think")) thinkCalls.push(url);
+        return Response.json({ title: "Akte", frontmatter: {} });
+      })
+    );
+    const res = await call();
+    // 503 before the model call: createHandler charges credits only for a
+    // successful response.
+    expect(res.status).toBe(503);
+    expect(thinkCalls).toHaveLength(0);
   });
 
   it("a failed document read stops instead of producing a strategy without documents", async () => {

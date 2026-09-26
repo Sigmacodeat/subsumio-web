@@ -71,6 +71,37 @@ describe("checkCaseContradictions", () => {
     expect(m.patch).not.toHaveBeenCalled();
   });
 
+  it("reads only the matter's documents via the engine filter, complete or error (R11-5)", async () => {
+    m.list.mockResolvedValue([
+      doc("d1", "legal/cases/m1", {}),
+      doc("d2", "legal/cases/m1", {}),
+    ]);
+    await checkCaseContradictions({}, "legal/cases/m1");
+    expect(m.list.mock.calls[0][3]).toMatchObject({
+      strict: true,
+      failOnTruncate: true,
+      frontmatter: { case_slug: "legal/cases/m1" },
+    });
+  });
+
+  it("a truncated read keeps the stored findings of the matter", async () => {
+    m.list.mockRejectedValue(new Error("list document truncated at 10000"));
+    await expect(checkCaseContradictions({}, "legal/cases/m1")).rejects.toThrow("truncated");
+    expect(m.patch).not.toHaveBeenCalled();
+  });
+
+  it("concurrent checks of one matter coalesce into at most two runs", async () => {
+    m.list.mockImplementation(async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      return [doc("d1", "legal/cases/m1", {}), doc("d2", "legal/cases/m1", {})];
+    });
+    const results = await Promise.all(
+      Array.from({ length: 30 }, () => checkCaseContradictions({ a: "1" }, "legal/cases/m1"))
+    );
+    expect(results).toHaveLength(30);
+    expect(m.list.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
   it("throws when the documents cannot be read", async () => {
     m.list.mockRejectedValue(new Error("HTTP 502"));
     await expect(checkCaseContradictions({}, "legal/cases/m1")).rejects.toThrow("HTTP 502");
