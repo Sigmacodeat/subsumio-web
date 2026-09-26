@@ -4652,8 +4652,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "old_slug_and_new_slug_required");
           return;
         }
-        await assertSlugMatterScope(engine, req, oldSlug);
-        await assertSlugMatterScope(engine, req, newSlug);
+        // Marking changes both pages: they must be visible and writable.
+        await assertPageMatterAccess(engine, req, oldSlug, { loadStored: true, write: true });
+        await assertPageMatterAccess(engine, req, newSlug, { loadStored: true, write: true });
         const { markSuperseded } = await import("../core/matter-scope.ts");
         await markSuperseded(engine, oldSlug, newSlug, requestSourceId(req));
         res.json({ success: true });
@@ -4676,8 +4677,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 400, "slug_a_and_slug_b_required");
           return;
         }
-        await assertSlugMatterScope(engine, req, slugA);
-        await assertSlugMatterScope(engine, req, slugB);
+        await assertPageMatterAccess(engine, req, slugA, { loadStored: true, write: true });
+        await assertPageMatterAccess(engine, req, slugB, { loadStored: true, write: true });
         const { markContradiction } = await import("../core/matter-scope.ts");
         await markContradiction(engine, slugA, slugB, requestSourceId(req));
         res.json({ success: true });
