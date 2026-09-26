@@ -4808,6 +4808,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           ...(typeof req.query.date_before === "string"
             ? { date_before: req.query.date_before }
             : {}),
+          ...(req.query.date_fallback === "0" || req.query.date_fallback === "false"
+            ? { date_fallback: false }
+            : {}),
+          ...(typeof req.query.group_fields === "string"
+            ? { group_fields: list(req.query.group_fields) }
+            : {}),
+          ...(typeof req.query.present_fields === "string"
+            ? { present_fields: list(req.query.present_fields) }
+            : {}),
+          ...(typeof req.query.array_field === "string"
+            ? { array_field: req.query.array_field }
+            : {}),
         },
         requestSourceId(req),
         undefined,

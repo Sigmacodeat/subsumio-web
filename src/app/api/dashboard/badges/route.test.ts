@@ -7,8 +7,19 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
-vi.mock("@/lib/approval-summary", () => ({
-  loadApprovalSummary: vi.fn(async () => ({ categories: [], total: 0, urgent: 0 })),
+const approvalCounts = vi.hoisted(() => ({
+  value: null as null | {
+    total: number;
+    urgent: boolean;
+    byKey: Record<string, number>;
+    incomplete: string[];
+  },
+}));
+vi.mock("@/lib/approval-counts", () => ({
+  loadApprovalCounts: vi.fn(async () => {
+    if (!approvalCounts.value) throw new Error("engine down");
+    return approvalCounts.value;
+  }),
 }));
 let caller = "a@b.test";
 vi.mock("@/lib/api-handler", () => ({
@@ -36,16 +47,41 @@ let countsComplete = true;
 function engineCounts(u: URL) {
   const types = (u.searchParams.get("types") ?? "").split(",");
   const before = u.searchParams.get("date_before");
+  const groupFields = (u.searchParams.get("group_fields") ?? "").split(",").filter(Boolean);
+  const presentFields = (u.searchParams.get("present_fields") ?? "").split(",").filter(Boolean);
   const groups = new Map<
     string,
-    { type: string; status: string; count: number; before_count: number }
+    {
+      type: string;
+      status: string;
+      count: number;
+      before_count: number;
+      page_count: number;
+      fields: Record<string, string>;
+      present: Record<string, boolean>;
+    }
   >();
   for (const type of types) {
     for (const row of byType[type] ?? []) {
       const status = String(row.frontmatter.status ?? "").toLowerCase();
       if (status === "tombstoned") continue;
-      const key = `${type}|${status}`;
-      const g = groups.get(key) ?? { type, status, count: 0, before_count: 0 };
+      const fields = Object.fromEntries(
+        groupFields.map((f) => [f, String(row.frontmatter[f] ?? "").toLowerCase()])
+      );
+      const present = Object.fromEntries(
+        presentFields.map((f) => [f, String(row.frontmatter[f] ?? "") !== ""])
+      );
+      const key = JSON.stringify([type, status, fields, present]);
+      const g = groups.get(key) ?? {
+        type,
+        status,
+        count: 0,
+        before_count: 0,
+        page_count: 0,
+        fields,
+        present,
+      };
+      g.page_count++;
       g.count++;
       const date = String(row.frontmatter.due_date ?? row.frontmatter.date ?? "");
       if (before && date && date.slice(0, 10) <= before) g.before_count++;
@@ -67,6 +103,20 @@ beforeEach(() => {
   listCalls = [];
   countCalls = [];
   countsComplete = true;
+  approvalCounts.value = {
+    total: 0,
+    urgent: false,
+    byKey: {
+      deadlines: 0,
+      client_input: 0,
+      requests: 0,
+      agent_actions: 0,
+      analyses: 0,
+      case_scans: 0,
+      time: 0,
+    },
+    incomplete: [],
+  };
   byType = {
     legal_deadline: Array.from({ length: TOTAL_DEADLINES }, (_, i) => ({
       slug: `legal/deadlines/d${i}`,
@@ -127,8 +177,10 @@ describe("dashboard badges", () => {
 
   test("counted badges come from one engine count, never from listing the pages", async () => {
     await call();
-    expect(countCalls).toHaveLength(1);
-    const u = countCalls[0]!;
+    // One count for deadlines/intake/signatures/invoices, one for the vault.
+    expect(countCalls).toHaveLength(2);
+    expect(listCalls).toHaveLength(0);
+    const u = countCalls.find((c) => c.searchParams.get("types")?.includes("legal_deadline"))!;
     expect(u.searchParams.get("types")?.split(",").sort()).toEqual(
       ["intake_request", "invoice", "legal_deadline", "signature_request"].sort()
     );
@@ -151,10 +203,10 @@ describe("dashboard badges", () => {
 
   test("parallel requests of one caller share one engine count", async () => {
     await Promise.all([call(), call(), call()]);
-    expect(countCalls).toHaveLength(1);
+    expect(countCalls).toHaveLength(2);
     // Cached for the next tick, too.
     await call();
-    expect(countCalls).toHaveLength(1);
+    expect(countCalls).toHaveLength(2);
   });
 
   test("an unreadable count marks the counted badges degraded, not 'nothing there'", async () => {
@@ -171,5 +223,94 @@ describe("dashboard badges", () => {
       count: TOTAL_DEADLINES,
       degraded: true,
     });
+  });
+
+  test("vault: every unassigned or unfinished document counts, beyond 2,000", async () => {
+    byType.document = [
+      ...Array.from({ length: 2_500 }, (_, i) => ({
+        slug: `docs/u${i}`,
+        frontmatter: { extraction_status: "done" },
+      })),
+      // assigned by matter, and by status
+      { slug: "docs/a1", frontmatter: { case_slug: "cases/1", extraction_status: "done" } },
+      { slug: "docs/a2", frontmatter: { assignment_status: "assigned" } },
+      // assigned but OCR failed; unverified extraction
+      { slug: "docs/g1", frontmatter: { case_slug: "cases/1", extraction_status: "ocr_failed" } },
+      { slug: "docs/g2", frontmatter: { case_slug: "cases/1", extraction_unverified: true } },
+      // both: unassigned and analysis pending (counts twice, as before)
+      { slug: "docs/b", frontmatter: { analysis_status: "pending" } },
+      { slug: "docs/t", frontmatter: { status: "tombstoned" } },
+    ];
+    byType.legal_document = [{ slug: "ld/1", frontmatter: { analysis_status: "failed" } }];
+    const body = await call();
+    // 2,500 unassigned + g1 + g2 + b twice + ld/1 twice
+    expect(body.data["/dashboard/vault"]).toEqual({ count: 2_500 + 2 + 2 + 2, variant: "danger" });
+    const vaultCall = countCalls.find((c) => c.searchParams.get("types")?.includes("document"));
+    expect(vaultCall?.searchParams.get("present_fields")).toBe("case_slug");
+    expect(listCalls).toHaveLength(0);
+  });
+
+  test("an unreadable vault count marks the vault badge degraded", async () => {
+    failTypes.add("counts");
+    const body = await call();
+    expect(body.data["/dashboard/vault"]).toMatchObject({ degraded: true });
+  });
+
+  test("approvals: counts per list, danger when something is urgent", async () => {
+    approvalCounts.value = {
+      total: 9,
+      urgent: true,
+      byKey: {
+        deadlines: 2,
+        client_input: 1,
+        requests: 1,
+        agent_actions: 3,
+        analyses: 1,
+        case_scans: 0,
+        time: 1,
+      },
+      incomplete: [],
+    };
+    const body = await call();
+    expect(body.data["/dashboard/freigaben"]).toEqual({ count: 9, variant: "danger" });
+    expect(body.data["/dashboard/communications"]).toEqual({ count: 4, variant: "warning" });
+    expect(body.data["/dashboard/approvals"]).toEqual({ count: 3, variant: "warning" });
+    expect(body.data["/dashboard/review-queue"]).toEqual({ count: 1, variant: "warning" });
+    expect(body.data["/dashboard/time-suggestions"]).toEqual({ count: 1, variant: "info" });
+  });
+
+  test("approvals: a partial count degrades the total and the affected list only", async () => {
+    approvalCounts.value = {
+      total: 3,
+      urgent: false,
+      byKey: {
+        deadlines: 0,
+        client_input: 0,
+        requests: 0,
+        agent_actions: 3,
+        analyses: 0,
+        case_scans: 0,
+        time: 0,
+      },
+      incomplete: ["time"],
+    };
+    const body = await call();
+    expect(body.data["/dashboard/freigaben"]).toMatchObject({ count: 3, degraded: true });
+    expect(body.data["/dashboard/time-suggestions"]).toMatchObject({ count: 0, degraded: true });
+    expect(body.data["/dashboard/approvals"]).toEqual({ count: 3, variant: "warning" });
+  });
+
+  test("approvals: a failed count degrades every approval badge", async () => {
+    approvalCounts.value = null;
+    const body = await call();
+    for (const href of [
+      "/dashboard/freigaben",
+      "/dashboard/communications",
+      "/dashboard/approvals",
+      "/dashboard/review-queue",
+      "/dashboard/time-suggestions",
+    ]) {
+      expect(body.data[href]).toMatchObject({ degraded: true });
+    }
   });
 });
