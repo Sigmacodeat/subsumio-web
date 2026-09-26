@@ -39,7 +39,10 @@ function makeRelease(dir: string, opts: { complete?: boolean } = {}) {
   mkdirSync(join(dir, H), { recursive: true });
   writeFileSync(join(dir, "package.json"), "{}\n");
   writeFileSync(join(dir, H, "docker-compose.yml"), "services: {}\n");
-  if (opts.complete !== false) writeFileSync(join(dir, H, "crontab"), "0 6 * * * true\n");
+  if (opts.complete !== false) {
+    writeFileSync(join(dir, H, "crontab"), "0 6 * * * true\n");
+    writeFileSync(join(dir, H, "cronjob.sh"), "#!/bin/sh\nexec \"$@\"\n", { mode: 0o755 });
+  }
 }
 
 /** A release archive as `git archive` would produce it. */
@@ -138,7 +141,8 @@ describe("deploy-code.sh — preparing the new release", () => {
 describe("deploy-code.sh — switching releases", () => {
   const blocks = () => remoteBlocks();
   const prepare = () => blocks()[0]!;
-  const swap = () => blocks()[1]!;
+  // The switch is the last remote block; checks run in the blocks before it.
+  const swap = () => blocks().at(-1)!;
 
   function prepared(sha = "bbbbbbbbbb") {
     const res = runBlock(prepare(), { APP: app, H, SHA: sha, TAR: makeTar() });
