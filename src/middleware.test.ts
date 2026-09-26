@@ -402,6 +402,44 @@ describe("middleware CSP", () => {
     });
   });
 
+  it("img-src has no https: wildcard; fonts and analytics only where used", async () => {
+    await withEnv(
+      {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_ENGINE_URL: "https://engine.example",
+        NEXT_PUBLIC_POSTHOG_KEY: undefined,
+      },
+      async () => {
+        const res = await run("/");
+        const csp = res.headers.get("Content-Security-Policy") || "";
+        const imgSrc = csp.match(/img-src([^;]*)/)?.[1] ?? "";
+        expect(imgSrc.split(/\s+/)).not.toContain("https:");
+        expect(imgSrc).toContain("'self'");
+        expect(imgSrc).toContain("https://engine.example");
+        expect(csp).not.toContain("fonts.googleapis.com");
+        expect(csp).not.toContain("fonts.gstatic.com");
+        expect(csp).not.toContain("posthog");
+      }
+    );
+  });
+
+  it("allows the analytics host only when analytics is configured", async () => {
+    await withEnv(
+      {
+        NEXT_PUBLIC_POSTHOG_KEY: "phc_test",
+        NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
+      },
+      async () => {
+        const res = await run("/");
+        const connect = (res.headers.get("Content-Security-Policy") || "").match(
+          /connect-src([^;]*)/
+        )?.[1];
+        expect(connect).toContain("https://eu.i.posthog.com");
+        expect(connect).not.toContain("app.posthog.com");
+      }
+    );
+  });
+
   it("allows unsafe-eval in development script-src", async () => {
     await withEnv({ NODE_ENV: "development" }, async () => {
       const res = await run("/");

@@ -65,15 +65,54 @@ function buildCspHeader(nonce: string): string {
         }
       })()
     : "https://api.subsum.io";
+  const originOf = (url: string | undefined): string | null => {
+    if (!url) return null;
+    try {
+      return new URL(url).origin;
+    } catch {
+      return null;
+    }
+  };
+  // Images: only our own origins. No `https:` wildcard — an injected <img>
+  // (rendered mail, markdown) must not be able to beacon data to any host.
+  // Extra hosts (e.g. an object-storage domain) via SUBSUMIO_CSP_IMG_HOSTS.
+  const publicEngineOrigin = originOf(env("NEXT_PUBLIC_ENGINE_URL"));
+  const extraImgHosts = (env("SUBSUMIO_CSP_IMG_HOSTS") ?? "")
+    .split(/[\s,]+/)
+    .map(originOf)
+    .filter((o): o is string => Boolean(o));
+  const imgSrc = [
+    "'self'",
+    "data:",
+    "blob:",
+    ...Array.from(
+      new Set([engineOrigin, ...(publicEngineOrigin ? [publicEngineOrigin] : []), ...extraImgHosts])
+    ),
+  ].join(" ");
+  // Product analytics only when it is actually configured.
+  const posthogOrigin = env("NEXT_PUBLIC_POSTHOG_KEY")
+    ? originOf(env("NEXT_PUBLIC_POSTHOG_HOST") || "https://app.posthog.com")
+    : null;
+  const connectSrc = [
+    "'self'",
+    "https://api.stripe.com",
+    "https://*.sentry.io",
+    ...(posthogOrigin ? [posthogOrigin] : []),
+    engineOrigin,
+    ...(publicEngineOrigin && publicEngineOrigin !== engineOrigin ? [publicEngineOrigin] : []),
+  ].join(" ");
   return [
     "default-src 'self'",
     isDev
       ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com`
       : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com ${engineOrigin}`,
+    // Fonts are self-hosted by next/font (src/app/layout.tsx) — no Google hosts.
+    // 'unsafe-inline' stays for styles: React style attributes and Next's
+    // injected style tags need it; scripts remain nonce-only.
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${imgSrc}`,
+    "font-src 'self' data:",
+    `connect-src ${connectSrc}`,
     "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
