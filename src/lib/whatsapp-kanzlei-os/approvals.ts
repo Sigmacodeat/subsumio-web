@@ -116,7 +116,9 @@ export function buildWhatsAppApproval(
   const stamp = at.toISOString().slice(0, 10);
   const slug = `agent-action/whatsapp/${stamp}/${safeSlugPart(input.risk.intent)}-${at.getTime()}`;
   const label = ACTION_LABELS[actionType];
-  const actor = input.sender.name || input.sender.userId || "WhatsApp";
+  // A firm member proposes as their account (email, as on the web) so the
+  // Vier-Augen check recognises their own proposal in every channel.
+  const actor = input.sender.email || input.sender.name || input.sender.userId || "WhatsApp";
   const summary = `${label}: ${input.normalizedText.slice(0, 220) || input.risk.intent}`;
 
   return {

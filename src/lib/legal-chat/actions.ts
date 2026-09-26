@@ -1174,7 +1174,15 @@ async function createPendingAction(
   return slug;
 }
 
-async function findLatestPendingAction(ctx: ChatContext): Promise<BrainPage | null> {
+/** A pending chat command past its `expires_at` can no longer be confirmed. */
+function chatActionExpired(front: Record<string, unknown>, now = Date.now()): boolean {
+  const expires = typeof front.expires_at === "string" ? Date.parse(front.expires_at) : NaN;
+  return Number.isFinite(expires) && expires < now;
+}
+
+async function findLatestPendingAction(
+  ctx: Pick<ChatContext, "sender" | "fromPhone">
+): Promise<BrainPage | null> {
   const pages = await listPages(ctx.sender.brainId, "chat_action", 100);
   const senderHash = phoneHash(ctx.fromPhone);
   return (
@@ -1184,13 +1192,26 @@ async function findLatestPendingAction(ctx: ChatContext): Promise<BrainPage | nu
         return (
           front.provider === "whatsapp" &&
           front.from_phone_hash === senderHash &&
-          front.status === "pending_confirmation"
+          front.status === "pending_confirmation" &&
+          !chatActionExpired(front)
         );
       })
       .sort(
         (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       )[0] ?? null
   );
+}
+
+/** Whether this sender has a chat command waiting for JA (not expired). */
+export async function hasPendingWhatsAppChatAction(
+  sender: WhatsAppIdentity,
+  fromPhone: string
+): Promise<boolean> {
+  try {
+    return (await findLatestPendingAction({ sender, fromPhone })) !== null;
+  } catch {
+    return false;
+  }
 }
 
 async function markAction(

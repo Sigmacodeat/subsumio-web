@@ -29,6 +29,13 @@ import {
   grantWhatsAppConsent,
 } from "@/lib/whatsapp/consent-grant";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
+import {
+  approvalNotificationRecipients,
+  decideWhatsAppApproval,
+  listDecidableApprovals,
+} from "@/lib/whatsapp/approval-channel";
+import { hasPendingWhatsAppChatAction } from "@/lib/legal-chat/actions";
+import { readCurrentPage } from "@/lib/page-write-guards";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
 import {
@@ -45,7 +52,6 @@ import {
   type SafeCaseCreateInput,
 } from "@/lib/safe-case-create";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
-import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
 import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { z } from "zod";
@@ -228,9 +234,20 @@ async function processInboundMessage(
   sender: WhatsAppIdentity,
   results: Array<{ id: string; status: string; error?: string }>
 ): Promise<void> {
+  // Inside runAsEngineCaller these headers carry the firm member's identity.
+  const headers = engineHeadersForBrain(sender.brainId);
   const result = await orchestrateWhatsAppMessage(message, sender, {
-    listPendingApprovals,
-    updateApprovalStatus,
+    listPendingApprovals: (decider) => listDecidableApprovals(headers, decider),
+    decideApproval: (decider, actionSlug, status, rejectReason) =>
+      decideWhatsAppApproval({
+        headers,
+        brainId: sender.brainId,
+        actionSlug,
+        status,
+        decider,
+        rejectReason,
+      }),
+    hasPendingChatAction: hasPendingWhatsAppChatAction,
     approvalExecutionDeps: executionDepsForBrain(sender.brainId),
   });
   if (result.interactive) {
@@ -246,20 +263,39 @@ async function processInboundMessage(
   }
 
   // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
-  // If the orchestrator created a pending approval with a notification event,
-  // send a proactive WhatsApp message to the lawyer with the approval summary.
+  // A new Freigabe is announced to the matter's responsible lawyer(s) with a
+  // linked WhatsApp number — never to the sender (Vier-Augen) and never to a
+  // client. Without a matter the dashboard queue is the place to look.
   if (result.status === "pending_approval" && result.actionSlug) {
     try {
       const event = result.notificationEvent;
       const messageBody = event ? buildWhatsAppMessageBody(event) : "";
-      if (event?.recipient_phone && messageBody) {
+      const recipients = messageBody
+        ? await approvalNotificationRecipients(
+            {
+              orgId: sender.orgId,
+              caseSlug: event?.case_slug,
+              excludeUserId: isWhatsAppStaffRole(sender.role) ? sender.userId : undefined,
+            },
+            {
+              readCase: async (caseSlug) => {
+                const read = await readCurrentPage(ENGINE_URL, headers, caseSlug);
+                return read.kind === "found"
+                  ? ((read.page.frontmatter ?? {}) as Record<string, unknown>)
+                  : null;
+              },
+            }
+          )
+        : [];
+      for (const recipient of recipients) {
         await sendProactiveMessage({
-          to: event.recipient_phone,
+          to: recipient.phone,
           brainId: sender.brainId,
+          orgId: sender.orgId,
           scope: "approval_request",
           freeform: messageBody,
           urgent: true,
-        });
+        }).catch(() => undefined);
       }
     } catch {
       // Non-blocking: notification dispatch is best-effort
@@ -321,57 +357,6 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
       );
     }
   }
-}
-
-async function listPendingApprovals(
-  brainId: string,
-  _senderId: string
-): Promise<Array<{ action_slug: string; action_type: ActionType }>> {
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=agent_action&limit=100`, {
-    headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) return [];
-  const data = await res.json().catch(() => ({}));
-  const pages: Array<{ slug?: unknown; frontmatter?: Record<string, unknown> }> = Array.isArray(
-    data.pages
-  )
-    ? data.pages
-    : Array.isArray(data.items)
-      ? data.items
-      : [];
-  const pending: Array<{ action_slug: string; action_type: ActionType }> = [];
-  for (const page of pages) {
-    const actionSlug = typeof page.slug === "string" ? page.slug : "";
-    const actionType = page.frontmatter?.action_type as ActionType | undefined;
-    if (actionSlug && actionType && page.frontmatter?.status === "pending") {
-      pending.push({ action_slug: actionSlug, action_type: actionType });
-    }
-  }
-  return pending;
-}
-
-async function updateApprovalStatus(
-  brainId: string,
-  actionSlug: string,
-  status: "approved" | "rejected",
-  decidedBy: string,
-  rejectReason?: string
-): Promise<boolean> {
-  const res = await enginePatchPage(
-    engineHeadersForBrain(brainId),
-    {
-      slug: actionSlug,
-      frontmatter: {
-        status,
-        decided_at: new Date().toISOString(),
-        decided_by: decidedBy,
-        ...(status === "rejected" && rejectReason ? { reject_reason: rejectReason } : {}),
-      },
-    },
-    { timeoutMs: 15_000 }
-  );
-  return res.ok;
 }
 
 function executionDepsForBrain(brainId: string) {

@@ -441,7 +441,9 @@ describe("orchestrateWhatsAppMessage", () => {
       expect(result.reply).toBe("Gespeichert: Zeiteintrag.");
     });
 
-    it("maps button_reply confirm_yes to 'ja' for downstream processing", async () => {
+    // The buttons belong to the chat command — "speichern"/"verwerfen" keep
+    // them apart from a Freigabe decision ("Ja <Referenz>").
+    it("maps button_reply confirm_yes to 'speichern' for downstream processing", async () => {
       const handleText = vi.fn(async () => "Bestätigt und gespeichert.");
       const message = {
         id: "wamid.BUTTON3",
@@ -460,11 +462,11 @@ describe("orchestrateWhatsAppMessage", () => {
         }
       );
 
-      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "ja" }));
+      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "speichern" }));
       expect(result.reply).toBe("Bestätigt und gespeichert.");
     });
 
-    it("maps button_reply confirm_no to 'nein' for downstream processing", async () => {
+    it("maps button_reply confirm_no to 'verwerfen' for downstream processing", async () => {
       const handleText = vi.fn(async () => "Abgebrochen.");
       const message = {
         id: "wamid.BUTTON4",
@@ -483,7 +485,101 @@ describe("orchestrateWhatsAppMessage", () => {
         }
       );
 
-      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "nein" }));
+      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "verwerfen" }));
+    });
+  });
+
+  // W3-5 / W2-3, W3-6, W3-7, W3-16: the WhatsApp Freigabe channel follows the
+  // dashboard's rules.
+  describe("approval return channel", () => {
+    function textMessage(text: string): WhatsAppTextMessage {
+      return { id: `wamid.${text.replace(/\W/g, "")}`, from: "+436641234567", type: "text", text };
+    }
+    const pending = [
+      {
+        action_slug: "agent-action/whatsapp/2026-09-26/document-request-1790000012",
+        action_type: "document_request_send" as const,
+        summary: "Unterlagen anfordern",
+      },
+    ];
+
+    it("an assistant cannot decide a Freigabe, not even with a reference", async () => {
+      const decideApproval = vi.fn();
+      const result = await orchestrateWhatsAppMessage(
+        textMessage("Ja 90000012"),
+        identity("assistant"),
+        {
+          fetchImpl: okFetch() as unknown as typeof fetch,
+          listPendingApprovals: async () => pending,
+          decideApproval,
+          handleText: vi.fn(async () => "x"),
+        }
+      );
+      expect(decideApproval).not.toHaveBeenCalled();
+      expect(result.reply).toMatch(/nur Anwältinnen\/Anwälte und die Administration/);
+    });
+
+    it("a lawyer's decision goes through the shared decision rules and reports a refusal", async () => {
+      const decideApproval = vi.fn(async () => ({
+        ok: false as const,
+        message:
+          "Eine Freigabe muss von einer zweiten Person entschieden werden (Vier-Augen-Prinzip).",
+      }));
+      const lawyer = { ...identity("lawyer"), email: "a@k.example" };
+      const result = await orchestrateWhatsAppMessage(textMessage("Ja 90000012"), lawyer, {
+        fetchImpl: okFetch() as unknown as typeof fetch,
+        listPendingApprovals: async () => pending,
+        decideApproval,
+      });
+      expect(decideApproval).toHaveBeenCalledWith(
+        lawyer,
+        pending[0].action_slug,
+        "approved",
+        undefined
+      );
+      expect(result.reply).toMatch(/Vier-Augen/);
+      expect(result.status).toBe("routed");
+    });
+
+    it("a bare 'Ja' with open Freigaben asks which one is meant instead of confirming a chat command", async () => {
+      const handleText = vi.fn(async () => "Gespeichert: Frist.");
+      const decideApproval = vi.fn();
+      const result = await orchestrateWhatsAppMessage(textMessage("Ja"), identity("lawyer"), {
+        fetchImpl: okFetch() as unknown as typeof fetch,
+        listPendingApprovals: async () => pending,
+        decideApproval,
+        hasPendingChatAction: async () => true,
+        handleText,
+      });
+      expect(handleText).not.toHaveBeenCalled();
+      expect(decideApproval).not.toHaveBeenCalled();
+      expect(result.reply).toContain("Ja 90000012");
+      expect(result.reply).toContain("speichern");
+    });
+
+    it("a bare 'Ja' without open Freigaben still confirms the chat command", async () => {
+      const handleText = vi.fn(async () => "Gespeichert: Frist.");
+      const result = await orchestrateWhatsAppMessage(textMessage("ja"), identity("lawyer"), {
+        fetchImpl: okFetch() as unknown as typeof fetch,
+        listPendingApprovals: async () => [],
+        decideApproval: vi.fn(),
+        handleText,
+      });
+      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "ja" }));
+      expect(result.reply).toBe("Gespeichert: Frist.");
+    });
+
+    it("a client's request never announces the Freigabe to the client", async () => {
+      const client = { ...identity("client"), matterScope: ["legal/cases/2026-014"] };
+      const result = await orchestrateWhatsAppMessage(
+        textMessage("Termin nächste Woche möglich?"),
+        client,
+        { fetchImpl: caseFetch() as unknown as typeof fetch }
+      );
+      expect(result.status).toBe("pending_approval");
+      expect(result.notificationEvent?.recipient_phone).toBeUndefined();
+      expect(result.notificationEvent?.recipient_user_ids).toEqual([]);
+      expect(result.notificationEvent?.case_slug).toBe("legal/cases/2026-014");
     });
   });
 });
