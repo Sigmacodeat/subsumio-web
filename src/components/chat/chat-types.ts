@@ -13,6 +13,7 @@ export interface ChatCitation {
   case_slug?: string;
   chunk_index?: number;
   page_number?: number;
+  page_end?: number;
   char_offset_start?: number;
   char_offset_end?: number;
 }

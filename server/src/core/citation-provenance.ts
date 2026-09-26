@@ -126,3 +126,55 @@ export function provenanceForChunk(
   }
   return { page, pageEnd, charOffsetInPage };
 }
+
+/**
+ * Locate a chunk inside the document text it was cut from and return its page
+ * range. The chunk is found by a prefix search that grows (80 → 200 → whole
+ * chunk) until the match is unique, so a clause that repeats across a contract
+ * does not resolve to its first occurrence. Pages come from the nearest
+ * `--- Page N ---` marker at or before each end of the chunk. Returns null
+ * when the chunk cannot be placed or the document carries no page markers.
+ */
+export function locateChunkPages(
+  markdown: string,
+  chunkText: string
+): { start: number; end: number; page: number; pageEnd: number } | null {
+  const text = chunkText.trim();
+  if (text.length < 20) return null;
+  let start = -1;
+  for (const len of [80, 200, text.length]) {
+    const needle = text.slice(0, Math.min(len, text.length));
+    const first = markdown.indexOf(needle);
+    if (first === -1) return null;
+    start = first;
+    if (markdown.indexOf(needle, first + 1) === -1 || len >= text.length) break;
+  }
+  if (start < 0) return null;
+  const end = start + text.length;
+  const markers = [...markdown.matchAll(/^--- Page (\d+) ---$/gm)].map((m) => ({
+    index: m.index ?? 0,
+    page: Number(m[1]),
+  }));
+  if (markers.length === 0) return null;
+  const pageAt = (offset: number): number | null => {
+    let page: number | null = null;
+    for (const marker of markers) {
+      if (marker.index <= offset) page = marker.page;
+      else break;
+    }
+    return page;
+  };
+  const page = pageAt(start) ?? markers[0].page;
+  const pageEnd = pageAt(Math.max(start, end - 1)) ?? page;
+  return { start, end, page, pageEnd };
+}
+
+/** Passage text for display: page markers, separators and OCR tags removed. */
+export function cleanPassage(text: string): string {
+  return text
+    .replace(/^--- Page \d+ ---$/gm, "")
+    .replace(/^###\*\*\*###$/gm, "")
+    .replace(/^\[OCR-Seite[^\]]*\]$/gm, "")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}

@@ -326,9 +326,24 @@ export async function runGather(
  * Pages are rendered as `<page slug="..." score="...">excerpt</page>`;
  * takes are rendered via the renderTakesBlock helper from sanitize.ts.
  */
-export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): string {
+/**
+ * Per-page excerpt ceiling and the total budget across all pages. A 600-char
+ * cut showed the model ~17 % of a ~3,500-char chunk, so the Anträge, Beweise
+ * and amounts at the end of a passage never reached the answer. Pages arrive
+ * best-first, so the budget is spent on the strongest evidence.
+ */
+export const PAGE_EXCERPT_MAX_CHARS = 4000;
+export const PAGES_BLOCK_BUDGET_CHARS = 60_000;
+
+export function renderPagesBlock(
+  pages: SearchResult[],
+  excerptLen = PAGE_EXCERPT_MAX_CHARS,
+  totalBudget = PAGES_BLOCK_BUDGET_CHARS
+): string {
+  let remaining = totalBudget;
   return pages
     .map((p, idx) => {
+      const allowance = Math.max(300, Math.min(excerptLen, remaining));
       const slug = String((p as unknown as { slug?: string }).slug ?? "");
       const excerpt = String(
         (p as unknown as { compiled_truth?: string; chunk_text?: string; snippet?: string })
@@ -336,7 +351,8 @@ export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): strin
           (p as unknown as { compiled_truth?: string }).compiled_truth ??
           (p as unknown as { snippet?: string }).snippet ??
           ""
-      ).slice(0, excerptLen);
+      ).slice(0, allowance);
+      remaining -= excerpt.length;
       const passageStart = (p as SearchResult).passage_start;
       const passageEnd = (p as SearchResult).passage_end;
       const offsetAttrs =

@@ -29,6 +29,7 @@ import {
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
+import { cleanPassage, locateChunkPages } from "../core/citation-provenance.ts";
 import {
   extractDocumentText,
   synthesizeDocumentMarkdown,
@@ -2369,7 +2370,8 @@ async function enrichCitations(
   engine: BrainEngine,
   citations: Array<{ page_slug: string; row_num?: number | null }>,
   sourceId: string,
-  allowedSources?: string[]
+  allowedSources?: string[],
+  retrievedChunks?: Array<{ slug: string; chunk_index: number }>
 ): Promise<
   Array<{
     slug: string;
@@ -2379,6 +2381,7 @@ async function enrichCitations(
     case_slug?: string;
     chunk_index?: number;
     page_number?: number;
+    page_end?: number;
     char_offset_start?: number;
     char_offset_end?: number;
   }>
@@ -2456,10 +2459,24 @@ async function enrichCitations(
     )
     .catch(() => [] as Array<{ page_slug: string; chunk_index: number; chunk_text: string }>);
 
-  // Build a map: slug → best chunk (first chunk = most representative)
+  // slug → the chunk the answer rests on: the one retrieval showed the model
+  // for that page, falling back to the first chunk only when the page was
+  // cited without a retrieved chunk (e.g. graph-only hits).
+  const retrievedIndex = new Map<string, number>();
+  for (const rc of retrievedChunks ?? []) {
+    if (!retrievedIndex.has(rc.slug)) retrievedIndex.set(rc.slug, rc.chunk_index);
+  }
   const chunkMap = new Map<string, { chunk_index: number; chunk_text: string }>();
   for (const cr of chunkRows) {
-    if (!chunkMap.has(cr.page_slug)) {
+    const wanted = retrievedIndex.get(cr.page_slug);
+    if (wanted !== undefined) {
+      if (cr.chunk_index === wanted) {
+        chunkMap.set(cr.page_slug, { chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
+      } else if (!chunkMap.has(cr.page_slug)) {
+        // Placeholder until the retrieved chunk shows up in the ordered rows.
+        chunkMap.set(cr.page_slug, { chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
+      }
+    } else if (!chunkMap.has(cr.page_slug)) {
       chunkMap.set(cr.page_slug, { chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
     }
   }
@@ -2472,31 +2489,25 @@ async function enrichCitations(
     const truth = truthMap.get(slug);
     const pageCount = pageCountMap.get(slug);
 
-    // Derive page_number from the chunk_text position within the compiled_truth.
-    // The PDF extractor inserts `###***###` between pages. By counting how many
-    // separators appear before the chunk_text's position in the full document,
-    // we can determine which PDF page this chunk came from.
+    // Page range from the `--- Page N ---` markers the PDF extractor writes:
+    // the chunk is located in compiled_truth (unique-prefix search) and the
+    // nearest marker before its start/end gives the page(s) it spans.
     let pageNumber: number | undefined;
+    let pageEnd: number | undefined;
     let charOffsetStart: number | undefined;
     let charOffsetEnd: number | undefined;
     let quote = "";
 
     if (chunk) {
-      // Use up to 200 chars of the chunk as the passage quote
-      quote = chunk.chunk_text.slice(0, 200).trim();
-
-      if (truth && chunk.chunk_text.length > 20) {
-        const offset = truth.indexOf(chunk.chunk_text.slice(0, 50));
-        if (offset >= 0) {
-          charOffsetStart = offset;
-          charOffsetEnd = offset + chunk.chunk_text.length;
-
-          // Count page separators before this offset to derive page number
-          if (pageCount && pageCount > 1) {
-            const PAGE_SEP = "###***###";
-            const before = truth.slice(0, offset);
-            const sepCount = before.split(PAGE_SEP).length - 1;
-            pageNumber = sepCount + 1; // 1-based page number
+      quote = cleanPassage(chunk.chunk_text).slice(0, 200).trim();
+      if (truth) {
+        const located = locateChunkPages(truth, chunk.chunk_text);
+        if (located) {
+          charOffsetStart = located.start;
+          charOffsetEnd = located.end;
+          if (!pageCount || located.page <= pageCount) {
+            pageNumber = located.page;
+            if (located.pageEnd !== located.page) pageEnd = located.pageEnd;
           }
         }
       }
@@ -2510,6 +2521,7 @@ async function enrichCitations(
       ...(caseSlugMap.has(slug) ? { case_slug: caseSlugMap.get(slug)! } : {}),
       ...(chunk ? { chunk_index: chunk.chunk_index } : {}),
       ...(pageNumber !== undefined ? { page_number: pageNumber } : {}),
+      ...(pageEnd !== undefined ? { page_end: pageEnd } : {}),
       ...(charOffsetStart !== undefined ? { char_offset_start: charOffsetStart } : {}),
       ...(charOffsetEnd !== undefined ? { char_offset_end: charOffsetEnd } : {}),
     };
@@ -4076,7 +4088,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         engine,
         result.citations ?? [],
         sourceId,
-        readSourcesFor(req)
+        readSourcesFor(req),
+        result.retrievedChunks
       );
       // Shared law (statutes, decisions in the law-* sources) is public
       // authority, not matter evidence: it stays citable inside a matter.

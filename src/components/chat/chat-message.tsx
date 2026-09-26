@@ -249,6 +249,8 @@ function ChatMessageBubbleInner({
                   slug: c.slug,
                   title: c.title,
                   quote: c.quote,
+                  page_number: c.page_number,
+                  page_end: c.page_end,
                 })),
                 gaps: message.gaps,
                 grounding: message.grounding,

@@ -31,7 +31,14 @@ import { tracking } from "@/lib/tracking";
 
 export interface CitationPanelData {
   /** Brain citations (slug + title) from the engine; `quote` opens the page at that passage. */
-  citations?: Array<{ slug: string; title: string; quote?: string }>;
+  citations?: Array<{
+    slug: string;
+    title: string;
+    quote?: string;
+    /** Source page(s) of the cited passage (PDF documents). */
+    page_number?: number;
+    page_end?: number;
+  }>;
   /** Gaps reported by the engine. */
   gaps?: string[];
   /** Corpus grounding metadata from citation-gate. */
@@ -385,6 +392,13 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                     >
                       <BookOpen size={9} />
                       {formatCitationTitle(c.title, c.slug)}
+                      {c.page_number ? (
+                        <span className="text-[color:var(--ds-text-subtle)]">
+                          {lang === "en" ? " · p. " : " · S. "}
+                          {c.page_number}
+                          {c.page_end && c.page_end !== c.page_number ? `–${c.page_end}` : ""}
+                        </span>
+                      ) : null}
                     </a>
                   );
                 })}

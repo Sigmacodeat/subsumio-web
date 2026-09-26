@@ -259,6 +259,12 @@ export interface ThinkResult {
   question: string;
   answer: string;
   citations: ParsedCitation[];
+  /**
+   * The chunk the model was shown for each retrieved page (best chunk per
+   * page). Citation enrichment uses it to quote and paginate the passage the
+   * answer actually rests on, not the first chunk of the document.
+   */
+  retrievedChunks?: Array<{ slug: string; chunk_id: number; chunk_index: number }>;
   gaps: string[];
   pagesGathered: number;
   takesGathered: number;
@@ -1347,6 +1353,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     question: opts.question,
     answer: response.answer,
     citations: grounded.valid,
+    retrievedChunks: gather.pages
+      .filter((p) => typeof p.chunk_id === "number" && typeof p.chunk_index === "number")
+      .map((p) => ({ slug: p.slug, chunk_id: p.chunk_id, chunk_index: p.chunk_index })),
     gaps: response.gaps,
     pagesGathered: gather.pages.length,
     takesGathered: gather.takes.length,
