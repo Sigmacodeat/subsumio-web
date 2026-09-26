@@ -33,6 +33,29 @@ const log = logger("api/legal/analyze");
 const INTERNAL_ANALYSIS_DAILY_CAP = Number(process.env.SUBSUMIO_INTERNAL_ANALYSIS_DAILY_CAP ?? 300);
 
 /** Short content fingerprint: an unchanged document is never analysed twice. */
+/** Best-effort: record on the document why its analysis did not complete. */
+async function markAnalysisFailed(
+  headers: Record<string, string>,
+  slug: string,
+  reason: string,
+  retryOwner?: string
+): Promise<void> {
+  try {
+    const res = await enginePatchPage(headers, {
+      slug,
+      frontmatter: {
+        analysis_status: "failed",
+        analysis_failed_at: new Date().toISOString(),
+        analysis_error: reason,
+        ...(retryOwner ? { analysis_retry_owner: retryOwner } : {}),
+      },
+    });
+    if (!res.ok) log.error(`[analyze] failed to persist failure for ${slug}: HTTP ${res.status}`);
+  } catch (err) {
+    log.error("[analyze] failed to persist failure status:", err);
+  }
+}
+
 function analysisContentHash(text: string): string {
   return createHash("sha256").update(text).digest("hex").slice(0, 32);
 }
@@ -168,6 +191,15 @@ export const POST = createHandler(
     }
 
     if (!text.trim()) {
+      // The document must not stay "Analyse ausstehend" for ever: say why.
+      if (documentSlug) {
+        await markAnalysisFailed(
+          engineHeaders,
+          documentSlug,
+          warnings.includes("document_fetch_failed") ? "document_fetch_failed" : "document_empty",
+          body.retry_owner
+        );
+      }
       return apiError("document_not_found_or_empty", "Document not found or empty", 404);
     }
 
@@ -350,6 +382,12 @@ export const POST = createHandler(
         log.error(
           `[analyze] failed to persist analysis for ${documentSlug}:`,
           err instanceof Error ? err.message : String(err)
+        );
+        await markAnalysisFailed(
+          engineHeaders,
+          documentSlug,
+          "analysis_persistence_failed",
+          body.retry_owner
         );
         return Response.json(
           {

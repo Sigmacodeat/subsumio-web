@@ -127,6 +127,39 @@ describe("legal/analyze — idempotent per document content", () => {
   });
 });
 
+describe("legal/analyze — every non-success is recorded on the document", () => {
+  it("an empty document is marked failed with the reason", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ title: "", content: "", frontmatter: {} }))
+    );
+    const res = await call({});
+    expect(res.status).toBe(404);
+    const [, body] = m.patch.mock.calls[0]!;
+    expect(body).toMatchObject({
+      slug: "legal/documents/d1",
+      frontmatter: { analysis_status: "failed", analysis_error: "document_empty" },
+    });
+  });
+
+  it("a failed save of the analysis is marked failed too", async () => {
+    m.patch.mockImplementation(async (_h: unknown, b: { frontmatter?: Record<string, unknown> }) =>
+      b.frontmatter?.analysis_status === "completed"
+        ? new Response("nope", { status: 500 })
+        : Response.json({ ok: true })
+    );
+    const res = await call({});
+    expect(res.status).toBe(503);
+    const failed = m.patch.mock.calls.find(
+      ([, b]) =>
+        (b as { frontmatter?: Record<string, unknown> }).frontmatter?.analysis_status === "failed"
+    );
+    expect(
+      (failed![1] as { frontmatter: Record<string, unknown> }).frontmatter.analysis_error
+    ).toBe("analysis_persistence_failed");
+  });
+});
+
 describe("legal/analyze — background calls", () => {
   beforeEach(() => {
     m.ctx.brainId = "internal";

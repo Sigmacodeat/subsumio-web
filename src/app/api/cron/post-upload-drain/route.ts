@@ -123,6 +123,9 @@ async function drainOutbox(): Promise<Response> {
         });
         if (!patch.ok)
           log.error(`[post-upload-drain] failed to block ${page.slug}: ${patch.status}`);
+        if (task_type === "analyze") {
+          await markDocumentAnalysis(headers, doc_slug, "blocked", `blocked_${readiness.reason}`);
+        }
         blocked++;
         continue;
       }
@@ -327,6 +330,11 @@ async function drainOutbox(): Promise<Response> {
       });
       if (!patch.ok)
         log.error(`[post-upload-drain] failed to mark ${page.slug} exhausted: ${patch.status}`);
+      if (task_type === "analyze") {
+        // The outbox gives up: the document shows the failure, and the
+        // hourly retry cron takes over.
+        await markDocumentAnalysis(headers, doc_slug, "failed", errorMsg || "analysis_exhausted");
+      }
       exhausted++;
     } else {
       // Schedule retry with backoff
@@ -359,6 +367,34 @@ async function drainOutbox(): Promise<Response> {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * A terminal outbox state reaches the document: without it the document
+ * stayed "Analyse ausstehend" for good, with no reason and no retry.
+ */
+async function markDocumentAnalysis(
+  headers: Record<string, string>,
+  docSlug: string,
+  status: "failed" | "blocked",
+  reason: string
+): Promise<void> {
+  try {
+    const res = await enginePatchPage(headers, {
+      slug: docSlug,
+      frontmatter: {
+        analysis_status: status,
+        analysis_error: reason.slice(0, 500),
+        ...(status === "failed"
+          ? { analysis_failed_at: new Date().toISOString(), analysis_retry_owner: "cron" }
+          : {}),
+      },
+    });
+    if (!res.ok)
+      log.error(`[post-upload-drain] failed to mark ${docSlug} ${status}: ${res.status}`);
+  } catch (err) {
+    log.error(`[post-upload-drain] failed to mark ${docSlug} ${status}:`, String(err));
+  }
+}
 
 function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");

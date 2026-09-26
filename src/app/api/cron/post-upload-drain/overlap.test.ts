@@ -128,3 +128,39 @@ describe("post-upload drain — overlapping runs", () => {
     expect(last.frontmatter?.last_error).toBe("internal_analysis_budget_exhausted");
   });
 });
+
+describe("post-upload drain — terminal states reach the document", () => {
+  it("after the last failed attempt the document shows 'failed' and the retry cron takes over", async () => {
+    (tasks[0]!.frontmatter as Record<string, unknown>).attempts = 3; // MAX_ATTEMPTS - 1
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).startsWith("http://engine/api/pages/")
+          ? Response.json({ frontmatter: { extraction_status: "ready" } })
+          : new Response("{}", { status: 502 })
+      )
+    );
+    const out = await run();
+    expect(out.exhausted).toBe(1);
+    const docPatch = patches.find((p) => p.slug === "documents/doc-1");
+    expect(docPatch?.frontmatter).toMatchObject({
+      analysis_status: "failed",
+      analysis_retry_owner: "cron",
+    });
+    expect(String(docPatch?.frontmatter?.analysis_error)).toContain("502");
+  });
+
+  it("a document that can never be analysed is marked blocked with the reason", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ frontmatter: { extraction_status: "failed" } }))
+    );
+    const out = await run();
+    expect(out.blocked).toBe(1);
+    const docPatch = patches.find((p) => p.slug === "documents/doc-1");
+    expect(docPatch?.frontmatter).toMatchObject({
+      analysis_status: "blocked",
+      analysis_error: "blocked_extraction_failed",
+    });
+  });
+});
