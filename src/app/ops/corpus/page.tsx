@@ -283,6 +283,7 @@ function NachweisSection({ onSelectCorpus }: { onSelectCorpus: (sourceId: string
         <CorpusNachweis
           rows={d.sync.rows}
           measuredAt={d.sync.measuredAt ?? null}
+          progress={d.sync.progress ?? {}}
           onInspect={onSelectCorpus}
           onRefresh={() => query.refetch()}
         />

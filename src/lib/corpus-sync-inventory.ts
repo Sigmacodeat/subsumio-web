@@ -59,6 +59,16 @@ export interface SyncInventorySource {
   aboveSoll: number;
   /** Fehlt in Messungen vor dem Nachweis-Ausbau (2026-09-26). */
   proof?: SyncProof;
+  /** Gerichte: Stand der Nummernliste (ris-jud-index-crawl.ts). */
+  courtIndex?: CourtIndexState;
+}
+
+/** Nummernliste eines Gerichts — erst vollständig abgeglichen wird sie zum Soll. */
+export interface CourtIndexState {
+  crawledAt: string | null;
+  risTotal: number | null;
+  listed: number;
+  complete: boolean;
 }
 
 export interface SyncInventory {
@@ -112,6 +122,8 @@ export interface CorpusSyncRow {
   pipelineKey: string | null;
   /** In der DB ohne Dokumentnummer — außerhalb jedes Topfs, eigens ausgewiesen. */
   dbPagesWithoutDocId: number;
+  /** Gerichte: Stand der Nummernliste; null = noch keine. */
+  courtIndex: CourtIndexState | null;
   /** Nachweis je Dokument; null = Messung vor dem Nachweis-Ausbau. Ohne `laws` (zu groß für die Seite). */
   proof: Omit<SyncProof, "laws"> | null;
 }
@@ -153,6 +165,17 @@ const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v)
 
 const numOrNull = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
+
+function parseCourtIndex(raw: unknown): CourtIndexState | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  return {
+    crawledAt: typeof r.crawledAt === "string" ? r.crawledAt : null,
+    risTotal: numOrNull(r.risTotal),
+    listed: num(r.listed),
+    complete: r.complete === true,
+  };
+}
 
 export function parseSyncInventory(json: string): SyncInventory | null {
   let raw: unknown;
@@ -196,6 +219,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
         notInRisSoll: numOrNull(s.notInRisSoll),
         aboveSoll: num(s.aboveSoll),
         proof: parseProof((s as { proof?: unknown }).proof),
+        courtIndex: parseCourtIndex((s as { courtIndex?: unknown }).courtIndex),
       })),
   };
 }
@@ -270,6 +294,7 @@ export function toSyncRow(
     canUpdate: status === "fetch_open" && pipelineKey !== null,
     pipelineKey,
     dbPagesWithoutDocId: s.dbPagesWithoutDocId,
+    courtIndex: s.courtIndex ?? null,
     proof: s.proof && !s.historical && s.inScope ? withoutLaws(s.proof) : null,
   };
 }

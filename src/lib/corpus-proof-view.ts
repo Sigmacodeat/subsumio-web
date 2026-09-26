@@ -96,10 +96,12 @@ export function totalCounts(groups: AreaGroup[]): ProofCounts {
 }
 
 /** Filter der Seite: welche Zeilen zeigen. */
-export type ProofFilter = "alle" | "offen" | ProofCategory;
+/** „stockt" wertet der Verlauf aus (corpus-progress.ts), nicht die Töpfe. */
+export type ProofFilter = "alle" | "offen" | "stockt" | ProofCategory;
 
 export function rowMatches(counts: ProofCounts | null, f: ProofFilter): boolean {
   if (f === "alle") return true;
+  if (f === "stockt") return false;
   if (!counts) return f === "offen"; // ohne Messung ist nichts belegt
   const c = byCategory(counts);
   if (f === "offen") return c.wrong + c.missing + c.working > 0;

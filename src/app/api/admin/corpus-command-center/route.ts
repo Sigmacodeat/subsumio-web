@@ -8,6 +8,7 @@ import {
   type CorpusSyncRow,
 } from "@/lib/corpus-sync-inventory";
 import { SOURCE_LABELS } from "@/lib/corpus-labels";
+import { readSyncHistory } from "@/lib/corpus-sync-history";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { lawCorpusNormalizedDir } from "@/lib/corpus-paths";
@@ -387,6 +388,8 @@ export const GET = createHandler(
         totals: syncTotalsValue,
         // Zeitpunkt der Dokumentnummern-Messung; null = noch nie gemessen.
         measuredAt: inventory?.measuredAt ?? null,
+        // Tagesstände der letzten 30 Tage je Quelle (Fortschritt, Restdauer).
+        progress: readSyncHistory(),
       },
       workQueue: {
         items: workQueue.slice(0, 200), // erste 200 — Rest via Pagination

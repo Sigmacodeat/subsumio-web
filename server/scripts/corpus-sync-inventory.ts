@@ -63,6 +63,41 @@ export const INDEX_OF: Record<string, string> = {
 };
 
 /**
+ * Courts: the document-exact list of every decision RIS publishes
+ * (ris-jud-index-crawl.ts). Used as Soll only when its meta file says the
+ * crawl reconciled every query window with RIS's hit count — a half-crawled
+ * list would turn unlisted decisions into silent "not in Soll".
+ */
+export function courtIndexFile(corpus: string): string | null {
+  if (corpus === "at-judikatur") return "ris-index-jud-ogh.jsonl";
+  const m = corpus.match(/^at-judikatur-([a-z]+)$/);
+  return m ? `ris-index-jud-${m[1]}.jsonl` : null;
+}
+
+export interface CourtIndexMeta {
+  crawledAt: string | null;
+  risTotal: number | null;
+  listed: number;
+  complete: boolean;
+}
+
+/** The crawl's own verdict next to the list; null when there is none. */
+export function readCourtIndexMeta(stateDir: string, file: string): CourtIndexMeta | null {
+  const path = join(stateDir, file.replace(/\.jsonl$/, ".meta.json"));
+  try {
+    const m = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    return {
+      crawledAt: typeof m.crawledAt === "string" ? m.crawledAt : null,
+      risTotal: typeof m.risTotal === "number" ? m.risTotal : null,
+      listed: typeof m.listed === "number" ? m.listed : 0,
+      complete: m.complete === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Smaller RIS collections without an in-force index: the Soll is the RIS hit
  * count of their search (checked by hand on 2026-09-25 — e.g. Gemeinden 18,663
  * vs 18,171 on disk). Fetched at most once a day, one request every 2 s
@@ -169,6 +204,8 @@ export interface SyncInventorySource {
   aboveSoll: number;
   /** Per-document proof (in scope only). */
   proof?: SyncProof;
+  /** Courts: state of the document-number list, whether or not it is used as Soll yet. */
+  courtIndex?: CourtIndexMeta;
 }
 
 /**
@@ -568,7 +605,10 @@ export async function measure(
       failed: 0,
     };
 
-    const indexFile = INDEX_OF[corpus];
+    const courtFile = courtIndexFile(corpus);
+    const courtMeta = courtFile ? readCourtIndexMeta(STATE, courtFile) : null;
+    const indexFile =
+      INDEX_OF[corpus] ?? (courtFile && courtMeta?.complete ? courtFile : undefined);
     const indexPath = indexFile ? join(STATE, indexFile) : null;
     const proof: SyncProof = {
       ...emptyUnit(),
@@ -659,6 +699,7 @@ export async function measure(
       notInRisSoll,
       aboveSoll,
       ...(inScope && corpus !== "at" ? { proof } : {}),
+      ...(courtMeta ? { courtIndex: courtMeta } : {}),
     });
   }
 
@@ -668,6 +709,45 @@ export async function measure(
     durationMs: Date.now() - started,
     sources,
   };
+}
+
+/**
+ * Progress over time: one compact line per measurement in
+ * _state/corpus-sync-history.jsonl — per source the Soll and the seven
+ * buckets in PROOF_BUCKETS order. The page draws the trend and the
+ * remaining time from it. Lines older than HISTORY_DAYS are dropped.
+ */
+export const HISTORY_FILE = "corpus-sync-history.jsonl";
+export const HISTORY_DAYS = 120;
+
+export interface HistoryLine {
+  at: string;
+  /** corpus → [risSoll or -1, ...PROOF_BUCKETS counts] */
+  s: Record<string, number[]>;
+}
+
+export function historyLine(inv: SyncInventory): HistoryLine {
+  const s: Record<string, number[]> = {};
+  for (const src of inv.sources) {
+    if (!src.proof) continue;
+    s[src.corpus] = [src.risSoll ?? -1, ...PROOF_BUCKETS.map((b) => src.proof!.counts[b])];
+  }
+  return { at: inv.measuredAt, s };
+}
+
+/** Existing history plus the new line, oldest dropped — as file content. */
+export function appendHistory(existing: string, line: HistoryLine, now = Date.now()): string {
+  const cutoff = now - HISTORY_DAYS * 86_400_000;
+  const kept = existing.split("\n").filter((l) => {
+    if (!l.trim()) return false;
+    try {
+      return Date.parse((JSON.parse(l) as HistoryLine).at) >= cutoff;
+    } catch {
+      return false;
+    }
+  });
+  kept.push(JSON.stringify(line));
+  return kept.join("\n") + "\n";
 }
 
 async function main() {
@@ -683,6 +763,15 @@ async function main() {
     mkdirSync(STATE, { recursive: true });
     writeFileSync(`${OUT}.tmp`, JSON.stringify(inv, null, 1));
     renameSync(`${OUT}.tmp`, OUT);
+    const HIST = join(STATE, HISTORY_FILE);
+    let prev = "";
+    try {
+      prev = readFileSync(HIST, "utf8");
+    } catch {
+      // first measurement
+    }
+    writeFileSync(`${HIST}.tmp`, appendHistory(prev, historyLine(inv)));
+    renameSync(`${HIST}.tmp`, HIST);
     console.log(
       `corpus-sync-inventory: ${inv.sources.length} Quellen in ${Math.round(inv.durationMs / 1000)} s → ${OUT}`
     );

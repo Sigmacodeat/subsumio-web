@@ -44,6 +44,7 @@ import {
   type ProofUnit,
 } from "@/lib/corpus-proof";
 import { landName, risDocumentUrl, LAENDER } from "@/lib/corpus-areas";
+import { sumSeries, trendOf, type DailyPoint, type Trend } from "@/lib/corpus-progress";
 import {
   byCategory,
   confirmedPct,
@@ -154,9 +155,18 @@ const CATEGORY: Record<
   },
 };
 
-const FILTERS: ProofFilter[] = ["offen", "alle", "confirmed", "wrong", "missing", "working"];
+const FILTERS: ProofFilter[] = [
+  "offen",
+  "alle",
+  "stockt",
+  "confirmed",
+  "wrong",
+  "missing",
+  "working",
+];
 const FILTER_LABEL: Record<ProofFilter, string> = {
   offen: "Mit offenen Punkten",
+  stockt: "Stockt",
   alle: "Alle",
   confirmed: "Nachweislich 1:1",
   wrong: "Abweichend/fehlerhaft",
@@ -170,14 +180,22 @@ const LAW_LIST_PARAM: Record<string, string> = {
   "at-landesrecht": "landesrecht",
 };
 
+/** Verlauf ohne Fortschritt, obwohl etwas offen ist — braucht einen Blick. */
+function isStuck(t: Trend): boolean {
+  return t.state === "stalled" || t.state === "growing";
+}
+
 export function CorpusNachweis({
   rows,
   measuredAt,
+  progress = {},
   onInspect,
   onRefresh,
 }: {
   rows: CorpusSyncRow[];
   measuredAt: string | null;
+  /** Tagesstände je Quelle (corpus) aus corpus-sync-history. */
+  progress?: Record<string, DailyPoint[]>;
   onInspect?: (sourceId: string) => void;
   onRefresh?: () => void;
 }) {
@@ -199,6 +217,14 @@ export function CorpusNachweis({
   const cats = byCategory(total);
   const outside = rows.filter((r) => !r.inScope || r.historical);
   const unmeasured = groups.reduce((n, g) => n + g.unmeasured, 0);
+  const matches = (r: CorpusSyncRow) =>
+    filter === "stockt"
+      ? isStuck(trendOf(progress[r.corpus] ?? []))
+      : rowMatches(r.proof?.counts ?? null, filter);
+  const overall = useMemo(
+    () => sumSeries(groups.flatMap((g) => g.rows.map((r) => progress[r.corpus] ?? []))),
+    [groups, progress]
+  );
 
   if (!measuredAt) {
     return (
@@ -290,6 +316,8 @@ export function CorpusNachweis({
         })}
       </div>
 
+      <ProgressPanel points={overall} />
+
       <div role="group" aria-label="Ansicht filtern" className="flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
           <button
@@ -316,12 +344,13 @@ export function CorpusNachweis({
           <AreaSection
             key={g.area.id}
             group={g}
-            filter={filter}
+            matches={matches}
+            progress={progress}
             onInspect={onInspect}
             onRefresh={onRefresh}
           />
         ))}
-        {groups.every((g) => !g.rows.some((r) => rowMatches(r.proof?.counts ?? null, filter))) && (
+        {groups.every((g) => !g.rows.some(matches)) && (
           <EmptyState
             icon={CheckCircle2}
             title="Keine Quelle in diesem Filter"
@@ -450,18 +479,151 @@ function ProblemChips({ counts }: { counts: ProofCounts }) {
   );
 }
 
+/** Gesamtfortschritt: Kurve „nachweislich 1:1" der letzten 30 Tage und Restdauer. */
+function ProgressPanel({ points }: { points: DailyPoint[] }) {
+  const last = points.at(-1);
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-xs font-medium">Fortschritt der letzten 30 Tage</p>
+        <p className="mt-0.5">
+          <TrendText points={points} />
+        </p>
+      </div>
+      {points.length >= 2 ? (
+        <Sparkline points={points} wide />
+      ) : (
+        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+          Die Kurve beginnt mit der ersten Messung nach dem Deploy und füllt sich täglich.
+        </p>
+      )}
+      {last && (
+        <p className="ml-auto text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+          {fmt(last.open)} Dokumente offen, die wir schließen können
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Anteil „nachweislich 1:1" je Tag als Linie; leer bei weniger als zwei Tagen. */
+function Sparkline({ points, wide = false }: { points: DailyPoint[]; wide?: boolean }) {
+  if (points.length < 2) return null;
+  const w = wide ? 220 : 72;
+  const h = wide ? 36 : 18;
+  const ratios = points.map((p) => (p.total > 0 ? p.confirmed / p.total : 0));
+  const min = Math.min(...ratios);
+  const max = Math.max(...ratios);
+  const span = max - min || 1;
+  const xy = ratios.map((r, i) => [
+    (i / (ratios.length - 1)) * (w - 2) + 1,
+    h - 1 - ((r - min) / span) * (h - 2),
+  ]);
+  const first = points[0]!;
+  const last = points.at(-1)!;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      className="shrink-0 text-[color:var(--ds-success-solid)]"
+      role="img"
+      aria-label={`Nachweislich 1:1 von ${pctText(ratioPct(first))} am ${first.day} auf ${pctText(ratioPct(last))} am ${last.day}`}
+    >
+      <polyline
+        points={xy.map(([x, y]) => `${x!.toFixed(1)},${y!.toFixed(1)}`).join(" ")}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={wide ? 2 : 1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ratioPct(p: DailyPoint): number {
+  return p.total > 0 ? Math.floor((p.confirmed / p.total) * 1000) / 10 : 0;
+}
+
+function etaText(days: number): string {
+  if (days <= 1) return "morgen";
+  if (days < 60) return `in ≈ ${fmt(days)} Tagen`;
+  if (days < 730) return `in ≈ ${fmt(Math.round(days / 30))} Monaten`;
+  return "nicht absehbar (über zwei Jahre beim jetzigen Tempo)";
+}
+
+/** Eine Zeile: seit gestern, Tempo, Restdauer — oder dass es stockt. */
+function TrendText({ points }: { points: DailyPoint[] }) {
+  const t = trendOf(points);
+  const delta =
+    t.confirmedDelta !== null && t.confirmedDelta !== 0
+      ? `${t.confirmedDelta > 0 ? "+" : "−"}${fmt(Math.abs(t.confirmedDelta))} seit gestern · `
+      : "";
+  switch (t.state) {
+    case "done":
+      return (
+        <span className="text-xs text-[color:var(--ds-success-text)]">✓ nichts mehr offen</span>
+      );
+    case "moving":
+      return (
+        <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+          {delta}−{fmt(Math.round(t.perDay ?? 0))} offen/Tag · fertig {etaText(t.etaDays ?? 0)}
+        </span>
+      );
+    case "stalled":
+      return (
+        <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
+          {delta}stockt — seit mindestens 3 Tagen keine Bewegung
+        </span>
+      );
+    case "growing":
+      return (
+        <span className="text-xs font-medium text-[color:var(--ds-danger-text)] tabular-nums">
+          {delta}offen wächst (+{fmt(Math.round(-(t.perDay ?? 0)))}/Tag)
+        </span>
+      );
+    default:
+      return (
+        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+          {delta}Tempo ab dem zweiten Messtag
+        </span>
+      );
+  }
+}
+
+/** Gerichte: ob die Nummernliste schon als Soll taugt. */
+function CourtIndexNote({ idx }: { idx: NonNullable<CorpusSyncRow["courtIndex"]> }) {
+  return idx.complete ? (
+    <span className="block text-xs text-[color:var(--ds-success-text)]">
+      Nummernliste vollständig{idx.crawledAt ? ` (${formatDateTime(idx.crawledAt)})` : ""}
+    </span>
+  ) : (
+    <span
+      className="block text-xs text-[color:var(--ds-warning-text)] tabular-nums"
+      title="Erst wenn jede Abfrage mit der RIS-Trefferzahl übereinstimmt, wird die Liste zum Soll"
+    >
+      Nummernliste im Aufbau: {fmt(idx.listed)}
+      {idx.risTotal !== null ? ` von ${fmt(idx.risTotal)}` : ""} gelistet
+    </span>
+  );
+}
+
 function AreaSection({
   group,
-  filter,
+  matches,
+  progress,
   onInspect,
   onRefresh,
 }: {
   group: AreaGroup;
-  filter: ProofFilter;
+  matches: (r: CorpusSyncRow) => boolean;
+  progress: Record<string, DailyPoint[]>;
   onInspect?: (sourceId: string) => void;
   onRefresh?: () => void;
 }) {
-  const visible = group.rows.filter((r) => rowMatches(r.proof?.counts ?? null, filter));
+  const visible = group.rows.filter(matches);
+  const series = sumSeries(group.rows.map((r) => progress[r.corpus] ?? []));
   if (visible.length === 0) return null;
   const total = proofTotal(group.counts);
   return (
@@ -480,6 +642,9 @@ function AreaSection({
                 {fmt(group.counts.confirmed)} von {fmt(total)} {group.area.unit} nachweislich 1:1 (
                 {pctText(confirmedPct(group.counts))})
               </p>
+              <p className="mt-0.5 text-right">
+                <TrendText points={series} />
+              </p>
             </div>
           )}
         </div>
@@ -489,6 +654,7 @@ function AreaSection({
               key={r.corpus}
               row={r}
               unit={group.area.unit}
+              points={progress[r.corpus] ?? []}
               onInspect={onInspect}
               onRefresh={onRefresh}
             />
@@ -502,11 +668,13 @@ function AreaSection({
 function SourceRow({
   row,
   unit,
+  points,
   onInspect,
   onRefresh,
 }: {
   row: CorpusSyncRow;
   unit: string;
+  points: DailyPoint[];
   onInspect?: (sourceId: string) => void;
   onRefresh?: () => void;
 }) {
@@ -533,12 +701,17 @@ function SourceRow({
                 ? `RIS ≈ ${fmt(row.risSoll)} ${unit} (Trefferzahl)`
                 : `RIS-Soll ${fmt(row.risSoll)} ${unit}`}
           </span>
+          {row.courtIndex && <CourtIndexNote idx={row.courtIndex} />}
         </span>
         {proof ? (
           <span className="min-w-0">
             <ProofBar counts={proof.counts} />
-            <span className="mt-1 block text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-              {pctText(confirmedPct(proof.counts))} nachweislich 1:1
+            <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+              <span>{pctText(confirmedPct(proof.counts))} nachweislich 1:1</span>
+              <Sparkline points={points} />
+            </span>
+            <span className="mt-0.5 block">
+              <TrendText points={points} />
             </span>
           </span>
         ) : (

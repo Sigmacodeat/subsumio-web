@@ -83,12 +83,12 @@ const ROWS = [
   ),
 ];
 
-function renderIt(rows = ROWS) {
+function renderIt(rows = ROWS, progress = {}) {
   const qc = new QueryClient();
   return render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <CorpusNachweis rows={rows} measuredAt="2026-09-26T07:00:00Z" />
+        <CorpusNachweis rows={rows} measuredAt="2026-09-26T07:00:00Z" progress={progress} />
       </ToastProvider>
     </QueryClientProvider>
   );
@@ -140,5 +140,21 @@ describe("CorpusNachweis", () => {
     renderIt([toSyncRow(src({ risSoll: 10, risSollKind: "index" }), "Bundesrecht", undefined)]);
     expect(screen.getByText("Nachweis noch nicht gemessen")).toBeDefined();
     expect(screen.queryByText(/alles nachweislich 1:1/)).toBeNull();
+  });
+
+  it("zeigt Tempo und Restdauer und macht Stillstand sichtbar", () => {
+    const pt = (day: string, confirmed: number, open: number) => ({
+      day,
+      confirmed,
+      open,
+      total: confirmed + open,
+    });
+    renderIt(ROWS, {
+      "at-normen": [pt("2026-09-20", 95, 5), pt("2026-09-23", 95, 5), pt("2026-09-26", 95, 5)],
+      "at-judikatur-vfgh": [pt("2026-09-25", 40, 10), pt("2026-09-26", 50, 5)],
+    });
+    expect(screen.getAllByText(/stockt — seit mindestens 3 Tagen/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/\+10 seit gestern/)).toBeDefined();
+    expect(screen.getByRole("button", { name: "Stockt" })).toBeDefined();
   });
 });

@@ -40,6 +40,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { ShowMoreButton, useShowMore } from "./corpus-show-more";
 import type { ContentStatus, CorpusSyncRow, CorpusSyncTotals } from "@/lib/corpus-sync-inventory";
+import type { DailyPoint } from "@/lib/corpus-progress";
 
 const API_BASE = "/api/admin/corpus-command-center";
 
@@ -112,6 +113,8 @@ export interface CommandCenterData {
     totals: CorpusSyncTotals;
     /** Zeitpunkt der Dokumentnummern-Messung (stündlich); null = noch nie. */
     measuredAt: string | null;
+    /** Tagesstände je Quelle (corpus) der letzten 30 Tage; fehlt bei älteren Servern. */
+    progress?: Record<string, DailyPoint[]>;
   };
   workQueue: {
     items: WorkQueueItem[];

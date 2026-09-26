@@ -263,3 +263,58 @@ describe("classifyInDb", () => {
     expect(classifyInDb(disk, db({ allVerified: false }), false)).toBe("unchecked");
   });
 });
+
+describe("history", () => {
+  test("one compact line per measurement, old lines dropped", async () => {
+    const { appendHistory, historyLine, HISTORY_DAYS } =
+      await import("../scripts/corpus-sync-inventory.ts");
+    const inv = await measure(engine, ROOT, async () => new Map([["at-avn", 707]]));
+    const line = historyLine(inv);
+    expect(line.s["at-normen"]).toEqual([4, 1, 0, 0, 0, 1, 1, 1]);
+    expect(line.s["ch"]).toBeUndefined();
+
+    const now = Date.parse(inv.measuredAt);
+    const old = JSON.stringify({
+      at: new Date(now - (HISTORY_DAYS + 1) * 86_400_000).toISOString(),
+      s: {},
+    });
+    const recent = JSON.stringify({ at: new Date(now - 86_400_000).toISOString(), s: {} });
+    const out = appendHistory(`${old}\n${recent}\nkaputt\n`, line, now).trim().split("\n");
+    expect(out).toHaveLength(2);
+    expect(JSON.parse(out[1]!).at).toBe(inv.measuredAt);
+  });
+
+  test("a court list is the Soll only once the crawl reconciled with RIS", async () => {
+    const write = (complete: boolean) => {
+      writeFileSync(
+        join(ROOT, "_state/ris-index-jud-ogh.jsonl"),
+        ["JJR_1", "JJT_2", "JJT_3"]
+          .map((id) => JSON.stringify({ id, kurztitel: `1Ob${id}` }))
+          .join("\n") + "\n"
+      );
+      writeFileSync(
+        join(ROOT, "_state/ris-index-jud-ogh.meta.json"),
+        JSON.stringify({ crawledAt: "2026-09-26T00:00:00Z", risTotal: 3, listed: 3, complete })
+      );
+    };
+    write(false);
+    let by = Object.fromEntries(
+      (await measure(engine, ROOT, async () => new Map())).sources.map((s) => [s.corpus, s])
+    );
+    expect(by["at-judikatur"]!.risSollKind).toBe("hits");
+    expect(by["at-judikatur"]!.courtIndex).toMatchObject({ complete: false, listed: 3 });
+
+    write(true);
+    by = Object.fromEntries(
+      (await measure(engine, ROOT, async () => new Map())).sources.map((s) => [s.corpus, s])
+    );
+    const ogh = by["at-judikatur"]!;
+    expect(ogh.risSollKind).toBe("index");
+    expect(ogh.risSoll).toBe(3);
+    expect(ogh.proof!.sollExact).toBe(true);
+    // JJT_3 is listed by RIS but not on disk — now known by number.
+    expect(ogh.proof!.samples.fetchOpen).toEqual([{ id: "JJT_3", label: "1ObJJT_3" }]);
+    rmSync(join(ROOT, "_state/ris-index-jud-ogh.jsonl"));
+    rmSync(join(ROOT, "_state/ris-index-jud-ogh.meta.json"));
+  });
+});
