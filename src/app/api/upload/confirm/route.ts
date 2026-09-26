@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
+import { reconcileCaseDocuments } from "@/lib/case-documents";
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 import {
   GUARD_READ_FAILED,
   isArchivedCase,
@@ -61,8 +63,43 @@ async function afterConfirm(
   brainId: string,
   slug: string,
   result: ConfirmResult,
-  billing: { ownerId: string; ownerType: "user" | "org" }
+  billing: { ownerId: string; ownerType: "user" | "org" },
+  receivedBy: string
 ): Promise<void> {
+  const caseSlug = resultCaseSlug(result);
+  // Same as the form upload: the document is on the matter's list at once
+  // (the outbox reconcile only retries), and every upload is an inbound
+  // record with its receipt date.
+  if (caseSlug) {
+    try {
+      await reconcileCaseDocuments(headers, caseSlug, {
+        id: slug,
+        slug,
+        name: result.title ?? slug.split("/").pop() ?? slug,
+        url: slug,
+        uploadedAt: new Date().toISOString(),
+        size: 0,
+        kind: "document",
+      });
+    } catch (err) {
+      log.error(
+        `[upload/confirm] case reconciliation failed for ${slug} (outbox retries):`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+  }
+  await stampInboundEntryBestEffort(
+    headers,
+    {
+      channel: "upload",
+      subject: result.title ?? slug.split("/").pop() ?? slug,
+      caseSlug,
+      documentSlug: slug,
+      receivedBy,
+    },
+    brainId
+  );
+
   if (result.pipeline_deferred === true) {
     try {
       const res = await enginePatchPage(headers, {
@@ -207,7 +244,14 @@ export const POST = createHandler(
               try {
                 const result = JSON.parse(data) as ConfirmResult;
                 if (result.slug) {
-                  await afterConfirm(ctx.headers, ctx.brainId, result.slug, result, ctx.billing);
+                  await afterConfirm(
+                    ctx.headers,
+                    ctx.brainId,
+                    result.slug,
+                    result,
+                    ctx.billing,
+                    ctx.user.name || ctx.user.email
+                  );
                 }
               } catch {
                 /* best-effort */
@@ -248,7 +292,14 @@ export const POST = createHandler(
         };
 
         if (result.slug) {
-          await afterConfirm(ctx.headers, ctx.brainId, result.slug, result, ctx.billing);
+          await afterConfirm(
+            ctx.headers,
+            ctx.brainId,
+            result.slug,
+            result,
+            ctx.billing,
+            ctx.user.name || ctx.user.email
+          );
         }
 
         return Response.json(result, { status: upstream.status });
