@@ -43,7 +43,7 @@ const EMAIL_TRACKING_RETENTION_DAYS = 90;
  * tombstoned (Papierkorb mit `tombstone_reason: "retention_expired"`) — die
  * normale Papierkorb-Frist und der Purge unten bleiben das Recovery-Fenster.
  */
-const RETENTION_ITEM_TYPES = ["document", "note"] as const;
+const RETENTION_ITEM_TYPES = ["document", "note", "kyc_verification"] as const;
 
 /**
  * Ablaufzeitpunkt einer Per-Item-Retention. Gibt den Ablauf zurück, wenn er
@@ -56,7 +56,12 @@ function configuredRetentionExpiry(
   now: Date
 ): { expiresAt: Date } | { invalid: string } | null {
   const fm = page.frontmatter ?? {};
-  const until = fm.retention_until;
+  // AML records written before the field was unified carry only `retain_until`.
+  const until =
+    fm.retention_until ??
+    (page.type === "kyc_verification" || page.slug.startsWith("legal/kyc/")
+      ? fm.retain_until
+      : undefined);
   if (until !== undefined && until !== null && String(until).trim() !== "") {
     // YAML-Frontmatter kann Datumsangaben als Date-Objekt oder Zahl
     // (Epoch-ms) liefern — beides akzeptieren, sonst als String parsen.
@@ -299,6 +304,29 @@ export const GET = createCronHandler(async () => {
             }
             if (res.status === 404) continue;
             report.retentionTombstoned++;
+            // The ID copy filed with an AML record goes with it (older
+            // records carry no date on the copy itself).
+            const idCopy = (fm.identification as { document_file_slug?: unknown } | undefined)
+              ?.document_file_slug;
+            if (type === "kyc_verification" && typeof idCopy === "string" && idCopy) {
+              const copyRes = await enginePatchPage(
+                headers,
+                {
+                  slug: idCopy,
+                  frontmatter: {
+                    status: "tombstoned",
+                    tombstoned_at: now.toISOString(),
+                    tombstoned_by: "cron:retention",
+                    tombstone_reason: "retention_expired",
+                  },
+                },
+                { timeoutMs: 15_000 }
+              );
+              if (!copyRes.ok && copyRes.status !== 404) {
+                throw new Error(`ID copy ${idCopy}: HTTP ${copyRes.status}`);
+              }
+              if (copyRes.ok) report.retentionTombstoned++;
+            }
             void logAudit("data.delete", "page", {
               entityId: page.slug,
               brainId,
@@ -343,9 +371,12 @@ export const GET = createCronHandler(async () => {
         // Aufbewahrungsfrist: a matter (or a page of a matter) that was closed
         // is never purged before the period has run — whatever the trash
         // window says. Undeterminable period → kept (fail-closed).
+        // A page whose OWN statutory deletion date has passed (reason
+        // "retention_expired", e.g. AML records and ID copies after five
+        // years) is deleted even while its matter is still kept.
         if (
           (item.type === "legal_case" && item.retention?.running !== false) ||
-          parent?.retentionRunning === true
+          (parent?.retentionRunning === true && item.reason !== "retention_expired")
         ) {
           report.retentionCaseFloored++;
           continue;

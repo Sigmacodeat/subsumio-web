@@ -1,6 +1,9 @@
 import { applyCheckResult, runSanctionsCheck } from "@/lib/sanctions/check";
 import { z } from "zod";
 import { isStaffRole } from "@/lib/team-visibility";
+import { logger } from "@/lib/logger";
+
+const log = logger("api/kyc/[id]");
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
@@ -292,7 +295,15 @@ export const PATCH = createHandler(
         auditAction = "kyc.fail";
       } else {
         const ended = body.ended_at ?? now;
-        next = { ...next, mandate_ended_at: ended, retain_until: retentionEnd(ended) };
+        const until = retentionEnd(ended);
+        // `retention_until` is what the retention job enforces (the record is
+        // deleted after it); `retain_until` stays for the display.
+        next = {
+          ...next,
+          mandate_ended_at: ended,
+          retain_until: until,
+          retention_until: until,
+        };
         entry = { at: now, by: ctx.user.email, action: "mandate_ended" };
         auditAction = "kyc.mandate_end";
       }
@@ -310,6 +321,19 @@ export const PATCH = createHandler(
       );
       if (!res.ok)
         return apiError("engine_error", "Die Prüfung konnte nicht gespeichert werden", 502);
+
+      // The ID copy filed with the check expires with it.
+      const idCopy = next.identification?.document_file_slug;
+      if (auditAction === "kyc.mandate_end" && idCopy && next.retention_until) {
+        const copyRes = await enginePatchPage(
+          ctx.headers,
+          { slug: idCopy, frontmatter: { retention_until: next.retention_until } },
+          { timeoutMs: 15_000 }
+        ).catch(() => null);
+        if (!copyRes?.ok) {
+          log.warn("[kyc] retention date not stamped on the ID copy", { slug: idCopy });
+        }
+      }
 
       void logAudit(auditAction, "kyc_verification", {
         entityId: id,

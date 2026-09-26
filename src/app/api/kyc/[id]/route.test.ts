@@ -163,3 +163,35 @@ describe("GET /api/kyc/<id> — firm-internal", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("PATCH /api/kyc/<id> mandate_end — retention the job can enforce", () => {
+  it("stores retention_until on the record and on the ID copy", async () => {
+    stored = {
+      ...stored,
+      identification: { document_file_slug: "docs/ausweis", copy_retained: true },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ frontmatter: stored, content: "" }))
+    );
+    mockPatch.mockResolvedValue(Response.json({ ok: true }));
+    const req = Object.assign(
+      new Request("http://x/api/kyc/k1", {
+        method: "PATCH",
+        body: JSON.stringify({ action: "mandate_end", ended_at: "2026-01-15" }),
+      }),
+      { params: Promise.resolve({ id: "k1" }) }
+    );
+    const res = await (PATCH as unknown as (r: Request) => Promise<Response>)(req);
+    expect(res.status).toBe(200);
+    const recordPatch = mockPatch.mock.calls[0]![1] as { frontmatter: Record<string, unknown> };
+    expect(recordPatch.frontmatter).toMatchObject({
+      retain_until: "2031-01-15",
+      retention_until: "2031-01-15",
+    });
+    expect(mockPatch.mock.calls[1]![1]).toEqual({
+      slug: "docs/ausweis",
+      frontmatter: { retention_until: "2031-01-15" },
+    });
+  });
+});

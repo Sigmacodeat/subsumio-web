@@ -466,3 +466,58 @@ describe("purge covers every deletable matter page type", () => {
     expect(deleted).toEqual(["notes/n1"]);
   });
 });
+
+describe("AML records: retention end is enforced (§ 12 Abs 3 RAO)", () => {
+  function kycPage(extra: Record<string, unknown>) {
+    return {
+      slug: "legal/kyc/k1",
+      title: "KYC",
+      type: "kyc_verification",
+      frontmatter: {
+        case_slug: "legal/cases/m",
+        identification: { document_file_slug: "docs/ausweis" },
+        ...extra,
+      },
+    };
+  }
+
+  it("tombstones a record past retain_until (older field) together with its ID copy", async () => {
+    casePages.set("legal/cases/m", { slug: "legal/cases/m", frontmatter: {} });
+    pagesByType.set("kyc_verification", [kycPage({ retain_until: "2020-01-01" })]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls.map((t) => t.slug)).toEqual(["legal/kyc/k1", "docs/ausweis"]);
+    expect(tombstoneCalls[1]!.frontmatter).toMatchObject({ tombstone_reason: "retention_expired" });
+    expect(body.retentionTombstoned).toBe(2);
+  });
+
+  it("keeps it under a legal hold on the matter", async () => {
+    casePages.set("legal/cases/m", { slug: "legal/cases/m", frontmatter: { legal_hold: true } });
+    pagesByType.set("kyc_verification", [kycPage({ retention_until: "2020-01-01" })]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([]);
+    expect(body.skippedHold).toBe(1);
+  });
+
+  it("an expired AML record is purged even while its archived matter is still retained", async () => {
+    casePages.set("legal/cases/m", {
+      slug: "legal/cases/m",
+      frontmatter: { status: "archived", closed_at: new Date().toISOString().slice(0, 10) },
+    });
+    pagesByType.set("kyc_verification", [
+      {
+        ...kycPage({ status: "tombstoned", tombstoned_at: old }),
+        frontmatter: {
+          ...kycPage({}).frontmatter,
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "retention_expired",
+        },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["legal/kyc/k1"]);
+  });
+});

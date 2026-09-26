@@ -7,6 +7,7 @@ import { getAuditExtra, setAuditExtra } from "@/lib/audit-context";
 import { canRestoreCase, restoreCaseDocuments } from "@/lib/case-cascade";
 import { reconcileCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { withoutStaffOnlyRecords } from "@/lib/staff-only-records";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/trash");
@@ -74,7 +75,8 @@ export const GET = createHandler(
           if (item) seen.set(page.slug, item);
         }
       }
-      const items = [...seen.values()].sort((a, b) =>
+      // AML records never reach client accounts, not even from the trash.
+      const items = withoutStaffOnlyRecords(ctx.user.role, [...seen.values()]).sort((a, b) =>
         (b.deleted_at ?? "").localeCompare(a.deleted_at ?? "")
       );
       return apiSuccess({

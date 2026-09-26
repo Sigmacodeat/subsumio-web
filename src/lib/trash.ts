@@ -43,6 +43,8 @@ export const TRASH_TYPES = [
   "intake_request",
   "legal_contact",
   "invoice",
+  // AML records past their retention end (cron: retention_expired).
+  "kyc_verification",
 ] as const;
 
 export interface TrashItem {

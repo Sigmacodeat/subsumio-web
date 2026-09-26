@@ -77,6 +77,7 @@ const TYPE_LABEL: Record<string, string> = {
   document_request: "Dokumentanfrage",
   shared_item: "Freigabe",
   calendar_event: "Termin",
+  kyc_verification: "Identitätsprüfung",
 };
 
 const REASON_LABEL: Record<string, string> = {
