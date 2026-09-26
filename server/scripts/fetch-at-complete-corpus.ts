@@ -681,7 +681,7 @@ async function fetchJudikaturForCourt(courtKey: string, court: CourtConfig): Pro
     }
 
     console.log(`  → ${normCount} for ${term} (total: ${totalFetched})`);
-    if (totalFetched < target) await new Promise((r) => setTimeout(r, 300));
+    if (totalFetched < target) await risMassPause("Corpus-Fetch");
   }
 
   console.log(
@@ -828,7 +828,16 @@ async function fetchStaatsvertraege(): Promise<void> {
   console.log(`\n  Staatsverträge: Written=${totalWritten} Skipped=${totalSkipped}`);
 }
 
-async function fetchStaatsvertragViaOgd(gnr: string): Promise<string> {
+/**
+ * Fallback for treaties without usable full text: every RIS request here —
+ * search page or HTML document — is followed by the mass-download pause
+ * (it fetched up to 100 HTML pages back to back before). `pause` is
+ * injectable for tests only.
+ */
+export async function fetchStaatsvertragViaOgd(
+  gnr: string,
+  pause: () => Promise<void> = () => risMassPause("Corpus-Fetch")
+): Promise<string> {
   if (!gnr) return "";
   const allText: string[] = [];
 
@@ -836,6 +845,7 @@ async function fetchStaatsvertragViaOgd(gnr: string): Promise<string> {
     const url = `${RIS_BASE}/Bundesrecht?Applikation=BrKons&Gesetzesnummer=${gnr}&DokumenteProSeite=OneHundred&Seitennummer=${page}`;
     try {
       const res = await fetchWithRetry(url);
+      await pause();
       if (!res.ok) break;
       const data = (await res.json()) as Record<string, unknown>;
       const refs = extractRisReferences(data);
@@ -845,6 +855,7 @@ async function fetchStaatsvertragViaOgd(gnr: string): Promise<string> {
         const htmlUrl = extractHtmlUrl(ref);
         if (!htmlUrl) continue;
         const htmlRes = await fetchWithRetry(htmlUrl);
+        await pause();
         if (!htmlRes.ok) continue;
         const html = await htmlRes.text();
         const text = stripHtmlSimple(html);
@@ -852,7 +863,6 @@ async function fetchStaatsvertragViaOgd(gnr: string): Promise<string> {
       }
 
       if (refs.length < 100) break;
-      await new Promise((r) => setTimeout(r, 200));
     } catch {
       break;
     }
@@ -1070,12 +1080,14 @@ async function main() {
   console.log("═══════════════════════════════════════════════════════════");
 }
 
-main()
-  .then(() => {
-    releaseRisLock();
-  })
-  .catch((err) => {
-    console.error("Fatal error:", err);
-    releaseRisLock();
-    process.exit(1);
-  });
+if (import.meta.main) {
+  main()
+    .then(() => {
+      releaseRisLock();
+    })
+    .catch((err) => {
+      console.error("Fatal error:", err);
+      releaseRisLock();
+      process.exit(1);
+    });
+}
