@@ -39,6 +39,12 @@ export default function WebhooksPage() {
       events: string[];
       status: string;
       created_at: string;
+      delivery?: {
+        pending: number;
+        exhausted: number;
+        lastError: string | null;
+        lastErrorAt: string | null;
+      } | null;
     }>
   >([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +88,17 @@ export default function WebhooksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as {
+          error?: string;
+          code?: string;
+        } | null;
+        if (err?.code === "invalid_webhook_url" && err.error) {
+          addToast({ type: "error", title: err.error });
+          return;
+        }
+        throw new Error();
+      }
       addToast({ type: "success", title: t("webhooks.saved") });
       setShowForm(false);
       setForm({ url: "", events: [], secret: "", description: "" });
@@ -277,6 +293,26 @@ export default function WebhooksPage() {
                 <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   {t("webhooks.created")} {formatDateTime(wh.created_at)}
                 </div>
+                {wh.delivery && (wh.delivery.pending > 0 || wh.delivery.exhausted > 0) && (
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
+                    {wh.delivery.exhausted > 0
+                      ? L(
+                          `${wh.delivery.exhausted} Ereignis(se) konnten nicht zugestellt werden.`,
+                          `${wh.delivery.exhausted} event(s) could not be delivered.`
+                        )
+                      : L(
+                          `${wh.delivery.pending} Ereignis(se) warten auf erneute Zustellung.`,
+                          `${wh.delivery.pending} event(s) waiting to be re-delivered.`
+                        )}
+                    {wh.delivery.lastError
+                      ? ` ${L("Letzter Fehler", "Last error")}: ${wh.delivery.lastError}${
+                          wh.delivery.lastErrorAt
+                            ? ` (${formatDateTime(wh.delivery.lastErrorAt)})`
+                            : ""
+                        }`
+                      : ""}
+                  </p>
+                )}
               </div>
               <Button
                 onClick={() => void deleteWebhook(wh.id, wh.url)}
