@@ -288,7 +288,7 @@
 | `/api/files/{...slug}`                                      | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/graph`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/health`                                               | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
-| `/api/health/credits`                                       | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
+| `/api/health/credits`                                       | GET                      | Session                   | `platform.operator`               | standard |
 | `/api/inbound-register`                                     | GET, POST                | Session                   | `brain.write`                     | standard |
 | `/api/inbox`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/inbox/read`                                           | PATCH                    | Session                   | `brain.write`                     | standard |
