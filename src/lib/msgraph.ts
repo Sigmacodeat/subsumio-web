@@ -362,6 +362,20 @@ export async function checkGraphHealth(): Promise<{ ok: boolean; error?: string 
   }
 }
 
+/**
+ * Read-only probe of the service mailbox: metadata of the sync folder only
+ * (id, name, item count) — no message is read, nothing is changed. Proves the
+ * app token carries mail permission for MS365_MAILBOX. Used by the
+ * post-deploy smoke test; throws like every other Graph call.
+ */
+export async function checkGraphMailbox(): Promise<{ folder: string; totalItemCount?: number }> {
+  const folder = process.env.MS365_OUTLOOK_FOLDER || "Inbox";
+  const data = await graphGetJson<{ displayName?: string; totalItemCount?: number }>(
+    `${mailboxPath()}/mailFolders/${encodeURIComponent(folder)}?$select=id,displayName,totalItemCount`
+  );
+  return { folder: data.displayName || folder, totalItemCount: data.totalItemCount };
+}
+
 export function isMsGraphConfigured(): boolean {
   return Boolean(MS365_CLIENT_ID && MS365_CLIENT_SECRET && MS365_TENANT_ID && appMailbox());
 }

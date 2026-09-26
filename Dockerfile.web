@@ -35,6 +35,11 @@ COPY . .
 
 RUN bun --smol run build
 
+# Post-deploy smoke test (server/deploy/netcup/RUNBOOK.md). The runner has
+# neither scripts/ nor src/, so the script is bundled with the libraries it
+# reuses into one self-contained file.
+RUN bun build scripts/post-deploy-smoke.ts --target=bun --outfile=/app/.ops/post-deploy-smoke.js
+
 # The build cache is only useful for the NEXT build, never at runtime. Copying
 # it into the image added ~2.9 GB per release and filled the server's disk.
 RUN rm -rf .next/cache
@@ -65,6 +70,9 @@ COPY --from=build --chown=bun:bun /app/bun.lock ./bun.lock
 # The image is not a Next standalone build, so outputFileTracingIncludes does not
 # ship it — without this line every citation check fails with ENOENT.
 COPY --from=build --chown=bun:bun /app/src/lib/corpus-meta.json ./src/lib/corpus-meta.json
+# Operator tool, run after each deploy:
+#   docker exec subsumio-engine-web-1 bun scripts/post-deploy-smoke.js
+COPY --from=build --chown=bun:bun /app/.ops/post-deploy-smoke.js ./scripts/post-deploy-smoke.js
 
 # Persistent runtime state (file-backed stores: feature flags, SCIM status,
 # WhatsApp media, admin backups, dashboard widgets, …). The netcup compose

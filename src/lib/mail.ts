@@ -49,6 +49,11 @@ export interface MailResult {
   error?: string;
 }
 
+/** Sender address of all transactional mail (MAIL_FROM, else the product default). */
+export function mailFrom(): string {
+  return process.env.MAIL_FROM || "Subsumio <hello@subsum.io>";
+}
+
 export function isMailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
@@ -66,7 +71,7 @@ export async function sendMail({
   attachments,
 }: MailInput): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM || "Subsumio <hello@subsum.io>";
+  const from = mailFrom();
   const bodyText =
     text ??
     html
