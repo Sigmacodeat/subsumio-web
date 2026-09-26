@@ -135,6 +135,20 @@ const nextConfig: NextConfig = {
           // to eliminate 'unsafe-inline' from script-src.
         ],
       },
+      // Office add-in sign-in dialog. Office on the web opens the dialog as a
+      // popup of the Office page and passes the result back through the
+      // opener; COOP same-origin would cut that link. Only the dialog page
+      // itself and the sign-in page it passes through (marked with
+      // ?addin_dialog=1 by the middleware) relax it. Later rules win.
+      {
+        source: "/addin-connect",
+        headers: [{ key: "Cross-Origin-Opener-Policy", value: "unsafe-none" }],
+      },
+      {
+        source: "/:market(at|de)/login",
+        has: [{ type: "query", key: "addin_dialog", value: "1" }],
+        headers: [{ key: "Cross-Origin-Opener-Policy", value: "unsafe-none" }],
+      },
     ];
   },
   experimental: {

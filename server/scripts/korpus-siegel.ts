@@ -26,6 +26,7 @@
  */
 
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
 
@@ -69,7 +70,7 @@ async function bestand(quelle: string): Promise<Record<string, string>> {
   // verwaist gemeldet.
   const sql = `select slug || E'\\x1f' || coalesce(frontmatter->>'content_hash','')
                from pages where source_id = '${quelle}' and deleted_at is null`;
-  const raw = (await $`psql ${url} -tAc ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, url);
   const out: Record<string, string> = {};
   for (const zeile of raw.split("\n")) {
     const i = zeile.indexOf("\x1f");

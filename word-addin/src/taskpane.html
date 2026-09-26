@@ -275,17 +275,36 @@
     <!-- Auth -->
     <div id="authSection">
       <p>Verbinden Sie Subsumio mit Word für Vertragsanalyse, Entwürfe und Aktenrecherche.</p>
-      <input type="password" id="token" placeholder="Add-in-Zugang (sk_addin_…)" autocomplete="off" />
+      <button class="btn" id="signInBtn" onclick="signIn()">Anmelden</button>
       <p style="font-size: 11px; color: #8a8aa8">
-        Erstellen unter subsum.io → Word-Add-in → „Add-in-Zugang erstellen“ (24 Stunden gültig,
-        jederzeit widerrufbar).
+        Die Anmeldung öffnet ein Subsumio-Fenster (mit Zwei-Faktor-Anmeldung). Word erhält einen
+        Zugang, der 24 Stunden gilt und jederzeit widerrufen werden kann.
       </p>
-      <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
+      <details style="font-size: 11px; color: #8a8aa8; margin-top: 8px">
+        <summary>Anmeldefenster nicht verfügbar?</summary>
+        <input
+          type="password"
+          id="token"
+          placeholder="Add-in-Zugang (sk_addin_…)"
+          autocomplete="off"
+        />
+        <p>Erstellen unter subsum.io → Word-Add-in → „Add-in-Zugang erstellen“.</p>
+        <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
+      </details>
       <div id="status" style="display: none"></div>
     </div>
 
     <!-- Main Content (nach Login) -->
     <div id="mainContent" style="display: none">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 6px">
+        <button class="btn" id="signOutBtn" onclick="signOut()" style="width: auto; padding: 4px 12px; font-size: 11px">
+          Abmelden
+        </button>
+      </div>
+      <div id="sessionNotice" class="status err" style="display: none">
+        Ihr Add-in-Zugang läuft in Kürze ab.
+        <button class="btn" onclick="signIn()" style="margin-top: 6px">Erneut anmelden</button>
+      </div>
       <div id="status" style="display: none; margin-top: 10px"></div>
 
       <!-- Tabs -->

@@ -20,6 +20,7 @@ import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause } from "./ris-pace";
 
@@ -151,7 +152,7 @@ async function main() {
     .map((t) => `'${t}'`)
     .join(",");
   const sql = `select distinct slug from corpus_defects where source_id = 'law-at-normen' and defect_type in (${types})`;
-  const raw = (await $`psql ${DB_URL} -tAF$'\x1f' -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, DB_URL, { fieldSeparator: "\x1f" });
   const slugs = raw
     .split("\n")
     .filter(Boolean)

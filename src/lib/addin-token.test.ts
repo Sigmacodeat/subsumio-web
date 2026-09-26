@@ -45,6 +45,7 @@ import {
   ADDIN_TOKEN_TTL_MS,
   issueAddinToken,
   isStoredKeyUsable,
+  revokeAddinToken,
   revokeAddinTokens,
 } from "./addin-token";
 import { verifyApiKey } from "./auth/api-key-auth";
@@ -132,5 +133,26 @@ describe("add-in tokens", () => {
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
     });
     expect(await verifyApiKey(`Bearer ${liveKey}`)).toBeNull();
+  });
+
+  it("each add-in holds its own token: connecting Outlook keeps Word signed in", async () => {
+    const shared = await issueAddinToken(memoryStore, owner);
+    const word = await issueAddinToken(memoryStore, owner, Date.now(), "word");
+    // The shared (manually created) token is replaced by the add-in's own one.
+    expect(keys.map((k) => k.id)).toEqual([word.id]);
+    const outlook = await issueAddinToken(memoryStore, owner, Date.now(), "outlook");
+    const word2 = await issueAddinToken(memoryStore, owner, Date.now(), "word");
+    expect(keys.map((k) => k.id).sort()).toEqual([outlook.id, word2.id].sort());
+    expect(await verifyApiKey(`Bearer ${outlook.token}`)).not.toBeNull();
+    expect(await verifyApiKey(`Bearer ${word.token}`)).toBeNull();
+    expect(await verifyApiKey(`Bearer ${shared.token}`)).toBeNull();
+  });
+
+  it("an add-in's sign-out revokes only its own token", async () => {
+    const word = await issueAddinToken(memoryStore, owner, Date.now(), "word");
+    const outlook = await issueAddinToken(memoryStore, owner, Date.now(), "outlook");
+    expect(await revokeAddinToken(memoryStore, owner.id, word.id)).toBe(1);
+    expect(await revokeAddinToken(memoryStore, "someone-else", outlook.id)).toBe(0);
+    expect(keys.map((k) => k.id)).toEqual([outlook.id]);
   });
 });

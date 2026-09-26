@@ -20,6 +20,7 @@ bun run server/scripts/batch-import-from-disk.ts \
   --batch-size 100 --sleep-ms 10 --no-embed > /tmp/import-literatur.log 2>&1
 
 echo "=== ALL REMAINING IMPORTS DONE ===" >> /tmp/import-all-at.log
-psql "${DATABASE_URL}" \
+# psql-env.ts passes the connection as libpq env, never on the command line.
+bun run server/scripts/psql-env.ts \
   -c "SELECT source_id, COUNT(*) as pages FROM pages WHERE source_id LIKE 'law-at%' GROUP BY source_id ORDER BY pages DESC;" \
   > /tmp/import-final-report.log 2>&1

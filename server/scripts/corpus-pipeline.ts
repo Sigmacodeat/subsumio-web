@@ -68,7 +68,7 @@ import {
 } from "fs";
 import { join, dirname, resolve } from "path";
 import { forwardAlert } from "./pipeline-alert";
-import { runPsqlFile } from "./psql-env";
+import { jsonAggRows, runPsqlFile, type PsqlResult } from "./psql-env";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
@@ -564,17 +564,20 @@ function sqlLiteral(value: string): string {
 }
 
 function psqlQuery(query: string): string {
+  const r = psqlRun(query);
+  if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+  return r.out;
+}
+
+function psqlRun(query: string): PsqlResult {
   // Write SQL to a temp file and use psql -f to avoid shell escaping issues
   // with multi-line SQL (JSON.stringify turns newlines into literal \n,
   // which psql -c doesn't interpret, causing syntax errors).
   const tmpFile = `/tmp/psql_query_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    // Credentials via env (never argv/logs); failures are logged masked
-    // instead of silently turning into an empty result.
-    const r = runPsqlFile(tmpFile, dbUrl());
-    if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
-    return r.out;
+    // Credentials via env (never argv/logs); the error text is masked.
+    return runPsqlFile(tmpFile, dbUrl());
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -626,16 +629,9 @@ function releaseCycleLock(): void {
  * treats as "no rows found", not "the query failed".
  */
 function psqlJSON<T = Record<string, unknown>>(query: string): T[] {
-  const wrapped = `SELECT json_agg(t) FROM (${query}) t`;
-  const raw = psqlQuery(wrapped);
-  if (!raw) return [];
-  try {
-    // json_agg liefert NULL bei 0 Zeilen — kein Array.
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch {
-    return [];
-  }
+  // 0 rows → []; a failed query or non-JSON output throws (masked) instead of
+  // passing for "no rows" — the cycle then stops and releases its lock.
+  return jsonAggRows<T>(psqlRun(`SELECT json_agg(t) FROM (${query}) t`));
 }
 
 /** True wenn source_key zuletzt vor < intervalS Sekunden lief. */

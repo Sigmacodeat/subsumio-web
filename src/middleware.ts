@@ -53,7 +53,13 @@ function generateCspNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function buildCspHeader(nonce: string): string {
+/** Office dialog page that hands a short-lived add-in token to Word/Outlook. */
+const ADDIN_CONNECT_PATH = "/addin-connect";
+/** Office.js — loaded only on the add-in dialog page. */
+const OFFICE_JS_ORIGIN = "https://appsforoffice.microsoft.com";
+
+function buildCspHeader(nonce: string, opts: { officeJs?: boolean } = {}): string {
+  const officeJs = opts.officeJs ? ` ${OFFICE_JS_ORIGIN}` : "";
   const isDev = env("NODE_ENV") !== "production";
   const engineUrl = env("SUBSUMIO_API_URL");
   const engineOrigin = engineUrl
@@ -104,8 +110,8 @@ function buildCspHeader(nonce: string): string {
   return [
     "default-src 'self'",
     isDev
-      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com`
-      : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
+      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com${officeJs}`
+      : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com${officeJs}`,
     // Fonts are self-hosted by next/font (src/app/layout.tsx) — no Google hosts.
     // 'unsafe-inline' stays for styles: React style attributes and Next's
     // injected style tags need it; scripts remain nonce-only.
@@ -319,8 +325,8 @@ function isWebhookCsrfExempt(pathname: string): boolean {
 
 /**
  * Requests authenticated with a firm API key (`Authorization: Bearer
- * sk_live_…`, used by the Word/Outlook add-ins and customer integrations)
- * carry no CSRF cookie. CSRF abuses a cookie the browser attaches on its own;
+ * sk_live_…`, customer integrations) or an add-in token (`sk_addin_…`, the
+ * Word/Outlook add-ins) carry no CSRF cookie. CSRF abuses a cookie the browser attaches on its own;
  * a request WITHOUT a session cookie has nothing to abuse, and createHandler
  * authenticates it by the key (or rejects it). A request that has a session
  * cookie still needs the CSRF token, so adding a fake Authorization header
@@ -328,7 +334,7 @@ function isWebhookCsrfExempt(pathname: string): boolean {
  */
 function isApiKeyCsrfExempt(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Bearer sk_live_")) return false;
+  if (!auth?.startsWith("Bearer sk_live_") && !auth?.startsWith("Bearer sk_addin_")) return false;
   return !req.cookies.get(SESSION_COOKIE)?.value;
 }
 
@@ -405,7 +411,7 @@ export async function middleware(req: NextRequest) {
 
   // --- CSP nonce: generate per-request and pass to Next.js via request headers ---
   const nonce = generateCspNonce();
-  const cspHeader = buildCspHeader(nonce);
+  const cspHeader = buildCspHeader(nonce, { officeJs: pathname === ADDIN_CONNECT_PATH });
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
   // Next.js reads the nonce for its own inline scripts (RSC payload, boot
@@ -570,7 +576,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- Protected areas ---
-  if (pathname.startsWith("/dashboard") || isOpsPath(pathname)) {
+  const addinConnect = pathname === ADDIN_CONNECT_PATH;
+  if (pathname.startsWith("/dashboard") || isOpsPath(pathname) || addinConnect) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
       // Expired live-demo session (marker cookie set at /demo entry):
@@ -581,7 +588,11 @@ export async function middleware(req: NextRequest) {
         return applyCsp(NextResponse.redirect(demo));
       }
       const login = new URL("/at/login", req.url);
-      login.searchParams.set("next", pathname);
+      // The add-in dialog keeps its query (which add-in) across the sign-in,
+      // and the login page is marked so it stays reachable for the Office
+      // dialog (see next.config.ts headers).
+      login.searchParams.set("next", addinConnect ? pathname + req.nextUrl.search : pathname);
+      if (addinConnect) login.searchParams.set("addin_dialog", "1");
       return applyCsp(NextResponse.redirect(login));
     }
 
