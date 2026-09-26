@@ -18,6 +18,7 @@
 
 import { randomUUID } from "node:crypto";
 import { getOrgStore, getStore, type Org, type User } from "@/lib/auth/store";
+import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
 
 const OWNER_CACHE_TTL_MS = 60_000;
 const ownerCache = new Map<string, { orgId: string | null; at: number }>();
@@ -57,7 +58,10 @@ export async function detachFromFirm(
 ): Promise<User | null> {
   const patch: Partial<User> = { orgId: null };
   if (user.brainId === org.brainId) patch.brainId = newPersonalBrainId();
-  return getStore().update(user.id, patch);
+  const updated = await getStore().update(user.id, patch);
+  // Open realtime streams still point at the firm brain.
+  closeSseConnectionsForUser(user.id);
+  return updated;
 }
 
 /** Tests only. */

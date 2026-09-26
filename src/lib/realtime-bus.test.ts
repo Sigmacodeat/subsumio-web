@@ -8,6 +8,7 @@ import {
   getSseConnectionCount,
   broadcastSseEventToUser,
   pageRefsOf,
+  closeSseConnectionsForUser,
 } from "./realtime-bus";
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
@@ -117,5 +118,24 @@ describe("realtime-bus", () => {
       "cases/z",
     ]);
     expect(pageRefsOf({ entry_id: "e1" })).toEqual([]);
+  });
+});
+
+describe("closeSseConnectionsForUser", () => {
+  test("ends the person's streams; the next broadcast does not reach them", () => {
+    const close = vi.fn();
+    const gone = { brainId: "brain-1", userId: "u-gone", role: "lawyer", send: vi.fn(), close };
+    const stays = { brainId: "brain-1", userId: "u-stays", role: "lawyer", send: vi.fn() };
+    addSseConnection(gone);
+    addSseConnection(stays);
+
+    expect(closeSseConnectionsForUser("u-gone")).toBe(1);
+    expect(close).toHaveBeenCalledTimes(1);
+
+    broadcastSseEvent("brain-1", "comment.deleted", { commentId: "c1" });
+    expect(gone.send).not.toHaveBeenCalled();
+    expect(stays.send).toHaveBeenCalledWith("comment.deleted", { commentId: "c1" });
+    removeSseConnection(stays);
+    expect(getSseConnectionCount()).toBe(0);
   });
 });

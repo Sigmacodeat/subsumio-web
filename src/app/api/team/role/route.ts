@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStore, getOrgStore, type KanzleiRole } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
 
 const VALID_ROLES: KanzleiRole[] = ["admin", "lawyer", "assistant", "client_viewer"];
 
@@ -58,6 +59,8 @@ const handler = createHandler(
     }
 
     await store.update(body.userId, { role: body.role });
+    // Open realtime streams were opened with the old role.
+    closeSseConnectionsForUser(body.userId);
     return Response.json({ ok: true, userId: body.userId, role: body.role });
   }
 );

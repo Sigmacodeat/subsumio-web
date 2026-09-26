@@ -6,7 +6,8 @@
  *   - browser sessions (version floor + session registry, push tokens);
  *   - API keys are switched off, add-in tokens deleted (both are also refused
  *     at use for a deactivated account; this makes the cut permanent — a
- *     reactivated account gets new keys, not the old ones back).
+ *     reactivated account gets new keys, not the old ones back);
+ *   - open realtime streams in this process are closed.
  *
  * MCP tokens are not listed here: the engine asks the web app on every use
  * whether the creator may still work in the firm (engine-user-status), and a
@@ -18,10 +19,13 @@
 
 import { getApiKeyStore } from "@/lib/api-key-store";
 import { revokeAllSessions } from "@/lib/auth/session";
+import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
 
 export async function revokeUserAccess(userId: string): Promise<{ keysRevoked: number }> {
   let firstError: unknown = null;
   let keysRevoked = 0;
+
+  closeSseConnectionsForUser(userId);
 
   try {
     await revokeAllSessions(userId);

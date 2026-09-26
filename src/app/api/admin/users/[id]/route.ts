@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getStore, type Plan, type KanzleiRole } from "@/lib/auth/store";
-import { revokeAllSessions } from "@/lib/auth/session";
+import { revokeUserAccess } from "@/lib/auth/revoke-access";
 import { isValidIndustry } from "@/lib/industry-pack";
 import { getTenant } from "@/lib/tenants";
 import { TenantAdminFailure, setMemberRole, tenantAdminMessage } from "@/lib/tenant-admin";
@@ -72,7 +72,7 @@ export const PATCH = createHandler(
     }
 
     if (body.deactivatedAt && typeof body.deactivatedAt === "string") {
-      await revokeAllSessions(id);
+      await revokeUserAccess(id);
     }
 
     const {
@@ -120,7 +120,7 @@ export const DELETE = createHandler(
       return apiError("deactivate_failed", "Deaktivierung fehlgeschlagen", 500);
     }
 
-    await revokeAllSessions(id);
+    await revokeUserAccess(id);
 
     return Response.json({ ok: true, deactivatedAt: updated.deactivatedAt });
   }

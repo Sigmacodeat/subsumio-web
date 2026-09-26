@@ -4,6 +4,7 @@
 
 import { getOrgStore, getStore, type KanzleiRole, type User } from "@/lib/auth/store";
 import { revokeAllSessions } from "@/lib/auth/session";
+import { closeSseConnectionsForUser } from "@/lib/realtime-bus";
 import { listTenantMembers, type Tenant } from "@/lib/tenants";
 
 export type TenantAdminError =
@@ -82,6 +83,7 @@ export async function suspendTenant(
   for (const member of active) {
     await store.update(member.id, { deactivatedAt: now });
     await revokeAllSessions(member.id);
+    closeSseConnectionsForUser(member.id);
   }
   return { signedOut: active.length };
 }
@@ -146,6 +148,7 @@ export async function setMemberRole(
   const updated = await getStore().update(member.id, { role });
   // The session carries the role; a fresh sign-in picks up the new one.
   await revokeAllSessions(member.id);
+  closeSseConnectionsForUser(member.id);
   return updated ?? member;
 }
 
