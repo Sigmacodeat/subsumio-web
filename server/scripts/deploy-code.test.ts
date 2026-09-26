@@ -193,3 +193,48 @@ describe("deploy-code.sh — switching releases", () => {
     SHELL_TIMEOUT
   );
 });
+
+describe("deploy-code.sh — engine data volume handover", () => {
+  // The chown command travels through three shells (local double quotes →
+  // ssh → `sh -c` inside the container). Unescaped parentheses reached the
+  // container shell as syntax and stopped a deploy (2026-09-26).
+  it(
+    "the find expression reaches the container shell intact",
+    () => {
+      const line = readFileSync(SCRIPT, "utf8")
+        .split("\n")
+        .find((l) => l.includes("find /data") && l.includes("chown"));
+      expect(line).toBeTruthy();
+      const bin = mkdtempSync(join(tmpdir(), "deploy-quoting-"));
+      try {
+        const log = join(bin, "find.args");
+        // ssh HOST "cmd": run cmd in a shell, as the server would (no real cd).
+        writeFileSync(join(bin, "ssh"), '#!/bin/sh\nshift\nexec sh -c "cd() { :; }; $1"\n', {
+          mode: 0o755,
+        });
+        // docker … -c 'payload': run the payload with sh, as the container would.
+        writeFileSync(
+          join(bin, "docker"),
+          '#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = "-c" ] && { shift; exec sh -c "$1"; }; shift; done\n',
+          { mode: 0o755 }
+        );
+        writeFileSync(join(bin, "find"), `#!/bin/sh\nprintf '%s\\n' "$@" > '${log}'\n`, {
+          mode: 0o755,
+        });
+        const cmd = line!.trim().replace(/\s*\|\|\s*\{\s*$/, "");
+        const res = spawnSync("sh", ["-c", cmd], {
+          env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, HOST: "h", APP: "/x", H },
+          encoding: "utf8",
+        });
+        expect(res.stderr).toBe("");
+        expect(res.status).toBe(0);
+        const args = readFileSync(log, "utf8").trim().split("\n");
+        expect(args.slice(0, 4)).toEqual(["/data", "(", "!", "-user"]);
+        expect(args).toContain(")");
+      } finally {
+        rmSync(bin, { recursive: true, force: true });
+      }
+    },
+    SHELL_TIMEOUT
+  );
+});
