@@ -7218,7 +7218,7 @@ const statute_currency_check: Operation = {
     compare_live: {
       type: "boolean",
       description:
-        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI",
+        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Local callers only (default: true); ignored for remote callers.",
     },
   },
   scope: "read",
@@ -7228,7 +7228,9 @@ const statute_currency_check: Operation = {
     const statuteFilter = typeof p.statute_id === "string" ? p.statute_id.toLowerCase() : undefined;
     const isLocal = ctx.remote === false;
     const compareCorpus = typeof p.compare_corpus === "boolean" ? p.compare_corpus : isLocal;
-    const compareLive = typeof p.compare_live === "boolean" ? p.compare_live : isLocal;
+    // Live lookups hit public law portals with strict rate limits (RIS-OGD):
+    // only trusted local callers may trigger them, never a remote client.
+    const compareLive = isLocal && (typeof p.compare_live === "boolean" ? p.compare_live : true);
 
     // Query law pages from the brain. The slug pattern is:
     //   legal/statutes/<jur>/<abbr>/<section-id>
