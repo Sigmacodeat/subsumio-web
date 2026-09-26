@@ -15,7 +15,7 @@ vi.mock("@/lib/api-key-store", () => ({
     delete: del,
   }),
 }));
-const revokeAllSessions = vi.fn(async () => undefined);
+const revokeAllSessions = vi.fn(async (_userId: string) => undefined);
 vi.mock("@/lib/auth/session", () => ({ revokeAllSessions: (id: string) => revokeAllSessions(id) }));
 
 import { revokeUserAccess } from "./revoke-access";

@@ -15,7 +15,7 @@ vi.mock("@/lib/use-recent-matters", () => ({ useRecentMatters: () => ({ recent: 
 vi.mock("@/lib/tracking", () => ({
   tracking: { features: { commandPaletteOpened: vi.fn() } },
 }));
-const searchPalette = vi.fn(async () => ({
+const searchPalette = vi.fn(async (_query: string) => ({
   results: [],
   cases: [],
   contacts: [],
@@ -26,7 +26,7 @@ const searchPalette = vi.fn(async () => ({
 const search = vi.fn(async () => []);
 vi.mock("@/lib/api", () => ({
   api: {
-    searchPalette: (...a: unknown[]) => searchPalette(...(a as [])),
+    searchPalette: (...a: unknown[]) => searchPalette(...(a as [string])),
     search: (...a: unknown[]) => search(...(a as [])),
     brain: { search: (...a: unknown[]) => search(...(a as [])) },
   },

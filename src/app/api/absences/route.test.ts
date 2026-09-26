@@ -77,8 +77,8 @@ const ABSENCE = {
   user_name: "RA Müller",
   delegate_email: "vertreter@example.com",
   delegate_name: "RA Vertreter",
-  start_date: "2026-10-01",
-  end_date: "2026-10-14",
+  start_date: "2099-10-01",
+  end_date: "2099-10-14",
   status: "planned",
   auto_route_enabled: true,
   reassigned_rundown_items: [],
@@ -133,17 +133,17 @@ describe("PATCH /api/absences", () => {
       .mockResolvedValueOnce([
         {
           slug: "legal/deadlines/d-in",
-          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-10-05" },
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2099-10-05" },
         },
         {
           slug: "legal/deadlines/d-out",
-          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-11-01" },
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2099-11-01" },
         },
         {
           slug: "legal/deadlines/d-done",
           frontmatter: {
             case_slug: "legal/cases/1",
-            due_date: "2026-10-05",
+            due_date: "2099-10-05",
             status: "erledigt",
           },
         },
@@ -151,7 +151,7 @@ describe("PATCH /api/absences", () => {
       .mockResolvedValueOnce([
         {
           slug: "legal/wv/w-1",
-          frontmatter: { case_slug: "legal/cases/1", date: "2026-10-10" },
+          frontmatter: { case_slug: "legal/cases/1", date: "2099-10-10" },
         },
       ])
       .mockResolvedValueOnce([
@@ -209,7 +209,7 @@ describe("PATCH /api/absences", () => {
       { slug: "legal/absences/absence-1", frontmatter: { ...ABSENCE, status: "cancelled" } },
       {
         slug: "legal/absences/neu",
-        frontmatter: { ...ABSENCE, id: "neu", start_date: "2026-10-05", end_date: "2026-10-20" },
+        frontmatter: { ...ABSENCE, id: "neu", start_date: "2099-10-05", end_date: "2099-10-20" },
       },
     ]);
     const res = await patch({ id: "absence-1", action: "activate" });
@@ -263,8 +263,8 @@ describe("POST /api/absences", () => {
     user_name: "RA Müller",
     delegate_email: "vertreter@example.com",
     delegate_name: "RA Vertreter",
-    start_date: "2026-10-01",
-    end_date: "2026-10-14",
+    start_date: "2099-10-01",
+    end_date: "2099-10-14",
     kind: "urlaub",
   };
 
@@ -288,7 +288,7 @@ describe("POST /api/absences", () => {
     mockList.mockResolvedValueOnce([
       {
         slug: "legal/absences/alt",
-        frontmatter: { ...ABSENCE, start_date: "2026-10-10", end_date: "2026-10-20" },
+        frontmatter: { ...ABSENCE, start_date: "2099-10-10", end_date: "2099-10-20" },
       },
     ]);
     const res = await post(baseBody);

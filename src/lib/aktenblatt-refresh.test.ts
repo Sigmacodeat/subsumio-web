@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
-const writeMock = vi.fn(async () => undefined);
+const writeMock = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("@/lib/engine-write", () => ({ engineWriteBestEffort: (...a: unknown[]) => writeMock(...a) }));
 
 import { refreshAktenblatt } from "./aktenblatt-refresh";

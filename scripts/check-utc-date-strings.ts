@@ -25,7 +25,7 @@ const PATTERN =
   /toISOString\(\)\s*\.\s*(?:slice\(\s*0\s*,\s*10\s*\)|substring\(\s*0\s*,\s*10\s*\)|split\(\s*["']T["']\s*\)\s*\[\s*0\s*\])/g;
 
 /** Occurrences at the time the guard was introduced — may only go down. */
-export const BASELINE = 77;
+export const BASELINE = 76;
 
 function walk(dir: string): string[] {
   const out: string[] = [];
