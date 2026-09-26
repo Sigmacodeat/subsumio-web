@@ -42,6 +42,12 @@ interface SuggestedDeadline {
   source: string;
   source_quote: string;
   confirmed: boolean;
+  zustellungsdatum?: string;
+  frist_art?: string;
+  rechtsgrundlage?: string;
+  vorfrist_date?: string;
+  notfrist?: boolean;
+  calculation_note?: string;
 }
 
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
@@ -76,6 +82,18 @@ export function toSuggestedDeadlines(
       source: mailLabel,
       source_quote: d.sourceSnippet.slice(0, 300),
       confirmed: false,
+      ...(d.berechnung
+        ? {
+            zustellungsdatum: d.berechnung.zustellungsdatum,
+            ...(d.berechnung.fristArt ? { frist_art: d.berechnung.fristArt } : {}),
+            ...(d.berechnung.rechtsgrundlage
+              ? { rechtsgrundlage: d.berechnung.rechtsgrundlage }
+              : {}),
+            vorfrist_date: d.berechnung.vorfrist,
+            notfrist: d.berechnung.notfrist,
+            calculation_note: d.berechnung.hinweise.join(" · "),
+          }
+        : {}),
     });
   }
   return out;

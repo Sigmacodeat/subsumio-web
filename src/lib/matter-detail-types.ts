@@ -23,6 +23,19 @@ export interface SuggestedDeadline {
   source_quote: string;
   confirmed: boolean;
   review_status?: "pending" | "approved" | "rejected";
+  /** Facts of the deterministic engine calculation (analysis-deadlines.ts). */
+  engine_computed?: boolean;
+  rechtsraum?: "AT" | "DE";
+  zustellungsdatum?: string;
+  eingangsdatum?: string;
+  frist_art?: string;
+  rechtsgrundlage?: string;
+  vorfrist_date?: string;
+  notfrist?: boolean;
+  ferialsache?: string;
+  calculation_note?: string;
+  /** What a human must add before the date can be computed. */
+  rueckfrage?: string;
 }
 
 export interface SuggestedParty {

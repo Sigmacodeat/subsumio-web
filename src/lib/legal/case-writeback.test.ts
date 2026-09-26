@@ -334,4 +334,58 @@ describe("writeSuggestedDeadlinesAndParties", () => {
       expect.any(Object)
     );
   });
+
+  test("carries the engine facts onto the suggestion and the unreviewed Fristenbuch entry", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ frontmatter: { suggested_deadlines: [] } }), { status: 200 })
+      )
+      .mockResolvedValue(new Response("{}", { status: 201 }));
+
+    await writeSuggestedDeadlinesAndParties(
+      { Authorization: "Bearer test" },
+      "legal/cases/test",
+      {
+        deadlines: [
+          {
+            label: "Berufungsfrist (§ 464 Abs 1 ZPO)",
+            date: "2026-05-04",
+            urgency: "high",
+            source: "Berufungsfrist vier Wochen",
+            engine_computed: true,
+            zustellungsdatum: "2026-04-03",
+            frist_art: "berufung",
+            rechtsgrundlage: "§ 464 Abs 1 ZPO",
+            vorfrist_date: "2026-04-27",
+            notfrist: true,
+            calculation_note: "Fristende … verschoben",
+          },
+        ],
+      },
+      "doc/urteil.md"
+    );
+
+    const patch = vi.mocked(enginePatchPage).mock.calls[0]![1] as {
+      frontmatter: { suggested_deadlines: Array<Record<string, unknown>> };
+    };
+    expect(patch.frontmatter.suggested_deadlines[0]).toMatchObject({
+      zustellungsdatum: "2026-04-03",
+      frist_art: "berufung",
+      rechtsgrundlage: "§ 464 Abs 1 ZPO",
+      notfrist: true,
+    });
+    const create = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c) => c[1]?.method === "POST"
+    );
+    const body = JSON.parse(create![1].body as string);
+    expect(body.frontmatter).toMatchObject({
+      type: "legal_deadline",
+      case_slug: "legal/cases/test",
+      review_status: "unreviewed",
+      law: "§ 464 Abs 1 ZPO",
+      is_notfrist: true,
+      second_check_required: true,
+      zustellungsdatum: "2026-04-03",
+    });
+  });
 });

@@ -18,6 +18,8 @@
 
 import { ENGINE_URL } from "@/lib/engine";
 import { encodeSlugPath } from "@/lib/utils";
+import { berechneFristAuto, resolveFristArt } from "@/lib/legal/frist-engine";
+import { berechneFristArtDE, fristArtDE } from "@/lib/legal/frist-engine-de";
 
 export type DeadlineDecisionAction = "approve" | "reject";
 
@@ -33,7 +35,14 @@ export interface DeadlineDecisionInput {
 }
 
 export type DeadlineDecisionResult =
-  | { ok: true; deadlineSlug: string | null; alreadyDecided: boolean }
+  | {
+      ok: true;
+      deadlineSlug: string | null;
+      alreadyDecided: boolean;
+      /** Engine re-check of the confirmed date (only when Zustelldatum and
+       *  Fristart of the suggestion are known). */
+      engineCheck?: EngineCheck;
+    }
   | { ok: false; status: number; code: string; message: string };
 
 type FetchFn = typeof fetch;
@@ -62,6 +71,87 @@ export function deadlineSlugForSuggestion(
     h = Math.imul(h, 0x01000193);
   }
   return `legal/deadlines/${tail.toLowerCase()}-sd${index}-${(h >>> 0).toString(36)}`;
+}
+
+export interface EngineCheck {
+  /** Fristende as the deterministic engine computes it. */
+  engineDueDate: string;
+  /** The confirmed date equals the engine's date. */
+  matches: boolean;
+  /** Human-readable result, stored with the deadline and shown as warning. */
+  message: string;
+  rechtsgrundlage?: string;
+  notfrist: boolean;
+  vorfrist?: string;
+}
+
+/**
+ * Gegenrechnung: recomputes the suggestion's deadline from its Zustelldatum
+ * and Fristart with the engine and compares it with the confirmed date. The
+ * suggestion's Zustelldatum is the effective service day (ERV fiction already
+ * applied). Returns null when the suggestion carries no such facts.
+ */
+export function engineGegenrechnung(
+  suggestion: Record<string, unknown>,
+  confirmedDate: string
+): EngineCheck | null {
+  const zustellung =
+    typeof suggestion.zustellungsdatum === "string" ? suggestion.zustellungsdatum : "";
+  const art = typeof suggestion.frist_art === "string" ? suggestion.frist_art : "";
+  if (!art || !isValidIsoDate(zustellung)) return null;
+  try {
+    if (suggestion.rechtsraum === "DE") {
+      const artDE = fristArtDE(art);
+      if (!artDE) return null;
+      const r = berechneFristArtDE(art, zustellung);
+      const matches = r.fristende === confirmedDate;
+      return {
+        engineDueDate: r.fristende,
+        matches,
+        rechtsgrundlage: artDE.rechtsgrundlage,
+        notfrist: artDE.notfrist,
+        vorfrist: r.vorfrist,
+        message: matches
+          ? `Frist-Engine bestätigt ${r.fristende} (ab Zustellung ${zustellung}, ${artDE.rechtsgrundlage}).`
+          : `Abweichung: Die Frist-Engine errechnet ${r.fristende} (ab Zustellung ${zustellung}, ${artDE.rechtsgrundlage}); bestätigt wurde ${confirmedDate}.`,
+      };
+    }
+    const fristArt = resolveFristArt(art);
+    if (!fristArt) return null;
+    // The suggestion was computed without the vhfZ suspension when the text
+    // hinted at a Ferialsache; recompute under the same assumption.
+    const ohneHemmung = suggestion.ferialsache === "ja" || suggestion.ferialsache === "zweifel";
+    const main = berechneFristAuto(art, zustellung, { ferialsache: ohneHemmung });
+    const alt = fristArt.gehemmtInVhfz
+      ? berechneFristAuto(art, zustellung, { ferialsache: !ohneHemmung }).fristende
+      : main.fristende;
+    const basis = `ab Zustellung ${zustellung}, ${fristArt.rechtsgrundlage}`;
+    if (main.fristende === confirmedDate) {
+      return {
+        engineDueDate: main.fristende,
+        matches: true,
+        rechtsgrundlage: fristArt.rechtsgrundlage,
+        notfrist: fristArt.notfrist,
+        vorfrist: main.vorfrist,
+        message: `Frist-Engine bestätigt ${main.fristende} (${basis}).`,
+      };
+    }
+    const message =
+      alt !== main.fristende && alt === confirmedDate
+        ? `Hinweis: ${confirmedDate} gilt nur ${
+            ohneHemmung ? "wenn KEINE Ferialsache vorliegt" : "in einer Ferialsache"
+          } (§ 222 ZPO); die Frist-Engine errechnet sonst ${main.fristende} (${basis}).`
+        : `Abweichung: Die Frist-Engine errechnet ${main.fristende} (${basis}); bestätigt wurde ${confirmedDate}.`;
+    return {
+      engineDueDate: main.fristende,
+      matches: false,
+      rechtsgrundlage: fristArt.rechtsgrundlage,
+      notfrist: fristArt.notfrist,
+      message,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function fail(status: number, code: string, message: string): DeadlineDecisionResult {
@@ -131,6 +221,7 @@ export async function decideSuggestedDeadline(
       ? suggestion.deadline_slug
       : null;
 
+  let engineCheck: EngineCheck | null = null;
   if (input.action === "approve") {
     const dueDate = (input.dueDate ?? aiDueDate).trim();
     if (!isValidIsoDate(dueDate)) {
@@ -140,6 +231,7 @@ export async function decideSuggestedDeadline(
         "Bitte ein gültiges Fristdatum (TT.MM.JJJJ) angeben, bevor die Frist übernommen wird."
       );
     }
+    engineCheck = engineGegenrechnung(suggestion, dueDate);
     deadlineSlug ??= deadlineSlugForSuggestion(input.caseSlug, suggestion, input.index);
     const sourceQuote = typeof suggestion.source_quote === "string" ? suggestion.source_quote : "";
     const writeRes = await fetchFn(`${ENGINE_URL}/api/pages`, {
@@ -172,6 +264,21 @@ export async function decideSuggestedDeadline(
           reviewed_by: input.reviewer,
           reviewed_at: now,
           from_suggestion: true,
+          ...(typeof suggestion.zustellungsdatum === "string"
+            ? { zustellungsdatum: suggestion.zustellungsdatum }
+            : {}),
+          ...(typeof suggestion.frist_art === "string" ? { frist_art: suggestion.frist_art } : {}),
+          ...(engineCheck
+            ? {
+                engine_due_date: engineCheck.engineDueDate,
+                engine_check: engineCheck.matches ? "match" : "abweichung",
+                engine_check_note: engineCheck.message,
+                ...(engineCheck.rechtsgrundlage ? { law: engineCheck.rechtsgrundlage } : {}),
+                ...(engineCheck.vorfrist ? { vorfrist_date: engineCheck.vorfrist } : {}),
+                // Notfristen get the existing Vier-Augen check.
+                ...(engineCheck.notfrist ? { is_notfrist: true, second_check_required: true } : {}),
+              }
+            : {}),
         },
       }),
       signal: AbortSignal.timeout(15_000),
@@ -216,7 +323,16 @@ export async function decideSuggestedDeadline(
           ...sd,
           title,
           ...(input.action === "approve"
-            ? { due_date: (input.dueDate ?? aiDueDate).trim(), ai_due_date: aiDueDate || null }
+            ? {
+                due_date: (input.dueDate ?? aiDueDate).trim(),
+                ai_due_date: aiDueDate || null,
+                ...(engineCheck
+                  ? {
+                      engine_due_date: engineCheck.engineDueDate,
+                      engine_check: engineCheck.matches ? "match" : "abweichung",
+                    }
+                  : {}),
+              }
             : {}),
           confirmed: true,
           review_status: input.action === "approve" ? "approved" : "rejected",
@@ -245,5 +361,10 @@ export async function decideSuggestedDeadline(
         : "Der Fristvorschlag konnte nicht aktualisiert werden."
     );
   }
-  return { ok: true, deadlineSlug, alreadyDecided: false };
+  return {
+    ok: true,
+    deadlineSlug,
+    alreadyDecided: false,
+    ...(engineCheck ? { engineCheck } : {}),
+  };
 }

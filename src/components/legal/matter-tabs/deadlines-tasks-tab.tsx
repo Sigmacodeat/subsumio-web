@@ -31,6 +31,12 @@ import { useMatterDetail } from "@/lib/matter-detail-context";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { withDeadlineAudit } from "@/lib/legal-deadlines";
 import type { DeadlineEntry } from "@/lib/legal-types";
+import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
+import {
+  canAdoptDetected,
+  confidenceLabel,
+  deadlineEntryFromDetected,
+} from "@/lib/legal/detected-deadline-entry";
 import { computeFrist, fristOptionsFor, type FristComputation } from "@/lib/legal/frist-options";
 import { getRechtsraumParams, resolveMatterRechtsraum } from "@/lib/legal/rechtsraum";
 import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
@@ -111,7 +117,7 @@ export function DeadlinesTasksTab() {
   const suggestionText = useMemo(
     () =>
       [
-        ...ctx.aiDetectedDeadlines.map((d) => `${d.title} — ${d.date}`),
+        ...ctx.aiDetectedDeadlines.map((d) => [d.description, d.date].filter(Boolean).join(" — ")),
         ...(ctx.caseData?.suggestedDeadlines ?? [])
           .filter((sd) => !sd.confirmed)
           .map((sd) => [sd.title, sd.due_date, sd.source_quote].filter(Boolean).join(" — ")),
@@ -652,12 +658,7 @@ export function DeadlinesTasksTab() {
                     body: JSON.stringify({ text: ctx.aiDetectText, caseSlug: slug }),
                   });
                   const data = (await res.json().catch(() => null)) as {
-                    detected?: Array<{
-                      title: string;
-                      date: string;
-                      type: string;
-                      confidence: number;
-                    }>;
+                    detected?: DetectedDeadline[];
                     error?: string;
                     message?: string;
                   } | null;
@@ -711,53 +712,91 @@ export function DeadlinesTasksTab() {
           )}
           {ctx.aiDetectedDeadlines.length > 0 && (
             <div className="space-y-2">
-              {ctx.aiDetectedDeadlines.map((d, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm text-[color:var(--ds-text)]">{d.title}</div>
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      <span className="tabular-nums">{formatDate(d.date)}</span> · {d.type} ·
-                      KI-Vorschlag, anwaltlich zu prüfen
+              {ctx.aiDetectedDeadlines.map((d, i) => {
+                const b = d.berechnung;
+                const adoptable = canAdoptDetected(d);
+                return (
+                  <div
+                    key={i}
+                    data-testid="ai-detected-deadline"
+                    className="flex items-start justify-between gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm text-[color:var(--ds-text)]">{d.description}</div>
+                      <div className="text-xs text-[color:var(--ds-text-muted)]">
+                        {d.date ? (
+                          <span className="tabular-nums">{formatDate(d.date)}</span>
+                        ) : (
+                          <span>Datum offen</span>
+                        )}{" "}
+                        · KI-Vorschlag, anwaltlich zu prüfen
+                      </div>
+                      {b && (
+                        <div className="text-xs text-[color:var(--ds-text-muted)]">
+                          Zustellung{" "}
+                          <span className="tabular-nums">{formatDate(b.zustellungsdatum)}</span>
+                          {b.eingangsdatum && (
+                            <>
+                              {" "}
+                              (im ERV eingelangt{" "}
+                              <span className="tabular-nums">{formatDate(b.eingangsdatum)}</span>)
+                            </>
+                          )}
+                          {b.rechtsgrundlage ? ` · ${b.rechtsgrundlage}` : ""}
+                          {b.notfrist ? " · Notfrist" : ""}
+                        </div>
+                      )}
+                      {b?.hinweise
+                        .filter((h) => /Ferialsache|weicht|Dokumenttyp|ERV/.test(h))
+                        .map((h, hi) => (
+                          <p
+                            key={hi}
+                            className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]"
+                          >
+                            {h}
+                          </p>
+                        ))}
+                      {d.rueckfrage && (
+                        <p
+                          role="note"
+                          className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]"
+                        >
+                          {d.rueckfrage}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge
+                        variant="default"
+                        className={`text-xs whitespace-nowrap ${
+                          d.confidence === "high"
+                            ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+                            : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                        }`}
+                      >
+                        {confidenceLabel(d.confidence)}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={caseData?.status === "archived" || !adoptable}
+                        title={adoptable ? undefined : "Ohne Fristdatum nicht übernehmbar"}
+                        className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
+                        onClick={() => {
+                          if (!adoptable) return;
+                          const entry = deadlineEntryFromDetected(d, new Date());
+                          const updated = [...ctx.deadlinesList, entry];
+                          ctx.setDeadlinesList(updated);
+                          ctx.saveCaseUpdate({ deadlines: updated });
+                          ctx.setAiDetectedDeadlines((prev) => prev.filter((_, idx) => idx !== i));
+                        }}
+                      >
+                        <Plus size={12} /> {t("cases.detail_dl_add_btn")}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Badge
-                      variant="default"
-                      className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
-                    >
-                      {Math.round(d.confidence * 100)}%
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={caseData?.status === "archived"}
-                      className="border-[color:var(--ds-success-border)] text-xs text-[color:var(--ds-success-text)] hover:bg-[color:var(--ds-success-bg)]"
-                      onClick={() => {
-                        const entry: DeadlineEntry = {
-                          id: `dl-${Date.now()}`,
-                          title: d.title,
-                          due_date: d.date,
-                          type: d.type as DeadlineEntry["type"],
-                          status: "pending",
-                          review_status: "unreviewed",
-                          // Marks it as a KI suggestion: alerts label it and
-                          // send no external notification until reviewed.
-                          source: "ai_detected",
-                        };
-                        const updated = [...ctx.deadlinesList, entry];
-                        ctx.setDeadlinesList(updated);
-                        ctx.saveCaseUpdate({ deadlines: updated });
-                        ctx.setAiDetectedDeadlines((prev) => prev.filter((_, idx) => idx !== i));
-                      }}
-                    >
-                      <Plus size={12} /> {t("cases.detail_dl_add_btn")}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               <CitationPanel
                 data={{ grounding: aiGrounding, citations: [], isStreaming: false }}
                 compact
@@ -786,7 +825,32 @@ export function DeadlinesTasksTab() {
                   <div className="min-w-0">
                     <div className="text-sm text-[color:var(--ds-text)]">{sd.title}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      {sd.due_date ? (
+                        <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      ) : (
+                        <span>Datum offen</span>
+                      )}
+                      {sd.zustellungsdatum && (
+                        <span className="mt-0.5 block">
+                          Berechnet ab Zustellung{" "}
+                          <span className="tabular-nums">{formatDate(sd.zustellungsdatum)}</span>
+                          {sd.rechtsgrundlage ? ` · ${sd.rechtsgrundlage}` : ""}
+                          {sd.notfrist ? " · Notfrist" : ""}
+                        </span>
+                      )}
+                      {sd.rueckfrage && (
+                        <span className="mt-0.5 block text-[color:var(--ds-warning-text)]">
+                          {sd.rueckfrage}
+                        </span>
+                      )}
+                      {sd.calculation_note && /Ferialsache/.test(sd.calculation_note) && (
+                        <span className="mt-0.5 block text-[color:var(--ds-warning-text)]">
+                          {sd.calculation_note
+                            .split(" · ")
+                            .filter((h) => /Ferialsache/.test(h))
+                            .join(" ")}
+                        </span>
+                      )}
                       {sd.urgency ? ` · ${urgencyLabel(sd.urgency, lang)}` : ""}
                       {sd.source_quote && sd.source_quote !== sd.title && (
                         <span className="mt-0.5 block italic">&bdquo;{sd.source_quote}&ldquo;</span>

@@ -1,10 +1,6 @@
 import { z } from "zod";
-import { ENGINE_URL, recordQuota } from "@/lib/engine";
-import {
-  detectDeadlines,
-  enrichAllDeadlines,
-  resolveRelativeDeadline,
-} from "@/lib/ai-deadline-detect";
+import { resolveCaseJurisdiction } from "@/lib/engine";
+import { recognizeDeadlines, type Rechtsraum } from "@/lib/ai-deadline-detect";
 import {
   hybridDeadlineDetection,
   isLLMDeadlineExtractionAvailable,
@@ -39,8 +35,10 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     const safeText = sanitizeUserInput(body.text);
-    const rawDetected = detectDeadlines(safeText);
-    const enrichedRegex = enrichAllDeadlines(rawDetected, safeText);
+    // The matter's Rechtsraum picks the engine: a German matter is not
+    // computed with Austrian rules (and vice versa). Without a matter: AT.
+    const rechtsraum = await rechtsraumFor(body.caseSlug, ctx.headers);
+    const enrichedRegex = recognizeDeadlines(safeText, { rechtsraum });
 
     // LLM Fallback: wenn Regex keine/wenige Fristen findet, rufe LLM an.
     // Kostenpflichtig (deadline_detect) — ohne Guthaben bleibt es beim
@@ -48,72 +46,20 @@ export const POST = createHandler(
     const llmAffordable = await canAffordOptionalLlm(ctx, "deadline_detect");
     const llmMeta: LlmCallMeta = {};
     const detected = llmAffordable
-      ? await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers, { meta: llmMeta })
+      ? await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers, {
+          meta: llmMeta,
+          rechtsraum,
+        })
       : enrichedRegex;
     if (llmMeta.modelCalled) void recordCreditConsumption(ctx, "deadline_detect", body.caseSlug);
     const llmUsed = detected.some((d) => d.matchedRule === "llm_fallback");
 
-    const createdSlugs: string[] = [];
-    if (body.caseSlug) {
-      for (const d of detected) {
-        if (d.confidence === "high" && (d.date || d.daysFromNow)) {
-          try {
-            const dueDate = d.date || resolveRelativeDeadline(d.daysFromNow!);
-            const slug = `legal/deadline/${Date.now()}-${createdSlugs.length}`;
-            const fristResult = d.fristResult;
-            const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { ...ctx.headers, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                slug,
-                title: d.description,
-                type: "deadline",
-                content: `Erkannt aus Text:\n${d.sourceSnippet}\n\nKonfidenz: ${d.confidence}${fristResult ? `\n\nDeterministische Berechnung:\n${fristResult.hinweise.join("\n")}` : ""}`,
-                frontmatter: {
-                  type: "deadline",
-                  case_slug: body.caseSlug,
-                  due_date: dueDate,
-                  status: "pending",
-                  review_status: "unreviewed",
-                  source: d.matchedRule === "llm_fallback" ? "llm_detected" : "ai_detected",
-                  matched_rule: d.matchedRule,
-                  ai_confidence: d.confidence,
-                  // Deterministisch berechnete Frist-Daten
-                  ...(fristResult
-                    ? {
-                        frist_art: fristResult.art.key,
-                        frist_regime: fristResult.art.regime,
-                        rechtsgrundlage: fristResult.art.rechtsgrundlage,
-                        fristbeginn: fristResult.fristbeginn,
-                        fristende: fristResult.fristende,
-                        vorfrist_date: fristResult.vorfrist,
-                        kalendertage: fristResult.kalendertage,
-                        notfrist: fristResult.art.notfrist,
-                        deterministic: true,
-                      }
-                    : {
-                        deterministic: false,
-                      }),
-                  ...(d.zustellungsdatum ? { zustellungsdatum: d.zustellungsdatum } : {}),
-                },
-              }),
-              signal: AbortSignal.timeout(30_000),
-            });
-            if (!createRes.ok) continue; // Engine returned error — skip this deadline
-            createdSlugs.push(slug);
-          } catch {
-            // Einzelne Fehler nicht abbrechen
-          }
-        }
-      }
-    }
-    if (createdSlugs.length > 0) {
-      void recordQuota(ctx, "pages", createdSlugs.length);
-    }
-
+    // Nothing is written here. Every result is a suggestion the lawyer adopts
+    // explicitly (Akte → Fristen, Fristenbuch), where it is stored as an
+    // unreviewed deadline the Fristenbuch reads.
     const response: Record<string, unknown> = {
       detected,
-      created: createdSlugs.length > 0 ? createdSlugs : undefined,
+      rechtsraum,
       llm_fallback_used: llmUsed,
       llm_available: isLLMDeadlineExtractionAvailable(),
       ...(llmAffordable ? {} : { llm_skipped: "insufficient_credits" }),
@@ -133,3 +79,12 @@ export const POST = createHandler(
     return Response.json(response);
   }
 );
+
+async function rechtsraumFor(
+  caseSlug: string | undefined,
+  headers: Record<string, string>
+): Promise<Rechtsraum> {
+  if (!caseSlug?.trim()) return "AT";
+  const j = await resolveCaseJurisdiction(caseSlug.trim(), headers).catch(() => undefined);
+  return j === "de" ? "DE" : j === "ch" ? "CH" : "AT";
+}

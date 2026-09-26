@@ -87,3 +87,20 @@ describe("mergeSuggestedDeadlines", () => {
     expect(mergeSuggestedDeadlines(undefined, s)).toHaveLength(1);
   });
 });
+
+describe("toSuggestedDeadlines — Frist-Engine im Mailweg (W1-1)", () => {
+  it("a Rechtsmittelfrist from mail text is computed from the Zustelldatum and keeps its basis", async () => {
+    const { recognizeDeadlines } = await import("@/lib/ai-deadline-detect");
+    const text =
+      "Anbei das Urteil, zugestellt am 03.04.2026. Gegen dieses Urteil kann binnen vier Wochen Berufung erhoben werden.";
+    const [s] = toSuggestedDeadlines(recognizeDeadlines(text), "Mail: Urteil");
+    expect(s).toMatchObject({
+      due_date: "2026-05-04",
+      zustellungsdatum: "2026-04-03",
+      frist_art: "berufung",
+      rechtsgrundlage: "§ 464 Abs 1 ZPO",
+      notfrist: true,
+      confirmed: false,
+    });
+  });
+});

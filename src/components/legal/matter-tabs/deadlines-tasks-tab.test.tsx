@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeadlineFormData } from "@/lib/schemas/case-detail";
 import type { DeadlineEntry } from "@/lib/legal-types";
+import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k, lang: "de" }) }));
 vi.mock("next/navigation", () => ({
@@ -55,7 +56,7 @@ function Harness({
   deadlines?: DeadlineEntry[];
   jurisdiction?: string;
   standaloneFailed?: boolean;
-  detected?: Array<{ title: string; date: string; type: string; confidence: number }>;
+  detected?: DetectedDeadline[];
 }) {
   const deadlineForm = useForm<DeadlineFormData>({
     defaultValues: { title: "", due_date: "", type: "deadline", status: "pending" },
@@ -261,7 +262,14 @@ describe("Akten-Tab — Löschen, KI-Erkennung, KI-Vorschläge (UIS-3-3)", () =>
     render(
       <Harness
         detected={[
-          { title: "Berufungsfrist", date: "2026-03-30", type: "deadline", confidence: 0.9 },
+          {
+            type: "legal_deadline",
+            description: "Berufungsfrist",
+            date: "2026-03-30",
+            confidence: "high",
+            sourceSnippet: "Berufungsfrist",
+            matchedRule: "zpo_berufung",
+          },
         ]}
       />
     );
@@ -271,6 +279,83 @@ describe("Akten-Tab — Löschen, KI-Erkennung, KI-Vorschläge (UIS-3-3)", () =>
     );
     expect(screen.getByText(formatDate("2026-03-30"))).toBeTruthy();
     expect(screen.queryByText(/^2026-03-30/)).toBeNull();
+  });
+});
+
+describe("Akten-Tab Fristen — KI-Fristerkennung zeigt das echte Antwortformat (W1-5)", () => {
+  const berufung: DetectedDeadline = {
+    type: "legal_deadline",
+    description: "Berufungsfrist (§ 464 Abs 1 ZPO)",
+    date: "2026-09-14",
+    confidence: "medium",
+    sourceSnippet: "Berufungsfrist vier Wochen",
+    matchedRule: "zpo_berufung",
+    suggestedTemplate: "berufung",
+    berechnung: {
+      rechtsraum: "AT",
+      fristArt: "berufung",
+      bezeichnung: "Berufung",
+      rechtsgrundlage: "§ 464 Abs 1 ZPO",
+      notfrist: true,
+      zustellungsdatum: "2026-07-20",
+      fristende: "2026-09-14",
+      vorfrist: "2026-09-07",
+      fristendeOhneHemmung: "2026-08-17",
+      ferialsache: "unbekannt",
+      hinweise: ["Ferialsache prüfen: … In einer Ferialsache endet sie bereits am 2026-08-17."],
+    },
+  };
+
+  it("shows title, confidence label (no „NaN %“), Zustellung and Rechtsgrundlage", () => {
+    render(<Harness detected={[berufung]} />);
+    const row = screen.getByTestId("ai-detected-deadline");
+    expect(row.textContent).toContain("Berufungsfrist (§ 464 Abs 1 ZPO)");
+    expect(row.textContent).toContain("Prüfen");
+    expect(row.textContent).not.toContain("NaN");
+    expect(row.textContent).toContain(formatDate("2026-07-20"));
+    expect(row.textContent).toContain("Notfrist");
+    expect(row.textContent).toContain("Ferialsache prüfen");
+  });
+
+  it("adopting stores an unreviewed Frist with title, Rechtsgrundlage, Fristbeginn and Notfrist", () => {
+    render(<Harness detected={[berufung]} />);
+    fireEvent.click(
+      within(screen.getByTestId("ai-detected-deadline")).getByText(/cases.detail_dl_add_btn/)
+    );
+    const saved = saveCaseUpdate.mock.calls.at(-1)![0].deadlines as DeadlineEntry[];
+    expect(saved.at(-1)).toMatchObject({
+      title: "Berufungsfrist (§ 464 Abs 1 ZPO)",
+      due_date: "2026-09-14",
+      review_status: "unreviewed",
+      source: "ai_detected",
+      law: "§ 464 Abs 1 ZPO",
+      start_date: "2026-07-20",
+      rule_key: "berufung",
+      is_notfrist: true,
+      second_check_required: true,
+    });
+  });
+
+  it("a suggestion without a date asks for the Zustelldatum and cannot be adopted", () => {
+    render(
+      <Harness
+        detected={[
+          {
+            ...berufung,
+            date: undefined,
+            berechnung: undefined,
+            rueckfrage: "Zustelldatum fehlt — bitte eintragen",
+          },
+        ]}
+      />
+    );
+    const row = screen.getByTestId("ai-detected-deadline");
+    expect(row.textContent).toContain("Datum offen");
+    expect(row.textContent).toContain("Zustelldatum fehlt");
+    const btn = within(row)
+      .getByText(/cases.detail_dl_add_btn/)
+      .closest("button")!;
+    expect(btn.disabled).toBe(true);
   });
 });
 

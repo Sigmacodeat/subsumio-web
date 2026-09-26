@@ -15,6 +15,7 @@ import {
 } from "@/lib/legal/analysis-utils";
 import { findRelevantPrecedents } from "@/lib/legal/precedent-search";
 import { writeSuggestedDeadlinesAndParties } from "@/lib/legal/case-writeback";
+import { withAnalysisDeadlines } from "@/lib/legal/analysis-deadlines";
 import { checkCaseContradictions } from "@/lib/legal/contradiction-check";
 
 import { createHash } from "node:crypto";
@@ -62,42 +63,8 @@ function analysisContentHash(text: string): string {
 
 export const maxDuration = 120;
 
-/**
- * The engine's document analysis reports dates as `key_dates` [{date, what}],
- * while the case writeback expects `deadlines` [{label, date, urgency, source}].
- * Without this bridge no uploaded document ever produced a deadline
- * suggestion. Past dates (service dates, hearings held) are not deadlines.
- */
-export function withDeadlinesFromKeyDates(
-  parsed: Record<string, unknown>
-): Record<string, unknown> {
-  if (Array.isArray(parsed.deadlines) && parsed.deadlines.length > 0) return parsed;
-  if (!Array.isArray(parsed.key_dates)) return parsed;
-  const today = new Date().toISOString().slice(0, 10);
-  const deadlines = (parsed.key_dates as Array<Record<string, unknown>>)
-    .filter(
-      (k) => typeof k?.date === "string" && /^\d{4}-\d{2}-\d{2}/.test(k.date) && k.date >= today
-    )
-    .map((k) => {
-      const what =
-        typeof k.what === "string"
-          ? k.what
-          : typeof k.label === "string"
-            ? k.label
-            : "Erkannter Termin";
-      const urgent =
-        /frist|binnen|spätestens|einzubringen|einbringen|erheben|tagsatzung|verhandlung|termin/i.test(
-          what
-        );
-      return {
-        label: what,
-        date: String(k.date).slice(0, 10),
-        urgency: urgent ? "high" : "normal",
-        source: what,
-      };
-    });
-  return deadlines.length > 0 ? { ...parsed, deadlines } : parsed;
-}
+// Kept for existing imports; the bridge lives with the engine suggestions.
+export { withDeadlinesFromKeyDates } from "@/lib/legal/analysis-deadlines";
 
 const analyzeSchema = z
   .object({
@@ -350,6 +317,27 @@ export const POST = createHandler(
       parsed.suggested_precedents = suggestedPrecedents;
     }
 
+    // Rechtsmittel-/Einspruchs-/Klagebeantwortungsfristen: computed by the
+    // deterministic engine from Zustelldatum + Fristart (text or document
+    // type), in the matter's Rechtsraum — the model is never asked for an end
+    // date that does not stand in the document.
+    // Resolved above for the engine call (x-subsumio-case-jurisdiction).
+    const caseJurisdiction = caseScopedHeaders["x-subsumio-case-jurisdiction"];
+    const rechtsraum =
+      caseJurisdiction === "de"
+        ? ("DE" as const)
+        : caseJurisdiction === "ch"
+          ? ("CH" as const)
+          : jurisdiction === "de"
+            ? ("DE" as const)
+            : jurisdiction === "ch"
+              ? ("CH" as const)
+              : ("AT" as const);
+    const withDeadlines = withAnalysisDeadlines(parsed, text, { rechtsraum });
+    if (Array.isArray(withDeadlines.deadlines) && withDeadlines.deadlines.length > 0) {
+      parsed.deadlines = withDeadlines.deadlines;
+    }
+
     // ── 4. Persist analysis to document frontmatter ─────────────────────
     if (documentSlug) {
       try {
@@ -402,12 +390,7 @@ export const POST = createHandler(
 
     // ── 5. Fire-and-forget: case writeback + contradictions check ───────
     if (documentCaseSlug) {
-      void writeSuggestedDeadlinesAndParties(
-        engineHeaders,
-        documentCaseSlug,
-        withDeadlinesFromKeyDates(parsed),
-        documentSlug
-      );
+      void writeSuggestedDeadlinesAndParties(engineHeaders, documentCaseSlug, parsed, documentSlug);
 
       // Called in-process with the same engine headers (same brain, same
       // access) — no HTTP round trip back into this app. The upload outbox

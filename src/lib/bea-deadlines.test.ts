@@ -53,6 +53,27 @@ describe("beaDeadlineSuggestions", () => {
     expect(berufung!.source).toBe("beA: Urteil AG Hamburg");
   });
 
+  test("DE-Berechnung trägt die deutsche Rechtsgrundlage, nicht den AT-Paragrafen (W1-17)", () => {
+    const out = beaDeadlineSuggestions({
+      text: BERUFUNG_TEXT,
+      receivedDate: "2026-09-17",
+      sourceLabel: "beA: Urteil AG Hamburg",
+    });
+    const berufung = out.find((s) => /berufung/i.test(s.title))!;
+    expect(berufung.title).toContain("§ 517 ZPO");
+    expect(berufung.title).not.toContain("§ 464");
+  });
+
+  test("freie Frist endet nicht am Wochenende (W1-4, § 193 BGB)", () => {
+    // eEB 18.09. + 15 Tage = Sa 03.10. → Mo 05.10.2026
+    const out = beaDeadlineSuggestions({
+      text: "Bitte nehmen Sie binnen 15 Tagen Stellung.",
+      receivedDate: "2026-09-17",
+      sourceLabel: "beA: Schriftsatz",
+    });
+    expect(out.map((s) => s.due_date)).toContain("2026-10-05");
+  });
+
   test("relative Frist ohne Mapping wird auf den eEB-Tag verankert", () => {
     const out = beaDeadlineSuggestions({
       text: "Bitte nehmen Sie binnen zwei Wochen Stellung.",

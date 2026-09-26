@@ -46,7 +46,11 @@ describe("frist-engine integration in ai-deadline-detect", () => {
       expect(enriched.zustellungsdatum).toBe("2024-07-15");
       expect(enriched.fristResult!.art.key).toBe("berufung");
       expect(enriched.fristResult!.art.gehemmtInVhfz).toBe(true);
-      expect(enriched.confidence).toBe("high");
+      // Service inside the vhfZ: the date depends on whether the matter is a
+      // Ferialsache (§ 222 Abs 2 ZPO), which the text does not say → medium,
+      // with the earlier Ferialsachen date named.
+      expect(enriched.confidence).toBe("medium");
+      expect(enriched.berechnung?.fristendeOhneHemmung).toBe("2024-08-12");
     });
 
     test("Berufungsfrist during Sommer-vhfZ gets extended (§ 222 ZPO)", () => {
