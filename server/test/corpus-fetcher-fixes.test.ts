@@ -21,6 +21,7 @@ import {
   extractContentUrls,
   extractMetadata,
   pdfToText,
+  cleanPdfText,
   type SourceConfig,
 } from "../scripts/fetch-missing-sources.ts";
 
@@ -176,5 +177,27 @@ describe("fetch-missing-sources: RIS extraction", () => {
 
   test("pdfToText: invalid input yields empty string, never throws", () => {
     expect(pdfToText(Buffer.from("not a pdf"))).toBe("");
+  });
+
+  test("cleanPdfText strips print furniture, keeps legal text", () => {
+    const raw = [
+      "Seite 1 von 2",
+      "VERORDNUNGSBLATT",
+      "der Bezirkshauptmannschaft Oberwart",
+      "",
+      "§ 1. Geltungsbereich …",
+      "",
+      "Seite 2 von 2",
+      "www.ris.bka.gv.at",
+      "●",
+      "Für den Bezirkshauptmann",
+    ].join("\n");
+    const out = cleanPdfText(raw);
+    expect(out).not.toMatch(/Seite \d+ von \d+/);
+    expect(out).not.toContain("www.ris.bka.gv.at");
+    expect(out).not.toContain("●");
+    expect(out).toContain("VERORDNUNGSBLATT");
+    expect(out).toContain("§ 1. Geltungsbereich");
+    expect(out).toContain("Für den Bezirkshauptmann");
   });
 });

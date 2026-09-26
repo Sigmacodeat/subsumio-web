@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 import { spawnSync } from "child_process";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause } from "./ris-pace";
+import { recordFetchOutcome } from "./ris-fetch-outcomes";
 import { atomicWrite, contentHash, stripHtmlComplete, decodeEntities, risXmlToText } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
@@ -320,13 +321,23 @@ export function extractContentUrls(
   }
 }
 
+const RE_PDF_FURNITURE = /^\s*(Seite\s+\d+\s+von\s+\d+|www\.ris\.bka\.gv\.at|●|·)\s*$/;
+
+export function cleanPdfText(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !RE_PDF_FURNITURE.test(line))
+    .join("\n")
+    .trim();
+}
+
 export function pdfToText(buf: Buffer): string {
   const r = spawnSync("pdftotext", ["-nopgbrk", "-enc", "UTF-8", "-", "-"], {
     input: buf,
     maxBuffer: 64 * 1024 * 1024,
   });
   if (r.error || r.status !== 0 || !r.stdout) return "";
-  return r.stdout.toString("utf8").trim();
+  return cleanPdfText(r.stdout.toString("utf8"));
 }
 
 /**
@@ -468,7 +479,7 @@ export function extractMetadata(
       const court = metaSrc[ck] as Record<string, unknown> | undefined;
       if (!court) continue;
       if (court.Entscheidungsart) result.entscheidungsart = court.Entscheidungsart as string;
-      const gericht = (court.Gericht ?? court.EntscheidendeBehoerde) as string | undefined;
+      const gericht = (court.Gericht ?? court.EntscheidendeBehoerde ?? court.Kommission) as string | undefined;
       if (gericht) result.gericht = gericht;
       if (court.Rechtssatznummer) result.rechtssatznummer = court.Rechtssatznummer as string;
       // Indizes
@@ -668,11 +679,11 @@ async function fetchSource(source: SourceConfig): Promise<void> {
         let text = await fetchDocContent(dokumentliste, docUrl);
 
         if (text.length < 50) {
-          // Save as metadata-only placeholder
           const metaFields = extractMetadata(meta, source);
           const metaLines = Object.entries(metaFields).map(([k, v]) => `${k}: ${v}`);
           text = `${title}\n\n${metaLines.join("\n")}\n\nVolltext nicht abrufbar — siehe ${docUrl}`;
           notDigitalized++;
+          recordFetchOutcome(CORPUS_ROOT, source.outDir, docId, "no_text", docUrl);
         }
 
         // Build frontmatter
