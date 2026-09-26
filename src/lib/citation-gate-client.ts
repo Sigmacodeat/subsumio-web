@@ -277,7 +277,9 @@ export interface RawLiteratureCitation {
   /** Corpus directory under law-corpus/, when resolvable. */
   corpusDir: "de-materialien" | "ch-literatur" | null;
   pinpoint?: string;
-  jurisdiction: "de" | "ch";
+  jurisdiction: "de" | "ch" | "at";
+  /** Official page to check the citation by hand (AT Materialien: Parlament). */
+  checkUrl?: string;
 }
 
 const DRUCKSACHE_RX =
@@ -288,6 +290,66 @@ const OK_LONG_RX =
   /\bOnlinekommentar\s+zu\s+Art\.?\s*(\d+[a-z]?)\s+([A-ZÄÖÜ][A-Za-z]{1,8})(?:\s+(?:Rn\.?|N)\s*(\d{1,4}))?/g;
 const LICENSED_RX =
   /\b([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:\/[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)?),?\s+([A-ZÄÖÜ][A-Za-z]{1,8})\s*§\s*(\d+[a-z]?)\s+Rn\.?\s*(\d{1,4})/g;
+
+// Austrian commentary: "Reischauer in Rummel, ABGB³ § 1295 Rz 1",
+// "Kodek in Kletečka/Schauer, ABGB-ON1.05 § 879 Rz 3", "Schwimann/Kodek, ABGB § 1 Rz 2"
+// (Rz or Rn, optional emphasis stars and edition digits after the code).
+const AT_LICENSED_RX =
+  /\*?([A-ZÄÖÜ][\p{L}]+(?:\/[A-ZÄÖÜ][\p{L}]+)?)\*?,?\s+([A-ZÄÖÜ][A-Za-z]{1,8}(?:-ON)?)[\u00B2\u00B3\u00B9\u2070-\u2079\d.]*\s*§\s*(\d+[a-z]?)\s+(?:Rz|Rn)\.?\s*(\d{1,4})/gu;
+// Austrian Gesetzesmaterialien: "ErläutRV 1234 BlgNR 24. GP", "AB 567 BlgNR XXVII. GP".
+const AT_MATERIALIEN_RX =
+  /\b(ErläutRV|ErlRV|RV|AB|IA)\s+(\d{1,5})\s+(?:der\s+)?Blg\.?\s*NR\.?\s*(\d{1,2}|[IVXLC]{1,7})\.?\s*GP\b/g;
+
+/** Publisher works for Austrian law we recognise but hold no licence for. */
+const AT_LICENSED_WORKS = new Set([
+  "rummel",
+  "rummel/lukas",
+  "schwimann",
+  "schwimann/kodek",
+  "schwimann/neumayr",
+  "klang",
+  "kletečka/schauer",
+  "kletecka/schauer",
+  "koziol/welser",
+  "koziol/bydlinski/bollenberger",
+  "kbb",
+  "fasching",
+  "fasching/konecny",
+  "rechberger",
+  "rechberger/klicka",
+  "straube",
+  "straube/ratka/rauter",
+  "höpfel/ratz",
+  "wiener kommentar",
+  "fenyves/kerschner/vonkilch",
+]);
+
+const ROMAN = [
+  [1000, "M"],
+  [900, "CM"],
+  [500, "D"],
+  [400, "CD"],
+  [100, "C"],
+  [90, "XC"],
+  [50, "L"],
+  [40, "XL"],
+  [10, "X"],
+  [9, "IX"],
+  [5, "V"],
+  [4, "IV"],
+  [1, "I"],
+] as const;
+
+function toRoman(n: number): string {
+  let out = "";
+  for (const [v, r] of ROMAN) {
+    while (n >= v) {
+      out += r;
+      n -= v;
+    }
+  }
+  return out;
+}
 
 /** CH codes covered by Onlinekommentar.ch (site slug = abbr + article number). */
 const OK_CH_CODES = new Set(["ZGB", "OR", "BV", "BPR", "STGB", "DSG", "BGÖ", "BGOE"]);
@@ -356,6 +418,42 @@ export function extractLiteratureCitations(text: string): RawLiteratureCitation[
   };
   for (const m of text.matchAll(OK_SHORT_RX)) pushOk(m[0], m[1], m[2], m[3]);
   for (const m of text.matchAll(OK_LONG_RX)) pushOk(m[0], m[2], m[1], m[3]);
+
+  for (const m of text.matchAll(AT_MATERIALIEN_RX)) {
+    const [raw, kind, nr, gpRaw] = m;
+    const gp = /^\d+$/.test(gpRaw) ? toRoman(Number(gpRaw)) : gpRaw.toUpperCase();
+    const key = `at-mat:${nr}:${gp}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      kind: "materialien",
+      raw,
+      work: kind === "ErlRV" ? "ErläutRV" : kind,
+      ref: `${nr} BlgNR ${gp}. GP`,
+      corpusFile: null,
+      corpusDir: null,
+      jurisdiction: "at",
+      checkUrl: `https://www.parlament.gv.at/gegenstand/${gp}/I/${nr}`,
+    });
+  }
+
+  for (const m of text.matchAll(AT_LICENSED_RX)) {
+    const [raw, work, code, para, rz] = m;
+    if (!AT_LICENSED_WORKS.has(work.toLowerCase())) continue;
+    const key = `licensed:${work.toLowerCase()}:${code}:${para}:${rz}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      kind: "licensed_work",
+      raw,
+      work,
+      ref: `${code} § ${para}`,
+      corpusFile: null,
+      corpusDir: null,
+      pinpoint: `Rz ${rz}`,
+      jurisdiction: "at",
+    });
+  }
 
   for (const m of text.matchAll(LICENSED_RX)) {
     const [raw, work, code, para] = m;

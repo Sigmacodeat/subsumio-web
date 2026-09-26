@@ -304,7 +304,22 @@ export async function groundLiteratureCitations(
     }
 
     const category = ref.kind === "materialien" ? "materialien" : "literatur";
-    const file = path.join(CORPUS_DIR, ref.corpusDir!, `${ref.corpusFile}.md`);
+    // Not in our corpus (Austrian Materialien): counted, never assumed.
+    if (!ref.corpusDir || !ref.corpusFile) {
+      results.push({
+        code: ref.work,
+        paragraph: ref.ref,
+        context: ref.raw,
+        verified: false,
+        category,
+        jurisdiction: ref.jurisdiction,
+        ...(ref.checkUrl ? { search_url: ref.checkUrl } : {}),
+        unverifiable_reason:
+          "Gesetzesmaterialien nicht im Korpus — Fundstelle im Parlament prüfen (Link).",
+      });
+      continue;
+    }
+    const file = path.join(CORPUS_DIR, ref.corpusDir, `${ref.corpusFile}.md`);
     let body: string | null = null;
     try {
       const content = await fs.readFile(file, "utf8");
