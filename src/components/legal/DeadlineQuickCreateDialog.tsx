@@ -58,6 +58,8 @@ interface DeadlineQuickCreateDialogProps {
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
   presetCaseSlug?: string;
+  /** Prefilled description, e.g. the subject of a Posteingang entry. */
+  presetDescription?: string;
 }
 
 interface CaseOption {
@@ -77,6 +79,7 @@ export function DeadlineQuickCreateDialog({
   onOpenChange,
   onCreated,
   presetCaseSlug,
+  presetDescription,
 }: DeadlineQuickCreateDialogProps) {
   const { t, lang } = useLang();
   const { addToast } = useToast();
@@ -240,7 +243,8 @@ export function DeadlineQuickCreateDialog({
     // captured at mount, so apply the preset on every open — otherwise the
     // case selector is hidden AND the deadline is saved without a case.
     setCaseSlug(presetCaseSlug ?? "");
-  }, [open, presetCaseSlug, resetForm]);
+    if (presetDescription) setDescription(presetDescription);
+  }, [open, presetCaseSlug, presetDescription, resetForm]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

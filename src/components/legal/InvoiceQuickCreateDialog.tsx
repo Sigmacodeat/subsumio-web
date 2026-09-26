@@ -55,10 +55,13 @@ import {
   feeAgreementRate,
   formatMinutesDe,
   ruledTimeItems,
+  tariffTimeItem,
   type FeeAgreementLike,
   type RateSource,
 } from "@/lib/billing-rules";
 import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
+import { tariffAmountOf } from "@/lib/time-entry-value";
+import { tariffJurisdictionOf } from "@/lib/tariff-jurisdiction";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -79,6 +82,8 @@ interface InvoiceItem {
   rate_source?: RateSource;
   /** The time entry this position bills — the server checks it against the record. */
   time_entry_id?: string;
+  /** Tarifleistung recorded at the matter (flat amount, no hours). */
+  tariff?: true;
 }
 
 interface Invoice {
@@ -119,6 +124,8 @@ interface InvoiceCase {
   clientName?: string;
   clientSlug?: string;
   legalArea?: string;
+  /** Streitwert — prefilled as Bemessungsgrundlage in the tariff forms. */
+  disputeValue?: number;
   timeEntries?: TimeEntry[];
   expenses?: ExpenseEntry[];
 }
@@ -140,6 +147,26 @@ const roundCents = (n: number) => Math.round(n * 100) / 100;
 const roundHours = (n: number) => Math.round(n * 10_000) / 10_000;
 const money = (n: number) =>
   `${n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+/** Tarifleistungen (RATG/AHK) recorded at the matter bill a fixed amount. */
+function isTariffEntry(entry: TimeEntry): boolean {
+  return tariffAmountOf(entry) !== null;
+}
+
+/** Flat positions of the recorded Tarifleistungen, bound to their time entry. */
+function tariffEntryItemsFor(entries: TimeEntry[]): InvoiceItem[] {
+  return entries.filter(isTariffEntry).flatMap((entry) => {
+    const item = tariffTimeItem({
+      id: entry.id,
+      description: entry.description,
+      date: entry.date,
+      minutes: entry.minutes,
+      tariffAmount: tariffAmountOf(entry),
+      tariffLabel: entry.tariff?.label,
+    });
+    return item ? [item] : [];
+  });
+}
 
 /** Hourly items from open time entries — one rule for the preview and the invoice. */
 function timeItemsFor(entries: TimeEntry[], defaultRate: number): InvoiceItem[] {
@@ -207,7 +234,7 @@ export function InvoiceQuickCreateDialog({
   const meQuery = useMe();
   // Tarifrecht ist länderspezifisch: AT-Kanzleien sehen RATG/AHK/GGG/NTG,
   // deutsche Kanzleien RVG/GKG/JVEG.
-  const tariffJurisdiction = meQuery.data?.user?.jurisdiction === "de" ? "de" : "at";
+  const tariffJurisdiction = tariffJurisdictionOf(meQuery.data?.user?.jurisdiction);
 
   const [selectedCaseSlug, setSelectedCaseSlug] = useState(presetCaseSlug ?? "");
   const [invoiceType, setInvoiceType] = useState<Invoice["invoiceType"]>("standard");
@@ -301,6 +328,10 @@ export function InvoiceQuickCreateDialog({
             clientName: fm.client_name,
             clientSlug: fm.client_slug,
             legalArea: fm.legal_area,
+            disputeValue:
+              typeof fm.dispute_value === "number" && Number.isFinite(fm.dispute_value)
+                ? fm.dispute_value
+                : undefined,
             timeEntries: fm.time_entries || [],
             expenses: fm.expenses || [],
           };
@@ -362,9 +393,10 @@ export function InvoiceQuickCreateDialog({
   );
   const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
   const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
+  const openHourly = openTime.filter((entry) => !isTariffEntry(entry));
   const ruledPreview =
     rules && selectedCase
-      ? ruledTimeItems(openTime, rules, {
+      ? ruledTimeItems(openHourly, rules, {
           feeAgreementRate: feeAgreementRate(feeAgreements, selectedCase.slug),
           legalArea: selectedCase.legalArea,
           settings: kanzlei,
@@ -374,7 +406,8 @@ export function InvoiceQuickCreateDialog({
   const previewItems = [
     ...(ruledPreview
       ? ruledPreview.items
-      : timeItemsFor(openTime, parseHourlyRate(kanzlei?.stundensatz) ?? 0)),
+      : timeItemsFor(openHourly, parseHourlyRate(kanzlei?.stundensatz) ?? 0)),
+    ...tariffEntryItemsFor(openTime),
     ...flatItemsFor(tariffLines),
   ];
   const timeFee = roundCents(
@@ -446,17 +479,20 @@ export function InvoiceQuickCreateDialog({
       }
 
       const activeRules = activeBillingRules(settings);
+      // Tarifleistungen are billed at their recorded amount; only the hourly
+      // entries need a rate.
+      const billableHourly = billableTime.filter((entry) => !isTariffEntry(entry));
       let timeItems: InvoiceItem[];
       if (activeRules) {
         // Billing rules on: increment rounding + rate by fee agreement /
         // practice area / firm rate (src/lib/billing-rules.ts — the same
         // functions the server checks the positions with).
-        if (billableTime.length > 0 && feeLoad !== "ready") {
+        if (billableHourly.length > 0 && feeLoad !== "ready") {
           throw new Error(
             "Die Honorarvereinbarungen konnten nicht geladen werden. Bitte den Dialog neu öffnen."
           );
         }
-        const ruled = ruledTimeItems(billableTime, activeRules, {
+        const ruled = ruledTimeItems(billableHourly, activeRules, {
           feeAgreementRate: feeAgreementRate(feeAgreements, c.slug),
           legalArea: c.legalArea,
           settings,
@@ -466,14 +502,17 @@ export function InvoiceQuickCreateDialog({
             "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
           );
         }
-        timeItems = ruled.items;
+        timeItems = [...ruled.items, ...tariffEntryItemsFor(billableTime)];
       } else {
-        if (defaultRate === null && billableTime.some((entry) => !entry.rate)) {
+        if (defaultRate === null && billableHourly.some((entry) => !entry.rate)) {
           throw new Error(
             "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
           );
         }
-        timeItems = timeItemsFor(billableTime, defaultRate ?? 0);
+        timeItems = [
+          ...timeItemsFor(billableHourly, defaultRate ?? 0),
+          ...tariffEntryItemsFor(billableTime),
+        ];
       }
 
       const billableTimeIds = billableTime.map((e) => e.id);
@@ -759,8 +798,16 @@ export function InvoiceQuickCreateDialog({
             )}
             {selectedCaseSlug && tariffJurisdiction !== "de" && (
               <>
-                <RatgTariffForm lines={tariffLines} onChange={setTariffLines} />
-                <AhkTariffForm lines={tariffLines} onChange={setTariffLines} />
+                <RatgTariffForm
+                  lines={tariffLines}
+                  onChange={setTariffLines}
+                  defaultBasis={selectedCase?.disputeValue}
+                />
+                <AhkTariffForm
+                  lines={tariffLines}
+                  onChange={setTariffLines}
+                  defaultBasis={selectedCase?.disputeValue}
+                />
                 <GggTariffForm lines={tariffLines} onChange={setTariffLines} />
                 <NtgTariffForm lines={tariffLines} onChange={setTariffLines} />
               </>

@@ -74,7 +74,10 @@ export const GET = createHandler(
     } catch {
       return apiError("engine_error", "Engine request failed", 502);
     }
-    let items: PowerOfAttorney[] = data as PowerOfAttorney[];
+    // The record lives in the page frontmatter (as in the KYC route).
+    let items: PowerOfAttorney[] = (data as Array<{ frontmatter?: PowerOfAttorney }>)
+      .map((p) => p.frontmatter)
+      .filter((p): p is PowerOfAttorney => Boolean(p?.id));
     if (query?.case_slug) {
       items = items.filter((p) => p.case_slug === query.case_slug);
     }

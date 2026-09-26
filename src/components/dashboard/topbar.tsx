@@ -218,16 +218,21 @@ export function Topbar({
                   ? "Erwähnung"
                   : n.type === "reply"
                     ? "Antwort"
-                    : n.data?.intakeSlug
-                      ? "Mandatsanfrage"
-                      : "System",
+                    : n.type === "task_assigned"
+                      ? "Aufgabe zugewiesen"
+                      : n.data?.intakeSlug
+                        ? "Mandatsanfrage"
+                        : "System",
               message: String(n.data?.message ?? ""),
               type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as
                 | "mention"
                 | "reply"
                 | "system",
               read: false,
-              caseSlug: undefined as string | undefined,
+              caseSlug:
+                n.type === "task_assigned" && typeof n.data?.caseSlug === "string"
+                  ? (n.data.caseSlug as string)
+                  : (undefined as string | undefined),
               createdAt: n.createdAt,
             };
           }

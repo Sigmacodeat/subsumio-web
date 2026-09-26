@@ -142,6 +142,18 @@ const CORE_SECTION_KEYS: DashboardKey[] = [
   "nav.section.docs_drafting",
 ];
 
+/**
+ * Everyday pages outside the core workspaces that the focus mode still shows:
+ * billing (Rechnungen, Zeiterfassung) and the post registers. Their workspace
+ * appears with only these entries until "Alle Funktionen" is switched on.
+ */
+export const CORE_EVERYDAY_HREFS: ReadonlySet<string> = new Set([
+  "/dashboard/invoicing",
+  "/dashboard/time",
+  "/dashboard/posteingangsbuch",
+  "/dashboard/outbound-register",
+]);
+
 type NavItem = {
   href: string;
   icon: typeof LayoutDashboard;
@@ -1621,26 +1633,25 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) {
       const base = navSections
-        .map((section) => ({
-          ...section,
-          items: section.items.filter(
-            (item) =>
-              !item.comingSoon &&
-              isItemVisible(item) &&
-              (!coreMode ||
-                !item.audienceTier ||
-                item.audienceTier === "quick-start" ||
-                isActiveHref(pathname, item.href))
-          ),
-        }))
+        .map((section) => {
+          const coreSection = CORE_SECTION_KEYS.includes(section.titleKey);
+          const sectionActive = section.items.some((item) => isActiveHref(pathname, item.href));
+          return {
+            ...section,
+            items: section.items.filter(
+              (item) =>
+                !item.comingSoon &&
+                isItemVisible(item) &&
+                (!coreMode ||
+                  CORE_EVERYDAY_HREFS.has(item.href) ||
+                  isActiveHref(pathname, item.href) ||
+                  ((coreSection || sectionActive) &&
+                    (!item.audienceTier || item.audienceTier === "quick-start")))
+            ),
+          };
+        })
         .filter((section) => section.items.length > 0);
-      return coreMode
-        ? base.filter(
-            (section) =>
-              CORE_SECTION_KEYS.includes(section.titleKey) ||
-              section.items.some((item) => isActiveHref(pathname, item.href))
-          )
-        : base;
+      return base;
     }
     const q = searchQuery.toLowerCase().trim();
     const sections = [...navSections, adminSection];

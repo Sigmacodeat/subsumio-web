@@ -347,6 +347,43 @@ describe("Sidebar directory + admin filtering", () => {
   });
 });
 
+describe("Sidebar focus mode — Tagesgeschäft (W4-10)", () => {
+  beforeEach(() => {
+    pathname = "/dashboard";
+    localStorage.clear();
+  });
+
+  test("shows invoices, time tracking and the post registers without switching to all functions", async () => {
+    renderSidebar({ role: "member" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Honorar & Finanzen/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /^Rechnungen$/i })).toHaveAttribute(
+        "href",
+        "/dashboard/invoicing"
+      );
+    });
+    expect(screen.getByRole("link", { name: /^Zeiten$/i })).toHaveAttribute(
+      "href",
+      "/dashboard/time"
+    );
+    // Only the everyday entries of that workspace — no specialist tools.
+    expect(screen.queryByRole("link", { name: /Treuhandkonto/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Kanzlei & Compliance/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: /Posteingangsbuch/i })).toHaveAttribute(
+        "href",
+        "/dashboard/posteingangsbuch"
+      );
+    });
+    expect(screen.getByRole("link", { name: /Postausgangsbuch/i })).toHaveAttribute(
+      "href",
+      "/dashboard/outbound-register"
+    );
+  });
+});
+
 describe("Sidebar restructured nav", () => {
   beforeEach(() => {
     pathname = "/dashboard";

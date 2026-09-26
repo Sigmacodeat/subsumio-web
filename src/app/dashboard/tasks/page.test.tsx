@@ -28,7 +28,10 @@ vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast }) }));
 vi.mock("@/lib/queries/auth", () => ({ useMe: () => ({ data: { user: { id: "u1" } } }) }));
 vi.mock("@/lib/queries/settings", () => ({ useTeam: () => ({ data: { members: [] } }) }));
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k, lang: "de" }) }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import TasksPage from "./page";
 

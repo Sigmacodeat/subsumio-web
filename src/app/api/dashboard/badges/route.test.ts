@@ -11,12 +11,13 @@ vi.mock("@/lib/approval-summary", () => ({
   loadApprovalSummary: vi.fn(async () => ({ categories: [], total: 0, urgent: 0 })),
 }));
 let caller = "a@b.test";
+let callerId: string | undefined;
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (_opts: unknown, handler: (ctx: unknown, ...rest: unknown[]) => Promise<Response>) => () =>
       handler({
         headers: { "x-subsumio-source": "b", "x-caller": caller },
-        user: { email: caller },
+        user: { email: caller, id: callerId },
       }),
   apiSuccess: (data: unknown) => Response.json({ data }),
 }));
@@ -63,6 +64,7 @@ function call(): Promise<{
 
 beforeEach(() => {
   caller = `u-${Math.random()}@b.test`; // fresh cache key per test
+  callerId = undefined;
   failTypes = new Set();
   listCalls = [];
   countCalls = [];
@@ -171,5 +173,38 @@ describe("dashboard badges", () => {
       count: TOTAL_DEADLINES,
       degraded: true,
     });
+  });
+
+  test("open tasks assigned to the caller raise the tasks badge (W4-08)", async () => {
+    callerId = "user-sek";
+    byType.legal_case = [
+      {
+        slug: "legal/cases/a",
+        frontmatter: {
+          status: "open",
+          tasks: [
+            { id: "t1", text: "Ladung an Mandantin", done: false, assigneeId: "user-sek" },
+            { id: "t2", text: "Erledigt", done: true, assigneeId: "user-sek" },
+            { id: "t3", text: "Anderer", done: false, assigneeId: "user-ra" },
+          ],
+        },
+      },
+      {
+        slug: "legal/cases/b",
+        frontmatter: {
+          status: "archived",
+          tasks: [{ id: "t4", text: "Alt", done: false, assigneeId: "user-sek" }],
+        },
+      },
+    ];
+    const body = await call();
+    expect(body.data["/dashboard/tasks"]).toEqual({ count: 1, variant: "info" });
+  });
+
+  test("an unreadable matter list marks the tasks badge degraded", async () => {
+    callerId = "user-sek";
+    failTypes.add("legal_case");
+    const body = await call();
+    expect(body.data["/dashboard/tasks"]).toMatchObject({ degraded: true });
   });
 });

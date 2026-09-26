@@ -4,6 +4,7 @@ import { listEnginePagesDetailed } from "@/lib/engine-pages";
 import { fetchPageStatusCounts, sumCounts, type PageStatusCounts } from "@/lib/engine-page-counts";
 import { addDaysToIsoDate, firmToday } from "@/lib/datetime";
 import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
+import { countOpenTasksFor } from "@/lib/task-assignment";
 
 /** Deadlines due within this many days (or overdue) raise the badge. */
 const DEADLINE_CRITICAL_DAYS = 3;
@@ -50,6 +51,8 @@ function isOpenStatus(status: unknown): boolean {
 
 /** Vault badge: new uploads sit at the top of the newest-first list. */
 const VAULT_WINDOW = 2_000;
+/** Matters read for "Meine Aufgaben" (tasks live in the matter). */
+const TASK_CASES_MAX = 10_000;
 
 /** Intake statuses that still wait for the firm. */
 const OPEN_INTAKE_STATUSES = new Set(["", "new", "needs_info", "conflict_check"]);
@@ -88,7 +91,7 @@ async function listForBadge(
 
 async function computeBadges(ctx: {
   headers: Record<string, string>;
-  user: { email: string };
+  user: { email: string; id?: string };
   demo?: { ingested?: boolean } | null;
 }): Promise<BadgeResult> {
   const degraded = new Set<string>();
@@ -101,11 +104,16 @@ async function computeBadges(ctx: {
     dateFields: ["due_date", "date"],
     dateBefore: addDaysToIsoDate(firmToday(), DEADLINE_CRITICAL_DAYS),
   }).catch(() => null);
-  const [counted, docsR, legalDocsR] = await Promise.all([
+  const userId = ctx.user.id ?? "";
+  const [counted, docsR, legalDocsR, casesR] = await Promise.all([
     countsPromise,
     listForBadge(ctx.headers, "document", VAULT_WINDOW),
     listForBadge(ctx.headers, "legal_document", VAULT_WINDOW),
+    userId
+      ? listForBadge(ctx.headers, "legal_case", TASK_CASES_MAX)
+      : Promise.resolve<Listed>({ pages: [], incomplete: false }),
   ]);
+  if (casesR.incomplete) degraded.add("/dashboard/tasks");
   if (!counted || !counted.complete) for (const href of COUNTED_HREFS) degraded.add(href);
   if (docsR.incomplete || legalDocsR.incomplete) degraded.add("/dashboard/vault");
   const counts = counted?.counts ?? [];
@@ -206,6 +214,15 @@ async function computeBadges(ctx: {
   const vaultCount = unassignedCount + reviewGapCount;
   if (vaultCount > 0) {
     badges["/dashboard/vault"] = { count: vaultCount, variant: "danger" };
+  }
+
+  // Tasks assigned to the caller (open ones, in active matters)
+  const myTasks = countOpenTasksFor(
+    casesR.pages as Array<{ frontmatter?: Record<string, unknown> }>,
+    userId
+  );
+  if (myTasks > 0) {
+    badges["/dashboard/tasks"] = { count: myTasks, variant: "info" };
   }
 
   // Invoices — open

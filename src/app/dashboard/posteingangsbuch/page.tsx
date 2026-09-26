@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Download, Inbox, Loader2, Plus, RotateCcw, UserPlus } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarPlus,
+  Check,
+  Download,
+  Inbox,
+  Loader2,
+  Pencil,
+  Plus,
+  RotateCcw,
+  UserPlus,
+} from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { Button } from "@/components/ui/button";
@@ -25,7 +36,9 @@ import {
 } from "@/lib/inbound-register";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDateTime } from "@/lib/utils";
+import { encodeSlugPath, formatDateTime } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { inboundDeadlineDescription } from "@/lib/inbound-register";
 
 /**
  * Posteingangsbuch — laufende Nummer/Übersicht über alle eingehenden
@@ -60,6 +73,74 @@ export default function PosteingangsbuchPage() {
   });
 
   const [loadError, setLoadError] = useState(false);
+  /** Matter titles/Aktenzeichen for the register column (slug → label). */
+  const [caseLabels, setCaseLabels] = useState<Record<string, string>>({});
+  /** Entry whose matter is being corrected, with the typed Aktenzeichen. */
+  const [reassign, setReassign] = useState<{ id: string; value: string } | null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.brain
+      .listAllPages({ type: "legal_case", max: 10_000 })
+      .then((pages) => {
+        if (cancelled) return;
+        const labels: Record<string, string> = {};
+        for (const p of pages as Array<{
+          slug: string;
+          title?: string;
+          frontmatter?: Record<string, unknown>;
+        }>) {
+          const nr = p.frontmatter?.case_number;
+          labels[p.slug] = [typeof nr === "string" ? nr : "", p.title ?? ""]
+            .filter(Boolean)
+            .join(" · ");
+        }
+        setCaseLabels(labels);
+      })
+      .catch(() => {
+        // Without titles the column shows the matter link by its address.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function assignCase(id: string, action: "confirm" | "assign", caseSlug?: string) {
+    setAssigning(id);
+    try {
+      const res = await csrfFetch("/api/inbound-register", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action, case_slug: caseSlug }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+        throw new Error(err.message || err.error || String(res.status));
+      }
+      setReassign(null);
+      await load();
+      addToast({
+        type: "success",
+        title: action === "confirm" ? "Zuordnung bestätigt" : "Zuordnung geändert",
+      });
+    } catch (e) {
+      const msg = e instanceof Error && !/^\d+$/.test(e.message) ? e.message : undefined;
+      addToast({ type: "error", title: "Zuordnung nicht gespeichert", description: msg });
+    } finally {
+      setAssigning(null);
+    }
+  }
+
+  function createDeadline(e: InboundEntry) {
+    // The dashboard shell owns the deadline dialog: it is saved as an
+    // unreviewed deadline of this matter (Vier-Augen-Prüfung in Fristen).
+    window.dispatchEvent(
+      new CustomEvent("subsumio:create-deadline", {
+        detail: { caseSlug: e.case_slug, description: inboundDeadlineDescription(e) },
+      })
+    );
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -355,21 +436,92 @@ export default function PosteingangsbuchPage() {
                     {e.sender_name ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-[color:var(--ds-text-muted)]">
-                    {e.case_slug ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        {e.case_slug}
-                        {e.case_suggested && (
-                          <Badge
-                            variant="attention"
-                            className="text-xs"
-                            title={`Automatische Zuordnung: ${e.case_suggest_reason ?? ""}`}
+                    {reassign?.id === e.id ? (
+                      <form
+                        className="flex items-center gap-1.5"
+                        onSubmit={(ev) => {
+                          ev.preventDefault();
+                          if (reassign.value.trim())
+                            void assignCase(e.id, "assign", reassign.value.trim());
+                        }}
+                      >
+                        <Input
+                          autoFocus
+                          aria-label="Aktenzeichen"
+                          value={reassign.value}
+                          onChange={(ev) => setReassign({ id: e.id, value: ev.target.value })}
+                          placeholder="Aktenzeichen"
+                          className="h-8 w-36 text-xs"
+                        />
+                        <Button type="submit" size="sm" disabled={assigning === e.id}>
+                          Zuordnen
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setReassign(null)}
+                        >
+                          Abbrechen
+                        </Button>
+                      </form>
+                    ) : (
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        {e.case_slug ? (
+                          <Link
+                            href={`/dashboard/cases/${encodeSlugPath(e.case_slug)}`}
+                            className="text-[color:var(--brand-primary)] hover:underline"
                           >
-                            Vorschlag
-                          </Badge>
+                            {caseLabels[e.case_slug] || e.case_slug}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                        {e.case_slug && e.case_suggested && (
+                          <>
+                            <Badge
+                              variant="attention"
+                              className="text-xs"
+                              title={`Automatische Zuordnung: ${e.case_suggest_reason ?? ""}`}
+                            >
+                              Vorschlag
+                            </Badge>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 gap-1 px-2 text-xs"
+                              disabled={assigning === e.id}
+                              onClick={() => void assignCase(e.id, "confirm")}
+                              aria-label={`Zuordnung von „${e.subject}“ bestätigen`}
+                            >
+                              <Check size={12} aria-hidden /> Bestätigen
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 px-2 text-xs"
+                          onClick={() => setReassign({ id: e.id, value: "" })}
+                          aria-label={`Akte für „${e.subject}“ ${e.case_slug ? "ändern" : "zuordnen"}`}
+                        >
+                          <Pencil size={12} aria-hidden /> {e.case_slug ? "Ändern" : "Zuordnen"}
+                        </Button>
+                        {e.case_slug && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 gap-1 px-2 text-xs"
+                            onClick={() => createDeadline(e)}
+                            aria-label={`Frist aus „${e.subject}“ anlegen`}
+                          >
+                            <CalendarPlus size={12} aria-hidden /> Frist anlegen
+                          </Button>
                         )}
                       </span>
-                    ) : (
-                      "—"
                     )}
                   </td>
                   <td className="px-3 py-2">{e.subject}</td>

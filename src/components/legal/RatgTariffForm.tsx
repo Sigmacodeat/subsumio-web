@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calculator, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,14 +77,27 @@ function parseAmount(value: string): number {
 
 export type RatgBereich = Bereich;
 
+/** Streitwert of the matter as the basis field reads it ("12000,50"). */
+export function basisInputFromValue(value: number | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? value.toFixed(2).replace(".", ",").replace(/,00$/, "")
+    : "";
+}
+
 export function RatgTariffForm({
   lines,
   onChange,
   initialBereich = "zivil",
+  defaultBasis,
+  date,
 }: {
   lines: TariffInvoiceLine[];
   onChange: (lines: TariffInvoiceLine[]) => void;
   initialBereich?: Bereich;
+  /** Streitwert of the matter — prefilled as Bemessungsgrundlage. */
+  defaultBasis?: number;
+  /** Service date of the positions (default: today). */
+  date?: string;
 }) {
   const [bereich, setBereich] = useState<Bereich>(initialBereich);
   const [tp4Verfahren, setTp4Verfahren] = useState<RatgTp4Verfahren>("privatanklage_sonstige");
@@ -98,7 +111,12 @@ export function RatgTariffForm({
   const [item, setItem] = useState<RatgTariffItem>("TP3A");
   const [kind, setKind] = useState<RatgServiceKind>("schriftsatz");
   const [label, setLabel] = useState("");
-  const [basis, setBasis] = useState("");
+  const [basis, setBasis] = useState(() => basisInputFromValue(defaultBasis));
+  // A matter picked later (or its Streitwert) fills an empty basis field.
+  useEffect(() => {
+    const prefill = basisInputFromValue(defaultBasis);
+    if (prefill) setBasis((cur) => (cur.trim() ? cur : prefill));
+  }, [defaultBasis]);
   const [hours, setHours] = useState("1");
   const [factor, setFactor] = useState("1");
   const [erv, setErv] = useState<"none" | "einleitend" | "weiterer">("weiterer");
@@ -172,14 +190,14 @@ export function RatgTariffForm({
     }
     try {
       const result = compute();
-      const date = new Date().toISOString().slice(0, 10);
+      const lineDate = date || new Date().toISOString().slice(0, 10);
       const stamp = Date.now();
       onChange([
         ...lines,
         ...result.lines.map((l, i) => ({
           id: `ratg-${stamp}-${i}`,
           description: `${l.label} — ${l.basis}`,
-          date,
+          date: lineDate,
           amount: l.amount,
         })),
       ]);

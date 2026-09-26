@@ -11,6 +11,9 @@ vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast }) }));
 vi.mock("@/lib/csrf", () => ({ csrfFetch: (...a: unknown[]) => csrfFetchMock(...a) }));
 const t = (k: string) => k;
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t, lang: "de" }) }));
+vi.mock("@/lib/queries/auth", () => ({
+  useMe: () => ({ data: { user: { id: "u1", jurisdiction: "AT" } } }),
+}));
 vi.mock("@/lib/api", async (orig) => ({
   ...(await orig<typeof import("@/lib/api")>()),
   CASE_PICKER_MAX: 10_000,

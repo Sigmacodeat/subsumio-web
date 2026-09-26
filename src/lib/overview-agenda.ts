@@ -34,6 +34,11 @@ export interface AgendaEntry {
   caseSlug: string | null;
   caseNumber: string | null;
   caseTitle: string | null;
+  /**
+   * A calendar appointment (hearing, meeting) — never a deadline: it is not
+   * overdue once it has passed and is not counted as a Frist.
+   */
+  appointment?: boolean;
 }
 
 export interface AgendaDay {
@@ -102,14 +107,40 @@ export function buildAgenda(
     const caseTitle = c ? (str(c.title) ?? null) : null;
     const notfrist = fm.is_notfrist === true || /notfrist/i.test(title);
     const unreviewed = String(fm.review_status ?? "") === "unreviewed";
+    const isAppointment = fm.source_kind === "appointment";
     const eventType = String(fm.event_type ?? "").toLowerCase();
     const kind: AgendaKind =
-      eventType === "hearing" || eventType === "appointment" || HEARING_RE.test(title)
+      isAppointment ||
+      eventType === "hearing" ||
+      eventType === "appointment" ||
+      HEARING_RE.test(title)
         ? "hearing"
         : "deadline";
     const time = str(fm.time) ?? title.match(TIME_RE)?.[0]?.replace(/\s*uhr/i, "") ?? null;
 
     const due = parseDateValue(str(fm.due_date) ?? str(fm.date));
+    if (isAppointment) {
+      // A past appointment is over, not overdue.
+      const days = due ? (daysUntil(due, now) ?? 0) : -1;
+      if (due && days >= 0) {
+        entries.push({
+          key: `${page.slug}#appointment`,
+          slug: page.slug,
+          kind: "hearing",
+          title,
+          date: due,
+          days,
+          time: str(fm.time),
+          notfrist: false,
+          unreviewed: false,
+          caseSlug,
+          caseNumber,
+          caseTitle,
+          appointment: true,
+        });
+      }
+      continue;
+    }
     if (due) {
       entries.push({
         key: `${page.slug}#due`,
@@ -227,4 +258,57 @@ export function agendaDayLabel(day: { date: Date; days: number }): string {
     day: "2-digit",
     month: "2-digit",
   }).format(day.date);
+}
+
+/** An appointment page (`appointment`, Kanzleikalender) as the agenda reads it. */
+export interface AgendaAppointmentPageLike {
+  slug: string;
+  title?: string;
+  frontmatter?: Record<string, unknown>;
+}
+
+/** An Outlook appointment of the signed-in user (already de-duplicated). */
+export interface AgendaOutlookItemLike {
+  id: string;
+  title: string;
+  date: string;
+  time?: string;
+}
+
+/**
+ * Calendar appointments (hearings, meetings) for the Übersicht agenda: the
+ * firm's own appointments plus the user's Outlook appointments. Cancelled
+ * ones are left out; they are marked so the agenda never treats them as a
+ * deadline.
+ */
+export function appointmentsToAgendaPages(
+  appointments: AgendaAppointmentPageLike[],
+  outlook: AgendaOutlookItemLike[] = []
+): AgendaSourcePage[] {
+  const out: AgendaSourcePage[] = [];
+  for (const p of appointments) {
+    const fm = p.frontmatter ?? {};
+    const status = String(fm.status ?? "").toLowerCase();
+    if (status === "cancelled" || status === "canceled" || status === "tombstoned") continue;
+    const date = str(fm.date);
+    if (!date || !/^\d{4}-\d{2}-\d{2}/.test(date)) continue;
+    out.push({
+      slug: p.slug,
+      title: str(fm.title) ?? str(p.title) ?? "Termin",
+      frontmatter: {
+        source_kind: "appointment",
+        date,
+        time: str(fm.time) ?? undefined,
+        case_slug: str(fm.case_slug) ?? undefined,
+      },
+    });
+  }
+  for (const o of outlook) {
+    out.push({
+      slug: o.id,
+      title: o.title,
+      frontmatter: { source_kind: "appointment", date: o.date, time: o.time },
+    });
+  }
+  return out;
 }

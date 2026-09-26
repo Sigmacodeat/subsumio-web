@@ -27,9 +27,13 @@ export interface IntakeRequestFrontmatter {
   phone_hash?: string;
   email?: string;
   legal_area?: string;
+  /** Gegenseite, wie in der Erstanfrage angegeben (Kollisionsprüfung). */
+  opponent?: string;
   summary: string;
   missing_documents: string[];
   conflict_check_status: ConflictCheckStatus;
+  /** Aktenzeichen, das für die Überführung schon vergeben wurde (Wiederholung). */
+  reserved_case_number?: string;
   converted_case_slug?: string;
   source_event_slug?: string;
   created_at: string;

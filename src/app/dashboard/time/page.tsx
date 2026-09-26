@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
-import { formatDate, formatEur } from "@/lib/utils";
+import Link from "next/link";
+import { encodeSlugPath, formatDate, formatEur } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
@@ -42,6 +43,8 @@ import { tracking } from "@/lib/tracking";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { TimeTrackingWidget } from "@/components/dashboard/time-tracking-widget";
+import { TariffEntryDialog, type TariffCaseOption } from "@/components/legal/TariffEntryDialog";
+import { timeEntryValue } from "@/lib/time-entry-value";
 
 const ALL_CASES = "__all";
 
@@ -72,6 +75,8 @@ type TimeEntryWithMeta = {
   lawyer?: string;
   activity_type?: string;
   is_auto_generated?: boolean;
+  /** Tarifleistung (RATG/AHK) — billed at this amount. */
+  tariff?: { system: "ratg" | "ahk"; amount: number; label: string };
 };
 
 const TIME_TAB_IDS = ["all", "billable", "unbilled", "auto", "manual"] as const;
@@ -113,6 +118,7 @@ function TimeEntriesInner() {
     billable: true,
   });
   const [createOpen, setCreateOpen] = useState(false);
+  const [tariffOpen, setTariffOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
     description: "",
     minutes: "",
@@ -211,10 +217,16 @@ function TimeEntriesInner() {
   const totalHours = formatHours(totalMinutes);
   const billableValue = filteredEntries
     .filter((e: TimeEntryWithMeta) => e.billable && !e.billed)
-    .reduce(
-      (sum: number, e: TimeEntryWithMeta) => sum + ((e.minutes || 0) / 60) * (e.rate || 0),
-      0
-    );
+    .reduce((sum: number, e: TimeEntryWithMeta) => sum + timeEntryValue(e, e.rate || 0), 0);
+  // Matters for the Tarifleistung dialog, with their Streitwert.
+  const tariffCases: TariffCaseOption[] = cases.map(
+    (c: { slug: string; title: string; frontmatter?: Record<string, unknown> }) => ({
+      slug: c.slug,
+      title: c.title,
+      disputeValue:
+        typeof c.frontmatter?.dispute_value === "number" ? c.frontmatter.dispute_value : undefined,
+    })
+  );
   const billableAmount = formatEur(billableValue, lang);
   const caseTitle = (slug?: string) =>
     (slug && cases.find((c: { slug: string; title: string }) => c.slug === slug)?.title) ||
@@ -233,7 +245,7 @@ function TimeEntriesInner() {
         </head><body>
         <h1>Zeiteinträge — ${formatDate(new Date())}</h1>
         <table><thead><tr><th>Datum</th><th>Beschreibung</th><th>Akte</th><th>Minuten</th><th>Stunden</th><th>Abrechenbar</th><th>Satz</th><th>Betrag</th></tr></thead><tbody>
-        ${filteredEntries.map((e: TimeEntryWithMeta) => `<tr><td>${formatDate(e.date)}</td><td>${esc(e.description)}</td><td>${esc(e.case_title || caseTitle(e.case_slug))}</td><td>${e.minutes}</td><td>${formatHours(e.minutes)}</td><td>${e.billable ? "Ja" : "Nein"}</td><td>${e.rate ? formatEur(e.rate) : "—"}</td><td>${e.billable && e.rate ? formatEur((e.minutes / 60) * e.rate) : "—"}</td></tr>`).join("")}
+        ${filteredEntries.map((e: TimeEntryWithMeta) => `<tr><td>${formatDate(e.date)}</td><td>${esc(e.description)}</td><td>${esc(e.case_title || caseTitle(e.case_slug))}</td><td>${e.minutes}</td><td>${formatHours(e.minutes)}</td><td>${e.billable ? "Ja" : "Nein"}</td><td>${e.rate ? formatEur(e.rate) : "—"}</td><td>${e.billable && (e.rate || e.tariff) ? formatEur(timeEntryValue(e, e.rate || 0)) : "—"}</td></tr>`).join("")}
         </tbody></table>
         <p><strong>Gesamt:</strong> ${totalHours} — nicht abgerechnet: ${billableAmount}</p>
         </body></html>`);
@@ -266,7 +278,7 @@ function TimeEntriesInner() {
       e.billable ? "Ja" : "Nein",
       e.billed ? "Ja" : "Nein",
       e.rate ? decimalDe(e.rate) : "",
-      e.billable && e.rate ? decimalDe((e.minutes / 60) * e.rate) : "",
+      e.billable && (e.rate || e.tariff) ? decimalDe(timeEntryValue(e, e.rate || 0)) : "",
       e.lawyer || "",
       e.activity_type || "",
     ]);
@@ -376,6 +388,14 @@ function TimeEntriesInner() {
         actions={
           <>
             <PrimaryAction onClick={() => setCreateOpen(true)}>Neuer Eintrag</PrimaryAction>
+            <Button
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => setTariffOpen(true)}
+            >
+              Tarifleistung (RATG/AHK)
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -510,13 +530,29 @@ function TimeEntriesInner() {
                       {entry.description}
                     </div>
                     <div className="truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                      {formatDate(entry.date)} · {entry.case_title || caseTitle(entry.case_slug)} ·{" "}
-                      {formatHours(entry.minutes)}
+                      {formatDate(entry.date)} ·{" "}
+                      {entry.case_slug ? (
+                        <Link
+                          href={`/dashboard/cases/${encodeSlugPath(entry.case_slug)}`}
+                          className="hover:text-[color:var(--brand-primary)] hover:underline"
+                        >
+                          {entry.case_title || caseTitle(entry.case_slug)}
+                        </Link>
+                      ) : (
+                        entry.case_title || caseTitle(entry.case_slug)
+                      )}{" "}
+                      · {formatHours(entry.minutes)}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {entry.is_auto_generated && (
                       <Badge className="hidden text-xs sm:inline-flex">Automatisch</Badge>
+                    )}
+                    {entry.tariff && (
+                      <Badge className="text-xs tabular-nums">
+                        {entry.tariff.system === "ahk" ? "AHK" : "RATG"}{" "}
+                        {formatEur(entry.tariff.amount, lang)}
+                      </Badge>
                     )}
                     {entry.billed ? (
                       <Badge className="hidden text-xs sm:inline-flex">Abgerechnet</Badge>
@@ -685,6 +721,14 @@ function TimeEntriesInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TariffEntryDialog
+        open={tariffOpen}
+        onOpenChange={setTariffOpen}
+        cases={tariffCases}
+        presetCaseSlug={selectedCase !== ALL_CASES ? selectedCase : undefined}
+        onSaved={() => void queryClient.invalidateQueries({ queryKey: ["time-entries"] })}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)}>

@@ -2491,6 +2491,7 @@ export const api = {
       priority?: "low" | "medium" | "high" | "critical";
       portal_enabled?: boolean;
       send_document_request?: boolean;
+      dispute_value?: number;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake/convert", { method: "POST", body: JSON.stringify(input) });
     },
@@ -3645,6 +3646,8 @@ export const api = {
       billable?: boolean;
       activity_type?: string;
       lawyer?: string;
+      /** Tarifleistung (RATG/AHK): billed at this amount instead of minutes × rate. */
+      tariff?: { system: "ratg" | "ahk"; amount: number; basis?: number; label: string };
     }): Promise<{ id: string }> {
       // POST answers { entry, case_slug } — callers want the created entry,
       // so resolve to it (its `id` is what time-suggestions persists).

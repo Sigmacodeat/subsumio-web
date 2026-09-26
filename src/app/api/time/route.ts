@@ -73,16 +73,37 @@ const activityTypeField = z.enum([
   "other",
 ]);
 
-const timePostSchema = z.object({
-  case_slug: z.string().min(1, "case_slug_required"),
-  description: z.string().min(1, "description_required").max(500),
-  minutes: minutesField,
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso"),
-  rate: z.number().min(0).optional(),
-  billable: z.boolean().default(true),
-  activity_type: activityTypeField.default("other"),
-  lawyer: z.string().max(100).optional(),
-});
+/** A Tarifleistung may be recorded without time spent (0 minutes). */
+const tariffMinutesField = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === "number" ? Math.round(v) : parseInt(String(v), 10)))
+  .pipe(z.number().int().min(0, "minutes_required_positive").max(MINUTES_MAX, "minutes_max"));
+
+const timePostSchema = z
+  .object({
+    case_slug: z.string().min(1, "case_slug_required"),
+    description: z.string().min(1, "description_required").max(500),
+    minutes: tariffMinutesField,
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso"),
+    rate: z.number().min(0).optional(),
+    billable: z.boolean().default(true),
+    activity_type: activityTypeField.default("other"),
+    lawyer: z.string().max(100).optional(),
+    /** Tarifleistung (RATG/AHK): billed at this amount instead of minutes × rate. */
+    tariff: z
+      .object({
+        system: z.enum(["ratg", "ahk"]),
+        amount: z.number().positive().max(10_000_000),
+        basis: z.number().min(0).max(1_000_000_000_000).optional(),
+        label: z.string().trim().min(1).max(500),
+      })
+      .optional(),
+  })
+  // Hourly entries need time; a Tarifleistung is billed by its amount.
+  .refine((b) => b.tariff !== undefined || b.minutes > 0, {
+    message: "minutes_required_positive",
+    path: ["minutes"],
+  });
 
 // The UI sends `case_slug: entry.case_slug || ""` — standalone entries
 // carry no case_slug, so normalize empty/blank to absent instead of
@@ -218,6 +239,14 @@ export const POST = createHandler(
       billable: body.billable,
       lawyer: body.lawyer || ctx.user?.name || ctx.user?.email,
       activity_type: body.activity_type,
+      ...(body.tariff
+        ? {
+            tariff: {
+              ...body.tariff,
+              amount: Math.round(body.tariff.amount * 100) / 100,
+            },
+          }
+        : {}),
     });
 
     const exists = await brain.getPage(body.case_slug).catch(() => null);

@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { agendaDayLabel, buildAgenda, fristenToAgendaPages } from "./overview-agenda";
+import {
+  agendaDayLabel,
+  appointmentsToAgendaPages,
+  buildAgenda,
+  fristenToAgendaPages,
+} from "./overview-agenda";
 
 const now = new Date(2026, 8, 19, 9, 0); // Sa, 19.09.2026
 
@@ -153,5 +158,68 @@ describe("fristenToAgendaPages (Mein Tag uses the Fristen read model)", () => {
       caseNumber: "QA-2026-003",
     });
     expect(entries.find((e) => e.title === "Tagsatzung")?.kind).toBe("hearing");
+  });
+});
+
+describe("Kalendertermine in der Agenda (W4-07)", () => {
+  const appts = appointmentsToAgendaPages(
+    [
+      {
+        slug: "legal/appointments/appt-1",
+        title: "Verhandlung BG Innere Stadt",
+        frontmatter: {
+          title: "Verhandlung BG Innere Stadt",
+          date: "2026-09-22",
+          time: "12:00",
+          case_slug: "legal/cases/a",
+          status: "scheduled",
+          appointment_type: "hearing",
+        },
+      },
+      {
+        slug: "legal/appointments/appt-old",
+        title: "Besprechung (vorbei)",
+        frontmatter: { date: "2026-09-10", time: "09:00", status: "scheduled" },
+      },
+      {
+        slug: "legal/appointments/appt-x",
+        title: "Abgesagt",
+        frontmatter: { date: "2026-09-23", status: "cancelled" },
+      },
+    ],
+    [{ id: "outlook:e1", title: "Mandantentermin", date: "2026-09-21", time: "15:30" }]
+  );
+
+  test("hearings from the calendar appear on their day with time and matter", () => {
+    const agenda = buildAgenda(
+      [{ slug: "d1", title: "Berufungsfrist", frontmatter: { due_date: "2026-09-22" } }, ...appts],
+      cases,
+      { now }
+    );
+    const day = agenda.days.find((d) => d.iso === "2026-09-22")!;
+    const hearing = day.entries.find((e) => e.slug === "legal/appointments/appt-1")!;
+    expect(hearing).toMatchObject({
+      kind: "hearing",
+      appointment: true,
+      time: "12:00",
+      caseNumber: "QA-2026-003",
+    });
+    expect(agenda.days.find((d) => d.iso === "2026-09-21")!.entries[0].title).toBe(
+      "Mandantentermin"
+    );
+    expect(agenda.upcoming.some((e) => e.slug === "legal/appointments/appt-x")).toBe(false);
+  });
+
+  test("a past appointment is neither overdue nor a deadline", () => {
+    const agenda = buildAgenda(appts, cases, { now });
+    expect(agenda.overdue).toEqual([]);
+    expect(agenda.upcoming.every((e) => e.appointment)).toBe(true);
+    expect(agenda.upcoming.some((e) => e.slug === "legal/appointments/appt-old")).toBe(false);
+  });
+
+  test("appointments never become deadlines in the Fristen count", () => {
+    const agenda = buildAgenda(appts, cases, { now });
+    const deadlines = agenda.upcoming.filter((e) => e.kind !== "vorfrist" && !e.appointment);
+    expect(deadlines).toHaveLength(0);
   });
 });
