@@ -14,6 +14,8 @@ import {
   type AttorneyOverride,
 } from "@/lib/verification-policy";
 import type { MailAttachment } from "@/lib/mail";
+import { checkStoredPageRelease } from "@/lib/ai-release-guard";
+import { releaseRequiredMessage } from "@/lib/ai-release";
 
 const log = logger("api/cases/send-email");
 
@@ -161,6 +163,20 @@ export const POST = createHandler(
     const attachments: MailAttachment[] = [];
     let totalBytes = 0;
     for (const slug of body.attachment_slugs ?? []) {
+      // An AI draft leaves the firm only with a lawyer's release of its
+      // current text (checked server-side, fail-closed).
+      const gate = await checkStoredPageRelease(ctx.headers, slug, ctx.brainId);
+      if (!gate.ok) {
+        if (gate.reason === "unreadable") {
+          return apiError("attachment_unavailable", `Anhang nicht verfügbar: ${slug}`, 400);
+        }
+        return apiError(
+          "release_required",
+          `Anhang „${slug.split("/").pop()}“: ${releaseRequiredMessage(gate.reason)}`,
+          403,
+          { slug, reason: gate.reason }
+        );
+      }
       const att = await loadAttachment(ctx.headers, slug);
       if (!att) {
         return apiError(

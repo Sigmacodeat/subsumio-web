@@ -191,6 +191,19 @@ describe("portal document requests", () => {
     expect(JSON.stringify(out)).not.toContain("documents/z");
   });
 
+  it("shows the client when the firm last reminded them, without the address", () => {
+    const out = toPortalRequest({
+      ...base,
+      frontmatter: {
+        ...base.frontmatter,
+        reminder_sent_at: "2026-09-22T06:00:00.000Z",
+        recipient_email: "mandant@example.at",
+      },
+    });
+    expect(out.frontmatter.last_reminder_at).toBe("2026-09-22T06:00:00.000Z");
+    expect(JSON.stringify(out)).not.toContain("mandant@example.at");
+  });
+
   it("drops the author of a questionnaire", () => {
     const out = toPortalQuestionnaire({
       id: "q1",

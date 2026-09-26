@@ -14,7 +14,9 @@ import { createDocumentRequestNotification } from "@/lib/comments";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { issueRegisteredPortalLink } from "@/lib/portal-link-issue";
-import { reminderDecision } from "@/lib/legal/document-request-reminder";
+import { buildReminderMail, reminderDecision } from "@/lib/legal/document-request-reminder";
+import { sendFirmMail } from "@/lib/firm-mail";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,8 @@ interface DocumentRequestItem {
 
 interface DocumentRequestFm {
   recipient_phone?: string;
+  /** Address the request was e-mailed to; reminders go there as well. */
+  recipient_email?: string;
   type: "document_request";
   case_slug: string;
   status: string;
@@ -122,6 +126,20 @@ export const GET = createCronHandler(async (_req) => {
           }
         }
 
+        // One registered portal link per reminder run, shared by both channels.
+        let portalLinkIssued: Promise<string | null> | null = null;
+        const portalLinkOnce = () =>
+          (portalLinkIssued ??=
+            fm.portal_link === true || typeof fm.portal_url === "string"
+              ? issueRegisteredPortalLink({
+                  headers,
+                  brainId,
+                  caseSlug: fm.case_slug,
+                  createdBy: "system:document-request-reminder",
+                  purpose: `document_request:${page.slug}`,
+                })
+              : Promise.resolve(null));
+
         // WhatsApp reminder — only to the number the request was made for.
         // (It used to go to the firm's first WhatsApp identity, i.e. to
         // whoever happened to be registered first.)
@@ -131,16 +149,7 @@ export const GET = createCronHandler(async (_req) => {
           try {
             const itemList = openItems.map((i) => `• ${i.label}`).join("\n");
             // A fresh, registered link — never one read back from storage.
-            const portalLink =
-              fm.portal_link === true || typeof fm.portal_url === "string"
-                ? await issueRegisteredPortalLink({
-                    headers,
-                    brainId,
-                    caseSlug: fm.case_slug,
-                    createdBy: "system:document-request-reminder",
-                    purpose: `document_request:${page.slug}`,
-                  })
-                : null;
+            const portalLink = await portalLinkOnce();
             const freeform = `Erinnerung: Bitte laden Sie folgende Unterlagen hoch:\n${itemList}${
               portalLink ? `\n\nPortal: ${portalLink}` : ""
             }`;
@@ -154,6 +163,42 @@ export const GET = createCronHandler(async (_req) => {
             report.details.push({
               slug: page.slug,
               reason: `whatsapp_failed: ${err instanceof Error ? err.message : String(err)}`,
+            });
+          }
+        }
+
+        // E-mail reminder — only to the address the request was sent to,
+        // over the firm's mail route (own SMTP, Resend as fallback).
+        const recipientEmail =
+          typeof fm.recipient_email === "string" && /^[^\s@]+@[^\s@]+$/.test(fm.recipient_email)
+            ? fm.recipient_email
+            : "";
+        if (recipientEmail) {
+          try {
+            const portalLink = await portalLinkOnce();
+            const settings = await loadKanzleiSettingsForBrain(brainId).catch(() => null);
+            const mail = buildReminderMail({
+              items: openItems.map((i) => i.label),
+              portalLink,
+              firmName: settings?.kanzleiName || settings?.anwaltName || "",
+            });
+            const sent = await sendFirmMail(settings, {
+              to: recipientEmail,
+              subject: mail.subject,
+              text: mail.text,
+              html: mail.html,
+              replyTo: settings?.emailFrom || undefined,
+            });
+            if (!sent.sent) {
+              report.details.push({
+                slug: page.slug,
+                reason: `email_failed: ${sent.error ?? "not sent"}`,
+              });
+            }
+          } catch (err) {
+            report.details.push({
+              slug: page.slug,
+              reason: `email_failed: ${err instanceof Error ? err.message : String(err)}`,
             });
           }
         }

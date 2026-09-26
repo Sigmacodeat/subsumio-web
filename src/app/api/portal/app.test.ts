@@ -35,12 +35,15 @@ import { isPushServiceEndpoint, notifyPortalClients } from "@/lib/portal-push";
 const ENGINE = "http://localhost:3001";
 const FCM = "https://fcm.googleapis.com/fcm/send/abc123";
 
-function engine(caseFm: Record<string, unknown>) {
+function engine(caseFm: Record<string, unknown>, docFm: Record<string, unknown> = {}) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
       if (url === `${ENGINE}/api/pages/cases%2Fmueller`) {
         return Response.json({ slug: "cases/mueller", frontmatter: caseFm });
+      }
+      if (url === `${ENGINE}/api/pages/docs%2Furteil`) {
+        return Response.json({ slug: "docs/urteil", content: "Urteil", frontmatter: docFm });
       }
       if (url === `${ENGINE}/api/files/docs/urteil`) {
         return new Response("%PDF", {
@@ -80,6 +83,11 @@ describe("portal document", () => {
     const res = await get("docs/urteil");
     expect(res.status).toBe(200);
     expect(res.headers.get("content-disposition")).toMatch(/^inline/);
+  });
+
+  it("does not hand out an AI draft without a lawyer's release, even when portal-visible", async () => {
+    engine(openCase, { ai_generated: true });
+    expect((await get("docs/urteil")).status).toBe(404);
   });
 
   it("refuses unreleased documents, other tokens and closed portals", async () => {

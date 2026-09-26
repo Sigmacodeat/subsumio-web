@@ -7,6 +7,7 @@ import { logAudit } from "@/lib/audit";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { isPortalVisibleDocument } from "@/lib/portal-view";
 import { caseFrontmatter, type DocumentEntry } from "@/lib/legal-types";
+import { checkStoredPageRelease } from "@/lib/ai-release-guard";
 
 import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 import { logger } from "@/lib/logger";
@@ -47,6 +48,10 @@ export const GET = createPublicHandler(
     const docs = (caseFrontmatter(await caseRes.json()).documents ?? []) as DocumentEntry[];
     const released = docs.find((d) => d.slug === query.slug && isPortalVisibleDocument(d));
     if (!released) return apiError("not_found", "Dokument nicht freigegeben", 404);
+    // An AI draft reaches the client only with a lawyer's release of its
+    // current text — the portal flag alone is not enough (fail-closed).
+    const gate = await checkStoredPageRelease(access.headers, query.slug, access.payload.brain_id);
+    if (!gate.ok) return apiError("not_found", "Dokument nicht freigegeben", 404);
 
     try {
       const path = query.slug.split("/").map(encodeURIComponent).join("/");

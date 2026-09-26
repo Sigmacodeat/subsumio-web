@@ -15,6 +15,7 @@ import { formalNameOf } from "@/lib/person-name";
 import type { Lang } from "@/content/site";
 import type { BrainStats } from "@/lib/types";
 import { SecretaryGateWarning } from "@/components/dashboard/secretary-gate-warning";
+import { AiLiteracyWarning } from "@/components/compliance/ai-literacy-section";
 import {
   appointmentsToAgendaPages,
   buildAgenda,
@@ -499,6 +500,7 @@ export default function DashboardPage() {
       )}
 
       <SecretaryGateWarning />
+      <AiLiteracyWarning />
 
       <div
         role="tabpanel"

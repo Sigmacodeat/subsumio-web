@@ -255,6 +255,9 @@ export type AuditAction =
   | "ai.reasoning_trace"
   | "ai.webhook_escalate"
   | "ai.webhook_block"
+  | "ai.output_release"
+  | "ai.output_blocked"
+  | "compliance.ai_training_record"
   | "verification.policy_allowed"
   | "verification.policy_denied"
   | "verification.override_granted"
@@ -593,6 +596,9 @@ const ACTION_LABELS: Record<string, string> = {
   "ai.reasoning_trace": "AI Reasoning Trace erstellt",
   "ai.webhook_escalate": "KI-Webhook: Eskalation gesendet",
   "ai.webhook_block": "KI-Webhook: Sperr-Ereignis gesendet",
+  "ai.output_release": "KI-Text geprüft und anwaltlich freigegeben",
+  "ai.output_blocked": "Export/Versand von KI-Text ohne Freigabe verweigert",
+  "compliance.ai_training_record": "KI-Schulungsnachweis erfasst",
   "verification.policy_allowed": "Verifikations-Policy: Aktion erlaubt",
   "verification.policy_denied": "Verifikations-Policy: Aktion verweigert",
   "verification.override_granted": "Verifikations-Policy: Anwaltlicher Override erteilt",

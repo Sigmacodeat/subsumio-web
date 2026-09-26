@@ -36,6 +36,8 @@ import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { draftingSchema, type DraftingFormData } from "@/lib/schemas/drafting";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
+import { AiReleasePanel } from "@/components/legal/AiReleasePanel";
+import { requestAiRelease } from "@/lib/ai-release-client";
 
 const TEMPLATE_KEYS = [
   "klage",
@@ -150,6 +152,9 @@ export default function DraftingPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [casesError, setCasesError] = useState(false);
+  // Server-signed lawyer release of exactly `result` (citations checked).
+  // Word export and sending are only possible with it.
+  const [release, setRelease] = useState<{ token: string; reason?: string } | null>(null);
 
   const template = TEMPLATES.find((t) => t.key === selectedTemplate)!;
 
@@ -172,6 +177,7 @@ export default function DraftingPage() {
       setGenerateError(null);
       setResultCitations([]);
       setResultGaps([]);
+      setRelease(null);
       resetGrounding();
       try {
         const res = await api.query.think(
@@ -235,10 +241,17 @@ export default function DraftingPage() {
 
   async function downloadDocx(text: string) {
     setDocxReady(false);
+    if (!release) {
+      addToast({
+        type: "error",
+        description: "Bitte den Entwurf zuerst prüfen und anwaltlich freigeben.",
+      });
+      return;
+    }
     try {
-      // The brief exactly as shown. No slug (the text is authoritative, and a
-      // null slug made the route reject every unsaved export) and no form
-      // fields: they are internal and would end up at the bottom of the brief.
+      // The brief exactly as shown and released. No slug (the text is
+      // authoritative) and no form fields: they are internal and would end
+      // up at the bottom of the brief.
       const kanzlei = await loadKanzleiSettings().catch(() => null);
       const res = await csrfFetch("/api/word-export", {
         method: "POST",
@@ -246,11 +259,13 @@ export default function DraftingPage() {
         body: JSON.stringify({
           title: `${template.label}: ${formData.title || "Entwurf"}`,
           markdown: text,
+          release: release.token,
           letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,
         }),
       });
       if (!res.ok) {
-        throw new Error(`Export failed: ${res.status}`);
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || "Das Word-Dokument konnte nicht erstellt werden.");
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -262,22 +277,12 @@ export default function DraftingPage() {
       setDocxReady(true);
       setTimeout(() => setDocxReady(false), 2000);
     } catch (err) {
-      console.error("docx export failed:", err);
-      // Fallback: old HTML method
-      const escTitle = (formData.title || t("drafting.saved_default"))
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escTitle}</title><style>@page{margin:2.5cm}body{font-family:Calibri,Arial,sans-serif;font-size:11pt}</style></head><body><pre style="white-space:pre-wrap">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre></body></html>`;
-      const blob = new Blob([html], { type: "application/vnd.ms-word" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${template.label}_${(formData.title || t("drafting.saved_default")).slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setDocxReady(true);
-      setTimeout(() => setDocxReady(false), 2000);
+      // No client-side fallback: it would bypass the release and the AI marking.
+      addToast({
+        type: "error",
+        description:
+          err instanceof Error ? err.message : "Das Word-Dokument konnte nicht erstellt werden.",
+      });
     }
   }
 
@@ -337,6 +342,21 @@ export default function DraftingPage() {
 
       setDraftSaved(slug);
       addToast({ type: "success", description: t("drafting.saved_default") });
+      // A released draft stays released as a stored document (e-mail, portal):
+      // the server checks and releases the stored text itself.
+      if (release) {
+        const stored = await requestAiRelease({
+          slug,
+          title: `${template.label}: ${current.title || t("drafting.saved_default")}`,
+          overrideReason: release.reason,
+        });
+        if (stored.kind !== "released") {
+          addToast({
+            type: "error",
+            description: `Gespeichert, aber die Freigabe gilt noch nicht für das Dokument in der Akte: ${stored.message}`,
+          });
+        }
+      }
       return slug;
     } catch {
       setDraftSaved(`${t("drafting.error_prefix")}: ${t("drafting.error_save")}`);
@@ -587,8 +607,13 @@ export default function DraftingPage() {
               </button>
               <button
                 onClick={() => downloadDocx(result)}
-                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
-                title={t("drafting.btn_docx")}
+                disabled={!release}
+                className="flex items-center gap-1 rounded-md text-xs text-[color:var(--ds-text-muted)] transition-[color,transform] duration-[var(--ds-duration-fast)] hover:text-[color:var(--ds-info-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+                title={
+                  release
+                    ? t("drafting.btn_docx")
+                    : "Word-Export erst nach Prüfung und anwaltlicher Freigabe"
+                }
               >
                 {docxReady ? (
                   <Check size={14} className="text-[color:var(--ds-success-text)]" />
@@ -622,6 +647,12 @@ export default function DraftingPage() {
               isStreaming: false,
             }}
             compact
+          />
+          <AiReleasePanel
+            content={result}
+            title={`${template.label}: ${formData.title || "Entwurf"}`}
+            released={release?.token ?? null}
+            onReleased={(token, _by, reason) => setRelease({ token, reason })}
           />
           {draftSaved && (
             <p

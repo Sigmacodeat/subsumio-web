@@ -35,6 +35,8 @@ export interface DocumentRequestFrontmatter {
   portal_link?: boolean;
   /** The client's WhatsApp number reminders go to (E.164); none → no WhatsApp reminder. */
   recipient_phone?: string;
+  /** The address the request was e-mailed to; reminders go there (none → no e-mail reminder). */
+  recipient_email?: string;
   source_event_slug?: string;
   message_draft?: string;
   created_at: string;
@@ -56,6 +58,8 @@ export interface DocumentRequestInput {
   includePortalLink?: boolean;
   /** E.164 number of the recipient, for WhatsApp reminders. */
   recipientPhone?: string;
+  /** E-mail address of the recipient, for e-mail reminders. */
+  recipientEmail?: string;
 }
 
 function safeSlugPart(input: string): string {
@@ -135,6 +139,7 @@ export async function buildDocumentRequest(
       items,
       ...(input.includePortalLink ? { portal_link: true } : {}),
       ...(input.recipientPhone ? { recipient_phone: input.recipientPhone } : {}),
+      ...(input.recipientEmail ? { recipient_email: input.recipientEmail } : {}),
       source_event_slug: input.sourceEventSlug,
       message_draft: messageDraft,
       created_at: created,

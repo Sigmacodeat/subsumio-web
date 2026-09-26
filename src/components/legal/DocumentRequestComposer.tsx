@@ -70,7 +70,7 @@ export function DocumentRequestComposer({
   ];
 
   const updateStatus = useCallback(
-    async (status: "sent" | "fulfilled") => {
+    async (status: "sent" | "fulfilled", recipientEmailForReminders?: string) => {
       const res = await csrfFetch("/api/document-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -79,6 +79,8 @@ export function DocumentRequestComposer({
           status,
           sent_at: status === "sent" ? new Date().toISOString() : undefined,
           message_draft: message,
+          // Reminders follow the channel the request went out on.
+          recipient_email: recipientEmailForReminders,
         }),
       });
       if (!res.ok) {
@@ -110,7 +112,7 @@ export function DocumentRequestComposer({
           }),
         });
         if (!res.ok) throw new Error("E-Mail-Versand fehlgeschlagen");
-        await updateStatus("sent");
+        await updateStatus("sent", recipientEmail);
         addToast({ type: "success", title: "Dokumentenanfrage per E-Mail versendet" });
       } else if (channel === "portal" && portalLink) {
         // Not stored anywhere: issued (and hash-registered) for this send.

@@ -46,6 +46,19 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: vi.fn(async () => new Response("{}")),
 }));
 
+const mails = vi.hoisted(
+  () => [] as Array<{ to: string; subject: string; text?: string; html?: string }>
+);
+vi.mock("@/lib/firm-mail", () => ({
+  sendFirmMail: vi.fn(async (_s: unknown, m: { to: string; subject: string }) => {
+    mails.push(m);
+    return { sent: true, via: "resend" };
+  }),
+}));
+vi.mock("@/lib/kanzlei-settings-server", () => ({
+  loadKanzleiSettingsForBrain: vi.fn(async () => ({ kanzleiName: "Kanzlei Muster" })),
+}));
+
 import { GET } from "./route";
 
 const tenDaysAgo = new Date(Date.now() - 10 * 86_400_000).toISOString();
@@ -66,6 +79,7 @@ function request(slug: string, extra: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   sent.length = 0;
+  mails.length = 0;
   pages.length = 0;
   cases.length = 0;
   cases.push({
@@ -119,5 +133,34 @@ describe("document request reminders", () => {
     pages.push(request("r1", { recipient_phone: "+436641234567", portal_link: true }));
     await GET(new NextRequest("http://x/api/cron/document-request-reminders"));
     expect(sent[0]!.freeform).not.toContain("Portal:");
+  });
+
+  it("also reminds by e-mail to the address the request was sent to", async () => {
+    issueLink.mockReset();
+    issueLink.mockResolvedValue("https://app.example/portal/frisch.token");
+    pages.push(
+      request("r1", {
+        recipient_email: "mandant@example.at",
+        recipient_phone: "+436641234567",
+        portal_link: true,
+      }),
+      request("r2")
+    );
+    await GET(new NextRequest("http://x/api/cron/document-request-reminders"));
+    expect(mails).toHaveLength(1);
+    expect(mails[0]!.to).toBe("mandant@example.at");
+    expect(mails[0]!.subject).toContain("Erinnerung");
+    expect(mails[0]!.text).toContain("Lohnzettel");
+    expect(mails[0]!.text).toContain("https://app.example/portal/frisch.token");
+    expect(mails[0]!.text).toContain("Kanzlei Muster");
+    // One registered link per reminder, shared by WhatsApp and e-mail.
+    expect(issueLink).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(1);
+  });
+
+  it("sends no e-mail without a stored address", async () => {
+    pages.push(request("r1"));
+    await GET(new NextRequest("http://x/api/cron/document-request-reminders"));
+    expect(mails).toHaveLength(0);
   });
 });

@@ -13,6 +13,8 @@ vi.mock("@/lib/queries/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/queries/settings")>()),
   useModelProfile: () => ({ ...queryState, refetch: vi.fn() }),
   useUpdateModelProfile: () => ({ ...mutationState, mutate, reset }),
+  useOrg: () => ({ isLoading: false, data: { org: null } }),
+  useUpdateOrg: () => ({ isPending: false, mutate: vi.fn() }),
 }));
 
 import AIModelSettingsPage from "./page";

@@ -4,6 +4,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { detachFromFirm } from "@/lib/auth/firm-brain";
 import { visibleOrgMembers } from "@/lib/team-visibility";
 import { mayManageTeam } from "@/lib/invite-roles";
+import { defaultModelPolicyForNewOrg, euRouteAvailable } from "@/lib/eu-routing";
 
 const orgPostSchema = z.object({
   name: z.string().trim().min(2, "invalid_name").max(80, "invalid_name"),
@@ -37,6 +38,9 @@ export const GET = createHandler(
         ownerId: org.ownerId,
         createdAt: org.createdAt,
         modelPolicy: org.modelPolicy ?? "any",
+        // Whether the operator set up an EU model route — without it the EU
+        // data mode would refuse every AI request (see src/lib/eu-routing.ts).
+        euRouteAvailable: euRouteAvailable(),
       },
       members,
       isOwner: ctx.user.id === org.ownerId,
@@ -89,9 +93,12 @@ export const POST = createHandler(
 
     // The firm adopts the founder's brain, so matters, deadlines and documents
     // created before the team existed stay where they are.
-    const org = await getOrgStore().create(
-      buildNewOrg({ name: body.name, ownerId: ctx.user.id, brainId: ctx.user.brainId })
-    );
+    // DACH firms start in the EU data mode when an EU model route exists.
+    const modelPolicy = defaultModelPolicyForNewOrg(ctx.user.jurisdiction);
+    const org = await getOrgStore().create({
+      ...buildNewOrg({ name: body.name, ownerId: ctx.user.id, brainId: ctx.user.brainId }),
+      ...(modelPolicy === "eu_only" ? { modelPolicy } : {}),
+    });
     // The founder administers the new firm (team, roles, settings, billing).
     // Without this only the very first account of an installation was admin.
     await getStore().update(ctx.user.id, { orgId: org.id, role: "admin" });

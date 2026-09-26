@@ -17,12 +17,7 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { caseFrontmatter, type CaseFrontmatter } from "@/lib/legal-types";
-import {
-  extractVariableKeys,
-  fillTemplate,
-  fillTemplateMarkdown,
-  resolveKnownVariables,
-} from "@/lib/templates";
+import { extractVariableKeys, fillTemplate, resolveKnownVariables } from "@/lib/templates";
 import { buildLetterheadFromKanzleiSettings } from "@/lib/letterhead-rubrum";
 
 interface TemplateForDialog {
@@ -109,7 +104,6 @@ export function TemplateUseDialog({
   }, [caseSlug, kanzlei, cases]);
 
   const filled = fillTemplate(template.body, values);
-  const filledMarkdown = fillTemplateMarkdown(template.body, values);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   function copy() {
@@ -126,9 +120,9 @@ export function TemplateUseDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: template.title,
-          markdown: filledMarkdown,
-          // Aus der Vorlage befüllt, kein KI-Text — keine KI-Kennzeichnung.
-          ai_generated: false,
+          // The server reads and fills the template itself — only then is the
+          // export text without AI (no AI marking, no release needed).
+          template: { slug: template.slug, values },
           letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,
         }),
       });

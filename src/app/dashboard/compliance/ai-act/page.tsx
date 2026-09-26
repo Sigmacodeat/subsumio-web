@@ -14,6 +14,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { cn } from "@/lib/utils";
 import { art14OversightStatus } from "@/lib/ai-act-status";
+import { AiLiteracySection } from "@/components/compliance/ai-literacy-section";
 
 interface ConformityItem {
   id: string;
@@ -357,6 +358,8 @@ export default function AIActConformityPage() {
           ))}
         </ul>
       </Section>
+
+      <AiLiteracySection />
 
       <p className="border-t border-[color:var(--ds-border)] pt-4 text-xs text-[color:var(--ds-text-subtle)]">
         {t("aiact.footer")}{" "}

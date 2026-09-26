@@ -1,35 +1,19 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { generateDocx } from "@/lib/docx-export";
+import { fillTemplateMarkdown } from "@/lib/templates";
+import { logAudit } from "@/lib/audit";
 import {
-  assertOutputActionAllowed,
-  VerificationPolicyError,
-  buildPolicyOutput,
-  type AttorneyOverride,
-} from "@/lib/verification-policy";
+  AI_RELEASE_FM_KEY,
+  contentHashOf,
+  isAiPage,
+  pageBody,
+  releaseRequiredMessage,
+  verifyRelease,
+} from "@/lib/ai-release";
 
 export const maxDuration = 60;
-
-const overrideSchema = z.object({
-  user_id: z.string().min(1),
-  reason: z.string().min(10),
-  timestamp: z.string().min(1),
-  output_hash: z.string().length(64),
-});
-
-const verificationSchema = z.object({
-  state: z.enum([
-    "VERIFIED",
-    "VERIFIED_WITH_WARNINGS",
-    "NEEDS_HUMAN_REVIEW",
-    "BLOCKED",
-    "VERIFIER_ERROR",
-  ]),
-  content_hash: z.string().length(64),
-  receipt_hash: z.string().length(64).optional(),
-  override: overrideSchema.optional(),
-});
 
 const letterheadSchema = z.object({
   firm_name: z.string(),
@@ -54,10 +38,19 @@ const postSchema = z.object({
   title: z.string().optional(),
   markdown: z.string().max(500_000).optional(),
   formData: z.record(z.unknown()).optional(),
-  /** KI-Kennzeichnung (Art. 50 KI-VO). Standard true — nur Exporte ohne
-   *  KI-Anteil (z. B. aus Vorlagen befüllte Schreiben) setzen false. */
+  /** Aus einer Vorlage befüllt: der Server liest die Vorlage selbst und
+   *  befüllt sie — nur so gilt ein Export als Text ohne KI-Anteil. */
+  template: z
+    .object({
+      slug: z.string().min(1).max(300),
+      values: z.record(z.string().max(20_000)).default({}),
+    })
+    .optional(),
+  /** Nur noch für gespeicherte Seiten ohne KI-Herkunft relevant; freier
+   *  Markdown gilt immer als KI-Text (der Server kann die Herkunft nicht prüfen). */
   ai_generated: z.boolean().optional(),
-  verification: verificationSchema.optional(),
+  /** Signierte Freigabe aus POST /api/ai-output/release für genau diesen Text. */
+  release: z.string().max(8_000).optional(),
   /** Kanzlei-Briefpapier für die erste Seite — siehe docx-export.ts. */
   letterhead: letterheadSchema.optional(),
 });
@@ -96,40 +89,48 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    // ── Verification policy check (export_docx) ──
-    if (body.verification) {
-      const output = buildPolicyOutput(
-        body.slug || body.title || "docx-export",
-        body.verification.state,
-        body.verification.content_hash,
-        { receipt_hash: body.verification.receipt_hash, title: body.title }
-      );
-      try {
-        await assertOutputActionAllowed(
-          output,
-          "export_docx",
-          { user_id: ctx.user.id, user_email: ctx.user.email, brain_id: ctx.brainId },
-          body.verification.override as AttorneyOverride | undefined
-        );
-      } catch (err) {
-        if (err instanceof VerificationPolicyError) {
-          return Response.json(
-            { error: "verification_denied", reason: err.decision.reason },
-            { status: 403 }
-          );
-        }
-        throw err;
-      }
-    }
-
     let md: string;
     let caseRef = "";
-    // Stored pages say themselves whether they are AI output — the client
-    // cannot switch that off (Art. 50 KI-VO) or skip the export policy.
-    let storedAiOutput = false;
+    // AI origin is decided here, never by the client: free Markdown is always
+    // AI text (the server cannot tell otherwise), a stored page says it in its
+    // frontmatter, and only a template the server fills itself counts as
+    // text without AI.
+    let aiOutput: boolean;
+    /** The exact text the release must cover. */
+    let releasedText: string;
+    let storedRelease: unknown;
 
-    if (body.markdown && typeof body.markdown === "string") {
+    if (body.template) {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.template.slug)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => null);
+      if (!res) {
+        return apiError("engine_unreachable", "Die Vorlage konnte nicht geladen werden.", 503);
+      }
+      if (!res.ok) return apiError("template_not_found", "Vorlage nicht gefunden", 404);
+      const page = (await res.json()) as {
+        type?: string;
+        status?: string;
+        content?: string;
+        compiled_truth?: string;
+        frontmatter?: Record<string, unknown>;
+      };
+      const type = page.type ?? page.frontmatter?.type;
+      if (type !== "legal_template" || page.status === "tombstoned") {
+        return apiError("template_not_found", "Vorlage nicht gefunden", 404);
+      }
+      const filled = fillTemplateMarkdown(
+        String(page.content ?? page.compiled_truth ?? ""),
+        body.template.values
+      );
+      md = buildMarkdownFromDraft(filled, body.title || "Subsumio Dokument", body.formData);
+      aiOutput = isAiPage(page.frontmatter);
+      releasedText = filled;
+    } else if (body.markdown && typeof body.markdown === "string") {
       md = buildMarkdownFromDraft(body.markdown, body.title || "Subsumio Dokument", body.formData);
+      aiOutput = true;
+      releasedText = body.markdown;
     } else if (body.slug && typeof body.slug === "string") {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
         headers: ctx.headers,
@@ -139,22 +140,32 @@ export const POST = createHandler(
         return Response.json({ error: "page_not_found" }, { status: 404 });
       }
       const page = await res.json();
-      md = String(page.compiled_truth ?? page.content ?? "");
+      md = pageBody(page);
       const fm = page.frontmatter ?? {};
       caseRef = String(fm.case_number ?? fm.case_ref ?? "");
-      storedAiOutput = fm.ai_generated === true;
-      if (storedAiOutput && !body.verification) {
-        return Response.json(
-          {
-            error:
-              "Dieser KI-Entwurf kann erst nach der Prüfung als Word-Dokument exportiert werden.",
-            code: "verification_required",
-          },
-          { status: 403 }
-        );
-      }
+      aiOutput = isAiPage(fm);
+      releasedText = md;
+      storedRelease = fm[AI_RELEASE_FM_KEY];
     } else {
       return Response.json({ error: "slug or markdown is required" }, { status: 400 });
+    }
+
+    if (aiOutput) {
+      const expected = { brainId: ctx.brainId, contentHash: contentHashOf(releasedText) };
+      let check = verifyRelease(body.release, expected);
+      if (!check.ok && storedRelease !== undefined) check = verifyRelease(storedRelease, expected);
+      if (!check.ok) {
+        void logAudit("ai.output_blocked", "document", {
+          brainId: ctx.brainId,
+          userId: ctx.user.id,
+          userEmail: ctx.user.email,
+          entityId: body.slug,
+          details: { action: "export_docx", reason: check.reason, title: body.title },
+        });
+        return apiError("release_required", releaseRequiredMessage(check.reason), 403, {
+          reason: check.reason,
+        });
+      }
     }
 
     const title = body.title || "Subsumio Dokument";
@@ -162,7 +173,9 @@ export const POST = createHandler(
       title,
       caseRef,
       letterhead: body.letterhead,
-      aiGenerated: storedAiOutput || body.ai_generated !== false,
+      // Art. 50 KI-VO: every AI export is marked; a stored non-AI page or a
+      // server-filled template may opt out.
+      aiGenerated: aiOutput || (!body.template && body.ai_generated !== false),
     });
     const buf = docx.buffer.slice(
       docx.byteOffset,

@@ -289,6 +289,9 @@ describe("POST /api/cases/send-email", () => {
           },
         });
       }
+      if (url.includes("/api/pages/")) {
+        return Response.json({ slug: "legal/cases/test/documents/schriftsatz", frontmatter: {} });
+      }
       return new Response("not found", { status: 404 });
     });
 
@@ -332,5 +335,76 @@ describe("POST /api/cases/send-email", () => {
     const body = await res.json();
     expect(body.error).toBe("attachment_unavailable");
     expect(sendMail).not.toHaveBeenCalled();
+  });
+
+  describe("KI-Entwurf als Anhang", () => {
+    function stubDraft(frontmatter: Record<string, unknown>, content = "KI-Schriftsatz") {
+      return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes("/api/files/")) return new Response("nope", { status: 404 });
+        if (url.includes("/api/pages/")) {
+          return Response.json({ slug: "legal/drafts/x", title: "Klage", content, frontmatter });
+        }
+        return new Response("{}", { status: 200 });
+      });
+    }
+    function send() {
+      return POST(
+        new Request("http://localhost/api/cases/send-email", {
+          method: "POST",
+          body: JSON.stringify({
+            to: "client@example.com",
+            subject: "Anbei",
+            body: "Anbei der Entwurf.",
+            attachment_slugs: ["legal/drafts/x"],
+          }),
+        }) as unknown as NextRequest
+      );
+    }
+
+    test("refuses an AI draft without a lawyer's release", async () => {
+      const spy = stubDraft({ ai_generated: true });
+      const res = await send();
+      spy.mockRestore();
+      expect(res.status).toBe(403);
+      expect((await res.json()).error).toBe("release_required");
+      expect(sendMail).not.toHaveBeenCalled();
+    });
+
+    test("sends an AI draft whose current text carries a release", async () => {
+      const { signRelease, contentHashOf } = await import("@/lib/ai-release");
+      const release = signRelease({
+        brainId: "test-brain",
+        contentHash: contentHashOf("KI-Schriftsatz"),
+        state: "VERIFIED",
+        releasedBy: "lawyer-1",
+        releasedAt: "2026-09-24T10:00:00.000Z",
+        citationsVerified: 1,
+        citationsUnverified: 0,
+      });
+      const spy = stubDraft({ ai_generated: true, ai_release: release });
+      const res = await send();
+      spy.mockRestore();
+      expect(res.status).toBe(200);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+    });
+
+    test("refuses an AI draft edited after its release", async () => {
+      const { signRelease, contentHashOf } = await import("@/lib/ai-release");
+      const release = signRelease({
+        brainId: "test-brain",
+        contentHash: contentHashOf("alter Text"),
+        state: "VERIFIED",
+        releasedBy: "lawyer-1",
+        releasedAt: "2026-09-24T10:00:00.000Z",
+        citationsVerified: 1,
+        citationsUnverified: 0,
+      });
+      const spy = stubDraft({ ai_generated: true, ai_release: release });
+      const res = await send();
+      spy.mockRestore();
+      expect(res.status).toBe(403);
+      expect(sendMail).not.toHaveBeenCalled();
+    });
   });
 });
