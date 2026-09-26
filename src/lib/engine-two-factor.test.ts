@@ -31,10 +31,17 @@ vi.mock("@/lib/billing/credits", () => ({
     Response.json({ error: "insufficient_credits" }, { status: 402 }),
   CREDIT_COSTS: { think: 1, frist_engine: 0 },
 }));
-const checkQuota = vi.fn(async () => ({ ok: true, used: 0, limit: 10 }));
+const checkQuota = vi.fn(
+  async (): Promise<{ ok: boolean; used: number; limit: number; reserved?: boolean }> => ({
+    ok: true,
+    used: 0,
+    limit: 10,
+  })
+);
+const incQuota = vi.fn(async (..._args: unknown[]) => undefined);
 vi.mock("@/lib/plans", () => ({
   checkQuota: (...args: unknown[]) => checkQuota(...(args as [])),
-  incQuota: vi.fn(),
+  incQuota: (...args: unknown[]) => incQuota(...args),
   quotaExceeded: () => Response.json({ error: "quota_exceeded" }, { status: 402 }),
 }));
 
@@ -62,7 +69,7 @@ vi.mock("@/lib/auth/store", () => ({
   }),
 }));
 
-import { applyUsageGuards, firmBrainIdFor, requireEngineContext } from "./engine";
+import { applyUsageGuards, firmBrainIdFor, recordQuota, requireEngineContext } from "./engine";
 import { readTwoFactorPolicy, twoFactorPolicyFor } from "./kanzlei-settings-server";
 
 const fetchMock = vi.fn();
@@ -219,5 +226,46 @@ describe("applyUsageGuards", () => {
   test("refuses over quota", async () => {
     checkQuota.mockResolvedValueOnce({ ok: false, used: 10, limit: 10 });
     expect((await applyUsageGuards(ctx, "standard", "queries"))?.status).toBe(402);
+  });
+});
+
+describe("quota booked once per request (R11-10)", () => {
+  const freshCtx = () =>
+    ({
+      headers: {},
+      brainId: "b_firm",
+      plan: "team" as const,
+      user: { id: "member" },
+      billing: { ownerId: "founder", ownerType: "user" as const },
+    }) as unknown as Parameters<typeof applyUsageGuards>[0];
+
+  test("the unit reserved by the guard is consumed by recordQuota, not booked again", async () => {
+    incQuota.mockClear();
+    checkQuota.mockResolvedValueOnce({ ok: true, used: 1, limit: 10, reserved: true });
+    const ctx = freshCtx();
+    expect(await applyUsageGuards(ctx, "search", "queries")).toBeNull();
+    await recordQuota(ctx, "queries");
+    expect(incQuota).not.toHaveBeenCalled();
+  });
+
+  test("amounts beyond the reserved unit are booked; other fields are booked in full", async () => {
+    incQuota.mockClear();
+    checkQuota.mockResolvedValueOnce({ ok: true, used: 1, limit: 10, reserved: true });
+    const ctx = freshCtx();
+    await applyUsageGuards(ctx, "standard", "uploads");
+    await recordQuota(ctx, "uploads", 3);
+    await recordQuota(ctx, "pages", 2);
+    expect(incQuota.mock.calls).toEqual([
+      ["b_firm", "uploads", 2],
+      ["b_firm", "pages", 2],
+    ]);
+  });
+
+  test("without a reservation (no atomic store) recordQuota books the full amount", async () => {
+    incQuota.mockClear();
+    const ctx = freshCtx();
+    await applyUsageGuards(ctx, "search", "queries");
+    await recordQuota(ctx, "queries");
+    expect(incQuota).toHaveBeenCalledWith("b_firm", "queries", 1);
   });
 });

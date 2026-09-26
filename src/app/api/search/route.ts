@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
 import { sanitizeTypeFilter, buildSearchParams } from "@/lib/search-params";
-import { createHandler, recordQuota, apiError } from "@/lib/api-handler";
+import { createHandler, apiError } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/search");
@@ -33,10 +33,9 @@ export const GET = createHandler(
     const q = query.q;
     const typeFilter = sanitizeTypeFilter(query.type || "");
 
-    if (q.trim()) {
-      void recordQuery(ctx.brainId);
-      void recordQuota(ctx, "queries");
-    }
+    // The quota unit is booked by the request guard (quota: "queries"); a
+    // second booking here counted every search twice.
+    if (q.trim()) void recordQuery(ctx.brainId);
 
     try {
       const params = buildSearchParams(q, String(query.limit), typeFilter);

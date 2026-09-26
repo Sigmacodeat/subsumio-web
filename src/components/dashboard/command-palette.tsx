@@ -141,6 +141,8 @@ interface CommandPaletteProps {
 
 const RECENT_KEY = "subsumio:cmd_recent";
 const MAX_RECENT = 5;
+/** Typing pause before the palette searches (one request per settled query). */
+export const PALETTE_SEARCH_DEBOUNCE_MS = 300;
 
 function loadRecent(): string[] {
   try {
@@ -505,9 +507,12 @@ export function CommandPalette({
     }
   }, [open]);
 
-  // Federated search: fetch brain pages + cases + contacts + deadlines + documents in parallel
+  // Federated search: ONE request per settled query (one quota unit), after
+  // a 300 ms typing pause; a superseded request is aborted, not just ignored.
+  const searchAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchAbortRef.current?.abort();
     const requestId = ++searchRequestIdRef.current;
     if (!query.trim() || query.trim().length < 2) {
       setSearchResults([]);
@@ -519,30 +524,22 @@ export function CommandPalette({
     setSearching(true);
     searchTimerRef.current = setTimeout(async () => {
       const q = query.trim();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
       try {
-        const [brainRes, casesRes, contactsRes, deadlinesRes, docsRes] = await Promise.allSettled([
-          api.brain.search(q, 8),
-          api.search(q, 5, "case"),
-          api.search(q, 5, "contact"),
-          api.search(q, 5, "deadline"),
-          api.search(q, 5, "document"),
-        ]);
+        const res = await api.searchPalette(q, controller.signal);
         if (requestId !== searchRequestIdRef.current) return;
-        // The proxy forwards the engine body verbatim — a malformed payload
+        // The engine body is forwarded per section — a malformed payload
         // (object instead of array) must not take the whole dashboard down.
         const asArray = <T,>(v: T[] | unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
-        setSearchResults(brainRes.status === "fulfilled" ? asArray(brainRes.value) : []);
+        setSearchResults(asArray(res?.results));
         setFedResults({
-          cases: casesRes.status === "fulfilled" ? asArray(casesRes.value) : [],
-          contacts: contactsRes.status === "fulfilled" ? asArray(contactsRes.value) : [],
-          deadlines: deadlinesRes.status === "fulfilled" ? asArray(deadlinesRes.value) : [],
-          documents: docsRes.status === "fulfilled" ? asArray(docsRes.value) : [],
+          cases: asArray(res?.cases),
+          contacts: asArray(res?.contacts),
+          deadlines: asArray(res?.deadlines),
+          documents: asArray(res?.documents),
         });
-        setSearchFailures(
-          [brainRes, casesRes, contactsRes, deadlinesRes, docsRes].filter(
-            (result) => result.status === "rejected"
-          ).length
-        );
+        setSearchFailures(Array.isArray(res?.failed) ? res.failed.length : 0);
       } catch {
         if (requestId !== searchRequestIdRef.current) return;
         setSearchResults([]);
@@ -551,11 +548,14 @@ export function CommandPalette({
       } finally {
         if (requestId === searchRequestIdRef.current) setSearching(false);
       }
-    }, 200);
+    }, PALETTE_SEARCH_DEBOUNCE_MS);
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
   }, [query]);
+
+  // Abort an in-flight search when the palette unmounts.
+  useEffect(() => () => searchAbortRef.current?.abort(), []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allCommands;

@@ -385,6 +385,26 @@ export const api = {
     return request(`/api/search?${params.toString()}`);
   },
 
+  /**
+   * The command palette's federated search — one request (one quota unit)
+   * for every section. Pass a signal so a superseded query is cancelled.
+   */
+  searchPalette(
+    query: string,
+    signal?: AbortSignal
+  ): Promise<{
+    results: SearchResult[];
+    cases: SearchResult[];
+    contacts: SearchResult[];
+    deadlines: SearchResult[];
+    documents: SearchResult[];
+    failed: string[];
+  }> {
+    return requestUncached(`/api/search/palette?q=${encodeURIComponent(query)}`, {
+      ...(signal ? { signal } : {}),
+    });
+  },
+
   get<T>(path: string): Promise<T> {
     return request<T>(path);
   },

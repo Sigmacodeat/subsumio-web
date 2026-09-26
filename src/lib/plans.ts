@@ -243,7 +243,13 @@ export async function checkQuota(
   brainId: string,
   plan: Plan,
   field: QuotaType
-): Promise<{ ok: boolean; limit: number; used: number }> {
+): Promise<{
+  ok: boolean;
+  limit: number;
+  used: number;
+  /** One unit was booked atomically with the check (Postgres path). */
+  reserved?: boolean;
+}> {
   const limits = limitsFor(plan);
   const limitKey = QUOTA_TO_LIMIT_KEY[field];
   if (!limitKey) return { ok: true, limit: Infinity, used: 0 };
@@ -281,7 +287,7 @@ export async function checkQuota(
           return { ok: false, limit, used: used - 1 };
         }
         await client.query("COMMIT");
-        return { ok: true, limit, used };
+        return { ok: true, limit, used, reserved: true };
       } catch (err) {
         await client.query("ROLLBACK");
         throw err;
