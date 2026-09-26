@@ -1013,6 +1013,7 @@ export default function CommunicationsPage() {
                                   action: "create_deadline",
                                   deadline_date: card.deadline,
                                   deadline_label: msg.title,
+                                  ...(msg.caseSlug ? { case_slug: msg.caseSlug } : {}),
                                 })
                               }
                               disabled={triageActionMutation.isPending}
