@@ -81,3 +81,6 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
   alle offenen Akten (höchstens 50), nach Kostenvorschau in Credits und Bestätigung. Die
   Route bleibt bestehen und antwortet mit `410` „deaktiviert"; der Crontab-Eintrag ist
   entfernt.
+- `/api/cron/contradiction-probe` (03:00 UTC): kein nächtlicher Lauf mehr. Dokumente einer Akte
+  werden nach dem Hochladen auf Widersprüche geprüft (Post-Upload-Outbox). Die Route verlangt
+  `brain_id` und `doc_type` (sonst `400`) und wird nur manuell gestartet.
