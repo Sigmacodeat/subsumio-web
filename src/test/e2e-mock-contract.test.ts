@@ -20,6 +20,8 @@ vi.mock("@/lib/engine", () => ({
 import { checkPartiesConflicts, requestConflictCheck } from "@/lib/conflict-gate";
 import { listEnginePages } from "@/lib/engine-pages";
 import { engineCaseCreateDeps } from "@/lib/safe-case-create";
+import { reserveInvoiceEntries } from "@/lib/invoice-billing-lock";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { mockEngineHandler } from "../../tests/e2e-mock-engine";
 
 // The workflow mock is a loosely typed Bun script outside the typechecked
@@ -151,5 +153,47 @@ describe.each([
     expect(first.headers.get("x-next-cursor")).toBe("100");
     const all = await listEnginePages(headers, "contract_note", 1000, { strict: true });
     expect(new Set(all.map((p) => p.slug)).size).toBe(130);
+  });
+});
+
+describe("e2e-mock-engine — atomic array ops (billing reservation)", () => {
+  let server: Server;
+
+  beforeAll(async () => {
+    server = createServer(mockEngineHandler);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    engine.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  it("two invoices over the same time entry: the second finds it already billed", async () => {
+    await post("/api/pages", {
+      slug: "legal/cases/contract-billing",
+      title: "Abrechnung",
+      type: "legal_case",
+      frontmatter: { type: "legal_case", time_entries: [], expenses: [] },
+    });
+    const brain = createServerBrainClient(headers);
+    await brain.appendPageArray("legal/cases/contract-billing", "time_entries", [
+      { id: "te-1", minutes: 30, billed: false },
+    ]);
+    const first = await reserveInvoiceEntries(brain, {
+      caseSlug: "legal/cases/contract-billing",
+      invoiceNumber: "R-1",
+      timeEntryIds: ["te-1"],
+      expenseIds: [],
+    });
+    expect(first.claimed.time).toEqual(["te-1"]);
+    const second = await reserveInvoiceEntries(brain, {
+      caseSlug: "legal/cases/contract-billing",
+      invoiceNumber: "R-2",
+      timeEntryIds: ["te-1", "te-missing"],
+      expenseIds: [],
+    });
+    expect(second.alreadyBilled.time).toEqual(["te-1"]);
+    expect(second.notFound.time).toEqual(["te-missing"]);
   });
 });

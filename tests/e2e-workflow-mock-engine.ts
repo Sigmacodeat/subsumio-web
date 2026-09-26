@@ -8,7 +8,12 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { ifAbsentRejection, listWindow, mockConflictCheck } from "./e2e-mock-shared";
+import {
+  ifAbsentRejection,
+  isoDaysFromNow,
+  listWindow,
+  mockConflictCheck,
+} from "./e2e-mock-shared";
 import { randomUUID } from "node:crypto";
 
 const PORT = parseInt(process.env.MOCK_ENGINE_PORT || "3999", 10);
@@ -673,7 +678,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
           ...existingDl,
           {
             title: "Klagefrist",
-            due_date: "2026-12-31",
+            due_date: isoDaysFromNow(60),
             urgency: "high",
             source: "KI-Analyse",
             confirmed: false,
@@ -699,7 +704,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       deadlines: [
         {
           type: "absolute",
-          date: "2026-12-31",
+          date: isoDaysFromNow(60),
           label: "Klagefrist",
           confidence: 0.95,
           source: "§ 253 ZPO",

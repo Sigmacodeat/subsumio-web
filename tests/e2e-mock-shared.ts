@@ -9,7 +9,9 @@
  *  - a create-only write (`if_absent`) on a taken slug is refused with
  *    409 `page_exists`;
  *  - page listings are capped at 100 rows and page through `offset` or the
- *    keyset cursor (`x-next-cursor`), like GET /api/pages.
+ *    keyset cursor (`x-next-cursor`), like GET /api/pages;
+ *  - the atomic array ops (time entries, expenses, billing reservation)
+ *    report updated / skipped / not-found ids like page_array_mutate.
  *
  * Pinned by src/test/e2e-mock-contract.test.ts.
  */
@@ -88,6 +90,96 @@ export function ifAbsentRejection(
 ): { status: 409; body: { error: "page_exists"; message: string } } | null {
   if (body.if_absent !== true || !exists) return null;
   return { status: 409, body: { error: "page_exists", message: "Page already exists." } };
+}
+
+// ── Atomic array ops (POST /api/pages/array-append | array-mutate) ─────
+
+export interface ArrayMutationBody {
+  match?: Array<string | number | boolean>;
+  match_key?: string;
+  set?: Record<string, unknown>;
+  unset?: string[];
+  remove?: boolean;
+  unless?: { eq?: Record<string, unknown>; ne?: Record<string, unknown> };
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+/** The engine's in-statement skip guard: every eq equal AND every ne different. */
+function unlessHit(el: Record<string, unknown>, unless: ArrayMutationBody["unless"]): boolean {
+  if (!unless || (!unless.eq && !unless.ne)) return false;
+  for (const [k, v] of Object.entries(unless.eq ?? {})) {
+    if (!(k in el) || !sameValue(el[k], v)) return false;
+  }
+  for (const [k, v] of Object.entries(unless.ne ?? {})) {
+    if (!(k in el) || el[k] === null || String(el[k]) === String(v)) return false;
+  }
+  return true;
+}
+
+/** Append items to `frontmatter[field]` (engine page_array_append). */
+export function applyArrayAppend(
+  frontmatter: Record<string, unknown>,
+  slug: string,
+  field: string,
+  items: unknown[]
+) {
+  const next = [...(Array.isArray(frontmatter[field]) ? (frontmatter[field] as unknown[]) : [])];
+  next.push(...items);
+  frontmatter[field] = next;
+  return { slug, field, appended: items.length, length: next.length, items: next };
+}
+
+/** Patch/remove matched elements of `frontmatter[field]` (engine page_array_mutate). */
+export function applyArrayMutate(
+  frontmatter: Record<string, unknown>,
+  slug: string,
+  field: string,
+  m: ArrayMutationBody
+) {
+  const key = m.match_key ?? "id";
+  const wanted = (m.match ?? []).map(String);
+  const list = Array.isArray(frontmatter[field]) ? (frontmatter[field] as unknown[]) : [];
+  const updated: string[] = [];
+  const skipped: string[] = [];
+  const next: unknown[] = [];
+  for (const raw of list) {
+    const el = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null;
+    const id = el && el[key] !== undefined && el[key] !== null ? String(el[key]) : null;
+    if (!el || id === null || !wanted.includes(id)) {
+      next.push(raw);
+      continue;
+    }
+    if (unlessHit(el, m.unless)) {
+      skipped.push(id);
+      next.push(el);
+      continue;
+    }
+    updated.push(id);
+    if (m.remove) continue;
+    const out: Record<string, unknown> = { ...el, ...(m.set ?? {}) };
+    for (const k of m.unset ?? []) delete out[k];
+    next.push(out);
+  }
+  frontmatter[field] = next;
+  const seen = new Set([...updated, ...skipped]);
+  return {
+    slug,
+    field,
+    matched_ids: [...seen],
+    updated_ids: updated,
+    skipped_ids: skipped,
+    not_found_ids: wanted.filter((id) => !seen.has(id)),
+    items: next,
+    length: next.length,
+  };
+}
+
+/** YYYY-MM-DD n days from now — mock answers never carry a fixed future date. */
+export function isoDaysFromNow(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 }
 
 export const MOCK_LIST_MAX = 100;

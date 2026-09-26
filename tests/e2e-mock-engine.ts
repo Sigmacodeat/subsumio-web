@@ -25,7 +25,14 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { ifAbsentRejection, listWindow, mockConflictCheck } from "./e2e-mock-shared";
+import {
+  applyArrayAppend,
+  applyArrayMutate,
+  ifAbsentRejection,
+  isoDaysFromNow,
+  listWindow,
+  mockConflictCheck,
+} from "./e2e-mock-shared";
 
 const PORT = parseInt(process.env.MOCK_ENGINE_PORT || "3001", 10);
 
@@ -333,6 +340,31 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     return sendJson(res, 200, { ok: true, pages_deleted: n });
   }
 
+  // ── Pages: atomic array ops (time entries, expenses, billing) ───────
+  if (
+    (path === "/api/pages/array-append" || path === "/api/pages/array-mutate") &&
+    req.method === "POST"
+  ) {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const target = reqPages.get(String(body.slug ?? ""));
+    if (!target) return sendJson(res, 404, { error: "not_found" });
+    const field = String(body.field ?? "");
+    if (!field) return sendJson(res, 400, { error: "field_required" });
+    target.frontmatter = { ...target.frontmatter };
+    target.updated_at = new Date().toISOString();
+    const result =
+      path === "/api/pages/array-append"
+        ? applyArrayAppend(
+            target.frontmatter,
+            target.slug,
+            field,
+            Array.isArray(body.items) ? body.items : []
+          )
+        : applyArrayMutate(target.frontmatter, target.slug, field, body);
+    return sendJson(res, 200, result);
+  }
+
   // ── Pages: by slug ──────────────────────────────────────────────────
   const pageMatch = path.match(/^\/api\/pages\/(.+)$/);
   if (pageMatch) {
@@ -614,7 +646,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         ...[
           {
             title: "Klagefrist",
-            due_date: "2026-12-31",
+            due_date: isoDaysFromNow(60),
             urgency: "high",
             source: "KI-Analyse",
             confirmed: false,
@@ -681,7 +713,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       deadlines: [
         {
           type: "absolute",
-          date: "2026-12-31",
+          date: isoDaysFromNow(60),
           label: "Klagefrist",
           confidence: 0.95,
           source: "§ 253 ZPO",
