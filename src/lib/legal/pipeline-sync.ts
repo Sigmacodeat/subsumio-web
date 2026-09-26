@@ -20,9 +20,8 @@
 
 import { listEnginePages } from "@/lib/engine-pages";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { berechneFristAuto, type FristAutoErgebnis } from "@/lib/legal/frist-engine";
+import { resolveFristArt } from "@/lib/legal/frist-engine";
 import { computeVorfrist } from "@/lib/legal/vorfrist";
-import { FERIALSACHE_WARNUNG, vhfzHatVerlaengert } from "@/lib/legal/frist-options";
 
 interface DeadlineCalendarPage {
   slug: string;
@@ -39,7 +38,7 @@ interface ParsedDeadlineRow {
   beleg: string;
 }
 
-interface ExistingDeadlinePage {
+export interface ExistingDeadlinePage {
   slug: string;
   title?: string;
   frontmatter: Record<string, unknown> | null;
@@ -106,7 +105,9 @@ function dedupeKey(caseSlug: string, datum: string, frist: string): string {
 
 /**
  * Mappt eine Pipeline-Fristbeschreibung + Rechtsgrundlage auf einen
- * FRISTEN_REGISTRY Key für die deterministische Berechnung.
+ * FRISTEN_REGISTRY-Key. Dient nur der Einordnung (Fristart, Notfrist) —
+ * das Datum der Pipeline ist bereits das Fristende und wird NICHT neu
+ * berechnet. Eine Verjährung ohne erkennbare Dauer bleibt ohne Zuordnung.
  */
 function guessFristKey(frist: string, rechtsgrundlage: string): string | null {
   const f = frist.toLowerCase();
@@ -141,9 +142,66 @@ function guessFristKey(frist: string, rechtsgrundlage: string): string | null {
     return "verjaehrung_kurz";
   if (f.includes("verjährung") && (f.includes("30 jahr") || f.includes("dreißig jahr")))
     return "verjaehrung_lang";
-  if (f.includes("verjährung")) return "verjaehrung_kurz"; // default: kurz
 
   return null;
+}
+
+/** Datum am Anfang eines Sync-Slugs `legal/deadlines/<YYYY-MM-DD>-…`. */
+const SYNC_SLUG_DATE_RE = /^legal\/deadlines\/(\d{4}-\d{2}-\d{2})-/;
+
+/**
+ * Das Pipeline-Datum, aus dem eine vorhandene Sync-Seite entstanden ist:
+ * `pipeline_datum`, bei älteren Seiten das Datum im Slug (der Sync hat den
+ * Slug immer aus dem Pipeline-Datum gebildet, auch als er `due_date` noch
+ * verschoben hat). Null für Seiten, die nicht vom Sync stammen.
+ */
+export function pipelineSourceDate(page: ExistingDeadlinePage): string | null {
+  const fm = page.frontmatter ?? {};
+  const stored = typeof fm.pipeline_datum === "string" ? fm.pipeline_datum.slice(0, 10) : "";
+  if (DATE_ISO_RE.test(stored)) return stored;
+  if (fm.source !== "pipeline") return null;
+  return SYNC_SLUG_DATE_RE.exec(page.slug)?.[1] ?? null;
+}
+
+export interface PipelineDateRepair {
+  slug: string;
+  caseSlug: string;
+  description: string;
+  /** Verschobenes Datum, das heute als `due_date` gespeichert ist. */
+  wrongDueDate: string;
+  /** Fristende laut Pipeline (Akt) — der richtige Wert. */
+  pipelineDate: string;
+  vorfristDate: string | null;
+}
+
+/**
+ * Findet Sync-Seiten, deren `due_date` noch nach der früheren, falschen
+ * Logik aus dem Pipeline-Datum „berechnet“ wurde (das Pipeline-Datum wurde
+ * als Zustelldatum behandelt). Nur ungeprüfte, offene Einträge: was ein
+ * Mensch freigegeben, erledigt oder verworfen hat, bleibt unangetastet.
+ */
+export function findShiftedPipelineDeadlines(pages: ExistingDeadlinePage[]): PipelineDateRepair[] {
+  const out: PipelineDateRepair[] = [];
+  for (const page of pages) {
+    const fm = page.frontmatter ?? {};
+    if (fm.source !== "pipeline" || fm.deterministic !== true) continue;
+    if ((fm.review_status ?? "unreviewed") !== "unreviewed") continue;
+    const status = String(fm.status ?? "pending");
+    if (status === "done" || status === "cancelled" || status === "rejected") continue;
+    if (typeof fm.pipeline_datum === "string") continue; // already written by the fixed sync
+    const pipelineDate = SYNC_SLUG_DATE_RE.exec(page.slug)?.[1];
+    const due = String(fm.due_date ?? "").slice(0, 10);
+    if (!pipelineDate || !DATE_ISO_RE.test(due) || due === pipelineDate) continue;
+    out.push({
+      slug: page.slug,
+      caseSlug: String(fm.case_slug ?? ""),
+      description: String(fm.description ?? page.title ?? ""),
+      wrongDueDate: due,
+      pipelineDate,
+      vorfristDate: computeVorfrist(pipelineDate),
+    });
+  }
+  return out;
 }
 
 async function fetchDeadlineCalendarPages(brainId: string): Promise<DeadlineCalendarPage[]> {
@@ -167,8 +225,16 @@ async function fetchExistingDeadlines(brainId: string): Promise<Map<string, Exis
       const caseSlug = String(fm.case_slug ?? "");
       const dueDate = String(fm.due_date ?? fm.date ?? "");
       const desc = String(fm.description ?? page.title ?? "");
-      const key = dedupeKey(caseSlug, dueDate.slice(0, 10), desc);
-      if (!map.has(key)) map.set(key, page);
+      // Keyed on the due date AND on the pipeline date the page came from:
+      // older sync pages carry a shifted due date, and matching only on it
+      // created the same deadline again on every run.
+      const dates = new Set([dueDate.slice(0, 10)]);
+      const source = pipelineSourceDate(page);
+      if (source) dates.add(source);
+      for (const d of dates) {
+        const key = dedupeKey(caseSlug, d, desc);
+        if (!map.has(key)) map.set(key, page);
+      }
     }
     return map;
   } catch {
@@ -206,7 +272,9 @@ async function createDeadlinePage(
  * pipeline-detected deadlines visible to the daily digest, topbar
  * notifications, calendar export and the deadlines page.
  *
- * Idempotent: deduplicates by (caseSlug, datum, frist description).
+ * Idempotent: deduplicates by (caseSlug, pipeline date, frist description).
+ * The pipeline date is the Fristende as written in the file and becomes the
+ * page's `due_date` unchanged.
  * Only creates new pages — never modifies or deletes existing ones.
  */
 export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult> {
@@ -240,41 +308,25 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
         .slice(0, 48);
       const slug = `legal/deadlines/${iso}-${titlePart || "pipeline"}-${Date.now().toString(36)}`;
 
-      // Versuche deterministische Berechnung via frist-engine
-      // Mappe die Pipeline-Fristbeschreibung auf einen Registry-Key
-      const fristKey = guessFristKey(row.frist, row.rechtsgrundlage);
-      let fristResult: FristAutoErgebnis | null = null;
-      let vorfrist: string | null = null;
-      let vhfzUnconfirmed = false;
-
-      if (fristKey) {
-        try {
-          // Nutze das extrahierte Datum als Zustellungsdatum/Auslöser
-          fristResult = berechneFristAuto(fristKey, iso);
-          vorfrist = fristResult.vorfrist;
-          // § 222 Abs 2 ZPO: whether the matter is a Ferialsache is not known
-          // here. An extension by the verhandlungsfreie Zeit is flagged and
-          // must be confirmed by a second person.
-          if (vhfzHatVerlaengert(fristResult.hinweise)) {
-            fristResult.hinweise.push(FERIALSACHE_WARNUNG);
-            vhfzUnconfirmed = true;
-          }
-        } catch {
-          // Fallback auf einfache Vorfrist-Berechnung
-          vorfrist = computeVorfrist(iso);
-        }
-      } else {
-        vorfrist = computeVorfrist(iso);
-      }
+      // Die Spalte „Datum“ ist das Fristende laut Akt (der Extraktor liest es
+      // wörtlich ab und rechnet nicht, siehe writeDeadlineCalendarPage in der
+      // Engine). Es wird unverändert übernommen. Früher wurde es als
+      // Zustelldatum in die Frist-Engine gegeben — das verschob jede Frist um
+      // ihre eigene Dauer nach hinten. Ein Zustelldatum liefert die Pipeline
+      // nicht, eine Kontrollrechnung ist daher hier nicht möglich.
+      const fristArt = resolveFristArt(guessFristKey(row.frist, row.rechtsgrundlage) ?? "");
+      const vorfrist = computeVorfrist(iso);
 
       const ok = await createDeadlinePage(brainId, {
         slug,
         title: row.frist,
-        content: `Pipeline-extrahierte Frist.\n\nRechtsgrundlage: ${row.rechtsgrundlage}\nFolge bei Versäumnis: ${row.folge}\nBeleg: ${row.beleg}${fristResult ? `\n\nDeterministische Berechnung:\n${fristResult.hinweise.join("\n")}` : ""}`,
+        content: `Pipeline-extrahierte Frist (Fristende laut Akt, nicht berechnet).\n\nRechtsgrundlage: ${row.rechtsgrundlage}\nFolge bei Versäumnis: ${row.folge}\nBeleg: ${row.beleg}`,
         frontmatter: {
           type: "legal_deadline",
           event_type: "deadline",
-          due_date: fristResult?.fristende ?? iso,
+          due_date: iso,
+          fristende: iso,
+          pipeline_datum: iso,
           vorfrist_date: vorfrist,
           description: row.frist,
           status: "pending",
@@ -286,24 +338,15 @@ export async function syncPipelineDeadlines(brainId: string): Promise<SyncResult
           pipeline_beleg: row.beleg,
           pipeline_folge: row.folge,
           created_at: new Date().toISOString(),
-          // Deterministisch berechnete Frist-Daten
-          ...(fristResult
+          deterministic: false,
+          ...(fristArt
             ? {
-                frist_art: fristResult.art.key,
-                frist_regime: fristResult.art.regime,
-                rechtsgrundlage: fristResult.art.rechtsgrundlage,
-                fristbeginn: fristResult.fristbeginn,
-                fristende: fristResult.fristende,
-                kalendertage: fristResult.kalendertage,
-                notfrist: fristResult.art.notfrist,
-                deterministic: true,
-                ...(vhfzUnconfirmed
-                  ? { second_check_required: true, ferialsache_unconfirmed: true }
-                  : {}),
+                frist_art: fristArt.key,
+                frist_regime: fristArt.regime,
+                rechtsgrundlage: fristArt.rechtsgrundlage,
+                notfrist: fristArt.notfrist,
               }
-            : {
-                deterministic: false,
-              }),
+            : {}),
         },
       });
 

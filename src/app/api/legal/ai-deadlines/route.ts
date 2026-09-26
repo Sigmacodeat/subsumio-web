@@ -24,6 +24,12 @@ export const maxDuration = 120;
 const aiDeadlinesSchema = z.object({
   text: z.string().min(1, "text_required").max(50_000, "text_too_long"),
   caseSlug: z.string().optional(),
+  /** Date of the document or its service (YYYY-MM-DD) — the model resolves
+   *  dates without a year against it instead of against today. */
+  referenceDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}/, "reference_date_invalid")
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -48,10 +54,40 @@ export const POST = createHandler(
     const llmAffordable = await canAffordOptionalLlm(ctx, "deadline_detect");
     const llmMeta: LlmCallMeta = {};
     const detected = llmAffordable
-      ? await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers, { meta: llmMeta })
+      ? await hybridDeadlineDetection(safeText, enrichedRegex, ctx.headers, {
+          meta: llmMeta,
+          referenceDate: body.referenceDate,
+        })
       : enrichedRegex;
-    if (llmMeta.modelCalled) void recordCreditConsumption(ctx, "deadline_detect", body.caseSlug);
+    const llmFailed = llmMeta.status === "failed";
+    // A failed analysis is not billed — the user gets no result for it.
+    if (llmMeta.modelCalled && !llmFailed) {
+      void recordCreditConsumption(ctx, "deadline_detect", body.caseSlug);
+    }
     const llmUsed = detected.some((d) => d.matchedRule === "llm_fallback");
+
+    // A failed model check must never read as "no deadlines in this text".
+    if (llmFailed && detected.length === 0) {
+      return Response.json(
+        {
+          error: "deadline_analysis_failed",
+          message:
+            "Die KI-Fristerkennung ist fehlgeschlagen — der Text wurde nicht geprüft. Bitte erneut versuchen oder die Fristen manuell erfassen.",
+        },
+        { status: 502 }
+      );
+    }
+    const warnings: string[] = [];
+    if (llmFailed) {
+      warnings.push(
+        "Die KI-Prüfung ist fehlgeschlagen — angezeigt werden nur regelbasiert erkannte Fristen. Der Text ist nicht vollständig geprüft."
+      );
+    }
+    if (llmMeta.omittedChars) {
+      warnings.push(
+        `Der Text ist zu lang für eine vollständige KI-Prüfung: ${llmMeta.omittedChars.toLocaleString("de-AT")} Zeichen im Mittelteil wurden nicht von der KI gelesen (Anfang und Schluss schon). Bitte diesen Teil gesondert prüfen.`
+      );
+    }
 
     const createdSlugs: string[] = [];
     if (body.caseSlug) {
@@ -116,6 +152,8 @@ export const POST = createHandler(
       created: createdSlugs.length > 0 ? createdSlugs : undefined,
       llm_fallback_used: llmUsed,
       llm_available: isLLMDeadlineExtractionAvailable(),
+      ...(llmMeta.status ? { llm_status: llmMeta.status } : {}),
+      ...(warnings.length > 0 ? { warnings } : {}),
       ...(llmAffordable ? {} : { llm_skipped: "insufficient_credits" }),
     };
 

@@ -1332,6 +1332,10 @@ export default function DeadlinesPage() {
                 const data = await res.json();
                 if (res.ok) {
                   setAiResults(data.detected || []);
+                  // Partial check (model failed or text too long): say so.
+                  if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+                    setAiError(data.warnings.join(" "));
+                  }
                   addToast({
                     type: "success",
                     title: `${data.detected?.length || 0} ${t("deadlines.detect_result")}`,

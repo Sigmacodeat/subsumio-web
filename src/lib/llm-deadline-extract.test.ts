@@ -4,6 +4,9 @@ import {
   hybridDeadlineDetection,
   extractDeadlinesWithLLM,
   dropUngroundedDates,
+  readDeadlineList,
+  clipForDeadlineModel,
+  type LlmCallMeta,
 } from "@/lib/llm-deadline-extract";
 import { detectDeadlines, enrichAllDeadlines } from "@/lib/ai-deadline-detect";
 
@@ -253,6 +256,128 @@ describe("llm-deadline-extract", () => {
           .zustellungsdatum
       ).toBe("2024-03-15");
       expect(dropUngroundedDates(item("kein Datum"), "", "2026-09-17").absolutes_datum).toBeNull();
+    });
+  });
+
+  describe("KI3-02: Ausgabeformat, Fehler, Kürzung, Bezugsdatum", () => {
+    const berufung = {
+      frist_key: "berufung",
+      frist_beschreibung: "Berufungsfrist",
+      zustellungsdatum: "2024-03-15",
+      absolutes_datum: null,
+      tage_relativ: null,
+      rechtsgrundlage: null,
+      snippet: "zugestellt am 15.03.2024",
+      confidence: "medium",
+    };
+    const text = "Das Urteil wurde am 15.03.2024 zugestellt.";
+
+    test("der Prompt verlangt ein Objekt mit Array-Feld „fristen“", async () => {
+      mockComplete.mockResolvedValue(stubResult('{"fristen": []}'));
+      await extractDeadlinesWithLLM(text, { headers: HEADERS, referenceDate: "2024-03-20" });
+      expect(mockComplete.mock.calls[0][1].system).toContain('{"fristen": []}');
+      expect(mockComplete.mock.calls[0][1].system).not.toContain("JSON-Array, jedes Element");
+    });
+
+    test("ein einzelnes Frist-Objekt (statt Array) wird nicht verworfen", async () => {
+      mockComplete.mockResolvedValue(stubResult(JSON.stringify(berufung)));
+      const result = await extractDeadlinesWithLLM(text, {
+        headers: HEADERS,
+        referenceDate: "2024-03-20",
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.suggestedTemplate).toBe("berufung");
+    });
+
+    test("{fristen: [...]} und nacktes Array werden gleich gelesen", () => {
+      expect(readDeadlineList({ fristen: [berufung] })).toHaveLength(1);
+      expect(readDeadlineList([berufung])).toHaveLength(1);
+      expect(readDeadlineList({ deadlines: [berufung] })).toHaveLength(1);
+      expect(readDeadlineList({ fristen: [] })).toEqual([]);
+      expect(readDeadlineList({ antwort: "keine" })).toBeNull();
+      expect(readDeadlineList(null)).toBeNull();
+    });
+
+    test("unlesbare Antwort ist „fehlgeschlagen“, nicht „keine Frist“", async () => {
+      mockComplete.mockResolvedValue(stubResult("Ich habe keine Fristen gefunden."));
+      const meta: LlmCallMeta = {};
+      const result = await extractDeadlinesWithLLM(text, { headers: HEADERS, meta });
+      expect(result).toEqual([]);
+      expect(meta.status).toBe("failed");
+      expect(meta.modelCalled).toBe(true);
+    });
+
+    test("keine Antwort des Gateways ist „fehlgeschlagen“", async () => {
+      mockComplete.mockResolvedValue(null);
+      const meta: LlmCallMeta = {};
+      await extractDeadlinesWithLLM(text, { headers: HEADERS, meta });
+      expect(meta.status).toBe("failed");
+    });
+
+    test("leere Liste ist ein gültiges Ergebnis", async () => {
+      mockComplete.mockResolvedValue(stubResult('{"fristen": []}'));
+      const meta: LlmCallMeta = {};
+      await extractDeadlinesWithLLM(text, { headers: HEADERS, meta });
+      expect(meta.status).toBe("ok");
+    });
+
+    test("langer Text: Schluss (Rechtsmittelbelehrung) bleibt drin, Auslassung wird gemeldet", async () => {
+      const long = `${"A".repeat(20_000)} RECHTSMITTELBELEHRUNG: Berufung binnen vier Wochen.`;
+      const clipped = clipForDeadlineModel(long);
+      expect(clipped.omittedChars).toBeGreaterThan(0);
+      expect(clipped.text).toContain("RECHTSMITTELBELEHRUNG");
+      expect(clipped.text.length).toBeLessThan(10_100);
+
+      mockComplete.mockResolvedValue(stubResult('{"fristen": []}'));
+      const meta: LlmCallMeta = {};
+      await extractDeadlinesWithLLM(long, { headers: HEADERS, meta });
+      expect(mockComplete.mock.calls[0][1].prompt).toContain("RECHTSMITTELBELEHRUNG");
+      expect(meta.omittedChars).toBe(clipped.omittedChars);
+      expect(clipForDeadlineModel("kurz").omittedChars).toBe(0);
+    });
+
+    test("hybridDeadlineDetection gibt das Bezugsdatum an das Modell weiter", async () => {
+      mockComplete.mockResolvedValue(stubResult('{"fristen": []}'));
+      await hybridDeadlineDetection("Frist bis 15. April", [], HEADERS, {
+        referenceDate: "2026-03-02",
+      });
+      expect(mockComplete.mock.calls[0][1].prompt).toContain("BEZUGSDATUM: 2026-03-02");
+    });
+
+    test("ein genanntes Fristende wird nicht als Zustelldatum weitergerechnet", async () => {
+      mockComplete.mockResolvedValue(
+        stubResult(
+          JSON.stringify({
+            fristen: [
+              {
+                ...berufung,
+                zustellungsdatum: null,
+                absolutes_datum: "2026-10-15",
+                snippet: "Die Frist endet am 15.10.2026.",
+              },
+            ],
+          })
+        )
+      );
+      const [d] = await extractDeadlinesWithLLM("Die Frist endet am 15.10.2026.", {
+        headers: HEADERS,
+        referenceDate: "2026-09-26",
+      });
+      expect(d!.date).toBe("2026-10-15");
+      expect(d!.fristResult).toBeUndefined();
+    });
+
+    test("Widerspruch zwischen genanntem Fristende und Berechnung wird angezeigt, nicht überschrieben", async () => {
+      mockComplete.mockResolvedValue(
+        stubResult(JSON.stringify({ fristen: [{ ...berufung, absolutes_datum: "2024-04-30" }] }))
+      );
+      const [d] = await extractDeadlinesWithLLM(text, {
+        headers: HEADERS,
+        referenceDate: "2024-03-20",
+      });
+      expect(d!.date).toBe("2024-04-30");
+      expect(d!.confidence).toBe("medium");
+      expect(d!.fristResult!.hinweise.join(" ")).toContain("Abweichung");
     });
   });
 });

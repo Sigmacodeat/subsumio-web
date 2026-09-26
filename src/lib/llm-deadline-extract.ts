@@ -54,11 +54,11 @@ WICHTIG:
 - Wenn kein Datum extrahierbar ist, setze "zustellungsdatum" auf null.
 - Im Auftrag steht ein BEZUGSDATUM. Löse Angaben ohne Jahr oder mit relativem Bezug ("dieses Jahres", "nächsten Montag", "Monatsletzter") gegen dieses Bezugsdatum auf. Rate niemals ein Jahr. Lässt sich ein Datum nicht sicher bestimmen, setze es auf null.
 
-Output-Format: JSON-Array, jedes Element wie oben beschrieben.
-Gib "[]" zurück wenn keine Fristen im Text erwähnt werden.
+Output-Format: genau EIN JSON-Objekt mit dem Feld "fristen" — ein Array, jedes Element wie oben beschrieben.
+Auch bei nur einer Frist steht sie im Array. Gib {"fristen": []} zurück, wenn keine Fristen im Text erwähnt werden.
 
 Beispiel-Output:
-[
+{"fristen": [
   {
     "frist_key": "berufung",
     "frist_beschreibung": "Berufungsfrist",
@@ -69,7 +69,7 @@ Beispiel-Output:
     "snippet": "Das Urteil wurde zugestellt am 15.03.2024. Berufungsfrist vier Wochen.",
     "confidence": "high"
   }
-]`;
+]}`;
 
 interface LLMExtractedDeadline {
   frist_key: string | null;
@@ -121,9 +121,73 @@ export function dropUngroundedDates<
   };
 }
 
-/** Filled in by the extractor so the route can bill a model call that happened. */
+/** Filled in by the extractor: billing and what the caller must tell the user. */
 export interface LlmCallMeta {
   modelCalled?: boolean;
+  /**
+   * "failed": the model gave no answer or one that could not be read — the
+   * text was NOT checked by the model. Never to be shown as "no deadline".
+   */
+  status?: "ok" | "failed";
+  /** Characters in the middle of a long text the model did not see. */
+  omittedChars?: number;
+}
+
+/** Longest text the model reads in one call. */
+export const LLM_DEADLINE_MAX_CHARS = 10_000;
+/** Of that, the share kept from the end — where the Rechtsmittelbelehrung stands. */
+const LLM_DEADLINE_TAIL_CHARS = 4_000;
+
+/**
+ * Text for the model. A long text keeps its beginning and its end (decisions
+ * close with the Rechtsmittelbelehrung) and drops the middle — the caller is
+ * told how much was left out.
+ */
+export function clipForDeadlineModel(text: string): { text: string; omittedChars: number } {
+  if (text.length <= LLM_DEADLINE_MAX_CHARS) return { text, omittedChars: 0 };
+  const head = text.slice(0, LLM_DEADLINE_MAX_CHARS - LLM_DEADLINE_TAIL_CHARS);
+  const tail = text.slice(text.length - LLM_DEADLINE_TAIL_CHARS);
+  const omittedChars = text.length - head.length - tail.length;
+  return {
+    text: `${head}\n\n[... ${omittedChars} Zeichen ausgelassen ...]\n\n${tail}`,
+    omittedChars,
+  };
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * The model's answer as a list of deadlines. Accepts the requested
+ * {"fristen": [...]}, a bare array, {"deadlines": [...]} and a single deadline
+ * object (models told to answer with "one JSON object" sometimes return just
+ * the one deadline). Anything else is null — an unreadable answer, not an
+ * empty one.
+ */
+export function readDeadlineList(json: unknown): LLMExtractedDeadline[] | null {
+  const list = Array.isArray(json)
+    ? json
+    : isRecord(json) && Array.isArray(json.fristen)
+      ? json.fristen
+      : isRecord(json) && Array.isArray(json.deadlines)
+        ? json.deadlines
+        : isRecord(json) && ("frist_key" in json || "frist_beschreibung" in json)
+          ? [json]
+          : null;
+  if (!list) return null;
+  return list.filter(isRecord).map((r) => ({
+    frist_key: typeof r.frist_key === "string" ? r.frist_key : null,
+    frist_beschreibung: typeof r.frist_beschreibung === "string" ? r.frist_beschreibung : "",
+    zustellungsdatum: typeof r.zustellungsdatum === "string" ? r.zustellungsdatum : null,
+    absolutes_datum: typeof r.absolutes_datum === "string" ? r.absolutes_datum : null,
+    tage_relativ: typeof r.tage_relativ === "number" ? r.tage_relativ : null,
+    rechtsgrundlage: typeof r.rechtsgrundlage === "string" ? r.rechtsgrundlage : null,
+    snippet: typeof r.snippet === "string" ? r.snippet : "",
+    confidence:
+      r.confidence === "high" || r.confidence === "medium" || r.confidence === "low"
+        ? r.confidence
+        : "low",
+  }));
 }
 
 /**
@@ -136,8 +200,9 @@ export function isLLMDeadlineExtractionAvailable(): boolean {
 /**
  * Extract deadlines from text through the engine's LLM gateway.
  *
- * @param text The full text to analyze (max 10,000 chars)
- * @returns Array of DetectedDeadline objects with optional fristResult
+ * @param text The full text to analyze (long texts: beginning and end, see clipForDeadlineModel)
+ * @returns Array of DetectedDeadline objects with optional fristResult. A
+ *   failed or unreadable model answer returns [] with `meta.status = "failed"`.
  */
 export async function extractDeadlinesWithLLM(
   text: string,
@@ -154,8 +219,13 @@ export async function extractDeadlinesWithLLM(
   if (!opts?.headers || !isEngineLLMAvailable()) return [];
   const headers = opts.headers;
   const referenceDate = isoDay(opts.referenceDate) ?? new Date().toISOString().slice(0, 10);
-  const truncated =
-    text.length > 10_000 ? text.slice(0, 10_000) + "\n\n[... text truncated]" : text;
+  const clipped = clipForDeadlineModel(text);
+  const truncated = clipped.text;
+  if (opts.meta && clipped.omittedChars > 0) opts.meta.omittedChars = clipped.omittedChars;
+  const fail = (): DetectedDeadline[] => {
+    if (opts.meta) opts.meta.status = "failed";
+    return [];
+  };
 
   try {
     const result = await engineComplete(headers, {
@@ -171,18 +241,13 @@ export async function extractDeadlinesWithLLM(
     });
     if (result && opts.meta) opts.meta.modelCalled = true;
     const content = result?.text?.trim();
-    if (!content) return [];
-    // Parse JSON (handle both array and {deadlines: [...]} formats)
-    const json = parseJsonObject<unknown>(content);
-    if (json === null) {
-      console.error("[llm-deadline-extract] Failed to parse LLM response as JSON");
-      return [];
+    if (!content) return fail();
+    const parsed = readDeadlineList(parseJsonObject<unknown>(content));
+    if (parsed === null) {
+      console.error("[llm-deadline-extract] LLM response is not a deadline list");
+      return fail();
     }
-    const parsed: LLMExtractedDeadline[] = Array.isArray(json)
-      ? (json as LLMExtractedDeadline[])
-      : Array.isArray((json as { deadlines?: unknown }).deadlines)
-        ? (json as { deadlines: LLMExtractedDeadline[] }).deadlines
-        : [];
+    if (opts.meta) opts.meta.status = "ok";
     // Convert LLM results to DetectedDeadline with frist-engine enrichment
     return parsed.map((raw): DetectedDeadline => {
       const item = dropUngroundedDates(raw, truncated, referenceDate);
@@ -198,17 +263,32 @@ export async function extractDeadlinesWithLLM(
         zustellungsdatum: item.zustellungsdatum ?? undefined,
       };
 
-      // Enrich with frist-engine if we have a key and a date
-      if (item.frist_key && (item.zustellungsdatum || item.absolutes_datum)) {
-        const ausloeser = item.zustellungsdatum || item.absolutes_datum!;
+      // The frist-engine computes from the service date only. An end date
+      // stated in the text ("bis 30.06.") is already the Fristende — feeding
+      // it in as a service date would push the deadline a whole period out.
+      if (item.frist_key && item.zustellungsdatum) {
         try {
-          const result = berechneFristAuto(item.frist_key, ausloeser, opts);
+          const result = berechneFristAuto(item.frist_key, item.zustellungsdatum, opts);
+          if (item.absolutes_datum && item.absolutes_datum !== result.fristende) {
+            // Text and computation disagree: keep what the text says, show
+            // the difference, and leave it to review (no auto-created page).
+            result.hinweise.push(
+              `Abweichung: Im Text steht als Fristende ${item.absolutes_datum}, berechnet ab Zustellung ${item.zustellungsdatum} ergibt sich ${result.fristende} — bitte prüfen.`
+            );
+            return {
+              ...dd,
+              fristResult: result,
+              date: item.absolutes_datum,
+              confidence: "medium",
+              zustellungsdatum: item.zustellungsdatum,
+            };
+          }
           return {
             ...dd,
             fristResult: result,
             date: result.fristende,
             confidence: "high",
-            zustellungsdatum: ausloeser,
+            zustellungsdatum: item.zustellungsdatum,
           };
         } catch {
           // If frist-engine fails (unknown key etc.), keep the LLM result
@@ -223,7 +303,7 @@ export async function extractDeadlinesWithLLM(
       "[llm-deadline-extract] Request failed:",
       err instanceof Error ? err.message : String(err)
     );
-    return [];
+    return fail();
   }
 }
 
@@ -239,14 +319,20 @@ export async function extractDeadlinesWithLLM(
  *
  * @param text The full text to analyze
  * @param regexDetected Results from detectDeadlines() (already enriched)
- * @param opts Optional: ferialsache, vorfristTage
+ * @param opts Optional: ferialsache, vorfristTage, referenceDate, meta (status, omitted text)
  * @returns Merged array of DetectedDeadline[]
  */
 export async function hybridDeadlineDetection(
   text: string,
   regexDetected: DetectedDeadline[],
   headers?: Record<string, string>,
-  opts?: { ferialsache?: boolean; vorfristTage?: number; meta?: LlmCallMeta }
+  opts?: {
+    ferialsache?: boolean;
+    vorfristTage?: number;
+    meta?: LlmCallMeta;
+    /** Date of the document / its service (ISO); relative dates resolve against it. */
+    referenceDate?: string;
+  }
 ): Promise<DetectedDeadline[]> {
   const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
   const shouldCallLLM = highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);
