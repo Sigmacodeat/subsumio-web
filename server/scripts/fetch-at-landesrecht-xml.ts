@@ -28,6 +28,20 @@
  *   bun scripts/fetch-at-landesrecht-xml.ts --limit 100    # Testlauf
  *   bun scripts/fetch-at-landesrecht-xml.ts --page 50      # Resume ab Seite 50
  *   bun scripts/fetch-at-landesrecht-xml.ts --from-index /law-corpus/_state/ris-inforce-landesrecht.jsonl
+ *   bun scripts/fetch-at-landesrecht-xml.ts --ids /law-corpus/_state/rejected-law-at-landesrecht-generation-known_bad.txt [--dry-run] [--ids-since 2026-09-26]
+ *
+ * --ids: holt GENAU die gelisteten Dokumentnummern neu (eine je Zeile, z.B.
+ * aus list-rejected-pages.ts) und überschreibt jede Rohdatei, die diese
+ * Nummer bereits trägt — auch ohne --force und an genau ihrem bisherigen
+ * Pfad (corpus-id-index.ts). Neben die alte Datei zu schreiben würde nichts
+ * reparieren: der Normalizer wählt pro doc_id nach Textqualität, nicht nach
+ * Alter. Nur wenn keine Rohdatei existiert, entsteht eine neue am
+ * Standardpfad <land>/gnr-<nr>/<key>.md. Metadaten (Kurztitel,
+ * Gesetzesnummer, Bundesland, Paragraph) kommen aus dem frischen XML.
+ * Fortsetzbar: Nummern, deren Rohdateien alle retrieved_at >= --ids-since
+ * (Standard: heute) tragen, werden übersprungen — nach einem Abbruch am
+ * Folgetag das Startdatum des Laufs angeben. --dry-run zählt nur, ohne
+ * RIS-Anfrage.
  *
  * --from-index: holt NUR die Dokumente, die der In-force-Index listet und die
  * noch nicht geprüft in _normalized liegen — direkt per Dokumentnummer, ohne
@@ -43,7 +57,13 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
-import { landOfDocId } from "./normalize/normalize-corpus";
+import { clean, landOfDocId, parseRaw } from "./normalize/normalize-corpus";
+import {
+  alreadyRefetched,
+  indexRawFilesById,
+  readIdList,
+  retrievedAtOfRawText,
+} from "./corpus-id-index";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
 import { recordFetchOutcome } from "./ris-fetch-outcomes";
 
@@ -86,6 +106,10 @@ function arg(name: string, fb?: string): string {
 const LIMIT = Number(arg("limit", "0"));
 const FROM_INDEX = arg("from-index");
 const START_PAGE = Number(arg("page", "1"));
+/** Datei mit einer Dokumentnummer je Zeile — siehe --ids im Kopf. */
+const IDS_FILE = arg("ids");
+const IDS_SINCE = arg("ids-since", new Date().toISOString().slice(0, 10));
+const DRY_RUN = process.argv.includes("--dry-run");
 const END_PAGE = Number(arg("to-page", String(MAX_PAGES)));
 
 function slugify(s: string): string {
@@ -183,7 +207,8 @@ async function fetchXmlFromUrl(url: string, attempt = 0): Promise<string | null>
     return body;
   } catch {
     if (attempt < 5) {
-      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt));
+      // Never faster than the RIS pace, even when retrying a network error.
+      await new Promise((r) => setTimeout(r, Math.max(RIS_PAUSE_MS, 600 * 2 ** attempt)));
       return fetchXmlFromUrl(url, attempt + 1);
     }
     return null;
@@ -341,7 +366,148 @@ function loadValidatedIds(root: string): Set<string> {
   return out;
 }
 
+/**
+ * Standardpfad einer Landesnorm relativ zu OUT_DIR — derselbe wie im
+ * Seiten-/Index-Modus. null, wenn kein Paragraphenschlüssel ableitbar ist
+ * (§ 0 / Norm-Dokument).
+ */
+export function standardRelPath(docId: string, gn: string, apa: string | null): string | null {
+  const key = normKey(apa);
+  if (!key) return null;
+  const land = landOfDocId(docId) ?? "unbekannt";
+  return join(land, gn ? `gnr-${gn}` : "no-gn", `${key}.md`);
+}
+
+function atomicWriteFile(path: string, content: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const tmp = join(
+    dirname(path),
+    `.refetch-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`
+  );
+  writeFileSync(tmp, content);
+  renameSync(tmp, path);
+}
+
+/** --ids: gelistete Dokumentnummern gezielt neu holen (siehe Dateikopf). */
+async function refetchIds(idsFile: string): Promise<void> {
+  const ids = readIdList(idsFile);
+  console.log(`  Id-Liste: ${ids.length} Dokumentnummern aus ${idsFile}`);
+  console.log(`  Suche vorhandene Rohdateien in ${OUT_DIR} …`);
+  const index = indexRawFilesById(OUT_DIR, new Set(ids));
+  console.log(`  ${index.size} Nummern haben Rohdateien, ${ids.length - index.size} nicht`);
+
+  let written = 0;
+  let skipped = 0;
+  let failed = 0;
+  let noText = 0;
+  let newFiles = 0;
+  let requests = 0;
+  const report = () =>
+    console.log(
+      `  [ids] neu geschrieben: ${written} (davon neue Dateien: ${newFiles}) | übersprungen: ${skipped} | kein Text: ${noText} | Fehler: ${failed} | Anfragen: ${requests}/${ids.length}`
+    );
+
+  for (const docId of ids) {
+    if (aborted) {
+      console.log(`\nAbbruch nach ${MAX_CONSECUTIVE_503} aufeinanderfolgenden 429/503.`);
+      break;
+    }
+    if (LIMIT > 0 && written >= LIMIT) break;
+
+    const existingPaths = index.get(docId) ?? [];
+    const existingTexts = existingPaths.map((p) => readFileSync(p, "utf8"));
+    if (alreadyRefetched(existingTexts.map(retrievedAtOfRawText), IDS_SINCE)) {
+      skipped++;
+      continue;
+    }
+    if (DRY_RUN) {
+      requests++;
+      continue;
+    }
+
+    requests++;
+    const xml = await fetchXmlFromUrl(`${XML_BASE}/${docId}/${docId}.xml`);
+    if (!xml) {
+      failed++;
+      if (!aborted)
+        recordFetchOutcome(
+          _corpusRoot,
+          "at-landesrecht",
+          docId,
+          lastFetchNotFound ? "not_found" : "failed"
+        );
+      await risMassPause("Landesrecht-XML (Id-Liste)");
+      continue;
+    }
+
+    const { text, meta } = extractText(xml);
+    if (text.length < MIN_TEXT_LENGTH) {
+      noText++;
+      recordFetchOutcome(_corpusRoot, "at-landesrecht", docId, "no_text", meta.artikel_anlage);
+      await risMassPause("Landesrecht-XML (Id-Liste)");
+      continue;
+    }
+
+    const oldFm = existingTexts.length > 0 ? parseRaw(existingTexts[0]!).fm : {};
+    const gn = clean(meta.gesnr) ?? clean(oldFm.gesetzesnummer) ?? "";
+    const title = clean(meta.kurztitel) ?? clean(oldFm.title) ?? docId;
+    const eli = clean(oldFm.eli) ?? "";
+    const bundesland = clean(meta.bundesland) ?? clean(oldFm.bundesland);
+    const md = buildMarkdown(docId, title, text, meta, bundesland ? { bundesland } : {}, eli, gn);
+
+    let targets = existingPaths;
+    if (targets.length === 0) {
+      const rel = standardRelPath(docId, gn, meta.artikel_anlage ?? null);
+      if (!rel) {
+        failed++;
+        recordFetchOutcome(
+          _corpusRoot,
+          "at-landesrecht",
+          docId,
+          "failed",
+          `kein Paragraphenschlüssel (${meta.artikel_anlage ?? "—"})`
+        );
+        await risMassPause("Landesrecht-XML (Id-Liste)");
+        continue;
+      }
+      targets = [join(OUT_DIR, rel)];
+      newFiles++;
+    }
+
+    if (KEEP_XML) {
+      const land = landOfDocId(docId) ?? "unbekannt";
+      const xmlDir = join(KEEP_XML, land, gn ? `gnr-${gn}` : "no-gn");
+      mkdirSync(xmlDir, { recursive: true });
+      writeFileSync(join(xmlDir, `${docId}.xml`), xml);
+    }
+    for (const t of targets) atomicWriteFile(t, md);
+    written++;
+    if (written % 200 === 0) report();
+
+    await risMassPause("Landesrecht-XML (Id-Liste)");
+  }
+
+  console.log(`\n═══════════════════════════════════════════════════════════`);
+  console.log(`  ${DRY_RUN ? "TROCKENLAUF — " : ""}Id-Liste fertig`);
+  report();
+  if (DRY_RUN)
+    console.log(
+      `  Anfragen, die ein echter Lauf stellen würde: ${requests} (≈ ${Math.ceil((requests * RIS_PAUSE_MS) / 60000)} min bei ${RIS_PAUSE_MS} ms Pause)`
+    );
+  console.log(`═══════════════════════════════════════════════════════════`);
+}
+
 async function main() {
+  if (IDS_FILE) {
+    if (DRY_RUN) return refetchIds(IDS_FILE);
+    await acquireRisLock();
+    try {
+      await refetchIds(IDS_FILE);
+    } finally {
+      releaseRisLock();
+    }
+    return;
+  }
   await acquireRisLock();
   mkdirSync(OUT_DIR, { recursive: true });
   // Present = passed the normalizer. Older generations (state folders, HTML
@@ -646,10 +812,12 @@ async function main() {
   console.log(`═══════════════════════════════════════════════════════════`);
 }
 
-main()
-  .then(() => releaseRisLock())
-  .catch((err) => {
-    console.error("Fatal error:", err);
-    releaseRisLock();
-    process.exit(1);
-  });
+if (import.meta.main) {
+  main()
+    .then(() => releaseRisLock())
+    .catch((err) => {
+      console.error("Fatal error:", err);
+      releaseRisLock();
+      process.exit(1);
+    });
+}

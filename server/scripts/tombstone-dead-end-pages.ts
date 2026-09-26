@@ -27,13 +27,20 @@
  * before touching anything, same reasoning as that script: what was
  * removed should stay answerable later.
  *
+ * The inventory line of a page is appended to the file BEFORE its UPDATE
+ * runs, so a crash mid-run never leaves a tombstone without a record. The
+ * default location is under the corpus root ($LAW_CORPUS_ROOT/_state),
+ * which is writable in the corpus-pipeline container (/data is read-only
+ * there).
+ *
  * Usage:
- *   bun run scripts/tombstone-dead-end-pages.ts --dry-run
- *   bun run scripts/tombstone-dead-end-pages.ts --yes
+ *   bun run scripts/tombstone-dead-end-pages.ts --source law-at-judikatur-vwgh
+ *   bun run scripts/tombstone-dead-end-pages.ts --source law-at-judikatur-vwgh --yes
  */
 
 import { parseArgs } from "util";
-import { writeFileSync } from "fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
 import { assessPage, DOC_CLASS_OF_SOURCE, type PageRow } from "./audit-plausibility-full.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
@@ -72,12 +79,23 @@ async function main() {
     options: {
       source: { type: "string" },
       yes: { type: "boolean", default: false },
-      "inventory-out": { type: "string", default: "/data/tombstone-dead-end-inventory.jsonl" },
+      "dry-run": { type: "boolean", default: false },
+      "inventory-out": { type: "string" },
     },
     allowPositionals: false,
   });
-  const APPLY = values.yes as boolean;
+  const APPLY = (values.yes as boolean) && !(values["dry-run"] as boolean);
   const sources = values.source ? [values.source as string] : Object.keys(DOC_CLASS_OF_SOURCE);
+  const inventoryOut =
+    (values["inventory-out"] as string | undefined) ??
+    join(
+      process.env.LAW_CORPUS_ROOT ?? "/law-corpus",
+      "_state",
+      `tombstone-dead-end-inventory-${new Date().toISOString().slice(0, 10)}.jsonl`
+    );
+  // Fail before touching the database if the inventory cannot be written.
+  mkdirSync(dirname(inventoryOut), { recursive: true });
+  writeFileSync(inventoryOut, "");
 
   const fileCfg = loadConfig();
   if (!fileCfg) throw new Error("No engine configured. Set DATABASE_URL or ~/.gbrain/config.json.");
@@ -111,16 +129,16 @@ async function main() {
           if (!isDeadEndOnly(verdict.issues)) continue;
 
           sourcePages++;
-          inventoryLines.push(
-            JSON.stringify({
-              source_id: source,
-              page_id: row.id,
-              slug: row.slug,
-              title: row.title,
-              doc_id: row.frontmatter?.["doc_id"] ?? row.frontmatter?.["nor_id"] ?? null,
-              issues: verdict.issues,
-            })
-          );
+          const line = JSON.stringify({
+            source_id: source,
+            page_id: row.id,
+            slug: row.slug,
+            title: row.title,
+            doc_id: row.frontmatter?.["doc_id"] ?? row.frontmatter?.["nor_id"] ?? null,
+            issues: verdict.issues,
+          });
+          inventoryLines.push(line);
+          appendFileSync(inventoryOut, line + "\n");
           if (APPLY) {
             await engine.executeRaw(`UPDATE pages SET deleted_at = now() WHERE id = $1`, [row.id]);
           }
@@ -139,12 +157,7 @@ async function main() {
     await engine.disconnect();
   }
 
-  if (inventoryLines.length > 0) {
-    writeFileSync(values["inventory-out"] as string, inventoryLines.join("\n") + "\n");
-    console.log(
-      `Inventar geschrieben: ${values["inventory-out"]} (${inventoryLines.length} Zeilen)`
-    );
-  }
+  console.log(`Inventar geschrieben: ${inventoryOut} (${inventoryLines.length} Zeilen)`);
 
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log(

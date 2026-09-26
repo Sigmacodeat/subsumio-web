@@ -25,14 +25,33 @@
  *   bun server/scripts/fetch-ris-pdf-corpus.ts --corpus Bezirke --dry-run
  *   bun server/scripts/fetch-ris-pdf-corpus.ts --corpus Bezirke
  *   bun server/scripts/fetch-ris-pdf-corpus.ts --corpus KmGer
+ *   bun server/scripts/fetch-ris-pdf-corpus.ts --corpus Bezirke --ids /law-corpus/_state/rejected-law-at-bezirke-generation-known_bad.txt [--dry-run] [--ids-since 2026-09-26]
+ *
+ * --ids: holt nur die gelisteten Dokumentnummern (eine je Zeile, z.B. aus
+ * list-rejected-pages.ts) neu. RIS kennt für diese Korpora keinen
+ * Einzelabruf mit Metadaten, deshalb werden die Listenseiten geblättert
+ * (Bezirke ≈ 27, KmGer 1 Anfrage) und nur die PDFs der gelisteten Nummern
+ * geladen. Jede Rohdatei, die die Nummer bereits trägt, wird an ihrem Pfad
+ * überschrieben (corpus-id-index.ts) — eine Kopie daneben würde der
+ * Normalizer nicht zwingend bevorzugen. Nummern, die RIS nicht mehr listet,
+ * landen als not_found in _state/ris-fetch-outcomes.jsonl. Fortsetzbar über
+ * retrieved_at >= --ids-since (Standard: heute). --dry-run zählt nur, ohne
+ * RIS-Anfrage.
  */
 
-import { writeFileSync, mkdirSync, existsSync, readFileSync, unlinkSync } from "fs";
-import { join } from "path";
+import { writeFileSync, mkdirSync, existsSync, readFileSync, unlinkSync, renameSync } from "fs";
+import { dirname, join } from "path";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_PAUSE_MS } from "./ris-pace";
 import { contentHash } from "./backfill-utils";
+import {
+  alreadyRefetched,
+  indexRawFilesById,
+  readIdList,
+  retrievedAtOfRawText,
+} from "./corpus-id-index";
+import { recordFetchOutcome } from "./ris-fetch-outcomes";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -43,6 +62,8 @@ const CORPUS = arg("--corpus", "Bezirke")!;
 const DRY = args.includes("--dry-run");
 const LIMIT = parseInt(arg("--limit", "0")!, 10);
 const NO_LOCK = args.includes("--no-lock");
+const IDS_FILE = arg("--ids");
+const IDS_SINCE = arg("--ids-since", new Date().toISOString().slice(0, 10))!;
 
 const UA = "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)";
 const API = "https://data.bka.gv.at/ris/api/v2.6";
@@ -237,6 +258,122 @@ function toMarkdown(d: Doc, body: string): string {
   return `${fm}\n\n# ${d.title}\n\n${body}\n`;
 }
 
+type DocText =
+  | { ok: true; text: string }
+  | { ok: false; reason: "http"; status: number }
+  | { ok: false; reason: "empty"; length: number };
+
+/** PDF eines Dokuments laden und zu Text machen (ohne Pause — die setzt der Aufrufer). */
+async function fetchDocText(d: Doc): Promise<DocText> {
+  const res = await fetch(d.pdfUrl, { headers: { "User-Agent": UA } });
+  if (!res.ok) return { ok: false, reason: "http", status: res.status };
+  const text = cleanPdfText(await pdfToText(await res.arrayBuffer()));
+  // Ohne Textschicht kein Volltext — lieber gar nichts schreiben als
+  // eine Datei, die Inhalt vortäuscht.
+  if (text.length < 120) return { ok: false, reason: "empty", length: text.length };
+  return { ok: true, text };
+}
+
+function defaultFileFor(outDir: string, d: Doc): string {
+  return join(outDir, `${slugify(d.title || d.id)}-${slugify(d.id).slice(-24)}.md`);
+}
+
+function atomicWriteFile(path: string, content: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const tmp = join(
+    dirname(path),
+    `.refetch-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`
+  );
+  writeFileSync(tmp, content, "utf8");
+  renameSync(tmp, path);
+}
+
+/** --ids: nur die gelisteten Dokumentnummern neu holen (siehe Dateikopf). */
+async function refetchIds(outDir: string, idsFile: string): Promise<void> {
+  const ids = readIdList(idsFile);
+  console.log(`Id-Liste:  ${ids.length} Dokumentnummern aus ${idsFile}`);
+  const index = indexRawFilesById(outDir, new Set(ids));
+  const pending = new Set(
+    ids.filter(
+      (id) =>
+        !alreadyRefetched(
+          (index.get(id) ?? []).map((p) => retrievedAtOfRawText(readFileSync(p, "utf8"))),
+          IDS_SINCE
+        )
+    )
+  );
+  console.log(
+    `           ${index.size} mit Rohdatei, ${ids.length - pending.size} schon seit ${IDS_SINCE} geholt, ${pending.size} offen`
+  );
+  if (DRY) {
+    console.log(
+      `[DRY-RUN] ein echter Lauf stellt ${pending.size} PDF-Anfragen + die Listenseiten (je 100 Dokumente) — keine Anfrage gestellt.`
+    );
+    return;
+  }
+  if (pending.size === 0) return;
+
+  let written = 0,
+    newFiles = 0,
+    failed = 0,
+    emptyText = 0,
+    page = 1;
+  const found = new Set<string>();
+  const corpusName = cfg.dir;
+  for (;;) {
+    const { docs } = await fetchPage(page);
+    await risMassPause("PDF-Corpus (Id-Liste)");
+    if (docs.length === 0) break;
+    for (const d of docs) {
+      if (!pending.has(d.id) || found.has(d.id)) continue;
+      found.add(d.id);
+      try {
+        const r = await fetchDocText(d);
+        if (!r.ok) {
+          if (r.reason === "http") {
+            failed++;
+            console.log(`  ✗ HTTP ${r.status}  ${d.id}`);
+            recordFetchOutcome(
+              CORPUS_ROOT,
+              corpusName,
+              d.id,
+              r.status === 404 ? "not_found" : "failed",
+              `HTTP ${r.status}`
+            );
+          } else {
+            emptyText++;
+            console.log(`  ⊘ kein Text (${r.length} Zeichen)  ${d.id}`);
+            recordFetchOutcome(CORPUS_ROOT, corpusName, d.id, "no_text", "PDF ohne Textschicht");
+          }
+        } else {
+          const existing = index.get(d.id) ?? [];
+          const targets = existing.length > 0 ? existing : [defaultFileFor(outDir, d)];
+          if (existing.length === 0) newFiles++;
+          const md = toMarkdown(d, r.text);
+          for (const t of targets) atomicWriteFile(t, md);
+          written++;
+          if (written % 50 === 0) console.log(`  ✓ ${String(written).padStart(5)}/${pending.size}`);
+        }
+      } catch (e) {
+        failed++;
+        console.log(`  ✗ ${d.id}: ${(e as Error).message.slice(0, 80)}`);
+        recordFetchOutcome(CORPUS_ROOT, corpusName, d.id, "failed", (e as Error).message);
+      }
+      await risMassPause("PDF-Corpus (Id-Liste)");
+    }
+    if (found.size >= pending.size) break;
+    page++;
+  }
+
+  const missing = [...pending].filter((id) => !found.has(id));
+  for (const id of missing) {
+    recordFetchOutcome(CORPUS_ROOT, corpusName, id, "not_found", "nicht mehr in der RIS-Liste");
+  }
+  console.log(
+    `\nId-Liste: geschrieben ${written} (neue Dateien ${newFiles})   ohne Textschicht: ${emptyText}   Fehler: ${failed}   von RIS nicht mehr gelistet: ${missing.length}`
+  );
+}
+
 async function main() {
   const outDir = join(CORPUS_ROOT, cfg.dir);
   console.log(
@@ -249,6 +386,15 @@ async function main() {
     console.log("Warte auf RIS-Lock (RIS-OGD erlaubt nur eine aktive Verbindung)…");
     await acquireRisLock();
     console.log("RIS-Lock erhalten.");
+  }
+
+  if (IDS_FILE) {
+    try {
+      await refetchIds(outDir, IDS_FILE);
+    } finally {
+      if (!NO_LOCK && !DRY) releaseRisLock();
+    }
+    return;
   }
 
   let written = 0,
@@ -271,23 +417,21 @@ async function main() {
           return;
         }
         try {
-          const res = await fetch(d.pdfUrl, { headers: { "User-Agent": UA } });
-          if (!res.ok) {
-            failed++;
-            console.log(`  ✗ HTTP ${res.status}  ${d.id}`);
+          const r = await fetchDocText(d);
+          if (!r.ok) {
+            if (r.reason === "http") {
+              failed++;
+              console.log(`  ✗ HTTP ${r.status}  ${d.id}`);
+            } else {
+              emptyText++;
+              console.log(`  ⊘ kein Text (${r.length} Zeichen)  ${d.id}`);
+            }
+            await risMassPause("PDF-Corpus");
             continue;
           }
-          const text = cleanPdfText(await pdfToText(await res.arrayBuffer()));
+          const text = r.text;
 
-          // Ohne Textschicht kein Volltext — lieber gar nichts schreiben als
-          // eine Datei, die Inhalt vortäuscht.
-          if (text.length < 120) {
-            emptyText++;
-            console.log(`  ⊘ kein Text (${text.length} Zeichen)  ${d.id}`);
-            continue;
-          }
-
-          const file = join(outDir, `${slugify(d.title || d.id)}-${slugify(d.id).slice(-24)}.md`);
+          const file = defaultFileFor(outDir, d);
           if (!DRY) {
             mkdirSync(outDir, { recursive: true });
             writeFileSync(file, toMarkdown(d, text), "utf8");
