@@ -74,7 +74,8 @@ export function MorningBriefing({ compact = false }: { compact?: boolean } = {})
   const stats = briefing?.data;
   const hasContent =
     stats &&
-    (stats.criticalDeadlines > 0 ||
+    (stats.deadlinesIncomplete === true ||
+      stats.criticalDeadlines > 0 ||
       stats.overdueDeadlines > 0 ||
       stats.inboxItems > 0 ||
       stats.pendingReviews > 0 ||

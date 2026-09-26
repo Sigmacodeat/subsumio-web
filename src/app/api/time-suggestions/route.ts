@@ -1,5 +1,6 @@
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { createServerBrainClient } from "@/lib/server-brain";
+import { listAllPagesOfType } from "@/lib/time-tracking";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/time-suggestions");
@@ -23,9 +24,9 @@ export const GET = createHandler(
     try {
       const brain = createServerBrainClient(ctx.headers);
       const myEmail = ctx.user.email.toLowerCase();
-      const pages = await brain
-        .listPages({ type: "time_suggestion", limit: 500 })
-        .catch(() => [] as unknown[]);
+      // Cursor-paginated: listPages stops silently at the 100-row engine cap.
+      // A failed read answers 500 — never an empty "keine Vorschläge" list.
+      const pages = await listAllPagesOfType(brain, "time_suggestion", 10_000);
       const suggestions = (Array.isArray(pages) ? pages : [])
         .map((p) => (p as { frontmatter?: Record<string, unknown> }).frontmatter)
         .filter(

@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { createCalendarEvent, isMsGraphConfigured } from "@/lib/msgraph";
+import { createCalendarEvent, isAppGraphFirm, isMsGraphConfigured } from "@/lib/msgraph";
 import {
   createUserCalendarEvent,
   isDelegatedMs365Configured,
   isMs365Connected,
 } from "@/lib/msgraph-user";
 import { getStore } from "@/lib/auth/store";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -30,6 +31,16 @@ const createEventSchema = z.object({
     .optional(),
   categories: z.array(z.string().max(50)).max(10).optional(),
   caseSlug: z.string().max(300).optional(),
+  /**
+   * Subsumio appointment this event mirrors: its outlook_event_id is written
+   * back so the background sync updates/deletes this event instead of
+   * pushing a second copy.
+   */
+  appointmentSlug: z
+    .string()
+    .max(300)
+    .regex(/^legal\/appointments\/[A-Za-z0-9._-]+$/, "invalid_appointment_slug")
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -55,9 +66,15 @@ export const POST = createHandler(
     if (!delegated && !isMsGraphConfigured()) {
       return apiError(
         "msgraph_not_configured",
-        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID",
+        "Microsoft 365 ist nicht konfiguriert. Erforderlich: MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID, MS365_MAILBOX",
         400
       );
+    }
+    // Without a personal connection the only other target is the service
+    // mailbox, which belongs to one firm (MS365_BRAIN_ID). Everyone else's
+    // appointment simply stays in Subsumio.
+    if (!delegated && !isAppGraphFirm(ctx.brainId)) {
+      return apiSuccess({ ok: true, delegated: false, skipped: "not_connected" });
     }
 
     try {
@@ -86,33 +103,67 @@ export const POST = createHandler(
         webLink = event.webLink;
       }
 
-      // If case-linked, store event reference in brain
+      // If case-linked, store event reference in brain. The Outlook event
+      // exists either way; `case_linked: false` reports a failed link.
+      let caseLinked: boolean | null = null;
       if (body.caseSlug && eventId) {
         const slug = delegated
           ? `calendar/outlook/${ctx.user.id}/${eventId}`
           : `calendar/outlook/${eventId}`;
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({
-            slug,
-            title: `Termin: ${body.subject}`,
-            type: "calendar_event",
-            frontmatter: {
+        caseLinked = await engineWriteBestEffort(
+          `${ENGINE_URL}/api/pages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...ctx.headers },
+            body: JSON.stringify({
+              slug,
+              title: `Termin: ${body.subject}`,
               type: "calendar_event",
-              case_slug: body.caseSlug,
+              frontmatter: {
+                type: "calendar_event",
+                case_slug: body.caseSlug,
+                outlook_event_id: eventId,
+                owner_user_id: delegated ? ctx.user.id : undefined,
+                subject: body.subject,
+                start: body.start,
+                end: body.end,
+                location: body.location,
+                web_link: webLink,
+                synced_at: new Date().toISOString(),
+              },
+            }),
+            signal: AbortSignal.timeout(10_000),
+          },
+          "Akten-Verknüpfung des Termins"
+        );
+      }
+
+      // Link the appointment to its Outlook copy (delegated = the owner's own
+      // calendar, the same one the per-user sync writes to).
+      if (delegated && eventId && body.appointmentSlug) {
+        const now = new Date().toISOString();
+        const linked = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: body.appointmentSlug,
+            frontmatter: {
               outlook_event_id: eventId,
-              owner_user_id: delegated ? ctx.user.id : undefined,
-              subject: body.subject,
-              start: body.start,
-              end: body.end,
-              location: body.location,
-              web_link: webLink,
-              synced_at: new Date().toISOString(),
+              synced_to: "outlook",
+              outlook_synced_at: now,
+              synced_at: now,
             },
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
+          },
+          { timeoutMs: 10_000 }
+        ).catch(() => null);
+        if (!linked?.ok) {
+          // The event exists in Outlook but the appointment does not know it:
+          // the sync would push a duplicate. Report it instead of "ok".
+          return apiError(
+            "calendar_link_failed",
+            "Termin in Outlook angelegt, aber nicht mit dem Subsumio-Termin verknüpft",
+            502
+          );
+        }
       }
 
       return apiSuccess({
@@ -121,6 +172,7 @@ export const POST = createHandler(
         webLink,
         subject: body.subject,
         delegated: Boolean(delegated),
+        case_linked: caseLinked,
       });
     } catch (e) {
       return apiError(

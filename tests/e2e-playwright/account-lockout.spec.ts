@@ -9,6 +9,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_PASSWORD = "LockoutTest123!";
@@ -23,8 +24,10 @@ test.describe("Account Lockout (E2E)", () => {
     const email = getTestEmail();
 
     // Sign up a user
-    const signupRes = await request.post("/api/auth/signup", {
+    const signupRes = await signupAndConfirm(request, {
       data: {
+        acceptTerms: true,
+        acceptDpa: true,
         email,
         name: "Lockout Test",
         password: TEST_PASSWORD,
@@ -61,8 +64,10 @@ test.describe("Account Lockout (E2E)", () => {
     const email = getTestEmail();
 
     // Sign up
-    const signupRes = await request.post("/api/auth/signup", {
+    const signupRes = await signupAndConfirm(request, {
       data: {
+        acceptTerms: true,
+        acceptDpa: true,
         email,
         name: "Lockout OK Test",
         password: TEST_PASSWORD,
@@ -85,8 +90,10 @@ test.describe("Account Lockout (E2E)", () => {
     const email = getTestEmail();
 
     // Sign up
-    await request.post("/api/auth/signup", {
+    await signupAndConfirm(request, {
       data: {
+        acceptTerms: true,
+        acceptDpa: true,
         email,
         name: "Rate Limit Test",
         password: TEST_PASSWORD,

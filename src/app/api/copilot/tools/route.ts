@@ -12,18 +12,24 @@ import { buildNdaTemplate } from "@/lib/nda-template";
 import { contactSlugFor } from "@/lib/case-contacts";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createServerBrainClient } from "@/lib/server-brain";
-import {
-  listAllTimeEntries,
-  markTimeEntriesBilled,
-  updateStandaloneBilling,
-  STANDALONE_ENTRY_PREFIX,
-  type TimeEntryWithCase,
-} from "@/lib/time-tracking";
-import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { listAllTimeEntries, type TimeEntryWithCase } from "@/lib/time-tracking";
+import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
+import { requestConflictCheck } from "@/lib/conflict-gate";
+import { reserveInvoiceNumber } from "@/lib/invoice-numbering";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
+import { computeInvoiceTotals, lineAmount, parseHourlyRate } from "@/lib/invoice-totals";
+import {
+  activeBillingRules,
+  feeAgreementRate,
+  ruledTimeItems,
+  type FeeAgreementLike,
+} from "@/lib/billing-rules";
+import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 import type { TaskEntry, DeadlineEntry, TimeEntry, DocumentEntry } from "@/lib/legal-types";
 import { mapWithConcurrency } from "@/lib/cron-utils";
+import { brainPageHref, INVOICING_HREF } from "@/lib/dashboard-hrefs";
 import { planVaultOrganization } from "@/lib/vault-organization";
 import {
   CREDIT_COSTS,
@@ -60,6 +66,11 @@ import {
 } from "@/lib/automation";
 
 import { logger } from "@/lib/logger";
+import { getEnginePage } from "@/lib/engine-page-io";
+import {
+  hideForeignPersonalEventHits,
+  hideForeignPersonalEvents,
+} from "@/lib/calendar/personal-events";
 const log = logger("api/copilot/tools");
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
@@ -189,6 +200,8 @@ const documentSummarySchema = z.object({
 
 const conflictCheckSchema = z.object({
   name: z.string().min(1).max(500),
+  /** Side of the name in the NEW mandate (§ 10 RAO): client or opponent. */
+  side: z.enum(["client", "opponent"]).default("client"),
 });
 
 const timeEntrySchema = z.object({
@@ -507,6 +520,8 @@ interface ToolResponse {
     }>;
     href?: string;
     message?: string;
+    /** Full AI-generated text: shown untruncated with grounding in the chat card. */
+    aiText?: string;
     filterHref?: string;
     summary?: {
       caseTitle?: string;
@@ -672,7 +687,7 @@ async function executeSearchDeadlines(
 }
 
 async function executeSearchKnowledge(
-  ctx: { headers: Record<string, string> },
+  ctx: { headers: Record<string, string>; user: { id: string } },
   params: z.infer<typeof searchKnowledgeSchema>
 ): Promise<ToolResponse> {
   try {
@@ -681,12 +696,18 @@ async function executeSearchKnowledge(
       { headers: ctx.headers }
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const results = (await res.json()) as Array<{
-      slug: string;
-      title: string;
-      snippet?: string;
-      score?: number;
-    }>;
+    // Colleagues' personal calendar mirrors never reach the Copilot.
+    const results = await hideForeignPersonalEventHits(
+      (await res.json()) as Array<{
+        slug: string;
+        title: string;
+        snippet?: string;
+        score?: number;
+        type?: string;
+      }>,
+      ctx.user.id,
+      (slug) => getEnginePage(ctx.headers, slug, { timeoutMs: 5_000 })
+    );
     return {
       success: true,
       data: results,
@@ -717,63 +738,64 @@ async function executeCreateCase(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof createCaseSchema>
 ): Promise<ToolResponse> {
-  try {
-    const safeTitle = sanitizeUserInput(params.title);
-    const safeClientName = params.client_name ? sanitizeUserInput(params.client_name) : undefined;
-    const safeOpponentName = params.opponent_name
-      ? sanitizeUserInput(params.opponent_name)
-      : undefined;
-    const safeCaseType = params.case_type ? sanitizeUserInput(params.case_type) : undefined;
-    const slug = `cases/${safeTitle
-      .toLowerCase()
-      .replace(/ä/g, "ae")
-      .replace(/ö/g, "oe")
-      .replace(/ü/g, "ue")
-      .replace(/ß/g, "ss")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
-    const body = {
-      slug,
-      title: safeTitle,
-      type: "legal_case",
-      content: `# ${safeTitle}\n\n## Akteninformation\n\n- **Mandant:** ${safeClientName ?? "—"}\n- **Gegenseite:** ${safeOpponentName ?? "—"}\n- **Typ:** ${safeCaseType ?? "Zivilrecht"}\n`,
-      frontmatter: {
-        client_name: safeClientName,
-        opponent_name: safeOpponentName,
-        case_type: safeCaseType,
-        status: "active",
-        created_at: new Date().toISOString(),
-      },
-    };
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = (await res.json()) as { slug: string };
+  const safeTitle = sanitizeUserInput(params.title);
+  const safeClientName = params.client_name ? sanitizeUserInput(params.client_name) : undefined;
+  const safeOpponentName = params.opponent_name
+    ? sanitizeUserInput(params.opponent_name)
+    : undefined;
+  const safeCaseType = params.case_type ? sanitizeUserInput(params.case_type) : undefined;
+  // Shared safe path: server slug, never replaces a matter, conflict check (§ 10 RAO).
+  const outcome = await createCaseSafely(engineCaseCreateDeps(ctx.headers), {
+    title: safeTitle,
+    slugHint: safeTitle,
+    content: `# ${safeTitle}\n\n## Akteninformation\n\n- **Mandant:** ${safeClientName ?? "—"}\n- **Gegenseite:** ${safeOpponentName ?? "—"}\n- **Typ:** ${safeCaseType ?? "Zivilrecht"}\n`,
+    frontmatter: {
+      ...(safeClientName ? { client_name: safeClientName } : {}),
+      ...(safeOpponentName ? { opponent_name: safeOpponentName } : {}),
+      ...(safeCaseType ? { case_type: safeCaseType } : {}),
+      status: "active",
+      created_via: "copilot",
+      created_at: new Date().toISOString(),
+    },
+  });
+  if (outcome.status === "created") {
     return {
       success: true,
-      data: result,
+      data: { slug: outcome.slug },
       display: {
         kind: "confirmation",
         title: `Akte erstellt: ${safeTitle}`,
-        href: `/dashboard/cases/${result.slug.replace(/^cases\//, "")}`,
-        message: `Die Akte wurde erfolgreich angelegt. Mandant: ${safeClientName ?? "—"}, Gegenseite: ${safeOpponentName ?? "—"}`,
-      },
-    };
-  } catch (_err) {
-    return {
-      success: false,
-      error: "Create failed",
-      display: {
-        kind: "confirmation",
-        title: "Akte konnte nicht erstellt werden",
-        message: "Engine nicht erreichbar",
+        href: `/dashboard/cases/${outcome.slug.replace(/^legal\/cases\//, "")}`,
+        message: `Die Akte wurde angelegt. Mandant: ${safeClientName ?? "—"}, Gegenseite: ${safeOpponentName ?? "—"}`,
       },
     };
   }
+  if (outcome.status === "conflict") {
+    return {
+      success: false,
+      error: "conflict_detected",
+      data: { conflict: { hasConflict: true, matches: outcome.matches } },
+      display: {
+        kind: "confirmation",
+        title: "⚠️ Interessenkonflikt — keine Akte angelegt",
+        message:
+          "Die Kollisionsprüfung hat einen Konflikt gefunden. Bitte über die Mandatsannahme prüfen und nur mit begründeter Freigabe fortfahren.",
+        items: outcome.matches.map((m) => ({ label: `⚠️ ${m.name}`, value: m.type })),
+      },
+    };
+  }
+  return {
+    success: false,
+    error: outcome.status === "exists" ? "case_slug_exists" : outcome.code,
+    display: {
+      kind: "confirmation",
+      title: "Akte konnte nicht erstellt werden",
+      message:
+        outcome.status === "exists"
+          ? "Unter dieser Kennung gibt es bereits eine Akte."
+          : outcome.message,
+    },
+  };
 }
 
 async function executeCaseSummary(
@@ -868,7 +890,8 @@ async function executeEmailDraft(
       display: {
         kind: "summary",
         title: `Email-Entwurf: ${params.subject}`,
-        message: data.answer ? data.answer.slice(0, 200) + "..." : "Kein Entwurf generiert",
+        message: data.answer ? undefined : "Kein Entwurf generiert",
+        aiText: data.answer || undefined,
         items: [
           { label: "Betreff", value: params.subject },
           { label: "Empfänger", value: params.recipient ?? "—" },
@@ -920,15 +943,24 @@ async function executeDeadlineExtract(
       display: {
         kind: "summary",
         title: `Fristen extrahiert aus: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 300) + "..."
-          : "Keine Fristen gefunden",
+        message: thinkData.answer ? undefined : "Keine Fristen gefunden",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Dokument",
             value: page.title,
             href: `/dashboard/brain/${encodeURIComponent(page.slug)}`,
           },
+          // Only the start of the document is analysed — say so instead of
+          // letting a partial deadline list look complete.
+          ...(page.content.length > 8000
+            ? [
+                {
+                  label: "Hinweis",
+                  value: `Nur die ersten 8.000 von ${page.content.length.toLocaleString("de-AT")} Zeichen geprüft`,
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -971,9 +1003,8 @@ async function executeDocumentSummary(
       display: {
         kind: "summary",
         title: `Zusammenfassung: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 400) + "..."
-          : "Keine Zusammenfassung verfügbar",
+        message: thinkData.answer ? undefined : "Keine Zusammenfassung verfügbar",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Dokument",
@@ -1000,47 +1031,42 @@ async function executeConflictCheck(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof conflictCheckSchema>
 ): Promise<ToolResponse> {
+  const safeName = sanitizeUserInput(params.name);
   try {
-    const safeName = sanitizeUserInput(params.name);
-    const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({ name: safeName }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as {
-      matches?: Array<{ name: string; slug: string; type: string }>;
-    };
-    const matches = data.matches ?? [];
-    const hasConflict = matches.length > 0;
-
+    const result = await requestConflictCheck(
+      ctx.headers,
+      { name: safeName, side: params.side },
+      30_000
+    );
+    const relevant = result.matches.filter((m) => m.assessment !== "info");
+    const hasConflict = result.severity === "critical";
     return {
       success: true,
-      data: { matches, hasConflict },
+      data: { severity: result.severity, hasConflict, matches: relevant },
       display: {
         kind: "confirmation",
         title: hasConflict
-          ? `⚠️ Konflikt erkannt für "${safeName}"`
-          : `✓ Kein Konflikt für "${safeName}"`,
-        message: hasConflict
-          ? `${matches.length} Treffer gefunden. Prüfe vor Mandatsannahme.`
-          : "Keine Konflikte in der Datenbank gefunden.",
-        items: matches.map((m) => ({
-          label: m.name,
-          value: m.type,
-          href: m.slug ? `/dashboard/cases/${m.slug.replace(/^cases\//, "")}` : undefined,
+          ? `⚠️ Interessenkonflikt für "${safeName}"`
+          : result.severity === "low"
+            ? `Prüfen: Treffer für "${safeName}"`
+            : `✓ Kein Konflikt für "${safeName}"`,
+        message: `${result.explanation} Anwaltlich zu prüfen.`,
+        items: relevant.map((m) => ({
+          label: m.matched_name || m.title,
+          value: m.assessment === "critical" ? "Konflikt" : "prüfen",
+          href: m.slug ? `/dashboard/brain/${encodeURIComponent(m.slug)}` : undefined,
         })),
       },
     };
-  } catch (_err) {
+  } catch {
     return {
       success: false,
-      error: "Conflict check failed",
+      error: "conflict_check_unavailable",
       display: {
-        kind: "confirmation",
-        title: "Konfliktprüfung fehlgeschlagen",
-        message: "Engine nicht erreichbar",
+        kind: "summary",
+        title: "Kollisionsprüfung nicht verfügbar",
+        message:
+          "Die Prüfung konnte nicht durchgeführt werden. Bitte später erneut versuchen — ohne Prüfung kein Mandat annehmen.",
       },
     };
   }
@@ -1158,9 +1184,8 @@ async function executeClientUpdate(
       display: {
         kind: "summary",
         title: `Mandanten-Update: ${page.title}`,
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 300) + "..."
-          : "Kein Update generiert",
+        message: thinkData.answer ? undefined : "Kein Update generiert",
+        aiText: thinkData.answer || undefined,
         items: [
           {
             label: "Akte",
@@ -1202,9 +1227,8 @@ async function executeMeetingTasks(
       display: {
         kind: "summary",
         title: "Besprechungsnotizen analysiert",
-        message: thinkData.answer
-          ? thinkData.answer.slice(0, 400) + "..."
-          : "Keine Aufgaben extrahiert",
+        message: thinkData.answer ? undefined : "Keine Aufgaben extrahiert",
+        aiText: thinkData.answer || undefined,
         items: params.case_slug
           ? [
               {
@@ -1233,100 +1257,68 @@ async function executeIntakeCreate(
   ctx: { headers: Record<string, string> },
   params: z.infer<typeof intakeCreateSchema>
 ): Promise<ToolResponse> {
-  try {
-    const safeClientName = sanitizeUserInput(params.client_name);
-    const safeMatterType = sanitizeUserInput(params.matter_type);
-    // Step 1: Conflict check if enabled
-    let conflictResult:
-      | { hasConflict: boolean; matches: Array<{ name: string; slug: string; type: string }> }
-      | undefined;
-    if (params.conflict_check) {
-      try {
-        const conflictRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({ name: safeClientName }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (conflictRes.ok) {
-          const conflictData = (await conflictRes.json()) as {
-            matches?: Array<{ name: string; slug: string; type: string }>;
-          };
-          conflictResult = {
-            hasConflict: (conflictData.matches?.length ?? 0) > 0,
-            matches: conflictData.matches ?? [],
-          };
-        }
-      } catch {
-        // Non-blocking: conflict check failure doesn't block intake
-      }
-    }
+  const safeClientName = sanitizeUserInput(params.client_name);
+  const safeMatterType = sanitizeUserInput(params.matter_type);
+  // The conflict check (§ 10 RAO) always runs — the matter is only created
+  // through the shared safe path, never directly on the engine.
+  const outcome = await createCaseSafely(engineCaseCreateDeps(ctx.headers), {
+    title: `${safeClientName} — ${safeMatterType}`,
+    slugHint: safeClientName,
+    content: `# ${safeClientName} — ${safeMatterType}\n\n## Mandanteninformation\n\n- **Mandant:** ${safeClientName}\n- **Aktenart:** ${safeMatterType}\n- **Jurisdiktion:** ${params.jurisdiction.toUpperCase()}\n- **Dringlichkeit:** ${params.urgency}\n`,
+    frontmatter: {
+      client_name: safeClientName,
+      matter_type: safeMatterType,
+      jurisdiction: params.jurisdiction,
+      urgency: params.urgency,
+      status: "intake",
+      created_via: "copilot",
+      created_at: new Date().toISOString(),
+    },
+  });
 
-    // Step 2: Create case
-    const slug = `cases/${safeClientName
-      .toLowerCase()
-      .replace(/ä/g, "ae")
-      .replace(/ö/g, "oe")
-      .replace(/ü/g, "ue")
-      .replace(/ß/g, "ss")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
-    const body = {
-      slug,
-      title: `${safeClientName} — ${safeMatterType}`,
-      type: "legal_case",
-      content: `# ${safeClientName} — ${safeMatterType}\n\n## Mandanteninformation\n\n- **Mandant:** ${safeClientName}\n- **Aktenart:** ${safeMatterType}\n- **Jurisdiktion:** ${params.jurisdiction.toUpperCase()}\n- **Dringlichkeit:** ${params.urgency}\n- **Erstellt:** ${new Date().toISOString()}\n${conflictResult ? `\n## Konfliktprüfung\n- **Geprüft:** ja\n- **Konflikt:** ${conflictResult.hasConflict ? "⚠️ Ja" : "Nein"}\n${conflictResult.matches.length > 0 ? `- **Treffer:** ${conflictResult.matches.map((m) => m.name).join(", ")}\n` : ""}` : ""}\n`,
-      frontmatter: {
-        client_name: safeClientName,
-        matter_type: safeMatterType,
-        jurisdiction: params.jurisdiction,
-        urgency: params.urgency,
-        status: "intake",
-        conflict_checked: params.conflict_check,
-        conflict_status: conflictResult?.hasConflict ? "conflict" : "clear",
-        created_at: new Date().toISOString(),
-      },
-    };
-
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = (await res.json()) as { slug: string };
-
+  if (outcome.status === "created") {
     return {
       success: true,
-      data: { case: result, conflict: conflictResult },
+      data: { case: { slug: outcome.slug }, conflict: { hasConflict: false, matches: [] } },
       display: {
         kind: "confirmation",
         title: `Mandant aufgenommen: ${safeClientName}`,
-        href: `/dashboard/cases/${result.slug.replace(/^cases\//, "")}`,
-        message: `Akte erstellt: ${safeMatterType} (${params.jurisdiction.toUpperCase()})${conflictResult ? ` | Konfliktprüfung: ${conflictResult.hasConflict ? "⚠️ Konflikt erkannt" : "✓ Kein Konflikt"}` : ""}`,
+        href: `/dashboard/cases/${outcome.slug.replace(/^legal\/cases\//, "")}`,
+        message: `Akte erstellt: ${safeMatterType} (${params.jurisdiction.toUpperCase()}) | Kollisionsprüfung: ✓ kein blockierender Konflikt`,
         items: [
           { label: "Mandant", value: safeClientName },
           { label: "Aktenart", value: safeMatterType },
           { label: "Dringlichkeit", value: params.urgency },
-          ...(conflictResult?.matches ?? []).map((m) => ({
-            label: `⚠️ Konflikt: ${m.name}`,
-            value: m.type,
-          })),
         ],
       },
     };
-  } catch (_err) {
+  }
+  if (outcome.status === "conflict") {
     return {
       success: false,
-      error: "Intake failed",
+      error: "conflict_detected",
+      data: { conflict: { hasConflict: true, matches: outcome.matches } },
       display: {
         kind: "confirmation",
-        title: "Mandantsaufnahme fehlgeschlagen",
-        message: "Engine nicht erreichbar",
+        title: `⚠️ Interessenkonflikt — keine Akte angelegt`,
+        message:
+          "Die Kollisionsprüfung hat einen Konflikt gefunden. Bitte über die Mandatsannahme prüfen und nur mit begründeter Freigabe fortfahren.",
+        items: outcome.matches.map((m) => ({ label: `⚠️ ${m.name}`, value: m.type })),
       },
     };
   }
+  return {
+    success: false,
+    error: outcome.status === "exists" ? "case_slug_exists" : outcome.code,
+    display: {
+      kind: "confirmation",
+      title: "Mandantsaufnahme fehlgeschlagen",
+      message:
+        outcome.status === "exists"
+          ? "Unter dieser Kennung gibt es bereits eine Akte."
+          : outcome.message,
+    },
+  };
 }
 
 async function executeDocumentRequestCreate(
@@ -1440,9 +1432,8 @@ async function executeTranslateText(
       kind: "summary",
       title: `Übersetzung nach ${params.target_language}`,
       href: "/dashboard/translate",
-      message: translated
-        ? `${translated.slice(0, 400)}${translated.length > 400 ? "..." : ""}`
-        : "Übersetzung abgeschlossen.",
+      message: translated ? undefined : "Übersetzung abgeschlossen.",
+      aiText: translated || undefined,
     },
   };
 }
@@ -1525,7 +1516,8 @@ async function executeDeepAnalysis(
       display: {
         kind: "summary",
         title: "Tiefenanalyse abgeschlossen",
-        message: data.summary?.slice(0, 400) ?? "Analyse durchgeführt",
+        message: data.summary ? undefined : "Analyse durchgeführt",
+        aiText: data.summary || undefined,
         items: params.slugs.map((s) => ({
           label: "Dokument",
           value: s,
@@ -1935,7 +1927,7 @@ async function executeSearchTasks(
 // ── Search Calendar (AP3) ──────────────────────────────────────────────
 
 async function executeSearchCalendar(
-  ctx: { headers: Record<string, string> },
+  ctx: { headers: Record<string, string>; user: { id: string } },
   params: z.infer<typeof searchCalendarSchema>
 ): Promise<ToolResponse> {
   try {
@@ -1948,11 +1940,16 @@ async function executeSearchCalendar(
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const pages = (await res.json()) as Array<{
-      slug: string;
-      title: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
+    // Only the caller's own personal mirrors (plus firm appointments).
+    const pages = hideForeignPersonalEvents(
+      (await res.json()) as Array<{
+        slug: string;
+        title: string;
+        type?: string;
+        frontmatter?: Record<string, unknown>;
+      }>,
+      ctx.user.id
+    );
 
     const now = new Date();
     now.setUTCHours(0, 0, 0, 0);
@@ -1971,8 +1968,12 @@ async function executeSearchCalendar(
     const items = pages
       .map((p) => {
         const fm = p.frontmatter ?? {};
+        // Outlook-synced calendar_event pages carry `start` (Graph dateTime).
         const dateStr =
-          (fm.start_date as string) ?? (fm.date as string) ?? (fm.due_date as string) ?? undefined;
+          (fm.start_date as string) ??
+          (fm.date as string) ??
+          (fm.due_date as string) ??
+          (typeof fm.start === "string" ? fm.start.replace(/\.\d+$/, "") : undefined);
         if (!dateStr) return null;
         const eventDate = new Date(dateStr);
         if (Number.isNaN(eventDate.getTime())) return null;
@@ -2042,17 +2043,15 @@ async function executeDeadlineMarkDone(
 ): Promise<ToolResponse> {
   try {
     // Update the deadline page frontmatter via engine
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(params.deadline_slug)}`, {
-      method: "PATCH",
-      headers: {
-        ...ctx.headers,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: params.deadline_slug,
         frontmatter: { status: "done", done_at: new Date().toISOString() },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
+      },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       // Fallback: try to at least confirm
@@ -2377,17 +2376,11 @@ async function executeRenderTemplate(
     display: { kind: "confirmation", title, message },
   });
   try {
-    const listRes = await fetch(`${ENGINE_URL}/api/pages?type=legal_template&limit=200`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(30_000),
+    // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+    const templates = await listEnginePages(ctx.headers, "legal_template", 10_000, {
+      strict: true,
+      timeoutMs: 30_000,
     });
-    if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
-    const templates = (await listRes.json()) as Array<{
-      slug: string;
-      title: string;
-      content?: string;
-      frontmatter?: Record<string, unknown>;
-    }>;
     const q = params.template_query.trim().toLowerCase();
     const template =
       templates.find((t) => t.slug.toLowerCase() === q || t.title.toLowerCase() === q) ??
@@ -2471,7 +2464,7 @@ async function executeRenderTemplate(
       display: {
         kind: "confirmation",
         title: `Vorlage gerendert: ${template.title}`,
-        ...(documentSlug ? { href: `/dashboard/documents` } : {}),
+        ...(documentSlug ? { href: brainPageHref(documentSlug) } : {}),
         message:
           unfilled.length > 0
             ? `Offene Platzhalter: ${unfilled.join(", ")} — bitte manuell ergänzen.`
@@ -2604,7 +2597,7 @@ async function executeInvoiceDraft(
       : null;
     const fm = (page.frontmatter ?? {}) as CaseFrontmatter & { time_entries?: TimeEntry[] };
 
-    const stundensatz = Number.parseFloat(kanzlei?.stundensatz ?? "") || 0;
+    const stundensatz = parseHourlyRate(kanzlei?.stundensatz) ?? 0;
     const billedEntryIds: string[] = [];
     // `include_unbilled_time` must see BOTH stores: the matter's
     // time_entries array AND standalone `time_entry` pages the timer
@@ -2624,32 +2617,69 @@ async function executeInvoiceDraft(
         (e) => e.case_slug === params.case_slug && e.billable !== false && !e.billed
       );
     }
-    const items = params.items?.length
-      ? params.items.map((i) => {
-          const amount =
-            i.amount ?? Math.round((i.hours ?? 0) * (i.rate ?? stundensatz) * 100) / 100;
-          return {
-            description: sanitizeUserInput(i.description),
-            date: new Date().toISOString().split("T")[0],
-            hours: i.hours ?? 0,
-            rate: i.rate ?? stundensatz,
-            amount,
-          };
-        })
-      : params.include_unbilled_time
-        ? unbilledEntries.map((e) => {
-            billedEntryIds.push(e.id);
-            const hours = e.minutes / 60;
-            const rate = e.rate ?? stundensatz;
+    // Billing rules (opt-in, src/lib/billing-rules.ts): the same rounding and
+    // rate choice as the invoice dialog, for time entries taken over here.
+    const rules = activeBillingRules(kanzlei);
+    let ruledItems: ReturnType<typeof ruledTimeItems> | null = null;
+    if (rules && !params.items?.length && params.include_unbilled_time) {
+      let agreements: FeeAgreementLike[];
+      try {
+        const pages = await listEnginePages(ctx.headers, "fee_agreement", 10_000, {
+          strict: true,
+        });
+        agreements = pages.map((p) => p.frontmatter as unknown as FeeAgreementLike);
+      } catch {
+        return fail(
+          "fee_agreements_unavailable",
+          "Honorarvereinbarungen nicht lesbar",
+          "Die Honorarvereinbarungen konnten nicht gelesen werden — es wurde kein Rechnungsentwurf angelegt."
+        );
+      }
+      ruledItems = ruledTimeItems(
+        unbilledEntries.map((e) => ({ ...e, description: sanitizeUserInput(e.description) })),
+        rules,
+        {
+          feeAgreementRate: feeAgreementRate(agreements, params.case_slug),
+          legalArea: fm.legal_area,
+          settings: kanzlei,
+        }
+      );
+      if (ruledItems.missingRate > 0) {
+        return fail(
+          "no_hourly_rate",
+          "Kein Stundensatz hinterlegt",
+          "Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+        );
+      }
+      billedEntryIds.push(...unbilledEntries.map((e) => e.id));
+    }
+    const items = ruledItems
+      ? ruledItems.items
+      : params.items?.length
+        ? params.items.map((i) => {
+            const amount = i.amount ?? lineAmount(i.hours ?? 0, i.rate ?? stundensatz);
             return {
-              description: sanitizeUserInput(e.description),
-              date: (e.date ?? "").split("T")[0],
-              hours: Math.round(hours * 100) / 100,
-              rate,
-              amount: Math.round(hours * rate * 100) / 100,
+              description: sanitizeUserInput(i.description),
+              date: firmToday(),
+              hours: i.hours ?? 0,
+              rate: i.rate ?? stundensatz,
+              amount,
             };
           })
-        : [];
+        : params.include_unbilled_time
+          ? unbilledEntries.map((e) => {
+              billedEntryIds.push(e.id);
+              const hours = e.minutes / 60;
+              const rate = e.rate ?? stundensatz;
+              return {
+                description: sanitizeUserInput(e.description),
+                date: (e.date ?? "").split("T")[0],
+                hours: Math.round(hours * 100) / 100,
+                rate,
+                amount: Math.round(hours * rate * 100) / 100,
+              };
+            })
+          : [];
 
     if (items.length === 0) {
       return fail(
@@ -2659,25 +2689,20 @@ async function executeInvoiceDraft(
       );
     }
 
-    const subtotal = Math.round(items.reduce((s, i) => s + i.amount, 0) * 100) / 100;
     const vatRate = vatRateFor(kanzlei);
-    const tax = Math.round(subtotal * vatRate * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    // Same calculation (cents, VAT per rate) the invoice route checks.
+    const totals = computeInvoiceTotals({ items, vatRate });
+    const subtotal = totals.subtotal;
+    const tax = totals.tax;
+    const total = totals.total;
     const paymentDays = Math.max(1, parseInt(kanzlei?.zahlungszielTage || "14", 10) || 14);
 
-    let existing: string[] = [];
-    try {
+    const year = firmYear();
+    // Der Bestand wird nur gelesen, um den Jahreszähler erstmals zu befüllen.
+    const invoiceNumber = await reserveInvoiceNumber(ctx.brainId, year, async () => {
       const pages = await listEnginePages(ctx.headers, "invoice", 50_000);
-      existing = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
-    } catch {
-      // Der Zähler garantiert Eindeutigkeit auch ohne Bestandsliste.
-    }
-    const year = new Date().getFullYear();
-    const invoiceNumber = await allocateInvoiceNumber(
-      ctx.brainId,
-      year,
-      highestInvoiceNumber(existing, year)
-    );
+      return pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+    });
 
     const now = new Date();
     const invoice = {
@@ -2686,8 +2711,8 @@ async function executeInvoiceDraft(
       client: fm.client_name ?? "",
       clientSlug: fm.client_slug,
       caseNumber: fm.case_number ?? page.slug,
-      date: now.toISOString().split("T")[0],
-      dueDate: new Date(now.getTime() + paymentDays * 86_400_000).toISOString().split("T")[0],
+      date: firmToday(now),
+      dueDate: addDaysToIsoDate(firmToday(now), paymentDays),
       items,
       status: "draft" as const,
       subtotal,
@@ -2702,15 +2727,21 @@ async function executeInvoiceDraft(
     };
     const hash = await sha256Hex(invoiceContentString(invoice));
 
-    const res = await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify({
+    // Reserve the time entries for this number first, then write the invoice
+    // (one helper, shared with /api/invoices). If another invoice took some
+    // of them meanwhile, nothing is created — no second invoice over the
+    // same work.
+    const outcome = await createInvoiceReservingEntries(
+      ctx.headers,
+      createServerBrainClient(ctx.headers),
+      {
         slug: invoice.id,
         title: `Rechnung ${invoice.number}`,
-        type: "invoice",
+        caseSlug: page.slug,
+        invoiceNumber: invoice.number,
+        timeEntryIds: billedEntryIds,
+        expenseIds: [],
         frontmatter: {
-          type: "invoice",
           invoice_number: invoice.number,
           client: invoice.client,
           client_slug: invoice.clientSlug,
@@ -2732,38 +2763,16 @@ async function executeInvoiceDraft(
           source: "copilot",
           ...gobdFrontmatter(hash, now),
         },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    // Verrechnete Zeiteinträge als billed markieren — gleiche Semantik wie
-    // der Rechnungsdialog, aber atomar: ein einziges UPDATE mit unless-Guard
-    // (bereits unter anderer Rechnung abgerechnete Einträge werden nie
-    // umattribuiert). Standalone-Timer-Pages laufen auf ihrer eigenen Page.
-    // Die Rechnung existiert bereits — ein Fehler hier darf sie nicht
-    // zurückrollen, wird aber laut geloggt statt verschluckt.
-    if (billedEntryIds.length > 0) {
-      try {
-        const brain = createServerBrainClient(ctx.headers);
-        const standaloneIds = billedEntryIds.filter((id) => id.startsWith(STANDALONE_ENTRY_PREFIX));
-        const caseIds = billedEntryIds.filter((id) => !id.startsWith(STANDALONE_ENTRY_PREFIX));
-        if (caseIds.length > 0) {
-          await markTimeEntriesBilled(brain, page.slug, caseIds, invoice.number);
-        }
-        if (standaloneIds.length > 0) {
-          await updateStandaloneBilling(brain, standaloneIds, {
-            billed: true,
-            invoiceNumber: invoice.number,
-          });
-        }
-      } catch (err) {
-        log.error(
-          "[copilot/tools] invoice_draft: billed-Markierung fehlgeschlagen:",
-          err instanceof Error ? err.message : String(err)
-        );
       }
+    );
+    if (outcome.kind === "conflict") {
+      return fail(
+        "entries_already_billed",
+        "Leistungen bereits abgerechnet",
+        `Einige Zeiteinträge der Akte "${page.title}" wurden inzwischen abgerechnet — es wurde kein Rechnungsentwurf angelegt. Bitte erneut versuchen.`
+      );
     }
+    if (outcome.kind === "create_failed") throw new Error(`HTTP ${outcome.status}`);
 
     return {
       success: true,
@@ -2771,7 +2780,7 @@ async function executeInvoiceDraft(
       display: {
         kind: "confirmation",
         title: `Rechnungsentwurf ${invoice.number}`,
-        href: "/dashboard/invoices",
+        href: INVOICING_HREF,
         message: `Entwurf über ${total.toFixed(2)} € (inkl. ${vatRate * 100} % USt) zur Akte "${page.title}" angelegt — bitte prüfen und versenden.`,
       },
     };

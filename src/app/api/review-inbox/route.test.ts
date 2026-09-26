@@ -357,4 +357,43 @@ describe("/api/review-inbox", () => {
     expect(sdItems[0].dueDate).toBe("2026-08-15");
     expect(sdItems[0].sourceQuote).toBe("§ 253 ZPO");
   });
+
+  test("lists open case scan results as review items, not other agent runs", async () => {
+    mockFetch((url: string) => {
+      if (url.includes("type=agent_run")) {
+        return Promise.resolve(
+          mockFetchResponse([
+            mockPage("agent-runs/supervisor-1", "agent_run", {
+              review_origin: "case_scan",
+              review_status: "unreviewed",
+              case_slug: "cases/matter-1",
+            }),
+            mockPage("agent-runs/supervisor-2", "agent_run", {
+              review_origin: "case_scan",
+              review_status: "reviewed",
+              case_slug: "cases/matter-1",
+            }),
+            mockPage("agent-runs/supervisor-3", "agent_run", { case_slug: "cases/matter-1" }),
+          ])
+        );
+      }
+      if (url.includes("type=legal_case")) {
+        return Promise.resolve(
+          mockFetchResponse([mockPage("cases/matter-1", "legal_case", {}, "Muster gegen Beispiel")])
+        );
+      }
+      return Promise.resolve(mockFetchResponse([]));
+    });
+
+    const res = await GET(
+      new Request("http://localhost/api/review-inbox") as unknown as NextRequest
+    );
+    const data = await res.json();
+    const scans = data.items.filter((i: { type: string }) => i.type === "case_scan_finding");
+    expect(scans).toHaveLength(1);
+    expect(scans[0].pageSlug).toBe("agent-runs/supervisor-1");
+    expect(scans[0].caseSlug).toBe("cases/matter-1");
+    expect(scans[0].title).toBe("Fall-Scan: Muster gegen Beispiel");
+    expect(scans[0].description).toContain("anwaltlich zu prüfen");
+  });
 });

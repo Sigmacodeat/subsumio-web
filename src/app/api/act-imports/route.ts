@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { actImportSessionSlug, safeImportId } from "@/lib/act-import";
 
 const createSchema = z.object({
@@ -37,27 +37,42 @@ export const POST = createHandler(
     const id = safeImportId(body.id ?? `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`);
     const slug = actImportSessionSlug(id);
     const now = new Date().toISOString();
-    const response = await enginePatchPage(ctx.headers, {
-      slug,
-      title: body.title,
-      type: "act_import_session",
-      content: JSON.stringify(
-        { id, case_slug: body.case_slug, status: "draft", created_at: now },
-        null,
-        2
-      ),
-      frontmatter: {
-        id,
-        case_slug: body.case_slug,
-        status: "draft",
-        expected_files: body.expected_files ?? 0,
-        expected_bytes: body.expected_bytes ?? 0,
-        jurisdiction: body.jurisdiction,
-        verfahrenstyp: body.verfahrenstyp,
-        created_at: now,
-        updated_at: now,
-      },
-    });
+    // Create-only: an existing session (running or finished analysis) is
+    // never reset to a draft or moved to another matter.
+    const response = await fetch(`${ENGINE_URL}/api/pages`, {
+      method: "POST",
+      headers: { ...ctx.headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        if_absent: true,
+        slug,
+        title: body.title,
+        type: "act_import_session",
+        content: JSON.stringify(
+          { id, case_slug: body.case_slug, status: "draft", created_at: now },
+          null,
+          2
+        ),
+        frontmatter: {
+          id,
+          case_slug: body.case_slug,
+          status: "draft",
+          expected_files: body.expected_files ?? 0,
+          expected_bytes: body.expected_bytes ?? 0,
+          jurisdiction: body.jurisdiction,
+          verfahrenstyp: body.verfahrenstyp,
+          created_at: now,
+          updated_at: now,
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    }).catch(() => null);
+    if (!response) return apiError("session_create_failed", "Engine nicht erreichbar", 502);
+    if (response.status === 409) {
+      const upstream = (await response.json().catch(() => null)) as { error?: unknown } | null;
+      if (upstream?.error === "page_exists") {
+        return apiError("import_exists", "Diese Import-Session existiert bereits", 409);
+      }
+    }
     if (!response.ok) return apiError("session_create_failed", await response.text(), 502);
     return Response.json({ ok: true, id, slug, status: "draft" }, { status: 201 });
   }

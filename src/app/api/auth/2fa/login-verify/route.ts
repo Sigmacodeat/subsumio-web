@@ -7,10 +7,9 @@ import {
 } from "@/lib/auth/account-status";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
-import { verifyTOTP } from "@/lib/totp";
-import { verifyBackupCode } from "@/lib/auth/backup-codes";
+import { consumeChallengeToken, verifySecondFactor } from "@/lib/auth/second-factor";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
-import { logAudit } from "@/lib/audit";
+import { logUserAudit } from "@/lib/audit-user";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { z } from "zod";
 
@@ -69,23 +68,32 @@ export const POST = createPublicHandler(
       );
     }
 
-    // Try TOTP first, then backup codes as fallback
-    let valid = await verifyTOTP(token, user.twoFactorSecret);
-    let usedBackupCode = false;
-
-    if (!valid && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
-      const backupIdx = await verifyBackupCode(token, user.twoFactorBackupCodes);
-      if (backupIdx >= 0) {
-        valid = true;
-        usedBackupCode = true;
-        // Consume the used backup code
-        const remaining = user.twoFactorBackupCodes.filter((_, i) => i !== backupIdx);
-        await store.update(user.id, { twoFactorBackupCodes: remaining });
+    // TOTP (each time step only once per user) or a single-use backup code.
+    // Failures count per user — a fresh challenge token does not reset them.
+    const factor = await verifySecondFactor(user, token);
+    if (!factor.ok) {
+      void logUserAudit(
+        factor.reason === "locked" ? "user.2fa_locked" : "user.2fa_failed",
+        "user",
+        user,
+        { entityId: user.id, details: { ip } }
+      );
+      if (factor.reason === "locked") {
+        return Response.json(
+          {
+            error: "two_factor_locked",
+            message: "Zu viele falsche Codes. Die Anmeldung ist vorübergehend gesperrt.",
+          },
+          { status: 429, headers: { "Retry-After": String(factor.retryAfterSeconds ?? 1800) } }
+        );
       }
-    }
-
-    if (!valid) {
       return apiError("invalid_token", "Invalid TOTP code", 400);
+    }
+    const usedBackupCode = factor.method === "backup";
+
+    // The challenge is single-use: a second login with the same token fails.
+    if (!(await consumeChallengeToken(challengeToken))) {
+      return apiError("invalid_challenge", "Invalid challenge token", 401);
     }
 
     // Create session
@@ -93,7 +101,7 @@ export const POST = createPublicHandler(
       userAgent: req.headers.get("user-agent"),
       ip,
     });
-    void logAudit("user.login", "user", {
+    void logUserAudit("user.login", "user", user, {
       entityId: user.id,
       details: { ip, method: usedBackupCode ? "2fa_backup" : "2fa" },
     });

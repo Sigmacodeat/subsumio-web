@@ -24,7 +24,6 @@ import type {
   PricingTier,
   DocumentAnalysisResult,
   PrecedentSearchResponse,
-  CaseScannerResponse,
   DocumentTranslation,
   ObligationEntry,
   GroundedCitation,
@@ -279,18 +278,6 @@ describe("Type instantiation — types.ts", () => {
   test("PrecedentSearchResponse", () => {
     const resp: PrecedentSearchResponse = { results: [], total: 0, warnings: [] };
     expect(resp.total).toBe(0);
-  });
-
-  test("CaseScannerResponse", () => {
-    const resp: CaseScannerResponse = {
-      success: true,
-      job_id: "job-1",
-      status: "queued",
-      look_ahead_days: 30,
-      evidence_threshold: 0.7,
-      max_cases: 100,
-    };
-    expect(resp.status).toBe("queued");
   });
 
   test("DocumentTranslation", () => {

@@ -26,6 +26,7 @@ import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useScimStatus, useScimSync, type SyncStatus } from "@/lib/queries/scim";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
+import { ScimGroupRoles } from "@/components/dashboard/scim-group-roles";
 
 function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
@@ -385,12 +386,12 @@ export default function ScimSettingsPage() {
               {[
                 {
                   icon: UserPlus,
-                  text: "Neue Mitarbeiter im Verzeichnis erhalten automatisch einen Zugang zu Subsumio.",
+                  text: "Neue Mitarbeiter im Verzeichnis erhalten automatisch einen Zugang zu Subsumio – mit der Rolle Sekretariat, sofern keine ihrer Gruppen einer anderen Rolle zugeordnet ist.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
                   icon: UserCheck,
-                  text: "Änderungen an Name, E-Mail-Adresse oder Rolle werden übernommen.",
+                  text: "Änderungen an Name und E-Mail-Adresse werden übernommen. Eine neue E-Mail-Adresse wird nur übernommen, wenn sie in Subsumio noch frei ist; bestehende Anmeldungen enden dabei.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
                 {
@@ -400,7 +401,7 @@ export default function ScimSettingsPage() {
                 },
                 {
                   icon: FolderTree,
-                  text: "Gruppen aus dem Verzeichnis werden als Gruppen in Subsumio übernommen.",
+                  text: "Gruppen aus dem Verzeichnis werden pro Kanzlei gespeichert. Rollen vergeben sie nur, wenn Sie eine Gruppe unten einer Rolle zuordnen – nie die Admin-Rolle.",
                   color: "text-[color:var(--ds-text-muted)]",
                 },
               ].map((item, i) => {
@@ -418,6 +419,8 @@ export default function ScimSettingsPage() {
               })}
             </div>
           </Card>
+
+          <ScimGroupRoles />
 
           {/* Sync error toast */}
           {syncMutation.isError && (
@@ -441,6 +444,8 @@ export default function ScimSettingsPage() {
                   Synchronisation abgeschlossen: {syncMutation.data?.data?.usersCreated ?? 0}{" "}
                   erstellt, {syncMutation.data?.data?.usersUpdated ?? 0} aktualisiert,{" "}
                   {syncMutation.data?.data?.usersDeactivated ?? 0} deaktiviert
+                  {(syncMutation.data?.data?.errors?.length ?? 0) > 0 &&
+                    ` · ${syncMutation.data?.data?.errors.length} Fehler`}
                 </p>
               </div>
             </div>

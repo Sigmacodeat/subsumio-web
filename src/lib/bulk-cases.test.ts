@@ -3,7 +3,9 @@
 import { describe, test, expect } from "vitest";
 import {
   parseCsvCases,
-  caseSlugFromRow,
+  parseCsvCaseRows,
+  parseDisputeValue,
+  detectCsvDelimiter,
   caseFrontmatterFromRow,
   groupByMandateId,
   type BulkCaseRow,
@@ -98,12 +100,18 @@ describe("parseCsvCases", () => {
     expect(rows[0]!.client_name).toBe('Firma "Müller & Co."');
   });
 
-  test("handles non-numeric dispute_value as NaN", () => {
+  test("rejects a non-numeric dispute_value instead of importing NaN", () => {
     const csv = `case_number,client_name,matter,dispute_value,mandate_id
 123,Client,Matter,not-a-number,M-001`;
-    const rows = parseCsvCases(csv);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.dispute_value).toBeNaN();
+    expect(parseCsvCases(csv)).toHaveLength(0);
+    const parsed = parseCsvCaseRows(csv);
+    expect(parsed.invalid).toEqual([
+      expect.objectContaining({
+        line: 2,
+        case_number: "123",
+        error: expect.stringContaining("Streitwert"),
+      }),
+    ]);
   });
 
   test("handles empty dispute_value as undefined", () => {
@@ -131,60 +139,6 @@ describe("parseCsvCases", () => {
     const rows = parseCsvCases(csv);
     expect(rows).toHaveLength(1);
     expect(rows[0]!.case_number).toBe("123");
-  });
-});
-
-describe("caseSlugFromRow", () => {
-  test("creates slug from case_number", () => {
-    const row: BulkCaseRow = {
-      case_number: "123/2026",
-      client_name: "Test",
-      matter: "Test",
-      mandate_id: "M-001",
-    };
-    expect(caseSlugFromRow(row)).toBe("legal/cases/123-2026");
-  });
-
-  test("normalizes umlauts", () => {
-    const row: BulkCaseRow = {
-      case_number: "ünicöde-123",
-      client_name: "Test",
-      matter: "Test",
-      mandate_id: "M-001",
-    };
-    expect(caseSlugFromRow(row)).toBe("legal/cases/unicode-123");
-  });
-
-  test("replaces non-alphanumeric with dashes", () => {
-    const row: BulkCaseRow = {
-      case_number: "ABC 123/456 (2026)",
-      client_name: "Test",
-      matter: "Test",
-      mandate_id: "M-001",
-    };
-    expect(caseSlugFromRow(row)).toBe("legal/cases/abc-123-456-2026");
-  });
-
-  test("truncates to 80 chars", () => {
-    const longNum = "a".repeat(100);
-    const row: BulkCaseRow = {
-      case_number: longNum,
-      client_name: "Test",
-      matter: "Test",
-      mandate_id: "M-001",
-    };
-    const slug = caseSlugFromRow(row);
-    expect(slug).toBe(`legal/cases/${"a".repeat(80)}`);
-  });
-
-  test("strips leading/trailing dashes", () => {
-    const row: BulkCaseRow = {
-      case_number: "---123---",
-      client_name: "Test",
-      matter: "Test",
-      mandate_id: "M-001",
-    };
-    expect(caseSlugFromRow(row)).toBe("legal/cases/123");
   });
 });
 
@@ -287,5 +241,51 @@ describe("groupByMandateId", () => {
     const groups = groupByMandateId(items);
     expect(groups.size).toBe(1);
     expect(groups.get("K-001")).toHaveLength(1);
+  });
+});
+
+describe("Austrian CSV input (UIS-2-4)", () => {
+  test("detects a semicolon separator from the header", () => {
+    expect(detectCsvDelimiter("aktenzeichen;mandant;gegenstand;klammer")).toBe(";");
+    expect(detectCsvDelimiter("aktenzeichen,mandant,gegenstand,klammer")).toBe(",");
+    expect(detectCsvDelimiter('"a;b",mandant,gegenstand')).toBe(",");
+  });
+
+  test("parses Excel semicolon CSV with Austrian Streitwert and CRLF line ends", () => {
+    const csv =
+      "\uFEFFAktenzeichen;Mandant;Gegenstand;Streitwert;Klammer\r\n" +
+      '1 Cg 12/24;"Muster, Max";Forderung;10.000,50;K-1\r\n' +
+      "2 Cg 1/25;Anna;Miete;10.000;K-1\r\n";
+    const rows = parseCsvCases(csv);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.client_name).toBe("Muster, Max");
+    expect(rows[0]!.dispute_value).toBe(10000.5);
+    expect(rows[1]!.dispute_value).toBe(10000);
+  });
+
+  test.each([
+    ["10.000,50", 10000.5],
+    ["10.000", 10000],
+    ["1.234.567", 1234567],
+    ["10000.50", 10000.5],
+    ["10,5", 10.5],
+    ["€ 10.000,-", 10000],
+    ["EUR 2.500,00", 2500],
+    ["1,234,567", 1234567],
+    ["50000", 50000],
+  ])("parseDisputeValue(%s) = %s", (raw, expected) => {
+    expect(parseDisputeValue(raw)).toBe(expected);
+  });
+
+  test.each(["viel", "1.2.3,4,5", "10,000,5"])("parseDisputeValue(%s) is NaN", (raw) => {
+    expect(parseDisputeValue(raw)).toBeNaN();
+  });
+
+  test("reports incomplete rows with their line number", () => {
+    const parsed = parseCsvCaseRows(`case_number,client_name,matter,mandate_id
+123,Max,,M-1
+456,Anna,Miete,M-2`);
+    expect(parsed.rows.map((r) => r.line)).toEqual([3]);
+    expect(parsed.invalid).toEqual([expect.objectContaining({ line: 2, case_number: "123" })]);
   });
 });

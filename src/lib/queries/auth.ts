@@ -1,11 +1,24 @@
 "use client";
 
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { csrfFetch } from "@/lib/csrf";
 import { api, isPublicRoute } from "@/lib/api";
 import { tracking, resetUser } from "@/lib/tracking";
 import type { OnboardingProgress } from "@/lib/types";
+import { currentPushEndpoint, unsubscribeCurrentPush } from "@/lib/push-client";
+import {
+  clearOfflineData,
+  offlineOwnerDiffersFromUser,
+  setOfflineOwner,
+} from "@/lib/offline-store";
+
+/** Offline data on this device belongs to the signed-in person in this firm. */
+async function wipeOfflineDataOfOtherUser(userId: string | undefined): Promise<void> {
+  if (userId && offlineOwnerDiffersFromUser(userId)) await clearOfflineData();
+}
+import { clearAllUploadSessions } from "@/lib/upload-session-store";
 
 export interface LoginInput {
   email: string;
@@ -23,12 +36,19 @@ export function useMe() {
   // of producing a 401 on every visit.
   const pathname = usePathname();
   const enabled = !isPublicRoute(pathname ?? "");
-  return useQuery({
+  const query = useQuery({
     queryKey: ["auth", "me"],
     queryFn: () => api.auth.me(),
     enabled,
     staleTime: 5 * 60 * 1000,
   });
+  const offlineScope = (query.data as { offlineScope?: unknown } | undefined)?.offlineScope;
+  useEffect(() => {
+    // Another person or firm than the stored offline data belongs to → the
+    // store deletes it before anything is read or replayed.
+    if (typeof offlineScope === "string" && offlineScope) void setOfflineOwner(offlineScope);
+  }, [offlineScope]);
+  return query;
 }
 
 export function useOnboardingProgress() {
@@ -54,8 +74,9 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: LoginInput) => api.auth.login(input),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data?.user) {
+        await wipeOfflineDataOfOtherUser((data.user as { id?: string }).id);
         qc.setQueryData(["auth", "me"], { user: data.user });
         qc.invalidateQueries({ queryKey: ["auth", "me"] });
         window.location.href = "/dashboard";
@@ -70,8 +91,9 @@ export function useVerify2FA() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: TwoFAVerifyInput) => api.auth.verify2FA(input),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data?.user) {
+        await wipeOfflineDataOfOtherUser((data.user as { id?: string }).id);
         qc.setQueryData(["auth", "me"], { user: data.user });
         qc.invalidateQueries({ queryKey: ["auth", "me"] });
         window.location.href = "/dashboard";
@@ -84,10 +106,21 @@ export function useLogout() {
   const qc = useQueryClient();
   const router = useRouter();
   return useMutation({
-    mutationFn: () => api.auth.logout(),
-    onSuccess: () => {
+    mutationFn: async () => {
+      // This device's push registration ends with the session.
+      const pushEndpoint = await currentPushEndpoint();
+      const result = await api.auth.logout(pushEndpoint ? { pushEndpoint } : undefined);
+      if (pushEndpoint) await unsubscribeCurrentPush();
+      return result;
+    },
+    onSuccess: async () => {
+      // Cached matters, chat history and queued changes stay on the device
+      // otherwise — and would be replayed in the next person's account.
+      await clearOfflineData();
       tracking.auth.logout();
       resetUser();
+      // Resumable-upload state of this user must not outlive the session.
+      void clearAllUploadSessions();
       qc.removeQueries({ queryKey: ["auth", "me"] });
       qc.clear();
       router.push("/at/login");
@@ -119,11 +152,11 @@ export function use2FAVerify() {
 export function use2FADisable() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (password: string) =>
+    mutationFn: ({ password, code }: { password: string; code: string }) =>
       csrfFetch("/api/auth/2fa/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, code }),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["auth", "me"] }),
   });

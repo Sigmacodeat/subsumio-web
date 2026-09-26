@@ -55,6 +55,20 @@ describe("PERMISSIONS helper functions", () => {
 });
 
 describe("can (RBAC matrix)", () => {
+  test("Personalstamm: nur admin ändert, client_viewer liest nicht", () => {
+    expect(can(mockUser("admin"), "staff.write")).toBe(true);
+    expect(can(mockUser("lawyer"), "staff.write")).toBe(false);
+    expect(can(mockUser("assistant"), "staff.write")).toBe(false);
+    expect(can(mockUser("assistant"), "staff.read")).toBe(true);
+    expect(can(mockUser("client_viewer"), "staff.read")).toBe(false);
+  });
+
+  test("only lawyers and admins start a case scan", () => {
+    expect(can(mockUser("admin"), "legal.case_scanner")).toBe(true);
+    expect(can(mockUser("lawyer"), "legal.case_scanner")).toBe(true);
+    expect(can(mockUser("assistant"), "legal.case_scanner")).toBe(false);
+  });
+
   test("admin can do everything", () => {
     const user = mockUser("admin");
     const actions: RouteAction[] = [
@@ -97,9 +111,29 @@ describe("can (RBAC matrix)", () => {
     expect(can(user, "settings.write")).toBe(false);
   });
 
+  test("auth.sessions — every account manages its own sessions, client accounts too", () => {
+    for (const role of ["admin", "lawyer", "assistant", "client_viewer"] as const) {
+      expect(can(mockUser(role), "auth.sessions")).toBe(true);
+    }
+  });
+
   test("contract_draft — lawyer only (not assistant)", () => {
     expect(can(mockUser("lawyer"), "legal.contract_draft")).toBe(true);
     expect(can(mockUser("assistant"), "legal.contract_draft")).toBe(false);
+  });
+
+  test("audit.read — admin only", () => {
+    expect(can(mockUser("admin"), "audit.read")).toBe(true);
+    expect(can(mockUser("lawyer"), "audit.read")).toBe(false);
+    expect(can(mockUser("assistant"), "audit.read")).toBe(false);
+    expect(can(mockUser("client_viewer"), "audit.read")).toBe(false);
+  });
+
+  test("mail.read — firm staff, never client accounts", () => {
+    expect(can(mockUser("admin"), "mail.read")).toBe(true);
+    expect(can(mockUser("lawyer"), "mail.read")).toBe(true);
+    expect(can(mockUser("assistant"), "mail.read")).toBe(true);
+    expect(can(mockUser("client_viewer"), "mail.read")).toBe(false);
   });
 
   test("billing.read — admin and lawyer", () => {

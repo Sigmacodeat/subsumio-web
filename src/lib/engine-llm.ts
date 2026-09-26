@@ -12,6 +12,7 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { EU_ONLY_REFUSAL_CODE, isEuOnlyRefusal } from "@/lib/eu-policy-refusal";
 
 const log = logger("engine-llm");
 
@@ -90,7 +91,23 @@ export interface EngineTranscribeResult {
   provider: string;
 }
 
-export async function engineTranscribe(
+export type EngineTranscribeOutcome =
+  | { ok: true; result: EngineTranscribeResult }
+  | { ok: false; code: string; status: number };
+
+/** Failure codes of the engine's /api/llm/transcribe passed through as-is. */
+const TRANSCRIBE_ENGINE_CODES = new Set([
+  "transcription_not_configured",
+  "transcription_timeout",
+  "audio_size_invalid",
+]);
+
+/**
+ * Transcription with the reason of a failure: `eu_only_refused` (EU-only mode
+ * without an EU transcription provider), one of TRANSCRIBE_ENGINE_CODES,
+ * `engine_<status>` or `network`.
+ */
+export async function engineTranscribeDetailed(
   headers: Record<string, string>,
   audio: {
     bytes: Uint8Array;
@@ -99,7 +116,7 @@ export async function engineTranscribe(
     language?: string;
     model?: string;
   }
-): Promise<EngineTranscribeResult | null> {
+): Promise<EngineTranscribeOutcome> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/llm/transcribe`, {
       method: "POST",
@@ -116,15 +133,45 @@ export async function engineTranscribe(
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       log.warn("engine transcription failed", { status: res.status, detail: detail.slice(0, 200) });
-      return null;
+      let payload: unknown = null;
+      try {
+        payload = JSON.parse(detail);
+      } catch {
+        /* not JSON */
+      }
+      if (isEuOnlyRefusal(payload)) {
+        return { ok: false, code: EU_ONLY_REFUSAL_CODE, status: res.status };
+      }
+      const engineError =
+        payload && typeof payload === "object" && "error" in payload
+          ? (payload as { error?: unknown }).error
+          : undefined;
+      if (typeof engineError === "string" && TRANSCRIBE_ENGINE_CODES.has(engineError)) {
+        return { ok: false, code: engineError, status: res.status };
+      }
+      return { ok: false, code: `engine_${res.status}`, status: res.status };
     }
-    return (await res.json()) as EngineTranscribeResult;
+    return { ok: true, result: (await res.json()) as EngineTranscribeResult };
   } catch (err) {
     log.warn("engine transcription error", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return null;
+    return { ok: false, code: "network", status: 0 };
   }
+}
+
+export async function engineTranscribe(
+  headers: Record<string, string>,
+  audio: {
+    bytes: Uint8Array;
+    mimeType?: string;
+    filename?: string;
+    language?: string;
+    model?: string;
+  }
+): Promise<EngineTranscribeResult | null> {
+  const outcome = await engineTranscribeDetailed(headers, audio);
+  return outcome.ok ? outcome.result : null;
 }
 
 /**

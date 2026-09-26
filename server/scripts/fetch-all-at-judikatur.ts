@@ -536,10 +536,8 @@ async function fullScanCourt(
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
-  // Global RIS lock — ensures no other RIS script runs simultaneously
-  console.log("🔒 Acquiring RIS lock...");
+  // RIS lock — currently a no-op (see ris-lock.ts): no cross-process limit.
   await acquireRisLock();
-  console.log("✅ RIS lock acquired.");
 
   const args = process.argv.slice(2);
   // --source is the pipeline's trigger vocabulary (corpus-pipeline.ts maps

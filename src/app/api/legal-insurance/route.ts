@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   createRSVCaseData,
   buildCoverageInquiryEmail,
@@ -11,6 +12,8 @@ import {
   InsuranceNotConfiguredError,
 } from "@/lib/legal/insurance-adapter";
 import { logger } from "@/lib/logger";
+import { engineWriteOrThrow } from "@/lib/engine-write";
+import { getEnginePage, writeEnginePage } from "@/lib/engine-page-io";
 
 const log = logger("api/legal-insurance");
 
@@ -79,17 +82,21 @@ export const POST = createHandler(
     rsv.coverage_status = "pending";
     rsv.inquired_at = new Date().toISOString();
 
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { ...ctx.headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug: `legal/rsv/${rsv.id}`,
-        title: `RSV: ${body.client_name} (${body.insurance_provider})`,
-        type: "rsv_case",
-        frontmatter: rsv,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+    await engineWriteOrThrow(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { ...ctx.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: `legal/rsv/${rsv.id}`,
+          title: `RSV: ${body.client_name} (${body.insurance_provider})`,
+          type: "rsv_case",
+          frontmatter: rsv,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "RSV-Anfrage"
+    );
 
     return apiSuccess({
       rsv,
@@ -112,16 +119,14 @@ export const GET = createHandler(
     query: querySchema,
   },
   async (ctx, _body, query) => {
-    const params = new URLSearchParams({ type: "rsv_case", limit: "200" });
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("engine_error", "Engine request failed", 502);
-    const data = await res.json();
-    const pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<
-      { frontmatter?: RSVCaseData } | RSVCaseData
-    >;
+    // Every entry, not only the first engine batch of 100.
+    let data: unknown[];
+    try {
+      data = await listEnginePages(ctx.headers, "rsv_case", 10_000, { strict: true });
+    } catch {
+      return apiError("engine_error", "Engine request failed", 502);
+    }
+    const pages = data as Array<{ frontmatter?: RSVCaseData } | RSVCaseData>;
     let items = pages.map((page) =>
       "frontmatter" in page && page.frontmatter ? page.frontmatter : (page as RSVCaseData)
     );
@@ -129,5 +134,74 @@ export const GET = createHandler(
       items = items.filter((r) => r.case_slug === query.case_slug);
     }
     return apiSuccess({ items });
+  }
+);
+
+const updateSchema = z.object({
+  id: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^rsv-[a-z0-9-]+$/),
+  coverage_status: z.enum(["pending", "approved", "partially_approved", "denied", "expired"]),
+  coverage_amount: z.number().min(0).optional(),
+});
+
+/** Statuses that record the insurer's decision (sets `decided_at`). */
+const DECIDED_STATUSES = new Set<RSVCaseData["coverage_status"]>([
+  "approved",
+  "partially_approved",
+  "denied",
+]);
+
+/**
+ * PATCH /api/legal-insurance — records the insurer's answer on an existing
+ * coverage inquiry (e.g. "Gedeckt", "Abgelehnt"). Same permission as creating
+ * an inquiry.
+ */
+export const PATCH = createHandler(
+  {
+    action: "brain.write",
+    rateTier: "standard",
+    body: updateSchema,
+    audit: (_ctx, body) => ({
+      action: "case.update" as const,
+      entityType: "rsv_case",
+      entityId: body.id,
+      details: { coverage_status: body.coverage_status },
+    }),
+  },
+  async (ctx, body) => {
+    const slug = `legal/rsv/${body.id}`;
+    let page: Awaited<ReturnType<typeof getEnginePage>>;
+    try {
+      page = await getEnginePage(ctx.headers, slug, { timeoutMs: 10_000 });
+    } catch {
+      return apiError("engine_error", "Deckungsanfrage konnte nicht geladen werden", 502);
+    }
+    const existing = page?.frontmatter as Partial<RSVCaseData> | undefined;
+    if (!page || page.type !== "rsv_case" || !existing || existing.id !== body.id) {
+      return apiError("not_found", "Deckungsanfrage nicht gefunden", 404);
+    }
+
+    const now = new Date().toISOString();
+    const updated: RSVCaseData = {
+      ...(existing as RSVCaseData),
+      coverage_status: body.coverage_status,
+      ...(body.coverage_amount !== undefined ? { coverage_amount: body.coverage_amount } : {}),
+      decided_at: DECIDED_STATUSES.has(body.coverage_status) ? now : existing.decided_at,
+      updated_at: now,
+    };
+
+    try {
+      await writeEnginePage(
+        ctx.headers,
+        { slug, type: "rsv_case", frontmatter: { ...updated } },
+        { merge: true, timeoutMs: 10_000 }
+      );
+    } catch {
+      return apiError("engine_error", "Deckungsstatus konnte nicht gespeichert werden", 502);
+    }
+    return apiSuccess({ rsv: updated });
   }
 );

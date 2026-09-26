@@ -5,6 +5,8 @@ import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL } from "@/lib/engine";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { listEnginePages } from "@/lib/engine-pages";
+import { isPortalSignable } from "@/lib/portal-view";
+import { signedDocumentHash } from "@/lib/signed-document-hash";
 
 const querySchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -23,6 +25,8 @@ interface SignableDoc {
    * every request has one: some are still metadata-only (external provider,
    * legacy requests). */
   content?: string;
+  /** SHA-256 of `content`; sent back on signing so the signature binds this text. */
+  content_hash?: string;
 }
 
 // This route asks for a type firm-wide and only filters to this matter
@@ -38,13 +42,11 @@ const MAX_DOCS_PER_TYPE = 1_000; // outstanding docs of one type, firm-wide
 const SOURCES = [
   {
     type: "signature_request" as const,
-    closed: new Set(["signed", "declined", "expired"]),
     name: "recipient_name",
     email: "recipient_email",
   },
   {
     type: "power_of_attorney" as const,
-    closed: new Set(["signed", "expired", "revoked"]),
     name: "client_name",
     email: "client_email",
   },
@@ -78,8 +80,10 @@ export const GET = createPublicHandler(
         const fm = page.frontmatter ?? {};
         // Only documents explicitly stamped with THIS matter are shown.
         if (fm.case_slug !== caseSlug) continue;
-        const status = String(fm.status ?? "draft");
-        if (source.closed.has(status)) continue;
+        // Only requests the firm sent — never drafts, closed requests or
+        // tracking rows whose document lives elsewhere.
+        if (!isPortalSignable(fm)) continue;
+        const status = String(fm.status);
         matched.push({ source, page, status });
       }
     }
@@ -108,6 +112,7 @@ export const GET = createPublicHandler(
           expires_at: fm.expires_at as string | undefined,
           case_slug: caseSlug,
           content: typeof full?.content === "string" ? full.content : undefined,
+          content_hash: full ? signedDocumentHash(full.content) : undefined,
         };
         return doc;
       })

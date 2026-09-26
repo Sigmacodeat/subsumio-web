@@ -105,7 +105,25 @@ export const TENANT_UNSAFE_TOOLS: ReadonlySet<string> = new Set([
   "get_ingest_log",
   "get_recent_salience",
   "find_anomalies",
+  // Takes aggregates and code intelligence read brain-wide as well.
+  "takes_list",
+  "takes_scorecard",
+  "takes_calibration",
+  "code_def",
+  "code_refs",
 ]);
+
+/**
+ * True when an MCP client is bound to a firm's source (anything other than
+ * the host `default` source). Such clients never get TENANT_UNSAFE_TOOLS.
+ */
+export function isTenantBoundClient(auth: {
+  sourceId?: string;
+  allowedSources?: readonly string[];
+}): boolean {
+  if ((auth.sourceId ?? "default") !== "default") return true;
+  return (auth.allowedSources ?? []).some((s) => s !== "default");
+}
 
 /**
  * Tools a matter-scoped job (a web caller with an ethical wall, restricted
@@ -306,6 +324,13 @@ export interface BuildBrainToolsOpts {
   /** Matters the caller may only read (job data `_matter_read_only`). */
   matterReadOnly?: readonly string[];
   /**
+   * The web caller's document ACL groups (job data `_acl_groups`, see
+   * matter-access readJobAclGroups). Undefined / "all" = no document filter
+   * (host jobs, firm admins); a list — even an empty one — restricts every
+   * read to open pages and pages of those groups.
+   */
+  aclGroups?: string[] | "all";
+  /**
    * Where the pages this run writes may go (matter-access agentWriteBinding
    * of the job data). Undefined = free, today's behaviour (CLI, cron).
    */
@@ -323,6 +348,7 @@ interface OpContextDeps {
   sourceId?: string;
   sourceIds?: string[];
   matterScope?: MatterScope;
+  aclGroups?: string[] | "all";
 }
 
 function buildOpContext(deps: OpContextDeps): OperationContext {
@@ -353,6 +379,7 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
     brainId: deps.brainId,
     allowedSlugPrefixes: deps.allowedSlugPrefixes ? [...deps.allowedSlugPrefixes] : undefined,
     ...(deps.matterScope !== undefined ? { matterScope: deps.matterScope } : {}),
+    ...(deps.aclGroups !== undefined ? { aclGroups: deps.aclGroups } : {}),
   };
 }
 
@@ -422,7 +449,34 @@ async function visibleSlugs(
     if (binding.matters.some((m) => hiddenPrivate(vis, m))) return;
     if (pageBindingAllowed(scope, slug, binding)) visible.add(slug);
   });
+  for (const slug of await aclDeniedSlugs(ctx, [...visible])) visible.delete(slug);
   return visible;
+}
+
+/**
+ * Slugs whose stored page (any copy in the call's read sources) the caller's
+ * document-level ACL groups do not reach. Empty when `ctx.aclGroups` is
+ * undefined / "all".
+ */
+async function aclDeniedSlugs(ctx: OperationContext, slugs: string[]): Promise<Set<string>> {
+  const denied = new Set<string>();
+  const groups = ctx.aclGroups;
+  if (groups === undefined || groups === "all" || slugs.length === 0) return denied;
+  const rows = await ctx.engine.executeRaw<{ id: number; slug: string }>(
+    `SELECT id, slug FROM pages WHERE slug = ANY($1::text[]) AND source_id = ANY($2::text[])`,
+    [slugs, readSources(ctx)]
+  );
+  if (rows.length === 0) return denied;
+  const { filterPagesByACL } = await import("../../acl.ts");
+  const ok = new Set(
+    await filterPagesByACL(
+      ctx.engine,
+      rows.map((r) => Number(r.id)),
+      groups
+    )
+  );
+  for (const r of rows) if (!ok.has(Number(r.id))) denied.add(r.slug);
+  return denied;
 }
 
 async function assertSlugVisible(
@@ -463,6 +517,8 @@ async function assertPutPageAllowed(
     }
   }
   if (slug) {
+    // A page the caller's document ACL hides cannot be overwritten either.
+    if ((await aclDeniedSlugs(ctx, [slug])).size > 0) throw pageNotFound(slug);
     bindings.push(
       ...(await resolveRowBindings(ctx.engine, [{ slug, source_id: sourceId }], { sourceId }))
     );
@@ -592,7 +648,10 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
   const tenantJob = typeof opts.sourceId === "string" && opts.sourceId.length > 0;
   // A job carrying a restricted matter scope only gets tools that honour it.
   const matterScope = opts.matterScope;
-  const scopedJob = Array.isArray(matterScope);
+  const aclGroups = opts.aclGroups;
+  // A document-ACL-restricted job gets the same filtered tool set as a
+  // matter-scoped one: each of those tools honours ctx.aclGroups.
+  const scopedJob = Array.isArray(matterScope) || Array.isArray(aclGroups);
   const readOnly = opts.matterReadOnly ?? [];
   const picked: Operation[] = operations.filter(
     (op) =>
@@ -639,6 +698,7 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           sourceId: opts.sourceId,
           sourceIds: opts.sourceIds,
           matterScope,
+          aclGroups,
         });
         // Same trust boundary as HTTP/MCP dispatch: subagent calls are
         // remote, so localOnly ops are refused even if a registry was built
@@ -756,13 +816,14 @@ export async function runMatterGuarded(
   writeBinding: AgentWriteBinding = { kind: "free" }
 ): Promise<unknown> {
   const bound = writeBinding.kind !== "free";
-  if (matterScope === undefined && readOnly.length === 0 && !bound) {
+  const aclRestricted = Array.isArray(opCtx.aclGroups);
+  if (matterScope === undefined && readOnly.length === 0 && !bound && !aclRestricted) {
     return op.handler(opCtx, params);
   }
   // A restricted scope must not reach a tool it cannot filter, even if the
   // registry offering it was bypassed.
   const scope: MatterScope = matterScope ?? "all";
-  if (Array.isArray(scope) && !MATTER_SCOPED_TOOLS.has(op.name)) {
+  if ((Array.isArray(scope) || aclRestricted) && !MATTER_SCOPED_TOOLS.has(op.name)) {
     throw new OperationError(
       "permission_denied",
       `${op.name} is not available to matter-scoped callers`

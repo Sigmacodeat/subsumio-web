@@ -8,12 +8,16 @@ name: Answer Quality Gate
 # The retrieval half (no model, free) runs in every build as a unit test:
 # server/test/answer-quality-retrieval.test.ts.
 #
-# Cost: a few cents per run. Requires the ANTHROPIC_API_KEY (preferred) or
+# Cost: a few cents per run, so it no longer runs on every push. It runs when
+# started by hand (Actions → Answer Quality Gate → Run workflow) or on a pull
+# request that carries the label `ki-pruefung` (add the label once before
+# merging a change to the answer pipeline). Requires the ANTHROPIC_API_KEY (preferred) or
 # OPENROUTER_API_KEY repository secret; without one the job FAILS — a gate
 # that silently passes without a model is no gate.
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches: [main, develop]
     paths:
       - "server/src/core/think/**"
@@ -34,6 +38,7 @@ concurrency:
 
 jobs:
   answer-quality:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'ki-pruefung')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

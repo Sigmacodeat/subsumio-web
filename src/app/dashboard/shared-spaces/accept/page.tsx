@@ -26,7 +26,12 @@ function AcceptInvitation() {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok)
-        throw new Error(json?.error?.message ?? "Die Einladung konnte nicht angenommen werden.");
+        // apiError answers { error: "<Text>", code } — the text is `error` itself.
+        throw new Error(
+          typeof json?.error === "string" && json.error
+            ? json.error
+            : "Die Einladung konnte nicht angenommen werden."
+        );
       const { room_id } = unwrapApiBody<{ room_id: string }>(json);
       router.push(`/dashboard/shared-spaces/${room_id}`);
     } catch (err) {

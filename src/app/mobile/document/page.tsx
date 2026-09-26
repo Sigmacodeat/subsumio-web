@@ -18,6 +18,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { brainPageHref } from "@/lib/dashboard-hrefs";
 import { PdfViewer } from "@/components/mobile/pdf-viewer";
 import { getCache, setCache, OFFLINE_KEYS, isOnline } from "@/lib/offline-store";
 
@@ -123,11 +124,11 @@ export default function MobileDocumentPage() {
       await Share.share({
         title: selected.title,
         text: fullContent?.slice(0, 200) ?? selected.snippet ?? "",
-        url: `${window.location.origin}/dashboard/pages/${selected.slug}`,
+        url: `${window.location.origin}${brainPageHref(selected.slug)}`,
       });
     } catch {
       // Web fallback — copy to clipboard
-      const text = `${selected.title}\n\n${window.location.origin}/dashboard/pages/${selected.slug}`;
+      const text = `${selected.title}\n\n${window.location.origin}${brainPageHref(selected.slug)}`;
       await navigator.clipboard.writeText(text).catch(() => {});
     } finally {
       setSharing(false);
@@ -231,7 +232,7 @@ export default function MobileDocumentPage() {
               <Share2 size={16} />
             </button>
             <a
-              href={`/dashboard/pages/${selected.slug}`}
+              href={brainPageHref(selected.slug)}
               style={{
                 background: "var(--ds-border)",
                 border: "none",

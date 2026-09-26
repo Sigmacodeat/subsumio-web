@@ -635,6 +635,45 @@ export async function createIntakeStaleNotification(opts: {
   await persistNotificationUpsert(notif);
 }
 
+/**
+ * The full firm export an admin asked for is ready (or finished with gaps).
+ * One notice per export (deterministic id); the download itself stays on the
+ * privacy settings page, behind the admin's session.
+ */
+export async function createFirmExportReadyNotification(opts: {
+  userId: string;
+  brainId: string;
+  exportId: number;
+  expiresAt?: string | null;
+  complete: boolean;
+}): Promise<void> {
+  const until = opts.expiresAt
+    ? new Date(opts.expiresAt).toLocaleString("de-AT", {
+        timeZone: "Europe/Vienna",
+        dateStyle: "short",
+        timeStyle: "short",
+      })
+    : null;
+  const notif: Notification = {
+    id: `notif_firm_export_${opts.exportId}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "system",
+    data: {
+      exportId: opts.exportId,
+      href: "/dashboard/settings/privacy",
+      message: `${
+        opts.complete
+          ? "Der vollständige Kanzlei-Export ist fertig."
+          : "Der Kanzlei-Export ist fertig, aber nicht vollständig — Details im Manifest."
+      } Download einmalig unter Einstellungen → Privatsphäre${until ? `, bis ${until}` : ""}.`,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
+}
+
 export async function createRetentionNotification(opts: {
   userId: string;
   brainId: string;
@@ -759,6 +798,38 @@ export async function deleteAllReadNotifications(opts: {
     } catch {}
   });
   return deleted;
+}
+
+/**
+ * An outgoing webhook was switched off after repeated failed deliveries.
+ * One notice per switch-off and admin; reactivation happens in
+ * Einstellungen → Webhooks.
+ */
+export async function createWebhookDisabledNotification(opts: {
+  userId: string;
+  brainId: string;
+  webhookId: string;
+  url: string;
+  failures: number;
+  /** Time of the switch-off — a later switch-off is a new notice. */
+  disabledAt: string;
+}): Promise<void> {
+  const idPart = opts.webhookId.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
+  const notif: Notification = {
+    id: `notif_webhook_disabled_${idPart}_${opts.disabledAt.replace(/[^0-9]/g, "")}`,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "system",
+    data: {
+      webhookId: opts.webhookId,
+      url: opts.url,
+      failures: opts.failures,
+      message: `Webhook an ${opts.url} wurde nach ${opts.failures} fehlgeschlagenen Zustellungen in Folge automatisch deaktiviert. Unter Einstellungen → Webhooks prüfen und reaktivieren.`,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
 }
 
 export async function createNotificationFailureNotification(opts: {

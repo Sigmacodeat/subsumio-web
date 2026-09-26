@@ -1,11 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import {
-  checkSingleDeadline,
-  parseDeadlineCalendarPage,
-  type DeadlineCheckResult,
-} from "./deadline-post-check";
+import { checkSingleDeadline, parseDeadlineCalendarPage } from "./deadline-post-check";
 
 describe("checkSingleDeadline", () => {
   test("returns null when no matching rule found", () => {
@@ -19,13 +15,12 @@ describe("checkSingleDeadline", () => {
     expect(result).toBeNull();
   });
 
-  test("matches Berufung by keyword and verifies correct date", () => {
-    // Berufungsfrist: 4 Wochen ab Zustellung 2026-11-01 → 2026-12-01 (deterministisch)
+  test("§ 464 Abs 1 ZPO: AT-Berufung wird mit der AT-Engine geprüft (4 Wochen ab 2026-11-01 → So 29.11. → Mo 2026-11-30)", () => {
     const result = checkSingleDeadline(
       "legal/cases/test",
       "Test Case",
       "Berufungsfrist",
-      "2026-12-01",
+      "2026-11-30",
       "2026-11-01",
       undefined,
       undefined,
@@ -34,7 +29,72 @@ describe("checkSingleDeadline", () => {
     expect(result).not.toBeNull();
     expect(result!.severity).toBe("ok");
     expect(result!.discrepancyDays).toBe(0);
-    expect(result!.ruleKey).toBe("zpo-berufung");
+    expect(result!.ruleKey).toBe("berufung");
+    expect(result!.ruleLaw).toBe("§ 464 Abs 1 ZPO");
+  });
+
+  test("FRI-19 § 222 Abs 1 ZPO: AT-Berufung zugestellt 2026-07-20, KI-Datum 2026-09-14 ist korrekt (ok, nicht kritisch)", () => {
+    const result = checkSingleDeadline(
+      "legal/cases/test",
+      "Test",
+      "Berufung",
+      "2026-09-14",
+      "2026-07-20",
+      undefined,
+      undefined,
+      "AT"
+    );
+    expect(result!.severity).toBe("ok");
+  });
+
+  test("FRI-19 § 222 Abs 2 ZPO: Rekurs in einer Ferialsache (Ende 2026-08-03) gilt ebenfalls als korrekt", () => {
+    const result = checkSingleDeadline(
+      "legal/cases/test",
+      "Test",
+      "Rekurs gegen EV-Beschluss",
+      "2026-08-03",
+      "2026-07-20",
+      undefined,
+      undefined,
+      "AT"
+    );
+    expect(result!.ruleKey).toBe("rekurs");
+    expect(result!.severity).toBe("ok");
+  });
+
+  test("FRI-19 § 248 Abs 2 ZPO: Einspruch gegen Zahlungsbefehl (AT) wird nicht auf § 339 dZPO gemappt", () => {
+    const result = checkSingleDeadline(
+      "legal/cases/test",
+      "Test",
+      "Einspruch gegen Zahlungsbefehl",
+      "2026-03-30",
+      "2026-03-02",
+      undefined,
+      undefined,
+      "AT"
+    );
+    expect(result!.ruleKey).toBe("einspruch_zahlungsbefehl");
+    expect(result!.ruleLaw).toBe("§ 248 Abs 2 ZPO");
+    expect(result!.severity).toBe("ok");
+  });
+
+  test("FRI-19: ohne Rechtsraum gilt Österreich — nie die deutsche Tabelle", () => {
+    const result = checkSingleDeadline("c", "T", "Berufung", "2026-03-30", "2026-03-02");
+    expect(result!.ruleKey).toBe("berufung");
+  });
+
+  test("FRI-19: „Berufungsbegründung“ (DE) trifft die Begründungsfrist, nicht die Berufungsfrist", () => {
+    const result = checkSingleDeadline(
+      "c",
+      "T",
+      "Berufungsbegründung",
+      "2026-05-04",
+      "2026-03-02",
+      undefined,
+      undefined,
+      "DE"
+    );
+    expect(result!.ruleKey).toBe("zpo-berufungsbegruendung");
   });
 
   test("flags critical discrepancy when AI date is far off", () => {
@@ -42,7 +102,7 @@ describe("checkSingleDeadline", () => {
       "legal/cases/test",
       "Test Case",
       "Berufungsfrist",
-      "2026-12-15", // Way off from 2026-12-01
+      "2026-12-15", // Way off from 2026-11-30
       "2026-11-01",
       undefined,
       undefined,
@@ -54,12 +114,12 @@ describe("checkSingleDeadline", () => {
   });
 
   test("flags warning when AI date is slightly off (1-3 days)", () => {
-    // Deterministisch: 2026-12-01, AI: 2026-12-03 (2 days off)
+    // Deterministisch: 2026-11-30, AI: 2026-12-02 (2 days off)
     const result = checkSingleDeadline(
       "legal/cases/test",
       "Test Case",
       "Berufungsfrist",
-      "2026-12-03",
+      "2026-12-02",
       "2026-11-01",
       undefined,
       undefined,
@@ -80,7 +140,7 @@ describe("checkSingleDeadline", () => {
       "2026-11-01",
       undefined,
       undefined,
-      "AT"
+      "DE"
     );
     expect(result).not.toBeNull();
     expect(result!.ruleKey).toBe("zpo-einspruch-vu");
@@ -98,7 +158,7 @@ describe("checkSingleDeadline", () => {
       "AT"
     );
     expect(result).not.toBeNull();
-    expect(result!.ruleKey).toBe("zpo-revision");
+    expect(result!.ruleKey).toBe("revision");
   });
 
   test("matches by exact law citation", () => {
@@ -106,9 +166,9 @@ describe("checkSingleDeadline", () => {
       "legal/cases/test",
       "Test",
       "Some Frist",
-      "2026-12-01", // Matches deterministic date for Berufung from 2026-11-01
+      "2026-11-30", // Matches deterministic date for Berufung from 2026-11-01
       "2026-11-01",
-      "§ 517 ZPO",
+      "§ 464 Abs 1 ZPO",
       undefined,
       "AT"
     );

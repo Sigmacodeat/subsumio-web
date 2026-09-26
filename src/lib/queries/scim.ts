@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
-import { apiGet } from "@/lib/queries/settings";
+import { apiGet, jsonOrThrow } from "@/lib/queries/settings";
 
 export interface SyncStatus {
   lastSyncAt: string | null;
@@ -34,7 +34,10 @@ export function useScimStatus() {
 export function useScimSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => csrfFetch("/api/scim/sync", { method: "POST" }).then((r) => r.json()),
+    mutationFn: () =>
+      csrfFetch("/api/scim/sync", { method: "POST" }).then((r) =>
+        jsonOrThrow<{ data: SyncStatus["lastSyncResult"] }>(r)
+      ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["scim", "status"] });
     },

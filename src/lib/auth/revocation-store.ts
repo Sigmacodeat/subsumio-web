@@ -22,21 +22,32 @@ const ensureRevocationSchema = createSchemaInit(`
   )
 `);
 
-/** Get the minimum accepted session version for a user. */
+/**
+ * Get the minimum accepted session version for a user.
+ *
+ * Fail-closed: when the store cannot be read, the last value this process
+ * read or wrote is used; without one the error is thrown — "0" would accept
+ * every revoked session again. Callers decide what an unknown state means
+ * (verifySession: invalid; the revocation endpoint: 503).
+ */
 export async function getMinRevocationVersion(userId: string): Promise<number> {
   const pool = getSharedPgPool();
   if (!pool) {
     return revokedVersions.get(userId) ?? 0;
   }
-  await ensureRevocationSchema();
   try {
+    await ensureRevocationSchema();
     const { rows } = await pool.query<{ min_version: number }>(
       "SELECT min_version FROM subsumio_session_revocations WHERE user_id = $1",
       [userId]
     );
-    return rows[0]?.min_version ?? 0;
-  } catch {
-    return revokedVersions.get(userId) ?? 0;
+    const minVersion = rows[0]?.min_version ?? 0;
+    revokedVersions.set(userId, minVersion);
+    return minVersion;
+  } catch (err) {
+    const lastKnown = revokedVersions.get(userId);
+    if (lastKnown !== undefined) return lastKnown;
+    throw err;
   }
 }
 
@@ -45,6 +56,16 @@ export async function revokeAllSessions(userId: string): Promise<void> {
   // Mirror the version-floor bump into the registry so the "Aktive Sitzungen"
   // list and the per-sid revocation check agree with it.
   void import("./session-registry").then((m) => m.revokeSessionRows(userId).catch(() => {}));
+  // Signed out everywhere (deactivation, password reset, …): no device keeps
+  // receiving push notifications with matter or deadline titles.
+  await import("@/lib/push-token-store")
+    .then((m) => m.deletePushTokensForUser(userId))
+    .catch((err) =>
+      log.warn(
+        `[revocation] push registrations of ${userId} not removed:`,
+        err instanceof Error ? err.message : String(err)
+      )
+    );
   const pool = getSharedPgPool();
   if (!pool) {
     const current = revokedVersions.get(userId) ?? 0;

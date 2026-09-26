@@ -12,7 +12,7 @@ import {
   signedFilename,
 } from "@/lib/qes/pdf-as";
 import { appBase, pdfAsBase } from "@/lib/qes/config";
-import { getQesSession, updateQesSession } from "@/lib/qes/sessions";
+import { claimQesSession, getQesSession, updateQesSession } from "@/lib/qes/sessions";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -59,15 +59,32 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     return backToMatter(session.caseSlug, { qes: "failed", reason: error });
   };
 
+  // Claim the session (fetched → processing) before any work, so a retried
+  // or doubled callback cannot store the signed document twice.
+  const claimed = await claimQesSession(token, "fetched", "processing");
+  if (!claimed) {
+    const current = await getQesSession(token);
+    if (!current || current.status === "pending")
+      return fail("Das Dokument wurde vom Signaturdienst nicht abgerufen.");
+    if (current.status === "signed") return backToMatter(session.caseSlug, { qes: "signed" });
+    if (current.status === "failed")
+      return backToMatter(session.caseSlug, {
+        qes: "failed",
+        reason: current.error ?? "Die qualifizierte Signatur wurde nicht abgeschlossen.",
+      });
+    // Another callback is completing this signature right now.
+    return backToMatter(session.caseSlug, { qes: "processing" });
+  }
+
   if (!base || !isTrustedPdfUrl(pdfUrl, base))
     return fail("Unerwartete Rückmeldung des Signaturdienstes.");
-  if (!session.originalDigest)
+  if (!claimed.originalDigest)
     return fail("Das Dokument wurde vom Signaturdienst nicht abgerufen.");
 
   let signed: Buffer;
   let check: ReturnType<typeof readQesCheck>;
   try {
-    const res = await fetch(withOrigDigest(pdfUrl as string, base, session.originalDigest), {
+    const res = await fetch(withOrigDigest(pdfUrl as string, base, claimed.originalDigest), {
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return fail("Das signierte Dokument konnte nicht abgeholt werden.");
@@ -81,6 +98,13 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
     return fail("Der Signaturdienst hat kein PDF geliefert.");
   }
   if (!check.valueOk) return fail("Die Signaturprüfung ist fehlgeschlagen.");
+  // A qualified signature needs BOTH a valid signature value and a valid
+  // certificate chain (trusted root, valid at signing time). Fail closed:
+  // a missing or non-zero certificate check is never stored as "qualified".
+  if (!check.certificateOk)
+    return fail(
+      `Das Signaturzertifikat ist nicht gültig (Prüfcode ${check.certificateCheckCode ?? "fehlt"}).`
+    );
 
   const signer = certificateSubjectName(check.signerCertificate);
   const entry = await uploadFileToMatter(
@@ -100,7 +124,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
 
   const headers = engineHeadersForBrain(session.brainId);
   const now = new Date().toISOString();
-  await enginePatchPage(
+  // The signed PDF is stored at this point; the two evidence writes below
+  // must not be reported as done when the engine refused them.
+  const metadataStored = await enginePatchPage(
     headers,
     {
       slug: signedSlug,
@@ -116,8 +142,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       },
     },
     { timeoutMs: 15_000 }
-  ).catch(() => null);
-  await fetch(`${ENGINE_URL}/api/pages`, {
+  )
+    .then((res) => res.ok)
+    .catch(() => false);
+  const evidenceStored = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -135,14 +163,24 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
         signer_name: signer,
         started_by: session.userEmail,
         captured_at: now,
-        original_sha256: session.originalDigest,
+        original_sha256: claimed.originalDigest,
         signed_sha256: sha256Hex(signed),
         value_check_code: check.valueCheckCode,
         certificate_check_code: check.certificateCheckCode,
       },
     }),
     signal: AbortSignal.timeout(10_000),
-  }).catch(() => null);
+  })
+    .then((res) => res.ok)
+    .catch(() => false);
+  const evidenceComplete = metadataStored && evidenceStored;
+  if (!evidenceComplete) {
+    log.error("signature evidence not stored", {
+      signedDocument: signedSlug,
+      metadataStored,
+      evidenceStored,
+    });
+  }
 
   await updateQesSession(token, { status: "signed", signedDocumentSlug: signedSlug });
   void logAudit("signature.qes_signed", "document", {
@@ -155,7 +193,17 @@ export async function GET(req: NextRequest, context: { params: Promise<{ token: 
       signedDocument: signedSlug,
       signer,
       certificateCheck: check.certificateCheckCode,
+      evidenceComplete,
     },
   });
-  return backToMatter(session.caseSlug, { qes: "signed" });
+  return backToMatter(
+    session.caseSlug,
+    evidenceComplete
+      ? { qes: "signed" }
+      : {
+          qes: "signed",
+          reason:
+            "Der Signaturnachweis konnte nicht vollständig gespeichert werden. Bitte den Support informieren.",
+        }
+  );
 }

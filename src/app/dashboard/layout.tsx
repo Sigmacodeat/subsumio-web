@@ -63,6 +63,7 @@ import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { MobileSyncBanner } from "@/components/mobile/mobile-sync-banner";
 import { SupportSessionBanner } from "@/components/dashboard/support-session-banner";
 import { DemoChrome } from "@/components/dashboard/demo-banner";
+import { LegalAcceptanceGate } from "@/components/dashboard/legal-acceptance-gate";
 import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { AnimatePresence } from "framer-motion";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -717,6 +718,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
       )}
       {isDemoSession && <DemoChrome />}
+      {/* Contract confirmation (AGB, Datenschutz, AVV) — blocks until done. */}
+      <LegalAcceptanceGate legal={meQuery.data?.legal} />
       {/* Prevent search engines from indexing authenticated dashboard pages.
           Defense-in-depth: robots.txt already blocks /dashboard, but this
           data attribute ensures noindex intent is documented. The actual

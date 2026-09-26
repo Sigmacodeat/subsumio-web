@@ -52,7 +52,12 @@ export function usePages(opts?: {
 }) {
   return useQuery<BrainPage[]>({
     queryKey: ["brain", "pages", opts],
-    queryFn: () => api.brain.listPages(opts),
+    // Limits above the engine's 100-per-request cap need paging — otherwise
+    // the query silently resolves to a truncated list.
+    queryFn: () =>
+      opts?.type && (opts.limit ?? 0) > 100 && !opts.offset && !opts.source && !opts.tag
+        ? api.brain.listAllPages({ type: opts.type, max: opts.limit })
+        : api.brain.listPages(opts),
   });
 }
 
@@ -77,6 +82,8 @@ export interface CockpitData {
   /** A page list failed to load — counts may be incomplete. */
   degraded?: boolean;
   failed_types?: string[];
+  /** Lists with more pages than were read — counts are lower bounds. */
+  capped_types?: string[];
 }
 
 export function useCockpitData(opts?: { types?: string; recentLimit?: number; enabled?: boolean }) {

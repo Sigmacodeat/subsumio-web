@@ -32,6 +32,11 @@ export interface CapturedSignature {
   ip_address?: string;
   user_agent?: string;
   brain_id?: string;
+  /** SHA-256 of the document text that was signed (binds signature and text). */
+  document_hash?: string;
+  document_hash_algorithm?: "sha256";
+  /** When the signed document text was last changed before signing. */
+  document_updated_at?: string;
 }
 
 export interface CaptureInput {
@@ -46,6 +51,8 @@ export interface CaptureInput {
   ip_address?: string;
   user_agent?: string;
   brain_id?: string;
+  document_hash?: string;
+  document_updated_at?: string;
 }
 
 /**
@@ -76,6 +83,13 @@ export function createCapturedSignature(input: CaptureInput): CapturedSignature 
     ip_address: input.ip_address,
     user_agent: input.user_agent,
     brain_id: input.brain_id,
+    ...(input.document_hash
+      ? {
+          document_hash: input.document_hash,
+          document_hash_algorithm: "sha256" as const,
+          document_updated_at: input.document_updated_at,
+        }
+      : {}),
   };
 }
 

@@ -46,6 +46,7 @@ import {
   agentWriteBinding,
   inheritedAgentStamps,
   matterScopeAllows,
+  readJobAclGroups,
   readJobCase,
   readJobMatterAccess,
   type MatterScope,
@@ -63,6 +64,9 @@ export interface SupervisorHandlerData {
   _matter_read_only?: string[];
   _owner_user_id?: string;
   _case_slug?: string;
+  /** "case_scan": the result page is a review item awaiting a lawyer. */
+  _review_origin?: string;
+  _case_scan_id?: string;
 }
 
 /**
@@ -165,7 +169,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     let caseContext: CaseContext | null = null;
     if (boundCase) {
       try {
-        caseContext = await loadCaseContext(engine, boundCase, sourceStamp, matterAccess.scope);
+        caseContext = await loadCaseContext(
+          engine,
+          boundCase,
+          sourceStamp,
+          matterAccess.scope,
+          readJobAclGroups(data)
+        );
       } catch (e) {
         // Non-fatal: proceed with the plain prompt.
         const msg = e instanceof Error ? e.message : String(e);
@@ -191,7 +201,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       };
     } else {
       // Auto-Dekomposition via LLM
-      plan = await decomposeTask(enrichedPrompt, data.supervisor_model);
+      plan = await decomposeTask(enrichedPrompt, data.supervisor_model, engine);
     }
 
     // Unbekannte Specialists früh ablehnen — vor dem ersten Child-Submit.
@@ -299,9 +309,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     // ── Schritt 4: Synthese ─────────────────────────────────
     let synthesis: string;
     if (data.aggregate_with_llm) {
-      synthesis = await synthesizeWithLlm(data.prompt, children, plan, data.supervisor_model).catch(
-        () => synthesizeResults(children, plan)
-      );
+      synthesis = await synthesizeWithLlm(
+        data.prompt,
+        children,
+        plan,
+        data.supervisor_model,
+        engine
+      ).catch(() => synthesizeResults(children, plan));
     } else {
       synthesis = synthesizeResults(children, plan);
     }
@@ -411,6 +425,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
             // an unbound result page would be visible to walled colleagues.
             ...(resultCase ? { case_slug: resultCase } : {}),
             ...(data.supervisor_model ? { model: data.supervisor_model } : {}),
+            ...reviewMarkerFrontmatter(data),
           },
         },
         { sourceId: sourceStamp }
@@ -420,6 +435,9 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       // is best-effort so we don't fail a successful analysis.
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[supervisor] put_page failed for agent run ${ctx.id}: ${msg}`);
+      // A case scan's only deliverable is the review item: without it the
+      // run failed (and the scan is refunded).
+      if (isCaseScanRun(data)) throw e;
     }
 
     return {
@@ -429,6 +447,30 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       ...(criticReview ? { critic_review: criticReview } : {}),
       ...(revisedSynthesis ? { revised_synthesis: revisedSynthesis } : {}),
     };
+  };
+}
+
+/** True for a run the case scanner started (its result awaits review). */
+export function isCaseScanRun(data: unknown): boolean {
+  return (
+    !!data &&
+    typeof data === "object" &&
+    (data as Record<string, unknown>)._review_origin === "case_scan"
+  );
+}
+
+/**
+ * Frontmatter that makes a case scan's result page a review item ("Eingang
+ * prüfen"): listed there until a lawyer marks it reviewed or discards it.
+ * Other runs get nothing.
+ */
+export function reviewMarkerFrontmatter(data: unknown): Record<string, unknown> {
+  if (!isCaseScanRun(data)) return {};
+  const scanId = (data as Record<string, unknown>)._case_scan_id;
+  return {
+    review_origin: "case_scan",
+    review_status: "unreviewed",
+    ...(typeof scanId === "string" && scanId ? { case_scan_id: scanId } : {}),
   };
 }
 
@@ -648,7 +690,8 @@ export async function loadCaseContext(
   engine: BrainEngine,
   caseSlug: string,
   sourceId?: string,
-  matterScope?: MatterScope
+  matterScope?: MatterScope,
+  aclGroups?: string[] | "all"
 ): Promise<CaseContext | null> {
   if (!caseSlug || !matterScopeAllows(matterScope, caseSlug, caseSlug)) return null;
 
@@ -656,11 +699,12 @@ export async function loadCaseContext(
   const params: unknown[] = sourceId ? [caseSlug, sourceId] : [caseSlug];
 
   const [caseRow] = await engine.executeRaw<{
+    id: number;
     slug: string;
     title: string;
     compiled_truth: string | null;
   }>(
-    `SELECT slug, title, compiled_truth
+    `SELECT id, slug, title, compiled_truth
      FROM pages
      WHERE slug = $1
        AND type = 'legal_case'
@@ -670,15 +714,22 @@ export async function loadCaseContext(
     params
   );
   if (!caseRow) return null;
+  // The document ACL of the user who started the run applies to the case
+  // page and to everything loaded with it.
+  const { aclUnrestricted, filterPagesByACL } = await import("../../acl.ts");
+  const aclVisible = async (ids: number[]): Promise<Set<number>> =>
+    new Set(aclUnrestricted(aclGroups) ? ids : await filterPagesByACL(engine, ids, aclGroups));
+  if (!(await aclVisible([Number(caseRow.id)])).has(Number(caseRow.id))) return null;
 
   // Pages bound to the matter by frontmatter (deadlines, documents, evidence).
   const relatedRows = await engine.executeRaw<{
+    id: number;
     slug: string;
     title: string;
     type: string;
     frontmatter: unknown;
   }>(
-    `SELECT slug, title, type, frontmatter
+    `SELECT id, slug, title, type, frontmatter
      FROM pages
      WHERE deleted_at IS NULL
        AND (
@@ -707,8 +758,11 @@ export async function loadCaseContext(
           { sourceId }
         )
       : [];
+  const aclOk = await aclVisible(relatedWithFm.map((r) => Number(r.id)));
   const related = relatedWithFm.filter(
-    (r, i) => bindings.length === 0 || pageBindingAllowed(matterScope, r.slug, bindings[i]!)
+    (r, i) =>
+      aclOk.has(Number(r.id)) &&
+      (bindings.length === 0 || pageBindingAllowed(matterScope, r.slug, bindings[i]!))
   );
 
   const deadlines = related
@@ -786,11 +840,33 @@ export function renderCaseContextBlock(ctx: CaseContext): string {
 
 // ── Dekomposition ───────────────────────────────────────────
 
-async function decomposeTask(prompt: string, model?: string): Promise<SupervisorPlan> {
+/**
+ * Model for the supervisor's own calls (plan, synthesis): the caller's pick,
+ * else the deployment's utility tier (native / OpenRouter / Bedrock EU,
+ * config overrides honoured). Always provider-prefixed — the gateway rejects
+ * bare ids — and never a hard-wired vendor that would bypass tier or EU mode.
+ */
+export async function resolveSupervisorModel(
+  engine: BrainEngine | null,
+  model?: string
+): Promise<string> {
+  const { normalizeModelId } = await import("../../model-id.ts");
+  if (model && model.trim()) return normalizeModelId(model.trim());
+  const { resolveModel, TIER_DEFAULTS } = await import("../../model-config.ts");
+  return normalizeModelId(
+    await resolveModel(engine, { tier: "utility", fallback: TIER_DEFAULTS.utility })
+  );
+}
+
+export async function decomposeTask(
+  prompt: string,
+  model?: string,
+  engine: BrainEngine | null = null
+): Promise<SupervisorPlan> {
   // Wir nutzen die Gateway-API für einen schnellen, kostengünstigen Call
   const { chat } = await import("../../ai/gateway.ts");
 
-  const resolvedModel = model ?? "claude-haiku-4-5"; // Kostengünstig für Dekomposition
+  const resolvedModel = await resolveSupervisorModel(engine, model);
 
   const result = await chat({
     model: resolvedModel,
@@ -956,13 +1032,14 @@ async function synthesizeWithLlm(
   userPrompt: string,
   children: SupervisorChildResult[],
   plan: SupervisorPlan,
-  model?: string
+  model?: string,
+  engine: BrainEngine | null = null
 ): Promise<string> {
   const { chat } = await import("../../ai/gateway.ts");
   const raw = synthesizeResults(children, plan);
 
   const result = await chat({
-    model: model ?? "claude-haiku-4-5",
+    model: await resolveSupervisorModel(engine, model),
     system: [
       "Du bist der Synthese-Schritt eines Legal-AI-Supervisors.",
       "Du bekommst die Roh-Ergebnisse mehrerer Specialist-Agenten und die ursprüngliche Anfrage.",

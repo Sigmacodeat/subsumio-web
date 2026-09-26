@@ -10,11 +10,18 @@
 // Each page component keeps its own <MotionConfig> and data-tone wrapper
 // for page-specific theming, but no longer renders the shared chrome.
 
+import dynamic from "next/dynamic";
 import { MotionConfig } from "framer-motion";
 import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
 import { ScrollProgress } from "./motion-system";
 import BackToTop from "./back-to-top";
-import ConciergeWidget from "./concierge/concierge-widget";
+
+// The chat widget is only needed after a click: its own chunk, loaded after
+// hydration, so it stays out of the initial bundle of every landing page.
+const ConciergeWidget = dynamic(() => import("./concierge/concierge-widget"), {
+  ssr: false,
+  loading: () => null,
+});
 export default function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">

@@ -17,10 +17,15 @@
  * vorlag — das würde selbst schon vertrauliche Mandantenbeziehungen
  * verraten.
  *
- * Welche Kanzlei (Brain) eine Anfrage erreicht, ist bei dieser
- * Ein-Instanz-pro-Kanzlei-Architektur über eine Umgebungsvariable
- * festgelegt (siehe resolvePublicIntakeBrainId) — es gibt (Stand
- * 22.09.2026) keine Mandanten-URL-Konvention wie bei einer Multi-Tenant-SaaS.
+ * Welche Kanzlei (Brain) eine Anfrage erreicht, legt ausschließlich
+ * SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID fest (src/lib/public-firm.ts) — kein
+ * Rückgriff auf die WhatsApp-Standard-Kanzlei. Das Formular läuft nur, wenn
+ * die Kanzlei in ihren Einstellungen Name, Anschrift und E-Mail hinterlegt
+ * hat: sie wird auf dem Formular als Verantwortliche genannt (Art. 13 DSGVO).
+ *
+ * GET ?form=intake|booking → die empfangende Kanzlei (für Kopf und
+ * Datenschutzhinweis der Formulare) oder 404, wenn das Formular nicht
+ * angeboten wird.
  */
 
 import { NextRequest } from "next/server";
@@ -29,6 +34,8 @@ import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { KANZLEI_SETTINGS_SLUG } from "@/lib/kanzlei-settings";
+import { apiSuccess } from "@/lib/api-response";
+import { loadPublicFirm, resolvePublicFormBrainId } from "@/lib/public-firm";
 import { buildIntakeRequest, type IntakeRequestFrontmatter } from "@/lib/intake";
 import { sendMail } from "@/lib/mail";
 import { logger } from "@/lib/logger";
@@ -37,52 +44,70 @@ const log = logger("api/intake/public");
 
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  email: z.string().trim().email().max(200).optional().or(z.literal("")),
-  phone: z
-    .string()
-    .trim()
-    .max(40)
-    .regex(/^[+\d\s()/-]*$/, "invalid_phone")
-    .optional()
-    .or(z.literal("")),
-  legalArea: z.string().trim().max(80).optional(),
-  /** Gegenseite — für die Kollisionsprüfung (§ 10 RAO) mindestens so
-   *  wichtig wie der Anfragende selbst. */
-  opponent: z.string().trim().max(200).optional(),
-  message: z.string().trim().min(1).max(4000),
-  /** DSGVO-Einwilligung zur Verarbeitung dieser Anfrage. */
-  consent: z.literal(true),
-  /** Honeypot — für Menschen unsichtbar. */
-  website: z.string().max(0).optional(),
-});
+const bodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(200),
+    email: z.string().trim().email().max(200).optional().or(z.literal("")),
+    phone: z
+      .string()
+      .trim()
+      .max(40)
+      .regex(/^[+\d\s()/-]*$/, "invalid_phone")
+      .optional()
+      .or(z.literal("")),
+    legalArea: z.string().trim().max(80).optional(),
+    /** Gegenseite — für die Kollisionsprüfung (§ 10 RAO) mindestens so
+     *  wichtig wie der Anfragende selbst. */
+    opponent: z.string().trim().max(200).optional(),
+    message: z.string().trim().min(1).max(4000),
+    /** DSGVO-Einwilligung zur Verarbeitung dieser Anfrage. */
+    consent: z.literal(true),
+    /** Honeypot — für Menschen unsichtbar. */
+    website: z.string().max(0).optional(),
+  })
+  // Ohne Kontaktweg kann die Kanzlei nicht antworten.
+  .refine((b) => Boolean(b.email) || Boolean(b.phone), {
+    message: "contact_required",
+    path: ["email"],
+  });
 
-/**
- * Bei dieser Ein-Instanz-pro-Kanzlei-Architektur genügt eine feste
- * Ziel-Brain-ID aus der Umgebung — derselbe Ansatz wie
- * WHATSAPP_DEFAULT_BRAIN_ID für eingehende WhatsApp-Nachrichten
- * (api/whatsapp/webhook/route.ts).
- */
-function resolvePublicIntakeBrainId(): string | null {
-  return (
-    process.env.SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID || process.env.WHATSAPP_DEFAULT_BRAIN_ID || null
-  );
-}
+const querySchema = z.object({ form: z.enum(["intake", "booking"]).default("intake") });
+
+export const GET = createPublicHandler(
+  {
+    query: querySchema,
+    rateLimitKey: (req: NextRequest) => `intake-public:get:${clientIp(req.headers)}`,
+    rateLimitMax: 120,
+    rateLimitWindowMs: 60 * 60_000,
+  },
+  async (_req, _body, query) => {
+    const brainId = resolvePublicFormBrainId(query?.form ?? "intake");
+    const firm = brainId ? await loadPublicFirm(brainId) : null;
+    if (!firm) return apiError("not_available", "Formular nicht verfügbar", 404);
+    return apiSuccess({ firm });
+  }
+);
 
 interface ConflictCheckResult {
   severity?: "critical" | "low" | "none";
 }
 
+/**
+ * `side` is the role of the name in the requested mandate: the requester is
+ * the prospective client, the named opponent the prospective opponent. A
+ * requester who is the opponent in an existing Akte (or an opponent who is an
+ * existing client) is a conflict, not "clear".
+ */
 async function checkConflict(
   brainId: string,
-  name: string
+  name: string,
+  side: "client" | "opponent"
 ): Promise<IntakeRequestFrontmatter["conflict_check_status"]> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, side }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return "needs_review";
@@ -109,7 +134,7 @@ export const POST = createPublicHandler(
   async (_req, body) => {
     if (body.website) return apiError("invalid", "invalid", 400);
 
-    const brainId = resolvePublicIntakeBrainId();
+    const brainId = resolvePublicFormBrainId("intake");
     if (!brainId) {
       log.error(
         "SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID not configured — public intake form cannot file requests"
@@ -121,12 +146,22 @@ export const POST = createPublicHandler(
       );
     }
 
+    // Ohne benennbare Kanzlei (Verantwortliche) keine Annahme — dieselbe
+    // Bedingung, unter der das Formular überhaupt angezeigt wird.
+    if (!(await loadPublicFirm(brainId))) {
+      return apiError(
+        "not_configured",
+        "Das Erstanfrage-Formular ist derzeit nicht verfügbar. Bitte kontaktieren Sie uns telefonisch oder per E-Mail.",
+        503
+      );
+    }
+
     const headers = engineHeadersForBrain(brainId);
     // Kollisionsprüfung auf Anfragenden UND Gegenseite — die Gegenseite ist
     // der eigentliche § 10-RAO-Konflikt (bestehendes Mandat der Gegenseite).
-    let conflictStatus = await checkConflict(brainId, body.name);
+    let conflictStatus = await checkConflict(brainId, body.name, "client");
     if (body.opponent && conflictStatus !== "conflict") {
-      const opponentStatus = await checkConflict(brainId, body.opponent);
+      const opponentStatus = await checkConflict(brainId, body.opponent, "opponent");
       if (opponentStatus === "conflict") conflictStatus = "conflict";
       else if (opponentStatus === "needs_review" && conflictStatus === "clear")
         conflictStatus = "needs_review";

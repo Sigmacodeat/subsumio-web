@@ -7,6 +7,7 @@ import { CalendarClock, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
+
+/**
+ * Upper bound per list. The engine lists by last change, so a small cap
+ * silently dropped long-untouched follow-ups; reaching this one shows a notice.
+ */
+const WIEDERVORLAGEN_LIST_MAX = 10_000;
 
 function openCreateDialog() {
   window.dispatchEvent(new Event("subsumio:create-wiedervorlage"));
@@ -26,16 +33,17 @@ export default function WiedervorlagenPage() {
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["legal-follow-ups"],
-    queryFn: () => api.brain.listPages({ type: "legal_follow_up", limit: 500 }),
+    queryFn: () =>
+      api.brain.listAllPages({ type: "legal_follow_up", max: WIEDERVORLAGEN_LIST_MAX }),
   });
   const casesQuery = useQuery({
     queryKey: ["wiedervorlagen-cases"],
-    queryFn: () => api.cases.list({ limit: 200 }),
+    queryFn: () => api.brain.listAllPages({ type: "legal_case", max: WIEDERVORLAGEN_LIST_MAX }),
     staleTime: 60_000,
   });
   const absencesQuery = useQuery({
     queryKey: ["wiedervorlagen-absences"],
-    queryFn: () => api.brain.listPages({ type: "absence_record", limit: 100 }),
+    queryFn: () => api.brain.listAllPages({ type: "absence_record", max: WIEDERVORLAGEN_LIST_MAX }),
     staleTime: 60_000,
   });
 
@@ -117,6 +125,9 @@ export default function WiedervorlagenPage() {
           <PrimaryAction onClick={openCreateDialog}>{t("practice.followup.new")}</PrimaryAction>
         }
       />
+      {(query.data?.length ?? 0) >= WIEDERVORLAGEN_LIST_MAX && (
+        <CappedResultsNotice limit={WIEDERVORLAGEN_LIST_MAX} />
+      )}
       {query.isLoading ? (
         <div className="space-y-2" aria-busy="true">
           <Skeleton className="h-14 rounded-xl" />

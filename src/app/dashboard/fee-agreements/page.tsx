@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, Wallet } from "lucide-react";
+import { AlertTriangle, Loader2, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RowSkeleton } from "@/components/dashboard/skeleton";
 import { csrfFetch } from "@/lib/csrf";
@@ -18,7 +18,11 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { FeeAgreement, BudgetStatus } from "@/lib/fee-agreements";
-import { FEE_MODEL_LABELS, computeBudgetStatus } from "@/lib/fee-agreements";
+import {
+  FEE_MODEL_LABELS,
+  budgetInputsFromEntries,
+  computeBudgetStatus,
+} from "@/lib/fee-agreements";
 
 const ALERT_COLORS: Record<string, string> = {
   none: "",
@@ -41,6 +45,7 @@ export default function FeeAgreementsPage() {
   const [agreements, setAgreements] = useState<FeeAgreement[]>([]);
   const [cases, setCases] = useState<CaseOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -55,12 +60,15 @@ export default function FeeAgreementsPage() {
 
   const load = useCallback(async () => {
     try {
-      const batch = await api.brain.batchListPages(["fee_agreement", "legal_case"], 200);
+      // Every agreement and matter (read in batches of 100): a matter beyond a
+      // cut-off would show 0 % budget use.
+      const batch = await api.brain.batchListPagesDetailed(["fee_agreement", "legal_case"], 10_000);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
       setAgreements(
-        (batch["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
+        (batch.results["fee_agreement"] ?? []).map((p) => p.frontmatter as unknown as FeeAgreement)
       );
       setCases(
-        (batch["legal_case"] ?? []).map((p) => {
+        (batch.results["legal_case"] ?? []).map((p) => {
           const fm = caseFrontmatter(p);
           return {
             slug: p.slug,
@@ -70,7 +78,9 @@ export default function FeeAgreementsPage() {
           };
         })
       );
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("fee.err_load") });
     } finally {
       setLoading(false);
@@ -128,14 +138,18 @@ export default function FeeAgreementsPage() {
     return c.caseNumber ? `${c.caseNumber} – ${c.title}` : c.title;
   };
 
-  /** Budget-Auslastung aus den erfassten abrechenbaren Zeiten der Akte. */
+  /** Budget-Auslastung — dieselbe Regel wie das Budget-Widget. */
   const computeStatus = (ag: FeeAgreement): BudgetStatus => {
-    const entries = (caseFor(ag.case_slug)?.timeEntries ?? []).filter((e) => e.billable !== false);
-    const value = entries.reduce(
-      (sum, e) => sum + ((Number(e.minutes) || 0) / 60) * (Number(e.rate) || ag.hourly_rate || 0),
-      0
+    const inputs = budgetInputsFromEntries(
+      caseFor(ag.case_slug)?.timeEntries ?? [],
+      ag.hourly_rate
     );
-    return computeBudgetStatus(ag, { minutes: 0, billedAmount: value });
+    return computeBudgetStatus(ag, {
+      minutes: inputs.minutes,
+      hourlyRate: ag.hourly_rate,
+      trackedValue: inputs.trackedValue,
+      billedAmount: inputs.billedAmount,
+    });
   };
 
   return (
@@ -257,6 +271,20 @@ export default function FeeAgreementsPage() {
 
       {loading ? (
         <RowSkeleton count={3} />
+      ) : loadFailed ? (
+        <div role="alert">
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("fee.err_load")}
+            description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              setLoadFailed(false);
+              setLoading(true);
+              void load();
+            }}
+          />
+        </div>
       ) : agreements.length === 0 ? (
         !showCreate && (
           <EmptyState

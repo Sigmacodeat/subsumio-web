@@ -11,6 +11,7 @@
 
 import { ENGINE_URL, engineHeadersWithCaseJurisdiction } from "@/lib/engine";
 import { consumeSSEStream } from "@/lib/sse-stream";
+import { EU_ONLY_REFUSAL_MESSAGE, isEuOnlyRefusal } from "@/lib/eu-policy-refusal";
 
 export interface EngineThinkRequest {
   /** The question / task. Sent as `query` — the only field the engine reads. */
@@ -66,6 +67,14 @@ export async function engineThink(
   });
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
+    let body: unknown = null;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // not JSON
+    }
+    // "Nur EU": the refusal is the firm's policy, not an outage — say so.
+    if (isEuOnlyRefusal(body)) throw new EngineThinkError(EU_ONLY_REFUSAL_MESSAGE, 403);
     throw new EngineThinkError(`engine think ${res.status}: ${text.slice(0, 200)}`, res.status);
   }
 

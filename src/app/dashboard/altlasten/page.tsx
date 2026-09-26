@@ -79,6 +79,7 @@ export default function AltlastenPage() {
 
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("verjaehrung");
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [batchTriggering, setBatchTriggering] = useState(false);
@@ -88,6 +89,7 @@ export default function AltlastenPage() {
 
   const fetchCases = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       // Fetch all legal_case pages
       // listAllPages pages past the engine's 200-row cap and drops tombstones.
@@ -116,7 +118,8 @@ export default function AltlastenPage() {
               pipelineScore = typeof stateFm.total_score === "number" ? stateFm.total_score : null;
             }
 
-            // Try to get limitation scan
+            // Try to get limitation scan.
+            // grounding-exempt: only numeric frontmatter scores are read, no AI text is shown
             const limSlug = `limitation-scan/${slug}`;
             const limPage = await api.brain.getPage(limSlug).catch(() => null);
             if (limPage) {
@@ -154,6 +157,7 @@ export default function AltlastenPage() {
 
       setCases(rows);
     } catch {
+      setLoadFailed(true);
       addToast({
         type: "error",
         title: t("altlasten.err_load"),
@@ -325,7 +329,9 @@ export default function AltlastenPage() {
                 const r = u as Record<string, unknown>;
                 return {
                   anspruch: String(r.anspruch ?? "Unbekannter Anspruch"),
-                  restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : 30,
+                  // Unknown remaining time stays unknown — never an invented
+                  // 30 days (the Wiedervorlage is then due immediately).
+                  restzeit_tage: typeof r.restzeit_tage === "number" ? r.restzeit_tage : null,
                   paragraph: String(r.paragraph ?? ""),
                   handlungsbedarf: String(
                     r.handlungsbedarf ?? "Sofortige Prüfung und Klageerhebung erforderlich"
@@ -335,7 +341,7 @@ export default function AltlastenPage() {
             : [
                 {
                   anspruch: "Verjährung droht",
-                  restzeit_tage: 30,
+                  restzeit_tage: null,
                   paragraph: String(fm.law ?? ""),
                   handlungsbedarf: "Sofortige Prüfung und Klageerhebung erforderlich",
                 },
@@ -499,6 +505,16 @@ export default function AltlastenPage() {
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-11 w-full rounded-lg" />
           ))}
+        </div>
+      ) : loadFailed ? (
+        <div role="alert">
+          <EmptyState
+            icon={AlertTriangle}
+            title={t("altlasten.err_load")}
+            description="Die Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+            actionLabel={t("common.retry")}
+            onAction={() => void fetchCases()}
+          />
         </div>
       ) : sortedCases.length === 0 ? (
         <EmptyState

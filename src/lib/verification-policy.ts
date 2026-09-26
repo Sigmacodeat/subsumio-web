@@ -5,7 +5,7 @@
  * and provides a convenience wrapper that logs audit events.
  */
 
-import { logAudit } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import {
   assertOutputActionAllowed as _assertAllowed,
   VerificationPolicyError,
@@ -56,7 +56,7 @@ export async function assertOutputActionAllowed(
         ? ("verification.receipt_invalidated" as const)
         : ("verification.policy_denied" as const);
       void logAudit(auditAction, "verification_policy", {
-        brainId: actor.brain_id,
+        brainId: actor.brain_id ?? SYSTEM_BRAIN,
         userId: actor.user_id,
         userEmail: actor.user_email,
         details: {
@@ -75,7 +75,7 @@ export async function assertOutputActionAllowed(
   // Log successful decisions
   if (decision.override) {
     void logAudit("verification.override_granted", "verification_policy", {
-      brainId: actor.brain_id,
+      brainId: actor.brain_id ?? SYSTEM_BRAIN,
       userId: actor.user_id,
       userEmail: actor.user_email,
       details: {
@@ -91,7 +91,7 @@ export async function assertOutputActionAllowed(
     });
   } else if (isPublishAction(action)) {
     void logAudit("verification.policy_allowed", "verification_policy", {
-      brainId: actor.brain_id,
+      brainId: actor.brain_id ?? SYSTEM_BRAIN,
       userId: actor.user_id,
       userEmail: actor.user_email,
       details: {

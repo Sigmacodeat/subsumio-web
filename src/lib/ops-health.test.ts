@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   BACKUP_MAX_AGE_HOURS,
   describeBackupAge,
+  describeBackupStatus,
   describeDisk,
   DISK_WARN_FREE_RATIO,
+  parseBackupStatus,
 } from "./ops-health";
 
 const GB = 1024 ** 3;
@@ -34,5 +36,40 @@ describe("backup check", () => {
   it("accepts a backup from last night", () => {
     const result = describeBackupAge(new Date("2026-09-18T02:00:00Z"), now, true);
     expect(result).toEqual({ ok: true, detail: "letztes Backup vor 4 h (2026-09-18 02:00 UTC)" });
+  });
+});
+
+describe("backup coverage", () => {
+  const now = new Date("2026-09-18T06:00:00Z");
+  it("is ok only with an offsite copy that includes the original files", () => {
+    const ok = describeBackupStatus(
+      parseBackupStatus('{"at":"2026-09-18T02:00:00Z","offsite":true,"files":"offsite"}'),
+      now,
+      true
+    );
+    expect(ok.ok).toBe(true);
+  });
+  it("reports a local-only backup as not ok", () => {
+    const local = describeBackupStatus(
+      parseBackupStatus('{"at":"2026-09-18T02:00:00Z","offsite":false,"files":"local"}'),
+      now,
+      true
+    );
+    expect(local.ok).toBe(false);
+    expect(local.detail).toMatch(/kein Offsite-Backup/);
+    expect(local.detail).toMatch(/Originaldokumente nur lokal/);
+  });
+  it("does not accept an older status line without offsite information", () => {
+    const legacy = describeBackupStatus(parseBackupStatus("2026-09-18T02:00:00Z"), now, true);
+    expect(legacy.ok).toBe(false);
+    expect(legacy.detail).toMatch(/nicht nachgewiesen/);
+  });
+  it("accepts files kept in object storage", () => {
+    const s3 = describeBackupStatus(
+      parseBackupStatus('{"at":"2026-09-18T02:00:00Z","offsite":true,"files":"not_mounted"}'),
+      now,
+      true
+    );
+    expect(s3.ok).toBe(true);
   });
 });

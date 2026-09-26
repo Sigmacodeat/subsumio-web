@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { listEnginePages } from "@/lib/engine-pages";
+import { readCurrentPage } from "@/lib/page-write-guards";
 import {
   buildDocumentRequest,
   documentRequestFromPage,
@@ -29,6 +31,8 @@ const itemSchema = z.union([
     label: z.string().min(1).max(160).optional(),
     required: z.boolean().optional(),
     received_document_slug: z.string().optional(),
+    submitted_document_slug: z.string().optional(),
+    submitted_at: z.string().optional(),
   }),
 ]);
 
@@ -57,16 +61,8 @@ const docRequestPatchSchema = z.object({
   sent_at: z.string().optional(),
 });
 
-function pagesFrom(data: unknown): BrainPage[] {
-  if (Array.isArray(data)) return data as BrainPage[];
-  if (data && typeof data === "object" && Array.isArray((data as { pages?: unknown }).pages)) {
-    return (data as { pages: BrainPage[] }).pages;
-  }
-  if (data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)) {
-    return (data as { items: BrainPage[] }).items;
-  }
-  return [];
-}
+/** Upper bound for the firm-wide scan of document requests. */
+const REQUEST_SCAN_MAX = 50_000;
 
 export const GET = createHandler(
   {
@@ -76,19 +72,23 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
-    const limit = Math.min(Number.parseInt(query.limit || "100", 10) || 100, 250);
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=${limit}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok)
+    // Every request of the firm (cursor-paged, strict), filtered afterwards —
+    // not the newest 100, which dropped older requests from matter views.
+    let pages: BrainPage[];
+    try {
+      pages = (await listEnginePages(ctx.headers, "document_request", REQUEST_SCAN_MAX, {
+        strict: true,
+      })) as unknown as BrainPage[];
+    } catch (err) {
+      log.error("[doc-request] list failed:", err instanceof Error ? err.message : String(err));
       return apiError(
         "document_requests_list_failed",
         "Dokumentenanfragen konnten nicht geladen werden",
         502
       );
+    }
 
-    const requests = pagesFrom(await res.json().catch(() => []))
+    const requests = pages
       .map(documentRequestFromPage)
       .filter(
         (item): item is NonNullable<ReturnType<typeof documentRequestFromPage>> => item !== null
@@ -175,6 +175,21 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
+    // Only an existing document request is updated — a merge must neither
+    // create a page nor retype another record (e.g. a matter). Fail closed.
+    const current = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
+    if (current.kind === "error") {
+      return apiError("engine_unreachable", "Die Anfrage konnte nicht geprüft werden", 503);
+    }
+    if (current.kind === "missing") {
+      return apiError("not_found", "Dokumentenanfrage nicht gefunden", 404);
+    }
+    const currentType = current.page.type ?? current.page.frontmatter?.type;
+    if (currentType !== "document_request") {
+      return apiError("not_a_document_request", "Die Seite ist keine Dokumentenanfrage", 409);
+    }
+    const currentFm = (current.page.frontmatter ?? {}) as Record<string, unknown>;
+
     const patch: Partial<DocumentRequestFrontmatter> = {
       status: body.status,
       items: body.items?.map((item) =>
@@ -186,6 +201,8 @@ export const PATCH = createHandler(
               label: item.label || item.key || "Unterlage",
               required: item.required ?? true,
               received_document_slug: item.received_document_slug,
+              submitted_document_slug: item.submitted_document_slug,
+              submitted_at: item.submitted_at,
             }
       ),
       message_draft: body.message_draft,
@@ -196,19 +213,27 @@ export const PATCH = createHandler(
       if ((patch as Record<string, unknown>)[key] === undefined)
         delete (patch as Record<string, unknown>)[key];
     });
+    // Older requests stored the portal link with its token: drop it on the
+    // next update (null removes the key), keep only that the portal is offered.
+    if (currentFm.portal_url !== undefined || currentFm.portal_token_id !== undefined) {
+      Object.assign(patch, {
+        portal_url: null,
+        portal_token_id: null,
+        ...(currentFm.portal_url ? { portal_link: true } : {}),
+      });
+    }
 
+    // Merge without title/type: the request keeps its name and its type.
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify({
         slug: body.slug,
-        title: "Dokumentenanfrage Update",
-        type: "document_request",
         frontmatter: patch,
         ...(body.message_draft ? { content: body.message_draft } : {}),
         merge: true,
-        signal: AbortSignal.timeout(15_000),
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok)
       return apiError(
@@ -229,8 +254,13 @@ export const PATCH = createHandler(
         await createDocumentRequestNotification({
           userId: ctx.user.id,
           brainId: ctx.brainId,
-          caseSlug: body.slug.split("/").pop(),
-          caseTitle: body.slug,
+          caseSlug: typeof currentFm.case_slug === "string" ? currentFm.case_slug : undefined,
+          caseTitle:
+            typeof currentFm.case_title === "string" && currentFm.case_title
+              ? currentFm.case_title
+              : typeof currentFm.case_slug === "string"
+                ? currentFm.case_slug
+                : "Akte",
           requestSlug: body.slug,
           itemCount: items.length,
           isReminder: false,

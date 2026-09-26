@@ -35,6 +35,12 @@ import { suggestFolder } from "@/lib/vault-organization";
 import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
 import { FolderTree, FOLDER_DND_MIME } from "@/components/legal/folder-tree";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import {
+  partialLabel,
+  statusFieldsFromFrontmatter,
+  type DocStatusFields,
+} from "@/lib/doc-processing-status";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -46,6 +52,7 @@ export function DocumentsTab() {
   const ctx = useMatterDetail();
   const { t } = useLang();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -110,6 +117,7 @@ export function DocumentsTab() {
   const [docJurisdictions, setDocJurisdictions] = useState<Record<string, DocJurisdiction>>({});
   const [docLocks, setDocLocks] = useState<Record<string, DocumentLock>>({});
   const [docFolders, setDocFolders] = useState<Record<string, string>>({});
+  const [docStatuses, setDocStatuses] = useState<Record<string, DocStatusFields>>({});
   const [folderFilter, setFolderFilter] = useState("all");
   const [folderEditSlug, setFolderEditSlug] = useState<string | null>(null);
   const [folderEditValue, setFolderEditValue] = useState("");
@@ -178,14 +186,21 @@ export function DocumentsTab() {
     let cancelled = false;
     (async () => {
       try {
-        const slugs = docSlugsKey.split(",").slice(0, 50);
-        const pagesMap = await api.brain.getPages(slugs);
-        if (cancelled) return;
+        // Every document of the matter, in batches — the processing status
+        // lives on the document page, not in the matter's document list.
+        const slugs = docSlugsKey.split(",");
+        const pagesMap: Awaited<ReturnType<typeof api.brain.getPages>> = {};
+        for (let i = 0; i < slugs.length; i += 50) {
+          Object.assign(pagesMap, await api.brain.getPages(slugs.slice(i, i + 50)));
+          if (cancelled) return;
+        }
         const next: Record<string, DocJurisdiction> = {};
         const locks: Record<string, DocumentLock> = {};
         const folders: Record<string, string> = {};
+        const statuses: Record<string, DocStatusFields> = {};
         for (const [pageSlug, page] of Object.entries(pagesMap)) {
           const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
+          statuses[pageSlug] = statusFieldsFromFrontmatter(fm);
           if (isDocumentLock(fm.checked_out_by)) locks[pageSlug] = fm.checked_out_by;
           if (typeof fm.folder === "string" && fm.folder.trim()) {
             folders[pageSlug] = fm.folder.trim();
@@ -204,6 +219,7 @@ export function DocumentsTab() {
         setDocJurisdictions(next);
         setDocLocks(locks);
         setDocFolders(folders);
+        setDocStatuses(statuses);
       } catch {
         // Best-effort enrichment — the tab stays fully usable without it
       }
@@ -434,19 +450,23 @@ export function DocumentsTab() {
 
   return (
     <div className="space-y-4">
-      {(qesResult === "signed" || qesResult === "failed") && (
+      {(qesResult === "signed" || qesResult === "failed" || qesResult === "processing") && (
         <div
           role={qesResult === "failed" ? "alert" : "status"}
           className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${
             qesResult === "signed"
               ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
-              : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+              : qesResult === "processing"
+                ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]"
+                : "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
           }`}
         >
           <span className="flex-1">
             {qesResult === "signed"
               ? "Das Dokument wurde qualifiziert signiert. Das signierte PDF liegt jetzt zusätzlich in dieser Akte."
-              : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
+              : qesResult === "processing"
+                ? "Die qualifizierte Signatur wird gerade abgeschlossen. Die Liste aktualisiert sich nach einem Neuladen."
+                : `Die qualifizierte Signatur wurde nicht abgeschlossen${qesReason ? `: ${qesReason}` : "."} Das Original ist unverändert.`}
           </span>
           <button
             type="button"
@@ -1214,7 +1234,12 @@ export function DocumentsTab() {
                       );
                     })()}
                     {(() => {
-                      const ps = ctx.docProcessingStatus(doc);
+                      // The page's own status wins over the list entry.
+                      const fields = {
+                        ...doc,
+                        ...(doc.slug ? docStatuses[doc.slug] : undefined),
+                      };
+                      const ps = ctx.docProcessingStatus(fields);
                       const labelMap: Record<string, string> = {
                         confirmed: t("cases.detail_doc_status_confirmed"),
                         review_open: t("cases.detail_doc_status_review_open"),
@@ -1229,6 +1254,8 @@ export function DocumentsTab() {
                         extraction_failed: t("docstab.extraction_failed"),
                         extraction_password: t("docstab.extraction_password"),
                         extraction_unsupported: t("docstab.extraction_unsupported"),
+                        extraction_partial: partialLabel(fields),
+                        processing: "Wird verarbeitet",
                       };
                       return (
                         <span
@@ -1320,30 +1347,47 @@ export function DocumentsTab() {
                   disabled={caseData?.status === "archived"}
                   onClick={async () => {
                     const docSlug = doc.slug || doc.url;
-                    if (docSlug && isOnline()) {
-                      try {
-                        const docSlugPath = docSlug.split("/").map(encodeURIComponent).join("/");
-                        await csrfFetch(`/api/pages/${docSlugPath}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            frontmatter: {
-                              case_slug: null,
-                              assignment_status: "unassigned",
-                              intake_status: "needs_assignment",
-                              unassigned_at: new Date().toISOString(),
-                              // Removing a document from the wrong matter is
-                              // a triage action, never a deletion. Keeping the
-                              // original available prevents evidence loss and
-                              // lets the user reassign it from the inbox.
-                              tombstoned_at: null,
-                            },
-                            merge: true,
-                          }),
-                        });
-                      } catch {
-                        /* best effort */
+                    if (!docSlug || !caseData?.slug) return;
+                    if (!isOnline()) {
+                      addToast({
+                        type: "error",
+                        title: "Keine Verbindung",
+                        description: "Dokumente können nur online aus der Akte entfernt werden.",
+                      });
+                      return;
+                    }
+                    const ok = await confirm({
+                      title: "Aus Akte entfernen?",
+                      message: `„${doc.name}" wird aus dieser Akte entfernt und kommt zur Zuordnung in den Posteingang. Das Dokument selbst wird nicht gelöscht.`,
+                      confirmLabel: "Entfernen",
+                      variant: "danger",
+                    });
+                    if (!ok) return;
+                    // Removing a document from the wrong matter is a triage
+                    // action, never a deletion: it leaves the matter's list
+                    // (and its export) and can be reassigned from the inbox.
+                    try {
+                      const res = await csrfFetch("/api/cases/documents/detach", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ case_slug: caseData.slug, doc_slug: docSlug }),
+                      });
+                      if (!res.ok) {
+                        // apiError: { error: "<deutscher Text>", code }
+                        const payload = (await res.json().catch(() => ({}))) as {
+                          error?: string;
+                        };
+                        throw new Error(payload.error ?? "");
                       }
+                      addToast({ type: "success", title: "Dokument aus der Akte entfernt" });
+                    } catch (err) {
+                      addToast({
+                        type: "error",
+                        title: "Entfernen fehlgeschlagen",
+                        description:
+                          (err instanceof Error && err.message) ||
+                          "Das Dokument ist weiterhin in der Akte. Bitte erneut versuchen.",
+                      });
                     }
                     await ctx.refreshCaseData();
                   }}

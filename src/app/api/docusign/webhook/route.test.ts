@@ -32,9 +32,27 @@ vi.mock("@/lib/comments", () => ({
     async (n: { userId: string }) => void notified.push(n.userId)
   ),
 }));
-vi.mock("@/lib/cron-utils", () => ({
-  getRecipientsByBrain: vi.fn(async () => new Map([["brain_1", [{ id: "u1" }, { id: "u2" }]]])),
+vi.mock("@/lib/cron-utils", async (orig) => ({
+  ...(await orig<typeof import("@/lib/cron-utils")>()),
+  getRecipientsByBrain: vi.fn(
+    async () =>
+      new Map([
+        [
+          "brain_1",
+          [
+            { id: "a1", role: "admin" },
+            { id: "u1", role: "lawyer" },
+            { id: "u2", role: "assistant" },
+            { id: "walled", role: "lawyer" },
+            { id: "client", role: "client_viewer" },
+            { id: "gone", role: "lawyer", deactivatedAt: "2026-01-01" },
+          ],
+        ],
+      ])
+  ),
 }));
+/** The matter page as the engine returns it; null → unreadable. */
+let matterPage: Record<string, unknown> | null = null;
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 const patches: Array<{ slug: string; frontmatter: Record<string, unknown> }> = [];
 vi.mock("@/lib/engine", () => ({
@@ -57,22 +75,30 @@ beforeEach(() => {
   notified.length = 0;
   patches.length = 0;
   process.env.DOCUSIGN_CONNECT_SECRET = SECRET;
+  matterPage = {
+    slug: "legal/cases/berger",
+    frontmatter: { permissions: { blocked_users: ["walled"] } },
+  };
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) =>
-      String(url).includes(`docusign-${ENVELOPE}`)
-        ? new Response(
-            JSON.stringify({
-              slug: `legal/signatures/docusign-${ENVELOPE}`,
-              frontmatter: {
-                title: "Vollmacht Berger",
-                case_slug: "legal/cases/berger",
-                docusign_envelope_id: ENVELOPE,
-              },
-            }),
-            { status: 200 }
-          )
-        : new Response("not found", { status: 404 })
+      String(url).endsWith("/api/pages/legal/cases/berger")
+        ? matterPage
+          ? Response.json(matterPage)
+          : new Response("unavailable", { status: 503 })
+        : String(url).includes(`docusign-${ENVELOPE}`)
+          ? new Response(
+              JSON.stringify({
+                slug: `legal/signatures/docusign-${ENVELOPE}`,
+                frontmatter: {
+                  title: "Vollmacht Berger",
+                  case_slug: "legal/cases/berger",
+                  docusign_envelope_id: ENVELOPE,
+                },
+              }),
+              { status: 200 }
+            )
+          : new Response("not found", { status: 404 })
     )
   );
 });
@@ -132,9 +158,16 @@ describe("DocuSign Connect webhook", () => {
     expect(uploads).toHaveLength(1);
   });
 
-  it("notifies the firm when a signer declines", async () => {
+  it("notifies active staff with access to the matter when a signer declines", async () => {
     expect((await deliver("declined")).json).toMatchObject({ mapped: "declined", declined: true });
-    expect(notified).toEqual(["u1", "u2"]);
+    // Never client accounts, deactivated users, or people walled off the matter.
+    expect(notified).toEqual(["a1", "u1", "u2"]);
+  });
+
+  it("notifies admins only when the matter cannot be read (fail-closed)", async () => {
+    matterPage = null;
+    await deliver("declined");
+    expect(notified).toEqual(["a1"]);
   });
 
   it("reads XML events with custom fields", async () => {
@@ -144,6 +177,36 @@ describe("DocuSign Connect webhook", () => {
       mapped: "expired",
       updated: true,
     });
+  });
+
+  it("a failed download is not marked processed (500); the retry stores the document", async () => {
+    const docusign = await import("@/lib/docusign");
+    vi.mocked(docusign.downloadEnvelopeDocuments).mockRejectedValueOnce(new Error("HTTP 502"));
+    const first = await deliver("completed");
+    expect(first.status).toBe(500);
+    expect(processed.size).toBe(0);
+    expect(uploads).toHaveLength(0);
+    const second = await deliver("completed");
+    expect(second.status).toBe(200);
+    expect(second.json).toMatchObject({ documentStored: true });
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("a download that is not a PDF is not filed", async () => {
+    const docusign = await import("@/lib/docusign");
+    vi.mocked(docusign.downloadEnvelopeDocuments).mockResolvedValueOnce(
+      Buffer.from("<html>error</html>")
+    );
+    expect((await deliver("completed")).status).toBe(500);
+    expect(uploads).toHaveLength(0);
+  });
+
+  it("a failed status update is retried by DocuSign (500, not processed)", async () => {
+    const engine = await import("@/lib/engine");
+    vi.mocked(engine.enginePatchPage).mockResolvedValueOnce(new Response("", { status: 503 }));
+    const res = await deliver("sent");
+    expect(res.status).toBe(500);
+    expect(processed.size).toBe(0);
   });
 
   it("rejects an invalid signature", async () => {

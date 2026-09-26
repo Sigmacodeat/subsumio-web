@@ -238,7 +238,7 @@ export class SemanticQueryCache {
       // the v0.40.3.0 IRON-RULE).
       await this.engine.executeRaw(
         `INSERT INTO query_cache (id, query_text, source_id, knobs_hash, embedding, results, meta, ttl_seconds, page_generations, max_generation_at_store, created_at)
-         VALUES ($1, $2, $3, $4, $5::vector, $6::jsonb, $7::jsonb, $8, $9::jsonb, $10, now())
+         VALUES ($1, $2, $3, $4, $5::vector, $6::text::jsonb, $7::text::jsonb, $8, $9::text::jsonb, $10, now())
          ON CONFLICT (id) DO UPDATE SET
            query_text = EXCLUDED.query_text,
            knobs_hash = EXCLUDED.knobs_hash,
@@ -340,6 +340,36 @@ export class SemanticQueryCache {
 function clampThreshold(v: number | undefined): number {
   if (typeof v !== "number" || !Number.isFinite(v)) return DEFAULT_SIMILARITY_THRESHOLD;
   return Math.max(0.5, Math.min(0.999, v));
+}
+
+/**
+ * Drop every cached result set that contains one of `slugs` — called when
+ * pages are permanently deleted: the cache stores the matched chunk texts, so
+ * a purged page must not live on in it. Best-effort (missing table → 0).
+ */
+export async function deleteCachedResultsForSlugs(
+  engine: Pick<BrainEngine, "executeRaw">,
+  slugs: string[]
+): Promise<number> {
+  if (slugs.length === 0) return 0;
+  try {
+    const rows = await engine.executeRaw<{ n: number }>(
+      `WITH deleted AS (
+         DELETE FROM query_cache q
+         WHERE jsonb_typeof(q.results) = 'array'
+           AND EXISTS (
+             SELECT 1 FROM jsonb_array_elements(q.results) AS e
+             WHERE e->>'slug' = ANY($1::text[])
+           )
+         RETURNING 1
+       )
+       SELECT COUNT(*)::int AS n FROM deleted`,
+      [slugs]
+    );
+    return rows[0]?.n ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 function clampTtl(v: number | undefined): number {

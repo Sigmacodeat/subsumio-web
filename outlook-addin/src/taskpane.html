@@ -8,7 +8,7 @@
        strict script-src stays enforceable. style-src keeps 'unsafe-inline'
        for the existing inline style="" display toggles — those aren't a
        script-execution vector, so tightening only script-src is what matters
-       against XSS reaching the localStorage-held API key. -->
+       against XSS reaching the add-in token held by this pane. -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'self' https://appsforoffice.microsoft.com; connect-src https://subsum.io; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none';"
@@ -313,17 +313,26 @@
     </div>
 
     <div class="section" id="authSection">
-      <div class="section-title">API-Key</div>
-      <input type="password" id="token" placeholder="sk_live_..." />
-      <button id="connectBtn">Verbinden</button>
+      <div class="section-title">Anmeldung</div>
+      <button id="signInBtn">Anmelden</button>
       <div style="font-size: 11px; color: #4a4a6a; margin-top: 8px; line-height: 1.5">
-        Sie benötigen einen API-Key aus Ihrem Subsumio-Dashboard (<a
-          href="https://subsum.io/dashboard/settings"
-          target="_blank"
-          style="color: #6366f1; text-decoration: none"
-          >Einstellungen → API-Keys</a
-        >).
+        Die Anmeldung öffnet ein Subsumio-Fenster (mit Zwei-Faktor-Anmeldung). Outlook erhält einen
+        Zugang, der 24 Stunden gilt und jederzeit widerrufen werden kann.
       </div>
+      <details style="font-size: 11px; color: #4a4a6a; margin-top: 8px">
+        <summary>Anmeldefenster nicht verfügbar?</summary>
+        <input type="password" id="token" placeholder="sk_addin_…" autocomplete="off" />
+        <button id="connectBtn">Verbinden</button>
+        <div style="line-height: 1.5">
+          Add-in-Zugang erstellen in Subsumio unter
+          <a
+            href="https://subsum.io/dashboard/word-addin"
+            target="_blank"
+            style="color: #6366f1; text-decoration: none"
+            >Word-Add-in → „Add-in-Zugang erstellen“</a
+          >.
+        </div>
+      </details>
     </div>
 
     <div
@@ -348,8 +357,13 @@
         class="secondary"
         style="width: auto; padding: 4px 12px; font-size: 11px"
       >
-        Trennen
+        Abmelden
       </button>
+    </div>
+
+    <div id="sessionNotice" class="status err" style="display: none">
+      Ihr Add-in-Zugang läuft in Kürze ab.
+      <button id="renewBtn" style="margin-top: 6px">Erneut anmelden</button>
     </div>
 
     <div id="status" class="status" style="display: none"></div>

@@ -7,6 +7,9 @@ import { useLang } from "@/lib/use-lang";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
+import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import type { Bundesland, Canton } from "@/lib/legal-deadlines";
 import {
   checkSingleDeadline,
   parseDeadlineCalendarPage,
@@ -21,7 +24,10 @@ interface DeadlineCalendarPage {
 }
 
 async function fetchDeadlineChecks(): Promise<DeadlineCheckResult[]> {
-  const pages = await api.brain.listPages({ type: "deadline_calendar", limit: 100 });
+  // The firm's Rechtsraum decides the rule set (AT engine for Austria). If it
+  // cannot be read the check fails visibly instead of guessing a country.
+  const rechtsraum = getRechtsraumParams(await loadKanzleiSettingsStrict());
+  const pages = await api.brain.listAllPages({ type: "deadline_calendar", max: 100 });
   const results: DeadlineCheckResult[] = [];
 
   for (const page of pages as DeadlineCalendarPage[]) {
@@ -39,7 +45,9 @@ async function fetchDeadlineChecks(): Promise<DeadlineCheckResult[]> {
         entry.label,
         entry.date,
         entry.startDate,
-        entry.law
+        entry.law,
+        rechtsraum.state as Bundesland | Canton | undefined,
+        rechtsraum.country
       );
       if (result) results.push(result);
     }
@@ -57,7 +65,7 @@ async function fetchDeadlineChecks(): Promise<DeadlineCheckResult[]> {
 export function DeadlineCheckWidget() {
   const { lang } = useLang();
   const isEn = lang === "en";
-  const { data, isLoading } = useQuery<DeadlineCheckResult[]>({
+  const { data, isLoading, isError } = useQuery<DeadlineCheckResult[]>({
     queryKey: ["deadline-post-check"],
     queryFn: fetchDeadlineChecks,
     staleTime: 120_000,
@@ -87,6 +95,24 @@ export function DeadlineCheckWidget() {
         <div className="flex h-20 items-center justify-center" role="status" aria-live="polite">
           <Loader2 size={18} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <AlertTriangle size={15} className="text-[color:var(--ds-warning-text)]" />
+          <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+            {isEn ? "Deadline Verification" : "Fristen-Kontrolle"}
+          </span>
+        </div>
+        <p role="alert" className="text-[13px] text-[color:var(--ds-warning-text)]">
+          {isEn
+            ? "The cross-check could not run (firm settings or deadlines unreadable)."
+            : "Die Gegenprüfung konnte nicht laufen (Kanzlei-Einstellungen oder Fristen nicht lesbar)."}
+        </p>
       </section>
     );
   }

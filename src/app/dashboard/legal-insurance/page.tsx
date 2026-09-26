@@ -34,6 +34,15 @@ const COVERAGE_TONE: Partial<Record<RSVCaseData["coverage_status"], string>> = {
     "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]",
 };
 
+/** Statuses a user can record after the insurer answered. */
+const SETTABLE_STATUSES = [
+  "pending",
+  "approved",
+  "partially_approved",
+  "denied",
+  "expired",
+] as const satisfies readonly RSVCaseData["coverage_status"][];
+
 interface CaseOption {
   slug: string;
   label: string;
@@ -66,6 +75,8 @@ export default function LegalInsurancePage() {
   const [email, setEmail] = useState<{ subject: string; body: string } | null>(null);
   const [coverage, setCoverage] = useState<CoverageResult | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [statusSaving, setStatusSaving] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -87,7 +98,7 @@ export default function LegalInsurancePage() {
   useEffect(() => {
     void load();
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case", max: 10_000 })
       .then((pages) =>
         setCases(
           pages.map((p) => {
@@ -137,6 +148,33 @@ export default function LegalInsurancePage() {
       setSubmitError("Keine Verbindung zum Server. Bitte versuchen Sie es erneut.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function updateStatus(item: RSVCaseData, status: (typeof SETTABLE_STATUSES)[number]) {
+    if (status === item.coverage_status) return;
+    setStatusSaving(item.id);
+    setStatusError(null);
+    try {
+      const r = await csrfFetch("/api/legal-insurance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, coverage_status: status }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => null);
+        setStatusError(
+          typeof j?.error === "string"
+            ? j.error
+            : "Der Deckungsstatus wurde nicht gespeichert. Bitte versuchen Sie es erneut."
+        );
+        return;
+      }
+      await load();
+    } catch {
+      setStatusError("Keine Verbindung zum Server. Bitte versuchen Sie es erneut.");
+    } finally {
+      setStatusSaving(null);
     }
   }
 
@@ -336,27 +374,62 @@ export default function LegalInsurancePage() {
             {loadError}
           </div>
         ) : items.length ? (
-          <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-            {items.map((i) => (
-              <li key={i.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                <div className="min-w-0">
-                  <div className="truncate text-[color:var(--ds-text)]">
-                    {i.client_name} · {i.insurance_provider}
-                  </div>
-                  <div className="truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
-                    {caseLabel(i.case_slug)}
-                    {i.created_at ? ` · ${formatDate(i.created_at)}` : ""}
-                  </div>
-                </div>
-                <Badge
-                  variant="default"
-                  className={`shrink-0 border text-xs ${COVERAGE_TONE[i.coverage_status] ?? ""}`}
+          <>
+            {statusError && (
+              <p role="alert" className="text-sm text-[color:var(--ds-danger-text)]">
+                {statusError}
+              </p>
+            )}
+            <ul className="divide-y divide-[color:var(--ds-border)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+              {items.map((i) => (
+                <li
+                  key={i.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
                 >
-                  {COVERAGE_LABELS[i.coverage_status] ?? i.coverage_status}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+                  <div className="min-w-0">
+                    <div className="truncate text-[color:var(--ds-text)]">
+                      {i.client_name} · {i.insurance_provider}
+                    </div>
+                    <div className="truncate text-xs text-[color:var(--ds-text-muted)] tabular-nums">
+                      {caseLabel(i.case_slug)}
+                      {i.created_at ? ` · ${formatDate(i.created_at)}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge
+                      variant="default"
+                      className={`shrink-0 border text-xs ${COVERAGE_TONE[i.coverage_status] ?? ""}`}
+                    >
+                      {COVERAGE_LABELS[i.coverage_status] ?? i.coverage_status}
+                    </Badge>
+                    <select
+                      aria-label={`Deckungsstatus ändern: ${i.client_name}`}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
+                      value={
+                        (SETTABLE_STATUSES as readonly string[]).includes(i.coverage_status)
+                          ? i.coverage_status
+                          : ""
+                      }
+                      disabled={statusSaving === i.id}
+                      onChange={(e) => {
+                        const next = SETTABLE_STATUSES.find((s) => s === e.target.value);
+                        if (next) void updateStatus(i, next);
+                      }}
+                    >
+                      {!(SETTABLE_STATUSES as readonly string[]).includes(i.coverage_status) && (
+                        <option value="">Status wählen</option>
+                      )}
+                      {SETTABLE_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {COVERAGE_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
         ) : (
           <EmptyState
             icon={ShieldCheck}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -8,7 +9,7 @@ const log = logger("api/legal/templates");
 const templatesQuerySchema = z.object({
   limit: z
     .string()
-    .transform((v) => Math.min(parseInt(v, 10) || 50, 200))
+    .transform((v) => Math.min(parseInt(v, 10) || 500, 1000))
     .optional(),
   offset: z
     .string()
@@ -47,28 +48,22 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
-    const params = new URLSearchParams();
-    params.set("type", "legal_template");
-    if (query.limit !== undefined) params.set("limit", String(query.limit));
-    if (query.offset !== undefined) params.set("offset", String(query.offset));
-
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
+      // Paged through the engine cursor (one listing is capped at 100 rows);
+      // deleted entries are left out. Strict: a failed read is an error.
+      const pages = await listEnginePages(ctx.headers, "legal_template", query.limit ?? 500, {
+        strict: true,
+        timeoutMs: 30_000,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const pages = await res.json();
-
-      let templates = Array.isArray(pages) ? pages : [];
+      let templates = pages;
       if (query.category) {
-        templates = templates.filter((p: Record<string, unknown>) => {
+        templates = templates.filter((p) => {
           const fm = p.frontmatter as Record<string, unknown> | undefined;
           return fm?.category === query.category;
         });
       }
       if (query.jurisdiction) {
-        templates = templates.filter((p: Record<string, unknown>) => {
+        templates = templates.filter((p) => {
           const fm = p.frontmatter as Record<string, unknown> | undefined;
           return fm?.jurisdiction === query.jurisdiction || fm?.jurisdiction === "all";
         });
@@ -77,7 +72,7 @@ export const GET = createHandler(
       return apiSuccess(templates);
     } catch (err) {
       log.error("[templates] list failed:", err instanceof Error ? err.message : String(err));
-      return apiSuccess([]);
+      return apiError("service_unavailable", "Vorlagen konnten nicht geladen werden", 503);
     }
   }
 );

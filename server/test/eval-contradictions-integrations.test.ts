@@ -159,7 +159,9 @@ describe("find_contradictions source isolation", () => {
           { severity: "high", axis: "b", slugA: "companies/acme", slugB: "foreign/secret" },
         ],
       }),
-      1000
+      1000,
+      // Runs are stored per firm; the caller reads its own firm's latest run.
+      "kanzlei-a"
     );
     await engine.executeRaw(
       `INSERT INTO sources (id, name) VALUES ('kanzlei-a', 'kanzlei-a') ON CONFLICT DO NOTHING`

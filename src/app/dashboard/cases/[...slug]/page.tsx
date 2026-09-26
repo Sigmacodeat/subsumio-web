@@ -149,8 +149,8 @@ export default function CaseDetailPage() {
             <Archive size={14} aria-hidden="true" className="shrink-0" />
             <span>
               {lang === "en"
-                ? `Archived${caseData.archivedAt ? ` on ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}`
-                : `Archiviert${caseData.archivedAt ? ` am ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}`}
+                ? `Archived${caseData.archivedAt ? ` on ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}${caseData.retentionUntil ? ` — retained until ${formatDate(caseData.retentionUntil)}` : ""}`
+                : `Archiviert${caseData.archivedAt ? ` am ${formatDate(caseData.archivedAt)}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}${caseData.retentionUntil ? ` — Aufbewahrung bis ${formatDate(caseData.retentionUntil)}` : ""}`}
             </span>
             {ctx.userRole === "admin" || ctx.userRole === "lawyer" ? (
               <div className="ml-auto flex items-center gap-1">

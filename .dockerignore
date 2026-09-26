@@ -10,6 +10,10 @@ coverage
 !.env.example
 server/.env
 server/deploy/netcup/.env
+**/.env
+**/.env.*
+!**/.env.example
+server/deploy/netcup/imports
 *.log
 *.tsbuildinfo
 

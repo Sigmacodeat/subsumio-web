@@ -5,9 +5,24 @@ import {
   verifyPortalToken,
   portalTokenHash,
 } from "@/lib/portal-token";
-import { markPortalLinkRevoked, readPortalLinks, portalLinkStatus } from "@/lib/portal-links";
+import {
+  markPortalLinkRevoked,
+  readPortalLinks,
+  portalLinkStatus,
+  portalLinksLockKey,
+} from "@/lib/portal-links";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { removePortalSubscriptionsFor } from "@/lib/portal-push";
+
+function notStored(): Response {
+  return apiError(
+    "revocation_not_stored",
+    "Widerruf nicht gespeichert – bitte erneut versuchen",
+    502
+  );
+}
 
 const revokeSchema = z
   .object({
@@ -62,6 +77,15 @@ async function persistLinks(
   return Boolean(res?.ok);
 }
 
+/** Best effort: the revocation itself is already stored and blocks access. */
+async function stopNotifications(brainId: string, caseSlug: string, tokenHash?: string) {
+  try {
+    await removePortalSubscriptionsFor(brainId, caseSlug, tokenHash);
+  } catch {
+    // Remaining subscriptions are skipped at send time (revocation check).
+  }
+}
+
 export const POST = createHandler(
   {
     action: "brain.write",
@@ -78,48 +102,83 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     if (body.token) {
-      const payload = await verifyPortalToken(body.token);
-      await revokePortalToken(body.token);
-      // Best-effort registry sync: the token decodes to its matter, so the
-      // link list can be marked revoked too.
-      if (payload?.case_slug) {
-        const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug: payload.case_slug });
-        const marked = fm && markPortalLinkRevoked(fm, portalTokenHash(body.token));
-        if (marked) await persistLinks(ctx.headers, payload.case_slug, marked);
+      const token = body.token;
+      const payload = await verifyPortalToken(token);
+      // The revocation list is what blocks the link — success only once it
+      // is stored.
+      try {
+        await revokePortalToken(token);
+      } catch {
+        return notStored();
       }
-      return apiSuccess({ revoked: 1 });
+      // Registry sync: the token decodes to its matter, so the link list
+      // can be marked revoked too (display only; the block is in place).
+      let registryUpdated = true;
+      if (payload?.case_slug) {
+        const caseSlug = payload.case_slug;
+        registryUpdated = await withKeyedLock(
+          portalLinksLockKey(ctx.headers, caseSlug),
+          async () => {
+            const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });
+            const marked = fm && markPortalLinkRevoked(fm, portalTokenHash(token));
+            return marked ? persistLinks(ctx.headers, caseSlug, marked) : true;
+          }
+        );
+      }
+      if (payload?.case_slug) {
+        await stopNotifications(ctx.brainId, payload.case_slug, portalTokenHash(token));
+      }
+      return apiSuccess(registryUpdated ? { revoked: 1 } : { revoked: 1, registry_updated: false });
     }
 
     const caseSlug = body.case_slug!;
-    // Read the matter AS THE CALLER: ethical walls apply, and a caller
-    // without access learns nothing about the link registry.
-    const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });
-    if (!fm) return apiError("case_not_found", "Akte nicht gefunden", 404);
+    // Same lock as registerPortalLink: a link issued meanwhile is neither
+    // lost from the registry nor left out of "revoke all".
+    return withKeyedLock(portalLinksLockKey(ctx.headers, caseSlug), async () => {
+      // Read the matter AS THE CALLER: ethical walls apply, and a caller
+      // without access learns nothing about the link registry.
+      const fm = await loadCaseFrontmatter({ headers: ctx.headers, caseSlug });
+      if (!fm) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
-    const links = readPortalLinks(fm);
-    const targets = body.all
-      ? links.filter((l) => portalLinkStatus(l) === "active")
-      : links.filter((l) => l.token_hash === body.token_hash);
-    if (targets.length === 0) {
-      return apiError("not_found", "Kein passender Portal-Link gefunden", 404);
-    }
+      const links = readPortalLinks(fm);
+      const targets = body.all
+        ? links.filter((l) => portalLinkStatus(l) === "active")
+        : links.filter((l) => l.token_hash === body.token_hash);
+      if (targets.length === 0 && !body.all) {
+        return apiError("not_found", "Kein passender Portal-Link gefunden", 404);
+      }
 
-    let next = links;
-    for (const target of targets) {
-      await revokePortalTokenHash(target.token_hash);
-      next = markPortalLinkRevoked({ portal_links: next }, target.token_hash) ?? next;
-    }
-    // "Revoke all" also sets the reset cutoff: tokens issued before this
-    // moment die even if they never made it into the registry (links issued
-    // before the registry existed). The cutoff is enforced in
-    // resolvePortalAccess on every portal request.
-    await persistLinks(
-      ctx.headers,
-      caseSlug,
-      next,
-      body.all ? new Date().toISOString() : undefined
-    );
+      let next = links;
+      try {
+        for (const target of targets) {
+          await revokePortalTokenHash(target.token_hash);
+          next = markPortalLinkRevoked({ portal_links: next }, target.token_hash) ?? next;
+        }
+      } catch {
+        return notStored();
+      }
+      // "Revoke all" also sets the reset cutoff: tokens issued before this
+      // moment die even if they never made it into the registry (links
+      // issued before the registry existed). The cutoff is enforced in
+      // resolvePortalAccess on every portal request — without it stored,
+      // "revoke all" has not happened.
+      const persisted = await persistLinks(
+        ctx.headers,
+        caseSlug,
+        next,
+        body.all ? new Date().toISOString() : undefined
+      );
+      if (!persisted && body.all) return notStored();
 
-    return apiSuccess({ revoked: targets.length });
+      // Revoked links get no further push notifications.
+      if (body.all) await stopNotifications(ctx.brainId, caseSlug);
+      else for (const t of targets) await stopNotifications(ctx.brainId, caseSlug, t.token_hash);
+
+      return apiSuccess(
+        persisted
+          ? { revoked: targets.length }
+          : { revoked: targets.length, registry_updated: false }
+      );
+    });
   }
 );

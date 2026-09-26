@@ -68,7 +68,7 @@ const COURT_HIERARCHY_WEIGHTS: Record<string, number> = {
 // Recent citations weigh more than old ones.
 // Half-life: 5 years (citations older than 5 years weigh half as much)
 
-function timeWeight(citationDate: Date, referenceDate: Date = new Date()): number {
+export function timeWeight(citationDate: Date, referenceDate: Date = new Date()): number {
   const yearsAgo =
     (referenceDate.getTime() - citationDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
   return Math.exp(-0.1386 * yearsAgo); // ln(2)/5 ≈ 0.1386 for 5-year half-life
@@ -173,7 +173,10 @@ function validateTreatmentLabel(label: string): TreatmentLabel {
   return valid.includes(normalized) ? normalized : "unknown";
 }
 
-function heuristicClassification(input: LLMClassificationInput): TreatmentClassification {
+/** Keyword fallback when the model is unavailable (exported for tests). */
+export function heuristicClassification(
+  input: Pick<LLMClassificationInput, "contextSnippet">
+): TreatmentClassification {
   const ctx = input.contextSnippet.toLowerCase();
 
   const negativeSignals = [
@@ -291,6 +294,26 @@ export async function classifyCitation(
 
 // ── Aggregate treatments for a judgement (Shepard's Signal equivalent) ─
 
+/**
+ * Overall status of a decision from its treatment counts: overruled or only
+ * negative → bad_law; negative and positive → mixed; limited (with or without
+ * positive) → at_risk; positive → good_law unless an at-risk reason exists.
+ */
+export function overallTreatmentStatus(
+  counts: { positive: number; negative: number; overruled: number; limited: number },
+  atRiskReasons: number,
+  total: number
+): OverallStatus {
+  if (total === 0) return "unknown";
+  if (counts.overruled > 0) return "bad_law";
+  if (counts.negative > 0 && counts.positive === 0) return "bad_law";
+  if (counts.negative > 0 && counts.positive > 0) return "mixed";
+  // Limited (no negative) → scope narrowed but not overturned.
+  if (counts.limited > 0) return "at_risk";
+  if (counts.positive > 0) return atRiskReasons > 0 ? "at_risk" : "good_law";
+  return "unknown";
+}
+
 export async function aggregateTreatments(
   pool: Pool,
   judgementId: string
@@ -393,34 +416,8 @@ export async function aggregateTreatments(
     }
   }
 
-  // Determine overall status
-  let overallStatus: OverallStatus = "unknown";
   const total = result.rows.length;
-
-  if (total === 0) {
-    overallStatus = "unknown";
-  } else if (counts.overruled > 0) {
-    overallStatus = "bad_law";
-  } else if (counts.negative > 0 && counts.positive === 0) {
-    overallStatus = "bad_law";
-  } else if (counts.negative > 0 && counts.positive > 0) {
-    overallStatus = "mixed";
-  } else if (counts.limited > 0 && counts.positive > 0 && counts.negative === 0) {
-    // Limited + positive (no negative) → at_risk (scope narrowed but not overturned)
-    overallStatus = "at_risk";
-  } else if (counts.limited > 0 && counts.positive === 0 && counts.negative === 0) {
-    // Only limited citations → at_risk
-    overallStatus = "at_risk";
-  } else if (counts.positive > 0 && counts.negative === 0) {
-    // Check at-risk: positive citations that cite an overruled case
-    if (atRiskReasons.length > 0) {
-      overallStatus = "at_risk";
-    } else {
-      overallStatus = "good_law";
-    }
-  } else if (counts.neutral > 0 && counts.positive === 0 && counts.negative === 0) {
-    overallStatus = "unknown";
-  }
+  const overallStatus = overallTreatmentStatus(counts, atRiskReasons.length, total);
 
   const aggregation: TreatmentAggregation = {
     judgement_id: judgementId,

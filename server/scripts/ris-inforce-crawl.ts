@@ -8,15 +8,16 @@
  *
  *   bun run server/scripts/ris-inforce-crawl.ts [--out /tmp/ris-inforce.jsonl]
  */
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, statSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { assessIndexCompleteness, parseTotalHits, writeIndexAtomic } from "./ris-index-write";
 import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Bundesrecht";
 const UA = { "User-Agent": RIS_USER_AGENT };
-// RIS OGD: one connection per process; two processes in parallel are
-// allowed (RIS-IT mail 2026-09-22, enforced via ris-lock's 2 slots).
+// RIS OGD: one connection per process. The cross-process slot limit in
+// ris-lock.ts is currently switched off (see its header).
 const CONCURRENCY = 1;
 const PAGE_SIZE = 100;
 
@@ -60,7 +61,8 @@ function pageUrl(seite: number): string {
   return `${API}?Applikation=BrKons&DokumenteProSeite=OneHundred&Seitennummer=${seite}&Fassungvom=${FASSUNG}`;
 }
 
-async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
+/** null = page lost after all retries (never an empty page). */
+async function fetchPage(seite: number, attempt = 0): Promise<Norm[] | null> {
   try {
     const res = await fetch(pageUrl(seite), { headers: UA });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -98,7 +100,7 @@ async function fetchPage(seite: number, attempt = 0): Promise<Norm[]> {
       return fetchPage(seite, attempt + 1);
     }
     console.error(`  ! Seite ${seite} nach 5 Versuchen aufgegeben: ${String(err)}`);
-    return [];
+    return null;
   }
 }
 
@@ -124,13 +126,15 @@ async function main() {
   }
 
   await acquireRisLock();
-  // Gesamtzahl ermitteln
+  // Gesamtzahl ermitteln. Eine Fehlerantwort (HTTP-Fehler oder JSON ohne
+  // Hits) ist ein Abbruch, nie "0 geltende Normen" — ein leerer Index
+  // wuerde sonst als gueltiges Soll alle Gesetzesseiten verwaisen lassen.
   const probe = await fetch(pageUrl(1), { headers: UA });
-  const probeData = (await probe.json()) as any;
-  const total = parseInt(
-    probeData?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "0",
-    10
-  );
+  if (!probe.ok) throw new Error(`Trefferzahl-Abfrage: HTTP ${probe.status}`);
+  const total = parseTotalHits(await probe.json());
+  if (total === null) {
+    throw new Error("Trefferzahl-Abfrage ohne Hits — Index bleibt unverändert.");
+  }
   const pages = Math.ceil(total / PAGE_SIZE);
   console.log(`RIS BrKons, Fassung vom ${FASSUNG}: ${total} geltende Normen auf ${pages} Seiten`);
 
@@ -140,6 +144,7 @@ async function main() {
   let written = 0;
   let next = 1;
   const buf: string[] = [];
+  const failedPages: number[] = [];
 
   async function worker() {
     while (true) {
@@ -147,7 +152,8 @@ async function main() {
       if (seite > pages) return;
       const norms = await fetchPage(seite);
       await risMassPause("Normen-Inventar");
-      for (const n of norms) {
+      if (norms === null) failedPages.push(seite);
+      for (const n of norms ?? []) {
         buf.push(JSON.stringify(n));
         written++;
       }
@@ -159,13 +165,15 @@ async function main() {
   }
 
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  writeFileSync(OUT, buf.join("\n") + "\n");
   process.stderr.write("\n");
-  console.log(`✓ ${written} Normen geschrieben → ${OUT}`);
-  if (written < total * 0.99) {
-    console.error(`! WARNUNG: nur ${written} von ${total} erwarteten Normen erfasst`);
-    process.exit(1);
+  // Erst pruefen, dann schreiben: ein unvollstaendiger Lauf laesst den
+  // bisherigen Index stehen (atomarer Tausch nur bei vollstaendigem Ergebnis).
+  const verdict = assessIndexCompleteness({ total, written, failedPages });
+  if (!verdict.ok) {
+    throw new Error(`Index NICHT geschrieben: ${verdict.reason} — ${OUT} bleibt unverändert`);
   }
+  writeIndexAtomic(OUT, buf);
+  console.log(`✓ ${written} Normen geschrieben → ${OUT}`);
 }
 
 main()

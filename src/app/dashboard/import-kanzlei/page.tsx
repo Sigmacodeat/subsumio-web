@@ -136,13 +136,14 @@ const importClient: ImportClient = {
       throw err;
     }
   },
-  // Atomic engine ops — import/rollback append and remove time_entries
-  // without a read-modify-write window on the whole array.
+  // Atomic engine op — the import appends time_entries without a
+  // read-modify-write window on the whole array.
   async appendPageArray(slug, field, items) {
     return api.brain.appendPageArray(slug, field, items);
   },
-  async mutatePageArray(slug, field, mutation) {
-    return api.brain.mutatePageArray(slug, field, mutation);
+  // Rollback: server-checked removal of this import's own entries.
+  async removeImportedTimeEntries(caseSlug, importProjectId, ids) {
+    return api.brain.removeImportedTimeEntries(caseSlug, importProjectId, ids);
   },
 };
 
@@ -348,9 +349,28 @@ export default function ImportKanzleiPage() {
     setError(null);
     const startedAt = Date.now();
     let running = startImport(project, "dashboard");
+    // What the import wrote is saved while it runs (before the first write
+    // and every few rows), so "Letzte Importe" can take it back even when
+    // the run stops half-way.
+    let savedRefs: ImportRefs = { pages: [], contactCompletions: [], timeEntries: [] };
     try {
-      const result = await executeImport(plan, importClient, (done, total) =>
-        setProgress(total ? Math.round((done / total) * 100) : 100)
+      await persist(running, { created_refs: savedRefs });
+    } catch {
+      setError("Der Import konnte nicht gestartet werden. Es wurde nichts übernommen.");
+      setBusy(null);
+      return;
+    }
+    try {
+      const result = await executeImport(
+        plan,
+        importClient,
+        (done, total) => setProgress(total ? Math.round((done / total) * 100) : 100),
+        {
+          onCheckpoint: async (refs) => {
+            await persist(running, { created_refs: refs });
+            savedRefs = refs;
+          },
+        }
       );
       setOutcome(result);
       const written = result.counts.imported + result.counts.completed;
@@ -383,9 +403,16 @@ export default function ImportKanzleiPage() {
       await persist(running, { created_refs: result.refs, outcome_counts: result.counts });
       void loadHistory();
     } catch {
+      const saved =
+        savedRefs.pages.length +
+        savedRefs.contactCompletions.length +
+        savedRefs.timeEntries.reduce((n, t) => n + t.ids.length, 0);
       setError(
-        "Der Import wurde abgebrochen. Bereits übernommene Einträge bleiben erhalten und lassen sich unter „Letzte Importe“ zurücknehmen."
+        saved > 0
+          ? `Der Import wurde abgebrochen. ${saved} bereits übernommene Einträge lassen sich unter „Letzte Importe“ zurücknehmen; zuletzt geschriebene Einträge sind dort möglicherweise nicht erfasst.`
+          : "Der Import wurde abgebrochen. Übernommene Einträge konnten nicht als Import vermerkt werden — bitte prüfen Sie die zuletzt angelegten Einträge."
       );
+      void loadHistory();
     } finally {
       setBusy(null);
     }
@@ -411,7 +438,7 @@ export default function ImportKanzleiPage() {
     setBusy("rollback");
     setError(null);
     try {
-      const result = await rollbackImport(entry.refs, importClient);
+      const result = await rollbackImport(entry.refs, importClient, entry.project.id);
       setRollback(result);
       await api.brain.updatePage({
         slug: entry.slug,

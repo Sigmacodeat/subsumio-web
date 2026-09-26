@@ -7,7 +7,16 @@
  *   - Pages WITH page_permissions rows are restricted to members of those groups.
  *   - aclGroups = undefined or "all" → no filtering (trusted admin / legacy).
  *   - aclGroups = string[] → only pages where the caller's groups have a matching row.
+ *   - aclGroups = [] (a user in no group) → only open pages. An empty list is
+ *     NOT "no filter": leaving a user's last group must never widen access.
  */
+
+/** True when `aclGroups` asks for no document-level filtering at all. */
+export function aclUnrestricted(
+  aclGroups: string[] | "all" | undefined
+): aclGroups is "all" | undefined {
+  return aclGroups === undefined || aclGroups === "all";
+}
 
 import type { BrainEngine } from "./engine.ts";
 
@@ -33,14 +42,20 @@ export interface PagePermission {
  *   - aclGroups is undefined or "all" (no enforcement)
  *   - The page has no page_permissions rows (open-by-default)
  *   - The page has a permission row matching one of the caller's groups
+ * An empty group list sees open pages only.
  */
 export async function isPageAccessible(
   engine: BrainEngine,
   pageId: number,
   aclGroups: string[] | "all" | undefined
 ): Promise<boolean> {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return true;
+  if (aclUnrestricted(aclGroups)) return true;
+  if (aclGroups.length === 0) {
+    const [row] = await engine.executeRaw<{ count: number }>(
+      `SELECT count(*)::int AS count FROM page_permissions WHERE page_id = $1`,
+      [pageId]
+    );
+    return !row || Number(row.count) === 0;
   }
 
   const [row] = await engine.executeRaw<{ count: number; matching: number }>(
@@ -52,24 +67,32 @@ export async function isPageAccessible(
 
   if (!row) return true;
   // No permissions rows = open access
-  if (row.count === 0) return true;
+  if (Number(row.count) === 0) return true;
   // Has permissions → must match at least one group
-  return row.matching > 0;
+  return Number(row.matching) > 0;
 }
 
 /**
  * Filter page IDs by ACL accessibility. Returns the subset of pageIds
- * that the caller's groups can access.
+ * that the caller's groups can access (an empty group list: open pages only).
  */
 export async function filterPagesByACL(
   engine: BrainEngine,
   pageIds: number[],
   aclGroups: string[] | "all" | undefined
 ): Promise<number[]> {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return pageIds;
-  }
+  if (aclUnrestricted(aclGroups)) return pageIds;
   if (pageIds.length === 0) return [];
+  if (aclGroups.length === 0) {
+    const open = await engine.executeRaw<{ page_id: number }>(
+      `SELECT p.id AS page_id
+       FROM pages p
+       WHERE p.id = ANY($1::int[])
+         AND NOT EXISTS (SELECT 1 FROM page_permissions pp WHERE pp.page_id = p.id)`,
+      [pageIds]
+    );
+    return open.map((r) => Number(r.page_id));
+  }
 
   const accessible = await engine.executeRaw<{ page_id: number }>(
     `SELECT p.id AS page_id
@@ -85,7 +108,7 @@ export async function filterPagesByACL(
     [pageIds, aclGroups]
   );
 
-  return accessible.map((r) => r.page_id);
+  return accessible.map((r) => Number(r.page_id));
 }
 
 /**
@@ -96,9 +119,13 @@ export async function filterPagesByACL(
 export function aclFilterClause(
   aclGroups: string[] | "all" | undefined,
   paramOffset: number
-): { clause: string; params: string[] } | null {
-  if (aclGroups === undefined || aclGroups === "all" || aclGroups.length === 0) {
-    return null;
+): { clause: string; params: string[][] } | null {
+  if (aclUnrestricted(aclGroups)) return null;
+  if (aclGroups.length === 0) {
+    return {
+      clause: `AND NOT EXISTS (SELECT 1 FROM page_permissions pp WHERE pp.page_id = p.id)`,
+      params: [],
+    };
   }
 
   return {
@@ -109,7 +136,7 @@ export function aclFilterClause(
         WHERE pp.page_id = p.id AND pp.group_id = ANY($${paramOffset}::uuid[])
       )
     )`,
-    params: [JSON.stringify(aclGroups)],
+    params: [aclGroups],
   };
 }
 
@@ -153,51 +180,88 @@ export async function createAccessGroup(
   return row;
 }
 
-export async function deleteAccessGroup(engine: BrainEngine, groupId: string): Promise<boolean> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/*
+ * Group ids are only meaningful inside their own source: several firms share
+ * one database, so every group operation below is bound to the caller's
+ * source_id. A group of another source behaves exactly like a missing one.
+ */
+
+/** True when `groupId` names a group of `sourceId`. */
+export async function groupBelongsToSource(
+  engine: BrainEngine,
+  groupId: string,
+  sourceId: string
+): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
   const [row] = await engine.executeRaw<{ id: string }>(
-    `DELETE FROM access_groups WHERE id = $1::uuid RETURNING id::text`,
-    [groupId]
+    `SELECT id::text AS id FROM access_groups WHERE id = $1::uuid AND source_id = $2`,
+    [groupId, sourceId]
   );
   return !!row;
 }
 
+export async function deleteAccessGroup(
+  engine: BrainEngine,
+  groupId: string,
+  sourceId: string
+): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
+  const [row] = await engine.executeRaw<{ id: string }>(
+    `DELETE FROM access_groups WHERE id = $1::uuid AND source_id = $2 RETURNING id::text`,
+    [groupId, sourceId]
+  );
+  return !!row;
+}
+
+/** Adds the member; false (nothing written) when the group is not in `sourceId`. */
 export async function addGroupMember(
   engine: BrainEngine,
   groupId: string,
   userId: string,
   sourceId: string
-): Promise<void> {
+): Promise<boolean> {
+  if (!(await groupBelongsToSource(engine, groupId, sourceId))) return false;
   await engine.executeRaw(
     `INSERT INTO access_group_members (group_id, user_id, source_id)
      VALUES ($1::uuid, $2, $3)
      ON CONFLICT (group_id, user_id) DO NOTHING`,
     [groupId, userId, sourceId]
   );
+  return true;
 }
 
 export async function removeGroupMember(
   engine: BrainEngine,
   groupId: string,
-  userId: string
+  userId: string,
+  sourceId: string
 ): Promise<boolean> {
+  if (!UUID_RE.test(groupId)) return false;
   const [row] = await engine.executeRaw<{ group_id: string }>(
-    `DELETE FROM access_group_members WHERE group_id = $1::uuid AND user_id = $2
-     RETURNING group_id::text`,
-    [groupId, userId]
+    `DELETE FROM access_group_members m
+     USING access_groups g
+     WHERE m.group_id = g.id AND g.id = $1::uuid AND g.source_id = $3 AND m.user_id = $2
+     RETURNING m.group_id::text AS group_id`,
+    [groupId, userId, sourceId]
   );
   return !!row;
 }
 
 export async function listGroupMembers(
   engine: BrainEngine,
-  groupId: string
+  groupId: string,
+  sourceId: string
 ): Promise<{ user_id: string; created_at: string }[]> {
+  if (!UUID_RE.test(groupId)) return [];
   return engine.executeRaw<{ user_id: string; created_at: string }>(
-    `SELECT user_id, created_at::text AS created_at
-     FROM access_group_members
-     WHERE group_id = $1::uuid
-     ORDER BY created_at`,
-    [groupId]
+    `SELECT m.user_id, m.created_at::text AS created_at
+     FROM access_group_members m
+     JOIN access_groups g ON g.id = m.group_id
+     WHERE m.group_id = $1::uuid AND g.source_id = $2
+     ORDER BY m.created_at`,
+    [groupId, sourceId]
   );
 }
 
@@ -215,18 +279,22 @@ export async function getUserGroups(
   return rows.map((r) => r.group_id);
 }
 
+/** Sets the permission; false (nothing written) when the group is not in `sourceId`. */
 export async function setPagePermission(
   engine: BrainEngine,
   pageId: number,
   groupId: string,
-  permission: "read" | "write"
-): Promise<void> {
+  permission: "read" | "write",
+  sourceId: string
+): Promise<boolean> {
+  if (!(await groupBelongsToSource(engine, groupId, sourceId))) return false;
   await engine.executeRaw(
     `INSERT INTO page_permissions (page_id, group_id, permission)
      VALUES ($1, $2::uuid, $3)
      ON CONFLICT (page_id, group_id) DO UPDATE SET permission = $3`,
     [pageId, groupId, permission]
   );
+  return true;
 }
 
 export async function removePagePermission(

@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Send,
   UserPlus,
+  Radar,
   RefreshCw,
   X,
   Zap,
@@ -23,13 +24,16 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
+import { issuePortalLink } from "@/lib/portal-link-client";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
 import { useRealtime } from "@/lib/realtime";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn, encodeSlugPath, formatRelativeTime } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { CaseScanFinding } from "@/components/legal/CaseScanFinding";
 
 type ReviewType =
   | "all"
@@ -37,7 +41,8 @@ type ReviewType =
   | "document_request"
   | "client_submission"
   | "suggested_party"
-  | "pending_fact";
+  | "pending_fact"
+  | "case_scan_finding";
 
 interface ReviewItem {
   id: string;
@@ -46,7 +51,8 @@ interface ReviewItem {
     | "suggested_deadline"
     | "client_submission"
     | "suggested_party"
-    | "pending_fact";
+    | "pending_fact"
+    | "case_scan_finding";
   title: string;
   description: string;
   caseSlug: string | null;
@@ -61,7 +67,7 @@ interface ReviewItem {
   requestSlug: string | null;
   items: string[];
   channel: string | null;
-  portalUrl: string | null;
+  portalLink: boolean;
   messageDraft: string | null;
   dueDate: string | null;
   urgency: string | null;
@@ -82,6 +88,7 @@ const TYPE_ICON: Record<ReviewItem["type"], React.ElementType> = {
   client_submission: MessageCircle,
   suggested_party: UserPlus,
   pending_fact: Lightbulb,
+  case_scan_finding: Radar,
 };
 
 const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
@@ -90,6 +97,7 @@ const TYPE_LABEL: Record<ReviewItem["type"], { de: string; en: string }> = {
   client_submission: { de: "Mandanteneingang", en: "Submission" },
   suggested_party: { de: "Parteienvorschlag", en: "Suggested Party" },
   pending_fact: { de: "Offene Tatsache", en: "Pending Fact" },
+  case_scan_finding: { de: "Fall-Scan (KI)", en: "Case scan (AI)" },
 };
 
 const TYPE_BADGE: Record<ReviewItem["type"], string> = {
@@ -103,6 +111,8 @@ const TYPE_BADGE: Record<ReviewItem["type"], string> = {
     "border-[color:var(--ds-category-violet-border)] bg-[color:var(--ds-category-violet-bg)] text-[color:var(--ds-category-violet-text)]",
   pending_fact:
     "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-[color:var(--ds-info-text)]",
+  case_scan_finding:
+    "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]",
 };
 
 const ACTION_BTN =
@@ -136,6 +146,9 @@ const I18N: Record<string, { de: string; en: string }> = {
   submissions: { de: "Eingänge", en: "Submissions" },
   parties: { de: "Parteien", en: "Parties" },
   facts: { de: "Tatsachen", en: "Facts" },
+  case_scans: { de: "Fall-Scans", en: "Case scans" },
+  toast_scan_reviewed: { de: "Fall-Scan als geprüft markiert", en: "Case scan marked as reviewed" },
+  toast_scan_rejected: { de: "Fall-Scan verworfen", en: "Case scan discarded" },
   empty_title: { de: "Nichts zu prüfen", en: "Nothing to review" },
   empty: {
     de: "Alle Fristvorschläge, Mandanteneingänge und Tatsachen sind bearbeitet.",
@@ -180,6 +193,25 @@ const I18N: Record<string, { de: string; en: string }> = {
 function tr(key: string, lang: Lang): string {
   const entry = I18N[key];
   return entry ? (lang === "en" ? entry.en : entry.de) : key;
+}
+
+/**
+ * A write from the review inbox: CSRF header, and a refused request is an
+ * error (with the server's message) — never reported as success.
+ */
+async function sendReviewWrite(url: string, method: "POST" | "PATCH", body: unknown) {
+  const res = await csrfFetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = (await res.json().catch(() => ({}))) as { error?: unknown };
+  if (!res.ok) {
+    throw new Error(
+      typeof json.error === "string" && json.error ? json.error : `HTTP ${res.status}`
+    );
+  }
+  return json;
 }
 
 export function ReviewInboxTab() {
@@ -245,82 +277,71 @@ export function ReviewInboxTab() {
         });
       }
       if (type === "document_request") {
-        return fetch("/api/document-requests", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug: item.requestSlug,
-            status: action === "send" ? "sent" : "fulfilled",
-            sent_at: action === "send" ? new Date().toISOString() : undefined,
-          }),
-        }).then((res) => res.json());
+        return sendReviewWrite("/api/document-requests", "PATCH", {
+          slug: item.requestSlug,
+          status: action === "send" ? "sent" : "fulfilled",
+          sent_at: action === "send" ? new Date().toISOString() : undefined,
+        });
       }
       if (type === "client_submission") {
         if (action === "import_document") {
-          return fetch("/api/legal/submission-to-document", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ submissionSlug: item.pageSlug }),
-          }).then((res) => res.json());
-        }
-        return fetch("/api/legal/submission-review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          return sendReviewWrite("/api/legal/submission-to-document", "POST", {
             submissionSlug: item.pageSlug,
-            action: "reviewed",
-          }),
-        }).then((res) => res.json());
+          });
+        }
+        return sendReviewWrite("/api/legal/submission-review", "POST", {
+          submissionSlug: item.pageSlug,
+          action: "reviewed",
+        });
       }
       if (type === "suggested_party" && item.arrayIndex !== null) {
         const reviewStatus = action === "approve" ? "approved" : "rejected";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frontmatter: {
-              suggested_parties: {
-                [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
-              },
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            suggested_parties: {
+              [item.arrayIndex]: { confirmed: true, review_status: reviewStatus },
             },
-            merge: true,
-          }),
-        }).then((res) => res.json());
+          },
+          merge: true,
+        });
       }
       if (type === "pending_fact" && item.factId && item.factStatement) {
-        return fetch("/api/legal/matter-knowledge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            caseSlug: item.caseSlug || item.pageSlug,
-            action,
-            factId: item.factId,
-            statement: item.factStatement,
-            source: {
-              type: "upload_analysis",
-              label: item.source || "Review Inbox",
-            },
-          }),
-        }).then((res) => res.json());
+        return sendReviewWrite("/api/legal/matter-knowledge", "POST", {
+          caseSlug: item.caseSlug || item.pageSlug,
+          action,
+          factId: item.factId,
+          statement: item.factStatement,
+          source: {
+            type: "upload_analysis",
+            label: item.source || "Review Inbox",
+          },
+        });
       }
       if (type === "pending_fact" && item.arrayIndex !== null) {
         // Fallback for facts without factId — direct patch
         const reviewStatus = action === "approve" ? "approved" : "party_assertion";
-        return fetch(`/api/pages/${encodeURIComponent(item.pageSlug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            frontmatter: {
-              facts: {
-                [item.arrayIndex]: {
-                  review_status: reviewStatus,
-                  reviewed_at: new Date().toISOString(),
-                },
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            facts: {
+              [item.arrayIndex]: {
+                review_status: reviewStatus,
+                reviewed_at: new Date().toISOString(),
               },
             },
-            merge: true,
-          }),
-        }).then((res) => res.json());
+          },
+          merge: true,
+        });
+      }
+      if (type === "case_scan_finding") {
+        // Only the review state of the result page changes — nothing is
+        // written into the matter.
+        return sendReviewWrite(`/api/pages/${encodeSlugPath(item.pageSlug)}`, "PATCH", {
+          frontmatter: {
+            review_status: action === "reviewed" ? "reviewed" : "rejected",
+            reviewed_at: new Date().toISOString(),
+          },
+          merge: true,
+        });
       }
       throw new Error("unknown_type");
     },
@@ -342,6 +363,16 @@ export function ReviewInboxTab() {
           type: "success",
           title: tr(
             variables.action === "approve" ? "toast_party_confirmed" : "toast_party_rejected",
+            lang
+          ),
+        });
+        return;
+      }
+      if (variables.type === "case_scan_finding") {
+        addToast({
+          type: "success",
+          title: tr(
+            variables.action === "reviewed" ? "toast_scan_reviewed" : "toast_scan_rejected",
             lang
           ),
         });
@@ -395,14 +426,22 @@ export function ReviewInboxTab() {
     { key: "client_submission", label: tr("submissions", lang) },
     { key: "suggested_party", label: tr("parties", lang) },
     { key: "pending_fact", label: tr("facts", lang) },
+    { key: "case_scan_finding", label: tr("case_scans", lang) },
   ];
 
-  function copyPortalUrl(item: ReviewItem) {
-    if (!item.portalUrl) return;
-    const url = `${window.location.origin}${item.portalUrl}`;
-    void navigator.clipboard.writeText(url).then(() => {
+  // Portal links are not stored: a fresh one is issued for each copy.
+  async function copyPortalUrl(item: ReviewItem) {
+    if (!item.portalLink || !item.caseSlug) return;
+    try {
+      const url = await issuePortalLink(item.caseSlug);
+      await navigator.clipboard.writeText(url);
       addToast({ type: "success", title: tr("toast_portal_copied", lang) });
-    });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Portal-Link konnte nicht erzeugt werden",
+      });
+    }
   }
 
   return (
@@ -564,13 +603,16 @@ export function ReviewInboxTab() {
                       </Link>
                     )}
                   </div>
+                  {item.type === "case_scan_finding" && (
+                    <CaseScanFinding pageSlug={item.pageSlug} lang={lang === "en" ? "en" : "de"} />
+                  )}
                   {/* Inline actions */}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {item.type === "document_request" && item.status === "draft" && (
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "send",
                               item,
@@ -586,8 +628,8 @@ export function ReviewInboxTab() {
                           )}
                           {tr("send", lang)}
                         </button>
-                        {item.portalUrl && (
-                          <button onClick={() => copyPortalUrl(item)} className={ACTION_BTN}>
+                        {item.portalLink && item.caseSlug && (
+                          <button onClick={() => void copyPortalUrl(item)} className={ACTION_BTN}>
                             <ArrowUpRight size={12} />
                             {tr("copy_portal", lang)}
                           </button>
@@ -597,7 +639,7 @@ export function ReviewInboxTab() {
                     {item.type === "document_request" && item.status === "sent" && (
                       <button
                         onClick={() =>
-                          void actionMutation.mutateAsync({
+                          actionMutation.mutate({
                             type: item.type,
                             action: "fulfilled",
                             item,
@@ -653,7 +695,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reject",
                               item,
@@ -671,7 +713,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reviewed",
                               item,
@@ -689,7 +731,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "import_document",
                               item,
@@ -711,7 +753,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "approve",
                               item,
@@ -729,7 +771,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "reject",
                               item,
@@ -747,7 +789,7 @@ export function ReviewInboxTab() {
                       <>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "approve",
                               item,
@@ -765,7 +807,7 @@ export function ReviewInboxTab() {
                         </button>
                         <button
                           onClick={() =>
-                            void actionMutation.mutateAsync({
+                            actionMutation.mutate({
                               type: item.type,
                               action: "party_assertion",
                               item,
@@ -780,6 +822,42 @@ export function ReviewInboxTab() {
                             <MessageCircle size={12} />
                           )}
                           {lang === "en" ? "Party Assertion" : "Parteibehauptung"}
+                        </button>
+                      </>
+                    )}
+                    {item.type === "case_scan_finding" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            actionMutation.mutate({
+                              type: item.type,
+                              action: "reviewed",
+                              item,
+                            })
+                          }
+                          disabled={locked}
+                          className={ACTION_BTN}
+                        >
+                          {busy ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Check size={12} />
+                          )}
+                          {tr("mark_reviewed", lang)}
+                        </button>
+                        <button
+                          onClick={() =>
+                            actionMutation.mutate({
+                              type: item.type,
+                              action: "reject",
+                              item,
+                            })
+                          }
+                          disabled={locked}
+                          className={ACTION_BTN}
+                        >
+                          {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />}
+                          {tr("reject", lang)}
                         </button>
                       </>
                     )}

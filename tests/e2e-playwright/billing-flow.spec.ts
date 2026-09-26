@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { createHmac } from "node:crypto";
+import { signupAndConfirm } from "./helpers";
 
 async function signUpViaApi(page: import("@playwright/test").Page, email: string) {
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: "Billing Test",
       password: "BillingTest123!",

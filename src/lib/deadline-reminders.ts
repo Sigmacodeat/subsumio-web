@@ -117,11 +117,24 @@ export interface ReminderGroup {
   delegation?: ReminderDelegation;
 }
 
-const CLOSED_STATUS = /^(done|erledigt|completed|abgeschlossen|cancelled|storniert|tombstoned)$/i;
+const CLOSED_STATUS =
+  /^(done|erledigt|completed|abgeschlossen|cancelled|canceled|storniert|tombstoned)$/i;
+const DISCARDED_STATUS = /^(cancelled|canceled|storniert|tombstoned)$/i;
+
+type DeadlineStatusLike = { status?: unknown; review_status?: unknown };
 
 /** Done, cancelled, rejected or deleted deadlines never remind. */
-export function isClosedDeadline(d: ReminderDeadline): boolean {
+export function isClosedDeadline(d: DeadlineStatusLike): boolean {
   return CLOSED_STATUS.test(String(d.status ?? "")) || d.review_status === "rejected";
+}
+
+/**
+ * The part of `isClosedDeadline` that means "this deadline does not exist
+ * (any more)": cancelled, deleted, or a discarded AI suggestion. Such entries
+ * are left out of every list; the rest of the closed set is "erledigt".
+ */
+export function isDiscardedDeadline(d: DeadlineStatusLike): boolean {
+  return DISCARDED_STATUS.test(String(d.status ?? "")) || d.review_status === "rejected";
 }
 
 export function daysUntil(dateStr: string, now: Date): number {

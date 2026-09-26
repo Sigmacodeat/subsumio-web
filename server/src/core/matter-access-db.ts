@@ -6,13 +6,20 @@
  */
 import type { BrainEngine } from "./engine.ts";
 import {
+  ID_COPY_DOC_TYPE,
+  KYC_RECORD_TYPE,
+  KYC_TAG,
+  PERSONAL_CALENDAR_PREFIX,
   PRIVATE_CHAT_PREFIX,
   callerMatterAccess,
+  personalCalendarDenies,
   privateChatDenies,
   scopeForCaller,
+  staffOnlyDenies,
   withDeniedMatters,
   type MatterAccessRow,
   type MatterAccessUser,
+  type PersonalCalendarMirror,
   type MatterScope,
 } from "./matter-access.ts";
 
@@ -44,6 +51,14 @@ export interface SourceMatterAccess {
   rows: MatterAccessRow[];
   /** Owner segments of private Copilot conversations (chat-sessions/private/<owner>/…). */
   chatOwners: string[];
+  /**
+   * Firm-internal records only staff may read: KYC records and the ID copies
+   * filed with them (see staffOnlyDenies). Deleted ones count too, so the
+   * trash does not reopen them.
+   */
+  staffOnlySlugs: string[];
+  /** Personal calendar mirrors with their owner (see personalCalendarDenies). */
+  personalCalendar: PersonalCalendarMirror[];
 }
 
 /** The access rules of every matter in `sourceId` that has any. */
@@ -68,6 +83,33 @@ export async function loadSourceMatterAccess(
         AND deleted_at IS NULL`,
     [sourceId, `${PRIVATE_CHAT_PREFIX}%`]
   );
+  // Same rule as the web app's staff-only records (src/lib/staff-only-records.ts):
+  // KYC records by type, ID copies by doc_type, anything tagged "kyc", and
+  // the ID copy a record links to. Containment runs on the frontmatter GIN index.
+  const kyc = await engine.executeRaw<{ slug: string; id_copy: string | null }>(
+    `SELECT slug, frontmatter->'identification'->>'document_file_slug' AS id_copy
+       FROM pages
+      WHERE source_id = $1
+        AND (type = $2
+             OR frontmatter @> jsonb_build_object('type', $2::text)
+             OR frontmatter @> jsonb_build_object('doc_type', $3::text)
+             OR frontmatter @> jsonb_build_object('tags', jsonb_build_array($4::text))
+             OR id IN (SELECT page_id FROM tags WHERE tag = $4))`,
+    [sourceId, KYC_RECORD_TYPE, ID_COPY_DOC_TYPE, KYC_TAG]
+  );
+  const staffOnly = new Set<string>();
+  for (const r of kyc) {
+    staffOnly.add(r.slug);
+    if (typeof r.id_copy === "string" && r.id_copy) staffOnly.add(r.id_copy);
+  }
+  const mirrors = await engine.executeRaw<{ slug: string; owner: string | null }>(
+    `SELECT slug, frontmatter->>'owner_user_id' AS owner
+       FROM pages
+      WHERE source_id = $1
+        AND (slug LIKE $2
+             OR (type = 'calendar_event' AND frontmatter ? 'owner_user_id'))`,
+    [sourceId, `${PERSONAL_CALENDAR_PREFIX}%`]
+  );
   return {
     rows: raw.map((r) => ({
       slug: r.slug,
@@ -76,6 +118,11 @@ export async function loadSourceMatterAccess(
         : r.permissions) as MatterAccessRow["permissions"],
     })),
     chatOwners: owners.map((o) => o.owner),
+    staffOnlySlugs: [...staffOnly],
+    personalCalendar: mirrors.map((m) => ({
+      slug: m.slug,
+      owner: typeof m.owner === "string" && m.owner ? m.owner : null,
+    })),
   };
 }
 
@@ -83,7 +130,9 @@ export async function loadSourceMatterAccess(
  * One user's effective matter scope and read-only matters, starting from
  * `base` (the scope a signed token already carried; "all" otherwise).
  * Walls, restricted matters and grants apply to every role, admins included;
- * other people's private conversations are always hidden.
+ * other people's private conversations are always hidden, and firm-internal
+ * records (KYC) from everyone who is not firm staff, and personal calendar
+ * mirrors from everyone but their owner.
  */
 export function callerMatterScope(
   base: MatterScope,
@@ -92,10 +141,14 @@ export function callerMatterScope(
 ): { scope: MatterScope; readOnly: string[] } {
   const access = callerMatterAccess(user, known.rows);
   return {
-    scope: withDeniedMatters(
-      scopeForCaller(base, access),
-      privateChatDenies(known.chatOwners, user.userId)
-    ),
+    scope: withDeniedMatters(scopeForCaller(base, access), [
+      ...privateChatDenies(known.chatOwners, user.userId),
+      // KYC records and ID copies are for firm staff only (AML tipping-off
+      // ban) — client accounts never reach them, not even on their matter.
+      ...staffOnlyDenies(user.role, known.staffOnlySlugs ?? []),
+      // Colleagues' personal calendar mirrors are theirs alone.
+      ...personalCalendarDenies(known.personalCalendar ?? [], user.userId),
+    ]),
     readOnly: access.readOnly,
   };
 }

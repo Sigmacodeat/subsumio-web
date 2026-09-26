@@ -4,6 +4,7 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { getDataRoomStore } from "@/lib/data-rooms";
 import { roomRole } from "@/lib/data-room-access";
+import { roomMatterOpen, servableRoomDocument, type RoomPage } from "@/lib/data-room-availability";
 
 import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
 import { logger } from "@/lib/logger";
@@ -37,16 +38,28 @@ export const GET = createHandler(
     const shared = (await store.documents(room.id)).find((d) => d.docSlug === query.slug);
     if (!shared) return apiError("not_found", "Dokument nicht freigegeben", 404);
 
-    const hostHeaders = engineHeadersForBrain(room.hostBrainId);
+    // Hosts read with their own identity (matter scope applies); only guests
+    // of another firm read through the host brain on the server.
+    const hostHeaders =
+      role.kind === "host" ? ctx.headers : engineHeadersForBrain(room.hostBrainId);
     const path = query.slug.split("/").map(encodeURIComponent).join("/");
     try {
+      // The page decides, not the share list: a deleted document, an
+      // archived/deleted matter (for guests) or a firm-internal record is
+      // not served — for the text and for the original alike.
+      const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(query.slug)}`, {
+        headers: hostHeaders,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!pageRes.ok) return apiError("not_found", "Dokument nicht gefunden", 404);
+      const page = (await pageRes.json()) as RoomPage;
+      if (!servableRoomDocument(page, role.kind)) {
+        return apiError("not_found", "Dokument nicht gefunden", 404);
+      }
+      if (role.kind === "guest" && !(await roomMatterOpen(room.caseSlug, hostHeaders))) {
+        return apiError("not_found", "Der Datenraum ist geschlossen", 404);
+      }
       if (query.format === "text") {
-        const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(query.slug)}`, {
-          headers: hostHeaders,
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (!res.ok) return apiError("not_found", "Dokument nicht gefunden", 404);
-        const page = (await res.json()) as { title?: string; content?: string };
         audit();
         return Response.json({ title: page.title ?? shared.title, content: page.content ?? "" });
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -26,6 +26,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DmsBrowserDialog } from "@/components/legal/DmsBrowserDialog";
+import { DmsConfigPanel } from "@/components/legal/DmsConfigPanel";
 import {
   getCoverageMatrix,
   isWebSelfServiceConnector,
@@ -122,24 +123,27 @@ export default function ConnectorsPage() {
   const { t } = useLang();
   const me = useMe();
   const jurisdiction = me.data?.user?.jurisdiction ?? me.data?.demo?.jurisdiction?.toUpperCase();
-  const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
+  const isAdmin = me.data?.user?.role === "admin";
+  const [allConnectors, setConnectors] = useState<ConnectorStatus[]>([]);
+  // Filtered at render: the firm's jurisdiction often arrives after the list.
+  const hiddenServices = hiddenServicesFor(jurisdiction);
+  const connectors = allConnectors.filter((c) => !hiddenServices.has(c.service));
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
   const [showDmsBrowser, setShowDmsBrowser] = useState(false);
-  const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
+  const [advokatPath, setAdvokatPath] = useState("advokat");
   const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
   const advokatInputRef = useRef<HTMLInputElement>(null);
 
-  async function loadConnectors() {
+  const loadConnectors = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await api.connectors.list();
-      const hidden = hiddenServicesFor(jurisdiction);
-      setConnectors(res.connectors.filter((c) => !hidden.has(c.service)));
+      setConnectors(res.connectors);
     } catch (e) {
       setConnectors([]);
       setError(
@@ -151,11 +155,11 @@ export default function ConnectorsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadConnectors();
-  }, []);
+  }, [loadConnectors]);
 
   async function handleSync(service: string) {
     const label = CONNECTOR_LABELS[service] ?? service;
@@ -370,7 +374,8 @@ export default function ConnectorsPage() {
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
             Binden Sie einen Export- oder Dokumentenordner Ihres ADVOKAT-Servers ein. Subsumio liest
             den Ordner nur (schreibt nie hinein) und gleicht ihn jede Minute ab. Der erste
-            Unterordner gilt als Aktenzeichen.
+            Unterordner gilt als Aktenzeichen. Angegeben wird ein Ordner im Import-Verzeichnis Ihrer
+            Kanzlei auf dem Server (z. B. „advokat“); Pfade außerhalb werden abgelehnt.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -378,8 +383,8 @@ export default function ConnectorsPage() {
             ref={advokatInputRef}
             value={advokatPath}
             onChange={(event) => setAdvokatPath(event.target.value)}
-            placeholder="/imports/advokat"
-            aria-label="Pfad des ADVOKAT-Ordners auf dem Server"
+            placeholder="advokat"
+            aria-label="ADVOKAT-Ordner im Import-Verzeichnis der Kanzlei"
           />
           <Button
             type="button"
@@ -450,6 +455,9 @@ export default function ConnectorsPage() {
       </div>
 
       {showCoverage && <CoverageMatrix />}
+
+      {/* DMS-Anbindung pro Kanzlei — Einrichten/Ändern nur für Administratoren */}
+      {isAdmin && <DmsConfigPanel />}
 
       {/* WP-8.53: OneDrive/SharePoint — DMS-Browser (Suche/Ordner/Import) */}
       <div className="flex items-center justify-between rounded-xl border [border-color:var(--ds-border)] p-4 [background:var(--ds-surface)]">

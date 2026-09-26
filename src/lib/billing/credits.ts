@@ -28,7 +28,12 @@ export {
 } from "@/lib/billing/credit-constants";
 
 import type { CreditOperation, CreditPack } from "@/lib/billing/credit-constants";
-import { CREDIT_PACKS, TRIAL_CREDITS, TRIAL_DAYS } from "@/lib/billing/credit-constants";
+import {
+  CREDIT_PACKS,
+  CREDIT_VALIDITY_DAYS,
+  TRIAL_CREDITS,
+  TRIAL_DAYS,
+} from "@/lib/billing/credit-constants";
 
 const log = logger("credits");
 
@@ -396,7 +401,7 @@ export async function addCredits(
             [opts.stripeSessionId]
           );
           if (grantExists.rows.length === 0) {
-            const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+            const expiresAt = new Date(Date.now() + CREDIT_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
             await client.query(
               `INSERT INTO subsumio_credit_grants
                  (owner_id, owner_type, grant_type, amount, remaining, burn_priority, expires_at, stripe_session_id, description)
@@ -2129,7 +2134,8 @@ export async function addCreditGrant(
   try {
     await ensureCreditSchema();
     const burnPriority = grantType === "promotional" ? 0 : grantType === "grant" ? 1 : 2;
-    const expiresAt = opts?.expiresAt ?? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 Jahr default
+    const expiresAt =
+      opts?.expiresAt ?? new Date(Date.now() + CREDIT_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
 
     await pool.query(
       `INSERT INTO subsumio_credit_grants (owner_id, owner_type, grant_type, amount, remaining, burn_priority, expires_at, stripe_session_id, description)
@@ -2456,4 +2462,127 @@ export async function setNegativeBalanceConfig(
       error: err instanceof Error ? err.message : String(err),
     });
   }
+}
+
+/**
+ * Take back a consumption booking whose work never delivered a result (the
+ * engine failed or was unreachable after the credit was booked up front).
+ * Idempotent per booking: the refund carries `<bookingKey>-refund`, and only
+ * an existing consumption row of this owner can be refunded — never more than
+ * it booked.
+ */
+export async function refundConsumptionBooking(
+  ownerId: string,
+  ownerType: OwnerType,
+  bookingKey: string
+): Promise<{ refunded: number; balanceAfter: number }> {
+  const refundKey = `${bookingKey}-refund`;
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureCreditSchema();
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        const booking = await client.query<{ amount: number; operation: string | null }>(
+          `SELECT amount, operation
+             FROM subsumio_credit_transactions
+            WHERE idempotency_key = $1
+              AND owner_id = $2
+              AND owner_type = $3
+              AND type = 'consumption'
+            FOR UPDATE`,
+          [bookingKey, ownerId, ownerType]
+        );
+        const done = await client.query<{ amount: number }>(
+          `SELECT amount FROM subsumio_credit_transactions WHERE idempotency_key = $1`,
+          [refundKey]
+        );
+        const amount = roundCredits(Math.abs(booking.rows[0]?.amount ?? 0));
+        if (done.rows[0] || amount <= 0) {
+          await client.query("ROLLBACK");
+          const { balance } = await getBalance(ownerId, ownerType);
+          return { refunded: 0, balanceAfter: balance };
+        }
+        await client.query(
+          `UPDATE saas_credit_balance
+           SET used_credit = GREATEST(0, used_credit - $2),
+               overage_eur = GREATEST(0, GREATEST(0, used_credit - $2) - included_credit),
+               updated_at = now()
+           WHERE org_id = $1 AND period_end > now()`,
+          [ownerId, amount]
+        );
+        const { rows } = await client.query<{ balance: number }>(
+          `SELECT (included_credit + purchased_credit - used_credit) as balance
+           FROM saas_credit_balance
+           WHERE org_id = $1 AND period_end > now()
+           ORDER BY period_start DESC LIMIT 1`,
+          [ownerId]
+        );
+        const newBalance = rows[0]?.balance ?? amount;
+        await client.query(
+          `INSERT INTO subsumio_credit_transactions
+             (owner_id, owner_type, type, amount, balance_after, operation, idempotency_key, description)
+           VALUES ($1, $2, 'refund', $3, $4, 'consumption_refund', $5, $6)`,
+          [
+            ownerId,
+            ownerType,
+            amount,
+            newBalance,
+            refundKey,
+            `Refund: ${booking.rows[0]?.operation ?? "action"} delivered no result`,
+          ]
+        );
+        await client.query("COMMIT");
+        return { refunded: amount, balanceAfter: newBalance };
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      log.error("refundConsumptionBooking error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      const { balance } = await getBalance(ownerId, ownerType);
+      return { refunded: 0, balanceAfter: balance };
+    }
+  }
+
+  // Memory fallback
+  const current = memBalances.get(memKey(ownerId, ownerType));
+  const booking = memFindByIdempotencyKey(bookingKey);
+  if (
+    memFindByIdempotencyKey(refundKey) ||
+    !booking ||
+    !current ||
+    booking.ownerId !== ownerId ||
+    booking.ownerType !== ownerType ||
+    booking.type !== "consumption" ||
+    booking.amount >= 0
+  ) {
+    return { refunded: 0, balanceAfter: current?.balance ?? 0 };
+  }
+  const amount = roundCredits(Math.abs(booking.amount));
+  const newBalance = roundCredits(current.balance + amount);
+  memBalances.set(memKey(ownerId, ownerType), {
+    ...current,
+    balance: newBalance,
+    updatedAt: new Date().toISOString(),
+  });
+  memTransactions.push({
+    id: `tx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    seq: memTxSeq++,
+    ownerId,
+    ownerType,
+    type: "refund",
+    amount,
+    balanceAfter: newBalance,
+    operation: "consumption_refund",
+    idempotencyKey: refundKey,
+    createdAt: new Date().toISOString(),
+  });
+  await persistMemory();
+  return { refunded: amount, balanceAfter: newBalance };
 }

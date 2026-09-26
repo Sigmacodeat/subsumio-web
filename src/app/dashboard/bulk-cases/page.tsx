@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
-import { parseCsvCases } from "@/lib/bulk-cases";
+import { parseCsvCaseRows, type BulkImportResult, type BulkRowStatus } from "@/lib/bulk-cases";
 import { useLang } from "@/lib/use-lang";
 import { encodeSlugPath, formatEur } from "@/lib/utils";
 import type { DashboardKey } from "@/content/dashboard";
@@ -16,12 +16,12 @@ const SAMPLE =
   "aktenzeichen,mandant,email,gegner,gegenstand,rechtsgebiet,gericht,streitwert,klammer\n" +
   "2026-001,Max Mustermann,max@example.at,Gegner GmbH,Forderung,Zivilrecht,BG Innere Stadt Wien,10000,PORTFOLIO-1";
 
-interface ImportResult {
-  total: number;
-  created: number;
-  errors: number;
-  results: Array<{ slug: string; case_number: string; status: string }>;
-}
+const STATUS_LABEL: Record<BulkRowStatus, { de: string; en: string }> = {
+  created: { de: "Angelegt", en: "Created" },
+  exists: { de: "Übersprungen — besteht bereits", en: "Skipped — already exists" },
+  conflict: { de: "Kollision — nicht angelegt", en: "Conflict — not created" },
+  error: { de: "Fehler — nicht angelegt", en: "Error — not created" },
+};
 
 export default function BulkCasesPage() {
   const { t, lang } = useLang();
@@ -30,10 +30,10 @@ export default function BulkCasesPage() {
   const [error, setError] = useState<string | null>(null);
   const [csv, setCsv] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<ImportResult | null>(null);
-  const preview = useMemo(() => parseCsvCases(csv), [csv]);
-  const dataLines = csv.trim() ? csv.trim().split("\n").length - 1 : 0;
-  const skipped = Math.max(0, dataLines - preview.length);
+  const [result, setResult] = useState<BulkImportResult | null>(null);
+  const parsed = useMemo(() => parseCsvCaseRows(csv), [csv]);
+  const preview = parsed.rows;
+  const skipped = parsed.invalid.length;
 
   async function submit() {
     setSubmitting(true);
@@ -47,7 +47,7 @@ export default function BulkCasesPage() {
       });
       const j = await r.json().catch(() => null);
       if (r.ok && j?.data) {
-        setResult(j.data as ImportResult);
+        setResult(j.data as BulkImportResult);
       } else {
         setError(
           en
@@ -98,8 +98,8 @@ export default function BulkCasesPage() {
         </div>
         <p className="text-xs text-[color:var(--ds-text-muted)]">
           {en
-            ? "Required columns: aktenzeichen, mandant, gegenstand, klammer. Optional: email, gegner, rechtsgebiet, gericht, streitwert."
-            : "Pflichtspalten: aktenzeichen, mandant, gegenstand, klammer. Optional: email, gegner, rechtsgebiet, gericht, streitwert."}
+            ? "Required columns: aktenzeichen, mandant, gegenstand, klammer. Optional: email, gegner, rechtsgebiet, gericht, streitwert. Separator: comma or semicolon. Existing case numbers are skipped, never overwritten."
+            : "Pflichtspalten: aktenzeichen, mandant, gegenstand, klammer. Optional: email, gegner, rechtsgebiet, gericht, streitwert (z. B. 10.000,50). Trennzeichen: Komma oder Semikolon. Bestehende Aktenzeichen werden übersprungen, nie überschrieben."}
         </p>
         <textarea
           aria-label={tr("workspace.bulk.csv_label")}
@@ -123,8 +123,8 @@ export default function BulkCasesPage() {
           {skipped > 0 && (
             <span className="text-xs text-[color:var(--ds-warning-text)]">
               {en
-                ? `${skipped} ${skipped === 1 ? "row is" : "rows are"} incomplete and will be skipped.`
-                : `${skipped} ${skipped === 1 ? "Zeile ist" : "Zeilen sind"} unvollständig und ${skipped === 1 ? "wird" : "werden"} übersprungen.`}
+                ? `${skipped} ${skipped === 1 ? "row is" : "rows are"} incomplete or invalid and will not be imported.`
+                : `${skipped} ${skipped === 1 ? "Zeile ist" : "Zeilen sind"} unvollständig oder fehlerhaft und ${skipped === 1 ? "wird" : "werden"} nicht importiert.`}
             </span>
           )}
         </div>
@@ -142,11 +142,23 @@ export default function BulkCasesPage() {
       {result && (
         <div
           role="status"
-          className="rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] p-4 text-sm text-[color:var(--ds-success-text)]"
+          className={`rounded-xl border p-4 text-sm ${
+            result.created === result.total
+              ? "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-[color:var(--ds-success-text)]"
+              : "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+          }`}
         >
           {en
             ? `${result.created} of ${result.total} cases created.`
             : `${result.created} von ${result.total} Akten angelegt.`}
+          {result.exists > 0 &&
+            (en
+              ? ` ${result.exists} skipped (already exist, left unchanged).`
+              : ` ${result.exists} übersprungen (bestehen bereits, unverändert).`)}
+          {result.conflicts > 0 &&
+            (en
+              ? ` ${result.conflicts} stopped by the conflict check.`
+              : ` ${result.conflicts} wegen Kollisionsprüfung nicht angelegt.`)}
           {result.errors > 0 &&
             (en
               ? ` ${result.errors} could not be created.`
@@ -154,6 +166,21 @@ export default function BulkCasesPage() {
           <Link href="/dashboard/cases" className="font-medium underline">
             {en ? "Open case register" : "Zum Aktenregister"}
           </Link>
+          {result.results.some((r) => r.status !== "created") && (
+            <ul className="mt-3 space-y-1 text-xs">
+              {result.results
+                .filter((r) => r.status !== "created")
+                .map((r) => (
+                  <li key={r.line}>
+                    {en ? "Line" : "Zeile"} {r.line}
+                    {r.case_number ? ` (${r.case_number})` : ""}:{" "}
+                    {STATUS_LABEL[r.status][en ? "en" : "de"]}
+                    {r.error ? ` — ${r.error}` : ""}
+                    {r.conflicts?.length ? ` (${r.conflicts.join(", ")})` : ""}
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -189,23 +216,26 @@ export default function BulkCasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {preview.map((r, i) => {
-                  const created = result?.results.find((x) => x.case_number === r.case_number);
+                {preview.map(({ line, row: r }) => {
+                  const rowResult = result?.results.find((x) => x.line === line);
+                  const linkSlug = rowResult?.status === "created" ? rowResult.slug : undefined;
                   return (
-                    <tr
-                      key={`${r.case_number}-${i}`}
-                      className="border-t border-[color:var(--ds-border)]"
-                    >
+                    <tr key={line} className="border-t border-[color:var(--ds-border)]">
                       <td className="px-3 py-2 font-mono text-xs whitespace-nowrap tabular-nums">
-                        {created?.slug ? (
+                        {linkSlug ? (
                           <Link
-                            href={`/dashboard/cases/${encodeSlugPath(created.slug)}`}
+                            href={`/dashboard/cases/${encodeSlugPath(linkSlug)}`}
                             className="brand-text hover:underline"
                           >
                             {r.case_number}
                           </Link>
                         ) : (
                           r.case_number
+                        )}
+                        {rowResult && rowResult.status !== "created" && (
+                          <span className="ml-2 font-sans text-[color:var(--ds-warning-text)]">
+                            {STATUS_LABEL[rowResult.status][en ? "en" : "de"]}
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2">{r.client_name}</td>

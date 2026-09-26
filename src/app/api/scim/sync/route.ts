@@ -1,6 +1,11 @@
 import { getOrgStore } from "@/lib/auth/store";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { syncFromWorkOS, saveSyncStatus, isWorkosDirectorySyncConfigured } from "@/lib/scim";
+import {
+  DirectoryNotConfiguredError,
+  syncFromWorkOS,
+  saveSyncStatus,
+  isWorkosDirectorySyncConfigured,
+} from "@/lib/scim";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/scim/sync");
@@ -24,13 +29,6 @@ export const POST = createHandler(
     maxDuration: 60,
   },
   async (ctx, _body, _query, _req) => {
-    if (!isWorkosDirectorySyncConfigured()) {
-      return apiError(
-        "workos_not_configured",
-        "WorkOS Directory Sync is not configured. Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID.",
-        503
-      );
-    }
     if (!ctx.user.orgId) {
       return apiError("no_org", "You must belong to an org to run a Directory Sync.", 400);
     }
@@ -43,12 +41,27 @@ export const POST = createHandler(
         403
       );
     }
+    // Only a directory connected to THIS firm is ever pulled.
+    if (!isWorkosDirectorySyncConfigured(org)) {
+      return apiError(
+        "directory_not_configured",
+        "Für diese Kanzlei ist kein Verzeichnis (WorkOS Directory Sync) verbunden.",
+        409
+      );
+    }
 
     try {
-      const result = await syncFromWorkOS(ctx.user.orgId);
-      await saveSyncStatus(result);
+      const result = await syncFromWorkOS(org.id);
+      await saveSyncStatus(org.id, result);
       return apiSuccess(result);
     } catch (err) {
+      if (err instanceof DirectoryNotConfiguredError) {
+        return apiError(
+          "directory_not_configured",
+          "Für diese Kanzlei ist kein Verzeichnis (WorkOS Directory Sync) verbunden.",
+          409
+        );
+      }
       const msg = err instanceof Error ? err.message : String(err);
       log.error("[scim/sync] error:", msg);
       return apiError("sync_failed", "Sync fehlgeschlagen", 500);

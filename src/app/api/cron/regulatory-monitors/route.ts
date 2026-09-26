@@ -5,7 +5,14 @@ import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  fetchPages,
+  getRecipientsByBrain,
+  matterPermissionsBySlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
+import type { MatterPermissions } from "@/lib/matter-access";
 import {
   type RegulatoryMonitor,
   type RegulatoryAlert,
@@ -23,6 +30,7 @@ import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/regulatory-monitors");
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -38,7 +46,8 @@ export const maxDuration = 300;
  *   2. Für jeden Monitor: sucht via searchJudgements nach neuen Treffern
  *   3. Neue Treffer → regulatory_alert Brain-Pages
  *   4. Update monitor last_run_at / last_run_hits
- *   5. Email-Notification an Brain-Nutzer (wenn email_notifications=true)
+ *   5. Email-Notification je Person (wenn email_notifications=true): aktive
+ *      Mitarbeiter; mandatsbezogene Monitore nur an Personen mit Aktenzugriff
  *
  * Integration mit /api/cron/case-law: teilt die Dedup-Tabelle
  * subsumio_caselaw_seen. Backward-compatible: liest auch die legacy
@@ -73,7 +82,7 @@ async function persistAlertPage(
   brainId: string,
   monitor: RegulatoryMonitor,
   hit: JudgementHit
-): Promise<void> {
+): Promise<boolean> {
   const slug = alertSlug(monitor.monitor_id, hit.id);
   const severity = inferSeverity({
     legalArea: hit.legalArea,
@@ -102,8 +111,10 @@ async function persistAlertPage(
     owner_name: monitor.owner_name,
     created_at: new Date().toISOString(),
   };
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  // Einzelne Fehler dürfen den Cron nicht abbrechen — werden aber gezählt.
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -114,10 +125,9 @@ async function persistAlertPage(
         frontmatter: alertToFrontmatter(alert),
       }),
       signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
-    // Einzelne Fehler dürfen den Cron nicht abbrechen
-  }
+    },
+    "Monitoring-Treffer"
+  );
 }
 
 async function updateMonitorStatus(
@@ -126,8 +136,10 @@ async function updateMonitorStatus(
   hits: number,
   status: "ok" | "error"
 ): Promise<void> {
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  // Non-fatal; a refused write is logged by the helper.
+  await engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { ...engineHeadersForBrain(brainId), "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -143,10 +155,9 @@ async function updateMonitorStatus(
         merge: true,
       }),
       signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Non-fatal
-  }
+    },
+    "Monitor-Status"
+  );
 }
 
 async function filterNewHits(
@@ -214,9 +225,14 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let alertsCreated = 0;
   let mailsSent = 0;
   let errors = 0;
+  let alertWriteFailures = 0;
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Default recipients: active firm staff only; a matter-bound monitor only
+    // to people who may open that matter (unreadable matter → admins only).
+    const staff = activeStaffRecipients(brainUsers);
+    let matterPermissions: Map<string, MatterPermissions> | null = null;
 
     // 1. Load all monitor definitions
     const monitorPages = await fetchMonitorPages(brainId);
@@ -265,8 +281,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
         // 4. Create alert pages for new hits
         for (const hit of allFreshHits) {
-          await persistAlertPage(brainId, monitor, hit);
-          alertsCreated++;
+          if (await persistAlertPage(brainId, monitor, hit)) alertsCreated++;
+          else alertWriteFailures++;
         }
 
         // 5. Update monitor status
@@ -275,9 +291,16 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         // 6. Send email notifications
         if (allFreshHits.length > 0 && monitor.email_notifications) {
           const { subject, text } = renderMonitorDigest(monitor, allFreshHits, appUrl);
+          if (monitor.case_slug && !monitor.notify_emails?.length && !matterPermissions) {
+            matterPermissions = matterPermissionsBySlug(
+              await fetchPages(brainId, "legal_case", 10_000).catch(() => [])
+            );
+          }
           const emails = monitor.notify_emails?.length
             ? monitor.notify_emails
-            : recipients.map((u) => u.email);
+            : recipientsForMatter(staff, monitor.case_slug, matterPermissions ?? new Map()).map(
+                (u) => u.email
+              );
           for (const email of emails) {
             const r = await sendMail({ to: email, subject, text });
             if (r.sent) mailsSent++;
@@ -301,5 +324,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     alerts_created: alertsCreated,
     mails_sent: mailsSent,
     errors,
+    alert_write_failures: alertWriteFailures,
   });
 });

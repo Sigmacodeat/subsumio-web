@@ -6,8 +6,9 @@ import { Wallet, Loader2, AlertTriangle, TrendingUp, CheckCircle2 } from "lucide
 import { useLang } from "@/lib/use-lang";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatEur } from "@/lib/utils";
 import {
+  budgetInputsFromEntries,
   computeBudgetStatus,
   FEE_MODEL_LABELS,
   type FeeAgreement,
@@ -33,11 +34,11 @@ interface CasePage {
 
 async function fetchMatterBudgets(): Promise<MatterBudget[]> {
   // Fetch all fee agreements
-  const agreementPages = await api.brain.listPages({ type: "fee_agreement", limit: 200 });
+  const agreementPages = await api.brain.listAllPages({ type: "fee_agreement", max: 200 });
   const agreements = agreementPages.map((p) => p.frontmatter as unknown as FeeAgreement);
 
   // Fetch case pages to get time entries and expenses
-  const casePages = await api.brain.listPages({ type: "case", limit: 200 });
+  const casePages = await api.brain.listAllPages({ type: "case", max: 200 });
   const caseMap = new Map<string, CasePage>();
   for (const page of casePages as CasePage[]) {
     caseMap.set(page.slug, page);
@@ -70,21 +71,19 @@ async function fetchMatterBudgets(): Promise<MatterBudget[]> {
       }
     }
 
-    const trackedMinutes = timeEntries
-      .filter((e) => e.billable !== false)
-      .reduce((sum, e) => sum + (e.minutes || 0), 0);
-
     const expenseTotal = expenses
       .filter((e) => e.billable !== false)
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-    const billedAmount = timeEntries
-      .filter((e) => e.billed === true)
-      .reduce((sum, e) => sum + (e.rate ?? agreement.hourly_rate ?? 0) * (e.minutes / 60), 0);
+    // Billed entries count once (as billed), open ones once (as tracked).
+    const inputs = budgetInputsFromEntries(timeEntries, agreement.hourly_rate);
+    const trackedMinutes = inputs.minutes;
+    const billedAmount = inputs.billedAmount;
 
     const status = computeBudgetStatus(agreement, {
-      minutes: trackedMinutes,
+      minutes: inputs.minutes,
       hourlyRate: agreement.hourly_rate,
+      trackedValue: inputs.trackedValue,
       billedAmount,
     });
 
@@ -199,7 +198,7 @@ export function MatterBudgetWidget() {
               {isEn ? "Tracked value" : "Erfasster Wert"}
             </span>
             <p className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-              {stats.totalValue.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+              {formatEur(stats.totalValue)}
             </p>
           </div>
           <div className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1.5">
@@ -207,7 +206,7 @@ export function MatterBudgetWidget() {
               {isEn ? "Total budget" : "Gesamtbudget"}
             </span>
             <p className="font-semibold text-[color:var(--ds-text)] tabular-nums">
-              {stats.totalBudget.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+              {formatEur(stats.totalBudget)}
             </p>
           </div>
         </div>
@@ -269,12 +268,8 @@ export function MatterBudgetWidget() {
                   {budget.trackedMinutes > 0 && ` · ${Math.round(budget.trackedMinutes / 60)}h`}
                 </span>
                 <span className="tabular-nums">
-                  {budget.status.total_value.toLocaleString("de-DE", {
-                    style: "currency",
-                    currency: "EUR",
-                  })}
-                  {budget.status.budget_cap &&
-                    ` / ${budget.status.budget_cap.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`}
+                  {formatEur(budget.status.total_value)}
+                  {budget.status.budget_cap && ` / ${formatEur(budget.status.budget_cap)}`}
                 </span>
               </div>
             </Link>

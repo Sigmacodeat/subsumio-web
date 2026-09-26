@@ -14,6 +14,13 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...args: unknown[]) => mockPatch(...args),
 }));
 
+const mockGetByEmail = vi.fn();
+vi.mock("@/lib/auth/store", () => ({
+  getStore: () => ({ getByEmail: (...args: unknown[]) => mockGetByEmail(...args) }),
+}));
+
+let ctxUser: Record<string, unknown> = { id: "u1", name: "Anwalt", email: "anwalt@example.com" };
+
 vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: (...args: unknown[]) => mockList(...args),
 }));
@@ -27,12 +34,12 @@ vi.mock("@/lib/api-handler", () => ({
     },
     handler: (ctx: unknown, body: unknown, query: unknown, req: Request) => Promise<Response>
   ) => {
-    const ctx = {
-      headers: { "x-subsumio-source": "brain-at" },
-      brainId: "brain-at",
-      user: { id: "u1", name: "Anwalt", email: "anwalt@example.com" },
-    };
     return async (req: Request) => {
+      const ctx = {
+        headers: { "x-subsumio-source": "brain-at" },
+        brainId: "brain-at",
+        user: ctxUser,
+      };
       const raw = await req.json().catch(() => ({}));
       const parsed = opts.body?.safeParse(raw);
       if (parsed && !parsed.success) {
@@ -52,6 +59,7 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 import { GET, PATCH, POST } from "./route";
+import { zonedDateString } from "@/lib/datetime";
 
 function patch(body: unknown) {
   return PATCH(
@@ -69,8 +77,8 @@ const ABSENCE = {
   user_name: "RA Müller",
   delegate_email: "vertreter@example.com",
   delegate_name: "RA Vertreter",
-  start_date: "2026-10-01",
-  end_date: "2026-10-14",
+  start_date: "2099-10-01",
+  end_date: "2099-10-14",
   status: "planned",
   auto_route_enabled: true,
   reassigned_rundown_items: [],
@@ -125,17 +133,17 @@ describe("PATCH /api/absences", () => {
       .mockResolvedValueOnce([
         {
           slug: "legal/deadlines/d-in",
-          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-10-05" },
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2099-10-05" },
         },
         {
           slug: "legal/deadlines/d-out",
-          frontmatter: { case_slug: "legal/cases/1", due_date: "2026-11-01" },
+          frontmatter: { case_slug: "legal/cases/1", due_date: "2099-11-01" },
         },
         {
           slug: "legal/deadlines/d-done",
           frontmatter: {
             case_slug: "legal/cases/1",
-            due_date: "2026-10-05",
+            due_date: "2099-10-05",
             status: "erledigt",
           },
         },
@@ -143,7 +151,7 @@ describe("PATCH /api/absences", () => {
       .mockResolvedValueOnce([
         {
           slug: "legal/wv/w-1",
-          frontmatter: { case_slug: "legal/cases/1", date: "2026-10-10" },
+          frontmatter: { case_slug: "legal/cases/1", date: "2099-10-10" },
         },
       ])
       .mockResolvedValueOnce([
@@ -153,6 +161,22 @@ describe("PATCH /api/absences", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/d-in", "legal/wv/w-1"]);
+  });
+
+  test("der Fristen-Scan liest vollständig oder gar nicht (R11-8)", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith(ABSENCE));
+    mockList.mockResolvedValue([]);
+    await patch({ id: "absence-1", action: "activate" });
+    for (const call of mockList.mock.calls) {
+      expect(call[2]).toBeGreaterThanOrEqual(100_000);
+      expect(call[3]).toMatchObject({ strict: true, failOnTruncate: true });
+    }
+    expect(mockList.mock.calls.map((c) => c[1]).sort()).toEqual([
+      "legal_case",
+      "legal_deadline",
+      "legal_follow_up",
+    ]);
+    mockList.mockReset();
   });
 
   test("activate bleibt erfolgreich wenn Fristen-Scan fehlschlägt", async () => {
@@ -176,6 +200,28 @@ describe("PATCH /api/absences", () => {
     mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
     const res = await patch({ id: "absence-1", action: "cancel" });
     expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  test("activate einer stornierten Abwesenheit mit Überschneidung → 409, kein Patch", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/absence-1", frontmatter: { ...ABSENCE, status: "cancelled" } },
+      {
+        slug: "legal/absences/neu",
+        frontmatter: { ...ABSENCE, id: "neu", start_date: "2099-10-05", end_date: "2099-10-20" },
+      },
+    ]);
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  test("activate einer stornierten Abwesenheit: Lesefehler → 502 statt ungeprüft", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
+    mockList.mockRejectedValueOnce(new Error("down"));
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(502);
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
@@ -217,8 +263,9 @@ describe("POST /api/absences", () => {
     user_name: "RA Müller",
     delegate_email: "vertreter@example.com",
     delegate_name: "RA Vertreter",
-    start_date: "2026-10-01",
-    end_date: "2026-10-14",
+    start_date: "2099-10-01",
+    end_date: "2099-10-14",
+    kind: "urlaub",
   };
 
   function post(body: unknown) {
@@ -231,7 +278,92 @@ describe("POST /api/absences", () => {
     );
   }
 
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockList.mockResolvedValue([]);
+    ctxUser = { id: "u1", name: "Anwalt", email: "anwalt@example.com" };
+  });
+
+  test("Überschneidung mit bestehender Abwesenheit derselben Person → 409", async () => {
+    mockList.mockResolvedValueOnce([
+      {
+        slug: "legal/absences/alt",
+        frontmatter: { ...ABSENCE, start_date: "2099-10-10", end_date: "2099-10-20" },
+      },
+    ]);
+    const res = await post(baseBody);
+    expect(res.status).toBe(409);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("stornierte oder fremde Abwesenheit im Zeitraum blockiert nicht", async () => {
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/s", frontmatter: { ...ABSENCE, status: "cancelled" } },
+      {
+        slug: "legal/absences/f",
+        frontmatter: { ...ABSENCE, user_email: "andere@example.com" },
+      },
+    ]);
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post(baseBody);
+    expect(res.status).toBe(200);
+  });
+
+  test("Kanzlei: unbekannte Vertretungs-E-Mail → 422", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce(null);
+    const res = await post(baseBody);
+    expect(res.status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("Kanzlei: Vertretung aus anderer Kanzlei oder deaktiviert → 422", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce({ orgId: "org-2", role: "lawyer" });
+    expect((await post(baseBody)).status).toBe(422);
+    mockGetByEmail.mockResolvedValueOnce({
+      orgId: "org-1",
+      role: "lawyer",
+      deactivatedAt: "2026-01-01",
+    });
+    expect((await post(baseBody)).status).toBe(422);
+  });
+
+  test("externe Vertretung (§ 34 RAO) → ohne Mitgliedsprüfung angelegt, Name/Kanzlei gespeichert", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const { delegate_email: _e, ...noEmail } = baseBody;
+    const res = await post({
+      ...noEmail,
+      delegate_name: "Dr. Substitut",
+      substitute_external: true,
+      delegate_firm: "Kanzlei Beispiel",
+    });
+    expect(res.status).toBe(200);
+    expect(mockGetByEmail).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.data.absence).toMatchObject({
+      substitute_external: true,
+      delegate_name: "Dr. Substitut",
+      delegate_firm: "Kanzlei Beispiel",
+      delegate_email: "",
+    });
+  });
+
+  test("Kanzleimitglied ohne E-Mail → 400", async () => {
+    const { delegate_email: _e, ...noEmail } = baseBody;
+    const res = await post(noEmail);
+    expect(res.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("Kanzlei: aktives Mitglied als Vertretung → angelegt", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockGetByEmail.mockResolvedValueOnce({ orgId: "org-1", role: "lawyer" });
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    expect((await post(baseBody)).status).toBe(200);
+    expect(mockGetByEmail).toHaveBeenCalledWith("vertreter@example.com");
+  });
 
   test("legt die Abwesenheit an und liefert den Record", async () => {
     mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
@@ -240,6 +372,43 @@ describe("POST /api/absences", () => {
     const body = await res.json();
     expect(body.data.absence.user_email).toBe("ra@example.com");
     expect(body.data.absence.status).toBe("planned");
+  });
+
+  test("Anlegen mit Start heute → aktiv und forwarded_deadlines enthält die passende Frist", async () => {
+    const today = zonedDateString(new Date());
+    mockList
+      .mockResolvedValueOnce([]) // overlap check
+      .mockResolvedValueOnce([
+        {
+          slug: "legal/deadlines/heute",
+          frontmatter: { case_slug: "legal/cases/1", due_date: today },
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { slug: "legal/cases/1", frontmatter: { own_lawyer_name: "RA Müller" } },
+      ]);
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post({ ...baseBody, start_date: today, end_date: "2099-12-31" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.absence.status).toBe("active");
+    expect(body.data.absence.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
+    const written = JSON.parse(String(mockFetch.mock.calls[0]![1].body));
+    expect(written.frontmatter.forwarded_deadlines).toEqual(["legal/deadlines/heute"]);
+  });
+
+  test("ohne Art der Abwesenheit → 400", async () => {
+    const { kind: _kind, ...withoutKind } = baseBody;
+    const res = await post(withoutKind);
+    expect(res.status).toBe(400);
+  });
+
+  test("Art wird gespeichert", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await post({ ...baseBody, kind: "krankheit" });
+    const body = await res.json();
+    expect(body.data.absence.kind).toBe("krankheit");
   });
 
   test("Freitext-Datum wird abgelehnt (400) — solche Records aktivierten nie", async () => {
@@ -276,20 +445,13 @@ describe("GET /api/absences", () => {
   }
 
   test("filtert auf dem Frontmatter, nicht auf dem Page-Wrapper", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          pages: [
-            { slug: "legal/absences/a1", frontmatter: ABSENCE },
-            {
-              slug: "legal/absences/a2",
-              frontmatter: { ...ABSENCE, id: "a2", user_email: "andere@example.com" },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/a1", frontmatter: ABSENCE },
+      {
+        slug: "legal/absences/a2",
+        frontmatter: { ...ABSENCE, id: "a2", user_email: "andere@example.com" },
+      },
+    ]);
     const res = await get("?user_email=ra@example.com");
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -298,23 +460,34 @@ describe("GET /api/absences", () => {
   });
 
   test("status-Filter trifft das Frontmatter-Feld", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          pages: [
-            { slug: "legal/absences/a1", frontmatter: ABSENCE },
-            {
-              slug: "legal/absences/a2",
-              frontmatter: { ...ABSENCE, id: "a2", status: "cancelled" },
-            },
-          ],
-        }),
-        { status: 200 }
-      )
-    );
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/a1", frontmatter: ABSENCE },
+      { slug: "legal/absences/a2", frontmatter: { ...ABSENCE, id: "a2", status: "cancelled" } },
+    ]);
     const res = await get("?status=cancelled");
     const body = await res.json();
     expect(body.data.absences).toHaveLength(1);
     expect(body.data.absences[0].id).toBe("a2");
+  });
+
+  test("150 Datensätze → 150 (vollständige, strikte Liste)", async () => {
+    mockList.mockResolvedValueOnce(
+      Array.from({ length: 150 }, (_, i) => ({
+        slug: `legal/absences/a${i}`,
+        frontmatter: { ...ABSENCE, id: `a${i}` },
+      }))
+    );
+    const res = await get();
+    const body = await res.json();
+    expect(body.data.absences).toHaveLength(150);
+    expect(mockList).toHaveBeenCalledWith(expect.anything(), "absence_record", 10_000, {
+      strict: true,
+    });
+  });
+
+  test("Lesefehler → 502 statt gekürzter Liste", async () => {
+    mockList.mockRejectedValueOnce(new Error("engine down"));
+    const res = await get();
+    expect(res.status).toBe(502);
   });
 });

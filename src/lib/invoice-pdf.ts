@@ -5,6 +5,7 @@
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { REVERSE_CHARGE_NOTE } from "@/lib/invoice-totals";
 
 export interface InvoicePdfData {
   number: string;
@@ -21,6 +22,11 @@ export interface InvoicePdfData {
   vatRate: number;
   tax: number;
   total: number;
+  /** USt je Steuersatz (Anteil); mehr als ein Satz → Aufschlüsselung pro Satz. */
+  taxBreakdown?: Array<{ rate: number; net: number; tax: number }>;
+  /** Übergang der Steuerschuld: Pflichthinweis + UID des Empfängers. */
+  reverseCharge?: boolean;
+  clientVatId?: string;
   paymentTerms?: string;
   bank?: { name?: string; iban?: string; bic?: string };
   notes?: string;
@@ -97,6 +103,10 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
     });
   } else {
     doc.text(data.client, rightX, y, { align: "right" });
+  }
+  if (data.clientVatId) {
+    y += 4;
+    doc.text(`UID: ${data.clientVatId}`, rightX, y, { align: "right" });
   }
 
   // --- Rechnungsdetails ---
@@ -202,7 +212,19 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   const sums = [
     { label: "Honorar netto", value: data.subtotal },
     ...(data.expenseTotal > 0 ? [{ label: "Auslagen netto", value: data.expenseTotal }] : []),
-    { label: `Mehrwertsteuer (${(data.vatRate * 100).toFixed(0)}%)`, value: data.tax },
+    ...(data.taxBreakdown && data.taxBreakdown.length > 1
+      ? data.taxBreakdown.map((r) => ({
+          label: `USt ${Math.round(r.rate * 100)} % auf ${r.net.toFixed(2)} €`,
+          value: r.tax,
+        }))
+      : [
+          {
+            label: data.reverseCharge
+              ? "Umsatzsteuer (Reverse Charge)"
+              : `Mehrwertsteuer (${(data.vatRate * 100).toFixed(0)}%)`,
+            value: data.tax,
+          },
+        ]),
     ...(data.advancePayment > 0
       ? [{ label: "Vorschuss / Anzahlung", value: -data.advancePayment }]
       : []),
@@ -225,6 +247,13 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
   doc.setTextColor(lightText);
   doc.setFontSize(8);
 
+  if (data.reverseCharge) {
+    const note = doc.splitTextToSize(REVERSE_CHARGE_NOTE, pageW - 2 * margin) as string[];
+    note.forEach((line) => {
+      doc.text(line, margin, y);
+      y += 4;
+    });
+  }
   if (data.paymentTerms) {
     doc.text(`Zahlungsbedingungen: ${data.paymentTerms}`, margin, y);
     y += 4;

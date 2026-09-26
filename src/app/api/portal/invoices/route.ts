@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 
 const querySchema = z.object({ token: z.string().min(1, "token_required") });
 
+/** Upper bound for the firm-wide invoice scan (invoices, cancellations, drafts). */
+const INVOICE_SCAN_MAX = 50_000;
+
 interface InvoiceFm {
   invoice_number?: string;
   case_slugs?: string[];
@@ -39,7 +42,12 @@ export const GET = createPublicHandler(
     const access = await resolvePortalAccess(portalToken(req, query.token));
     if (access instanceof Response) return access;
 
-    const pages = await listEnginePages(access.headers, "invoice", 1000).catch(() => null);
+    // Every invoice of the firm (cursor-paged, strict), filtered to this
+    // matter afterwards — a low cap silently dropped this matter's invoices
+    // once the firm had more. A failed read is an error, never "no invoices".
+    const pages = await listEnginePages(access.headers, "invoice", INVOICE_SCAN_MAX, {
+      strict: true,
+    }).catch(() => null);
     if (!pages) return apiError("engine_error", "Rechnungen konnten nicht geladen werden", 502);
 
     const invoices = [];

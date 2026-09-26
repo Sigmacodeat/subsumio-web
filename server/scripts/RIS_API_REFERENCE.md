@@ -224,8 +224,11 @@ Official limits per RIS-IT mail (2026-09-22) — no bulk dumps offered, OGD endp
 - Post-hoc updates via the **History-Abfrage** (see OGD handbooks on data.gv.at)
 - Announce mass downloads to ris.it@bka.gv.at beforehand
 
-Enforcement in this repo: `ris-pace.ts` (2 s pause + window check),
-`ris-lock.ts` (2-slot Postgres semaphore via `acquireRisLock`/`releaseRisLock`).
+Enforcement in this repo: `ris-pace.ts` (2 s pause per process). Current
+state (operator decision 2026-09-23, agreed with RIS-IT): the window check
+(`waitForRisWindow`) and the 2-slot Postgres semaphore in `ris-lock.ts`
+(`acquireRisLock`/`releaseRisLock`) are switched off — parallel downloads are
+not limited across processes.
 
 ## Important Notes
 

@@ -7,29 +7,53 @@ import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { listMemories } from "@/lib/copilot-memory";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
+import { logger } from "@/lib/logger";
+
+const log = logger("api/settings/gdpr/data-export");
 
 export const maxDuration = 120;
 
 /** The engine serves at most this many pages per request (`/api/pages` clamps `limit`). */
-const EXPORT_PAGE_SIZE = 200;
-/** Hard stop against a misbehaving engine that never returns a short page. */
+const EXPORT_PAGE_SIZE = 100;
+/** Hard stop against a misbehaving engine whose cursor never advances. */
 const EXPORT_MAX_BATCHES = 5_000;
 
 /**
  * Art. 15/20 DSGVO: the export must contain every page, not the first batch.
- * The engine caps `limit`, so walk the whole source by offset until a short
- * page comes back.
+ * Keyset-paginated (`x-next-cursor`) so batches shortened by matter-scope/ACL
+ * filters do not look like the end of the list; falls back to offset paging
+ * for engines without the header.
  */
 async function listAllPages(brain: ReturnType<typeof createServerBrainClient>) {
   const pages: unknown[] = [];
+  let cursor: string | undefined;
+  let complete = false;
   for (let batch = 0; batch < EXPORT_MAX_BATCHES; batch++) {
-    const chunk = await brain.listPages({
-      limit: EXPORT_PAGE_SIZE,
-      offset: batch * EXPORT_PAGE_SIZE,
-    });
-    pages.push(...chunk);
-    if (chunk.length < EXPORT_PAGE_SIZE) break;
+    const chunk = brain.listPagesPaged
+      ? await brain.listPagesPaged({
+          limit: EXPORT_PAGE_SIZE,
+          cursor,
+          offset: cursor ? 0 : pages.length,
+        })
+      : {
+          items: await brain.listPages({ limit: EXPORT_PAGE_SIZE, offset: pages.length }),
+          nextCursor: null,
+        };
+    pages.push(...chunk.items);
+    const next = chunk.nextCursor;
+    if (next && next !== cursor) {
+      cursor = next;
+      continue;
+    }
+    if (chunk.items.length < EXPORT_PAGE_SIZE) {
+      complete = true;
+      break;
+    }
   }
+  // Stopped by the batch bound with more to come: a cut export is no answer
+  // to Art. 15 — the caller fails instead of shipping it as complete.
+  if (!complete) throw new Error(`export stopped after ${EXPORT_MAX_BATCHES} batches`);
   return pages;
 }
 
@@ -60,10 +84,34 @@ export const GET = createHandler(
     const firmBrain = Boolean(user.orgId);
     if (!firmBrain) {
       try {
-        brainPages = await listAllPages(createServerBrainClient(ctx.headers));
-      } catch {
-        // Brain may not be available
+        brainPages = redactPageSecrets(await listAllPages(createServerBrainClient(ctx.headers)));
+      } catch (err) {
+        // Art. 15: a partial export must never be presented as complete.
+        log.error("brain page listing failed:", err instanceof Error ? err.message : err);
+        return apiError(
+          "export_incomplete",
+          "Der Export ist derzeit nicht vollständig möglich. Bitte später erneut versuchen.",
+          503
+        );
       }
+    }
+
+    // Same completeness rule for every personal-data source: any failure
+    // fails the whole export instead of shipping a silently incomplete file.
+    let copilotMemories: Awaited<ReturnType<typeof listMemories>>;
+    let contactRequests: Awaited<ReturnType<typeof leadsForEmail>>;
+    try {
+      [copilotMemories, contactRequests] = await Promise.all([
+        listMemories({ userId: ctx.user.id, ownedOnly: true }, ctx.headers),
+        leadsForEmail(user.email),
+      ]);
+    } catch (err) {
+      log.error("personal-data source failed:", err instanceof Error ? err.message : err);
+      return apiError(
+        "export_incomplete",
+        "Der Export ist derzeit nicht vollständig möglich. Bitte später erneut versuchen.",
+        503
+      );
     }
 
     const exportData = {
@@ -101,13 +149,10 @@ export const GET = createHandler(
       brainPages,
       // WP-5.30 / Art. 15 DSGVO: the user's own copilot-memory entries are
       // personal data even when they live in the firm's shared brain.
-      copilotMemories: await listMemories(
-        { userId: ctx.user.id, ownedOnly: true },
-        ctx.headers
-      ).catch(() => []),
+      copilotMemories,
       // Contact requests this address sent through the website chat or the
       // contact form (Art. 15 DSGVO).
-      contactRequests: await leadsForEmail(user.email).catch(() => []),
+      contactRequests,
       ...(firmBrain
         ? {
             brainPagesNote:
@@ -118,7 +163,9 @@ export const GET = createHandler(
 
     void logAudit("data.export", "user", {
       entityId: ctx.user.id,
+      brainId: ctx.brainId,
       userId: ctx.user.id,
+      userEmail: ctx.user.email,
       details: { page_count: brainPages.length },
     });
 

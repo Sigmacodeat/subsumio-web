@@ -5,6 +5,9 @@ import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import { createOpenItemForInvoice } from "@/lib/open-items";
+import { invoiceIssueProblem } from "@/lib/invoice-issue";
+import { recordInvoiceOutbound } from "@/lib/invoice-outbound.server";
+import { rejectionResponse } from "@/lib/page-write-guards";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/invoices/send");
@@ -49,6 +52,16 @@ export const POST = createHandler(
 
       const page = await brain.getPage(body.invoiceSlug);
       const fm = page.frontmatter as Record<string, unknown>;
+      const isDraft = String(fm.status ?? "draft") === "draft";
+      if (fm.status === "cancelled" || fm.status === "tombstoned") {
+        return apiError("invoice_not_sendable", "Diese Rechnung kann nicht versendet werden.", 409);
+      }
+      // Sending a draft issues it: complete and with consistent sums, or not
+      // at all — nothing leaves the office that the server would not issue.
+      if (isDraft) {
+        const problem = invoiceIssueProblem(fm);
+        if (problem) return rejectionResponse(problem);
+      }
       const client = String(fm.client ?? "");
       const clientSlug = String(fm.client_slug ?? "");
 
@@ -111,14 +124,24 @@ export const POST = createHandler(
         raw: { source: "smtp", route: "invoice.send", recipient },
       });
 
+      // Postausgangsbuch: the invoice mail with matter and invoice number.
+      const caseSlugs = Array.isArray(fm.case_slugs) ? (fm.case_slugs as unknown[]) : [];
+      await recordInvoiceOutbound(ctx.headers, {
+        recipient,
+        recipientName: client || recipient,
+        caseSlug: caseSlugs.length > 0 ? String(caseSlugs[0]) : undefined,
+        subject: `Rechnung ${String(fm.invoice_number ?? body.invoiceSlug)}`,
+        sentBy: ctx.user.email ?? ctx.user.id,
+        trackingId,
+      });
+
+      // Merge only the delivery bookkeeping — never the whole (possibly
+      // stale) frontmatter written back.
       await brain.updatePage({
         slug: body.invoiceSlug,
         frontmatter: {
-          ...fm,
           // A draft that went out by e-mail is sent; paid/overdue stay as they are.
-          ...(String(fm.status ?? "draft") === "draft"
-            ? { status: "sent", sent_at: new Date().toISOString() }
-            : {}),
+          ...(isDraft ? { status: "sent", sent_at: new Date().toISOString() } : {}),
           email_sent_at: new Date().toISOString(),
           email_sent_to: recipient,
           email_attachment: attachments.length > 0,

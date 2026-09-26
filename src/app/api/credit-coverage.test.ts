@@ -17,9 +17,10 @@ import path from "node:path";
 const API_DIR = path.join(process.cwd(), "src/app/api");
 const LIB_DIR = path.join(process.cwd(), "src/lib");
 
-/** Calls that cost model tokens when they appear directly in a file. */
+/** Calls that cost model tokens when they appear directly in a file
+ *  (the case scanner starts one agent run per matter). */
 const DIRECT_MODEL_CALL =
-  /engineComplete\(|engineThink\(|\/api\/think[`"'?]|\/api\/llm\/complete|\/api\/agents\/supervisor|createEngineProxy/;
+  /engineComplete\(|engineThink\(|\/api\/think[`"'?]|\/api\/llm\/complete|\/api\/agents\/supervisor|\/api\/legal\/case-scanner|createEngineProxy/;
 
 /** Routes that call a model (or the engine proxy) without billing credits, and why. */
 const NOT_BILLED: Record<string, string> = {
@@ -33,12 +34,9 @@ const NOT_BILLED: Record<string, string> = {
   "cron/agent-tasks": "runs tasks a firm queued itself (assigneeType=agent)",
   "legal/anonymize": "engine proxy; name detection on the utility tier",
   "legal/judgements-sync": "engine proxy without a model call",
-  "legal/translate": "engine proxy without a model call",
-  "legal/case-scanner": "engine proxy without a model call",
   "legal/conflict-check": "engine proxy without a model call",
   "legal/precedent-search": "engine proxy without a model call",
   "legal/portfolio-insights": "engine proxy without a model call",
-  "legal/obligation-extract": "engine proxy without a model call",
   "analytics/adoption": "engine proxy without a model call",
   // Background mail sync: the deadline extractor only runs for a mail that
   // announces a Frist without a parseable date (suggestions for review).

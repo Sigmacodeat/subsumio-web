@@ -25,7 +25,7 @@ interface PipelineStatePage {
 }
 
 async function fetchCaseConfidence(): Promise<CasePipelineInfo[]> {
-  const pages = await api.brain.listPages({ type: "pipeline_state", limit: 100 });
+  const pages = await api.brain.listAllPages({ type: "pipeline_state", max: 100 });
   return (pages as PipelineStatePage[]).map((p) => {
     const fm = p.frontmatter ?? {};
     const caseSlug = String(fm.case_ref ?? p.slug.replace("pipeline/state-", ""));

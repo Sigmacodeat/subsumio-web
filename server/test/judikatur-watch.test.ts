@@ -117,6 +117,52 @@ describe("parseRisResponse", () => {
 
 // ── Watch run ───────────────────────────────────────────────
 
+const noSleep = async (): Promise<void> => {};
+
+describe("runJudikaturWatch — RIS pace", () => {
+  it("waits at least 2 s between two RIS requests", async () => {
+    const engine = fakeEngine({
+      groundings: [{ slug: "legal-grounding/akte-1", compiled_truth: GROUNDING }],
+    });
+    const waits: number[] = [];
+    let requests = 0;
+    await runJudikaturWatch(engine, {
+      fetchImpl: async () => {
+        requests++;
+        return { ok: true, status: 200, json: async () => risEnvelope([]) };
+      },
+      heute: "2026-07-02",
+      sleep: async (ms) => {
+        waits.push(ms);
+      },
+    });
+    expect(requests).toBeGreaterThan(1);
+    expect(waits).toHaveLength(requests - 1);
+    for (const ms of waits) expect(ms).toBeGreaterThan(1_900);
+  });
+
+  it("the same norm in two Akten is queried once", async () => {
+    const engine = fakeEngine({
+      groundings: [
+        { slug: "legal-grounding/akte-1", compiled_truth: GROUNDING },
+        { slug: "legal-grounding/akte-2", compiled_truth: GROUNDING },
+      ],
+    });
+    const urls: string[] = [];
+    const result = await runJudikaturWatch(engine, {
+      fetchImpl: async (url: string) => {
+        urls.push(url);
+        return { ok: true, status: 200, json: async () => risEnvelope(["JJT_NEU"]) };
+      },
+      heute: "2026-07-02",
+      sleep: noSleep,
+    });
+    expect(new Set(urls).size).toBe(urls.length);
+    // …and both Akten still get their alert.
+    expect(result.alertSlugs).toHaveLength(2);
+  });
+});
+
 describe("runJudikaturWatch", () => {
   const fetchWithHits =
     (ids: string[]): FetchLike =>
@@ -131,6 +177,7 @@ describe("runJudikaturWatch", () => {
       groundings: [{ slug: "legal-grounding/akte-1", compiled_truth: GROUNDING }],
     });
     const result = await runJudikaturWatch(engine, {
+      sleep: noSleep,
       fetchImpl: fetchWithHits(["JJT_NEU"]),
       heute: "2026-07-02",
       sinceIso: "2026-06-01",
@@ -151,6 +198,7 @@ describe("runJudikaturWatch", () => {
       seen: { "judikatur-watch/seen-akte-1": ["JJT_ALT"] },
     });
     const result = await runJudikaturWatch(engine, {
+      sleep: noSleep,
       fetchImpl: fetchWithHits(["JJT_ALT"]),
       heute: "2026-07-02",
       sinceIso: "2026-06-01",
@@ -170,6 +218,7 @@ describe("runJudikaturWatch", () => {
       json: async () => ({}),
     });
     const result = await runJudikaturWatch(engine, {
+      sleep: noSleep,
       fetchImpl: failing,
       heute: "2026-07-02",
     });
@@ -182,6 +231,7 @@ describe("runJudikaturWatch", () => {
       groundings: [{ slug: "legal-grounding/leere-akte", compiled_truth: "nichts einschlägiges" }],
     });
     const result = await runJudikaturWatch(engine, {
+      sleep: noSleep,
       fetchImpl: fetchWithHits(["X"]),
       heute: "2026-07-02",
     });
@@ -193,6 +243,7 @@ describe("runJudikaturWatch", () => {
       groundings: [{ slug: "legal-grounding-maps/akte-2", compiled_truth: GROUNDING }],
     });
     const result = await runJudikaturWatch(engine, {
+      sleep: noSleep,
       fetchImpl: fetchWithHits(["JJT_9"]),
       heute: "2026-07-02",
     });

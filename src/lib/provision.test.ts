@@ -62,6 +62,13 @@ describe("provisionBrain", () => {
       (c) => String(c[0]).includes("/api/pages") && c[1]?.method === "POST"
     );
     expect(seedCalls.length).toBe(4 + DEMO_LIVE_COUNT);
+    // Demo seeds are create-only: an existing (possibly edited) demo page is
+    // never replaced, even when the existence probe failed.
+    const demoSeeds = seedCalls
+      .map((c) => JSON.parse(String(c[1]?.body)))
+      .filter((b) => b.frontmatter?.demo_stage === "live");
+    expect(demoSeeds).toHaveLength(DEMO_LIVE_COUNT);
+    expect(demoSeeds.every((b) => b.if_absent === true)).toBe(true);
   });
 
   test("unknown industry provisions the same legal defaults", async () => {

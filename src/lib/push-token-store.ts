@@ -90,6 +90,51 @@ export async function unregisterPushToken(userId: string, token: string): Promis
   ]);
 }
 
+/** Web push subscription endpoint stored inside a `web` token (JSON), if any. */
+export function webPushEndpointOf(
+  entry: Pick<PushTokenEntry, "platform" | "token">
+): string | null {
+  if (entry.platform !== "web") return null;
+  try {
+    const parsed = JSON.parse(entry.token) as { endpoint?: unknown };
+    return typeof parsed.endpoint === "string" ? parsed.endpoint : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Remove every push registration of a user — on deactivation, on "sign out
+ * all devices" and when a legacy session is revoked everywhere. With
+ * `exceptEndpoint`, the calling browser keeps its own registration.
+ * Returns the number of removed registrations.
+ */
+export async function deletePushTokensForUser(
+  userId: string,
+  opts: { exceptEndpoint?: string } = {}
+): Promise<number> {
+  const entries = await getPushTokensForUser(userId);
+  let removed = 0;
+  for (const entry of entries) {
+    if (opts.exceptEndpoint && webPushEndpointOf(entry) === opts.exceptEndpoint) continue;
+    await unregisterPushToken(userId, entry.token);
+    removed++;
+  }
+  return removed;
+}
+
+/** Remove the registration of one browser (by its push endpoint) — on logout. */
+export async function unregisterPushEndpoint(userId: string, endpoint: string): Promise<number> {
+  const entries = await getPushTokensForUser(userId);
+  let removed = 0;
+  for (const entry of entries) {
+    if (webPushEndpointOf(entry) !== endpoint) continue;
+    await unregisterPushToken(userId, entry.token);
+    removed++;
+  }
+  return removed;
+}
+
 export async function getPushTokensForUser(userId: string): Promise<PushTokenEntry[]> {
   const pool = getSharedPgPool();
   if (!pool) {
@@ -100,22 +145,6 @@ export async function getPushTokensForUser(userId: string): Promise<PushTokenEnt
   const { rows } = await pool.query(
     `SELECT * FROM subsumio_push_tokens WHERE user_id = $1 ORDER BY created_at DESC`,
     [userId]
-  );
-  return rows as PushTokenEntry[];
-}
-
-export async function getPushTokensForBrain(_brainId: string): Promise<PushTokenEntry[]> {
-  const pool = getSharedPgPool();
-  if (!pool) {
-    return Array.from(memoryStore.values());
-  }
-
-  await ensureSchema();
-  // Join with users via brain_id — but we don't have a direct FK.
-  // Instead, query all tokens and let the caller filter by recipient.
-  // For now, return all tokens (the caller maps brain→users→tokens).
-  const { rows } = await pool.query(
-    `SELECT * FROM subsumio_push_tokens ORDER BY created_at DESC LIMIT 500`
   );
   return rows as PushTokenEntry[];
 }

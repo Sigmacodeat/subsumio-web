@@ -17,12 +17,13 @@
  * js-yaml so no value can break out of the YAML block.
  */
 
-import { readFile, readdir } from "node:fs/promises";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, basename, extname } from "node:path";
 import { XMLParser } from "fast-xml-parser";
 import { dump as yamlDump } from "js-yaml";
 import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { tenantWatchDirAllowed } from "./import-root.ts";
 import type { IngestionEvent } from "../types.ts";
 
 interface BeaMessageItem extends ConnectorItem {
@@ -74,6 +75,12 @@ export class BeaImportConnector extends BaseConnector {
       this._ctx?.logger.warn(`[${this.id}] Watch directory does not exist: ${this.watchDir}`);
       return { items: [] };
     }
+    if (!tenantWatchDirAllowed(this.watchDir, this._config.tenant_source_id)) {
+      this._ctx?.logger.warn(
+        `[${this.id}] watch_dir is outside the firm's import root; scan skipped`
+      );
+      return { items: [] };
+    }
 
     // Load processed files from cursor (persisted state)
     if (cursor) {
@@ -91,6 +98,13 @@ export class BeaImportConnector extends BaseConnector {
     for (const file of xmlFiles) {
       const filePath = join(this.watchDir, file);
       if (this.processedFiles.has(filePath)) continue;
+      // Regular files only: a symlink could point outside the import root.
+      if (
+        !(await lstat(filePath)
+          .then((i) => i.isFile())
+          .catch(() => false))
+      )
+        continue;
 
       try {
         const message = await this.parseBeaXml(filePath);

@@ -187,9 +187,10 @@ export default function ContactsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const batch = await api.brain.batchListPages(["legal_contact", "legal_case"], 10_000);
-      const contactPages = batch["legal_contact"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["legal_contact", "legal_case"], 10_000);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const contactPages = batch.results["legal_contact"] ?? [];
+      const casePages = batch.results["legal_case"] ?? [];
       const nextContacts = contactPages.map(parseContact);
       setContacts(nextContacts);
       setCases(casePages);

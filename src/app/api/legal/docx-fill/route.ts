@@ -2,7 +2,12 @@ import { z } from "zod";
 import JSZip from "jszip";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
-import { DocxTemplateError, fillDocxBatch, fillDocxTemplate } from "@/lib/docx-template";
+import {
+  DocxTemplateError,
+  fillDocxBatch,
+  fillDocxTemplate,
+  missingDocxVariables,
+} from "@/lib/docx-template";
 import { resolveKnownVariables } from "@/lib/templates";
 import { KANZLEI_SETTINGS_SLUG, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import type { CaseFrontmatter } from "@/lib/legal-types";
@@ -85,6 +90,13 @@ export const POST = createHandler(
 
     try {
       if (body.rows && body.rows.length > 0) {
+        // Platzhalter, die in mindestens einer Zeile fehlen (im Dokument als «FEHLT: …» markiert).
+        const missing = new Set<string>();
+        for (const r of body.rows) {
+          for (const k of missingDocxVariables(template, { ...merged, ...r.values })) {
+            missing.add(k);
+          }
+        }
         const files = fillDocxBatch(
           template,
           body.rows.map((r) => ({ filename: r.filename, values: { ...merged, ...r.values } }))
@@ -97,6 +109,7 @@ export const POST = createHandler(
           filename: "serienbrief.zip",
           count: files.length,
           base64: zipBuffer.toString("base64"),
+          missing_variables: [...missing],
         });
       }
       const buffer = fillDocxTemplate(template, merged);
@@ -104,6 +117,7 @@ export const POST = createHandler(
         kind: "docx",
         filename: body.filename ?? "dokument.docx",
         base64: buffer.toString("base64"),
+        missing_variables: missingDocxVariables(template, merged),
       });
     } catch (err) {
       if (err instanceof DocxTemplateError) {

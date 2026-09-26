@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Engine Performance / APM Dashboard
+ * Engine / platform operations dashboard.
  *
- * Shows P50/P95/P99 latency, brain quality, search stats,
- * embedding queue, quota usage, and recent error events.
- * All data from existing API endpoints:
- *   /api/brain/stats           → search stats, latency percentiles
- *   /api/brain/health          → brain health, embedding queue
- *   /api/usage/quota           → quota usage per org
+ * Platform-wide values only, from platform.operator routes:
+ *   /api/admin/queue-health    → job queue, dead letters, services, corpus
+ *
+ * /api/brain/* and /api/usage/quota are firm-scoped (the caller's own brain)
+ * and must not be shown here as platform figures; platform-wide search and
+ * latency metrics are not connected yet (the page says so).
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,41 +16,10 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Zap, Database, Search, RefreshCw, Clock, TrendingUp, ArrowLeft } from "lucide-react";
+import { Zap, Database, RefreshCw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 // ── Types ─────────────────────────────────────────────────────────────
-
-interface SearchStats {
-  totalQueries: number;
-  cacheHitRate: number;
-  avgLatencyMs: number;
-  p50LatencyMs?: number;
-  p95LatencyMs: number;
-  p99LatencyMs: number;
-  errorRate: number;
-  intentMix?: Record<string, number>;
-  budgetDropRate?: number;
-}
-
-interface BrainHealth {
-  status: "healthy" | "degraded" | "down";
-  pageCount: number;
-  embeddingQueueDepth: number;
-  lastIndexedAt: string | null;
-  vectorIndexSize?: number;
-  dbSizeBytes?: number;
-}
-
-interface QuotaUsage {
-  queriesUsed: number;
-  queriesLimit: number;
-  pagesUsed: number;
-  pagesLimit: number;
-  embedTokensUsed: number;
-  embedTokensLimit: number;
-  resetAt: string;
-}
 
 interface QueueHealth {
   waiting: number;
@@ -68,117 +37,6 @@ interface QueueHealth {
   corpusTotalPages: number | null;
   corpusThinPages: number | null;
   corpusCriticalBooks: string[];
-}
-
-// ── Default empty-state helpers ──────────────────────────────────────
-
-function emptySearchStats(): SearchStats {
-  return {
-    totalQueries: 0,
-    cacheHitRate: 0,
-    avgLatencyMs: 0,
-    p95LatencyMs: 0,
-    p99LatencyMs: 0,
-    errorRate: 0,
-  };
-}
-
-function emptyHealth(): BrainHealth {
-  return { status: "healthy", pageCount: 0, embeddingQueueDepth: 0, lastIndexedAt: null };
-}
-
-// ── Gauge Bar ────────────────────────────────────────────────────────
-
-function GaugeBar({
-  value,
-  max,
-  color,
-  label,
-  unit = "",
-}: {
-  value: number;
-  max: number;
-  color: string;
-  label: string;
-  unit?: string;
-}) {
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-  const warn = pct > 80;
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 12,
-          marginBottom: 4,
-          color: "var(--ds-text)",
-        }}
-      >
-        <span>{label}</span>
-        <span
-          style={{ fontWeight: 600, color: warn ? "var(--ds-warning-text)" : "var(--ds-text)" }}
-        >
-          {value.toLocaleString("de-AT")}
-          {unit} / {max.toLocaleString("de-AT")}
-          {unit}
-        </span>
-      </div>
-      <div style={{ height: 8, background: "var(--ds-border)", borderRadius: 4 }}>
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: warn ? "var(--ds-warning-text)" : color,
-            borderRadius: 4,
-            transition: "width 0.5s",
-          }}
-        />
-      </div>
-      <div style={{ fontSize: 10, color: "var(--ds-text-subtle)", marginTop: 2 }}>
-        {Math.round(pct)}% genutzt
-      </div>
-    </div>
-  );
-}
-
-// ── Latency Pill ─────────────────────────────────────────────────────
-
-function LatencyPill({
-  label,
-  ms,
-  thresholdWarn = 500,
-  thresholdCrit = 1500,
-}: {
-  label: string;
-  ms: number;
-  thresholdWarn?: number;
-  thresholdCrit?: number;
-}) {
-  const color =
-    ms === 0
-      ? "var(--ds-text-subtle)"
-      : ms > thresholdCrit
-        ? "var(--ds-danger-text)"
-        : ms > thresholdWarn
-          ? "var(--ds-warning-text)"
-          : "var(--ds-success-text)";
-  return (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "10px 8px",
-        background: "var(--ds-bg)",
-        borderRadius: 8,
-        border: `1px solid ${color}30`,
-      }}
-    >
-      <div style={{ fontSize: 11, color: "var(--ds-text-subtle)", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>
-        {ms === 0 ? "—" : ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`}
-      </div>
-    </div>
-  );
 }
 
 // ── Status Dot ───────────────────────────────────────────────────────
@@ -216,9 +74,6 @@ function StatusDot({ status }: { status: "healthy" | "degraded" | "down" | "load
 
 export default function EngineAPMPage() {
   const { t } = useLang();
-  const [searchStats, setSearchStats] = useState<SearchStats | null>(null);
-  const [health, setHealth] = useState<BrainHealth | null>(null);
-  const [quota, setQuota] = useState<QuotaUsage | null>(null);
   const [queueHealth, setQueueHealth] = useState<QueueHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -227,16 +82,8 @@ export default function EngineAPMPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, healthRes, quotaRes, queueRes] = await Promise.allSettled([
-        fetch("/api/brain/stats", { signal: AbortSignal.timeout(30_000) }).then((r) =>
-          r.ok ? r.json() : null
-        ),
-        fetch("/api/brain/health", { signal: AbortSignal.timeout(30_000) }).then((r) =>
-          r.ok ? r.json() : null
-        ),
-        fetch("/api/usage/quota", { signal: AbortSignal.timeout(30_000) }).then((r) =>
-          r.ok ? r.json() : null
-        ),
+      // Only platform.operator routes — never the caller's own brain.
+      const [queueRes] = await Promise.allSettled([
         fetch("/api/admin/queue-health", { signal: AbortSignal.timeout(30_000) }).then((r) =>
           r.ok ? r.json() : null
         ),
@@ -275,49 +122,6 @@ export default function EngineAPMPage() {
           corpusCriticalBooks: d.corpus_completeness?.critical_books ?? [],
         });
       }
-
-      if (statsRes.status === "fulfilled" && statsRes.value) {
-        const d = statsRes.value;
-        setSearchStats({
-          totalQueries: d.total_queries ?? d.totalQueries ?? 0,
-          cacheHitRate: d.cache_hit_rate ?? d.cacheHitRate ?? 0,
-          avgLatencyMs: d.avg_latency_ms ?? d.avgLatencyMs ?? 0,
-          p95LatencyMs: d.p95_latency_ms ?? d.p95LatencyMs ?? 0,
-          p99LatencyMs: d.p99_latency_ms ?? d.p99LatencyMs ?? 0,
-          errorRate: d.error_rate ?? d.errorRate ?? 0,
-          intentMix: d.intent_mix ?? d.intentMix,
-          budgetDropRate: d.budget_drop_rate ?? d.budgetDropRate,
-        });
-      } else {
-        setSearchStats(emptySearchStats());
-      }
-
-      if (healthRes.status === "fulfilled" && healthRes.value) {
-        const d = healthRes.value;
-        setHealth({
-          status: d.status ?? "healthy",
-          pageCount: d.page_count ?? d.pageCount ?? 0,
-          embeddingQueueDepth: d.embedding_queue_depth ?? d.embeddingQueueDepth ?? 0,
-          lastIndexedAt: d.last_indexed_at ?? d.lastIndexedAt ?? null,
-          vectorIndexSize: d.vector_index_size ?? d.vectorIndexSize,
-          dbSizeBytes: d.db_size_bytes ?? d.dbSizeBytes,
-        });
-      } else {
-        setHealth(emptyHealth());
-      }
-
-      if (quotaRes.status === "fulfilled" && quotaRes.value) {
-        const d = quotaRes.value;
-        setQuota({
-          queriesUsed: d.queries_used ?? d.queriesUsed ?? 0,
-          queriesLimit: d.queries_limit ?? d.queriesLimit ?? 10000,
-          pagesUsed: d.pages_used ?? d.pagesUsed ?? 0,
-          pagesLimit: d.pages_limit ?? d.pagesLimit ?? 50000,
-          embedTokensUsed: d.embed_tokens_used ?? d.embedTokensUsed ?? 0,
-          embedTokensLimit: d.embed_tokens_limit ?? d.embedTokensLimit ?? 10000000,
-          resetAt: d.reset_at ?? d.resetAt ?? "",
-        });
-      }
     } catch (err) {
       console.error("[apm] load error:", err);
     } finally {
@@ -339,14 +143,9 @@ export default function EngineAPMPage() {
 
   const engineStatus: "healthy" | "degraded" | "down" | "loading" = loading
     ? "loading"
-    : (health?.status ?? "healthy");
-
-  const fmtBytes = (b?: number) => {
-    if (!b) return "—";
-    if (b > 1_000_000_000) return `${(b / 1e9).toFixed(1)} GB`;
-    if (b > 1_000_000) return `${(b / 1e6).toFixed(1)} MB`;
-    return `${(b / 1e3).toFixed(1)} KB`;
-  };
+    : queueHealth?.engineReachable
+      ? "healthy"
+      : "down";
 
   return (
     <div
@@ -415,248 +214,26 @@ export default function EngineAPMPage() {
           </div>
         </div>
 
-        {/* Latency Section */}
+        {/* Firm-scoped metrics are deliberately not shown here: /api/brain/*
+            and /api/usage/quota answer for the caller's own brain (or, in a
+            support session, one firm's) — not for the platform. */}
         <div
+          role="status"
           style={{
             background: "var(--ds-surface)",
             border: "1px solid var(--ds-border)",
             borderRadius: 10,
             padding: 16,
             marginBottom: 16,
+            fontSize: 12,
+            color: "var(--ds-text-muted)",
           }}
         >
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--ds-text)",
-              marginBottom: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <Clock size={14} style={{ color: "var(--accent-premium)" }} /> Antwort-Latenz (Search)
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-            <LatencyPill label="Ø Avg" ms={searchStats?.avgLatencyMs ?? 0} />
-            <LatencyPill
-              label="P50"
-              ms={searchStats?.p50LatencyMs ?? Math.round((searchStats?.avgLatencyMs ?? 0) * 0.8)}
-            />
-            <LatencyPill
-              label="P95"
-              ms={searchStats?.p95LatencyMs ?? 0}
-              thresholdWarn={800}
-              thresholdCrit={2000}
-            />
-            <LatencyPill
-              label="P99"
-              ms={searchStats?.p99LatencyMs ?? 0}
-              thresholdWarn={1500}
-              thresholdCrit={3000}
-            />
-          </div>
+          Plattformweite Such-, Latenz- und Kontingent-Kennzahlen sind noch nicht angebunden.
+          Angezeigt werden nur plattformweite Werte (Job-Queue, Dienste, Korpus).
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-          {/* Search Quality */}
-          <div
-            style={{
-              background: "var(--ds-surface)",
-              border: "1px solid var(--ds-border)",
-              borderRadius: 10,
-              padding: 16,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "var(--ds-text)",
-                marginBottom: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <Search size={14} style={{ color: "var(--accent-premium)" }} /> Search-Qualität
-            </div>
-
-            {[
-              {
-                label: "Cache-Hit-Rate",
-                value: `${Math.round((searchStats?.cacheHitRate ?? 0) * 100)}%`,
-                good: (searchStats?.cacheHitRate ?? 0) > 0.4,
-              },
-              {
-                label: "Fehlerrate",
-                value: `${((searchStats?.errorRate ?? 0) * 100).toFixed(2)}%`,
-                good: (searchStats?.errorRate ?? 0) < 0.01,
-              },
-              {
-                label: "Budget-Drop-Rate",
-                value: `${((searchStats?.budgetDropRate ?? 0) * 100).toFixed(1)}%`,
-                good: (searchStats?.budgetDropRate ?? 0) < 0.05,
-              },
-              {
-                label: "Queries gesamt",
-                value: (searchStats?.totalQueries ?? 0).toLocaleString("de-AT"),
-                good: true,
-              },
-            ].map((row) => (
-              <div
-                key={row.label}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "7px 0",
-                  borderBottom: "1px solid var(--ds-border)",
-                  fontSize: 12,
-                }}
-              >
-                <span style={{ color: "var(--ds-text-muted)" }}>{row.label}</span>
-                <span
-                  style={{
-                    fontWeight: 600,
-                    color: row.good ? "var(--ds-success-text)" : "var(--ds-warning-text)",
-                  }}
-                >
-                  {row.value}
-                </span>
-              </div>
-            ))}
-
-            {searchStats?.intentMix && (
-              <div style={{ marginTop: 12 }}>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "var(--ds-text-subtle)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                    marginBottom: 8,
-                  }}
-                >
-                  Intent-Mix
-                </div>
-                {Object.entries(searchStats.intentMix)
-                  .slice(0, 5)
-                  .map(([intent, count]) => (
-                    <div
-                      key={intent}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 11,
-                        color: "var(--ds-text-muted)",
-                        marginBottom: 3,
-                      }}
-                    >
-                      <span>{intent}</span>
-                      <span>
-                        {typeof count === "number" ? count.toLocaleString("de-AT") : count}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-
-          {/* Brain Health */}
-          <div
-            style={{
-              background: "var(--ds-surface)",
-              border: "1px solid var(--ds-border)",
-              borderRadius: 10,
-              padding: 16,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "var(--ds-text)",
-                marginBottom: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <Database size={14} style={{ color: "var(--ds-info-text)" }} /> Brain-Gesundheit
-            </div>
-
-            {[
-              { label: "Status", value: <StatusDot status={health?.status ?? "loading"} /> },
-              {
-                label: "Seiten im Brain",
-                value: (
-                  <span style={{ fontWeight: 600, color: "var(--ds-text)" }}>
-                    {(health?.pageCount ?? 0).toLocaleString("de-AT")}
-                  </span>
-                ),
-              },
-              {
-                label: "Embedding-Queue",
-                value: (
-                  <span
-                    style={{
-                      fontWeight: 600,
-                      color:
-                        (health?.embeddingQueueDepth ?? 0) > 100
-                          ? "var(--ds-warning-text)"
-                          : "var(--ds-success-text)",
-                    }}
-                  >
-                    {health?.embeddingQueueDepth ?? 0}
-                  </span>
-                ),
-              },
-              {
-                label: "Vektor-Index",
-                value: (
-                  <span style={{ color: "var(--ds-text-muted)" }}>
-                    {fmtBytes(health?.vectorIndexSize)}
-                  </span>
-                ),
-              },
-              {
-                label: "DB-Größe",
-                value: (
-                  <span style={{ color: "var(--ds-text-muted)" }}>
-                    {fmtBytes(health?.dbSizeBytes)}
-                  </span>
-                ),
-              },
-              {
-                label: "Letztes Indexing",
-                value: (
-                  <span style={{ color: "var(--ds-text-muted)", fontSize: 11 }}>
-                    {health?.lastIndexedAt
-                      ? new Date(health.lastIndexedAt).toLocaleString("de-AT")
-                      : "—"}
-                  </span>
-                ),
-              },
-            ].map((row) => (
-              <div
-                key={row.label}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "7px 0",
-                  borderBottom: "1px solid var(--ds-border)",
-                  fontSize: 12,
-                }}
-              >
-                <span style={{ color: "var(--ds-text-muted)" }}>{row.label}</span>
-                {row.value}
-              </div>
-            ))}
-          </div>
-
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 16 }}>
           {/* Pipeline / Job-Queue + DLQ */}
           <div
             style={{
@@ -851,65 +428,6 @@ export default function EngineAPMPage() {
             ))}
           </div>
         </div>
-
-        {/* Quota */}
-        {quota && (
-          <div
-            style={{
-              background: "var(--ds-surface)",
-              border: "1px solid var(--ds-border)",
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "var(--ds-text)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <TrendingUp size={14} style={{ color: "var(--ds-success-text)" }} /> Quota-Nutzung
-              </div>
-              {quota.resetAt && (
-                <span style={{ fontSize: 11, color: "var(--ds-text-subtle)" }}>
-                  Reset: {new Date(quota.resetAt).toLocaleDateString("de-AT")}
-                </span>
-              )}
-            </div>
-            <GaugeBar
-              label="Queries / Monat"
-              value={quota.queriesUsed}
-              max={quota.queriesLimit}
-              color="var(--accent-premium)"
-            />
-            <GaugeBar
-              label="Seiten im Brain"
-              value={quota.pagesUsed}
-              max={quota.pagesLimit}
-              color="var(--accent-premium)"
-            />
-            <GaugeBar
-              label="Embedding-Tokens"
-              value={quota.embedTokensUsed}
-              max={quota.embedTokensLimit}
-              color="var(--ds-info-text)"
-              unit=""
-            />
-          </div>
-        )}
 
         {/* Search Mode Info */}
         <div

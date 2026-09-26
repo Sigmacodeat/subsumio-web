@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { integrationReturnToast, withoutIntegrationReturn } from "@/lib/integration-return";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +30,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
-  loadKanzleiSettings,
+  loadKanzleiSettingsStrict,
   saveKanzleiSettings,
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
@@ -45,16 +46,20 @@ import {
   useSettingsApiKeys,
   useSaveSettingsApiKeys,
   useUpdateTeamRole,
+  useOrg,
 } from "@/lib/queries/settings";
+import { teamErrorText } from "@/app/dashboard/team/team-errors";
 import { useBrainStats } from "@/lib/queries/brain";
 import { limitsFor } from "@/lib/plans-limits";
 import type { Plan } from "@/lib/auth/store";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
+import { DocusignConnectionCard } from "@/components/dashboard/docusign-connection-card";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { SettingsHub } from "@/components/dashboard/settings-hub";
+import { BillingRulesSettings } from "@/components/dashboard/billing-rules-settings";
 import { csrfFetch } from "@/lib/csrf";
 
 /**
@@ -120,6 +125,14 @@ const TAB_META: Record<
       en: "Who may see which matters and documents, including conflict-of-interest walls.",
     },
     allowed: ["admin"],
+  },
+  signature: {
+    title: { de: "Elektronische Signatur (DocuSign)", en: "E-signature (DocuSign)" },
+    desc: {
+      de: "Ihr persönliches DocuSign-Konto verbinden, damit Signaturanfragen in Ihrem Namen versendet werden.",
+      en: "Connect your personal DocuSign account so signature requests are sent in your name.",
+    },
+    allowed: ["admin", "lawyer", "assistant"],
   },
   scim: {
     title: { de: "Benutzerabgleich (SCIM)", en: "User sync (SCIM)" },
@@ -239,6 +252,19 @@ function SettingsPageInner() {
   const searchParams = useSearchParams();
   // Derived from the URL so hub links (?tab=…) switch the view on client-side navigation.
   const activeTab = searchParams.get("tab");
+  const router = useRouter();
+  const pathname = usePathname();
+  const { addToast: addReturnToast } = useToast();
+  // Result of an Outlook/DocuSign connection round trip: shown once, then
+  // removed from the URL so a reload does not repeat it.
+  useEffect(() => {
+    const toast = integrationReturnToast(new URLSearchParams(searchParams.toString()));
+    if (!toast) return;
+    addReturnToast(toast);
+    router.replace(
+      `${pathname}${withoutIntegrationReturn(new URLSearchParams(searchParams.toString()))}`
+    );
+  }, [searchParams, addReturnToast, router, pathname]);
   const [referralUrl, setReferralUrl] = useState("");
   const [referrals, setReferrals] = useState<number | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "checking" | "online" | "offline">(
@@ -247,12 +273,13 @@ function SettingsPageInner() {
   const [keysSaved, setKeysSaved] = useState(false);
   const [kanzleiSaved, setKanzleiSaved] = useState(false);
   const [kanzleiSaveError, setKanzleiSaveError] = useState(false);
+  // "loading" | "ready" | "failed": saving is only possible once the stored
+  // settings were read — a save after a failed read would overwrite them.
+  const [kanzleiLoad, setKanzleiLoad] = useState<"loading" | "ready" | "failed">("loading");
+  const [smtpPasswordSet, setSmtpPasswordSet] = useState(false);
   const [keysSaveError, setKeysSaveError] = useState(false);
   // Full saved settings — the billing form only edits a subset, the rest must survive a save.
   const savedKanzleiRef = useRef<KanzleiSettings | null>(null);
-  const [dreamDone, setDreamDone] = useState(false);
-  const [dreamRunning, setDreamRunning] = useState(false);
-  const [dreamError, setDreamError] = useState(false);
   const [singleKeyShortcuts, setSingleKeyShortcuts] = useState(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("single-key-shortcuts") !== "false";
@@ -270,21 +297,11 @@ function SettingsPageInner() {
   const saveKeysMutation = useSaveSettingsApiKeys();
   const statsQuery = useBrainStats();
   const updateRoleMutation = useUpdateTeamRole();
-
-  const runDreamCycle = async () => {
-    setDreamRunning(true);
-    setDreamError(false);
-    setDreamDone(false);
-    try {
-      const response = await csrfFetch("/api/brain/dream-cycle", { method: "POST" });
-      if (!response.ok) throw new Error(String(response.status));
-      setDreamDone(true);
-    } catch {
-      setDreamError(true);
-    } finally {
-      setDreamRunning(false);
-    }
-  };
+  // Only the firm owner may change roles (POST /api/team/role answers 403
+  // owner_only otherwise) — other admins see the roles read-only.
+  const orgQuery = useOrg();
+  const isFirmOwner = (orgQuery.data as { isOwner?: boolean } | undefined)?.isOwner === true;
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   // Kanzlei form — RHF + Zod
   const kanzleiForm = useForm<KanzleiSettingsFormData>({
@@ -299,6 +316,7 @@ function SettingsPageInner() {
       ustId: "",
       stundensatz: "200",
       abrechnungstakt: "15",
+      billingRulesEnabled: false,
       bankName: "",
       iban: "",
       bic: "",
@@ -344,6 +362,9 @@ function SettingsPageInner() {
     control: kanzleiForm.control,
     name: "rechtsgebietSaetze",
   });
+  const billingRulesWatch = useWatch({ control: kanzleiForm.control, name: "billingRulesEnabled" });
+  const abrechnungstaktWatch = useWatch({ control: kanzleiForm.control, name: "abrechnungstakt" });
+  const stundensatzWatch = useWatch({ control: kanzleiForm.control, name: "stundensatz" });
 
   useEffect(() => {
     if (meQuery.data?.user?.referralCode) {
@@ -362,9 +383,11 @@ function SettingsPageInner() {
   }, [teamQuery.data]);
 
   useEffect(() => {
-    loadKanzleiSettings()
+    loadKanzleiSettingsStrict()
       .then((saved) => {
         savedKanzleiRef.current = saved;
+        setSmtpPasswordSet(saved.smtpPasswordSet === true);
+        setKanzleiLoad("ready");
         kanzleiForm.reset({
           kanzleiName: saved.kanzleiName,
           anwaltName: saved.anwaltName,
@@ -375,6 +398,7 @@ function SettingsPageInner() {
           ustId: saved.ustId,
           stundensatz: saved.stundensatz,
           abrechnungstakt: saved.abrechnungstakt ?? "15",
+          billingRulesEnabled: saved.billingRulesEnabled === true,
           bankName: saved.bankName ?? "",
           iban: saved.iban ?? "",
           bic: saved.bic ?? "",
@@ -387,7 +411,8 @@ function SettingsPageInner() {
           smtpHost: saved.smtpHost ?? "",
           smtpPort: saved.smtpPort ?? "587",
           smtpUser: saved.smtpUser ?? "",
-          smtpPassword: saved.smtpPassword ?? "",
+          // Never returned by the server; empty = keep the stored password.
+          smtpPassword: "",
           smtpSecure: saved.smtpSecure ?? false,
           emailFrom: saved.emailFrom ?? "",
           rechtsgebietSaetze: saved.rechtsgebietSaetze,
@@ -396,6 +421,7 @@ function SettingsPageInner() {
         });
       })
       .catch((err) => {
+        setKanzleiLoad("failed");
         console.error(
           "[settings] failed to load saved settings:",
           err instanceof Error ? err.message : String(err)
@@ -470,6 +496,8 @@ function SettingsPageInner() {
   }
 
   async function saveKanzleiProfile() {
+    // Never save over settings that could not be read.
+    if (kanzleiLoad !== "ready") return;
     setKanzleiSaveError(false);
     const isValid = await kanzleiForm.trigger();
     if (!isValid) return;
@@ -485,6 +513,7 @@ function SettingsPageInner() {
       ustId: data.ustId,
       stundensatz: data.stundensatz,
       abrechnungstakt: data.abrechnungstakt,
+      billingRulesEnabled: data.billingRulesEnabled === true,
       tarifModell: data.tarifModell,
       rechtsgebietSaetze: data.rechtsgebietSaetze,
       bankName: data.bankName,
@@ -506,8 +535,10 @@ function SettingsPageInner() {
     };
     try {
       await saveKanzleiSettings(settings);
-      savedKanzleiRef.current = settings;
-      kanzleiForm.reset(data);
+      if (data.smtpPassword) setSmtpPasswordSet(true);
+      // The password is write-only: keep it out of the in-memory copy and form.
+      savedKanzleiRef.current = { ...settings, smtpPassword: undefined };
+      kanzleiForm.reset({ ...data, smtpPassword: "" });
       setKanzleiSaved(true);
       setTimeout(() => setKanzleiSaved(false), 2000);
     } catch {
@@ -771,39 +802,17 @@ function SettingsPageInner() {
                     ))}
                   </ul>
                 </Field>
+                {/* The cycle runs for the whole installation: starting it by hand
+                    is reserved to the platform operator (POST /api/brain/dream-cycle
+                    is operator-only), so firm users get no button here. */}
                 <Field
-                  label={L("Sofort ausführen", "Run now")}
+                  label={L("Manueller Start", "Manual start")}
                   desc={L(
-                    "Nur nötig nach einem größeren Import; kann einige Minuten dauern.",
-                    "Only needed after a large import; can take a few minutes."
+                    "Ein manueller Lauf ist dem Betrieb vorbehalten. Wenden Sie sich nach einem größeren Import an den Support.",
+                    "A manual run is reserved to operations. After a large import, please contact support."
                   )}
                 >
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void runDreamCycle()}
-                      disabled={dreamRunning}
-                    >
-                      <RefreshCw
-                        size={14}
-                        className={cn(dreamRunning && "animate-spin")}
-                        aria-hidden
-                      />
-                      {dreamRunning ? t("sidebar.dream_running") : t("sidebar.dream_run_now")}
-                    </Button>
-                    {dreamDone && (
-                      <p role="status" className="text-xs text-[color:var(--ds-success-text)]">
-                        {L("Konsolidierung abgeschlossen.", "Consolidation finished.")}
-                      </p>
-                    )}
-                    {dreamError && (
-                      <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
-                        {t("sidebar.dream_error")}
-                      </p>
-                    )}
-                  </div>
+                  <span className="sr-only">{L("Nicht verfügbar", "Not available")}</span>
                 </Field>
               </div>
             </Card>
@@ -1018,6 +1027,26 @@ function SettingsPageInner() {
                   )}
 
                   <Field
+                    label={L("Abrechnungsregeln", "Billing rules")}
+                    desc={L(
+                      "Takt und Sätze wirken nur, wenn Sie sie hier einschalten.",
+                      "Increment and rates apply only when switched on here."
+                    )}
+                  >
+                    <BillingRulesSettings
+                      enabled={billingRulesWatch === true}
+                      onEnabledChange={(v) =>
+                        kanzleiForm.setValue("billingRulesEnabled", v, { shouldDirty: true })
+                      }
+                      abrechnungstakt={abrechnungstaktWatch}
+                      stundensatz={stundensatzWatch}
+                      rechtsgebietSaetze={rechtsgebietSaetzeWatch}
+                      tarifModell={tarifModellWatch}
+                      areaLabel={(k) => RATE_AREA_LABELS[k]?.de ?? k}
+                    />
+                  </Field>
+
+                  <Field
                     id="settings-zahlungsziel-tage"
                     label={t("settings.payment_terms")}
                     desc={t("settings.payment_terms_desc")}
@@ -1101,7 +1130,15 @@ function SettingsPageInner() {
                       id="settings-smtp-password"
                       type="password"
                       {...kanzleiForm.register("smtpPassword")}
-                      placeholder="••••••"
+                      autoComplete="new-password"
+                      placeholder={
+                        smtpPasswordSet
+                          ? L(
+                              "Gespeichert — leer lassen, um es beizubehalten",
+                              "Stored — leave empty to keep it"
+                            )
+                          : "••••••"
+                      }
                     />
                   </Field>
 
@@ -1121,6 +1158,14 @@ function SettingsPageInner() {
                   </Field>
                 </div>
                 <div className="border-t border-[color:var(--ds-border)] p-6">
+                  {kanzleiLoad === "failed" && (
+                    <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
+                      {L(
+                        "Die gespeicherten Kanzleidaten konnten nicht geladen werden. Speichern ist gesperrt, damit nichts überschrieben wird — bitte laden Sie die Seite neu.",
+                        "The saved firm data could not be loaded. Saving is locked so nothing is overwritten — please reload the page."
+                      )}
+                    </p>
+                  )}
                   {kanzleiSaveError && (
                     <p role="alert" className="mb-3 text-sm text-[color:var(--ds-danger-text)]">
                       {L(
@@ -1142,7 +1187,12 @@ function SettingsPageInner() {
                           )}
                     </p>
                   )}
-                  <Button variant="glow" size="md" onClick={saveKanzleiProfile}>
+                  <Button
+                    variant="glow"
+                    size="md"
+                    onClick={saveKanzleiProfile}
+                    disabled={kanzleiLoad !== "ready"}
+                  >
                     {kanzleiSaved ? t("settings.saved") : t("settings.save")}
                   </Button>
                 </div>
@@ -1167,6 +1217,16 @@ function SettingsPageInner() {
                   .
                 </p>
               </div>
+              {!isFirmOwner && teamMembers.length > 0 && (
+                <p className="px-6 pt-4 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("team.role_change_owner_only")}
+                </p>
+              )}
+              {roleError && (
+                <p role="alert" className="px-6 pt-4 text-sm text-[color:var(--ds-danger-text)]">
+                  {roleError}
+                </p>
+              )}
               <div className="divide-y divide-[color:var(--ds-border)] px-6">
                 {teamMembers.length === 0 ? (
                   <div className="py-10 text-center">
@@ -1201,22 +1261,19 @@ function SettingsPageInner() {
                           `Role of ${member.name ?? member.email}`
                         )}
                         value={member.role}
+                        disabled={!isFirmOwner || updateRoleMutation.isPending}
                         onChange={async (e) => {
+                          const role = e.target.value;
+                          setRoleError(null);
                           try {
-                            await updateRoleMutation.mutateAsync({
-                              userId: member.id,
-                              role: e.target.value,
-                            });
+                            await updateRoleMutation.mutateAsync({ userId: member.id, role });
+                            // Shown only once the server confirmed the change.
                             setTeamMembers((prev) =>
-                              prev.map((m) =>
-                                m.id === member.id ? { ...m, role: e.target.value } : m
-                              )
+                              prev.map((m) => (m.id === member.id ? { ...m, role } : m))
                             );
                           } catch (err) {
-                            console.error(
-                              "[team] failed to update role:",
-                              err instanceof Error ? err.message : String(err)
-                            );
+                            // The select keeps the role the member really has.
+                            setRoleError(teamErrorText(t, err));
                           }
                         }}
                         className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-[var(--ds-duration-normal)] ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 motion-reduce:transition-none"
@@ -1234,6 +1291,9 @@ function SettingsPageInner() {
               </div>
             </Card>
           )}
+
+          {/* Persönliche DocuSign-Verbindung */}
+          {activeTab === "signature" && <DocusignConnectionCard />}
 
           {/* ACLs — Document-Level Access Control */}
           {activeTab === "acls" && <AclSettings />}
@@ -1500,6 +1560,7 @@ function OutlookCalendarCard() {
   const [state, setState] = useState<"loading" | "unconfigured" | "ready">("loading");
   const [connected, setConnected] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -1512,6 +1573,7 @@ function OutlookCalendarCard() {
         return;
       }
       setConnected(Boolean(d.connected));
+      setNeedsReconnect(!d.connected && d.reason === "needs_reconnect");
       setEmail(d.email ?? null);
       setState("ready");
     } catch {
@@ -1566,7 +1628,9 @@ function OutlookCalendarCard() {
               ? "Verbindungsstatus wird geladen…"
               : connected
                 ? `Verbunden${email ? ` als ${email}` : ""}. Ihre Termine werden in Subsumio gespiegelt und neue Termine können nach Outlook geschrieben werden.`
-                : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
+                : needsReconnect
+                  ? `Die Verbindung${email ? ` (${email})` : ""} ist abgelaufen oder wurde bei Microsoft widerrufen. Termine werden nicht mehr abgeglichen — bitte neu verbinden.`
+                  : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
           </p>
         </div>
         {state === "ready" && (
@@ -1585,10 +1649,13 @@ function OutlookCalendarCard() {
                 </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
-                {busy && <Loader2 size={13} className="animate-spin" />}
-                Mit Microsoft verbinden
-              </Button>
+              <>
+                {needsReconnect && <Badge variant="warning">Neu verbinden</Badge>}
+                <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
+                  {busy && <Loader2 size={13} className="animate-spin" />}
+                  {needsReconnect ? "Outlook neu verbinden" : "Mit Microsoft verbinden"}
+                </Button>
+              </>
             )}
           </div>
         )}

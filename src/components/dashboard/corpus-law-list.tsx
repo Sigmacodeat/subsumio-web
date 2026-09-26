@@ -255,7 +255,7 @@ export function CorpusLawList() {
       hint: fetchState?.running
         ? `jetzt: ${runningLaw?.abbr ?? runningLaw?.title ?? `Gesetz ${fetchState.running}`}`
         : queuedCount > 0
-          ? "wartet auf das nächste RIS-Fenster"
+          ? "wartet auf den nächsten Pipeline-Zyklus"
           : "nichts vorgemerkt",
     });
   } else if ((t?.extra ?? 0) > 0) {

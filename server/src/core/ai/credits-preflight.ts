@@ -24,6 +24,14 @@ export interface CreditsHealthResult {
 
 const CACHE_TTL_MS = 60_000;
 let _cachedResult: { timestamp: number; data: CreditsHealthResult } | null = null;
+/** Check in progress — parallel callers share it instead of pinging again. */
+let _inflight: Promise<CreditsHealthResult> | null = null;
+
+/** Test hook: forget the cached and in-flight result. */
+export function _resetCreditsHealthCache(): void {
+  _cachedResult = null;
+  _inflight = null;
+}
 
 const PROVIDER_TOPUP_URLS: Record<string, string> = {
   anthropic: "https://console.anthropic.com/settings/billing",
@@ -192,9 +200,18 @@ export async function getCreditsHealth(): Promise<CreditsHealthResult> {
   if (_cachedResult && Date.now() - _cachedResult.timestamp < CACHE_TTL_MS) {
     return _cachedResult.data;
   }
-  const data = await checkAllProviders();
-  _cachedResult = { timestamp: Date.now(), data };
-  return data;
+  // Each check is a paid provider call: concurrent callers wait for the one
+  // already running instead of starting their own.
+  if (_inflight) return _inflight;
+  _inflight = checkAllProviders()
+    .then((data) => {
+      _cachedResult = { timestamp: Date.now(), data };
+      return data;
+    })
+    .finally(() => {
+      _inflight = null;
+    });
+  return _inflight;
 }
 
 /**

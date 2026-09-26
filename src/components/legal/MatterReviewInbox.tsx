@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { openSuggestions } from "@/lib/suggestion-index";
 import type { ElementType } from "react";
 import {
   AlertTriangle,
@@ -27,6 +28,7 @@ import type { BrainPage } from "@/lib/types";
 import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
 import { unwrapApiBody } from "@/lib/api-body";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
+import { csrfFetch } from "@/lib/csrf";
 
 type ReviewItemKind =
   | "client_submission"
@@ -101,7 +103,7 @@ export function MatterReviewInbox({
         fetch(`/api/matter-context/${encodeURIComponent(matter.slug)}`).then((res) =>
           res.ok ? (res.json() as Promise<MatterContextBundle>) : null
         ),
-        api.brain.listPages({ type: "client_submission", limit: 100 }).catch(() => []),
+        api.brain.listAllPages({ type: "client_submission", max: 100 }).catch(() => []),
       ]);
       setBundle(bundleResponse);
       setSubmissions(submissionPages.filter((page) => page.frontmatter?.case_slug === matter.slug));
@@ -135,11 +137,8 @@ export function MatterReviewInbox({
         pageSlug: page.slug,
       }));
 
-    const deadlineItems = (matter.suggestedDeadlines ?? [])
-      .map((deadline, originalIndex) => ({ deadline, originalIndex }))
-      .filter(({ deadline }) => !deadline.confirmed)
-      .slice(0, 3)
-      .map<ReviewItem>(({ deadline, originalIndex }) => ({
+    const deadlineItems = openSuggestions(matter.suggestedDeadlines).map<ReviewItem>(
+      ({ item: deadline, index: originalIndex }) => ({
         id: `deadline-${originalIndex}-${deadline.title}`,
         kind: "suggested_deadline",
         title: deadline.title,
@@ -150,13 +149,11 @@ export function MatterReviewInbox({
         actionLabel: "Übernehmen",
         secondaryLabel: "Verwerfen",
         index: originalIndex,
-      }));
+      })
+    );
 
-    const partyItems = (matter.suggestedParties ?? [])
-      .map((party, originalIndex) => ({ party, originalIndex }))
-      .filter(({ party }) => !party.confirmed)
-      .slice(0, 3)
-      .map<ReviewItem>(({ party, originalIndex }) => ({
+    const partyItems = openSuggestions(matter.suggestedParties).map<ReviewItem>(
+      ({ item: party, index: originalIndex }) => ({
         id: `party-${originalIndex}-${party.name}`,
         kind: "suggested_party",
         title: party.name,
@@ -166,7 +163,8 @@ export function MatterReviewInbox({
         actionLabel: "Kontakt anlegen",
         secondaryLabel: "Verwerfen",
         index: originalIndex,
-      }));
+      })
+    );
 
     const factItems = pendingFacts.map<ReviewItem>((fact) => ({
       id: `fact-${fact.id}`,
@@ -234,8 +232,10 @@ export function MatterReviewInbox({
     if (!item.pageSlug) return;
     setUpdating(item.id);
     try {
-      const res = await fetch("/api/legal/submission-review", {
+      const res = await csrfFetch("/api/legal/submission-review", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           submissionSlug: item.pageSlug,
@@ -279,8 +279,10 @@ export function MatterReviewInbox({
     if (!item.pageSlug) return;
     setUpdating(`${item.id}:import`);
     try {
-      const res = await fetch("/api/legal/submission-to-document", {
+      const res = await csrfFetch("/api/legal/submission-to-document", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submissionSlug: item.pageSlug }),
       });
@@ -374,8 +376,10 @@ export function MatterReviewInbox({
     if (!matter || !item.factId || !item.statement) return;
     setUpdating(`${item.id}:${action}`);
     try {
-      const res = await fetch("/api/legal/matter-knowledge", {
+      const res = await csrfFetch("/api/legal/matter-knowledge", {
         method: "POST",
+        // Long-running: csrfFetch would otherwise abort after 30s.
+        signal: AbortSignal.timeout(300_000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caseSlug: matter.slug,
@@ -421,7 +425,7 @@ export function MatterReviewInbox({
     if (!item.requestSlug) return;
     setUpdating(item.id);
     try {
-      const res = await fetch("/api/document-requests", {
+      const res = await csrfFetch("/api/document-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -655,7 +659,7 @@ export function MatterReviewInbox({
                       slug={composerRequest.slug}
                       caseSlug={matter.slug}
                       messageDraft={composerRequest.open_items.map((i) => i.label).join(", ")}
-                      portalUrl={composerRequest.portal_url}
+                      portalLink={composerRequest.portal_link === true}
                       items={composerRequest.open_items.map((i) => i.label)}
                       recipientPhone={clientContact?.phone}
                       recipientEmail={clientContact?.email}

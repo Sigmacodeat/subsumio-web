@@ -24,7 +24,7 @@
 
 import { existsSync, readdirSync } from "fs";
 import { join } from "path";
-import { $ } from "bun";
+import { psqlQueryOrThrow, runPsqlQuery } from "./psql-env";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -112,7 +112,8 @@ function withDb(url: string, db: string): string {
 const redact = (u: string) => u.replace(/:\/\/[^@]*@/, "://***:***@");
 
 async function psql(url: string, sql: string): Promise<string> {
-  return (await $`psql ${url} -tAc ${sql}`.quiet()).stdout.toString().trim();
+  // Credentials via env (never argv); a failure throws a masked PsqlError.
+  return psqlQueryOrThrow(sql, url).trim();
 }
 
 /**
@@ -122,8 +123,7 @@ async function psql(url: string, sql: string): Promise<string> {
  */
 async function isReachable(url: string): Promise<boolean> {
   try {
-    await $`psql ${url} -tAc ${"SELECT 1"}`.quiet();
-    return true;
+    return runPsqlQuery("SELECT 1", url).ok;
   } catch {
     return false;
   }
@@ -140,7 +140,7 @@ async function step1_createDatabase(base: string) {
     console.log(`   [DRY] CREATE DATABASE ${NEW_DB}`);
     return;
   }
-  await $`psql ${base} -c ${`CREATE DATABASE ${NEW_DB}`}`.quiet();
+  psqlQueryOrThrow(`CREATE DATABASE ${NEW_DB}`, base);
   console.log(`   ${NEW_DB} angelegt.`);
 }
 

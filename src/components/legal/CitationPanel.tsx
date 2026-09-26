@@ -21,7 +21,6 @@ import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness } from "@/lib/groundedness";
 import { formatCitationTitle } from "@/lib/ogh-format";
-import type { GroundedCitation } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
 import { extractStatuteCitations, type GroundingMetadata } from "@/lib/citation-gate-client";
 import { openNormReader, readerJurisdiction } from "@/lib/norm-reader-events";
@@ -69,6 +68,14 @@ const SUPPORT_STYLE: Record<
   },
 };
 
+/** "Nicht mehr in Kraft (seit 01.01.2024)" for a repealed norm. */
+export function repealedLabel(since: string | undefined): string {
+  const m = since?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m
+    ? `Nicht mehr in Kraft (seit ${m[3]}.${m[2]}.${m[1]}) — geltende Fassung prüfen.`
+    : "Nicht mehr in Kraft — geltende Fassung prüfen.";
+}
+
 export function CitationPanel({ data, compact = false, className }: CitationPanelProps) {
   const { lang } = useLang();
   const [expanded, setExpanded] = useState(!compact);
@@ -93,6 +100,9 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
     .map((gc) =>
       gc.category === "judikatur" ? `${gc.code} ${gc.paragraph}` : `${gc.paragraph} ${gc.code}`
     );
+  const repealed = (data.grounding?.grounded_citations ?? [])
+    .filter((gc) => gc.in_force === false)
+    .map((gc) => `${gc.paragraph} ${gc.code}`);
   const showAnything = hasCitations || hasGaps || hasGroundingData || !data.isStreaming;
 
   if (!showAnything && data.isStreaming) return null;
@@ -207,8 +217,37 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         </div>
       )}
 
+      {/* Repealed: the cited norm exists but no longer applies. */}
+      {repealed.length > 0 && (
+        <div
+          role="alert"
+          data-testid="citation-repealed-alert"
+          className="mx-4 mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            {repealed.length === 1
+              ? "Eine zitierte Norm ist nicht mehr in Kraft: "
+              : `${repealed.length} zitierte Normen sind nicht mehr in Kraft: `}
+            <strong>{repealed.join(", ")}</strong>. Geltende Fassung prüfen.
+          </span>
+        </div>
+      )}
+
+      {/* The check itself failed: say so, loudly. */}
+      {data.grounding?.check_failed && (
+        <div
+          role="alert"
+          data-testid="citation-check-failed"
+          className="mx-4 mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{data.grounding.warning}</span>
+        </div>
+      )}
+
       {/* Unverified citation warning */}
-      {data.grounding?.has_unverified && data.grounding.warning && (
+      {data.grounding?.has_unverified && data.grounding.warning && !data.grounding.check_failed && (
         <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
           <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>{data.grounding.warning}</span>
@@ -274,7 +313,15 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                           (Link oben).
                         </p>
                       )}
-                      {!gc.verified && gc.category !== "judikatur" && (
+                      {!gc.verified && gc.in_force === false && (
+                        <p
+                          className="mt-0.5 text-xs font-medium text-[color:var(--ds-danger-text)]"
+                          data-testid="citation-repealed"
+                        >
+                          {repealedLabel(gc.repealed_since)}
+                        </p>
+                      )}
+                      {!gc.verified && gc.in_force !== false && gc.category !== "judikatur" && (
                         <p className="mt-0.5 text-xs text-[color:var(--ds-warning-text)]">
                           Nicht in den Rechtsquellen gefunden — möglicherweise falsch zitiert oder
                           außerhalb des abgedeckten Rechtskreises.

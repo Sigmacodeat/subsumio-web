@@ -3,6 +3,9 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 import { randomUUID } from "node:crypto";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
+import { isStaffRole } from "@/lib/team-visibility";
 
 const shareSchema = z
   .object({
@@ -38,14 +41,32 @@ export const POST = createHandler(
   async (ctx, body) => {
     const { caseSlug } = body;
 
+    // Sharing writes into the firm brain and the inbound register — firm staff
+    // only. Client accounts hand in documents through the portal upload.
+    if (!isStaffRole(ctx.user.role)) {
+      return apiError("forbidden", "Keine Berechtigung zum Ablegen von Inhalten", 403);
+    }
+
     if (caseSlug) {
-      // The matter must exist and be readable by this user — ethical walls
-      // apply to shared content exactly like to any other write.
+      // The matter must exist, be visible to this user (ethical walls, matter
+      // scope) and the user needs write access on it — a read-only grant is
+      // not enough to file content into the matter.
       const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
         headers: ctx.headers,
         signal: AbortSignal.timeout(10_000),
       }).catch(() => null);
       if (!caseRes?.ok) return apiError("case_not_found", "Akte nicht gefunden", 404);
+      const casePage = (await caseRes.json().catch(() => null)) as {
+        type?: string;
+        frontmatter?: { type?: string; permissions?: MatterPermissions };
+      } | null;
+      if ((casePage?.type ?? casePage?.frontmatter?.type) !== "legal_case") {
+        return apiError("case_not_found", "Akte nicht gefunden", 404);
+      }
+      const level = matterAccessLevel(matterAccessUserFor(ctx), casePage?.frontmatter?.permissions);
+      if (level !== "write") {
+        return apiError("forbidden", "Kein Schreibrecht auf diese Akte", 403);
+      }
     }
 
     const shareId = `shared/${caseSlug ? `${caseSlug}/` : "eingang/"}${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`;

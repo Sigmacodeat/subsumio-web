@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { join } from "path";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause } from "./ris-pace";
 
@@ -136,7 +137,7 @@ async function fetchXml(docId: string): Promise<string | null> {
 
 async function main() {
   const sql = `select distinct slug from corpus_defects where source_id = 'law-at-landesrecht' and defect_type = 'inner_truncation'`;
-  const raw = (await $`psql ${DB_URL} -tAF$'\x1f' -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, DB_URL, { fieldSeparator: "\x1f" });
   const slugs = raw
     .split("\n")
     .filter(Boolean)

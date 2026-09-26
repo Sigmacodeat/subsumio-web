@@ -9,6 +9,7 @@
 import { statSync, readFileSync } from "fs";
 import { basename, extname } from "path";
 import { assertEuResidency } from "./ai/eu-policy.ts";
+import { withRequestEuPolicy } from "./ai/request-eu-policy.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +78,11 @@ export async function transcribe(
   const provider = config.provider || detectProvider();
   // EU-only: Groq, OpenAI and Deepgram all transcribe outside the EU and the
   // codebase has no EU speech-to-text route — refuse before audio leaves.
-  assertEuResidency(`${provider}:${config.model || "whisper"}`, "transcription", process.env);
+  assertEuResidency(
+    `${provider}:${config.model || "whisper"}`,
+    "transcription",
+    withRequestEuPolicy(process.env)
+  );
   const apiKey = config.apiKey || getApiKey(provider);
   if (!apiKey) {
     const envVar = provider === "groq" ? "GROQ_API_KEY" : "OPENAI_API_KEY";
@@ -133,7 +138,11 @@ export async function transcribeBuffer(
   config: TranscriptionConfig = {}
 ): Promise<TranscriptionResult> {
   const provider = config.provider || detectProvider();
-  assertEuResidency(`${provider}:${config.model || "whisper"}`, "transcription", process.env);
+  assertEuResidency(
+    `${provider}:${config.model || "whisper"}`,
+    "transcription",
+    withRequestEuPolicy(process.env)
+  );
   const apiKey = config.apiKey || getApiKey(provider);
   if (!apiKey) {
     const envVar = provider === "groq" ? "GROQ_API_KEY" : "OPENAI_API_KEY";

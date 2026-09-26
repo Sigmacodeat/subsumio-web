@@ -28,6 +28,7 @@
 
 import { writeFileSync, appendFileSync, existsSync, readFileSync } from "fs";
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -210,7 +211,7 @@ async function eichlauf(chat: any) {
       coalesce(min(c.paragraph_ref),''), string_agg(c.chunk_text, E'\n' order by c.chunk_index)
     from pages p join content_chunks c on c.page_id=p.id where p.slug in (${inlist})
     group by p.slug, p.source_id, p.title`;
-  const raw = (await $`psql ${URL_} -tAF${"\x1f"} -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, URL_, { fieldSeparator: "\x1f" });
   const docs: Doc[] = [];
   for (const line of raw.split("\n")) {
     const q = line.split("\x1f");
@@ -335,7 +336,7 @@ async function main() {
     order by md5(p.slug)
     ${cap}`;
 
-  const raw = (await $`psql ${URL_} -tAF${"\x1f"} -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, URL_, { fieldSeparator: "\x1f" });
   const docs: Doc[] = [];
   for (const line of raw.split("\n")) {
     const p = line.split("\x1f");

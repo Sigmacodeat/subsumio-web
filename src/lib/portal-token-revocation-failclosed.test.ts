@@ -10,7 +10,13 @@ const failingPool = {
 vi.mock("@/lib/auth/store", () => ({ getSharedPgPool: () => failingPool }));
 vi.mock("./auth/store", () => ({ getSharedPgPool: () => failingPool }));
 
-import { isPortalTokenRevoked, signPortalToken, verifyPortalToken } from "./portal-token";
+import {
+  isPortalTokenRevoked,
+  PortalRevocationNotStoredError,
+  revokePortalTokenHash,
+  signPortalToken,
+  verifyPortalToken,
+} from "./portal-token";
 
 describe("portal token revocation check fails closed", () => {
   test("verifyPortalToken refuses a validly signed token when the revocation list is unreadable", async () => {
@@ -22,5 +28,11 @@ describe("portal token revocation check fails closed", () => {
   test("isPortalTokenRevoked reports revoked when the revocation list is unreadable", async () => {
     const token = await signPortalToken("cases/b");
     expect(await isPortalTokenRevoked(token)).toBe(true);
+  });
+
+  test("revoking reports failure when the revocation list cannot be written", async () => {
+    await expect(revokePortalTokenHash("c".repeat(64))).rejects.toBeInstanceOf(
+      PortalRevocationNotStoredError
+    );
   });
 });

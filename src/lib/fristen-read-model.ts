@@ -8,6 +8,8 @@ import {
   type DeadlineStatus,
 } from "@/lib/legal-deadlines";
 import { caseFrontmatter } from "@/lib/legal-types";
+import { isClosedDeadline, isDiscardedDeadline } from "@/lib/deadline-reminders";
+import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
 
 /**
  * Unified Fristen Read-Model — shared by GET /api/legal/fristen and the
@@ -144,6 +146,9 @@ export interface FristenReadModel {
   failedSources: FristenSource[];
 }
 
+/** Safety stop per page type — far beyond any real firm; reaching it is reported. */
+export const FRISTEN_READ_CAP = 100_000;
+
 /** Loads and merges every deadline source for the caller behind `headers`. */
 export async function loadFristenReadModel(
   headers: Record<string, string>,
@@ -212,12 +217,24 @@ export async function loadFristenReadModel(
   // ── Source 2+3: Brain pages (legal_deadline + legal_case) ─────────────
   {
     // All matters and deadlines, in batches; deleted deadlines are left out.
-    // strict: a failed batch must surface as a failed source, never as a
-    // silently shortened list.
+    // strict + failOnTruncate: a failed batch or a list cut at the safety
+    // stop must surface as a failed source, never as a silently shortened
+    // list (the listing is newest-first, so a cut would drop exactly the
+    // long-untouched deadlines that are now falling due). With a matter
+    // filter, the engine selects only that matter's rows.
     const fetchPagesByType = async (type: FristenSource): Promise<BrainPage[]> => {
       try {
-        return (await listEnginePages(headers, type, 10_000, {
+        const scoped: Parameters<typeof listEnginePages>[3] = !caseFilter
+          ? {}
+          : type === "legal_deadline"
+            ? { frontmatter: { case_slug: caseFilter } }
+            : type === "legal_case"
+              ? { slugPrefix: caseFilter }
+              : {};
+        return (await listEnginePages(headers, type, FRISTEN_READ_CAP, {
           strict: true,
+          failOnTruncate: true,
+          ...scoped,
         })) as unknown as BrainPage[];
       } catch {
         failedSources.push(type);
@@ -248,10 +265,9 @@ export async function loadFristenReadModel(
       const dueDate = String(fm.due_date ?? fm.date ?? "");
       if (!dueDate) continue;
       // A discarded AI suggestion must not linger in the Fristenbuch —
-      // and a cancelled deadline must not resurface as "overdue"
+      // and a cancelled or deleted deadline must not resurface as "overdue"
       // (computeDeadlineStatus only knows "done" as closed).
-      if (fm.review_status === "rejected") continue;
-      if (fm.status === "cancelled" || fm.status === "storniert") continue;
+      if (isDiscardedDeadline(fm)) continue;
       if (caseFilter && fm.case_slug !== caseFilter) continue;
 
       const f: Frist = {
@@ -264,7 +280,9 @@ export async function loadFristenReadModel(
         due_date: dueDate.slice(0, 10),
         status: computeDeadlineStatus(
           dueDate,
-          typeof fm.status === "string" ? fm.status : undefined,
+          // "erledigt", "completed", … are done too — same closed set as
+          // the reminders (isClosedDeadline), never "overdue".
+          isClosedDeadline(fm) ? "done" : typeof fm.status === "string" ? fm.status : undefined,
           typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined,
           typeof fm.erv_zustelldatum === "string" ? fm.erv_zustelldatum : undefined
         ),
@@ -298,9 +316,10 @@ export async function loadFristenReadModel(
       for (const d of rawDeadlines) {
         const dueDate = d.due_date;
         if (!dueDate) continue;
-        // Stored JSON can carry "cancelled"/"storniert" even though the
-        // DeadlineStatus union doesn't list them.
-        if (/^(cancelled|storniert)$/i.test(String(d.status ?? ""))) continue;
+        // Stored JSON can carry "cancelled"/"storniert"/"erledigt" even
+        // though the DeadlineStatus union doesn't list them; a discarded AI
+        // suggestion is gone here just like on a deadline page.
+        if (isDiscardedDeadline(d)) continue;
 
         const f: Frist = {
           id: d.id || `${page.slug}-${dueDate}`,
@@ -309,7 +328,12 @@ export async function loadFristenReadModel(
           title: d.title || d.description || "Frist",
           description: d.description,
           due_date: dueDate.slice(0, 10),
-          status: computeDeadlineStatus(dueDate, d.status, d.vorfrist_date, d.erv_zustelldatum),
+          status: computeDeadlineStatus(
+            dueDate,
+            isClosedDeadline(d) ? "done" : d.status,
+            d.vorfrist_date,
+            d.erv_zustelldatum
+          ),
           type: d.type || "deadline",
           law: d.law,
           court: d.court,
@@ -372,4 +396,20 @@ export async function loadFristenReadModel(
   }
 
   return { fristen, failedSources };
+}
+
+/**
+ * Polling surfaces (topbar warnings, copilot deadline alerts) ask for the
+ * read model on every dashboard page, in every tab, every minute. They share
+ * one build per caller (brain + access) and options for 30 s — the
+ * Fristenbuch itself reads uncached.
+ */
+const pollingCache = createTtlCache<FristenReadModel>(30_000);
+
+export function loadFristenReadModelCached(
+  headers: Record<string, string>,
+  opts: { caseFilter?: string; heute?: string } = {}
+): Promise<FristenReadModel> {
+  const key = [headersCacheKey(headers), opts.caseFilter ?? "", opts.heute ?? ""].join("\u0000");
+  return pollingCache.get(key, () => loadFristenReadModel(headers, opts));
 }

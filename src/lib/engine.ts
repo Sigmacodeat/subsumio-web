@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { effectivePlan } from "@/lib/billing/trial";
 import { verifySession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
+import { isPersonalBrainOfOtherFirm } from "@/lib/auth/firm-brain";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
 import {
@@ -31,10 +32,16 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
+import {
+  supportAccessLogKey,
+  supportEngineRole,
+  supportSessionBlocksRequest,
+} from "@/lib/support-session-policy";
 import { getTenant } from "@/lib/tenants";
 import { billingAccountFor, type BillingAccount } from "@/lib/billing/billing-account";
 
 import { logger } from "@/lib/logger";
+import { MODEL_POLICY_HEADER, modelPolicyHeaderValue } from "@/lib/eu-policy-refusal";
 const log = logger("lib/engine");
 
 const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
@@ -125,6 +132,9 @@ export interface EngineContext {
   /** Registry sid of the current session — lets routes mark it as "Diese
    *  Sitzung" in the active-sessions list and revoke it on logout. */
   sessionId?: string;
+  /** Set when the request authenticated with an API key or an add-in token
+   *  instead of a browser session (src/lib/auth/api-key-auth.ts). */
+  apiKey?: { id: string; kind: "api" | "addin" };
   /** Set only while a platform operator is inside a time-boxed support
    *  session (see src/lib/support-session.ts) — never for firm users. */
   supportSession?: SupportSession;
@@ -144,6 +154,12 @@ export interface EngineContext {
     questionsCap: number;
     ingested: boolean;
   };
+  /**
+   * Quota unit already booked by the request guard (checkQuota reserves one
+   * unit atomically with the check). recordQuota consumes it first, so a
+   * request that is checked AND recorded counts once, not twice.
+   */
+  quotaReservation?: { field: QuotaType; remaining: number };
 }
 
 /**
@@ -223,6 +239,10 @@ export async function engineContext(): Promise<EngineContext | null> {
   let effectiveUser = user;
   let supportSession: SupportSession | undefined;
   let billing = billingAccountFor(user, null);
+  // The firm's "Nur EU" setting, enforced by the engine for every request.
+  let modelPolicy: "any" | "eu_only" | undefined;
+  // Set once the brain comes from the person's firm (not their own brainId).
+  let viaFirm = false;
 
   if (isPlatformOperator(user)) {
     const active = await getActiveSupportSession(user.id);
@@ -235,6 +255,7 @@ export async function engineContext(): Promise<EngineContext | null> {
         const payer = await getStore().getById(tenant.billing.ownerId);
         if (payer) plan = effectivePlan(payer);
         supportSession = active;
+        modelPolicy = tenant.org?.modelPolicy;
         effectiveUser = { ...user, role: "admin", orgId: tenant.org?.id ?? null };
       }
     }
@@ -246,6 +267,8 @@ export async function engineContext(): Promise<EngineContext | null> {
     if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
+      viaFirm = true;
+      modelPolicy = org.modelPolicy;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
       if (payer) plan = effectivePlan(payer);
@@ -259,6 +282,12 @@ export async function engineContext(): Promise<EngineContext | null> {
     }
   }
 
+  // A personal brain that is the shared brain of a firm this person no longer
+  // belongs to (a founder after leaving) is never opened — fail closed.
+  if (!supportSession && !viaFirm && (await isPersonalBrainOfOtherFirm(effectiveUser))) {
+    return null;
+  }
+
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
@@ -270,7 +299,18 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (user.jurisdiction) {
     headers["x-subsumio-jurisdiction"] = user.jurisdiction;
   }
-  addCallerIdentity(headers, brainId, effectiveUser);
+  // Always stated (eu_only | any): the engine remembers it per source so the
+  // firm's server-side work without a session stays under the same policy.
+  headers[MODEL_POLICY_HEADER] = modelPolicyHeaderValue(modelPolicy);
+  // Inside a support session the engine sees a non-admin role, so restricted
+  // matters and document ACLs of the firm stay closed (support-session-policy).
+  addCallerIdentity(
+    headers,
+    brainId,
+    supportSession
+      ? { ...effectiveUser, role: supportEngineRole(supportSession.mode) }
+      : effectiveUser
+  );
   return {
     headers,
     brainId,
@@ -292,7 +332,8 @@ export async function engineContext(): Promise<EngineContext | null> {
 export function addCallerIdentity(
   headers: Record<string, string>,
   brainId: string,
-  user: Pick<User, "id" | "role" | "orgId">
+  // role is a string: support sessions sign "support"/"lawyer" for the engine.
+  user: Pick<User, "id" | "orgId"> & { role: string }
 ): Record<string, string> {
   const token = createSignedIdentityToken(brainId, "all", {
     userId: user.id,
@@ -309,16 +350,20 @@ export function addCallerIdentity(
  * engineContext() (minus support sessions, which never apply to a login).
  * A member's own `user.brainId` is the unused personal workspace from their
  * signup (org/join leaves it untouched), so firm-wide settings must never be
- * read from it. Returns null when the firm is suspended. Store errors throw.
+ * read from it. Returns null when the firm is suspended, or when a person
+ * without a firm holds a firm's brain as their own (see auth/firm-brain.ts).
+ * Store errors throw.
  */
 export async function firmBrainIdFor(
   user: Pick<User, "brainId" | "orgId">
 ): Promise<string | null> {
-  if (!user.orgId) return user.brainId;
-  const org = await getOrgStore().getById(user.orgId);
+  const org = user.orgId ? await getOrgStore().getById(user.orgId) : null;
   if (org?.suspendedAt) return null;
-  // `orgId` without a firm behind it: the person works alone (see engineContext).
-  return org ? org.brainId : user.brainId;
+  if (org) return org.brainId;
+  // No firm (or `orgId` without a firm behind it — see engineContext): the
+  // person works alone, unless their own brain is a firm's shared brain.
+  if (await isPersonalBrainOfOtherFirm({ brainId: user.brainId, orgId: null })) return null;
+  return user.brainId;
 }
 
 /**
@@ -491,14 +536,18 @@ export function engineHeadersForBrainWithMatterScope(
  * Merge-update a page's frontmatter (and optionally content/title/type) on the
  * engine.
  *
- * The engine exposes ONLY `GET` + `POST` on `/api/pages` — there is NO `PATCH`
- * and NO `DELETE` route. A partial update is `POST /api/pages` with
- * `merge:true`: the engine loads the existing page, overlays the provided
+ * The engine has NO `PATCH` route on `/api/pages`. A partial update is
+ * `POST /api/pages` with `merge:true`: the engine loads the existing page, overlays the provided
  * frontmatter keys, and keeps the body/title/type when omitted. This helper is
  * the single correct way for server routes to patch a page. The previous
  * `PATCH ${ENGINE_URL}/api/pages/{slug}` calls hit a non-existent route and
  * 404'd silently, so every frontmatter writeback (case reconciliation, analysis
  * status, archive/restore cascades) was a no-op.
+ *
+ * Deleting is a separate route: `DELETE /api/pages/{slug}` soft-deletes the
+ * page (`deleted_at`, matter write check, restorable; lists leave it out).
+ * Some web paths still "delete" by stamping `status: "tombstoned"` through
+ * this helper instead — see src/lib/tombstone.ts.
  *
  * Semantics worth knowing:
  *  - Pass a frontmatter key with value `null` to REMOVE it — the engine drops
@@ -573,9 +622,65 @@ export async function requireEngineContext(
     return forbidden(action);
   }
 
+  // 1b. A read-only support session changes nothing in the firm.
+  if (supportSessionBlocksRequest(ctx.supportSession, req.method, action)) {
+    return Response.json(
+      {
+        error: "support_read_only",
+        message:
+          "Support-Zugriff ist nur lesend. Für Änderungen eine Sitzung mit Schreibzugriff (eigene Begründung) starten.",
+      },
+      { status: 403 }
+    );
+  }
+
+  // 1c. Every access inside a support session is recorded in the firm's own
+  //     audit trail before it is served; if the entry cannot be stored, the
+  //     request is refused (fail-closed).
+  if (ctx.supportSession) {
+    const refused = await recordSupportAccess(ctx, req, action);
+    if (refused) return refused;
+  }
+
   const guard = await applyUsageGuards(ctx, rateTier, quotaField, creditOp);
   if (guard) return guard;
   return ctx;
+}
+
+const SUPPORT_ACCESS_LOGGED = new Set<string>();
+
+async function recordSupportAccess(
+  ctx: EngineContext,
+  req: Request,
+  action: string
+): Promise<Response | null> {
+  let pathname = "";
+  try {
+    pathname = new URL(req.url).pathname;
+  } catch {
+    pathname = "(unbekannt)";
+  }
+  const key = supportAccessLogKey(ctx.supportSession, req.method, pathname, action);
+  if (!key || SUPPORT_ACCESS_LOGGED.has(key)) return null;
+  // Dynamic import: support-session-audit imports this module.
+  const { writeSupportAccessAuditEntry } = await import("@/lib/support-session-audit");
+  const stored = await writeSupportAccessAuditEntry(ctx.brainId, ctx.supportSession!, {
+    method: req.method.toUpperCase(),
+    path: pathname,
+    action,
+  });
+  if (!stored) {
+    return Response.json(
+      {
+        error: "Support-Zugriff konnte nicht protokolliert werden",
+        code: "support_audit_unavailable",
+      },
+      { status: 503 }
+    );
+  }
+  if (SUPPORT_ACCESS_LOGGED.size > 10_000) SUPPORT_ACCESS_LOGGED.clear();
+  SUPPORT_ACCESS_LOGGED.add(key);
+  return null;
 }
 
 /**
@@ -623,6 +728,7 @@ export async function applyUsageGuards(
     if (!quota.ok) {
       return quotaExceeded(quotaField, quota.used, quota.limit);
     }
+    if (quota.reserved) ctx.quotaReservation = { field: quotaField, remaining: 1 };
   }
 
   return null;
@@ -638,7 +744,15 @@ export async function recordQuota(
   amount = 1
 ): Promise<void> {
   if (ctx.demo) return;
-  await incQuota(ctx.brainId, field, amount);
+  let book = amount;
+  // The unit reserved by the request guard is this request's first unit.
+  const reservation = ctx.quotaReservation;
+  if (reservation && reservation.field === field && reservation.remaining > 0 && book > 0) {
+    const used = Math.min(reservation.remaining, book);
+    reservation.remaining -= used;
+    book -= used;
+  }
+  if (book > 0) await incQuota(ctx.brainId, field, book);
 }
 
 /**
@@ -660,13 +774,30 @@ export async function recordCreditConsumption(
   usage?: ActionUsage,
   /** Pass one when the usage is only known later — see attachUsageToBooking. */
   idempotencyKey?: string
-): Promise<void> {
+): Promise<{ ok: boolean; balance?: number; required?: number }> {
   const cost = CREDIT_COSTS[operation];
-  if (cost <= 0 || ctx.demo) return;
+  if (cost <= 0 || ctx.demo) return { ok: true };
   const ownerType: OwnerType = ctx.billing.ownerType;
   const ownerId = ctx.billing.ownerId;
+  let booked = false;
   try {
-    await deductCredits(ownerId, ownerType, cost, { operation, caseSlug, usage, idempotencyKey });
+    const deducted = await deductCredits(ownerId, ownerType, cost, {
+      operation,
+      caseSlug,
+      usage,
+      idempotencyKey,
+    });
+    if (!deducted.ok) {
+      // The pre-flight check passed but the booking did not (parallel requests
+      // drained the balance, spend cap, or a database error). Never silent:
+      // this is AI work that went unpaid.
+      log.warn(
+        `[credits] booking refused: operation=${operation} owner=${ownerType}:${ownerId} ` +
+          `required=${deducted.required} balance=${deducted.balance}`
+      );
+      return { ok: false, balance: deducted.balance, required: deducted.required };
+    }
+    booked = true;
     // Budget Alert prüfen (50%/75%/90% wie OpenAI) — non-blocking.
     // Fire-and-forget: don't fail the operation if the alert fails.
     const { balance } = await getBalance(ownerId, ownerType);
@@ -675,10 +806,12 @@ export async function recordCreditConsumption(
         // best-effort, ignore errors
       });
     }
+    return { ok: true, balance };
   } catch (err) {
     log.error(
       `[credits] consumption record failed: ${err instanceof Error ? err.message : String(err)}`
     );
+    return { ok: booked };
   }
 }
 

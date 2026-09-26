@@ -6,6 +6,17 @@
    2. Brain-Query: Frage an das Brain stellen (via /api/think)
 */
 
+import {
+  clearStoredSession,
+  msUntilRenewal,
+  openSignInDialog,
+  readStoredSession,
+  safeSessionStorage,
+  storeSession,
+  type AddinSession,
+} from "./addin-auth";
+import { createThinkStreamParser } from "./think-stream";
+
 interface CaseSuggestion {
   slug: string;
   caseNumber?: string;
@@ -21,9 +32,10 @@ interface AttachmentMeta {
 }
 
 const API_BASE = "https://subsum.io";
-let token = "";
-const _tokenName = "";
-let _connected = false;
+/** Short-lived add-in token from the sign-in dialog — memory + sessionStorage only. */
+let session: AddinSession | null = null;
+let renewTimer: ReturnType<typeof setTimeout> | undefined;
+let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
 let currentAttachments: AttachmentMeta[] = [];
@@ -90,7 +102,11 @@ function hideAiNotice(noticeId: string) {
  * /api/legal/ground (non-blocking). A failed check says so instead of passing
  * the answer off as verified.
  */
-async function showAiNoticeAndGround(noticeId: string, answer: string): Promise<void> {
+async function showAiNoticeAndGround(
+  noticeId: string,
+  answer: string,
+  serverGrounding?: GroundingResult
+): Promise<void> {
   const el = document.getElementById(noticeId);
   if (!el) return;
   el.innerHTML = `<div style="font-weight:700;color:#e0b341">${AI_BADGE_LABEL}</div><div style="color:#e0b341">${AI_NOTICE}</div>`;
@@ -99,12 +115,18 @@ async function showAiNoticeAndGround(noticeId: string, answer: string): Promise<
   if (text.length < 10) return;
   const slot = document.createElement("div");
   slot.style.cssText = "margin-top:4px;color:#9a9ab8";
-  slot.textContent = "Fundstellen werden geprüft…";
   el.appendChild(slot);
+  // The server already checked this answer's citations — show that result
+  // instead of checking the same text a second time.
+  if (serverGrounding) {
+    slot.innerHTML = groundingHtml(serverGrounding);
+    return;
+  }
+  slot.textContent = "Fundstellen werden geprüft…";
   try {
-    const res = await fetch(`${API_BASE}/api/legal/ground`, {
+    const res = await apiFetch("/api/legal/ground", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text.slice(0, 50_000) }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -119,59 +141,131 @@ function withAiNotice(draft: string): string {
   return `${draft.trim()}\n\n— ${AI_BADGE_LABEL}: ${AI_NOTICE}`;
 }
 
+/**
+ * Every API call authenticates with the add-in token only: cookies of a web
+ * session on the same origin are never sent (they would bypass the token and
+ * trip the browser CSRF check). A 401 ends the session in the pane.
+ */
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!session) throw new Error("Nicht angemeldet — bitte zuerst anmelden.");
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${session.token}`);
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers, credentials: "omit" });
+  if (res.status === 401) {
+    endSession("Ihr Add-in-Zugang ist abgelaufen oder wurde widerrufen. Bitte erneut anmelden.");
+  }
+  return res;
+}
+
+function setButtonBusy(id: string, busy: boolean, label: string, busyLabel: string) {
+  const btn = document.getElementById(id) as HTMLButtonElement | null;
+  if (!btn) return;
+  btn.disabled = busy;
+  if (busy) btn.innerHTML = `<div class="spinner"></div> ${busyLabel}`;
+  else btn.textContent = label;
+}
+
+/** Sign in through the Office dialog (normal web sign-in incl. 2FA). */
+async function signIn() {
+  setButtonBusy("signInBtn", true, "Anmelden", "Anmeldung läuft…");
+  try {
+    const next = await openSignInDialog(Office, { apiBase: API_BASE, client: "outlook" });
+    await startSession(next);
+  } catch (e) {
+    showStatus(e instanceof Error ? e.message : "Anmeldung fehlgeschlagen.", "err");
+  } finally {
+    setButtonBusy("signInBtn", false, "Anmelden", "");
+  }
+}
+
+/** Fallback for Outlook versions without the dialog: a pasted add-in token. */
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
-  token = input.value.trim();
-  if (!token) {
-    showStatus("Bitte API-Key eingeben (sk_live_...).", "err");
+  const value = input.value.trim();
+  input.value = "";
+  // Only short-lived add-in tokens (24 h, revocable) — never a permanent API key.
+  if (!value.startsWith("sk_addin_")) {
+    showStatus(
+      "Bitte einen Add-in-Zugang verwenden (beginnt mit „sk_addin_“) oder „Anmelden“ nutzen.",
+      "err"
+    );
     return;
   }
-
-  if (!token.startsWith("sk_live_")) {
-    showStatus("API-Key muss mit 'sk_live_' beginnen.", "err");
-    return;
-  }
-
-  const btn = document.getElementById("connectBtn") as HTMLButtonElement;
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Wird verbunden…';
-
+  setButtonBusy("connectBtn", true, "Verbinden", "Wird verbunden…");
   try {
-    const res = await fetch(`${API_BASE}/api/brains`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showStatus("Verbunden.", "ok");
-    _connected = true;
-    localStorage.setItem("subsumio_api_key", token);
-    document.getElementById("mainSection")!.style.display = "block";
-    document.getElementById("authSection")!.style.display = "none";
-    document.getElementById("connectedSection")!.style.display = "flex";
-    loadCurrentMail();
+    // A pasted token lives at most 24 hours; the server enforces the real expiry.
+    await startSession({ token: value, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Verbindung fehlgeschlagen.", "err");
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = "Verbinden";
+    setButtonBusy("connectBtn", false, "Verbinden", "");
   }
 }
 
-function disconnect() {
-  token = "";
-  _connected = false;
-  localStorage.removeItem("subsumio_api_key");
+async function startSession(next: AddinSession) {
+  session = next;
+  try {
+    const res = await apiFetch("/api/brains");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (e) {
+    endSession(null);
+    throw e;
+  }
+  storeSession(safeSessionStorage(), next);
+  scheduleRenewal(next);
+  showStatus("Verbunden.", "ok");
+  document.getElementById("mainSection")!.style.display = "block";
+  document.getElementById("authSection")!.style.display = "none";
+  document.getElementById("connectedSection")!.style.display = "flex";
+  loadCurrentMail();
+}
+
+/** Ask for a new sign-in shortly before the token expires; sign out at expiry. */
+function scheduleRenewal(current: AddinSession) {
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
+  renewTimer = setTimeout(() => {
+    if (notice) notice.style.display = "block";
+  }, msUntilRenewal(current));
+  expiryTimer = setTimeout(
+    () => endSession("Ihr Add-in-Zugang ist abgelaufen. Bitte erneut anmelden."),
+    Math.max(0, current.expiresAt - Date.now())
+  );
+}
+
+/** Ends the session in this pane (memory, sessionStorage, timers, UI). */
+function endSession(message: string | null) {
+  session = null;
+  clearTimeout(renewTimer);
+  clearTimeout(expiryTimer);
+  clearStoredSession(safeSessionStorage());
+  const notice = document.getElementById("sessionNotice");
+  if (notice) notice.style.display = "none";
   document.getElementById("mainSection")!.style.display = "none";
   document.getElementById("authSection")!.style.display = "block";
   document.getElementById("connectedSection")!.style.display = "none";
-  (document.getElementById("token") as HTMLInputElement).value = "";
-  showStatus("Getrennt.", "info");
+  if (message) showStatus(message, "err");
 }
 
-function tryRestoreSession() {
-  const saved = localStorage.getItem("subsumio_api_key");
-  if (saved && saved.startsWith("sk_live_")) {
-    (document.getElementById("token") as HTMLInputElement).value = saved;
-    connect();
+/** Sign out: revoke this add-in's token on the server, then forget it. */
+async function disconnect() {
+  let revoked = false;
+  try {
+    const res = await apiFetch("/api/addin-token", { method: "DELETE" });
+    revoked = res.ok;
+  } catch {
+    revoked = false;
+  }
+  endSession(null);
+  if (revoked) {
+    showStatus("Abgemeldet — der Zugang dieses Add-ins wurde widerrufen.", "info");
+  } else {
+    showStatus(
+      "Lokal abgemeldet. Der Zugang konnte nicht widerrufen werden; bitte in Subsumio widerrufen.",
+      "err"
+    );
   }
 }
 
@@ -179,18 +273,22 @@ async function loadCurrentMail() {
   try {
     const item = Office.context.mailbox.item;
 
+    // The add-in works on received mails (read mode). In compose mode the
+    // fields are async objects, not values — refuse instead of importing
+    // "[object Object]".
+    if (typeof item.subject !== "string" && item.subject !== undefined) {
+      showStatus("Subsumio ist für empfangene E-Mails verfügbar, nicht beim Verfassen.", "err");
+      return;
+    }
     const subject = item.subject || "(Kein Betreff)";
-    const from = item.from
-      ? item.from.emailAddress
-      : item.sender
-        ? item.sender.emailAddress
-        : "unbekannt@absender.de";
+    // No invented sender: without one the import is blocked (see importMail).
+    const from: string = item.from?.emailAddress || item.sender?.emailAddress || "";
     const date = item.dateTimeCreated ? new Date(item.dateTimeCreated).toISOString() : undefined;
 
     currentMail = { subject, from, body: "", date };
 
     document.getElementById("mailSubject")!.textContent = subject;
-    document.getElementById("mailFrom")!.textContent = from;
+    document.getElementById("mailFrom")!.textContent = from || "(Absender unbekannt)";
 
     // WP-4.21: Anhänge der geöffneten Mail auflisten (Read-Mode liefert
     // Metadaten; Inhalt erst bei Bedarf via getAttachmentContentAsync).
@@ -233,6 +331,13 @@ async function importMail() {
     showStatus("Keine E-Mail geladen.", "err");
     return;
   }
+  if (!currentMail.from) {
+    showStatus(
+      "Der Absender dieser E-Mail ist nicht bekannt — Import nicht möglich. Bitte die E-Mail manuell ablegen.",
+      "err"
+    );
+    return;
+  }
 
   const btn = document.getElementById("importBtn") as HTMLButtonElement;
   const btnText = document.getElementById("importBtnText")!;
@@ -240,9 +345,9 @@ async function importMail() {
   btnText.innerHTML = '<div class="spinner"></div> Importiere…';
 
   try {
-    const res = await fetch(`${API_BASE}/api/email-import`, {
+    const res = await apiFetch("/api/email-import", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -291,13 +396,17 @@ function renderCaseSuggestions(suggestions: CaseSuggestion[]) {
 
 async function importToSpecificCase(slug: string) {
   if (!currentMail) return;
+  if (!currentMail.from) {
+    showStatus("Der Absender dieser E-Mail ist nicht bekannt — Import nicht möglich.", "err");
+    return;
+  }
 
   showStatus("Importiere in ausgewählte Akte…", "info");
 
   try {
-    const res = await fetch(`${API_BASE}/api/email-import`, {
+    const res = await apiFetch("/api/email-import", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -341,9 +450,9 @@ async function runQuery() {
   hideAiNotice("queryNotice");
 
   try {
-    const res = await fetch(`${API_BASE}/api/think`, {
+    const res = await apiFetch("/api/think", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, mode: currentMode }),
     });
 
@@ -351,34 +460,38 @@ async function runQuery() {
 
     const contentType = res.headers.get("Content-Type") || "";
     if (contentType.includes("text/event-stream") && res.body) {
+      // Engine stream: {chunk} text, {final_answer} replaces the draft after
+      // verification, {grounding} is the server's citation check, [DONE] ends.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let result = "";
-
-      while (true) {
+      const parser = createThinkStreamParser();
+      while (!parser.state.done) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              if (parsed.content || parsed.text || parsed.delta) {
-                result += parsed.content || parsed.text || parsed.delta || "";
-                resultEl.textContent = result;
-              }
-            } catch {
-              result += line.slice(6);
-              resultEl.textContent = result;
-            }
-          }
+        if (parser.push(decoder.decode(value, { stream: true }))) {
+          resultEl.textContent = parser.state.answer;
         }
       }
-      if (!result) resultEl.textContent = "(Leere Antwort)";
-      else void showAiNoticeAndGround("queryNotice", result);
+      if (parser.end()) resultEl.textContent = parser.state.answer;
+      await reader.cancel().catch(() => {});
+      const { answer, grounding, error } = parser.state;
+      if (error && !answer) throw new Error(error);
+      if (!answer) resultEl.textContent = "(Leere Antwort)";
+      else {
+        resultEl.textContent = answer;
+        void showAiNoticeAndGround("queryNotice", answer, grounding);
+      }
     } else {
-      const text = await res.text();
+      // JSON answer ({answer} or {data:{answer}}) — never show the raw JSON.
+      const raw = await res.text();
+      let text = raw;
+      try {
+        const j = JSON.parse(raw) as { answer?: unknown; data?: { answer?: unknown } };
+        const a = j.answer ?? j.data?.answer;
+        if (typeof a === "string") text = a;
+      } catch {
+        /* plain text */
+      }
       resultEl.textContent = text;
       if (text.trim()) void showAiNoticeAndGround("queryNotice", text);
     }
@@ -423,9 +536,9 @@ async function draftReply() {
   resultEl.textContent = "Der Assistent liest die E-Mail und entwirft eine Antwort…";
 
   try {
-    const res = await fetch(`${API_BASE}/api/email/draft-reply`, {
+    const res = await apiFetch("/api/email/draft-reply", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject: currentMail.subject,
         from: currentMail.from,
@@ -514,9 +627,7 @@ async function loadAttachCases() {
   const sel = document.getElementById("attachCaseSelect") as HTMLSelectElement | null;
   if (!sel) return;
   try {
-    const res = await fetch(`${API_BASE}/api/pages?type=legal_case&limit=200`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch("/api/pages?type=legal_case&limit=200");
     if (!res.ok) return;
     const raw = (await res.json()) as unknown;
     const pages = (
@@ -607,9 +718,8 @@ async function fileAttachments() {
       fd.append("file", new File([blob], att.name, { type: att.contentType }));
       fd.append("case_slug", caseSlug);
       fd.append("source", "legal_case");
-      const res = await fetch(`${API_BASE}/api/upload`, {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -655,12 +765,14 @@ function escapeHtml(text: string): string {
 /**
  * Wire every handler via addEventListener instead of inline onclick=""
  * attributes. This is what lets taskpane.html ship a CSP with no
- * 'unsafe-inline' in script-src — the load-bearing defense for the
- * sk_live_ API key held in localStorage (see connect()/tryRestoreSession()):
- * a strict script-src means an injected <script> or onerror= payload can't
- * execute even if it lands in the DOM somewhere, since no inline JS runs.
+ * 'unsafe-inline' in script-src — a defense for the add-in token held while
+ * the taskpane is open: a strict script-src means an injected <script>
+ * or onerror= payload can't execute even if it lands in the DOM somewhere,
+ * since no inline JS runs.
  */
 function wireUpHandlers() {
+  document.getElementById("signInBtn")?.addEventListener("click", signIn);
+  document.getElementById("renewBtn")?.addEventListener("click", signIn);
   document.getElementById("connectBtn")?.addEventListener("click", connect);
   document.getElementById("disconnectBtn")?.addEventListener("click", disconnect);
   document.getElementById("importBtn")?.addEventListener("click", importMail);
@@ -687,5 +799,12 @@ function wireUpHandlers() {
 // Office initialization
 Office.onReady(() => {
   wireUpHandlers();
-  tryRestoreSession();
+  // Reopened pane in the same Office session: continue while the token is valid.
+  const storage = safeSessionStorage();
+  const stored = readStoredSession(storage);
+  if (stored) {
+    void startSession(stored).catch(() => undefined);
+  } else {
+    clearStoredSession(storage);
+  }
 });

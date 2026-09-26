@@ -72,3 +72,18 @@ Alle übrigen 17 Einträge stimmen überein. Der Crontab enthält 35 Jobs, `verc
 - `/api/cron/outlook-user-sync` (WP-4.19): 2-Wege-Kalendersync pro Nutzer
   via delegiertem Microsoft-OAuth. Empfohlener Zeitplan `*/15 * * * *`.
 - `/api/cron/sanctions-sync` prüft jetzt EU + UN + OFAC (WP-4.18).
+
+## Entfernt am 26.09.2026
+
+- `/api/cron/judikatur-watch` (02:00 UTC): Judikatur-Wächter pro Kanzlei — nur RIS-Abfragen, keine Modellaufrufe.
+- `/api/cron/case-scanner`: kein automatischer Nachtlauf mehr (Produktentscheidung). Der
+  Akten-Scan startet nur auf Abruf durch Anwalt/Admin — für eine Akte, eine Auswahl oder
+  alle offenen Akten (höchstens 50), nach Kostenvorschau in Credits und Bestätigung. Die
+  Route bleibt bestehen und antwortet mit `410` „deaktiviert"; der Crontab-Eintrag ist
+  entfernt.
+- `/api/cron/contradiction-probe` (03:00 UTC): Nachtlauf pro Kanzlei (nur zahlende bzw.
+  Testphase): in den letzten 24 h geänderte Dokumente werden gegen die Dokumente derselben
+  Kanzlei geprüft. Jeder Lauf ist an die Quelle der Kanzlei gebunden (Suche, Paare und
+  gespeicherter Lauf nie kanzleiübergreifend) und durch ein Tagesbudget pro Kanzlei gedeckelt
+  (`CONTRADICTION_PROBE_DAILY_BUDGET_USD`, Standard 2 USD). Manuell: `brain_id` plus genau einer
+  von `doc_type`/`query`/`recent_hours` (sonst `400`).

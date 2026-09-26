@@ -57,6 +57,9 @@ export function extrahiereNormen(groundingBody: string): string[] {
 }
 
 /** RIS Suchworte query: the norm as a phrase. */
+/** RIS-OGD terms: at most 0.5 requests per second → 2 s between requests. */
+export const RIS_WATCH_PAUSE_MS = 2_000;
+
 export function buildRisQuery(norm: string): string {
   return `"${norm}"`;
 }
@@ -169,6 +172,13 @@ export async function runJudikaturWatch(
     maxAkten?: number;
     /** Max Normen pro Akte. */
     maxNormenProAkte?: number;
+    /**
+     * Pause zwischen zwei RIS-Anfragen (RIS-OGD: höchstens 0,5 Anfragen/s).
+     * Default RIS_WATCH_PAUSE_MS.
+     */
+    pauseMs?: number;
+    /** Für Tests: Warten ersetzen. */
+    sleep?: (ms: number) => Promise<void>;
   }
 ): Promise<WatchRunResult> {
   const heute = opts.heute ?? new Date().toISOString().slice(0, 10);
@@ -178,6 +188,35 @@ export async function runJudikaturWatch(
   const maxAkten = opts.maxAkten ?? 25;
   const maxNormen = opts.maxNormenProAkte ?? 10;
   const fehler: string[] = [];
+  const pauseMs = opts.pauseMs ?? RIS_WATCH_PAUSE_MS;
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+
+  // One RIS query per norm and run, however many Akten cite it, and never
+  // two queries back to back: the RIS terms allow at most 0.5 requests/s.
+  // Every Akte then filters the shared hits against its own seen-list.
+  const perNorm = new Map<string, Promise<RisTreffer[] | { error: string }>>();
+  let lastRequestAt = 0;
+  const risTreffer = (norm: string): Promise<RisTreffer[] | { error: string }> => {
+    let p = perNorm.get(norm);
+    if (!p) {
+      p = (async () => {
+        const wait = lastRequestAt + pauseMs - Date.now();
+        if (lastRequestAt > 0 && wait > 0) await sleep(wait);
+        lastRequestAt = Date.now();
+        try {
+          const res = await opts.fetchImpl(buildRisUrl(norm, since));
+          if (!res.ok) return { error: `RIS HTTP ${res.status} für ${norm}` };
+          return parseRisResponse(await res.json());
+        } catch (err) {
+          return {
+            error: `RIS-Abfrage fehlgeschlagen für ${norm}: ${err instanceof Error ? err.message : String(err)}`,
+          };
+        }
+      })();
+      perNorm.set(norm, p);
+    }
+    return p;
+  };
 
   const srcCond = opts.sourceId && opts.sourceId !== "default" ? "AND source_id = $1" : "";
   const srcParams = opts.sourceId && opts.sourceId !== "default" ? [opts.sourceId] : [];
@@ -219,24 +258,16 @@ export async function runJudikaturWatch(
 
     const caseAlerts: JudikaturAlert[] = [];
     for (const norm of normen) {
-      try {
-        const res = await opts.fetchImpl(buildRisUrl(norm, since));
-        if (!res.ok) {
-          fehler.push(`RIS HTTP ${res.status} für ${norm} (${caseSlug})`);
-          continue;
-        }
-        const treffer = parseRisResponse(await res.json()).filter(
-          (t) => !seen.has(t.dokumentnummer)
-        );
-        if (treffer.length > 0) {
-          caseAlerts.push({ caseSlug, norm, treffer });
-          for (const t of treffer) seen.add(t.dokumentnummer);
-          neueGesamt += treffer.length;
-        }
-      } catch (err) {
-        fehler.push(
-          `RIS-Abfrage fehlgeschlagen für ${norm} (${caseSlug}): ${err instanceof Error ? err.message : String(err)}`
-        );
+      const result = await risTreffer(norm);
+      if (!Array.isArray(result)) {
+        fehler.push(`${result.error} (${caseSlug})`);
+        continue;
+      }
+      const treffer = result.filter((t) => !seen.has(t.dokumentnummer));
+      if (treffer.length > 0) {
+        caseAlerts.push({ caseSlug, norm, treffer });
+        for (const t of treffer) seen.add(t.dokumentnummer);
+        neueGesamt += treffer.length;
       }
     }
 

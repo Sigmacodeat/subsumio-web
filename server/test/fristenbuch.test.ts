@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import {
   baueIcs,
+  fristenbuchHeute,
   icsEscape,
   ladeFristenbuch,
   parseDeadlineDate,
@@ -177,5 +178,23 @@ describe("approval gate for AI-extracted calendars", () => {
     );
     expect(approved.eintraege.every((e) => e.review_status === "approved")).toBe(true);
     expect(baueIcs(approved, { dtstamp: "2026-07-02T120000Z" })).not.toContain("UNGEPRÜFT");
+  });
+});
+
+describe("fristenbuchHeute — Kalendertag in Europe/Vienna (FRI-16)", () => {
+  it("Winterzeit (MEZ, UTC+1): 2026-03-10T23:30Z ist in Wien schon der 2026-03-11", () => {
+    expect(fristenbuchHeute(new Date("2026-03-10T23:30:00Z"))).toBe("2026-03-11");
+  });
+
+  it("Sommerzeit (MESZ, UTC+2): 2026-07-14T22:30Z ist in Wien schon der 2026-07-15", () => {
+    expect(fristenbuchHeute(new Date("2026-07-14T22:30:00Z"))).toBe("2026-07-15");
+  });
+
+  it("Zeitumstellung 29.03.2026: 2026-03-28T23:30Z → Wien 2026-03-29", () => {
+    expect(fristenbuchHeute(new Date("2026-03-28T23:30:00Z"))).toBe("2026-03-29");
+  });
+
+  it("Jahreswechsel: 2026-12-31T23:15Z → Wien 2027-01-01", () => {
+    expect(fristenbuchHeute(new Date("2026-12-31T23:15:00Z"))).toBe("2027-01-01");
   });
 });

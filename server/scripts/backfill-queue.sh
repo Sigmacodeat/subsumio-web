@@ -1,8 +1,7 @@
 #!/bin/bash
 # Sequential RIS backfill queue — runs each source one at a time
-# with direct connection (no proxy needed, RIS lock not required since single process)
+# with direct connection (RIS lock not required since single process)
 : "${DATABASE_URL:?DATABASE_URL is required}"
-export RIS_PROXY_URLS=
 cd /app
 
 SOURCES=(

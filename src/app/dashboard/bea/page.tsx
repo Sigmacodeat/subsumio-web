@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -30,6 +30,7 @@ import {
   type FilingPackage,
 } from "@/lib/efiling-architecture";
 import { JurisdictionGate } from "@/components/dashboard/jurisdiction-gate";
+import { csrfFetch } from "@/lib/csrf";
 
 interface BeaDraft {
   slug: string;
@@ -113,15 +114,16 @@ function BeaPageInner() {
       .catch(() => {});
     (async () => {
       try {
-        const batch = await api.brain.batchListPages(
+        const batch = await api.brain.batchListPagesDetailed(
           ["bea_draft", "bea_message", "filing_package", "bea_receipt"],
           50
         );
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
         if (cancelled) return;
-        const draftPages = batch["bea_draft"] ?? [];
-        const importedPages = batch["bea_message"] ?? [];
-        const filingPages = batch["filing_package"] ?? [];
-        const receiptPages = batch["bea_receipt"] ?? [];
+        const draftPages = batch.results["bea_draft"] ?? [];
+        const importedPages = batch.results["bea_message"] ?? [];
+        const filingPages = batch.results["filing_package"] ?? [];
+        const receiptPages = batch.results["bea_receipt"] ?? [];
         const receiptsByFiling: Record<
           string,
           { confirmationCode: string; receivedAt: string; isSuccess: boolean }
@@ -293,40 +295,35 @@ function BeaPageInner() {
   }
 
   async function exportXJustiz(draft: BeaDraft): Promise<void> {
+    const court = courtFor(draft);
+    if (!court) {
+      setStatusMessage("Bitte zuerst das empfangende Gericht im Entwurf eintragen.");
+      return;
+    }
     setExportingSlug(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/export", {
+      const res = await csrfFetch("/api/bea/export", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           case_slug: draft.slug,
-          court: draft.recipient || "Amtsgericht",
+          court,
           case_number: draft.caseNumber,
           subject: draft.subject,
-          sender_name: "Kanzlei",
           priority: "normal",
-          documents: [
-            {
-              title: draft.subject,
-              file_path: draft.slug,
-              mime_type: "application/pdf",
-              size_bytes: 0,
-              file_hash: "pending",
-              is_main_document: true,
-            },
-          ],
+          // The server exports the draft's stored text with its real size and hash.
+          draft_slug: draft.slug,
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const data = await res.json();
-      const blob = new Blob([data.xml], { type: "application/xml" });
+      const data = unwrap(await res.json());
+      const blob = new Blob([String(data.xml ?? "")], { type: "application/xml" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -343,35 +340,81 @@ function BeaPageInner() {
     }
   }
 
+  /** The receiving court of a draft — never a placeholder or a generic fallback. */
+  function courtFor(draft: BeaDraft): string | null {
+    const r = draft.recipient?.trim();
+    return r && r !== "—" ? r : null;
+  }
+
+  /**
+   * Runs a filing call; when the server refuses it because the draft is not
+   * verified (and an override is possible), asks for the attorney's reason and
+   * retries once with it. Returns null when the user cancels.
+   */
+  async function withFilingOverride<T>(
+    call: (override?: { reason: string }) => Promise<T>
+  ): Promise<T | null> {
+    try {
+      return await call();
+    } catch (e) {
+      const d =
+        e instanceof ApiRequestError
+          ? (e.data as { code?: string; details?: { override_possible?: boolean } } | undefined)
+          : undefined;
+      if (d?.code === "verification_denied" && d.details?.override_possible) {
+        const reason = prompt(
+          `${(e as Error).message}\n\nBegründung der anwaltlichen Freigabe (mindestens 10 Zeichen):`
+        )?.trim();
+        if (!reason) return null;
+        if (reason.length < 10) throw new Error("Die Begründung muss mindestens 10 Zeichen haben.");
+        return await call({ reason });
+      }
+      throw e;
+    }
+  }
+
+  function unwrap(res: unknown): Record<string, unknown> {
+    const r = (res ?? {}) as { data?: Record<string, unknown> };
+    return (r.data ?? r) as Record<string, unknown>;
+  }
+
   async function sendViaMiddleware(draft: BeaDraft): Promise<void> {
     const pkg = filings[draft.slug];
     if (!pkg) return;
+    const court = courtFor(draft);
+    if (!court) {
+      setStatusMessage("Bitte zuerst das empfangende Gericht im Entwurf eintragen.");
+      return;
+    }
     setSendingSlug(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await api.bea.send({
-        filing_slug: filingSlugForDraft(draft.slug),
-        draft_slug: draft.slug,
-        court: draft.recipient || "Amtsgericht",
-        case_number: draft.caseNumber,
-        subject: draft.subject,
-        sender_name: "Kanzlei",
-        priority: pkg.priority ?? "normal",
-        deadline_date: pkg.deadline_date,
-        deadline_id: pkg.deadline_id,
-        documents: pkg.documents.map((d) => ({
-          title: d.title,
-          file_path: d.file_path,
-          mime_type: d.mime_type,
-          size_bytes: d.size_bytes,
-          file_hash: d.file_hash,
-          is_main_document: d.is_main_document,
-        })),
-      });
-      const data = res as Record<string, unknown>;
+      const res = await withFilingOverride((verification_override) =>
+        api.bea.send({
+          filing_slug: filingSlugForDraft(draft.slug),
+          draft_slug: draft.slug,
+          court,
+          case_number: draft.caseNumber,
+          subject: draft.subject,
+          priority: pkg.priority ?? "normal",
+          deadline_date: pkg.deadline_date,
+          deadline_id: pkg.deadline_id,
+          verification_override,
+          documents: pkg.documents.map((d) => ({
+            title: d.title,
+            file_path: d.file_path,
+            mime_type: d.mime_type,
+            size_bytes: d.size_bytes,
+            file_hash: d.file_hash,
+            is_main_document: d.is_main_document,
+          })),
+        })
+      );
+      if (res === null) return;
+      const data = unwrap(res);
       if (data.status === "sent") {
         setStatusMessage(`beA-Versand erfolgreich. Bestätigungscode: ${data.confirmation_code}`);
-      } else if (data.status === "sending" && !data.middleware_configured) {
+      } else if (data.status === "export_manual" && !data.middleware_configured) {
         const xml = data.xml as string;
         const blob = new Blob([xml], { type: "application/xml" });
         const url = URL.createObjectURL(blob);
@@ -389,8 +432,9 @@ function BeaPageInner() {
         setStatusMessage(`Versand-Status: ${data.status}`);
       }
       // Reload filings to get updated state
-      const batch = await api.brain.batchListPages(["filing_package"], 50);
-      const filingPages = batch["filing_package"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["filing_package"], 50);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const filingPages = batch.results["filing_package"] ?? [];
       const filingsBySlug: Record<string, FilingPackage> = {};
       for (const p of filingPages) {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -409,28 +453,37 @@ function BeaPageInner() {
   async function retrySend(draft: BeaDraft): Promise<void> {
     const pkg = filings[draft.slug];
     if (!pkg) return;
+    const court = courtFor(draft);
+    if (!court) {
+      setStatusMessage("Bitte zuerst das empfangende Gericht im Entwurf eintragen.");
+      return;
+    }
     setRetryingSlug(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await api.bea.retry({
-        filing_slug: filingSlugForDraft(draft.slug),
-        draft_slug: draft.slug,
-        court: draft.recipient || "Amtsgericht",
-        case_number: draft.caseNumber,
-        subject: draft.subject,
-        sender_name: "Kanzlei",
-        priority: pkg.priority ?? "normal",
-        deadline_date: pkg.deadline_date,
-        deadline_id: pkg.deadline_id,
-      });
-      const data = res as Record<string, unknown>;
+      const res = await withFilingOverride((verification_override) =>
+        api.bea.retry({
+          filing_slug: filingSlugForDraft(draft.slug),
+          draft_slug: draft.slug,
+          court,
+          case_number: draft.caseNumber,
+          subject: draft.subject,
+          priority: pkg.priority ?? "normal",
+          deadline_date: pkg.deadline_date,
+          deadline_id: pkg.deadline_id,
+          verification_override,
+        })
+      );
+      if (res === null) return;
+      const data = unwrap(res);
       if (data.is_success) {
         setStatusMessage(`Retry erfolgreich. Bestätigungscode: ${data.confirmation_code}`);
       } else {
         setStatusMessage(`Retry fehlgeschlagen: ${data.status}`);
       }
-      const batch = await api.brain.batchListPages(["filing_package"], 50);
-      const filingPages = batch["filing_package"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(["filing_package"], 50);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const filingPages = batch.results["filing_package"] ?? [];
       const filingsBySlug: Record<string, FilingPackage> = {};
       for (const p of filingPages) {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -446,11 +499,6 @@ function BeaPageInner() {
     }
   }
 
-  async function getCsrfHeaders(): Promise<Record<string, string>> {
-    const match = document.cookie.match(/sb_csrf=([^;]+)/);
-    return match ? { "x-csrf-token": match[1] } : {};
-  }
-
   async function confirmReceipt(draft: BeaDraft): Promise<void> {
     const pkg = filings[draft.slug];
     if (!pkg) return;
@@ -459,11 +507,10 @@ function BeaPageInner() {
     setReceiptBusy(draft.slug);
     setStatusMessage(null);
     try {
-      const res = await fetch("/api/bea/receipt", {
+      const res = await csrfFetch("/api/bea/receipt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           filing_id: pkg.id,
@@ -479,7 +526,7 @@ function BeaPageInner() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const data = await res.json();
+      const data = unwrap(await res.json());
       setReceipts((prev) => ({
         ...prev,
         [pkg.id]: {
@@ -813,6 +860,44 @@ function BeaPageInner() {
                                   )}
                                   XJustiz-Export
                                 </Button>
+                                {receipts[filings[msg.slug].id] ? (
+                                  <Badge
+                                    variant="default"
+                                    className="border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] text-xs text-[color:var(--ds-success-text)]"
+                                  >
+                                    <CheckCircle2 size={10} className="mr-1" aria-hidden="true" />
+                                    {receipts[filings[msg.slug].id].confirmationCode}
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    variant="secondary"
+                                    className="h-7 gap-1 px-2 text-xs"
+                                    disabled={receiptBusy === msg.slug}
+                                    onClick={() => void confirmReceipt(msg)}
+                                  >
+                                    {receiptBusy === msg.slug ? (
+                                      <Loader2
+                                        size={12}
+                                        className="animate-spin"
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      <CheckCircle2 size={12} aria-hidden="true" />
+                                    )}
+                                    {t("bea.confirm_receipt")}
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                            {filings[msg.slug].status === "export_manual" && (
+                              <>
+                                <Badge
+                                  variant="default"
+                                  className="border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-xs text-[color:var(--ds-warning-text)]"
+                                >
+                                  <AlertTriangle size={10} className="mr-1" aria-hidden="true" />
+                                  {getFilingStatusLabel(filings[msg.slug].status)}
+                                </Badge>
                                 {receipts[filings[msg.slug].id] ? (
                                   <Badge
                                     variant="default"

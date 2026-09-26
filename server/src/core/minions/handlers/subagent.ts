@@ -40,10 +40,12 @@ import type { BrainEngine } from "../../engine.ts";
 import type { GBrainConfig } from "../../config.ts";
 import { loadConfig } from "../../config.ts";
 import { buildBrainTools, filterAllowedTools } from "../tools/brain-allowlist.ts";
-import { agentWriteBinding, readJobMatterAccess } from "../../matter-access.ts";
+import { agentWriteBinding, readJobAclGroups, readJobMatterAccess } from "../../matter-access.ts";
 import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-leases.ts";
 import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
 import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
+import { assertEuResidency } from "../../ai/eu-policy.ts";
+import { withRequestEuPolicy } from "../../ai/request-eu-policy.ts";
 import { buildSystemPrompt, DEFAULT_SUBAGENT_SYSTEM } from "../system-prompt.ts";
 import { toolLoop as gatewayToolLoop, sanitizeForJson } from "../../ai/gateway.ts";
 import type {
@@ -279,6 +281,10 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         configKey: "models.subagent",
         fallback: TIER_DEFAULTS.subagent,
       }));
+    // EU-only (deployment switch or the firm's "Nur EU" on this job): the
+    // legacy Anthropic-direct loop below bypasses the gateway's check, so
+    // the resolved model is checked here, whatever tier it came from.
+    assertEuResidency(model, "chat", withRequestEuPolicy(process.env));
     const maxTurns = data.max_turns ?? DEFAULT_MAX_TURNS;
     // v0.41 Approach C: systemPrompt is now built AFTER toolDefs (a few
     // lines below) so the renderer can splice a tool-usage preamble
@@ -343,6 +349,9 @@ export function makeSubagentHandler(deps: SubagentDeps) {
             : undefined,
         matterScope: matterAccess.scope,
         matterReadOnly: matterAccess.readOnly,
+        // The web caller's document ACL groups (`_acl_groups`); a user or
+        // firm job without the stamp sees open pages only.
+        aclGroups: readJobAclGroups(data),
         // A web user's run writes only pages bound to its matter or kept
         // private for its owner; CLI / cron runs are unchanged.
         writeBinding: agentWriteBinding(data),
@@ -1577,7 +1586,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
       const rows = await engine.executeRaw<{ gbrain_tool_use_id: string }>(
         `INSERT INTO subagent_tool_executions
            (job_id, message_idx, tool_use_id, tool_name, input, status, schema_version, ordinal, gbrain_tool_use_id, provider_id)
-         VALUES ($1, $2, $3, $4, $5::jsonb, 'pending', 2, $6, $7, $8)
+         VALUES ($1, $2, $3, $4, $5::text::jsonb, 'pending', 2, $6, $7, $8)
          ON CONFLICT (job_id, message_idx, ordinal) DO UPDATE
            SET status = subagent_tool_executions.status
          RETURNING gbrain_tool_use_id::text AS gbrain_tool_use_id`,
@@ -1599,7 +1608,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
     onToolCallComplete: async (gbrainToolUseId, output) => {
       await engine.executeRaw(
         `UPDATE subagent_tool_executions
-           SET status = 'complete', output = $1::jsonb, ended_at = now()
+           SET status = 'complete', output = $1::text::jsonb, ended_at = now()
          WHERE gbrain_tool_use_id::text = $2`,
         [JSON.stringify(output ?? null), gbrainToolUseId]
       );
@@ -1818,10 +1827,11 @@ async function loadPriorTools(engine: BrainEngine, jobId: number): Promise<Persi
     message_idx: r.message_idx as number,
     tool_use_id: r.tool_use_id as string,
     tool_name: r.tool_name as string,
-    input: typeof r.input === "string" ? JSON.parse(r.input) : r.input,
+    // Rows written before the ENG-4 fix hold a JSON string scalar; newer
+    // rows hold the value itself (which may legitimately be a plain string).
+    input: parseLegacyJsonText(r.input),
     status: r.status as "pending" | "complete" | "failed",
-    output:
-      r.output == null ? null : typeof r.output === "string" ? JSON.parse(r.output) : r.output,
+    output: r.output == null ? null : parseLegacyJsonText(r.output),
     error: (r.error as string) ?? null,
   }));
 }
@@ -1834,7 +1844,7 @@ async function persistMessage(
   await engine.executeRaw(
     `INSERT INTO subagent_messages (job_id, message_idx, role, content_blocks,
         tokens_in, tokens_out, tokens_cache_read, tokens_cache_create, model)
-     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
+     VALUES ($1, $2, $3, $4::text::jsonb, $5, $6, $7, $8, $9)
      ON CONFLICT (job_id, message_idx) DO NOTHING`,
     [
       jobId,
@@ -1861,13 +1871,31 @@ async function persistToolExecPending(
   // Serialize to JSON string for the ::jsonb cast. When `input` is already a
   // string (e.g. pre-serialized), avoid double-encoding which produces a jsonb
   // scalar string instead of a jsonb object — breaking `input->>'key'` lookups.
-  const jsonStr = typeof input === "string" ? input : JSON.stringify(input);
+  const jsonStr = jsonText(input);
   await engine.executeRaw(
     `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, input, status)
-     VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')
+     VALUES ($1, $2, $3, $4, $5::text::jsonb, 'pending')
      ON CONFLICT (job_id, tool_use_id) DO NOTHING`,
     [jobId, messageIdx, toolUseId, toolName, jsonStr]
   );
+}
+
+/**
+ * JSON text for a `$N::text::jsonb` parameter. A string that already is JSON
+ * is passed through; anything else (objects, plain-text strings) is encoded
+ * once. A bare `$N::jsonb` would make postgres.js encode the string a second
+ * time and Postgres store a JSON string scalar instead of the value (ENG-4).
+ */
+function jsonText(value: unknown): string {
+  if (typeof value === "string") {
+    try {
+      JSON.parse(value);
+      return value;
+    } catch {
+      return JSON.stringify(value);
+    }
+  }
+  return JSON.stringify(value ?? null);
 }
 
 async function persistToolExecComplete(
@@ -1878,9 +1906,9 @@ async function persistToolExecComplete(
 ): Promise<void> {
   await engine.executeRaw(
     `UPDATE subagent_tool_executions
-        SET status = 'complete', output = $3::jsonb, ended_at = now()
+        SET status = 'complete', output = $3::text::jsonb, ended_at = now()
       WHERE job_id = $1 AND tool_use_id = $2`,
-    [jobId, toolUseId, typeof output === "string" ? output : JSON.stringify(output)]
+    [jobId, toolUseId, jsonText(output)]
   );
 }
 
@@ -1897,21 +1925,23 @@ async function persistToolExecFailed(
   // rejected upfront) and "pending row exists" (tool threw mid-execute).
   await engine.executeRaw(
     `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, input, status, error, ended_at)
-     VALUES ($1, $2, $3, $4, $5::jsonb, 'failed', $6, now())
+     VALUES ($1, $2, $3, $4, $5::text::jsonb, 'failed', $6, now())
      ON CONFLICT (job_id, tool_use_id) DO UPDATE
        SET status = 'failed', error = EXCLUDED.error, ended_at = now()`,
-    [
-      jobId,
-      messageIdx,
-      toolUseId,
-      toolName,
-      typeof input === "string" ? input : JSON.stringify(input),
-      error,
-    ]
+    [jobId, messageIdx, toolUseId, toolName, jsonText(input), error]
   );
 }
 
 // ── Internal: helpers ───────────────────────────────────────
+
+function parseLegacyJsonText(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
 
 function asStringIfNotObject(value: unknown): string {
   if (typeof value === "string") return value;

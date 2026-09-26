@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiError, recordCreditConsumption } from "@/lib/api-handler";
 
 export const maxDuration = 120;
@@ -48,6 +49,8 @@ interface StrategyResult {
   };
   success_probability: number;
   generatedAt: string;
+  /** Documents of the matter the strategy is based on (0 → warning shown). */
+  documentsConsidered: number;
 }
 
 export const POST = createHandler(
@@ -85,40 +88,40 @@ export const POST = createHandler(
 
     const fm = caseData.frontmatter ?? {};
 
-    // 2. Fetch all analyzed documents for this case
+    // 2. Fetch all analyzed documents for this case — cursor-paginated, a
+    // single /api/pages call is capped at 100 rows. Strict: a strategy on an
+    // unknown document basis must not look complete, so a failed read stops
+    // here (before any credit is charged).
     let documents: DocumentAnalysis[] = [];
     try {
-      const docRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=200`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
+      // Only this matter's documents (engine-side case_slug filter);
+      // truncation counts as a failed read.
+      const docData = await listEnginePages(ctx.headers, "document", 10_000, {
+        timeoutMs: 30_000,
+        strict: true,
+        failOnTruncate: true,
+        frontmatter: { case_slug: body.case_slug },
       });
-      if (docRes.ok) {
-        const docData = await docRes.json();
-        if (Array.isArray(docData)) {
-          documents = (
-            docData as Array<{
-              slug: string;
-              title: string;
-              frontmatter?: Record<string, unknown>;
-            }>
-          )
-            .filter((p) => {
-              const docFm = p.frontmatter ?? {};
-              return (
-                docFm.case_slug === body.case_slug &&
-                docFm.assignment_status !== "unassigned" &&
-                docFm.status !== "tombstoned"
-              );
-            })
-            .map((p) => ({
-              slug: p.slug,
-              title: p.title ?? p.slug,
-              analysis: (p.frontmatter?.auto_analysis as DocumentAnalysis["analysis"]) ?? undefined,
-            }));
-        }
-      }
+      documents = docData
+        .filter((p) => {
+          const docFm = p.frontmatter ?? {};
+          return (
+            docFm.case_slug === body.case_slug &&
+            docFm.assignment_status !== "unassigned" &&
+            docFm.status !== "tombstoned"
+          );
+        })
+        .map((p) => ({
+          slug: p.slug,
+          title: p.title ?? p.slug,
+          analysis: (p.frontmatter?.auto_analysis as DocumentAnalysis["analysis"]) ?? undefined,
+        }));
     } catch {
-      // Best-effort — strategy can be generated without documents
+      return apiError(
+        "documents_unavailable",
+        "Die Dokumente der Akte konnten nicht geladen werden — die Strategie wurde nicht erstellt.",
+        503
+      );
     }
 
     // 3. Build strategy prompt
@@ -286,6 +289,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
             ? Math.max(0, Math.min(1, parsed.success_probability))
             : 0.5,
         generatedAt: new Date().toISOString(),
+        documentsConsidered: documents.length,
       };
 
       if (parsed.cost_estimate && typeof parsed.cost_estimate === "object") {
@@ -307,6 +311,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         next_steps: [],
         success_probability: 0.5,
         generatedAt: new Date().toISOString(),
+        documentsConsidered: documents.length,
       };
     }
 
@@ -317,6 +322,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück (kein Markdown):
         frontmatter: {
           strategy: strategy,
           strategy_generated_at: strategy.generatedAt,
+          strategy_documents_considered: strategy.documentsConsidered,
         },
       });
     } catch {

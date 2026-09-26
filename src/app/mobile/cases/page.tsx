@@ -5,55 +5,62 @@
  * Lists all matters with quick search, status filter, and tap-to-open.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, FolderOpen, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
-
-interface Matter {
-  slug: string;
-  title: string;
-  status: string;
-  client?: string;
-  legalArea?: string;
-  updatedAt?: string;
-  urgent?: boolean;
-}
+import { caseHref } from "@/lib/dashboard-hrefs";
+import {
+  MOBILE_MATTER_FILTERS,
+  filterMobileMatters,
+  statusGroup,
+  toMobileMatter,
+  type MobileMatter,
+  type MobileMatterFilter,
+} from "@/lib/mobile-cases";
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "var(--signal-success-500)",
+  open: "var(--signal-success-500)",
   pending: "var(--signal-warning-500)",
   closed: "var(--ds-text-muted)",
-  urgent: "var(--signal-danger-500)",
+  dormant: "var(--ds-text-subtle)",
 };
 
+/** Upper bound of matters loaded for the phone list (paged, complete below it). */
+const MOBILE_MATTER_MAX = 10_000;
+
 export default function MobileCasesPage() {
-  const [matters, setMatters] = useState<Matter[]>([]);
+  const [matters, setMatters] = useState<MobileMatter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<MobileMatterFilter>("all");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const retry = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     (async () => {
       try {
-        const pages = await api.brain.search("Akte Mandat Fall Klient", 100);
-        if (cancelled) return;
-        const parsed: Matter[] = pages.map((p) => {
-          const r = p as unknown as Record<string, unknown>;
-          const fm = (r.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            slug: String(r.slug ?? ""),
-            title: String(r.title ?? ""),
-            status: String(fm.status ?? r.status ?? "active"),
-            client: String(fm.client ?? fm.klient ?? ""),
-            legalArea: String(fm.legal_area ?? fm.rechtsgebiet ?? ""),
-            updatedAt: String(r.updated_at ?? r.created_at ?? ""),
-            urgent: Boolean(fm.urgent ?? false),
-          };
+        // The matters this user can see — the same scoped list as the
+        // dashboard, paged to the end.
+        const pages = await api.brain.listAllPages({
+          type: "legal_case",
+          max: MOBILE_MATTER_MAX,
         });
-        if (!cancelled) setMatters(parsed);
+        if (cancelled) return;
+        const parsed = pages
+          .map(toMobileMatter)
+          .filter((m): m is MobileMatter => m !== null)
+          .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+        setMatters(parsed);
       } catch (e) {
-        if (!cancelled) console.error(e);
+        if (!cancelled) {
+          console.error(e);
+          setError("Akten konnten nicht geladen werden.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -61,18 +68,12 @@ export default function MobileCasesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
-  const filtered = useMemo(() => {
-    return matters.filter((m) => {
-      if (statusFilter !== "all" && m.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return m.title.toLowerCase().includes(q) || (m.client?.toLowerCase().includes(q) ?? false);
-      }
-      return true;
-    });
-  }, [matters, search, statusFilter]);
+  const filtered = useMemo(
+    () => filterMobileMatters(matters, statusFilter, search),
+    [matters, search, statusFilter]
+  );
 
   return (
     <div
@@ -121,9 +122,11 @@ export default function MobileCasesPage() {
         </div>
         {/* Status filter pills */}
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
-          {["all", "active", "pending", "closed"].map((s) => (
+          {MOBILE_MATTER_FILTERS.map(({ key: s, label }) => (
             <button
               key={s}
+              type="button"
+              aria-pressed={statusFilter === s}
               onClick={() => setStatusFilter(s)}
               style={{
                 padding: "4px 12px",
@@ -137,7 +140,7 @@ export default function MobileCasesPage() {
                 flexShrink: 0,
               }}
             >
-              {{ all: "Alle", active: "Aktiv", pending: "Ausstehend", closed: "Geschlossen" }[s]}
+              {label}
             </button>
           ))}
         </div>
@@ -152,6 +155,28 @@ export default function MobileCasesPage() {
               style={{ color: "var(--brand-500)", animation: "spin 1s linear infinite" }}
             />
           </div>
+        ) : error ? (
+          <div
+            role="alert"
+            style={{ textAlign: "center", padding: "40px 20px", color: "var(--ds-text-muted)" }}
+          >
+            <AlertCircle size={32} style={{ margin: "0 auto 10px", opacity: 0.6 }} />
+            <div style={{ fontSize: 14, marginBottom: 12 }}>{error}</div>
+            <button
+              type="button"
+              onClick={retry}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "1px solid var(--ds-border)",
+                background: "var(--ds-surface)",
+                color: "var(--ds-text)",
+                fontSize: 14,
+              }}
+            >
+              Erneut versuchen
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--ds-text-muted)" }}>
             <FolderOpen size={32} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
@@ -161,7 +186,7 @@ export default function MobileCasesPage() {
           filtered.map((m) => (
             <a
               key={m.slug}
-              href={`/dashboard/matters/${m.slug}`}
+              href={caseHref(m.slug)}
               style={
                 {
                   display: "flex",
@@ -203,9 +228,7 @@ export default function MobileCasesPage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {m.client && <span>{m.client}</span>}
-                  {m.client && m.legalArea && <span> · </span>}
-                  {m.legalArea && <span>{m.legalArea}</span>}
+                  {[m.caseNumber, m.client, m.legalArea].filter(Boolean).join(" · ")}
                 </div>
               </div>
               <div
@@ -223,7 +246,7 @@ export default function MobileCasesPage() {
                     width: 8,
                     height: 8,
                     borderRadius: "50%",
-                    background: STATUS_COLORS[m.status] ?? "var(--ds-text-muted)",
+                    background: STATUS_COLORS[statusGroup(m.status)] ?? "var(--ds-text-muted)",
                   }}
                 />
                 {m.updatedAt && (

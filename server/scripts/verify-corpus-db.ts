@@ -16,6 +16,7 @@
  */
 
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 
 const args = process.argv.slice(2);
 const arg = (n: string, d?: string) => {
@@ -40,7 +41,7 @@ if (!base) {
 const URL_ = base.replace(/\/[^/?]+(\?|$)/, `/${DB}$1`);
 
 async function q(sql: string): Promise<string> {
-  return (await $`psql ${URL_} -tAc ${sql}`.quiet()).stdout.toString().trim();
+  return psqlQueryOrThrow(sql, URL_).trim();
 }
 
 interface Check {

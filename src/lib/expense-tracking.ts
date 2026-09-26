@@ -6,8 +6,8 @@
  * existieren NUR als eingebettetes Array im Case-Frontmatter — es gibt keinen
  * Erzeugungspfad für standalone `expense`-Pages (UI, Legal-Chat und
  * WhatsApp-Flows schreiben alle in `caseFm.expenses`), und
- * src/lib/invoice-mark-billed.ts behandelt `expense_ids` als IDs innerhalb
- * der Akte. Deshalb gibt es hier kein Standalone-Prefix/Slug-Handling.
+ * src/lib/invoice-billing-lock.ts behandelt `expense_entry_ids` als IDs
+ * innerhalb der Akte. Deshalb gibt es hier kein Standalone-Prefix/Slug-Handling.
  *
  * Jeder Schreibzugriff läuft über die atomaren Engine-Operationen
  * `page_array_append` / `page_array_mutate` (ein UPDATE, Guard in der
@@ -248,17 +248,25 @@ export async function markExpensesBilledAtomic(
   };
 }
 
-/** Hebt die Abrechnungsmarkierung auf: billed=false, invoice_number weg — atomar. */
+/**
+ * Hebt die Abrechnungsmarkierung auf: billed=false, invoice_number weg — atomar.
+ * Mit `onlyInvoiceNumber` bleiben Auslagen, die inzwischen unter einer anderen
+ * Rechnung stehen, im selben UPDATE unangetastet.
+ */
 export async function unbillExpensesAtomic(
   brain: ExpensesArrayClient,
   caseSlug: string,
-  ids: string[]
+  ids: string[],
+  onlyInvoiceNumber?: string
 ): Promise<{ updated: number; not_found: string[] }> {
   if (ids.length === 0) return { updated: 0, not_found: [] };
   const res = await brain.mutatePageArray(caseSlug, EXPENSES_FIELD, {
     match: ids,
     set: { billed: false },
     unset: ["invoice_number"],
+    ...(onlyInvoiceNumber !== undefined
+      ? { unless: { ne: { invoice_number: onlyInvoiceNumber } } }
+      : {}),
   });
   return { updated: res.updated_ids.length, not_found: res.not_found_ids };
 }

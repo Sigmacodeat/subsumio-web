@@ -70,6 +70,24 @@ export function isWindowOpen(now: Date, lastInboundAt: Date | null): boolean {
 }
 
 /** Is `hour` inside the quiet window? Handles windows that wrap past midnight. */
+/**
+ * The current hour [0..23] in Vienna — quiet hours are the recipient's local
+ * night, not the server's (containers run in UTC).
+ */
+export function viennaLocalHour(now: Date = new Date()): number {
+  // formatToParts: the formatted string carries a unit ("22 Uhr").
+  const h = Number(
+    new Intl.DateTimeFormat("de-AT", {
+      timeZone: "Europe/Vienna",
+      hour: "numeric",
+      hourCycle: "h23",
+    })
+      .formatToParts(now)
+      .find((p) => p.type === "hour")?.value
+  );
+  return Number.isFinite(h) ? h % 24 : now.getUTCHours();
+}
+
 export function isWithinQuietHours(q: QuietHours): boolean {
   const { startHour, endHour, localHour } = q;
   if (startHour === endHour) return false; // empty window

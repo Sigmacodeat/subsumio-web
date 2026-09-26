@@ -20,8 +20,8 @@
  *   6. Caller entscheidet: fetch XML → write disk → markiereZumImport
  *
  * RIS OGD Compliance:
- *   - 1.5s Pause zwischen Requests (ris-proxy.ts)
- *   - acquireRisLock für single-connection mode
+ *   - 2 s Pause zwischen Requests (risPause, ris-pace.ts)
+ *   - acquireRisLock (derzeit No-op, siehe ris-lock.ts)
  *   - User-Agent gesetzt
  *
  * Keine Deletion-Erkennung via REST API — dafür würde die SOAP
@@ -95,6 +95,11 @@ export interface DeltaResult {
   pagesFetched: number;
   cursor: string | null;
   newCursor: string;
+  /**
+   * Every result page was read. False when a page failed after all retries
+   * or the page limit was hit — the cursor must not move past what was not seen.
+   */
+  complete: boolean;
 }
 
 // ── Applikation-Registry ───────────────────────────────────────────────
@@ -273,14 +278,35 @@ async function fetchDeltaPage(
 
   if (!res || !res.ok) return null;
 
-  const data = (await res.json()) as Record<string, unknown>;
-  const results = (data?.OgdSearchResult as Record<string, unknown>)?.OgdDocumentResults as
-    | { Hits?: { "#text"?: string }; OgdDocumentReference?: unknown }
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    return null; // Wartungsseite/HTML statt JSON — unvollständig, Cursor bleibt
+  }
+  return parseDeltaPage(data);
+}
+
+/**
+ * Parse one RIS search page. `null` = unusable answer (error object, missing
+ * result block or missing hit count) — the caller treats it as an
+ * incomplete fetch and keeps the cursor. Only an explicit `Hits` value
+ * counts; a response that merely lacks results is never "no changes".
+ * Exported for tests.
+ */
+export function parseDeltaPage(data: unknown): { refs: unknown[]; totalHits: number } | null {
+  const search = (data as Record<string, unknown> | null)?.OgdSearchResult as
+    | Record<string, unknown>
     | undefined;
+  if (!search || search.Error) return null;
+  const results = search.OgdDocumentResults as
+    | { Hits?: { "#text"?: string } | string; OgdDocumentReference?: unknown }
+    | undefined;
+  if (!results) return null;
 
-  if (!results) return { refs: [], totalHits: 0 };
-
-  const totalHits = results.Hits?.["#text"] ? parseInt(results.Hits["#text"], 10) : 0;
+  const hitsRaw = typeof results.Hits === "object" ? results.Hits?.["#text"] : results.Hits;
+  const totalHits = hitsRaw === undefined || hitsRaw === "" ? NaN : parseInt(String(hitsRaw), 10);
+  if (!Number.isFinite(totalHits) || totalHits < 0) return null;
   const refsRaw = results.OgdDocumentReference;
   const refs = Array.isArray(refsRaw) ? refsRaw : refsRaw ? [refsRaw] : [];
 
@@ -454,6 +480,7 @@ export async function fetchDelta(
   const documents: DeltaDocument[] = [];
   let totalHits = 0;
   let pagesFetched = 0;
+  let complete = false;
 
   for (let page = 1; page <= maxPages; page++) {
     // RIS OGD: at most 0.5 requests/s (was 200 ms).
@@ -468,13 +495,20 @@ export async function fetchDelta(
         pagesFetched,
         cursor,
         newCursor: cursor || new Date().toISOString(),
+        complete: false,
       };
     }
 
     totalHits = result.totalHits;
     pagesFetched = page;
 
-    if (result.refs.length === 0) break;
+    if (result.refs.length === 0) {
+      // Seite 1 meldet Treffer, liefert aber keine Referenzen: kaputte
+      // Antwort, nicht "keine Änderungen" — Cursor bleibt stehen.
+      if (page === 1 && result.totalHits > 0) break;
+      complete = true;
+      break;
+    }
 
     let allAfterCursor = true;
     for (const ref of result.refs as Record<string, unknown>[]) {
@@ -482,7 +516,7 @@ export async function fetchDelta(
       if (!parsed) continue;
 
       // Client-side Filter: nur Dokumente nach dem Cursor
-      if (cursor && parsed.changedAt <= cursor) {
+      if (isBeforeCursor(parsed.changedAt, cursor)) {
         allAfterCursor = false;
         continue;
       }
@@ -512,10 +546,16 @@ export async function fetchDelta(
     // Wenn alle Dokumente auf dieser Seite vor dem Cursor liegen, können wir
     // abbrechen — weitere Seiten werden noch älter sein (RIS sortiert nach
     // Änderungsdatum absteigend).
-    if (cursor && !allAfterCursor && documents.length === 0) break;
+    if (cursor && !allAfterCursor && documents.length === 0) {
+      complete = true;
+      break;
+    }
 
     // Letzte Seite erreicht
-    if (result.refs.length < 100) break;
+    if (result.refs.length < 100) {
+      complete = true;
+      break;
+    }
   }
 
   // Neuer Cursor: jetzt (oder neuestes changedAt, falls vorhanden)
@@ -534,7 +574,39 @@ export async function fetchDelta(
     pagesFetched,
     cursor,
     newCursor,
+    complete,
   };
+}
+
+/**
+ * Was this change before the last completed sync? Compared by calendar day
+ * and strictly: RIS reports the change DATE, the cursor is a timestamp — a
+ * document changed later on the cursor's own day must still come through.
+ * The same-day overlap is harmless (a norm is written to the same file).
+ */
+export function isBeforeCursor(changedAt: string, cursor: string | null): boolean {
+  const cursorDate = cursorToDate(cursor);
+  if (!cursorDate) return false;
+  return changedAt.slice(0, 10) < cursorDate;
+}
+
+/**
+ * Where the cursor may move after a batch. `null` = keep the old cursor.
+ *  - pages missing (incomplete fetch)   → keep
+ *  - some documents failed             → the day of the earliest failure, so
+ *                                         the next run fetches them again
+ *  - everything written                → the batch's new cursor
+ */
+export function nextCursorAfterBatch(input: {
+  newCursor: string;
+  complete: boolean;
+  failedChangedAt: string[];
+}): string | null {
+  if (!input.complete) return null;
+  if (input.failedChangedAt.length > 0) {
+    return input.failedChangedAt.map((d) => d.slice(0, 10)).sort()[0]!;
+  }
+  return input.newCursor;
 }
 
 // ── Hilfsfunktionen ────────────────────────────────────────────────────

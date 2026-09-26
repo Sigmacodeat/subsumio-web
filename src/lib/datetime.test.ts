@@ -6,6 +6,9 @@ import {
   zonedDateString,
   zonedWallTimeToUtc,
   toZonedDateString,
+  firmToday,
+  firmYear,
+  addDaysToDateString,
 } from "@/lib/datetime";
 
 describe("zonedDateString", () => {
@@ -61,5 +64,33 @@ describe("toZonedDateString", () => {
     expect(toZonedDateString(undefined)).toBe(today);
     expect(toZonedDateString("garbage")).toBe(today);
     expect(toZonedDateString(null)).toBe(today);
+  });
+});
+
+describe("firmToday / firmYear (audit QA-6)", () => {
+  it("New Year's night 00:30 Vienna is already the new day and year", () => {
+    const newYearsNight = new Date("2026-12-31T23:30:00Z"); // 00:30 CET on 1 Jan 2027
+    expect(firmToday(newYearsNight)).toBe("2027-01-01");
+    expect(firmYear(newYearsNight)).toBe(2027);
+  });
+
+  it("summer time: 01:30 CEST is still the Vienna day, not the UTC day before", () => {
+    expect(firmToday(new Date("2026-07-14T23:30:00Z"))).toBe("2026-07-15");
+  });
+
+  it("addDaysToDateString crosses month, year and DST boundaries", () => {
+    expect(addDaysToDateString("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDaysToDateString("2026-03-28", 2)).toBe("2026-03-30");
+    expect(addDaysToDateString("2026-10-24", 14)).toBe("2026-11-07");
+  });
+});
+
+describe("formatFirmTime / formatFirmDateLabel (public booking)", () => {
+  it("shows Vienna wall-clock time regardless of the runtime timezone", async () => {
+    const { formatFirmTime, formatFirmDateLabel } = await import("./datetime");
+    // 07:00 UTC in summer time = 09:00 in Vienna.
+    expect(formatFirmTime("2026-07-01T07:00:00.000Z")).toBe("09:00");
+    expect(formatFirmTime("2026-12-01T08:30:00.000Z")).toBe("09:30");
+    expect(formatFirmDateLabel("2026-09-27")).toContain("27. September 2026");
   });
 });

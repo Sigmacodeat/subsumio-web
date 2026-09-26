@@ -17,6 +17,7 @@ export type ApprovalCategoryKey =
   | "requests"
   | "agent_actions"
   | "analyses"
+  | "case_scans"
   | "time";
 
 export interface ApprovalPreview {
@@ -117,7 +118,7 @@ export function buildApprovalSummary(input: {
 }): ApprovalSummary {
   const unavailable: ApprovalCategoryKey[] = [];
   const inbox = input.inbox ?? [];
-  if (!input.inbox) unavailable.push("deadlines", "client_input", "requests");
+  if (!input.inbox) unavailable.push("deadlines", "client_input", "requests", "case_scans");
   if (!input.agentActions) unavailable.push("agent_actions");
   if (!input.analyses) unavailable.push("analyses");
   if (!input.timeSuggestions) unavailable.push("time");
@@ -130,6 +131,7 @@ export function buildApprovalSummary(input: {
     )
     .map(inboxPreview);
   const requests = inbox.filter((i) => i.type === "document_request").map(inboxPreview);
+  const caseScans = inbox.filter((i) => i.type === "case_scan_finding").map(inboxPreview);
 
   const agentActions = (input.agentActions ?? []).filter(isPendingAgentAction).map((p) => ({
     title: str(fm(p).summary) || p.title || "Aktion",
@@ -188,6 +190,13 @@ export function buildApprovalSummary(input: {
       "Analyseergebnisse, die vor der Verwendung geprüft werden müssen.",
       "/dashboard/review-queue",
       analyses
+    ),
+    category(
+      "case_scans",
+      "Ergebnisse des Fall-Scanners",
+      "KI-Prüfergebnisse zu Ihren Akten. Anwaltlich zu prüfen, nichts wird automatisch übernommen.",
+      REVIEW_HREF,
+      caseScans
     ),
     category(
       "requests",

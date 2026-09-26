@@ -157,7 +157,7 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
   // (Previously double-gated with NODE_ENV !== "production", but `next start`
   // forces NODE_ENV=production, which would block the e2e production-build
   // server from bypassing signup/login limits.)
-  if (env("SUBSUMIO_E2E") === "1" && /^(signup|demo-session):/.test(key)) {
+  if (env("SUBSUMIO_E2E") === "1" && /^(signup|demo-session|auth-verify):/.test(key)) {
     return { ok: true, retryAfterSeconds: 0 };
   }
   if (UPSTASH_URL && UPSTASH_TOKEN) {
@@ -189,9 +189,15 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
   return result;
 }
 
-/** Best-effort client IP behind proxies; falls back to a shared bucket. */
+/**
+ * Best-effort client IP behind proxies; falls back to a shared bucket.
+ * X-Real-IP wins: the reverse proxy overwrites it with the TCP peer address
+ * (same rule as the middleware's IP allowlist and the audit rows), while the
+ * first X-Forwarded-For hop is whatever the client chose to send.
+ */
 export function clientIp(headers: Headers): string {
-  const fwd = headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return headers.get("x-real-ip") ?? "unknown";
+  const real = headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const fwd = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return fwd || "unknown";
 }

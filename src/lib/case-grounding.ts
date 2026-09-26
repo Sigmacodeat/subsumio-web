@@ -14,18 +14,30 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import type { GroundedCitation } from "@/lib/types";
 import type { CaseCourt, RawCaseCitation } from "@/lib/case-citations";
-import { CORPUS_DIR, parseFrontmatter } from "@/lib/legal-grounding";
+import {
+  CORPUS_DIR,
+  MAX_CHECKED_CITATIONS,
+  NOT_CHECKED_REASON,
+  parseFrontmatter,
+} from "@/lib/legal-grounding";
 
 const COURT_DIRS: Record<CaseCourt, string> = {
   OGH: "at-judikatur",
   "RIS-Justiz": "at-judikatur",
   VwGH: "at-judikatur-vwgh",
   VfGH: "at-judikatur-vfgh",
+  ECLI: "at-judikatur",
 };
 
 type CaseIndex = Map<string, string>; // key → filename
 
-const indexCache = new Map<string, Promise<CaseIndex>>();
+/**
+ * The daily RIS delta adds decisions on disk; the index is rebuilt after this
+ * long so they are found without a restart. A failed read (corpus mount not
+ * ready) is never cached — the next check tries again.
+ */
+const INDEX_TTL_MS = 60 * 60_000;
+const indexCache = new Map<string, { builtAt: number; index: Promise<CaseIndex> }>();
 
 /** Filename → lookup keys (Geschäftszahl, Rechtssatznummer, or each Zahl of a joined VfGH case). */
 export function keysForFilename(file: string): string[] {
@@ -42,11 +54,12 @@ export function keysForFilename(file: string): string[] {
 }
 
 function loadIndex(dir: string): Promise<CaseIndex> {
-  let p = indexCache.get(dir);
-  if (!p) {
-    p = fs
-      .readdir(path.join(CORPUS_DIR, dir))
-      .then((names) => {
+  const cached = indexCache.get(dir);
+  if (cached && Date.now() - cached.builtAt < INDEX_TTL_MS) return cached.index;
+  const entry = {
+    builtAt: Date.now(),
+    index: fs.readdir(path.join(CORPUS_DIR, dir)).then(
+      (names) => {
         const idx: CaseIndex = new Map();
         for (const name of names) {
           if (!name.endsWith(".md")) continue;
@@ -55,11 +68,16 @@ function loadIndex(dir: string): Promise<CaseIndex> {
           }
         }
         return idx;
-      })
-      .catch(() => new Map());
-    indexCache.set(dir, p);
-  }
-  return p;
+      },
+      (): CaseIndex => {
+        // Not cached: the next check reads the directory again.
+        if (indexCache.get(dir) === entry) indexCache.delete(dir);
+        return new Map();
+      }
+    ),
+  };
+  indexCache.set(dir, entry);
+  return entry.index;
 }
 
 const RIS_DOC_RX = /^https:\/\/www\.ris\.bka\.gv\.at\/[^"'<>\s]*$/;
@@ -78,9 +96,7 @@ function excerpt(content: string): string {
 
 export async function groundCaseCitations(raw: RawCaseCitation[]): Promise<GroundedCitation[]> {
   const out: GroundedCitation[] = [];
-  for (const c of raw.slice(0, 20)) {
-    const dir = COURT_DIRS[c.court];
-    const file = (await loadIndex(dir)).get(c.key);
+  for (const [i, c] of raw.entries()) {
     const base: GroundedCitation = {
       code: c.court,
       paragraph: c.cited,
@@ -89,6 +105,13 @@ export async function groundCaseCitations(raw: RawCaseCitation[]): Promise<Groun
       jurisdiction: "at",
       search_url: c.searchUrl,
     };
+    // Beyond the cap: still counted, as "not checked".
+    if (i >= MAX_CHECKED_CITATIONS) {
+      out.push({ ...base, unverifiable_reason: NOT_CHECKED_REASON });
+      continue;
+    }
+    const dir = COURT_DIRS[c.court];
+    const file = (await loadIndex(dir)).get(c.key);
     if (!file) {
       out.push({ ...base, unverifiable_reason: "Entscheidung nicht im Korpus" });
       continue;

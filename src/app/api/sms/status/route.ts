@@ -4,9 +4,10 @@ import { createHandler, createWebhookHandler } from "@/lib/api-handler";
 import { verifyTwilioSignature } from "@/lib/sms/twilio-verify";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { normalizePhone } from "@/lib/whatsapp/types";
-import { listAuditLogs, logAudit } from "@/lib/audit";
+import { listAuditLogs, logAudit, SYSTEM_BRAIN } from "@/lib/audit";
 import { filterNewIds } from "@/lib/caselaw-dedup";
 import { env } from "@/lib/env";
+import { lookupSmsOutbound } from "@/lib/sms/outbound-index";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,9 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   // (Caddy) ist req.url intern http:// — Twilio signiert aber https://,
   // also gegen die kanonische Public-URL prüfen, nicht gegen req.url.
   const appUrl = env("NEXT_PUBLIC_APP_URL")?.replace(/\/+$/, "");
-  const callbackUrl = appUrl ? `${appUrl}/api/sms/status` : req.url;
+  // The query (`?b=<brain>`) is part of the signed URL — it cannot be forged.
+  const search = new URL(req.url).search;
+  const callbackUrl = appUrl ? `${appUrl}/api/sms/status${search}` : req.url;
   const signature = req.headers.get("x-twilio-signature");
   if (!verifyTwilioSignature(callbackUrl, params, signature)) {
     return Response.json({ error: "invalid_signature" }, { status: 401 });
@@ -52,23 +55,42 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     return Response.json({ ok: true, deduped: true });
   }
 
+  // File the status under the firm that sent the SMS: the server-side send
+  // record first, else the firm reference in the (Twilio-signed) callback
+  // URL; unknown/legacy callbacks go to the system chain. The phone hash is
+  // the entity, so reads filter in SQL.
+  const origin = await lookupSmsOutbound(sid).catch(() => null);
+  const toHash = origin?.toHash ?? (params.To ? phoneHash(params.To) : null);
+  const ref = new URL(req.url).searchParams.get("b");
+  const refBrain = ref && /^[A-Za-z0-9_.:-]{1,128}$/.test(ref) ? ref : null;
   await logAudit("sms.delivery_status", "sms_outbound", {
+    brainId: origin?.brainId ?? refBrain ?? SYSTEM_BRAIN,
+    entityId: toHash ?? undefined,
     details: {
       sid,
       status,
       errorCode: params.ErrorCode ?? null,
       // Korrelation zum Consent-Store über denselben SHA-256-Phone-Hash —
       // die Rohtelefonnummer wird nie persistiert.
-      toHash: params.To ? phoneHash(params.To) : null,
+      toHash,
     },
   });
 
   return Response.json({ ok: true });
 });
 
-const statusQuerySchema = z.object({
-  phone: z.string().min(5).max(30),
-});
+// The dialog sends the SHA-256 hash of the normalised number, so the raw
+// number never appears in URLs or access logs. `phone` stays accepted for
+// older clients.
+const statusQuerySchema = z
+  .object({
+    hash: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
+    phone: z.string().min(5).max(30).optional(),
+  })
+  .refine((q) => q.hash || q.phone, { message: "hash_or_phone_required" });
 
 interface SmsDeliveryRow {
   status: string;
@@ -91,11 +113,12 @@ export const GET = createHandler(
     query: statusQuerySchema,
   },
   async (ctx, _body, query) => {
-    const hash = phoneHash(normalizePhone(query.phone));
+    const hash = query.hash ?? phoneHash(normalizePhone(query.phone as string));
     const entries = await listAuditLogs({
       brainId: ctx.brainId,
       action: "sms.delivery_status",
-      limit: 100,
+      entityId: hash,
+      limit: 5,
     });
     const deliveries: SmsDeliveryRow[] = entries
       .filter((e) => (e.details as { toHash?: string } | undefined)?.toHash === hash)

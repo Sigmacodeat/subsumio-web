@@ -14,6 +14,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = { password: "PortalUpload1234!", name: "Portal Upload Tester" };
@@ -25,8 +26,10 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,
@@ -115,6 +118,8 @@ test.describe("Mandantenportal-Upload", () => {
 
     // ── Step 5: Upload a document via portal ───────────────────────────
     const uploadRes = await page.context().request.post("/api/portal/upload", {
+      // Access is checked before the body is read: the token travels as a header.
+      headers: { "x-portal-token": portalToken },
       multipart: {
         token: portalToken,
         file: {
@@ -203,38 +208,41 @@ test.describe("Mandantenportal-Upload", () => {
   test("portal upload rejected when portal_enabled is false", async ({ page }) => {
     const csrf = await getCsrfToken(page);
     const caseSlug = `cases/portal-disabled-${Date.now()}`;
+    const headers = csrf ? { "x-csrf-token": csrf } : {};
 
-    // Create a case with portal_enabled = false
+    // A case with the portal enabled, so a link can be issued.
     await page.context().request.post("/api/pages", {
       data: {
         slug: caseSlug,
         title: "Portal Disabled Case",
         content: "Test",
         type: "legal_case",
-        frontmatter: {
-          status: "open",
-          portal_enabled: false,
-        },
+        frontmatter: { status: "open", portal_enabled: true },
       },
-      headers: csrf ? { "x-csrf-token": csrf } : {},
+      headers,
     });
-
-    // Generate token (token generation works regardless of portal_enabled)
     const tokenRes = await page.context().request.post("/api/portal/generate", {
       data: { caseSlug },
-      headers: csrf ? { "x-csrf-token": csrf } : {},
+      headers,
     });
+    expect(tokenRes.status()).toBe(200);
     const { token: portalToken } = await tokenRes.json();
 
-    // Portal case API should reject
+    // The firm switches the portal off afterwards: the issued link stops working.
+    const off = await page.context().request.patch(`/api/pages/${encodeURIComponent(caseSlug)}`, {
+      data: { frontmatter: { portal_enabled: false }, merge: true },
+      headers,
+    });
+    expect(off.status()).toBe(200);
+
     const caseRes = await page.context().request.get(`/api/portal/case?token=${portalToken}`);
     expect(caseRes.status()).toBe(403);
-    const caseData = await caseRes.json();
-    expect(caseData.code).toBe("portal_disabled");
+    expect((await caseRes.json()).code).toBe("portal_disabled");
 
-    // Upload should also be rejected (valid PDF so the request reaches the
-    // portal_enabled gate — invalid files 422 earlier in the pipeline).
+    // Upload is refused too (valid PDF so the request reaches the access gate).
     const uploadRes = await page.context().request.post("/api/portal/upload", {
+      // Access is checked before the body is read: the token travels as a header.
+      headers: { "x-portal-token": portalToken },
       multipart: {
         token: portalToken,
         file: {
@@ -247,6 +255,14 @@ test.describe("Mandantenportal-Upload", () => {
       },
     });
     expect(uploadRes.status()).toBe(403);
+
+    // No new link is issued while the portal is off.
+    const again = await page.context().request.post("/api/portal/generate", {
+      data: { caseSlug },
+      headers,
+    });
+    expect(again.status()).toBe(409);
+    expect((await again.json()).code).toBe("portal_disabled");
   });
 
   test("portal page renders with upload UI", async ({ page }) => {

@@ -18,6 +18,8 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
+import { csrfFetch } from "@/lib/csrf";
+import { formatEur } from "@/lib/utils";
 import { useMe } from "@/lib/queries/auth";
 import {
   getClaimStatusLabel,
@@ -40,7 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function fmtEUR(n: number) {
-  return n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  return formatEur(n, "de");
 }
 
 export default function ClaimAccountPage() {
@@ -48,7 +50,7 @@ export default function ClaimAccountPage() {
   const { t } = useLang();
   const me = useMe();
   const userJur: ClaimJurisdiction =
-    (me.data?.user as { jurisdiction?: string } | undefined)?.jurisdiction === "at" ? "at" : "de";
+    (me.data?.user as { jurisdiction?: string } | undefined)?.jurisdiction === "de" ? "de" : "at";
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -84,7 +86,7 @@ export default function ClaimAccountPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "claim_account", limit: 200 });
+      const pages = await api.brain.listAllPages({ type: "claim_account", max: 10_000 });
       setClaims(pages.map((p) => p.frontmatter as unknown as Claim));
     } catch {
       addToast({ type: "error", title: t("claim.err_load") });
@@ -111,7 +113,7 @@ export default function ClaimAccountPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/claim-account", {
+      const res = await csrfFetch("/api/claim-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -126,6 +128,7 @@ export default function ClaimAccountPage() {
           due_date: form.due_date,
           court: form.court || undefined,
           claim_number: form.claim_number || undefined,
+          jurisdiction: userJur,
         }),
       });
       if (!res.ok) throw new Error("API error");
@@ -155,10 +158,16 @@ export default function ClaimAccountPage() {
   const recordPayment = async () => {
     if (!payingClaim || !paymentAmount) return;
     try {
-      const res = await fetch("/api/claim-account", {
+      // The server books the payment on the stored claim (id only) and keeps
+      // it in the payment journal.
+      const res = await csrfFetch("/api/claim-account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ claim: payingClaim, payment_amount: Number(paymentAmount) }),
+        body: JSON.stringify({
+          id: payingClaim.id,
+          expected_updated_at: payingClaim.updated_at,
+          payment_amount: Number(paymentAmount),
+        }),
       });
       if (!res.ok) throw new Error("API error");
       addToast({ type: "success", title: t("claim.ok_payment") });
@@ -177,13 +186,18 @@ export default function ClaimAccountPage() {
   ): Promise<{ antrag?: AntragsDaten } | null> => {
     setBusyAction(busyKey);
     try {
-      const res = await fetch("/api/claim-account", {
+      const res = await csrfFetch("/api/claim-account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ claim, jurisdiction: jurOf(claim), ...payload }),
+        body: JSON.stringify({
+          id: claim.id,
+          expected_updated_at: claim.updated_at,
+          jurisdiction: jurOf(claim),
+          ...payload,
+        }),
       });
-      const data = res.ok ? await res.json() : null;
-      if (!res.ok || !data?.ok) throw new Error("API error");
+      const data = res.ok ? await res.json().catch(() => null) : null;
+      if (!res.ok || !data) throw new Error("API error");
       void load();
       return data.data ?? {};
     } catch {

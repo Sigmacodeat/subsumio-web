@@ -1,278 +1,204 @@
 /**
- * E2E Invoice Billing Flow Tests
- * ================================
- * Tests the complete invoice billing lifecycle:
- *   1. Create invoice → mark as sent → mark as paid
- *   2. Invoice status transitions via API
- *   3. Invoice list shows correct status
- *   4. E-invoice generation endpoint returns XML
- *   5. Invoice with Kleinunternehmer setting (no VAT)
- *   6. Invoice PDF download
+ * E2E Invoice Billing Flow — über die echten Rechnungsrouten
+ * ============================================================
+ *   1. Anlage: POST /api/invoices (Nummer vom Server, Leistungen reserviert)
+ *   2. Ausstellen: PATCH /api/invoices/<slug> (Entwurf → versendet → bezahlt)
+ *   3. Storno: POST /api/invoices/<slug>/storno (Storno-Note, Original bleibt)
+ *   4. Doppelanlage über dieselbe Leistung → 409
+ *   5. Rechnung über die generische Seitenroute → 409
+ *   6. e-Rechnung aus einer echten Rechnung
+ *
+ * Nicht abgedeckt: der E-Mail-Versand (POST /api/invoices/send) braucht einen
+ * SMTP-Server, den die E2E-Umgebung nicht hat — ausgestellt wird hier über den
+ * Statuswechsel, der dieselbe Ausstellungsprüfung durchläuft.
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
+import {
+  createCaseWithTimeEntry,
+  draftInvoicePayload,
+  reserveInvoiceNumber,
+  signUpLegalUser,
+} from "./helpers";
 
-let testCounter = 0;
-const TEST_USER = {
-  password: "BillingTest123!",
-  name: "Billing Tester",
-};
+const CLIENT = "E2E Rechnungsmandantin GmbH";
 
-function getTestEmail() {
-  testCounter++;
-  return `billing-${Date.now()}-${testCounter}@subsumio.local`;
-}
-
-async function signUpViaApi(page: import("@playwright/test").Page) {
-  const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
-    data: {
-      email,
-      name: TEST_USER.name,
-      password: TEST_USER.password,
-      locale: "en",
-      industry: "legal",
-    },
+async function createDraft(api: APIRequestContext, csrf: string) {
+  const setup = await createCaseWithTimeEntry(api, csrf, { clientName: CLIENT });
+  const number = await reserveInvoiceNumber(api, csrf);
+  const payload = draftInvoicePayload(setup, number, CLIENT);
+  const res = await api.post("/api/invoices", {
+    headers: { "x-csrf-token": csrf },
+    data: payload,
   });
   expect(res.status()).toBe(201);
-  await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });
-  const csrfToken = (await page.context().cookies()).find(
-    (cookie) => cookie.name === "sb_csrf"
-  )?.value;
-  const onboardingRes = await page.context().request.post("/api/onboarding", {
-    data: { industry: null },
-    headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
-  });
-  expect(onboardingRes.status()).toBe(200);
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/dashboard\/?$/);
-  return { email, csrfToken };
+  const body = await res.json();
+  expect(body.data.invoice_number).toBe(number);
+  expect(body.data.billed.time).toEqual([setup.entryId]);
+  return { setup, number, payload, slug: payload.slug };
 }
 
-async function getCsrf(page: import("@playwright/test").Page): Promise<string> {
-  return await page.evaluate(() => {
-    const match = document.cookie.match(/sb_csrf=([^;]+)/);
-    return match ? match[1] : "";
-  });
+async function getInvoice(api: APIRequestContext, slug: string) {
+  const res = await api.get(`/api/invoices/${encodeURIComponent(slug)}`);
+  expect(res.status()).toBe(200);
+  return (await res.json()) as { frontmatter: Record<string, unknown> };
 }
 
-test.describe("Invoice Billing Flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await signUpViaApi(page);
+async function issue(api: APIRequestContext, csrf: string, slug: string) {
+  const res = await api.patch(`/api/invoices/${encodeURIComponent(slug)}`, {
+    headers: { "x-csrf-token": csrf },
+    data: { status: "sent", sent_at: new Date().toISOString() },
+  });
+  expect(res.status()).toBe(200);
+}
+
+test.describe("Invoice Billing Flow (echte Rechnungsrouten)", () => {
+  let csrf = "";
+  let api: APIRequestContext;
+
+  test.beforeEach(async ({ page }: { page: Page }) => {
+    ({ csrf } = await signUpLegalUser(page, "billing"));
+    api = page.context().request;
   });
 
-  test("create invoice → mark sent → mark paid", async ({ page }) => {
-    const csrf = await getCsrf(page);
-    const api = page.context().request;
+  test("Anlage über /api/invoices → ausstellen → bezahlt", async () => {
+    const { slug, setup } = await createDraft(api, csrf);
 
-    // 1. Create invoice
-    const invoiceSlug = `inv-billing-${Date.now()}`;
-    const invNumber = `R-BILL-${Date.now()}`;
-    const createRes = await api.post("/api/pages", {
+    // The time entry is billed under the invoice number.
+    const timeRes = await api.get(`/api/time?case_slug=${encodeURIComponent(setup.caseSlug)}`);
+    const entry = (await timeRes.json()).data.entries.find(
+      (e: { id: string }) => e.id === setup.entryId
+    );
+    expect(entry.billed).toBe(true);
+
+    await issue(api, csrf, slug);
+    expect((await getInvoice(api, slug)).frontmatter.status).toBe("sent");
+
+    const paidRes = await api.patch(`/api/invoices/${encodeURIComponent(slug)}`, {
+      headers: { "x-csrf-token": csrf },
+      data: { status: "paid", paid_at: new Date().toISOString() },
+    });
+    expect(paidRes.status()).toBe(200);
+    expect((await getInvoice(api, slug)).frontmatter.status).toBe("paid");
+  });
+
+  test("ausgestellte Rechnung ist unveränderbar", async () => {
+    const { slug } = await createDraft(api, csrf);
+    await issue(api, csrf, slug);
+    const res = await api.patch(`/api/invoices/${encodeURIComponent(slug)}`, {
+      headers: { "x-csrf-token": csrf },
+      data: { total: 1 },
+    });
+    expect(res.status()).toBeGreaterThanOrEqual(400);
+    expect((await getInvoice(api, slug)).frontmatter.total).not.toBe(1);
+  });
+
+  test("Storno: Storno-Note mit negativen Beträgen, Original unverändert, zweiter Storno → 409", async () => {
+    const { slug, number, payload } = await createDraft(api, csrf);
+    await issue(api, csrf, slug);
+    const before = (await getInvoice(api, slug)).frontmatter;
+
+    const stornoRes = await api.post(`/api/invoices/${encodeURIComponent(slug)}/storno`, {
+      headers: { "x-csrf-token": csrf },
+    });
+    expect(stornoRes.status()).toBe(201);
+    const storno = (await stornoRes.json()).data as { slug: string; invoice_number: string };
+    expect(storno.invoice_number).not.toBe(number);
+
+    const note = (await getInvoice(api, storno.slug)).frontmatter;
+    expect(note).toMatchObject({
+      invoice_type: "storno",
+      parent_invoice_id: slug,
+      parent_invoice_number: number,
+      status: "sent",
+      total: -payload.frontmatter.total,
+      subtotal: -payload.frontmatter.subtotal,
+    });
+
+    const after = (await getInvoice(api, slug)).frontmatter;
+    expect(after.status).toBe(before.status);
+    expect(after.total).toBe(before.total);
+    expect(after.items).toEqual(before.items);
+
+    const again = await api.post(`/api/invoices/${encodeURIComponent(slug)}/storno`, {
+      headers: { "x-csrf-token": csrf },
+    });
+    expect(again.status()).toBe(409);
+  });
+
+  test("zwei Rechnungen über dieselbe Leistung: verschiedene Nummern, nur eine wird angelegt", async () => {
+    const setup = await createCaseWithTimeEntry(api, csrf, { clientName: CLIENT });
+    const [n1, n2] = [await reserveInvoiceNumber(api, csrf), await reserveInvoiceNumber(api, csrf)];
+    expect(n1).not.toBe(n2);
+    const [a, b] = await Promise.all(
+      [n1, n2].map((n) =>
+        api.post("/api/invoices", {
+          headers: { "x-csrf-token": csrf },
+          data: draftInvoicePayload(setup, n, CLIENT),
+        })
+      )
+    );
+    expect([a.status(), b.status()].sort()).toEqual([201, 409]);
+  });
+
+  test("Positionen, die nicht zum Zeiteintrag passen, werden abgewiesen (422)", async () => {
+    const setup = await createCaseWithTimeEntry(api, csrf, { clientName: CLIENT });
+    const number = await reserveInvoiceNumber(api, csrf);
+    // Self-consistent but 4 × the recorded time.
+    const inflated = draftInvoicePayload({ ...setup, minutes: setup.minutes * 4 }, number, CLIENT);
+    const res = await api.post("/api/invoices", {
+      headers: { "x-csrf-token": csrf },
+      data: inflated,
+    });
+    expect(res.status()).toBe(422);
+    expect((await res.json()).code).toBe("invoice_billing_mismatch");
+  });
+
+  test("Entwurf wird gelöscht, nicht storniert", async () => {
+    const { slug } = await createDraft(api, csrf);
+    const res = await api.patch(`/api/invoices/${encodeURIComponent(slug)}`, {
+      headers: { "x-csrf-token": csrf },
+      data: { status: "cancelled" },
+    });
+    expect(res.status()).toBe(409);
+    expect((await res.json()).code).toBe("draft_cancel_use_delete");
+  });
+
+  test("Negativtest: Rechnung über POST /api/pages → 409", async () => {
+    const res = await api.post("/api/pages", {
       headers: { "x-csrf-token": csrf },
       data: {
-        slug: invoiceSlug,
-        title: `Rechnung ${invNumber}`,
-        type: "legal_invoice",
+        slug: `invoice/e2e-generic-${Date.now()}`,
+        title: "Rechnung am Rechnungsweg vorbei",
+        type: "invoice",
         content: "",
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: invNumber,
-          client: "Billing Test Client",
-          date: new Date().toISOString().slice(0, 10),
-          due_date: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
-          status: "draft",
-          items: [{ description: "Rechtsberatung", hours: 2, rate: 250, amount: 500 }],
-          total: 500,
-          vat_rate: 19,
-        },
+        frontmatter: { type: "invoice", invoice_number: "R-X", status: "draft", items: [] },
       },
     });
-    expect(createRes.status()).toBeLessThan(300);
-
-    // 2. Mark as sent
-    const sentRes = await api.patch(`/api/pages/${invoiceSlug}`, {
-      headers: { "x-csrf-token": csrf },
-      data: {
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: invNumber,
-          client: "Billing Test Client",
-          date: new Date().toISOString().slice(0, 10),
-          status: "sent",
-          items: [{ description: "Rechtsberatung", hours: 2, rate: 250, amount: 500 }],
-          total: 500,
-          vat_rate: 19,
-        },
-      },
-    });
-    expect(sentRes.status()).toBeLessThan(300);
-
-    // 3. Verify sent
-    const fetchSent = await api.get(`/api/pages/${invoiceSlug}`);
-    const sentData = await fetchSent.json();
-    expect(sentData.frontmatter?.status).toBe("sent");
-
-    // 4. Mark as paid
-    const paidRes = await api.patch(`/api/pages/${invoiceSlug}`, {
-      headers: { "x-csrf-token": csrf },
-      data: {
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: invNumber,
-          client: "Billing Test Client",
-          date: new Date().toISOString().slice(0, 10),
-          status: "paid",
-          items: [{ description: "Rechtsberatung", hours: 2, rate: 250, amount: 500 }],
-          total: 500,
-          vat_rate: 19,
-          paid_date: new Date().toISOString().slice(0, 10),
-        },
-      },
-    });
-    expect(paidRes.status()).toBeLessThan(300);
-
-    // 5. Verify paid
-    const fetchPaid = await api.get(`/api/pages/${invoiceSlug}`);
-    const paidData = await fetchPaid.json();
-    expect(paidData.frontmatter?.status).toBe("paid");
-    expect(paidData.frontmatter?.paid_date).toBeDefined();
+    expect(res.status()).toBe(409);
+    expect((await res.json()).error).toBe("invoice_create_via_route");
   });
 
-  test("invoice list shows all statuses", async ({ page }) => {
-    const csrf = await getCsrf(page);
-    const api = page.context().request;
-
-    const baseSlug = `inv-list-${Date.now()}`;
-    const statuses = ["draft", "sent", "paid", "cancelled"];
-
-    for (const status of statuses) {
-      await api.post("/api/pages", {
-        headers: { "x-csrf-token": csrf },
-        data: {
-          slug: `${baseSlug}-${status}`,
-          title: `Rechnung ${status}`,
-          type: "legal_invoice",
-          content: "",
-          frontmatter: {
-            type: "legal_invoice",
-            invoice_number: `R-${status}-${Date.now()}`,
-            client: "List Test Client",
-            date: new Date().toISOString().slice(0, 10),
-            status,
-            items: [],
-            total: 0,
-          },
-        },
-      });
-    }
-
-    const res = await api.get("/api/pages?type=legal_invoice&limit=100");
-    expect(res.status()).toBe(200);
-    const data = await res.json();
-    const pages = Array.isArray(data) ? data : (data.items ?? data.pages ?? []);
-    const slugs = pages.map((p: { slug: string }) => p.slug);
-    for (const status of statuses) {
-      expect(slugs).toContain(`${baseSlug}-${status}`);
-    }
-  });
-
-  test("e-invoice generation returns valid XML", async ({ page }) => {
-    const csrf = await getCsrf(page);
-    const api = page.context().request;
-
-    // Create an invoice first
-    const invoiceSlug = `inv-einvoice-${Date.now()}`;
-    await api.post("/api/pages", {
-      headers: { "x-csrf-token": csrf },
-      data: {
-        slug: invoiceSlug,
-        title: "E-Invoice Test",
-        type: "legal_invoice",
-        content: "",
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: `R-EINV-${Date.now()}`,
-          client: "E-Invoice Client",
-          date: new Date().toISOString().slice(0, 10),
-          status: "draft",
-          items: [{ description: "Beratung", hours: 1, rate: 200, amount: 200 }],
-          total: 200,
-          vat_rate: 19,
-        },
-      },
-    });
-
-    // Try to generate XRechnung XML
+  test("e-Rechnung aus einer echten Rechnung", async () => {
+    const { slug } = await createDraft(api, csrf);
     const genRes = await api.post("/api/e-invoice/generate", {
       headers: { "x-csrf-token": csrf },
-      data: {
-        invoiceSlug,
-        format: "xrechnung",
-      },
+      data: { invoiceSlug: slug, format: "xrechnung" },
     });
-
-    // Should return 200 with XML or 400 if settings missing
     if (genRes.status() === 200) {
       const xml = await genRes.text();
       expect(xml).toContain("<?xml");
       expect(xml).toContain("CrossIndustryInvoice");
     } else {
-      // If settings are missing (no kanzlei name), should get a clear error
+      // Without Kanzlei master data the route refuses with a clear 400.
       expect(genRes.status()).toBe(400);
     }
   });
 
-  test("invoicing dashboard renders with billing elements", async ({ page }) => {
+  test("Rechnungsübersicht rendert", async ({ page }) => {
     await page.goto("/dashboard/invoicing", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i }).first()).toBeVisible({
       timeout: 10_000,
     });
-  });
-
-  test("invoice status transition: draft → cancelled", async ({ page }) => {
-    const csrf = await getCsrf(page);
-    const api = page.context().request;
-
-    const invoiceSlug = `inv-cancel-${Date.now()}`;
-    const invNumber = `R-CANCEL-${Date.now()}`;
-    await api.post("/api/pages", {
-      headers: { "x-csrf-token": csrf },
-      data: {
-        slug: invoiceSlug,
-        title: `Rechnung ${invNumber}`,
-        type: "legal_invoice",
-        content: "",
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: invNumber,
-          client: "Cancel Test Client",
-          date: new Date().toISOString().slice(0, 10),
-          status: "draft",
-          items: [],
-          total: 0,
-        },
-      },
-    });
-
-    const cancelRes = await api.patch(`/api/pages/${invoiceSlug}`, {
-      headers: { "x-csrf-token": csrf },
-      data: {
-        frontmatter: {
-          type: "legal_invoice",
-          invoice_number: invNumber,
-          client: "Cancel Test Client",
-          date: new Date().toISOString().slice(0, 10),
-          status: "cancelled",
-          items: [],
-          total: 0,
-        },
-      },
-    });
-    expect(cancelRes.status()).toBeLessThan(300);
-
-    const fetchCancelled = await api.get(`/api/pages/${invoiceSlug}`);
-    const cancelledData = await fetchCancelled.json();
-    expect(cancelledData.frontmatter?.status).toBe("cancelled");
   });
 });

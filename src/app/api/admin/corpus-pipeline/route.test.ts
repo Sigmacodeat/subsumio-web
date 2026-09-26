@@ -48,7 +48,13 @@ beforeEach(() => {
     headers: {},
     brainId: "brain",
     plan: "team",
-    user: { id: "u1", email: OPERATOR, role: "admin", twoFactorEnabled: true },
+    user: {
+      id: "u1",
+      email: OPERATOR,
+      role: "admin",
+      twoFactorEnabled: true,
+      emailVerifiedAt: "2026-01-01T00:00:00.000Z",
+    },
   } as any);
 });
 

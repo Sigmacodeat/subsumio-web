@@ -149,3 +149,17 @@ export function createInterviewSession(input: {
     updated_at: now,
   };
 }
+
+/** Template variable from a question label ("Name der Mandantin" → "name_der_mandantin"). */
+export function variableFromLabel(label: string, index: number): string {
+  const base = label
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
+  return base || `frage_${index + 1}`;
+}

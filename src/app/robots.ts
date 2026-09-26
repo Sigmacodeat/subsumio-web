@@ -8,7 +8,19 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/admin", "/portal", "/api/"],
+        // App areas and the firm-specific public forms (those also carry
+        // noindex) — not Subsumio marketing content.
+        disallow: [
+          "/dashboard",
+          "/admin",
+          "/ops",
+          "/mobile",
+          "/portal",
+          "/api/",
+          "/erstanfrage",
+          "/termin",
+          "/mandat",
+        ],
       },
     ],
     sitemap: `${BASE}/sitemap.xml`,

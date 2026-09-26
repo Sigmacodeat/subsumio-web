@@ -13,7 +13,10 @@ vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k }) }));
 vi.mock("@/lib/api", () => ({
   api: {
     brain: {
-      batchListPages: (...a: unknown[]) => batchListPages(...a),
+      // The page pages through every type (listAllPages); the mock serves
+      // the per-type record the tests set up.
+      listAllPages: ({ type }: { type: string }) =>
+        batchListPages().then((results: Record<string, unknown[]>) => results[type] ?? []),
       updatePage: (...a: unknown[]) => updatePage(...a),
     },
     auth: { me: () => authMe() },
@@ -74,6 +77,22 @@ describe("ReviewQueue page", () => {
     const btn = await screen.findByRole("button", { name: /review_queue\.approve/ });
     await userEvent.click(btn);
     await waitFor(() => expect(screen.getByText(/konnte nicht aktualisiert/)).toBeInTheDocument());
+  });
+
+  it("a matter that was never put up for review is not listed as pending", async () => {
+    batchListPages.mockResolvedValue({
+      legal_case: [{ slug: "legal/cases/a", title: "Akte A", type: "legal_case", frontmatter: {} }],
+      document_draft: [doc("drafts/eins")],
+    });
+    render(<ReviewQueuePage />);
+    expect(await screen.findByText("drafts/eins")).toBeInTheDocument();
+    expect(screen.queryByText("Akte A")).not.toBeInTheDocument();
+  });
+
+  it("a failed load shows the error, not an empty queue", async () => {
+    batchListPages.mockRejectedValue(new Error("down"));
+    render(<ReviewQueuePage />);
+    expect(await screen.findByText(/konnten nicht geladen werden/)).toBeInTheDocument();
   });
 
   it("shows the empty state when nothing needs review", async () => {

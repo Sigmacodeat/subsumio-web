@@ -75,7 +75,14 @@ export function CaseNextStepsPanel({ caseSlug }: { caseSlug: string }) {
         </p>
       )}
 
-      {runsQuery.isLoading ? (
+      {runsQuery.isError && !result ? (
+        <p role="alert" className="py-3 text-xs text-[color:var(--ds-danger-text)]">
+          Die nächsten Schritte konnten nicht geladen werden.{" "}
+          <button type="button" className="underline" onClick={() => void runsQuery.refetch()}>
+            Erneut versuchen
+          </button>
+        </p>
+      ) : runsQuery.isLoading ? (
         <div className="flex items-center gap-2 py-3" role="status">
           <Loader2 size={12} className="animate-spin text-[color:var(--brand-primary)]" />
           <span className="text-xs text-[color:var(--ds-text-muted)]">

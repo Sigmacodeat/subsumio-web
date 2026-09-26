@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://mock-engine:3001" }));
+const role = vi.hoisted(() => ({ value: "lawyer" }));
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (
@@ -9,7 +10,10 @@ vi.mock("@/lib/api-handler", () => ({
       handler: (ctx: unknown, body: unknown, q: unknown, req: unknown) => Promise<Response>
     ) =>
     async (req: Request, routeCtx: { params: Promise<{ slug: string[] }> }) => {
-      const ctx = { headers: { "x-subsumio-source": "firm-a" }, user: { id: "u1" } };
+      const ctx = {
+        headers: { "x-subsumio-source": "firm-a" },
+        user: { id: "u1", role: role.value },
+      };
       // The real handler exposes route params on the request object.
       const r = Object.assign(req, { params: routeCtx.params });
       return handler(ctx, null, null, r);
@@ -67,5 +71,39 @@ describe("GET /api/files/[...slug] response hardening", () => {
     expect(res.headers.get("Content-Disposition")).toMatch(/^inline/);
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Content-Security-Policy")).not.toMatch(/sandbox/);
+  });
+});
+
+describe("GET /api/files/[...slug] — ID copies are firm-internal", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    role.value = "lawyer";
+  });
+
+  it("a client account gets 404 for an ID copy filed with the AML check", async () => {
+    role.value = "client_viewer";
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).includes("/api/pages/")
+        ? Response.json({ slug: "legal/docs/doc", frontmatter: { doc_type: "ausweiskopie" } })
+        : new Response("%PDF", { status: 200, headers: { "Content-Type": "application/pdf" } })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await get("http://localhost/api/files/legal/docs/doc");
+    expect(res.status).toBe(404);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("/api/files/"))).toBe(false);
+  });
+
+  it("a client account still downloads an ordinary document of its matter", async () => {
+    role.value = "client_viewer";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).includes("/api/pages/")
+          ? Response.json({ slug: "legal/docs/doc", frontmatter: { doc_type: "brief" } })
+          : new Response("%PDF", { status: 200, headers: { "Content-Type": "application/pdf" } })
+      )
+    );
+    const res = await get("http://localhost/api/files/legal/docs/doc");
+    expect(res.status).toBe(200);
   });
 });

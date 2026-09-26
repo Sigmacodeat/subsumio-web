@@ -8,6 +8,8 @@ const USERS = [
   { userId: "u-lawyer", role: "lawyer" },
   { userId: "u-assistant", role: "assistant" },
   { userId: "u-client", role: "client_viewer" },
+  // Operator inside a support session (support-session-policy.ts).
+  { userId: "u-support", role: "support" },
 ];
 const CASES: MatterPermissions[] = [
   {},
@@ -34,5 +36,25 @@ describe("matter access rule", () => {
         );
       }
     }
+  });
+});
+
+describe("support session role", () => {
+  const op = { userId: "u-support", role: "support" };
+  it("does not open restricted or confidential matters", () => {
+    expect(matterAccessLevel(op, { visibility: "restricted" }, NOW)).toBe("none");
+    expect(matterAccessLevel(op, { visibility: "confidential" }, NOW)).toBe("none");
+  });
+  it("reads ordinary matters without write access", () => {
+    expect(matterAccessLevel(op, {}, NOW)).toBe("read");
+  });
+  it("an explicit grant by the firm opens a restricted matter", () => {
+    expect(
+      matterAccessLevel(
+        op,
+        { visibility: "restricted", grants: [{ user_id: "u-support", level: "read" }] },
+        NOW
+      )
+    ).toBe("read");
   });
 });

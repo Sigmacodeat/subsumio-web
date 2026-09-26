@@ -157,9 +157,22 @@ describe("passwordSchema", () => {
   });
 });
 
+const ACCEPT = { acceptTerms: true, acceptDpa: true } as const;
+
 describe("signupSchema", () => {
+  test("rejects signup without accepting AGB/Datenschutz and AVV", () => {
+    const base = { email: "test@example.com", password: "StrongPass1!" };
+    expect(signupSchema.safeParse(base).success).toBe(false);
+    expect(signupSchema.safeParse({ ...base, acceptTerms: true }).success).toBe(false);
+    expect(signupSchema.safeParse({ ...base, acceptDpa: true }).success).toBe(false);
+    expect(signupSchema.safeParse({ ...base, acceptTerms: "true", acceptDpa: true }).success).toBe(
+      false
+    );
+  });
+
   test("accepts valid signup with all fields", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       name: "Test User",
@@ -169,6 +182,7 @@ describe("signupSchema", () => {
 
   test("accepts minimal signup (email + password)", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
     });
@@ -177,6 +191,7 @@ describe("signupSchema", () => {
 
   test("accepts the active legal industry", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       locale: "de",
@@ -187,6 +202,7 @@ describe("signupSchema", () => {
 
   test("rejects archived tax onboarding", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       industry: "tax",
@@ -196,6 +212,7 @@ describe("signupSchema", () => {
 
   test("rejects invalid locale", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       locale: "fr",
@@ -205,6 +222,7 @@ describe("signupSchema", () => {
 
   test("accepts the active Austrian signup locale", () => {
     const result = signupSchema.safeParse({
+      ...ACCEPT,
       email: "kanzlei@example.at",
       password: "SicheresPasswort123",
       name: "Kanzlei Wien",
@@ -218,6 +236,7 @@ describe("signupSchema", () => {
 describe("registerSchema", () => {
   test("requires name (unlike signupSchema)", () => {
     const result = registerSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
     });
@@ -226,6 +245,7 @@ describe("registerSchema", () => {
 
   test("accepts valid register with name", () => {
     const result = registerSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       name: "Test User",
@@ -235,6 +255,7 @@ describe("registerSchema", () => {
 
   test("accepts optional referredBy", () => {
     const result = registerSchema.safeParse({
+      ...ACCEPT,
       email: "test@example.com",
       password: "StrongPass1!",
       name: "Test",

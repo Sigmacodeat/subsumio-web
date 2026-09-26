@@ -549,18 +549,29 @@ function walk(dir: string): string[] {
 // in `_normalized/` landet pro Dokument genau die beste Fassung. Ohne
 // unwiderrufliche Aktion — der Rohbestand ist nicht in git.
 // ---------------------------------------------------------------------------
-interface Quality {
+export interface Quality {
   path: string;
   chrome: boolean;
   stub: boolean;
   substance: number;
   fields: number;
+  /** When RIS last changed the document (ISO date), "" when unknown. */
+  changedAt: string;
 }
 
 const RE_CHROME_Q = /Accesskey \d|Seitenbereiche:|Zur Navigationsleiste|Zum Seitenanfang/;
 const RE_STUB_Q = /Volltext nicht abrufbar/;
 
-function qualityOf(path: string, raw: Raw): Quality {
+/** RIS change date of a file: zuletzt_geaendert / zuletzt_aktualisiert, else retrieved_at. */
+function changedAtOf(fm: Raw["fm"]): string {
+  for (const key of ["zuletzt_geaendert", "zuletzt_aktualisiert", "retrieved_at"]) {
+    const iso = toIsoDate(clean(fm[key]));
+    if (iso) return iso;
+  }
+  return "";
+}
+
+export function qualityOf(path: string, raw: Raw): Quality {
   const substance = raw.body
     .split("\n")
     .filter((l) => !/^#{1,6}\s/.test(l))
@@ -574,13 +585,22 @@ function qualityOf(path: string, raw: Raw): Quality {
     stub: RE_STUB_Q.test(raw.body),
     substance,
     fields: Object.keys(raw.fm).length,
+    changedAt: changedAtOf(raw.fm),
   };
 }
 
-/** Sauber schlägt schmutzig; bei <2 % Inhaltsunterschied gewinnen die Metadaten. */
-function betterQ(a: Quality, b: Quality): Quality {
+/**
+ * Sauber schlägt schmutzig; dann die NEUERE Fassung (eine Berichtigung oder
+ * ein weggefallener Absatz macht den Text kürzer — die längere, ältere Datei
+ * darf sie nicht verdrängen); erst ohne Datum entscheidet der Inhalt, bei
+ * <2 % Unterschied die Metadaten.
+ */
+export function betterQ(a: Quality, b: Quality): Quality {
   if (a.stub !== b.stub) return a.stub ? b : a;
   if (a.chrome !== b.chrome) return a.chrome ? b : a;
+  if (a.changedAt && b.changedAt && a.changedAt !== b.changedAt) {
+    return a.changedAt > b.changedAt ? a : b;
+  }
   const max = Math.max(a.substance, b.substance);
   const equivalent = max > 0 && Math.abs(a.substance - b.substance) / max < 0.02;
   if (!equivalent) return a.substance > b.substance ? a : b;

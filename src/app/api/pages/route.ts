@@ -1,48 +1,105 @@
+import { withoutStaffOnlyRecords } from "@/lib/staff-only-records";
 import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
+import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
+import { emitCaseCreated } from "@/lib/webhook-dispatch";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
+import {
+  enforceFirmTwoFactorNow,
+  turnsOnTwoFactorRequirement,
+} from "@/lib/auth/two-factor-enforce";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
-import { matterConflictParties } from "@/lib/contact-conflict";
-import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
 import {
+  SERVER_OWNED_CONFLICT_KEYS,
+  canWaiveConflict,
+  checkMatterConflicts,
+  conflictCheckRecord,
+  type MatterConflictOutcome,
+} from "@/lib/conflict-gate";
+import { caseContentWithAktenblatt, isCaseSlug, isDeadlineSlug } from "@/lib/aktenblatt";
+import { refreshAktenblatt, refreshAktenblattForDeadline } from "@/lib/aktenblatt-refresh";
+import {
+  FRONTMATTER_IN_CONTENT_REJECTION,
   GUARD_READ_FAILED,
+  hasLeadingFrontmatter,
+  checkCreateOverExisting,
   checkInvoiceWrite,
+  checkSignedDocumentWrite,
+  guardProtectedPageWrite,
   guardSecondCheckWrite,
+  isKanzleiSettingsTarget,
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { can } from "@/lib/permissions";
+import { applyDeadlineWritePolicy, type DeadlineChangeEvent } from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
+import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
 
-const pagesQuerySchema = z.object({
-  limit: z.string().optional(),
-  offset: z.string().optional(),
-  source: z.string().optional(),
-  type: z.string().optional(),
-  tag: z.string().optional(),
-  q: z.string().optional(),
-  cursor: z.string().optional(),
-  /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
-  include_tombstoned: z.string().optional(),
-  /**
-   * Pages of `type` that belong to one matter — linked by frontmatter
-   * case_slug, case_title or case_number (any of them). The engine cannot
-   * filter by frontmatter and caps a list at 100 rows, so the server pages
-   * through the whole type and filters; the result is complete, not the
-   * newest N of the firm.
-   */
-  case_slug: z.string().max(500).optional(),
-  case_title: z.string().max(500).optional(),
-  case_number: z.string().max(200).optional(),
-});
+const pagesQuerySchema = z
+  .object({
+    limit: z.string().optional(),
+    offset: z.string().optional(),
+    source: z.string().optional(),
+    type: z.string().optional(),
+    tag: z.string().optional(),
+    q: z.string().optional(),
+    cursor: z.string().optional(),
+    /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
+    include_tombstoned: z.string().optional(),
+    /**
+     * Pages of `type` that belong to one matter — linked by frontmatter
+     * case_slug, case_title or case_number (any of them). The engine filters
+     * by these frontmatter fields in SQL (indexed for case_slug), so only the
+     * matter's own rows are read; the server pages through them and the
+     * result is complete, not the newest N of the firm.
+     */
+    case_slug: z.string().max(500).optional(),
+    case_title: z.string().max(500).optional(),
+    case_number: z.string().max(200).optional(),
+  })
+  // `fm.<key>=<value>`: engine-side frontmatter equality filter, relayed
+  // as is (keys validated below).
+  .passthrough();
 
-/** Upper bound for a matter-scoped scan (pages of one type, firm-wide). */
+/** Frontmatter filter params of a list query (`fm.<snake_case key>`). */
+function frontmatterFilterParams(
+  query: Record<string, unknown>
+): Array<[string, string]> | "invalid" {
+  const out: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(query)) {
+    if (!key.startsWith("fm.")) continue;
+    if (!/^[a-z][a-z0-9_]{0,62}$/.test(key.slice(3)) || typeof value !== "string") {
+      return "invalid";
+    }
+    out.push([key, value.slice(0, 500)]);
+  }
+  return out.length > 5 ? "invalid" : out;
+}
+
+/** Safety stop for one matter's pages of one type (engine-filtered). */
 const MATTER_SCAN_MAX = 50_000;
+
+/** The engine-side frontmatter filter for a matter query (any key matches). */
+function matterFrontmatterFilter(q: {
+  case_slug?: string;
+  case_title?: string;
+  case_number?: string;
+}): Record<string, string> {
+  const fm: Record<string, string> = {};
+  if (q.case_slug) fm.case_slug = q.case_slug;
+  if (q.case_title) fm.case_title = q.case_title;
+  if (q.case_number) fm.case_number = q.case_number;
+  return fm;
+}
 
 function belongsToMatter(
   fm: Record<string, unknown> | undefined,
@@ -81,38 +138,6 @@ const pagesPostSchema = z
     }
   });
 
-type ConflictMatch = { name: string; slug: string; type: string };
-
-async function checkLegalCaseConflicts(
-  headers: Record<string, string>,
-  frontmatter: Record<string, unknown> | undefined
-): Promise<{ checked: boolean; matches?: ConflictMatch[] }> {
-  // Client, main opponent and every additional opponent (same name once).
-  const namesToCheck = [...new Set(matterConflictParties(frontmatter).map((party) => party.name))];
-  if (namesToCheck.length === 0) return { checked: true };
-
-  const conflicts: ConflictMatch[] = [];
-  for (const name of namesToCheck) {
-    const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ name }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!checkRes.ok) {
-      throw new Error(`Conflict check failed: HTTP ${checkRes.status}`);
-    }
-    const checkData = (await checkRes.json()) as { matches?: ConflictMatch[] };
-    if (checkData.matches?.length) {
-      conflicts.push(
-        ...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
-      );
-    }
-  }
-
-  return { checked: true, matches: conflicts.length > 0 ? conflicts : undefined };
-}
-
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -125,11 +150,26 @@ export const GET = createHandler(
         return apiError("type_required", "Für eine Aktenfilterung ist type erforderlich", 400);
       }
       try {
+        // Engine filters in SQL; the Node-side check stays as a guard so a
+        // filter the engine could not apply never widens the result.
         const all = await listEnginePages(ctx.headers, query.type, MATTER_SCAN_MAX, {
           includeTombstoned: query.include_tombstoned === "1",
           timeoutMs: 15_000,
+          strict: true,
+          failOnTruncate: true,
+          frontmatter: matterFrontmatterFilter(query),
         });
-        return Response.json(all.filter((p) => belongsToMatter(p.frontmatter, query)));
+        return Response.json(
+          hideForeignPersonalEvents(
+            redactPageSecrets(
+              withoutStaffOnlyRecords(
+                ctx.user.role,
+                all.filter((p) => belongsToMatter(p.frontmatter, query))
+              )
+            ),
+            ctx.user?.id
+          )
+        );
       } catch (err) {
         log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
         return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
@@ -140,6 +180,11 @@ export const GET = createHandler(
       const val = query[key];
       if (val) params.set(key, val);
     }
+    const fmParams = frontmatterFilterParams(query as Record<string, unknown>);
+    if (fmParams === "invalid") {
+      return apiError("invalid_frontmatter_filter", "Ungültiger Filter", 400);
+    }
+    for (const [k, v] of fmParams) params.set(k, v);
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
         headers: ctx.headers,
@@ -148,10 +193,16 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = (await res.json()) as unknown;
       // Deleted records are tombstoned, not removed; lists must not bring them back.
-      const data =
-        Array.isArray(raw) && query.include_tombstoned !== "1"
-          ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
-          : raw;
+      const visible = Array.isArray(raw) ? withoutStaffOnlyRecords(ctx.user.role, raw) : raw;
+      // Other users' personal calendar mirrors are theirs alone.
+      const data = hideForeignPersonalEvents(
+        redactPageSecrets(
+          Array.isArray(visible) && query.include_tombstoned !== "1"
+            ? visible.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
+            : visible
+        ),
+        ctx.user?.id
+      );
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");
       if (nextCursor) {
@@ -164,73 +215,6 @@ export const GET = createHandler(
     }
   }
 );
-
-/**
- * Re-render the Aktenblatt after a metadata merge. Best-effort: a failure here
- * leaves the matter with a stale (but still valid) Aktenblatt.
- */
-async function refreshAktenblatt(headers: Record<string, string>, slug: string): Promise<void> {
-  try {
-    const path = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return;
-    const page = (await res.json()) as {
-      title?: string;
-      content?: string;
-      frontmatter?: Record<string, unknown>;
-    };
-    // Deadlines are usually standalone pages linked by case_slug.
-    const allDeadlines = (await listEnginePages(headers, "legal_deadline", 10_000, {
-      timeoutMs: 10_000,
-    })) as unknown as Array<Record<string, unknown>>;
-    const linkedDeadlines = allDeadlines.filter(
-      (d) => ((d.frontmatter ?? {}) as Record<string, unknown>).case_slug === slug
-    );
-    const next = caseContentWithAktenblatt(
-      page.content ?? "",
-      page.title ?? "",
-      page.frontmatter ?? {},
-      {
-        linkedDeadlines,
-      }
-    );
-    if (next === (page.content ?? "").trim()) return;
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ slug, merge: true, content: next }),
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (e) {
-    log.warn("[pages] aktenblatt refresh skipped:", e instanceof Error ? e.message : String(e));
-  }
-}
-
-async function refreshAktenblattForDeadline(
-  headers: Record<string, string>,
-  deadlineSlug: string,
-  fm: Record<string, unknown> | undefined
-): Promise<void> {
-  try {
-    let caseSlug = typeof fm?.case_slug === "string" ? fm.case_slug : "";
-    if (!caseSlug) {
-      const path = deadlineSlug.split("/").map(encodeURIComponent).join("/");
-      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-        headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!res.ok) return;
-      const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
-      caseSlug = typeof page.frontmatter?.case_slug === "string" ? page.frontmatter.case_slug : "";
-    }
-    if (isCaseSlug(caseSlug)) await refreshAktenblatt(headers, caseSlug);
-  } catch {
-    /* best-effort */
-  }
-}
 
 /**
  * Check-out enforcement: a merge/update on a document locked by another
@@ -283,14 +267,29 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, _query, _req) => {
+  async (ctx, body, _query, req) => {
     try {
+      // Metadata travels only in title/type/frontmatter, where the guards
+      // below see it — never as a YAML block inside the content.
+      if (hasLeadingFrontmatter(body.content)) {
+        return rejectionResponse(FRONTMATTER_IN_CONTENT_REJECTION);
+      }
       // Every write — merge or create — is judged against the stored page, so
       // a create over an existing slug cannot slip past the guards. Fail
       // closed: an unreadable page is not written.
       const currentRead = await readCurrentPage(ENGINE_URL, ctx.headers, body.slug);
       if (currentRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
       const current = currentRead.kind === "found" ? currentRead.page : null;
+
+      // Matters and invoices: a create never replaces a stored page. With no
+      // stored page the engine write is create-only; replacing one needs
+      // If-Match with its stored version.
+      const createVerdict = checkCreateOverExisting(current, {
+        merge: body.merge === true,
+        type: body.type,
+        ifMatch: req.headers.get("if-match"),
+      });
+      if (createVerdict.kind === "reject") return rejectionResponse(createVerdict.reject);
 
       // § 132 BAO / UStG: an issued invoice is frozen — only payment and
       // delivery bookkeeping may change; never overwritten by a create.
@@ -302,6 +301,48 @@ export const POST = createHandler(
         frontmatter: body.frontmatter,
       });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+      // A signed document keeps the text its signature was bound to.
+      const signedRejection = checkSignedDocumentWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        content: body.content,
+        frontmatter: body.frontmatter,
+      });
+      if (signedRejection) return rejectionResponse(signedRejection);
+      const invoiceRouteRejection = checkInvoiceGenericWrite(current, {
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if (invoiceRouteRejection) return rejectionResponse(invoiceRouteRejection);
+
+      // Records with their own route (Kanzlei-Einstellungen, KYC, Anderkonten,
+      // Freigaben, Kollisions-/Legal-Hold-Felder, Archiv) are not written here.
+      const isMergeWrite = body.merge === true;
+      const protectedWrite = guardProtectedPageWrite({
+        slug: body.slug,
+        current,
+        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        mode: isMergeWrite ? "merge" : "replace",
+        type: body.type,
+        frontmatter: body.frontmatter,
+      });
+      if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
+      if (protectedWrite.frontmatter) body.frontmatter = protectedWrite.frontmatter;
+
+      // The SMTP password is stored encrypted, never as page plaintext.
+      if (isKanzleiSettingsTarget(body.slug, current, body.type, body.frontmatter)) {
+        body.frontmatter = await sealKanzleiSettingsFrontmatter(
+          body.frontmatter ?? {},
+          current?.frontmatter ?? null
+        );
+      }
+
+      // Billed time entries / expenses are part of an invoice's basis — the
+      // billing state moves only through the dedicated billing routes.
+      const billedRejection = checkBilledEntriesWrite(current, {
+        mode: body.merge === true ? "merge" : "replace",
+        frontmatter: body.frontmatter,
+      });
+      if (billedRejection) return rejectionResponse(billedRejection);
 
       // Vier-Augen-Kontrolle: second_check_* only via the second-check route.
       if (body.frontmatter) {
@@ -310,12 +351,49 @@ export const POST = createHandler(
         body.frontmatter = guarded.frontmatter;
       }
 
-      let conflictWarning:
-        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
-        | undefined;
+      // Fristen: server-stamped identity (created/approved/completed by),
+      // Notfrist protection and the before/after audit trail.
+      let deadlineEvents: DeadlineChangeEvent[] = [];
+      if (body.frontmatter || body.type === "legal_deadline" || isDeadlineSlug(body.slug)) {
+        const policy = applyDeadlineWritePolicy({
+          slug: body.slug,
+          type: body.type ?? current?.type,
+          incoming: body.frontmatter ?? {},
+          current,
+          user: ctx.user,
+        });
+        if ("reject" in policy) return rejectionResponse(policy.reject);
+        if (body.frontmatter || policy.events.length > 0) body.frontmatter = policy.frontmatter;
+        deadlineEvents = policy.events;
+      }
+
+      // Every merge onto an existing page advances its version, so a client
+      // holding an older copy (If-Match on PATCH) notices the change instead
+      // of overwriting it.
+      if (body.merge === true && current) {
+        const storedVersion = Number(current.frontmatter?.version);
+        body.frontmatter = {
+          ...(body.frontmatter ?? {}),
+          version: (Number.isFinite(storedVersion) ? storedVersion : 0) + 1,
+        };
+      } else if (createVerdict.kind === "replace") {
+        body.frontmatter = { ...(body.frontmatter ?? {}), version: createVerdict.version };
+      }
+
+      let conflictWarning: MatterConflictOutcome | undefined;
       if (body.type === "legal_case") {
+        // Conflict status and waiver stamps are server-owned: never taken
+        // from the request body.
+        const fm: Record<string, unknown> = { ...(body.frontmatter ?? {}) };
+        for (const key of SERVER_OWNED_CONFLICT_KEYS) delete fm[key];
+        body.frontmatter = fm;
+
         try {
-          conflictWarning = await checkLegalCaseConflicts(ctx.headers, body.frontmatter);
+          // Each party is checked with its side in THIS matter (§ 10 Abs 1
+          // RAO); the matter itself and the party's own contact are no hits.
+          conflictWarning = await checkMatterConflicts(ctx.headers, fm, {
+            selfCaseSlug: body.slug,
+          });
         } catch (err) {
           log.error(
             "[pages] conflict check failed:",
@@ -329,47 +407,64 @@ export const POST = createHandler(
         }
 
         const waiverReason =
-          typeof body.frontmatter?.conflict_waiver_reason === "string"
-            ? body.frontmatter.conflict_waiver_reason.trim()
-            : "";
-        if (conflictWarning.matches?.length && waiverReason.length === 0) {
+          typeof fm.conflict_waiver_reason === "string" ? fm.conflict_waiver_reason.trim() : "";
+        const blocking = conflictWarning.blocking.length > 0;
+        if (blocking && waiverReason.length === 0) {
           return Response.json(
             {
               error: "conflict_detected",
-              message: "Kollisionsprüfung hat Treffer gefunden. Akte wurde nicht angelegt.",
+              message:
+                "Interessenkonflikt: Eine Partei steht in einer bestehenden Akte auf der Gegenseite. Akte wurde nicht angelegt.",
               conflictWarning,
             },
             { status: 409 }
           );
         }
-
-        // E9: Enforce partner-level approval for conflict waivers
-        if (conflictWarning.matches?.length && waiverReason.length > 0) {
-          const approverRole = ctx.user.role;
-          const allowedWaiverRoles = ["admin", "lawyer"];
-          if (!allowedWaiverRoles.includes(approverRole)) {
-            return Response.json(
-              {
-                error: "conflict_waiver_unauthorized",
-                message: "Konflikt-Waiver erfordert Partner-Freigabe (Rolle: admin oder lawyer).",
-              },
-              { status: 403 }
-            );
-          }
-          // Stamp waiver with approver info for audit trail
-          body.frontmatter = {
-            ...body.frontmatter,
-            conflict_waived_by: ctx.user.email,
-            conflict_waived_by_role: approverRole,
-            conflict_waived_at: new Date().toISOString(),
-            conflict_status: "conflict_waived",
-          };
+        if (blocking && !canWaiveConflict(ctx.user.role)) {
+          return Response.json(
+            {
+              error: "conflict_waiver_unauthorized",
+              message: "Konflikt-Freigabe erfordert die Rolle Anwalt oder Admin.",
+            },
+            { status: 403 }
+          );
         }
 
-        if (conflictWarning.checked && !conflictWarning.matches?.length) {
+        const now = new Date();
+        const actor = { id: ctx.user.id, email: ctx.user.email, role: ctx.user.role };
+        if (blocking) {
+          // Stamp waiver with the real approver for the audit trail
+          body.frontmatter = {
+            ...fm,
+            conflict_waived_by: ctx.user.email,
+            conflict_waived_by_id: ctx.user.id,
+            conflict_waived_by_role: ctx.user.role,
+            conflict_waived_at: now.toISOString(),
+            conflict_status: "conflict_waived",
+          };
+        } else if (conflictWarning.checked) {
+          body.frontmatter = { ...fm, conflict_status: "conflict_cleared" };
+        }
+
+        // Mandatsannahme evidence: the conflict_check block is written from
+        // the server's own result, never from what the client claims.
+        const acceptance = (body.frontmatter as Record<string, unknown>).mandate_acceptance;
+        if (acceptance && typeof acceptance === "object" && !Array.isArray(acceptance)) {
+          const stored = (
+            current?.frontmatter?.mandate_acceptance as Record<string, unknown> | undefined
+          )?.conflict_check;
+          const conflictCheck =
+            !conflictWarning.checked && body.merge === true && stored && typeof stored === "object"
+              ? stored
+              : conflictCheckRecord(
+                  conflictWarning,
+                  actor,
+                  blocking ? { reason: waiverReason, actor } : undefined,
+                  now
+                );
           body.frontmatter = {
             ...body.frontmatter,
-            conflict_status: "conflict_cleared",
+            mandate_acceptance: { ...acceptance, conflict_check: conflictCheck },
           };
         }
       }
@@ -397,11 +492,22 @@ export const POST = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(body),
+        body: JSON.stringify(
+          createVerdict.kind === "create_only" ? { ...body, if_absent: true } : body
+        ),
         signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) {
         const upstream = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+        if (res.status === 409 && upstream?.error === "page_exists") {
+          // Created in the meantime by someone else: nothing was replaced.
+          return rejectionResponse({
+            status: 409,
+            error: "page_exists",
+            message:
+              "Unter dieser Adresse wurde soeben eine Seite angelegt. Es wurde nichts überschrieben.",
+          });
+        }
         log.error("[pages] engine create rejected:", res.status, upstream);
         return Response.json(
           upstream ?? {
@@ -414,6 +520,7 @@ export const POST = createHandler(
       const isMerge = body.merge === true;
       if (!isMerge) void recordQuota(ctx, "pages");
       const result = await res.json();
+      await logDeadlineEvents(ctx, deadlineEvents);
 
       if (isMerge && isCaseSlug(body.slug) && body.content === undefined) {
         // Metadata merge on a matter: refresh the Aktenblatt from the merged
@@ -424,8 +531,22 @@ export const POST = createHandler(
         void refreshAktenblattForDeadline(ctx.headers, body.slug, body.frontmatter);
       }
 
+      if (
+        isKanzleiSettingsTarget(body.slug, current, body.type, body.frontmatter) &&
+        turnsOnTwoFactorRequirement(body.frontmatter, current?.frontmatter)
+      ) {
+        await enforceFirmTwoFactorNow(ctx.user);
+      }
+
       if (!isMerge && body.type === "legal_case") {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
+        if (!current) {
+          emitCaseCreated(ctx.brainId, {
+            slug: body.slug,
+            title: body.title,
+            frontmatter: body.frontmatter,
+          });
+        }
       } else if (!isMerge && body.type === "legal_deadline") {
         void markOnboardingProgress(ctx.user.id, { firstDeadline: true });
       }
@@ -437,7 +558,7 @@ export const POST = createHandler(
         action: isMerge ? "updated" : "created",
       });
 
-      return Response.json({ ...result, conflictWarning });
+      return Response.json({ ...redactPageSecrets(result), conflictWarning });
     } catch (e) {
       log.error("[pages] create failed:", e instanceof Error ? e.message : String(e));
       return apiError("internal_error", "Seite konnte nicht erstellt werden", 500);

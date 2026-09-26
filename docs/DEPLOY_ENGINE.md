@@ -37,7 +37,7 @@ full runbook + server layout:
 ➡️ **[`server/deploy/netcup/RUNBOOK.md`](../server/deploy/netcup/RUNBOOK.md)**
 
 ```bash
-bash scripts/deploy.sh            # commit + push + deploy
+bash scripts/deploy.sh            # deploy origin/main (clean tree, HEAD == origin/main; never commits/pushes)
 # or directly:
 sh server/deploy/netcup/deploy-code.sh          # full deploy
 sh server/deploy/netcup/deploy-code.sh --app    # web + engine only

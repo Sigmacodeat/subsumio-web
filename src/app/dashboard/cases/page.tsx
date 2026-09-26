@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   RotateCcw,
   Archive,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -263,6 +264,37 @@ export default function CasesPage() {
         type: "error",
         title: t("cases.toast_delete_fail"),
         description: t("cases.unknown_error"),
+      });
+    }
+  }
+
+  /** Matter created by mistake → Papierkorb (the server refuses closed matters). */
+  async function trashCase(slug: string) {
+    const caseItem = cases.find((c) => c.slug === slug);
+    const confirmed = await confirm({
+      title: t("cases.confirm_trash_title"),
+      message: t("cases.confirm_trash_msg").replace("{{name}}", caseItem?.title ?? slug),
+      confirmLabel: t("cases.btn_trash"),
+      cancelLabel: t("cases.btn_cancel"),
+      variant: "danger",
+    });
+    if (!confirmed) return;
+    try {
+      await api.brain.deletePage(slug, { mode: "trash" });
+      const next = cases.filter((c) => c.slug !== slug);
+      setCases(next);
+      await setCache(OFFLINE_KEYS.cases, next);
+      addToast({
+        type: "success",
+        title: t("cases.toast_trashed"),
+        description: caseItem?.title ?? slug,
+        duration: 6000,
+      });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: t("cases.toast_trash_fail"),
+        description: err instanceof Error && err.message ? err.message : t("cases.unknown_error"),
       });
     }
   }
@@ -625,7 +657,7 @@ export default function CasesPage() {
     {
       key: "actions",
       header: "",
-      width: "w-16",
+      width: "w-24",
       hideOnMobile: true,
       cell: (c) => (
         <div className="flex items-center justify-end gap-1">
@@ -652,6 +684,19 @@ export default function CasesPage() {
               aria-label={`${t("cases.delete")} ${c.title}`}
             >
               <Archive size={14} />
+            </button>
+          ) : null}
+          {canArchive && c.status !== "archived" && isOnline() ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                void trashCase(c.slug);
+              }}
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,color,opacity] duration-[var(--ds-duration-fast)] group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none motion-reduce:transition-none"
+              title={t("cases.trash")}
+              aria-label={`${t("cases.trash")} ${c.title}`}
+            >
+              <Trash2 size={14} />
             </button>
           ) : null}
           <ChevronRight

@@ -5,7 +5,7 @@ import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Subsumio Partnerprogramm — bis zu 30 % wiederkehrende Provision",
   description:
-    "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Drei Wege: Empfehlungspartner, Kunden-Empfehlungen und Einführungspartner. KI-Kanzleisoftware für österreichische Kanzleien.",
+    "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Zwei Wege: Empfehlungspartner und Einführungspartner. KI-Kanzleisoftware für österreichische Kanzleien.",
   alternates: {
     canonical: "/at/partners",
     languages: { "de-AT": "/at/partners", "de-DE": "/de/partners", "x-default": "/at/partners" },
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio Partnerprogramm — bis zu 30 % wiederkehrende Provision",
     description:
-      "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Drei Wege: Empfehlungspartner, Kunden-Empfehlungen und Einführungspartner.",
+      "Kanzleien zu Subsumio empfehlen und bis zu 30 % wiederkehrende Provision erhalten, solange der vermittelte Kunde zahlt. Zwei Wege: Empfehlungspartner und Einführungspartner.",
     url: "/at/partners",
     type: "website",
   },

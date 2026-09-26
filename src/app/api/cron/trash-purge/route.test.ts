@@ -9,6 +9,7 @@ const tombstoneCalls = vi.hoisted(
 );
 const audits = vi.hoisted(() => [] as Array<{ action: string; entityId?: string }>);
 const pagesByType = vi.hoisted(() => new Map<string, Array<Record<string, unknown>>>());
+const listLimits = vi.hoisted(() => [] as number[]);
 const casePages = vi.hoisted(() => new Map<string, Record<string, unknown>>());
 const settingsByBrain = vi.hoisted(() => new Map<string, Record<string, unknown> | Error>());
 
@@ -16,6 +17,7 @@ vi.mock("@/lib/api-handler", () => ({
   createCronHandler: (h: (req: NextRequest) => Promise<Response>) => h,
 }));
 vi.mock("@/lib/cron-utils", () => ({
+  CRON_FULL_READ_CAP: 100_000,
   getRecipientsByBrain: async () => new Map([["brain_a", [{ id: "u1" }]]]),
 }));
 vi.mock("@/lib/kanzlei-settings-server", () => ({
@@ -40,10 +42,11 @@ vi.mock("@/lib/engine-pages", () => ({
   listEnginePages: async (
     _h: unknown,
     type: string,
-    _l: number,
+    limit: number,
     opts?: { slugPrefix?: string }
   ) => {
-    const all = pagesByType.get(type) ?? [];
+    listLimits.push(limit);
+    const all = (pagesByType.get(type) ?? []).slice(0, limit);
     if (!opts?.slugPrefix) return all;
     return all.filter((p) => String(p.slug).startsWith(opts.slugPrefix!));
   },
@@ -61,6 +64,7 @@ vi.mock("@/lib/logger", () => ({
 const realFetch = globalThis.fetch;
 beforeEach(() => {
   deleted.length = 0;
+  listLimits.length = 0;
   caseFetches.length = 0;
   tombstoneCalls.length = 0;
   audits.length = 0;
@@ -344,5 +348,195 @@ describe("per-item retention (documents/notes)", () => {
     const { status } = await run();
     expect(status).toBe(200);
     expect(tombstoneCalls).toEqual([]);
+  });
+});
+
+describe("Aufbewahrungsfrist abgeschlossener Akten (§ 12 RAO, § 132 BAO)", () => {
+  const thisYear = new Date().toISOString().slice(0, 10);
+
+  it("never purges an archived matter — it is not in the trash at all", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/done",
+        title: "Abgeschlossen",
+        type: "legal_case",
+        frontmatter: { status: "archived", archived_at: old, closed_at: thisYear },
+      },
+    ]);
+    pagesByType.set("document", [
+      tombstoned("docs/archived-with-case", {
+        tombstone_reason: "case_archived",
+        case_slug: "legal/cases/done",
+      }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.purged).toBe(0);
+  });
+
+  it("keeps a deleted matter closed this year and counts it as floored", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/closed",
+        title: "Geschlossen",
+        type: "legal_case",
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "manual_delete",
+          archived_at: old,
+          closed_at: thisYear,
+        },
+      },
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.retentionCaseFloored).toBe(1);
+  });
+
+  it("keeps trash entries of a matter whose period still runs", async () => {
+    casePages.set("legal/cases/archived", {
+      slug: "legal/cases/archived",
+      frontmatter: { status: "archived", closed_at: thisYear },
+    });
+    pagesByType.set("document", [
+      tombstoned("docs/deleted-before-close", { case_slug: "legal/cases/archived" }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual([]);
+    expect(body.retentionCaseFloored).toBe(1);
+  });
+
+  it("purges a matter after the period and the trash window — pages before the matter", async () => {
+    const caseFm = {
+      status: "tombstoned",
+      tombstoned_at: old,
+      tombstone_reason: "manual_delete",
+      status_before_delete: "archived",
+      archived_at: "2015-02-01T10:00:00.000Z",
+      closed_at: "2015-02-01T10:00:00.000Z",
+      retention_until: "2022-12-31",
+    };
+    pagesByType.set("legal_case", [
+      { slug: "legal/cases/expired", title: "Alt", type: "legal_case", frontmatter: caseFm },
+    ]);
+    casePages.set("legal/cases/expired", { slug: "legal/cases/expired", frontmatter: caseFm });
+    pagesByType.set("document", [
+      tombstoned("docs/of-expired", {
+        tombstone_reason: "case_deleted",
+        case_slug: "legal/cases/expired",
+      }),
+    ]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["docs/of-expired", "legal/cases/expired"]);
+    expect(body.retentionCaseFloored).toBe(0);
+  });
+
+  it("purges a matter created by mistake after the trash window", async () => {
+    pagesByType.set("legal_case", [
+      {
+        slug: "legal/cases/mistake",
+        title: "Irrtum",
+        type: "legal_case",
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "manual_delete",
+        },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["legal/cases/mistake"]);
+  });
+});
+
+describe("purge covers every deletable matter page type", () => {
+  it("purges an expired deleted matter note", async () => {
+    pagesByType.set("legal_note", [
+      {
+        slug: "notes/n1",
+        title: "n",
+        type: "legal_note",
+        frontmatter: { status: "tombstoned", tombstoned_at: old },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["notes/n1"]);
+  });
+});
+
+describe("AML records: retention end is enforced (§ 12 Abs 3 RAO)", () => {
+  function kycPage(extra: Record<string, unknown>) {
+    return {
+      slug: "legal/kyc/k1",
+      title: "KYC",
+      type: "kyc_verification",
+      frontmatter: {
+        case_slug: "legal/cases/m",
+        identification: { document_file_slug: "docs/ausweis" },
+        ...extra,
+      },
+    };
+  }
+
+  it("tombstones a record past retain_until (older field) together with its ID copy", async () => {
+    casePages.set("legal/cases/m", { slug: "legal/cases/m", frontmatter: {} });
+    pagesByType.set("kyc_verification", [kycPage({ retain_until: "2020-01-01" })]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls.map((t) => t.slug)).toEqual(["legal/kyc/k1", "docs/ausweis"]);
+    expect(tombstoneCalls[1]!.frontmatter).toMatchObject({ tombstone_reason: "retention_expired" });
+    expect(body.retentionTombstoned).toBe(2);
+  });
+
+  it("keeps it under a legal hold on the matter", async () => {
+    casePages.set("legal/cases/m", { slug: "legal/cases/m", frontmatter: { legal_hold: true } });
+    pagesByType.set("kyc_verification", [kycPage({ retention_until: "2020-01-01" })]);
+    const { status, body } = await run();
+    expect(status).toBe(200);
+    expect(tombstoneCalls).toEqual([]);
+    expect(body.skippedHold).toBe(1);
+  });
+
+  it("an expired AML record is purged even while its archived matter is still retained", async () => {
+    casePages.set("legal/cases/m", {
+      slug: "legal/cases/m",
+      frontmatter: { status: "archived", closed_at: new Date().toISOString().slice(0, 10) },
+    });
+    pagesByType.set("kyc_verification", [
+      {
+        ...kycPage({ status: "tombstoned", tombstoned_at: old }),
+        frontmatter: {
+          ...kycPage({}).frontmatter,
+          status: "tombstoned",
+          tombstoned_at: old,
+          tombstone_reason: "retention_expired",
+        },
+      },
+    ]);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["legal/kyc/k1"]);
+  });
+});
+
+describe("full reads, no silent cap (R12-9)", () => {
+  it("reaches an expired entry beyond the first 5 000 of a type", async () => {
+    const fresh5d = new Date(Date.now() - 5 * 86_400_000).toISOString();
+    const docs = Array.from({ length: 6000 }, (_, i) =>
+      tombstoned(`docs/fresh-${i}`, { tombstoned_at: fresh5d })
+    );
+    docs.push(tombstoned("docs/oldest"));
+    pagesByType.set("document", docs);
+    const { status } = await run();
+    expect(status).toBe(200);
+    expect(deleted).toEqual(["docs/oldest"]);
+    expect(Math.min(...listLimits)).toBeGreaterThanOrEqual(100_000);
   });
 });

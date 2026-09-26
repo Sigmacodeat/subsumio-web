@@ -17,6 +17,7 @@ import { useMe, use2FASetup, use2FAVerify, use2FADisable, use2FAQrCode } from "@
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { ActiveSessions } from "@/components/dashboard/active-sessions";
 import { ChangeEmail } from "@/components/dashboard/change-email";
+import { SupportAccessCard } from "@/components/dashboard/support-access-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/use-lang";
@@ -33,6 +34,7 @@ export default function SecuritySettingsPage() {
   const [orgRequires2FA, setOrgRequires2FA] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
+  const [disableCode, setDisableCode] = useState("");
   const [ipAllowlist, setIpAllowlist] = useState<string[]>([]);
   const [ipAllowlistEnabled, setIpAllowlistEnabled] = useState(false);
   const [ipAllowlistNote, setIpAllowlistNote] = useState("");
@@ -126,22 +128,36 @@ export default function SecuritySettingsPage() {
 
   async function disable2FA() {
     setError(null);
-    if (!disablePassword) {
-      setError(L("Bitte geben Sie Ihr Passwort ein.", "Please enter your password."));
+    if (!disablePassword || !disableCode.trim()) {
+      setError(
+        L(
+          "Bitte geben Sie Ihr Passwort und den aktuellen Code aus Ihrer Authenticator-App ein.",
+          "Please enter your password and the current code from your authenticator app."
+        )
+      );
       return;
     }
     try {
-      const data = await disableMutation.mutateAsync(disablePassword);
+      const data = await disableMutation.mutateAsync({
+        password: disablePassword,
+        code: disableCode.trim(),
+      });
       if (data?.error) throw new Error(data.error);
       setStep("idle");
       setShowDisableDialog(false);
       setDisablePassword("");
-    } catch {
+      setDisableCode("");
+    } catch (err) {
       setError(
-        L(
-          "Die Zwei-Faktor-Anmeldung konnte nicht deaktiviert werden. Bitte prüfen Sie Ihr Passwort.",
-          "Two-factor sign-in could not be disabled. Please check your password."
-        )
+        err instanceof Error && err.message === "two_factor_locked"
+          ? L(
+              "Zu viele falsche Codes. Bitte versuchen Sie es später erneut.",
+              "Too many wrong codes. Please try again later."
+            )
+          : L(
+              "Die Zwei-Faktor-Anmeldung konnte nicht deaktiviert werden. Bitte prüfen Sie Passwort und Code.",
+              "Two-factor sign-in could not be disabled. Please check your password and code."
+            )
       );
     }
   }
@@ -287,8 +303,9 @@ export default function SecuritySettingsPage() {
                     {t("settings.security.btn_disable_2fa")}
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Bitte bestätigen Sie mit Ihrem Passwort, dass Sie die Zwei-Faktor-Anmeldung
-                    deaktivieren möchten.
+                    Bitte bestätigen Sie mit Ihrem Passwort und dem aktuellen Code (oder einem
+                    Wiederherstellungscode), dass Sie die Zwei-Faktor-Anmeldung deaktivieren
+                    möchten.
                   </p>
                 </div>
               </div>
@@ -304,6 +321,19 @@ export default function SecuritySettingsPage() {
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
                 autoFocus
               />
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label={L("Aktueller Code", "Current code")}
+                placeholder={L("Aktueller Code", "Current code")}
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") disable2FA();
+                }}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+              />
               {error && (
                 <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
                   {error}
@@ -316,6 +346,7 @@ export default function SecuritySettingsPage() {
                   onClick={() => {
                     setShowDisableDialog(false);
                     setDisablePassword("");
+                    setDisableCode("");
                     setError(null);
                   }}
                 >
@@ -325,7 +356,7 @@ export default function SecuritySettingsPage() {
                   variant="ghost"
                   className="gap-2 text-sm text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                   onClick={disable2FA}
-                  disabled={disableMutation.isPending || !disablePassword}
+                  disabled={disableMutation.isPending || !disablePassword || !disableCode.trim()}
                 >
                   {disableMutation.isPending ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -463,13 +494,15 @@ export default function SecuritySettingsPage() {
                   ? "Configure via environment variable:"
                   : "Konfiguration über Umgebungsvariable:"}
                 <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">
-                  SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
+                  {"SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1"}
                 </pre>
               </div>
             </>
           )}
         </div>
       )}
+
+      {isAdmin && !meQuery.data?.demo && <SupportAccessCard />}
 
       {meQuery.data?.user?.email && !meQuery.data?.demo && (
         <ChangeEmail currentEmail={meQuery.data.user.email} />

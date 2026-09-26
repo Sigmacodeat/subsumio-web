@@ -1,6 +1,13 @@
 import { z } from "zod";
-import { createHandler } from "@/lib/api-handler";
-import { buildChronology, exportChronologyMarkdown } from "@/lib/legal/chronology-builder";
+import { apiError, createHandler } from "@/lib/api-handler";
+import { ENGINE_URL } from "@/lib/engine";
+import { readCurrentPage } from "@/lib/page-write-guards";
+import {
+  buildChronology,
+  buildMatterChronology,
+  exportChronologyMarkdown,
+  type MatterChronologyData,
+} from "@/lib/legal/chronology-builder";
 
 export const maxDuration = 60;
 
@@ -29,7 +36,36 @@ export const POST = createHandler(
       },
     }),
   },
-  async (_ctx, body) => {
+  async (ctx, body) => {
+    const hasTables =
+      Boolean(body.forensic_report) ||
+      (body.on_table?.length ?? 0) > 0 ||
+      (body.damage_table?.length ?? 0) > 0 ||
+      (body.deadline_calendar?.length ?? 0) > 0;
+    if (!hasTables) {
+      // Only the matter was named (e.g. from the Word add-in): build the
+      // chronology from the matter's own dated records. Read with the
+      // caller's headers, so matter access rules apply.
+      const read = await readCurrentPage(ENGINE_URL, ctx.headers, body.case_slug);
+      if (read.kind === "error") {
+        return apiError("engine_unreachable", "Akte konnte nicht geladen werden", 503);
+      }
+      const page = read.kind === "found" ? read.page : null;
+      const type = page?.type ?? page?.frontmatter?.type;
+      if (!page || type !== "legal_case") {
+        return apiError("case_not_found", "Akte nicht gefunden", 404);
+      }
+      const chrono = buildMatterChronology(
+        body.case_slug,
+        page.title ?? body.case_slug,
+        (page.frontmatter ?? {}) as MatterChronologyData
+      );
+      return Response.json({
+        chronology: chrono,
+        markdown: exportChronologyMarkdown(chrono),
+        count: chrono.entries.length,
+      });
+    }
     const chrono = buildChronology(body.case_slug, {
       forensicReport: (body.forensic_report as never) ?? null,
       onTable: (body.on_table as never) ?? [],

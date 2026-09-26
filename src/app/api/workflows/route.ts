@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -26,23 +27,11 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
-
-      let workflows: WorkflowInstance[] = [];
-      if (res.ok) {
-        const raw = await res.json();
-        const pages = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? (raw as Record<string, unknown[]>).pages
-            : [];
-        workflows = pages
-          .map((p) => fmToWorkflowInstance(p))
-          .filter((w): w is WorkflowInstance => w !== null);
-      }
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+      const pages = await listEnginePages(ctx.headers, "workflow", 10_000, { strict: true });
+      const workflows: WorkflowInstance[] = pages
+        .map((p) => fmToWorkflowInstance(p))
+        .filter((w): w is WorkflowInstance => w !== null);
 
       return apiSuccess({
         workflows,

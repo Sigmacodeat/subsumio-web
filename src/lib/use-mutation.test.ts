@@ -19,6 +19,16 @@ vi.mock("./offline-store", () => ({
 
 // Mock api
 vi.mock("./api", () => ({
+  ApiRequestError: class ApiRequestError extends Error {
+    constructor(
+      message: string,
+      public status: number,
+      public code?: string
+    ) {
+      super(message);
+      this.name = "ApiRequestError";
+    }
+  },
   api: {
     brain: {
       createPage: vi.fn(async () => ({ slug: "test" })),
@@ -52,8 +62,9 @@ import {
   setMutationConflicted,
   setOfflineErrorReporter,
   getPendingFileUploads,
+  incrementMutationRetries,
 } from "./offline-store";
-import { api } from "./api";
+import { api, ApiRequestError } from "./api";
 
 describe("useMutationQueue", () => {
   beforeEach(() => {
@@ -464,6 +475,60 @@ describe("useMutationQueue", () => {
 
     expect(api.brain.createPage).not.toHaveBeenCalled();
     expect(removeMutation).not.toHaveBeenCalled();
+  });
+
+  test("createPage-Replay: Server meldet page_exists → Konflikt statt Retry/Verlust", async () => {
+    vi.mocked(getPendingMutations)
+      .mockResolvedValueOnce([]) // mount
+      .mockResolvedValueOnce([
+        {
+          id: "m1",
+          type: "createPage",
+          payload: { slug: "legal/cases/neu", title: "Neu", type: "legal_case" },
+          createdAt: "2024-01-01",
+        },
+      ]);
+    vi.mocked(api.brain.createPage).mockRejectedValueOnce(
+      new ApiRequestError("exists", 409, "page_exists")
+    );
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.syncPending();
+    });
+
+    expect(setMutationConflicted).toHaveBeenCalledWith("m1", true);
+    expect(removeMutation).not.toHaveBeenCalled();
+    expect(incrementMutationRetries).not.toHaveBeenCalled();
+  });
+
+  test("resolveConflict keep-mine auf createPage ersetzt nur die gesehene Version (If-Match)", async () => {
+    const conflicted = {
+      id: "m1",
+      type: "createPage" as const,
+      payload: { slug: "legal/cases/neu", title: "Meine Akte", type: "legal_case" },
+      createdAt: "2024-01-01T00:00:00Z",
+      conflicted: true,
+    };
+    vi.mocked(getPendingMutations).mockResolvedValue([conflicted]);
+    vi.mocked(api.brain.getPage).mockResolvedValueOnce({
+      slug: "legal/cases/neu",
+      title: "Andere",
+      content: "",
+      frontmatter: { version: 7 },
+    } as never);
+    const { result } = renderHook(() => useMutationQueue());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    await act(async () => {
+      await result.current.resolveConflict("m1", "keep-mine");
+    });
+
+    expect(api.brain.createPage).toHaveBeenCalledWith(conflicted.payload, { ifMatch: 7 });
+    expect(removeMutation).toHaveBeenCalledWith("m1");
   });
 
   test("fehlgeschlagener keep-mine laesst Konflikt resolvierbar", async () => {

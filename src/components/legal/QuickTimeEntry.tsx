@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
 
 interface QuickTimeEntryProps {
   caseSlug: string;
@@ -43,7 +44,7 @@ export function QuickTimeEntry({ caseSlug }: QuickTimeEntryProps) {
     if (!description.trim()) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/time", {
+      const res = await csrfFetch("/api/time", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

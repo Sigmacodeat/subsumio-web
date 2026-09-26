@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { randomUUID } from "node:crypto";
 
 import { logger } from "@/lib/logger";
@@ -50,13 +51,19 @@ const templatePatchSchema = z.object({
 const templateDeleteSchema = z.object({ slug: z.string().min(1) });
 
 export const GET = createHandler({ action: "settings.read", rateTier: "standard" }, async (ctx) => {
-  const res = await fetchEngine(
-    ctx.brainId,
-    ctx.headers,
-    `/api/pages?type=whatsapp_template&limit=100`
-  );
-  if (!res.ok) return Response.json({ templates: [] });
-  const pages = (await res.json()) as TemplatePage[];
+  // Complete list without deleted templates; a failed read is an error —
+  // never an empty template list.
+  let pages: TemplatePage[];
+  try {
+    pages = (await listEnginePages(ctx.headers, "whatsapp_template", 1000, {
+      strict: true,
+    })) as unknown as TemplatePage[];
+  } catch {
+    return Response.json(
+      { error: "Vorlagen konnten nicht geladen werden", code: "engine_error" },
+      { status: 502 }
+    );
+  }
   const templates = pages.map((page) => {
     const fm = page.frontmatter ?? {};
     return {

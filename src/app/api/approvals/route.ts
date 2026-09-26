@@ -7,13 +7,22 @@ import {
   type ApprovalStatus,
 } from "@/lib/approval";
 import { executeApprovedAction } from "@/lib/approval-execution";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { ENGINE_URL } from "@/lib/engine";
+import { readCurrentPage } from "@/lib/page-write-guards";
+import { withKeyedLock } from "@/lib/keyed-lock";
+import { approvalDecisionBlock } from "@/lib/approval-decision";
+import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/approvals");
 
 export const dynamic = "force-dynamic";
+
+/** Upper bound for one listing scan (agent_action pages across all statuses). */
+const APPROVALS_SCAN_MAX = 5000;
 
 const approvalsQuerySchema = z.object({
   status: z.string().default("pending"),
@@ -59,29 +68,64 @@ export const GET = createHandler(
     const limit = Math.min(parseInt(query.limit || "50", 10), 200);
     try {
       const brain = createServerBrainClient(ctx.headers);
-      const pages = await brain.listPages({ type: "agent_action", limit });
-      const items = pages
-        .filter((p) => {
-          const fm = p.frontmatter as Record<string, unknown>;
-          if (query.status !== "all" && fm.status !== query.status) return false;
-          return true;
-        })
-        .map((p) => {
-          const fm = p.frontmatter as Record<string, unknown>;
-          return {
-            id: p.slug,
-            action_type: fm.action_type,
-            status: fm.status,
-            proposed_by: fm.proposed_by,
-            target_slug: fm.target_slug ?? null,
-            summary: fm.summary,
-            proposed_at: fm.proposed_at,
-            decided_at: fm.decided_at ?? null,
-            decided_by: fm.decided_by ?? null,
-            reject_reason: fm.reject_reason ?? null,
-          };
-        });
-      return Response.json({ items, total: items.length });
+      // The status filter lives in frontmatter, so the engine cannot apply it:
+      // page through ALL proposals (bounded) and filter afterwards — otherwise
+      // an old open approval disappears behind the newest decided ones.
+      const pages: BrainPage[] = [];
+      let cursor: string | null = null;
+      while (pages.length < APPROVALS_SCAN_MAX) {
+        const want = Math.min(100, APPROVALS_SCAN_MAX - pages.length);
+        const batch: { items: BrainPage[]; nextCursor: string | null } = brain.listPagesPaged
+          ? await brain.listPagesPaged({
+              type: "agent_action",
+              limit: want,
+              ...(cursor ? { cursor } : { offset: pages.length }),
+            })
+          : {
+              items: await brain.listPages({
+                type: "agent_action",
+                limit: want,
+                offset: pages.length,
+              }),
+              nextCursor: null,
+            };
+        pages.push(...batch.items);
+        if (batch.nextCursor && batch.nextCursor !== cursor) {
+          cursor = batch.nextCursor;
+          continue;
+        }
+        if (cursor || batch.items.length < want) break;
+      }
+      const scanCapped = pages.length >= APPROVALS_SCAN_MAX;
+      const matching = pages.filter((p) => {
+        const fm = p.frontmatter as Record<string, unknown>;
+        // Deleted proposals are only marked — never list them.
+        if (fm.status === "tombstoned" || (p as { status?: string }).status === "tombstoned") {
+          return false;
+        }
+        if (query.status !== "all" && fm.status !== query.status) return false;
+        return true;
+      });
+      const items = matching.slice(0, limit).map((p) => {
+        const fm = p.frontmatter as Record<string, unknown>;
+        return {
+          id: p.slug,
+          action_type: fm.action_type,
+          status: fm.status,
+          proposed_by: fm.proposed_by,
+          target_slug: fm.target_slug ?? null,
+          summary: fm.summary,
+          proposed_at: fm.proposed_at,
+          decided_at: fm.decided_at ?? null,
+          decided_by: fm.decided_by ?? null,
+          reject_reason: fm.reject_reason ?? null,
+        };
+      });
+      return Response.json({
+        items,
+        total: matching.length,
+        ...(matching.length > limit || scanCapped ? { capped: true } : {}),
+      });
     } catch (err) {
       log.error("[approvals] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Freigaben konnten nicht geladen werden", 500);
@@ -135,66 +179,89 @@ export const PATCH = createHandler(
     rateTier: "standard",
     body: approvalsPatchSchema,
     audit: (ctx, body) => ({
-      action: "settings.update" as const,
+      action:
+        body.decision === "approved" ? ("approval.approve" as const) : ("approval.reject" as const),
       entityType: "agent_action",
       entityId: body.id,
       details: { decision: body.decision, decided_by: ctx.user.email },
     }),
   },
   async (ctx, body, _query, _req) => {
-    const brain = createServerBrainClient(ctx.headers);
-    const now = new Date().toISOString();
-    await brain.updatePage({
-      slug: body.id,
-      frontmatter: {
-        status: body.decision as ApprovalStatus,
-        decided_at: now,
-        decided_by: ctx.user.email,
-        ...(body.decision === "rejected" && body.reject_reason
-          ? { reject_reason: body.reject_reason }
-          : {}),
-      },
-    });
-
-    if (body.decision === "approved" && body.execute === true) {
-      try {
-        const result = await executeApprovedAction(
-          {
-            brainId: ctx.brainId,
-            getPage: brain.getPage,
-            createPage: brain.createPage,
-            updatePage: brain.updatePage,
-            mutatePageArray: brain.mutatePageArray,
-            sendProactiveWhatsApp: sendProactiveMessage,
-          },
-          {
-            actionSlug: body.id,
-            executedBy: ctx.user.email,
-            force: body.force === true,
-          }
-        );
-        return Response.json({
-          ok: true,
-          id: body.id,
-          decision: body.decision,
-          decided_at: now,
-          execution: result,
-        });
-      } catch (err) {
-        log.error(
-          "[approvals] execute after decision failed:",
-          err instanceof Error ? err.message : String(err)
-        );
-        return apiError(
-          "approval_execution_failed",
-          err instanceof Error
-            ? err.message
-            : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
-          400
-        );
-      }
-    }
-
-    return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
+    // One decision per action: two deciders must not both see "pending".
+    return withKeyedLock(`approval:${ctx.brainId}:${body.id}`, () => decide(ctx, body));
   }
 );
+
+async function decide(
+  ctx: { headers: Record<string, string>; brainId: string; user: { email: string; role: string } },
+  body: z.infer<typeof approvalsPatchSchema>
+): Promise<Response> {
+  // Only a pending Freigabe-Aktion is decided here — never any other page —
+  // by a lawyer/admin who did not propose or submit it (Vier-Augen).
+  const read = await readCurrentPage(ENGINE_URL, ctx.headers, body.id);
+  if (read.kind === "error") {
+    return apiError(
+      "guard_unavailable",
+      "Die Freigabe konnte nicht geprüft werden. Bitte erneut versuchen.",
+      503
+    );
+  }
+  const block = approvalDecisionBlock(read.kind === "found" ? read.page : null, ctx.user);
+  if (block) return apiError(block.code, block.message, block.status);
+
+  const brain = createServerBrainClient(ctx.headers);
+  const now = new Date().toISOString();
+  await brain.updatePage({
+    slug: body.id,
+    frontmatter: {
+      status: body.decision as ApprovalStatus,
+      decided_at: now,
+      decided_by: ctx.user.email,
+      ...(body.decision === "rejected" && body.reject_reason
+        ? { reject_reason: body.reject_reason }
+        : {}),
+    },
+  });
+
+  if (body.decision === "approved" && body.execute === true) {
+    try {
+      const result = await executeApprovedAction(
+        {
+          brainId: ctx.brainId,
+          getPage: brain.getPage,
+          createPage: brain.createPage,
+          updatePage: brain.updatePage,
+          mutatePageArray: brain.mutatePageArray,
+          sendProactiveWhatsApp: sendProactiveMessage,
+          createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
+        },
+        {
+          actionSlug: body.id,
+          executedBy: ctx.user.email,
+          force: body.force === true,
+        }
+      );
+      return Response.json({
+        ok: true,
+        id: body.id,
+        decision: body.decision,
+        decided_at: now,
+        execution: result,
+      });
+    } catch (err) {
+      log.error(
+        "[approvals] execute after decision failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return apiError(
+        "approval_execution_failed",
+        err instanceof Error
+          ? err.message
+          : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
+        400
+      );
+    }
+  }
+
+  return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
+}

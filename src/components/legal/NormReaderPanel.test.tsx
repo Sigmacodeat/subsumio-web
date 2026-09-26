@@ -45,6 +45,29 @@ describe("NormReaderPanel", () => {
     );
   });
 
+  it("a repealed norm is shown as no longer in force, not as verified", async () => {
+    normMock.mockResolvedValueOnce({
+      code: "ABGB",
+      paragraph: "§ 1295",
+      statute: "Allgemeines bürgerliches Gesetzbuch",
+      label: "ABGB",
+      jurisdiction: "at",
+      text: "Alter Wortlaut der Norm.",
+      source_url: RIS,
+      in_force_since: "1917-01-01",
+      retrieved_at: "2026-08-05",
+      repealed: true,
+      repealed_since: "2024-01-01",
+    });
+    render(<NormReaderPanel />);
+    act(() => openNormReader({ code: "ABGB", paragraph: "§ 1295", jurisdiction: "at" }));
+
+    expect(await screen.findByTestId("norm-repealed")).toHaveTextContent(
+      "Nicht mehr in Kraft (seit 01.01.2024)"
+    );
+    expect(screen.queryByText("Im Rechtskorpus verifiziert")).not.toBeInTheDocument();
+  });
+
   it("a plain click on an inline answer citation opens the reader instead of leaving the app", async () => {
     const html = linkCitationsInHtml("<p>Nach § 1295 ABGB haftet</p>", [
       { code: "ABGB", paragraph: "§ 1295", verified: true, source_url: RIS, jurisdiction: "at" },

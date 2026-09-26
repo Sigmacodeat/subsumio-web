@@ -13,6 +13,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+import { graphDateTimeToFirmLocal } from "@/lib/calendar/wall-clock";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ import {
   type CalendarEntry,
 } from "@/lib/calendar-conflicts";
 import {
+  CALENDAR_LIST_MAX,
   CalendarEditDialog,
   appointmentToEntry,
   useAppointments,
@@ -139,16 +142,7 @@ function isoWeek(d: Date): number {
 function outlookLocal(
   value: { dateTime?: string; timeZone?: string } | undefined
 ): { date: string; time: string; ms: number } | null {
-  if (!value?.dateTime) return null;
-  const raw = value.dateTime.replace(/\.\d+$/, "");
-  const tz = value.timeZone ?? "UTC";
-  const d = tz === "UTC" || tz === "Etc/UTC" ? new Date(`${raw}Z`) : new Date(raw);
-  if (Number.isNaN(d.getTime())) return null;
-  return {
-    date: toLocalIsoDate(d),
-    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
-    ms: d.getTime(),
-  };
+  return graphDateTimeToFirmLocal(value?.dateTime, value?.timeZone);
 }
 
 function itemToEntry(item: CalItem): CalendarEntry {
@@ -262,10 +256,28 @@ export default function CalendarPage() {
       }
     }
 
-    const raw = outlookQuery.data as Record<string, unknown> | undefined;
-    const outlookEvents =
-      raw && !raw.error ? ((raw.events ?? []) as Array<Record<string, unknown>>) : [];
+    // Own Outlook appointments (per-user sync → calendar_event pages), all roles.
+    const seenOutlook = new Set<string>();
+    for (const evt of appts.outlookEvents) {
+      seenOutlook.add(evt.eventId);
+      list.push({
+        id: evt.id,
+        title: evt.title,
+        date: evt.date,
+        time: evt.time,
+        durationMin: evt.durationMin,
+        kind: "appointment",
+        location: evt.location,
+        externalHref: evt.webLink,
+        source: "outlook",
+      });
+    }
+
+    // Firm service calendar (admins only). The route answers { data: {...} }.
+    const raw = outlookQuery.data as { data?: { events?: unknown[] } } | undefined;
+    const outlookEvents = (raw?.data?.events ?? []) as Array<Record<string, unknown>>;
     for (const evt of outlookEvents) {
+      if (typeof evt.id === "string" && seenOutlook.has(evt.id)) continue;
       const start = outlookLocal(evt.start as { dateTime?: string; timeZone?: string });
       if (!start) continue;
       const end = outlookLocal(evt.end as { dateTime?: string; timeZone?: string });
@@ -290,7 +302,13 @@ export default function CalendarPage() {
         (a.time ?? "").localeCompare(b.time ?? "") ||
         KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
     );
-  }, [fristenQuery.data, appts.appointments, appts.casePages, outlookQuery.data]);
+  }, [
+    fristenQuery.data,
+    appts.appointments,
+    appts.casePages,
+    appts.outlookEvents,
+    outlookQuery.data,
+  ]);
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, CalItem[]>();
@@ -412,6 +430,8 @@ export default function CalendarPage() {
           </Button>
         </div>
       )}
+
+      {appts.capped && <CappedResultsNotice limit={CALENDAR_LIST_MAX} />}
 
       {upcomingConflicts.length > 0 && (
         <section

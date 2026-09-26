@@ -48,6 +48,8 @@ export interface EInvoiceLineItem {
   unitPrice: number;
   taxRate: number;
   taxCategory: TaxCategoryCode;
+  /** Legal basis for a non-standard category (exempt, reverse charge). */
+  exemptionReason?: string;
 }
 
 /** Allowance or charge at document level */
@@ -86,6 +88,8 @@ export interface EInvoiceData {
   caseReference?: string;
   notes?: string;
   taxExemptionReason?: string;
+  /** Credit note / Storno: the invoice it corrects (BT-25/BT-26). */
+  precedingInvoice?: { number: string; date?: string };
 }
 
 /** Result of XRechnung XML generation */

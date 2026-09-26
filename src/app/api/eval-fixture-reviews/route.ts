@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -30,21 +31,13 @@ export const GET = createHandler(
   },
   async (ctx, _body, query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?type=eval_fixture_review&limit=500`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
+      // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+      const pages = await listEnginePages(ctx.headers, "eval_fixture_review", 10_000, {
+        strict: true,
       });
-
-      let reviews: EvalFixtureReview[] = [];
-      if (res.ok) {
-        const raw = await res.json();
-        const pages = Array.isArray(raw)
-          ? raw
-          : Array.isArray((raw as Record<string, unknown>)?.pages)
-            ? (raw as Record<string, unknown[]>).pages
-            : [];
-        reviews = pages.map((p) => fmToReview(p)).filter((r): r is EvalFixtureReview => r !== null);
-      }
+      const reviews: EvalFixtureReview[] = pages
+        .map((p) => fmToReview(p))
+        .filter((r): r is EvalFixtureReview => r !== null);
 
       const scoped = query.fixture_file ? filterByFixture(reviews, query.fixture_file) : reviews;
       const sorted = sortByProposedAt(scoped, "desc");
@@ -201,16 +194,12 @@ export const PATCH = createHandler(
 
       const updatedFrontmatter = { ...review.frontmatter, ...decision };
 
-      const updateRes = await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "PUT",
-        headers: { ...ctx.headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: body.slug,
-          title: review.title,
-          frontmatter: updatedFrontmatter,
-        }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      // The engine has no PUT /api/pages — updates are a merge POST.
+      const updateRes = await enginePatchPage(
+        ctx.headers,
+        { slug: body.slug, title: review.title, frontmatter: updatedFrontmatter },
+        { timeoutMs: 15_000 }
+      );
 
       if (!updateRes.ok) {
         return apiError(

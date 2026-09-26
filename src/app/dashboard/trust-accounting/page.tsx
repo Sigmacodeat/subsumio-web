@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -154,7 +155,8 @@ export default function TrustAccountingPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.legal.trustAccounts.list({ limit: 100 });
+      // Complete list, deleted accounts filtered out server-side.
+      const data = await api.legal.trustAccounts.list();
       setAccounts(data as unknown as TrustAccount[]);
     } catch (err) {
       console.error("[trust] load failed:", err instanceof Error ? err.message : err);
@@ -173,9 +175,14 @@ export default function TrustAccountingPage() {
     loadAccounts();
   }, [loadAccounts]);
 
+  const [listCapped, setListCapped] = useState(false);
   useEffect(() => {
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then(setCases)
       .catch(() => setCases([]));
   }, []);
@@ -412,6 +419,7 @@ export default function TrustAccountingPage() {
           </PrimaryAction>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {error && (
         <div
@@ -640,7 +648,17 @@ export default function TrustAccountingPage() {
                 size="sm"
                 className="ml-auto gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:text-[color:var(--ds-danger-text)]"
                 onClick={handleDelete}
-                disabled={saving}
+                // Fremdgeld stays on the books: only an account without balance
+                // can be deleted (the server enforces the same rule).
+                disabled={
+                  saving ||
+                  Math.round((selectedAccount.frontmatter?.current_balance ?? 0) * 100) !== 0
+                }
+                title={
+                  Math.round((selectedAccount.frontmatter?.current_balance ?? 0) * 100) !== 0
+                    ? "Nur ein Anderkonto ohne Saldo kann gelöscht werden."
+                    : undefined
+                }
               >
                 <Trash2 size={14} />
                 {t("trust.delete" as DashboardKey)}

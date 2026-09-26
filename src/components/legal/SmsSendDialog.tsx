@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { csrfFetch } from "@/lib/csrf";
+import { normalizePhone } from "@/lib/whatsapp/types";
 import {
   Loader2,
   MessageSquare,
@@ -69,6 +70,13 @@ const STATUS_LABEL: Record<string, string> = {
   read: "gelesen",
 };
 
+/** SHA-256 of the normalised number — the same hash the server stores. */
+async function smsPhoneHash(phone: string): Promise<string> {
+  const data = new TextEncoder().encode(normalizePhone(phone));
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export function SmsSendDialog({
   open,
   onOpenChange,
@@ -89,7 +97,8 @@ export function SmsSendDialog({
 
   const loadDeliveries = useCallback(async () => {
     try {
-      const res = await fetch(`/api/sms/status?phone=${encodeURIComponent(phone)}`);
+      // Only the hash of the number goes into the URL (access logs).
+      const res = await fetch(`/api/sms/status?hash=${await smsPhoneHash(phone)}`);
       if (!res.ok) return;
       const data = (await res.json()) as { deliveries?: SmsDeliveryRow[] };
       setDeliveries(data.deliveries ?? []);

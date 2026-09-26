@@ -338,8 +338,8 @@ export const D = {
     en: "Manage legal holds — protect matters from deletion and modification",
   },
   "nav.tooltip.papierkorb": {
-    de: "Gelöschte Dokumente und archivierte Akten einsehen und wiederherstellen",
-    en: "View and restore deleted documents and archived matters",
+    de: "Gelöschte Einträge einsehen und wiederherstellen (archivierte Akten stehen in der Aktenliste)",
+    en: "View and restore deleted items (archived matters are in the matter list)",
   },
   "nav.tooltip.case_assignment": {
     de: "Akten Teammitgliedern zuweisen und Arbeitslastverteilung anzeigen",
@@ -1031,8 +1031,8 @@ export const D = {
   "cases.status_archived": { de: "Archiviert", en: "Archived" },
   "cases.toast_deleted": { de: "Akte archiviert", en: "Case archived" },
   "cases.toast_deleted_desc": {
-    de: "Akte wurde archiviert und alle verknüpften Dokumente als tombstoned markiert.",
-    en: "Case has been archived and all linked documents have been tombstoned.",
+    de: "Akte wurde abgeschlossen und archiviert. Sie wird mit ihren Dokumenten für die gesetzliche Aufbewahrungsfrist (7 Jahre) aufbewahrt, nicht gelöscht.",
+    en: "Case has been closed and archived. It is kept with its documents for the statutory retention period (7 years), not deleted.",
   },
   "cases.toast_delete_fail": { de: "Archivierung fehlgeschlagen", en: "Archive failed" },
   "cases.toast_bulk_deleted": { de: "Akten archiviert", en: "cases archived" },
@@ -1040,8 +1040,8 @@ export const D = {
   "cases.unknown_error": { de: "Unbekannter Fehler", en: "Unknown error" },
   "cases.confirm_archive_title": { de: "Akte archivieren", en: "Archive case" },
   "cases.confirm_archive_msg": {
-    de: 'Akte „{{name}}" archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.',
-    en: 'Archive case "{{name}}"? All linked documents will be tombstoned.',
+    de: 'Akte „{{name}}" abschließen und archivieren? Die Akte und ihre Dokumente werden aus der laufenden Arbeit ausgeblendet und für die gesetzliche Aufbewahrungsfrist (7 Jahre ab Jahresende) aufbewahrt. Sie werden nicht gelöscht.',
+    en: 'Close and archive case "{{name}}"? The case and its documents leave the active workspace and are kept for the statutory retention period (7 years from year end). They are not deleted.',
   },
   "cases.close_checklist_title": {
     de: "Abschluss-Checkliste",
@@ -1097,8 +1097,8 @@ export const D = {
   },
   "cases.confirm_bulk_archive_title": { de: "Akten archivieren", en: "Archive cases" },
   "cases.confirm_bulk_archive_msg": {
-    de: "{{count}} Akte(n) archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.",
-    en: "Archive {{count}} case(s)? All linked documents will be tombstoned.",
+    de: "{{count}} Akte(n) abschließen und archivieren? Akten und Dokumente werden für die gesetzliche Aufbewahrungsfrist (7 Jahre ab Jahresende) aufbewahrt, nicht gelöscht.",
+    en: "Close and archive {{count}} case(s)? Cases and documents are kept for the statutory retention period (7 years from year end), not deleted.",
   },
   "cases.confirm_restore_title": { de: "Akte wiederherstellen", en: "Restore case" },
   "cases.confirm_restore_msg": {
@@ -1111,6 +1111,18 @@ export const D = {
     en: "Restore {{count}} case(s) from archive? All linked documents will be reactivated.",
   },
   "cases.btn_archive": { de: "Archivieren", en: "Archive" },
+  "cases.trash": {
+    de: "Irrtümlich angelegt — in den Papierkorb",
+    en: "Created by mistake — move to trash",
+  },
+  "cases.confirm_trash_title": { de: "Akte in den Papierkorb", en: "Move case to trash" },
+  "cases.confirm_trash_msg": {
+    de: 'Akte „{{name}}" in den Papierkorb verschieben? Nur für irrtümlich angelegte Akten: Akte und zugehörige Einträge werden nach Ablauf der Papierkorbfrist endgültig gelöscht. Abgeschlossene Akten bitte archivieren.',
+    en: 'Move case "{{name}}" to the trash? Only for cases created by mistake: the case and its entries are permanently deleted once the trash period ends. Please archive closed cases instead.',
+  },
+  "cases.btn_trash": { de: "In den Papierkorb", en: "Move to trash" },
+  "cases.toast_trashed": { de: "Akte im Papierkorb", en: "Case moved to trash" },
+  "cases.toast_trash_fail": { de: "Löschen nicht möglich", en: "Could not delete" },
   "cases.btn_restore": { de: "Wiederherstellen", en: "Restore" },
   "cases.btn_cancel": { de: "Abbrechen", en: "Cancel" },
   "cases.toast_restored": { de: "Akte wiederhergestellt", en: "Case restored" },
@@ -1562,9 +1574,33 @@ export const D = {
   },
   "inv.quick_cancel": { de: "Abbrechen", en: "Cancel" },
   "inv.quick_created": { de: "Rechnung erstellt", en: "Invoice created" },
-  "inv.quick_mark_billed_failed": {
-    de: "Rechnung erstellt, aber die Leistungen konnten nicht als abgerechnet markiert werden. Bitte in der Akte prüfen — Rechnung nicht erneut erstellen.",
-    en: "Invoice created, but the entries could not be marked as billed. Please check the matter — do not create the invoice again.",
+  "inv.quick_create_online_only": {
+    de: "Rechnungen können nur mit Verbindung erstellt werden — Rechnungsnummer und abgerechnete Leistungen werden am Server reserviert.",
+    en: "Invoices can only be created while online — the invoice number and billed work are reserved on the server.",
+  },
+  "inv.client_address_load_failed": {
+    de: "Mandantenanschrift konnte nicht geladen werden — es wurde keine Rechnung erstellt. Bitte erneut versuchen.",
+    en: "The client's address could not be loaded — no invoice was created. Please try again.",
+  },
+  "inv.reverse_charge_label": {
+    de: "Übergang der Steuerschuld (Reverse Charge)",
+    en: "Reverse charge (VAT liability passes to the recipient)",
+  },
+  "inv.reverse_charge_hint": {
+    de: "Unternehmer-Mandant im EU-Ausland (§ 19 Abs 1 UStG 1994) — keine USt, Pflichthinweis auf der Rechnung.",
+    en: "Business client in another EU country — no VAT, mandatory note on the invoice.",
+  },
+  "inv.client_vat_id": {
+    de: "UID-Nummer des Mandanten",
+    en: "Client VAT ID",
+  },
+  "inv.reverse_charge_vat_id_required": {
+    de: "Bei Reverse Charge ist die UID-Nummer des Mandanten Pflicht.",
+    en: "Reverse charge requires the client's VAT ID.",
+  },
+  "inv.online_only_action": {
+    de: "Rechnungsstatus und Löschen nur mit Verbindung — der Server prüft Summen und Pflichtangaben.",
+    en: "Invoice status changes and deletion need a connection — the server checks sums and mandatory details.",
   },
   "inv.quick_create_failed": {
     de: "Rechnung konnte nicht erstellt werden",
@@ -1639,7 +1675,7 @@ export const D = {
     en: "Keys are stored locally and never sent to the server",
   },
   "settings.tile_acls_desc": {
-    de: "Dokument-Level Zugriffskontrolle und Ethical Walls",
+    de: "Zugriffskontrolle auf Dokumentebene und Informationsbarrieren",
     en: "Document-level access control and ethical walls",
   },
   "settings.tile_scim_desc": {
@@ -2174,14 +2210,14 @@ export const D = {
   "settings.usage_desc": { de: "Aktueller Monat", en: "Current month" },
   "settings.usage_pages": { de: "Seiten", en: "Pages" },
   "settings.usage_queries": { de: "Anfragen", en: "Queries" },
-  "settings.referral": { de: "Empfehlen & sparen", en: "Refer & save" },
+  "settings.referral": { de: "Empfehlen", en: "Refer" },
   "settings.referral_desc": {
-    de: "Sie erhalten einen Monat gratis pro geworbener Kanzlei — die geworbene Kanzlei ebenfalls.",
-    en: "You get 1 month free per referred customer — so do they.",
+    de: "Teilen Sie Ihren persönlichen Link mit Kolleginnen und Kollegen.",
+    en: "Share your personal link with colleagues.",
   },
   "settings.referral_info": {
-    de: "12 Empfehlungen = ein Gratisjahr. Keine Obergrenze.",
-    en: "12 referrals = one free year. No limit.",
+    de: "Kanzleien, die sich über Ihren Link registrieren, werden Ihnen zugeordnet. Eine Gutschrift ist damit derzeit nicht verbunden.",
+    en: "Firms that sign up through your link are attributed to you. No credit is attached to it at present.",
   },
   "settings.referral_so_far": { de: "Bisher geworben:", en: "Referred so far:" },
   "settings.referral_loading": {
@@ -2338,7 +2374,7 @@ export const D = {
     en: "Brain — Knowledge Base Explorer",
   },
   "cmd.nav.graph": { de: "Graph — Entitäts-Netzwerk", en: "Graph — Entity Network" },
-  "cmd.nav.sources": { de: "Sources — Quellen-Verwaltung", en: "Sources — Source Management" },
+  "cmd.nav.sources": { de: "Quellen-Verwaltung", en: "Sources — Source Management" },
   "cmd.recent_matters": { de: "Kürzlich bearbeitete Akten", en: "Recently edited matters" },
   "cmd.action.new_case": { de: "Neue Akte", en: "New case" },
   "cmd.action.new_deadline": { de: "Neue Frist", en: "New deadline" },
@@ -2346,7 +2382,7 @@ export const D = {
   "cmd.action.new_contract": { de: "Neuer Vertrag", en: "New contract" },
   "cmd.action.new_signature": { de: "Unterschrift anfordern", en: "Request signature" },
   "cmd.action.new_clause": { de: "Neue Klausel", en: "New clause" },
-  "cmd.action.new_space": { de: "Neuer Shared Space", en: "New shared space" },
+  "cmd.action.new_space": { de: "Neuer Datenraum", en: "New shared space" },
   "cmd.action.upload": { de: "Dokument hochladen", en: "Upload document" },
   "cmd.action.assistant": { de: "Assistent öffnen", en: "Open assistant" },
   "cmd.shortcuts.title": { de: "Tastaturkürzel", en: "Keyboard shortcuts" },
@@ -2848,7 +2884,10 @@ export const D = {
     de: "Hochladen konnte nicht geladen werden",
     en: "Upload could not be loaded",
   },
-  "error.vault_title": { de: "Vault konnte nicht geladen werden", en: "Vault could not be loaded" },
+  "error.vault_title": {
+    de: "Dokumente konnten nicht geladen werden",
+    en: "Vault could not be loaded",
+  },
   "error.verfahrensdoku_title": {
     de: "Verfahrensdokumentation konnte nicht geladen werden",
     en: "Procedure documentation could not be loaded",
@@ -3498,6 +3537,18 @@ export const D = {
     de: "Auslage ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
     en: "Expense is already billed — unbill it first.",
   },
+  "cases.detail_time_delete_confirm": {
+    de: "Zeitbuchung wirklich löschen? Das kann nicht rückgängig gemacht werden.",
+    en: "Really delete this time booking? This cannot be undone.",
+  },
+  "cases.detail_time_billed_locked": {
+    de: "Zeitbuchung ist bereits abgerechnet — zuerst die Abrechnung zurücknehmen.",
+    en: "Time booking is already billed — unbill it first.",
+  },
+  "cases.detail_exp_delete_confirm": {
+    de: "Auslage wirklich löschen? Das kann nicht rückgängig gemacht werden.",
+    en: "Really delete this expense? This cannot be undone.",
+  },
   "cases.detail_audit_title": { de: "Audit-Trail", en: "Audit trail" },
   "cases.detail_audit_empty": {
     de: "Noch keine Audit-Einträge vorhanden.",
@@ -3575,8 +3626,8 @@ export const D = {
   "agents.btn_replay": { de: "Neu starten", en: "Restart" },
   "agents.section_prompt": { de: "Aufgabe", en: "Prompt" },
   "agents.label_model": { de: "Modell", en: "Model" },
-  "agents.label_input_tokens": { de: "Input Tokens", en: "Input Tokens" },
-  "agents.label_output_tokens": { de: "Output Tokens", en: "Output Tokens" },
+  "agents.label_input_tokens": { de: "Eingabe-Token", en: "Input Tokens" },
+  "agents.label_output_tokens": { de: "Ausgabe-Token", en: "Output Tokens" },
   "agents.label_cost": { de: "Kosten", en: "Cost" },
   "agents.section_result": { de: "Ergebnis", en: "Result" },
   "agents.section_children": { de: "Teilaufgaben", en: "Children" },
@@ -4995,7 +5046,7 @@ export const D = {
     de: "Keine erlaubten WhatsApp-Sender konfiguriert.",
     en: "No allowed WhatsApp senders configured.",
   },
-  "whatsapp.workflow_objects": { de: "Workflow Objekte", en: "Workflow objects" },
+  "whatsapp.workflow_objects": { de: "Workflow-Objekte", en: "Workflow objects" },
   "whatsapp.no_workflow": { de: "Noch keine Workflow-Objekte.", en: "No workflow objects yet." },
   "whatsapp.kind_approval": { de: "Freigabe", en: "Approval" },
   "whatsapp.kind_intake": { de: "Mandatsanfrage", en: "Intake" },
@@ -5722,11 +5773,11 @@ export const D = {
   // ── Nav: dashboard ──
   "nav.dashboard": { de: "Übersicht", en: "Dashboard" },
 
-  // ── Case Scanner page ──
+  // ── Case Scanner page (on demand) ──
   "scanner.title": { de: "Akten-Scanner", en: "Case Scanner" },
   "scanner.description": {
-    de: "Die nächtliche Prüfung durchsucht alle Akten nach drohenden Fristen, neuen Streitpunkten und Beweislücken — wird asynchron als Subsumio-Dienst-Job ausgeführt",
-    en: "Night agent scans all cases for impending deadlines, new issues and evidence gaps — runs asynchronously as an engine job",
+    de: "Prüft auf Abruf Akten auf drohende Fristen, Beweislücken und Rechtsprechung — nur nach Ihrer Bestätigung der Kosten",
+    en: "Reviews matters on demand for impending deadlines, evidence gaps and case law — only after you confirm the cost",
   },
   "scanner.error_start": { de: "Scanner-Start fehlgeschlagen.", en: "Failed to start scanner." },
   "scanner.how_it_works": {
@@ -5734,26 +5785,36 @@ export const D = {
     en: "How does the Case Scanner work?",
   },
   "scanner.description_detail": {
-    de: "Der Scanner wird als Hintergrundjob in der Subsumio-Dienst gestartet. Er durchsucht alle Fallakten nach:",
-    en: "The scanner runs as a background job in the engine. It searches all case files for:",
+    de: "Sie wählen eine Akte, eine Auswahl oder alle offenen Akten, die Sie sehen dürfen. Je Akte prüft ein KI-Auftrag mit Kostendeckel:",
+    en: "You pick one matter, a selection or all open matters you may see. For each matter a capped AI run checks:",
   },
   "scanner.feature_deadlines": {
     de: "Fristen, die in den nächsten N Tagen ablaufen",
     en: "Deadlines expiring in the next N days",
   },
   "scanner.feature_issues": {
-    de: "Neuen Issues, die seit dem letzten Scan aufgetaucht sind",
-    en: "New issues that appeared since the last scan",
+    de: "Rechtsprechung und Risiken zu den Normen der Akte",
+    en: "Case law and risks for the matter's provisions",
   },
   "scanner.feature_evidence": {
     de: "Akten mit geringer Evidenz (unter dem Schwellwert)",
     en: "Cases with low evidence (below threshold)",
   },
   "scanner.result_note": {
-    de: "Das Ergebnis wird als Job-Status zurückgegeben. Die Einzelergebnisse schreibt die Prüfung in die jeweiligen Akten-Seiten.",
-    en: "The result is returned as a job status. The agent writes detailed results to the respective case pages.",
+    de: "Es gibt keinen automatischen Nachtlauf. Die Ergebnisse erscheinen als Prüfpunkte unter „Eingang prüfen“ — anwaltlich zu prüfen; in die Akte wird nichts automatisch geschrieben.",
+    en: "There is no automatic nightly run. Results appear as review items under “Review inbox” — to be reviewed by a lawyer; nothing is written into the matter automatically.",
   },
-  "scanner.config": { de: "Konfiguration", en: "Configuration" },
+  "scanner.config": { de: "Umfang und Einstellungen", en: "Scope and settings" },
+  "scanner.scope": { de: "Welche Akten?", en: "Which matters?" },
+  "scanner.scope_case": { de: "Eine Akte", en: "One matter" },
+  "scanner.scope_selection": { de: "Auswahl", en: "Selection" },
+  "scanner.scope_all_open": { de: "Alle offenen Akten", en: "All open matters" },
+  "scanner.pick_case": { de: "Akte wählen", en: "Choose a matter" },
+  "scanner.pick_placeholder": { de: "— Akte auswählen —", en: "— select a matter —" },
+  "scanner.filter_cases": { de: "Akten filtern", en: "Filter matters" },
+  "scanner.selected": { de: "ausgewählt (max. {max})", en: "selected (max. {max})" },
+  "scanner.cases_loading": { de: "Akten werden geladen …", en: "Loading matters …" },
+  "scanner.no_cases": { de: "Keine Akten gefunden.", en: "No matters found." },
   "scanner.look_ahead": { de: "Vorschau-Zeitraum", en: "Look-ahead period" },
   "scanner.days": { de: "Tage", en: "days" },
   "scanner.look_ahead_desc": {
@@ -5762,20 +5823,58 @@ export const D = {
   },
   "scanner.evidence_threshold": { de: "Evidenz-Schwellwert", en: "Evidence threshold" },
   "scanner.evidence_desc": {
-    de: "Akten mit weniger als {evidenceThreshold} Evidenzstücken werden flagged.",
+    de: "Akten mit weniger als {evidenceThreshold} Evidenzstücken werden markiert.",
     en: "Cases with fewer than {evidenceThreshold} evidence items are flagged.",
   },
-  "scanner.max_cases": { de: "Max. Akten pro Scan", en: "Max cases per scan" },
-  "scanner.cases": { de: "Akten", en: "cases" },
-  "scanner.start": { de: "Scan starten", en: "Start scan" },
+  "scanner.cases": { de: "Akten", en: "matters" },
+  "scanner.preview": { de: "Kosten berechnen", en: "Calculate cost" },
+  "scanner.preview_title": { de: "Kostenvorschau", en: "Cost preview" },
+  "scanner.preview_line": {
+    de: "{count} Akten × {rate} Credits = {total} Credits",
+    en: "{count} matters × {rate} credits = {total} credits",
+  },
+  "scanner.balance": {
+    de: "Verfügbares Guthaben: {balance} Credits",
+    en: "Available balance: {balance} credits",
+  },
+  "scanner.insufficient": {
+    de: "Das Guthaben reicht für diesen Scan nicht. Bitte Credits nachkaufen oder weniger Akten wählen.",
+    en: "Your balance does not cover this scan. Buy credits or choose fewer matters.",
+  },
+  "scanner.truncated": {
+    de: "Es gibt mehr offene Akten als erlaubt — gescannt werden die {max} zuletzt bearbeiteten.",
+    en: "There are more open matters than allowed — the {max} most recently updated are scanned.",
+  },
+  "scanner.skipped_count": {
+    de: "{count} Akten werden nicht gescannt (nicht gefunden oder kein Zugriff).",
+    en: "{count} matters are not scanned (not found or no access).",
+  },
+  "scanner.nothing_to_scan": { de: "Keine Akte zu scannen.", en: "No matter to scan." },
+  "scanner.confirm_start": {
+    de: "Scan starten — {total} Credits",
+    en: "Start scan — {total} credits",
+  },
   "scanner.started": { de: "Scan gestartet", en: "Scan started" },
-  "scanner.job_id": { de: "Job-ID", en: "Job ID" },
-  "scanner.days_preview": { de: "Tage Vorschau", en: "Days preview" },
-  "scanner.evidence_threshold_short": { de: "Evidenz-Schwelle", en: "Evidence threshold" },
-  "scanner.max_cases_short": { de: "Max. Akten", en: "Max cases" },
+  "scanner.started_line": {
+    de: "{launched} Akten werden geprüft, {charged} Credits abgebucht.",
+    en: "{launched} matters are being reviewed, {charged} credits charged.",
+  },
+  "scanner.refunded_line": {
+    de: "{refunded} Credits für nicht gestartete Akten zurückgebucht.",
+    en: "{refunded} credits refunded for matters that did not start.",
+  },
+  "scanner.not_started": { de: "Nicht gestartet", en: "Not started" },
+  "scanner.run_status": { de: "Stand der Prüfungen", en: "Review progress" },
+  "scanner.run_done": { de: "fertig", en: "done" },
+  "scanner.run_running": { de: "läuft", en: "running" },
+  "scanner.run_failed": {
+    de: "fehlgeschlagen — Credits zurückgebucht",
+    en: "failed — credits refunded",
+  },
+  "scanner.to_review": { de: "Zu „Eingang prüfen“", en: "Go to review inbox" },
   "scanner.result_wait": {
-    de: "Die Prüfung schreibt Ergebnisse in die jeweiligen Akten-Seiten. Prüfen Sie die Akten-Übersicht in einigen Minuten.",
-    en: "The agent writes results to the respective case pages. Check the case overview in a few minutes.",
+    de: "Die Ergebnisse erscheinen nach einigen Minuten als Prüfpunkte unter „Eingang prüfen“.",
+    en: "Results appear as review items under “Review inbox” after a few minutes.",
   },
 
   // ── Intake page ──
@@ -7487,7 +7586,7 @@ export const D = {
   "nav.personal": { de: "Personal", en: "Staff" },
   "nav.case_assignment": { de: "Akten-Zuweisung", en: "Case Assignment" },
   "nav.case_search": { de: "Akten-Suche", en: "Case Search" },
-  "nav.ethical_wall": { de: "Ethical Wall", en: "Ethical Wall" },
+  "nav.ethical_wall": { de: "Informationsbarriere", en: "Ethical Wall" },
   "nav.webhooks": { de: "Webhooks", en: "Webhooks" },
   "nav.time_suggestions": { de: "Zeit-Vorschläge", en: "Time Suggestions" },
   "nav.autonomous": { de: "Autopilot", en: "Autopilot" },
@@ -7857,6 +7956,10 @@ export const D = {
   "compliance.error_save": {
     de: "Speichern fehlgeschlagen — Änderung ist nur lokal sichtbar.",
     en: "Save failed — changes are only visible locally.",
+  },
+  "compliance.error_load": {
+    de: "Die gespeicherte Selbstauskunft konnte nicht geladen werden. Änderungen sind gesperrt, bis sie geladen ist.",
+    en: "The saved self-assessment could not be loaded. Changes are locked until it loads.",
   },
   "compliance.title": { de: "Compliance-Selbstauskunft", en: "Compliance self-assessment" },
   "compliance.description": {
@@ -8413,6 +8516,10 @@ export const D = {
     de: "Zu viele Versuche — bitte kurz warten.",
     en: "Too many attempts — please wait briefly.",
   },
+  "team.load_error": {
+    de: "Das Team konnte nicht geladen werden.",
+    en: "The team could not be loaded.",
+  },
   "team.error_generic": {
     de: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
     en: "Something went wrong. Please try again.",
@@ -8428,6 +8535,22 @@ export const D = {
   "team.error_owner_only": {
     de: "Nur der Team-Inhaber kann das.",
     en: "Only the team owner can do that.",
+  },
+  "team.error_owner_must_stay_admin": {
+    de: "Die Inhaberin oder der Inhaber bleibt Admin. Wechseln Sie zuerst den Inhaber.",
+    en: "The owner stays an admin. Transfer ownership first.",
+  },
+  "team.error_last_admin": {
+    de: "Die Kanzlei braucht mindestens einen aktiven Admin.",
+    en: "The firm needs at least one active admin.",
+  },
+  "team.error_not_in_your_org": {
+    de: "Diese Person gehört nicht zu Ihrer Kanzlei.",
+    en: "This person is not a member of your firm.",
+  },
+  "team.role_change_owner_only": {
+    de: "Rollen kann nur die Inhaberin oder der Inhaber der Kanzlei ändern.",
+    en: "Only the firm owner can change roles.",
   },
   "team.loading": { de: "Team wird geladen…", en: "Loading team…" },
   "team.empty": {
@@ -8487,16 +8610,16 @@ export const D = {
   "scim.breadcrumb_settings": { de: "Einstellungen", en: "Settings" },
   "scim.breadcrumb_scim": { de: "SCIM", en: "SCIM" },
   "scim.configured": {
-    de: "WORKOS_API_KEY und WORKOS_DIRECTORY_ID konfiguriert",
-    en: "WORKOS_API_KEY and WORKOS_DIRECTORY_ID configured",
+    de: "Verzeichnis dieser Kanzlei verbunden",
+    en: "This firm's directory is connected",
   },
   "scim.not_configured": {
-    de: "Setzen Sie WORKOS_API_KEY und WORKOS_DIRECTORY_ID für die automatische Synchronisation",
-    en: "Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID for automatic synchronization",
+    de: "Für diese Kanzlei ist noch kein Verzeichnis verbunden — bitte beim Subsumio-Support einrichten lassen",
+    en: "No directory is connected for this firm yet — ask Subsumio support to set it up",
   },
   "scim.feature_auto_update": {
-    de: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
-    en: "Auto-update: changes to names, email or roles are synchronized.",
+    de: "Auto-Update: Namensänderungen werden übernommen; E-Mail und Rolle werden in Subsumio gepflegt.",
+    en: "Auto-update: name changes are applied; email and role are managed in Subsumio.",
   },
   "scim.feature_auto_deprovision": {
     de: "Auto-Deprovisioning: Gelöschte Benutzer werden deaktiviert (nicht gelöscht) — für Audit-Trail.",
@@ -8543,8 +8666,8 @@ export const D = {
     en: "Auto-provisioning: new users in IdP are automatically created in Subsumio.",
   },
   "scim.feature_group_sync": {
-    de: "Gruppen-Sync: AD/LDAP-Gruppen werden als SCIM-Gruppen abgebildet.",
-    en: "Group sync: AD/LDAP groups are mapped as SCIM groups.",
+    de: "Gruppen: werden vom Verzeichnis angenommen, vergeben aber keine Rechte und werden nicht dauerhaft gespeichert.",
+    en: "Groups: accepted from the directory, but grant no rights and are not stored permanently.",
   },
   "casesdetail.error_save": {
     de: "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar.",
@@ -9072,7 +9195,10 @@ export const D = {
     en: "Plan an absence to automatically forward deadlines.",
   },
   "absence.delegate_label": { de: "Vertreter:", en: "Delegate:" },
-  "absence.deadlines_forwarded": { de: "Frist(en) weitergeleitet", en: "deadline(s) forwarded" },
+  "absence.deadlines_forwarded": {
+    de: "Frist(en) von der Vertretung gedeckt",
+    en: "deadline(s) covered by the stand-in",
+  },
   "absence.rundown_reassigned": {
     de: "Rundown-Item(s) neu zugewiesen",
     en: "rundown item(s) reassigned",
@@ -9293,7 +9419,14 @@ export const D = {
     de: "Angeforderte Unterlagen",
     en: "Requested Documents",
   },
-  "portal.doc_request.submitted": { de: "Eingereicht", en: "Submitted" },
+  "portal.doc_request.submitted": {
+    de: "Eingereicht – wird von der Kanzlei geprüft",
+    en: "Submitted – being checked by the firm",
+  },
+  "portal.doc_request.received": {
+    de: "Von der Kanzlei bestätigt",
+    en: "Confirmed by the firm",
+  },
   "portal.doc_request.required": { de: "Erforderlich", en: "Required" },
   "portal.doc_request.optional": { de: "Optional", en: "Optional" },
   "portal.upload": { de: "Hochladen", en: "Upload" },
@@ -9317,9 +9450,9 @@ export const D = {
     de: "Hochladen fehlgeschlagen. Bitte versuchen Sie es erneut.",
     en: "Upload failed. Please try again.",
   },
-  "portal.upload_success_fulfilled": {
-    de: "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt.",
-    en: "Document uploaded. The document request is fully fulfilled.",
+  "portal.upload_success_in_review": {
+    de: "Dokument hochgeladen. Die Kanzlei prüft es und bestätigt dann den Erhalt.",
+    en: "Document uploaded. The firm will check it and then confirm receipt.",
   },
   "portal.upload_success": {
     de: "Dokument hochgeladen und an die Akte übermittelt.",
@@ -9457,9 +9590,30 @@ export const D = {
     de: "Frage eingeben…",
     en: "Type your question…",
   },
+  "portal.tabs_label": { de: "Bereiche der Akte", en: "Case sections" },
   "portal.chat_escalate": {
     de: "An Anwalt weiterleiten",
     en: "Escalate to lawyer",
+  },
+  "portal.chat_escalated": {
+    de: "Ihre Nachricht wurde an die Kanzlei weitergeleitet. Sie erhalten eine Rückmeldung über den Nachrichten-Tab.",
+    en: "Your message was forwarded to the firm. You will get a reply in the messages tab.",
+  },
+  "portal.chat_escalate_failed": {
+    de: "Die Weiterleitung an die Kanzlei ist fehlgeschlagen. Bitte versuchen Sie es erneut oder schreiben Sie im Nachrichten-Tab.",
+    en: "Forwarding to the firm failed. Please try again or write in the messages tab.",
+  },
+  "portal.chat_error": {
+    de: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
+    en: "Something went wrong. Please try again later.",
+  },
+  "portal.chat_no_answer": {
+    de: "Keine Antwort verfügbar.",
+    en: "No answer available.",
+  },
+  "portal.message_send_failed": {
+    de: "Ihre Nachricht wurde nicht gesendet. Bitte versuchen Sie es erneut.",
+    en: "Your message was not sent. Please try again.",
   },
   "portal.footer": {
     de: "Diese Ansicht ist nur für Sie bestimmt. Bitte teilen Sie den Link nicht.",
@@ -9899,7 +10053,7 @@ export const D = {
     en: "Shared workspaces for teams and clients",
   },
   "shared.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
-  "shared.new_title": { de: "Neuer Shared Space", en: "New Shared Space" },
+  "shared.new_title": { de: "Neuer Datenraum", en: "New Shared Space" },
   "shared.label_title": { de: "Titel", en: "Title" },
   "shared.title_placeholder": {
     de: "z.B. Kooperation Müller & Partner",
@@ -10167,13 +10321,13 @@ export const D = {
   "webhooks.created": { de: "Erstellt:", en: "Created:" },
 
   // ── Ethical Wall page strings ──
-  "ethical_wall.title": { de: "Ethical Wall", en: "Ethical Wall" },
+  "ethical_wall.title": { de: "Informationsbarriere", en: "Ethical Wall" },
   "ethical_wall.save": { de: "Speichern", en: "Save" },
   "ethical_wall.err_load": { de: "Fehler beim Laden", en: "Failed to load" },
   "ethical_wall.err_save": { de: "Fehler beim Speichern", en: "Failed to save" },
-  "ethical_wall.saved": { de: "Ethical Wall aktualisiert", en: "Ethical Wall updated" },
+  "ethical_wall.saved": { de: "Informationsbarriere aktualisiert", en: "Ethical Wall updated" },
   "ethical_wall.warning": {
-    de: "Die Ethical Wall blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese Einschränkung hat Vorrang vor normalen Berechtigungen.",
+    de: "Die Informationsbarriere blockiert den Zugriff auf diese Akte für bestimmte Benutzer. Diese Einschränkung hat Vorrang vor normalen Berechtigungen.",
     en: "The Ethical Wall blocks access to this case for specific users. This restriction takes precedence over normal permissions.",
   },
   "ethical_wall.blocked_users": { de: "Blockierte Benutzer", en: "Blocked users" },
@@ -10756,6 +10910,14 @@ export const D = {
   "admin.backup.created_desc": {
     de: "Voll-Backup erfolgreich erstellt",
     en: "Full backup successfully created",
+  },
+  "admin.backup.created_incomplete": {
+    de: "Backup unvollständig",
+    en: "Backup incomplete",
+  },
+  "admin.backup.created_incomplete_desc": {
+    de: "Die Sicherung wurde gespeichert, ist aber nicht vollständig — Details in der Backup-Datei",
+    en: "The backup was saved but is incomplete — details in the backup file",
   },
   "admin.backup.creating": { de: "Erstelle...", en: "Creating..." },
   "admin.backup.delete": { de: "Löschen", en: "Delete" },

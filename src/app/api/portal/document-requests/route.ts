@@ -5,6 +5,7 @@ import { createPublicHandler } from "@/lib/api-handler";
 import { resolvePortalAccess } from "@/lib/portal-access";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { documentRequestFromPage } from "@/lib/document-requests";
+import { isPortalVisibleRequest, toPortalRequest } from "@/lib/portal-view";
 import type { BrainPage } from "@/lib/types";
 
 const querySchema = z.object({
@@ -51,12 +52,13 @@ export const GET = createPublicHandler(
           request !== null
       )
       .filter((request) => request.frontmatter.case_slug === access.caseSlug)
-      .filter((request) => request.frontmatter.status !== "expired")
+      .filter(isPortalVisibleRequest)
       .sort(
         (a, b) =>
           new Date(b.frontmatter.created_at).getTime() -
           new Date(a.frontmatter.created_at).getTime()
-      );
+      )
+      .map(toPortalRequest);
 
     return Response.json({ requests });
   }

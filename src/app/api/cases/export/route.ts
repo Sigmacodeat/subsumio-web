@@ -4,6 +4,8 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { sanitizeFilename } from "@/lib/upload-validation";
+import { listEnginePages } from "@/lib/engine-pages";
+import { readCapped, uniqueZipPath } from "@/lib/case-export";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cases/export");
@@ -18,9 +20,68 @@ const exportQuerySchema = z.object({
 const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 800 * 1024 * 1024;
 
-function safePath(name: string): string {
-  const clean = sanitizeFilename(name).slice(0, 180) || "dokument";
-  return `dokumente/${clean}`;
+/** Höchstzahl der Dateien pro Export; der Rest steht im Manifest. */
+const MAX_EXPORT_ITEMS = 500;
+/** Obergrenze für die Suche nach Dokumenten, die per case_slug an der Akte hängen. */
+const MATTER_DOC_SCAN_MAX = 50_000;
+
+interface ExportDoc {
+  slug?: string;
+  url?: string;
+  name: string;
+}
+
+/**
+ * Die Dokumente der Akte: die Liste in `frontmatter.documents` plus alle
+ * Dokumentseiten, die per `case_slug` an der Akte hängen. Einträge, deren
+ * Dokument gelöscht oder einer anderen Akte zugeordnet ist, fallen heraus.
+ */
+async function collectCaseDocuments(
+  headers: Record<string, string>,
+  caseSlugs: Set<string>,
+  listed: ExportDoc[]
+): Promise<{ docs: ExportDoc[]; listingFailed: boolean }> {
+  let pages: Awaited<ReturnType<typeof listEnginePages>>;
+  try {
+    pages = await listEnginePages(headers, "document", MATTER_DOC_SCAN_MAX, {
+      includeTombstoned: true,
+      strict: true,
+      timeoutMs: 20_000,
+    });
+  } catch (err) {
+    log.warn("[cases/export] document listing failed:", err instanceof Error ? err.message : err);
+    return { docs: listed, listingFailed: true };
+  }
+  const bySlug = new Map(pages.map((p) => [p.slug, p]));
+  const docs: ExportDoc[] = [];
+  const seen = new Set<string>();
+  for (const entry of listed) {
+    const key = entry.slug || entry.url || "";
+    const page = entry.slug ? bySlug.get(entry.slug) : undefined;
+    if (page) {
+      const fm = page.frontmatter ?? {};
+      if (fm.status === "tombstoned") continue;
+      if (!caseSlugs.has(String(fm.case_slug ?? ""))) continue;
+    }
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    docs.push(entry);
+  }
+  for (const page of pages) {
+    const fm = page.frontmatter ?? {};
+    if (fm.status === "tombstoned") continue;
+    if (!caseSlugs.has(String(fm.case_slug ?? ""))) continue;
+    if (seen.has(page.slug)) continue;
+    seen.add(page.slug);
+    const name =
+      (typeof fm.source_filename === "string" && fm.source_filename) ||
+      (typeof fm.filename === "string" && fm.filename) ||
+      page.title ||
+      page.slug.split("/").pop() ||
+      "dokument";
+    docs.push({ slug: page.slug, name });
+  }
+  return { docs, listingFailed: false };
 }
 
 /**
@@ -55,7 +116,15 @@ export const GET = createHandler(
       }
       const casePage = (await caseRes.json()) as Record<string, unknown>;
       const fm = caseFrontmatter(casePage);
-      const docs = Array.isArray(fm.documents) ? fm.documents : [];
+      const listedDocs = (Array.isArray(fm.documents) ? fm.documents : []) as ExportDoc[];
+      const caseSlugs = new Set(
+        [query.slug, typeof casePage.slug === "string" ? casePage.slug : ""].filter(Boolean)
+      );
+      const { docs, listingFailed } = await collectCaseDocuments(
+        ctx.headers,
+        caseSlugs,
+        listedDocs
+      );
 
       const zip = new JSZip();
       zip.file(
@@ -82,9 +151,16 @@ export const GET = createHandler(
       let included = 0;
       const usedNames = new Set<string>();
 
-      for (const doc of docs.slice(0, 500)) {
+      for (const doc of docs.slice(MAX_EXPORT_ITEMS)) {
+        skipped.push({ name: doc.name, reason: "export_item_limit" });
+      }
+
+      for (const doc of docs.slice(0, MAX_EXPORT_ITEMS)) {
         const fileSlug = doc.slug || doc.url;
-        if (!fileSlug) continue;
+        if (!fileSlug) {
+          skipped.push({ name: doc.name, reason: "no_file_reference" });
+          continue;
+        }
         if (totalBytes >= MAX_TOTAL_BYTES) {
           skipped.push({ name: doc.name, reason: "export_size_limit" });
           continue;
@@ -99,15 +175,14 @@ export const GET = createHandler(
             skipped.push({ name: doc.name, reason: `download_http_${res.status}` });
             continue;
           }
-          const buf = Buffer.from(await res.arrayBuffer());
-          if (buf.byteLength > MAX_FILE_BYTES) {
+          const buf = await readCapped(res, MAX_FILE_BYTES);
+          if (!buf) {
             skipped.push({ name: doc.name, reason: "file_too_large" });
             continue;
           }
           totalBytes += buf.byteLength;
-          let path = safePath(doc.name);
           // Doppelte Dateinamen nicht überschreiben.
-          while (usedNames.has(path)) path = safePath(`_${doc.name}`);
+          const path = uniqueZipPath(doc.name, usedNames);
           usedNames.add(path);
           zip.file(path, buf);
           included += 1;
@@ -125,7 +200,8 @@ export const GET = createHandler(
             documents_total: docs.length,
             documents_included: included,
             documents_skipped: skipped,
-            complete: skipped.length === 0,
+            ...(listingFailed ? { document_listing_failed: true } : {}),
+            complete: skipped.length === 0 && !listingFailed,
           },
           null,
           2

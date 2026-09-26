@@ -12,7 +12,7 @@
  *
  * Mocks: engine fetch (for page listing/creation).
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock the engine module
 vi.mock("@/lib/engine", () => ({
@@ -73,10 +73,21 @@ const fetchMock = async (url: string | URL | Request, init?: RequestInit): Promi
 
 globalThis.fetch = fetchMock as typeof fetch;
 
+// Fixed clock: "in n days" must land on the same weekdays on every run. The
+// default is a Wednesday whose next day is a working day; tests that need a
+// holiday block set their own time.
+const DEFAULT_NOW = "2026-09-16T10:00:00+02:00";
+
 beforeEach(() => {
   mockPages.clear();
   createdPages.length = 0;
   vi.clearAllMocks();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(DEFAULT_NOW));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 // ── Test data: pipeline-extracted deadline_calendar page ──
@@ -85,27 +96,48 @@ function isoToDe(iso: string): string {
   return iso.replace(/(\d{4})-(\d{2})-(\d{2})/, "$3.$2.$1");
 }
 
-// Trigger date 13 days ago: StPO-Beschwerde (14 Tage, nicht vhfZ-gehemmt)
-// → Fristende in 1 Tag = kritisch.
-const _triggerDate = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
-
-const PIPELINE_CALENDAR_PAGE = {
-  slug: "deadline-calendars/urgent-case-2025",
-  compiled_truth: `# Fristen-Kalender
+// Trigger date 13 days before "now": StPO-Beschwerde (14 Tage, nicht
+// vhfZ-gehemmt) → Fristende am nächsten Tag = kritisch, sofern das ein
+// Werktag ist.
+function pipelineCalendarPage() {
+  const triggerDate = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+  return {
+    slug: "deadline-calendars/urgent-case-2025",
+    compiled_truth: `# Fristen-Kalender
 
 | Datum | Ampel | Frist | Rechtsgrundlage | Folge | Beleg |
 |------|-------|-------|-----------------|-------|-------|
-| ${isoToDe(_triggerDate)} | 🔴 | Sofortige Beschwerde | § 88 Abs 1 StPO | Rechtskraft | Urteil.pdf |
+| ${isoToDe(triggerDate)} | 🔴 | Sofortige Beschwerde | § 88 Abs 1 StPO | Rechtskraft | Urteil.pdf |
 `,
-  frontmatter: null,
-};
+    frontmatter: null,
+  };
+}
+
+/** The digest classification the cron applies to the synced deadline pages. */
+function digestStatuses(): Array<{ dueDate: string; status: string }> {
+  const out: Array<{ dueDate: string; status: string }> = [];
+  for (const page of mockPages.get("legal_deadline") ?? []) {
+    const fm = (page as { frontmatter?: Record<string, unknown> }).frontmatter ?? {};
+    const dueDate = String(fm.due_date ?? fm.date ?? "");
+    if (!dueDate) continue;
+    out.push({
+      dueDate: dueDate.slice(0, 10),
+      status: computeDeadlineStatus(
+        dueDate,
+        typeof fm.status === "string" ? fm.status : undefined,
+        typeof fm.vorfrist_date === "string" ? fm.vorfrist_date : undefined
+      ),
+    });
+  }
+  return out;
+}
 
 // ── E2E test ────────────────────────────────────────────────
 
 describe("E2: Full Fristen-Kette E2E — Pipeline → Sync → Digest", () => {
   it("pipeline-extracted deadline appears in the daily digest email", async () => {
     // Step 1: Pipeline has written a deadline_calendar page
-    setMockPages("deadline_calendar", [PIPELINE_CALENDAR_PAGE]);
+    setMockPages("deadline_calendar", [pipelineCalendarPage()]);
     setMockPages("legal_deadline", []); // No existing deadlines
 
     // Step 2: Run syncPipelineDeadlines (as the cron does before collecting)
@@ -155,7 +187,7 @@ describe("E2: Full Fristen-Kette E2E — Pipeline → Sync → Digest", () => {
     // Step 5: The pipeline-extracted deadline must appear in the digest
     expect(digestItems).toHaveLength(1);
     expect(digestItems[0]!.title).toBe("Sofortige Beschwerde");
-    expect(digestItems[0]!.status).toBe("critical"); // 3 days from now = critical (≤3 days)
+    expect(digestItems[0]!.status).toBe("critical"); // due tomorrow (a working day) = critical (≤3 days)
 
     // Step 6: Verify the digest text would include the deadline
     const digestText = renderDigestText(digestItems);
@@ -163,6 +195,24 @@ describe("E2: Full Fristen-Kette E2E — Pipeline → Sync → Digest", () => {
     expect(digestText).toContain("KRITISCH");
     expect(digestText).toContain("§ 88 Abs 1 StPO");
   });
+
+  it.each([
+    // [now (Vienna), expected due date after the holiday/weekend shift]
+    ["2026-12-24T10:00:00+01:00", "2026-12-28"], // 25./26.12. + Sunday → Monday
+    ["2027-03-25T10:00:00+01:00", "2027-03-30"], // Karfreitag + weekend + Ostermontag → Tuesday
+  ])(
+    "an end date on a holiday block is moved to the next working day → warning, not critical (now %s)",
+    async (now, shiftedDue) => {
+      vi.setSystemTime(new Date(now));
+      setMockPages("deadline_calendar", [pipelineCalendarPage()]);
+      setMockPages("legal_deadline", []);
+      const syncResult = await syncPipelineDeadlines("test-brain");
+      expect(syncResult.created).toBe(1);
+      const [item] = digestStatuses();
+      expect(item!.dueDate).toBe(shiftedDue);
+      expect(item!.status).toBe("warning");
+    }
+  );
 
   it("synced deadline with vorfrist reaches vorfrist stage in digest", async () => {
     // Deadline 20 days from now, vorfrist 7 days before = 13 days from now (not reached yet)

@@ -34,6 +34,8 @@ import {
   Share2,
   Users,
   FolderOpen,
+  Radar,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -56,85 +58,59 @@ interface CommandItem {
   keywords?: string;
 }
 
-const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
-  // Akten & Fristen
-  cases: "nav.cases",
-  contacts: "nav.contacts",
-  contracts: "nav.contracts",
-  playbooks: "nav.playbooks",
-  "process-strategy": "nav.process_strategy",
-  vault: "nav.vault",
-  deadlines: "nav.deadlines",
-  opponents: "nav.opponents",
-  "client-portal": "nav.client_portal",
-  // Recherche
-  research: "nav.legal_research",
-  analyze: "nav.analyze",
-  "deep-analysis": "nav.deep_analysis",
-  translate: "nav.translate",
-  "judgements-sync": "nav.judgements_sync",
-  kollisionspruefung: "nav.kollisionspruefung",
-  "tabular-review": "nav.tabular_review",
-  "obligation-tracking": "nav.obligation_tracking",
-  "case-scanner": "nav.case_scanner",
-  "clause-library": "nav.clause_library",
-  "review-queue": "nav.review_queue",
-  "version-history": "nav.version_history",
-  monitoring: "nav.monitoring",
-  sources: "nav.sources",
-  // Schriftsätze & Abrechnung
-  drafting: "nav.drafting",
-  invoicing: "nav.invoicing",
-  signature: "nav.signature",
-  // Daten & Integration
-  connectors: "nav.connectors",
-  whatsapp: "nav.whatsapp",
-  intake: "nav.intake",
-  "document-requests": "nav.document_requests",
-  "import-kanzlei": "nav.import_kanzlei",
-  "email-import": "nav.email_import",
-  "calendar-export": "nav.calendar_export",
-  compliance: "nav.compliance",
-  retention: "nav.retention",
-  anonymize: "nav.anonymize",
-  "word-addin": "nav.word_addin",
-  verfahrensdoku: "nav.verfahrensdoku",
-  "data-export": "nav.data_export",
-  // Verwaltung
-  team: "nav.team",
-  audit: "nav.audit_log",
-  controlling: "nav.controlling",
-  "api-keys": "nav.api_keys",
-  billing: "nav.billing",
-  mobile: "nav.mobile",
-  settings: "nav.settings",
-  "settings-kanzlei": "nav.kanzlei",
-  "settings-security": "nav.security",
-  "settings-ai-model": "nav.ai_model",
-  "portfolio-insights": "nav.portfolio_insights",
-  "shared-spaces": "nav.shared_spaces",
-  "outbound-register": "nav.outbound_register",
-  "power-of-attorney": "nav.power_of_attorney",
-  dictation: "nav.dictation",
-  kyc: "nav.kyc",
-  absences: "nav.absences",
-  "kanzlei-tools": "nav.kanzlei_tools",
-  "ethical-wall": "nav.ethical_wall",
-  webhooks: "nav.webhooks",
-  "time-suggestions": "nav.time_suggestions",
-  commentaries: "nav.commentaries",
-  autonomous: "nav.autonomous",
-  "red-team": "nav.red_team",
-  "berufungs-agent": "nav.berufungs_agent",
-  "war-room": "nav.war_room",
-  "document-interviews": "nav.document_interviews",
-  "court-analytics": "nav.court_analytics",
-  "online-booking": "nav.online_booking",
-  "bulk-cases": "nav.bulk_cases",
-  "fee-agreements": "nav.fee_agreements",
-  "claim-account": "nav.claim_account",
-  time: "nav.time",
-};
+/**
+ * Routes that are not in the sidebar but must stay findable in the palette.
+ * Every href points to a real dashboard page (pinned by the palette test).
+ */
+export const EXTRA_NAV_COMMANDS: ReadonlyArray<{
+  id: string;
+  labelKey: DashboardKey;
+  icon: typeof Search;
+  href: string;
+  section: DashboardKey;
+  keywords: string;
+}> = [
+  {
+    id: "altlasten",
+    labelKey: "nav.altlasten",
+    icon: Archive,
+    href: "/dashboard/altlasten",
+    section: "nav.section.clients_comm",
+    keywords: "bestandsakten altlasten backlog alte akten archiv legacy",
+  },
+  {
+    id: "case-scanner",
+    labelKey: "nav.case_scanner",
+    icon: Radar,
+    href: "/dashboard/case-scanner",
+    section: "nav.section.litigation",
+    keywords: "akten scanner scan fristen beweise prüfen case scanner",
+  },
+  {
+    id: "version-history",
+    labelKey: "nav.version_history",
+    icon: History,
+    href: "/dashboard/version-history",
+    section: "nav.section.docs_drafting",
+    keywords: "versionen verlauf dokumentversionen änderungen history",
+  },
+  {
+    id: "email-import",
+    labelKey: "nav.email_import",
+    icon: Upload,
+    href: "/dashboard/email-import",
+    section: "nav.section.clients_comm",
+    keywords: "e-mail import mails übernehmen postfach eml msg",
+  },
+  {
+    id: "tabular-review",
+    labelKey: "nav.tabular_review",
+    icon: FileText,
+    href: "/dashboard/tabular-review",
+    section: "nav.section.docs_drafting",
+    keywords: "massenprüfung tabellarische prüfung dokumente vergleichen review",
+  },
+];
 
 const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
   "nav.section.cockpit": "nav.section.cockpit",
@@ -165,6 +141,8 @@ interface CommandPaletteProps {
 
 const RECENT_KEY = "subsumio:cmd_recent";
 const MAX_RECENT = 5;
+/** Typing pause before the palette searches (one request per settled query). */
+export const PALETTE_SEARCH_DEBOUNCE_MS = 300;
 
 function loadRecent(): string[] {
   try {
@@ -245,24 +223,26 @@ export function CommandPalette({
         keywords: item.keywords,
       });
     }
-    // Legal-only route that lives outside the sidebar but must stay findable.
-    commands.push({
-      id: "altlasten",
-      label: "nav.altlasten",
-      labelKey: "nav.altlasten",
-      icon: Archive,
-      href: "/dashboard/altlasten",
-      section: "nav.section.clients_comm",
-      sectionKey: "nav.section.clients_comm",
-      keywords: "bestandsakten altlasten backlog alte akten archiv legacy",
-    });
+    // Legal-only routes that live outside the sidebar but must stay findable.
+    for (const extra of EXTRA_NAV_COMMANDS) {
+      if (seen.has(extra.href)) continue;
+      seen.add(extra.href);
+      commands.push({
+        id: extra.id,
+        label: extra.labelKey,
+        labelKey: extra.labelKey,
+        icon: extra.icon,
+        href: extra.href,
+        section: extra.section,
+        sectionKey: extra.section,
+        keywords: extra.keywords,
+      });
+    }
     return commands;
   }, [industry, role]);
   const resolveLabel = useCallback(
     (cmd: CommandItem) => {
       if (cmd.labelKey) return t(cmd.labelKey);
-      const key = CMD_LABEL_KEYS[cmd.id];
-      if (key) return t(key);
       return cmd.label;
     },
     [t]
@@ -358,15 +338,15 @@ export function CommandPalette({
       section: t("cmd.section.create"),
       keywords: "neuer vertrag contract create",
     });
+    // Data rooms are opened from a matter ("Zugriff & Freigaben"); the
+    // overview explains that step, so the command navigates there.
     cmds.push({
       id: "create-space",
       label: t("cmd.action.new_space" as DashboardKey),
       icon: Share2,
-      action: () => {
-        window.dispatchEvent(new CustomEvent("subsumio:create-space"));
-      },
+      href: "/dashboard/shared-spaces",
       section: t("cmd.section.create"),
-      keywords: "shared space kollaboration create",
+      keywords: "datenraum shared space kollaboration teilen create",
     });
     cmds.push({
       id: "create-signature",
@@ -527,9 +507,12 @@ export function CommandPalette({
     }
   }, [open]);
 
-  // Federated search: fetch brain pages + cases + contacts + deadlines + documents in parallel
+  // Federated search: ONE request per settled query (one quota unit), after
+  // a 300 ms typing pause; a superseded request is aborted, not just ignored.
+  const searchAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchAbortRef.current?.abort();
     const requestId = ++searchRequestIdRef.current;
     if (!query.trim() || query.trim().length < 2) {
       setSearchResults([]);
@@ -541,30 +524,22 @@ export function CommandPalette({
     setSearching(true);
     searchTimerRef.current = setTimeout(async () => {
       const q = query.trim();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
       try {
-        const [brainRes, casesRes, contactsRes, deadlinesRes, docsRes] = await Promise.allSettled([
-          api.brain.search(q, 8),
-          api.search(q, 5, "case"),
-          api.search(q, 5, "contact"),
-          api.search(q, 5, "deadline"),
-          api.search(q, 5, "document"),
-        ]);
+        const res = await api.searchPalette(q, controller.signal);
         if (requestId !== searchRequestIdRef.current) return;
-        // The proxy forwards the engine body verbatim — a malformed payload
+        // The engine body is forwarded per section — a malformed payload
         // (object instead of array) must not take the whole dashboard down.
         const asArray = <T,>(v: T[] | unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
-        setSearchResults(brainRes.status === "fulfilled" ? asArray(brainRes.value) : []);
+        setSearchResults(asArray(res?.results));
         setFedResults({
-          cases: casesRes.status === "fulfilled" ? asArray(casesRes.value) : [],
-          contacts: contactsRes.status === "fulfilled" ? asArray(contactsRes.value) : [],
-          deadlines: deadlinesRes.status === "fulfilled" ? asArray(deadlinesRes.value) : [],
-          documents: docsRes.status === "fulfilled" ? asArray(docsRes.value) : [],
+          cases: asArray(res?.cases),
+          contacts: asArray(res?.contacts),
+          deadlines: asArray(res?.deadlines),
+          documents: asArray(res?.documents),
         });
-        setSearchFailures(
-          [brainRes, casesRes, contactsRes, deadlinesRes, docsRes].filter(
-            (result) => result.status === "rejected"
-          ).length
-        );
+        setSearchFailures(Array.isArray(res?.failed) ? res.failed.length : 0);
       } catch {
         if (requestId !== searchRequestIdRef.current) return;
         setSearchResults([]);
@@ -573,11 +548,14 @@ export function CommandPalette({
       } finally {
         if (requestId === searchRequestIdRef.current) setSearching(false);
       }
-    }, 200);
+    }, PALETTE_SEARCH_DEBOUNCE_MS);
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
   }, [query]);
+
+  // Abort an in-flight search when the palette unmounts.
+  useEffect(() => () => searchAbortRef.current?.abort(), []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allCommands;

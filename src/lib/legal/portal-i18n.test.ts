@@ -74,7 +74,15 @@ describe("P0-TODO 3: Mandantenportal i18n — Zweisprachig", () => {
   it("portal page uses t() for upload feedback messages", () => {
     expect(portalSource).toContain('t("portal.upload_failed")');
     expect(portalSource).toContain('t("portal.upload_success")');
-    expect(portalSource).toContain('t("portal.upload_success_fulfilled")');
+    expect(portalSource).toContain('t("portal.upload_success_in_review")');
+  });
+
+  it("portal page reports failed messages, chat answers and escalations", () => {
+    expect(portalSource).toContain('t("portal.message_send_failed")');
+    expect(portalSource).toContain('t("portal.chat_escalate_failed")');
+    expect(portalSource).toContain('t("portal.chat_error")');
+    expect(portalSource).toContain("buildEscalationMessage(");
+    expect(portalSource).not.toContain("// silent fail");
   });
 
   it("portal page uses t() for empty states", () => {
@@ -126,7 +134,8 @@ describe("P0-TODO 3: Mandantenportal i18n — Zweisprachig", () => {
       "portal.doc_password_placeholder",
       "portal.no_documents",
       "portal.upload_failed",
-      "portal.upload_success_fulfilled",
+      "portal.upload_success_in_review",
+      "portal.doc_request.received",
       "portal.upload_success",
       "portal.messages_title",
       "portal.no_messages",

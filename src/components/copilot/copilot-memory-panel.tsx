@@ -9,6 +9,7 @@ import { useLang } from "@/lib/use-lang";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { useToast } from "@/components/ui/toast";
 
 interface CopilotMemoryEntry {
   id: string;
@@ -21,6 +22,14 @@ interface CopilotMemoryEntry {
   updatedAt: string;
   pinned: boolean;
   timesReferenced: number;
+  /** "proposed": recognised automatically, used only after "Merken". */
+  status?: "active" | "proposed";
+}
+
+/** The route's error text (German), else a fallback. */
+async function errorOf(res: Response, fallback: string): Promise<string> {
+  const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+  return typeof body?.error === "string" && body.error ? body.error : fallback;
 }
 
 const TYPE_LABELS_DE: Record<string, string> = {
@@ -54,6 +63,8 @@ const TYPE_COLORS: Record<string, string> = {
 export function CopilotMemoryPanel() {
   const { lang } = useLang();
   const isEn = lang === "en";
+  const { addToast } = useToast();
+  const fail = (title: string) => addToast({ type: "error", title });
   const [memories, setMemories] = useState<CopilotMemoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -100,52 +111,85 @@ export function CopilotMemoryPanel() {
         setNewKey("");
         setNewValue("");
         await fetchMemories();
+      } else {
+        fail(
+          await errorOf(res, isEn ? "Could not save" : "Eintrag konnte nicht gespeichert werden")
+        );
       }
     } catch {
-      // Non-blocking
+      fail(isEn ? "Could not save" : "Eintrag konnte nicht gespeichert werden");
     } finally {
       setSaving(false);
     }
   };
 
+  const confirmProposal = async (id: string) => {
+    try {
+      const res = await csrfFetch("/api/copilot/memory", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "active" }),
+      });
+      if (!res.ok) {
+        fail(await errorOf(res, isEn ? "Could not confirm" : "Bestätigen fehlgeschlagen"));
+        return;
+      }
+      setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, status: "active" } : m)));
+    } catch {
+      fail(isEn ? "Could not confirm" : "Bestätigen fehlgeschlagen");
+    }
+  };
+
   const togglePin = async (id: string, pinned: boolean) => {
     try {
-      await csrfFetch("/api/copilot/memory", {
+      const res = await csrfFetch("/api/copilot/memory", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, pinned: !pinned }),
       });
+      if (!res.ok) {
+        fail(await errorOf(res, isEn ? "Could not pin" : "Anheften fehlgeschlagen"));
+        return;
+      }
       setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, pinned: !pinned } : m)));
     } catch {
-      // Non-blocking
+      fail(isEn ? "Could not pin" : "Anheften fehlgeschlagen");
     }
   };
 
   const deleteMemory = async (id: string) => {
     try {
-      await csrfFetch("/api/copilot/memory", {
+      const res = await csrfFetch("/api/copilot/memory", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
+      if (!res.ok) {
+        fail(await errorOf(res, isEn ? "Could not delete" : "Löschen fehlgeschlagen"));
+        return;
+      }
       setMemories((prev) => prev.filter((m) => m.id !== id));
     } catch {
-      // Non-blocking
+      fail(isEn ? "Could not delete" : "Löschen fehlgeschlagen");
     }
   };
 
   const saveEdit = async (id: string) => {
     if (!editValue.trim()) return;
     try {
-      await csrfFetch("/api/copilot/memory", {
+      const res = await csrfFetch("/api/copilot/memory", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, value: editValue.trim() }),
       });
+      if (!res.ok) {
+        fail(await errorOf(res, isEn ? "Could not save" : "Speichern fehlgeschlagen"));
+        return;
+      }
       setMemories((prev) => prev.map((m) => (m.id === id ? { ...m, value: editValue.trim() } : m)));
       setEditingId(null);
     } catch {
-      // Non-blocking
+      fail(isEn ? "Could not save" : "Speichern fehlgeschlagen");
     }
   };
 
@@ -304,6 +348,27 @@ export function CopilotMemoryPanel() {
                       <p className="mt-0.5 text-[11px] text-[color:var(--ds-text-muted)]">
                         {m.value}
                       </p>
+                    )}
+                    {m.status === "proposed" && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-[color:var(--ds-warning-text)]">
+                          {isEn
+                            ? "Suggested — not used until you keep it."
+                            : "Vorschlag — wird erst nach „Merken“ verwendet."}
+                        </span>
+                        <button
+                          onClick={() => confirmProposal(m.id)}
+                          className="rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                        >
+                          {isEn ? "Keep" : "Merken"}
+                        </button>
+                        <button
+                          onClick={() => deleteMemory(m.id)}
+                          className="rounded px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                        >
+                          {isEn ? "Discard" : "Verwerfen"}
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">

@@ -65,4 +65,16 @@ describe("POST /api/pages/batch-list", () => {
     const body = (await res.json()) as { results: Record<string, unknown[]> };
     expect(body.results.legal_contact).toHaveLength(199);
   });
+
+  it("refuses a request that would fan out into thousands of engine calls (R11-12)", async () => {
+    const res = await post({
+      types: Array.from({ length: 20 }, (_, i) => `t${i}`),
+      limit: 50_000,
+    });
+    expect(res.status).toBe(400);
+    const tooMany = await post({ types: ["a", "b", "c"], limit: 50_000 });
+    expect(tooMany.status).toBe(400);
+    const allInvoices = await post({ types: ["invoice"], limit: 50_000 });
+    expect(allInvoices.status).toBe(200);
+  });
 });

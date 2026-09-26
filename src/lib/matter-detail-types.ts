@@ -1,3 +1,4 @@
+import { caseRetentionState } from "@/lib/case-retention";
 import type {
   EvidenceEntry,
   StrategyInfo,
@@ -98,11 +99,15 @@ export interface CaseDetail {
   knowledgeReviews: KnowledgeReview[];
   portalEnabled: boolean;
   portalNote?: string;
+  /** Summary the firm released to the client portal; the only case text a client sees. */
+  portalSummary?: string;
   /** WP-7.40: Im Portal mandanten-startbare Workflow-Template-IDs. */
   portalWorkflows?: string[];
   auditLog?: AuditLogEntry[];
   archivedAt?: string;
   archivedBy?: string;
+  /** Aufbewahrungsende einer abgeschlossenen Akte ("YYYY-MM-DD", § 12 RAO / § 132 BAO). */
+  retentionUntil?: string;
   mandateAcceptance?: CaseMandateAcceptance;
   version: number;
 }
@@ -209,12 +214,14 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
       : [],
     portalEnabled: (fm.portal_enabled as boolean) || false,
     portalNote: (fm.portal_note as string) || undefined,
+    portalSummary: typeof fm.portal_summary === "string" ? fm.portal_summary : undefined,
     portalWorkflows: Array.isArray(fm.portal_workflows)
       ? (fm.portal_workflows as string[])
       : undefined,
     auditLog: (fm.audit_log as AuditLogEntry[]) || [],
     archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
     archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
+    retentionUntil: caseRetentionState(fm).until ?? undefined,
     mandateAcceptance:
       typeof fm.mandate_acceptance === "object" && fm.mandate_acceptance !== null
         ? (fm.mandate_acceptance as CaseMandateAcceptance)

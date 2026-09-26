@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { retentionStatus } from "@/lib/retention-period";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Trash2, CheckCircle2, Info, Loader2, Archive } from "lucide-react";
 import { api } from "@/lib/api";
@@ -37,8 +38,6 @@ const CASE_STATUS_LABEL: Record<string, string> = {
   archived: "Archiviert",
 };
 
-const YEAR_MS = 1000 * 60 * 60 * 24 * 365.25;
-
 export default function RetentionPage() {
   const { t } = useLang();
   const router = useRouter();
@@ -62,17 +61,17 @@ export default function RetentionPage() {
         for (const p of pages) {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
           const closedAt = fm.closed_at ? String(fm.closed_at) : "";
-          const closedMs = closedAt ? new Date(closedAt).getTime() : NaN;
+          // § 132 BAO: the period runs from the end of the closing year.
+          const status = closedAt
+            ? retentionStatus(closedAt, new Date(now), RETENTION_YEARS, DELETE_GRACE_YEARS)
+            : null;
           // Laufende Akten (ohne gültiges Abschlussdatum) unterliegen noch keiner Frist.
-          if (!Number.isFinite(closedMs)) {
+          if (!status) {
             running++;
             continue;
           }
-          const years = Math.max(0, (now - closedMs) / YEAR_MS);
-          let action: RetentionCase["action"] = "keep";
-          if (years >= RETENTION_YEARS + DELETE_GRACE_YEARS)
-            action = "delete"; // ≥ 10 Jahre
-          else if (years >= RETENTION_YEARS) action = "review"; // 7–10 Jahre
+          const years = status.yearsSinceStart;
+          const action: RetentionCase["action"] = status.action;
           closed.push({
             slug: p.slug,
             title: p.title,
@@ -117,7 +116,9 @@ export default function RetentionPage() {
     setDeleting(c.slug);
     setLoadError(null);
     try {
-      await api.brain.deletePage(c.slug);
+      // Nach Fristablauf: in den Papierkorb (endgültige Löschung nach der
+      // Papierkorbfrist). Ein normales DELETE würde die Akte nur archivieren.
+      await api.brain.deletePage(c.slug, { mode: "trash" });
       setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
     } catch {
       setLoadError(t("retention.error_delete"));

@@ -113,7 +113,8 @@ export async function runPhaseLegalStatuteCurrency(
       source: string;
     }> = [];
     try {
-      const { fetchLiveStatuteVersion } = await import("../../lib/statute-live-source.ts");
+      const { fetchLiveStatuteVersion, livePauseMs } =
+        await import("../../lib/statute-live-source.ts");
       const byJur = new Map<string, string[]>();
       for (const [key, s] of byStatute) {
         const jur = s.jurisdiction;
@@ -122,7 +123,11 @@ export async function runPhaseLegalStatuteCurrency(
         byJur.get(jur)!.push(s.abbreviation.toLowerCase());
       }
       for (const [jur, abbrs] of byJur) {
-        for (const abbr of abbrs.slice(0, 10)) {
+        for (const [i, abbr] of abbrs.slice(0, 10).entries()) {
+          // Same pace as every other RIS access (never back to back).
+          if (i > 0) {
+            await new Promise((r) => setTimeout(r, livePauseMs(jur as "at" | "de" | "ch")));
+          }
           const live = await fetchLiveStatuteVersion(jur as "at" | "de" | "ch", abbr);
           if (live?.version_date) {
             const brainStatute = statutes.find(

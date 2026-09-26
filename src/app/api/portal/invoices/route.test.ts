@@ -58,4 +58,46 @@ describe("GET /api/portal/invoices — kill switch", () => {
     const data = (await res.json()) as { invoices: Array<{ slug: string }> };
     expect(data.invoices.map((i) => i.slug).sort()).toEqual(["i1", "i4"]);
   });
+
+  it("finds the matter's invoice deep in a large firm-wide list, reading it strictly", async () => {
+    vi.mocked(resolvePortalAccess).mockResolvedValue({
+      payload: { case_slug: "cases/a", brain_id: "b", exp: 1 },
+      caseSlug: "cases/a",
+      headers: { "x-test": "1" },
+      frontmatter: {},
+      title: "Akte A",
+      page: { slug: "cases/a", frontmatter: {} },
+    } as never);
+    const all = Array.from({ length: 1_200 }, (_, i) => ({
+      slug: `inv-${i}`,
+      frontmatter: {
+        case_slugs: [i === 1_149 ? "cases/a" : `cases/other-${i}`],
+        status: "sent",
+        total: 10,
+      },
+    }));
+    vi.mocked(listEnginePages).mockImplementation((async (
+      _h: unknown,
+      _type: string,
+      limit: number
+    ) => all.slice(0, limit)) as never);
+    const res = await GET(req() as never);
+    const data = (await res.json()) as { invoices: Array<{ slug: string }> };
+    expect(data.invoices.map((i) => i.slug)).toEqual(["inv-1149"]);
+    expect(vi.mocked(listEnginePages).mock.calls[0][3]).toMatchObject({ strict: true });
+  });
+
+  it("reports a failed read instead of an empty list", async () => {
+    vi.mocked(resolvePortalAccess).mockResolvedValue({
+      payload: { case_slug: "cases/a", brain_id: "b", exp: 1 },
+      caseSlug: "cases/a",
+      headers: {},
+      frontmatter: {},
+      title: "Akte A",
+      page: { slug: "cases/a", frontmatter: {} },
+    } as never);
+    vi.mocked(listEnginePages).mockRejectedValue(new Error("HTTP 500"));
+    const res = await GET(req() as never);
+    expect(res.status).toBe(502);
+  });
 });

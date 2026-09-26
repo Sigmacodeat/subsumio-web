@@ -1,10 +1,10 @@
 "use client";
 
-import { Download, CheckCircle2, Copy, KeyRound } from "lucide-react";
-import Link from "next/link";
+import { Download, CheckCircle2, Copy } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { AddinTokenPanel } from "@/components/dashboard/addin-token-panel";
 import { useLang } from "@/lib/use-lang";
 
 const MANIFEST_URL = "https://subsum.io/word-addin/manifest.xml";
@@ -142,14 +142,13 @@ export default function WordAddinPage() {
           </Step>
           <Step n={3} title="Mit Ihrem Konto verbinden">
             <p>
-              Erstellen Sie einen Zugangsschlüssel und fügen Sie ihn im Add-in unter „Verbinden“
-              ein. Der Schlüssel wird nur einmal angezeigt.
+              Klicken Sie im Word- oder Outlook-Add-in auf „Anmelden“ und melden Sie sich im
+              Subsumio-Fenster wie gewohnt an (mit Zwei-Faktor-Anmeldung). Das Add-in erhält einen
+              Zugang, der 24 Stunden gilt, nur Lesen und Schreiben erlaubt (keine Verwaltung) und
+              sich hier jederzeit widerrufen lässt. Nur falls das Anmeldefenster nicht verfügbar
+              ist: Zugang hier erstellen und im Add-in einfügen.
             </p>
-            <Button variant="primary" size="sm" className="mt-2 gap-2 whitespace-nowrap" asChild>
-              <Link href="/dashboard/api-keys">
-                <KeyRound size={13} aria-hidden /> Zugangsschlüssel erstellen
-              </Link>
-            </Button>
+            <AddinTokenPanel />
           </Step>
         </ol>
       </section>

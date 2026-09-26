@@ -125,13 +125,29 @@ export function generateLinkId(): string {
   return `lnk_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
 }
 
-function signUrl(encodedUrl: string): string {
-  const secret = getAuthSecret();
-  return createHmac("sha256", secret).update(encodedUrl).digest("base64url");
+/** Binds a signed link to the mail (tracking id) and link it was issued for. */
+export interface TrackedLinkBinding {
+  trackingId: string;
+  linkId?: string;
 }
 
-export function verifyUrlSignature(encodedUrl: string, signature: string): boolean {
-  const expected = signUrl(encodedUrl);
+function signUrl(encodedUrl: string, binding?: TrackedLinkBinding): string {
+  const secret = getAuthSecret();
+  // Bound links sign tracking id + link id + target, so a signed target from
+  // one mail cannot be replayed under another mail's tracking id. Links
+  // without binding (issued before) verify only the target.
+  const payload = binding
+    ? `v2\n${binding.trackingId}\n${binding.linkId ?? ""}\n${encodedUrl}`
+    : encodedUrl;
+  return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+export function verifyUrlSignature(
+  encodedUrl: string,
+  signature: string,
+  binding?: TrackedLinkBinding
+): boolean {
+  const expected = signUrl(encodedUrl, binding);
   if (signature.length !== expected.length) return false;
   try {
     return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
@@ -169,7 +185,7 @@ export function injectTracking(html: string, trackingId: string): string {
     }
     const linkId = generateLinkId();
     const encoded = Buffer.from(url).toString("base64url");
-    const sig = signUrl(encoded);
+    const sig = signUrl(encoded, { trackingId, linkId });
     const trackedUrl = `${trackingBase}/c/${trackingId}?l=${linkId}&u=${encoded}&s=${sig}`;
     return `href="${trackedUrl}"`;
   });
@@ -446,18 +462,14 @@ function extractUaCore(ua: string): string {
 }
 
 /**
- * Extract the real client IP from a request, respecting X-Forwarded-For
- * and X-Real-IP headers.
+ * Extract the client IP from a request. X-Real-IP (overwritten by the reverse
+ * proxy with the TCP peer) wins over the client-controlled X-Forwarded-For.
  */
 export function extractClientIp(headers: Headers): string | null {
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const realIp = headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  return null;
+  const realIp = headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const first = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return first || null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

@@ -42,7 +42,8 @@ const messagePostSchema = z
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    // Kanzleipostfach: nur Kanzleirollen, nie Mandantenzugänge.
+    action: "mail.read",
     rateTier: "standard",
     query: messagesQuerySchema,
     audit: (_ctx, _body, query) => ({
@@ -63,7 +64,7 @@ export const GET = createHandler(
       if (query.case) {
         const access = await caseAccessForUser(ctx.headers, query.case, ctx.user.id);
         if (access === "not_found") return apiError("case_not_found", "Akte nicht gefunden", 404);
-        if (access === "blocked")
+        if (access !== "ok")
           return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
       }
       const [listed, unreadCounts] = await Promise.all([
@@ -77,7 +78,8 @@ export const GET = createHandler(
         }),
         getUnreadCounts(scope),
       ]);
-      // Mail filed under a matter the user is walled off from is not listed.
+      // Mail filed under a matter the user cannot verifiably read (wall,
+      // matter scope, unknown matter) is not listed — fail-closed.
       const blocked = await blockedCasesForUser(
         ctx.headers,
         listed.map((m) => m.caseSlug ?? "").filter(Boolean),
@@ -124,7 +126,7 @@ export const POST = createHandler(
       if (body.case_slug) {
         const access = await caseAccessForUser(ctx.headers, body.case_slug, ctx.user.id);
         if (access === "not_found") return apiError("case_not_found", "Akte nicht gefunden", 400);
-        if (access === "blocked")
+        if (access !== "ok")
           return apiError("forbidden", "Kein Zugriff auf diese Akte (Ethical Wall)", 403);
       }
       const draft = { ...buildMailDraft(body), caseSlug: body.case_slug };

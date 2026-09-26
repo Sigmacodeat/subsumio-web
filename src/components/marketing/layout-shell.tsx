@@ -12,6 +12,7 @@ function isAuthedOrApi(pathname: string): boolean {
     pathname.startsWith("/ops") ||
     pathname.startsWith("/portal") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/addin-connect") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/reset") ||
@@ -26,6 +27,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const hasOwnMain =
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/addin-connect") ||
     pathname.startsWith("/ops") ||
     pathname.startsWith("/portal");
   const isMarketingPage = !isAuthedOrApi(pathname);

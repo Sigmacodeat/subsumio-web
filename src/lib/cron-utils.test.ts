@@ -11,10 +11,11 @@ vi.mock("@/lib/engine", () => ({
 vi.mock("@/lib/auth/store", () => ({
   getSharedPgPool: vi.fn(() => null),
   getStore: vi.fn(() => ({
-    list: vi.fn(async () => []),
+    list: vi.fn(async () => mockUsers),
   })),
   getOrgStore: vi.fn(() => ({
-    getById: vi.fn(async () => null),
+    getById: vi.fn(async (id: string) => mockOrgs.find((o) => o.id === id) ?? null),
+    list: vi.fn(async () => mockOrgs),
   })),
 }));
 
@@ -23,6 +24,9 @@ vi.mock("@/lib/schema-init", () => ({
 }));
 
 import { fetchPages, getRecipientsByBrain, createDailyDedup } from "./cron-utils";
+
+let mockUsers: Array<Record<string, unknown>> = [];
+let mockOrgs: Array<Record<string, unknown>> = [];
 
 describe("fetchPages", () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -113,6 +117,20 @@ describe("getRecipientsByBrain", () => {
   test("returns empty map when no users", async () => {
     const result = await getRecipientsByBrain();
     expect(result.size).toBe(0);
+  });
+
+  it("does not deliver a firm brain to someone who left the firm it came from", async () => {
+    mockOrgs = [{ id: "org-1", brainId: "brain_founder" }];
+    mockUsers = [
+      { id: "founder", brainId: "brain_founder", orgId: null },
+      { id: "partner", brainId: "brain_partner", orgId: "org-1" },
+      { id: "solo", brainId: "brain_solo", orgId: null },
+    ];
+    const result = await getRecipientsByBrain();
+    expect(result.get("brain_founder")?.map((u) => u.id)).toEqual(["partner"]);
+    expect(result.get("brain_solo")?.map((u) => u.id)).toEqual(["solo"]);
+    mockUsers = [];
+    mockOrgs = [];
   });
 });
 

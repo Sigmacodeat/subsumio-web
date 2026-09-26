@@ -53,6 +53,10 @@ interface RestoreResult {
   outcome: RestoreOutcome;
   /** Documents reactivated by the archive cascade (case restores only). */
   cascaded: number;
+  /** Documents the cascade could not reactivate (they stay in the Papierkorb). */
+  cascadeFailed?: number;
+  /** Server's German error text, when it sent one. */
+  message?: string;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -66,12 +70,20 @@ const TYPE_LABEL: Record<string, string> = {
   note: "Notiz",
   time_entry: "Zeiteintrag",
   task: "Aufgabe",
+  legal_note: "Aktennotiz",
+  legal_phone_note: "Telefonnotiz",
+  expense: "Auslage",
+  chat_session: "Unterhaltung",
+  document_request: "Dokumentanfrage",
+  shared_item: "Freigabe",
+  calendar_event: "Termin",
+  kyc_verification: "Identitätsprüfung",
 };
 
 const REASON_LABEL: Record<string, string> = {
-  archived: "Akte archiviert",
-  case_archived: "Mit Akte archiviert",
+  case_deleted: "Mit Akte gelöscht",
   manual_delete: "Manuell gelöscht",
+  retention_expired: "Aufbewahrungsfrist abgelaufen",
 };
 
 function reasonLabel(item: TrashItem): string {
@@ -184,14 +196,28 @@ function PapierkorbInner() {
         });
         if (!res.ok) {
           reinsert(item);
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          if (body?.error === "parent_archived") return { outcome: "parent_archived", cascaded: 0 };
-          return { outcome: res.status === 404 ? "not_found" : "error", cascaded: 0 };
+          // apiError: { error: German text, code: machine code }
+          const body = (await res.json().catch(() => null)) as {
+            error?: string;
+            code?: string;
+          } | null;
+          if (body?.code === "parent_archived") {
+            return { outcome: "parent_archived", cascaded: 0, message: body.error };
+          }
+          return {
+            outcome: res.status === 404 ? "not_found" : "error",
+            cascaded: 0,
+            message: body?.error,
+          };
         }
         const body = (await res.json().catch(() => null)) as {
-          data?: { cascaded?: number };
+          data?: { cascaded?: number; cascadeFailed?: number };
         } | null;
-        return { outcome: "ok", cascaded: body?.data?.cascaded ?? 0 };
+        return {
+          outcome: "ok",
+          cascaded: body?.data?.cascaded ?? 0,
+          cascadeFailed: body?.data?.cascadeFailed ?? 0,
+        };
       } catch {
         reinsert(item);
         return { outcome: "error", cascaded: 0 };
@@ -216,14 +242,14 @@ function PapierkorbInner() {
       if (item.kind === "case") {
         const ok = await confirm({
           title: "Akte wiederherstellen",
-          message: `Akte „${item.title}" wiederherstellen? Die mit der Akte archivierten Dokumente werden ebenfalls reaktiviert.`,
+          message: `Akte „${item.title}" wiederherstellen? Die mit der Akte gelöschten Einträge werden ebenfalls wiederhergestellt.`,
           confirmLabel: "Wiederherstellen",
           cancelLabel: "Abbrechen",
           variant: "primary",
         });
         if (!ok) return;
       }
-      const { outcome, cascaded } = await restoreCore(item);
+      const { outcome, cascaded, cascadeFailed = 0, message } = await restoreCore(item);
       if (outcome !== "ok") {
         addToast({
           type: "error",
@@ -235,8 +261,17 @@ function PapierkorbInner() {
                 : "Wiederherstellung fehlgeschlagen",
           description:
             outcome === "parent_archived"
-              ? "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her."
-              : undefined,
+              ? (message ??
+                "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her.")
+              : message,
+        });
+        return;
+      }
+      if (cascadeFailed > 0) {
+        addToast({
+          type: "error",
+          title: "Akte wiederhergestellt — Dokumente unvollständig",
+          description: `${cascadeFailed} Dokument${cascadeFailed === 1 ? "" : "e"} der Akte ${cascadeFailed === 1 ? "konnte" : "konnten"} nicht reaktiviert werden und ${cascadeFailed === 1 ? "liegt" : "liegen"} weiter im Papierkorb. Bitte erneut versuchen.`,
         });
         return;
       }
@@ -303,7 +338,7 @@ function PapierkorbInner() {
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Papierkorb"
-        description="Gelöschte Elemente und archivierte Akten wiederherstellen."
+        description="Gelöschte Elemente wiederherstellen. Archivierte Akten liegen nicht hier, sondern in der Aktenliste (Filter „Archiviert“) — sie werden für die Aufbewahrungsfrist aufbewahrt."
         breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Papierkorb" }]}
       />
 
@@ -376,7 +411,7 @@ function PapierkorbInner() {
           title={items.length === 0 ? "Papierkorb ist leer" : "Keine Treffer"}
           description={
             items.length === 0
-              ? "Gelöschte Dokumente und archivierte Akten erscheinen hier und können wiederhergestellt werden."
+              ? "Gelöschte Einträge erscheinen hier und können bis zum Ablauf der Papierkorbfrist wiederhergestellt werden."
               : "Passen Sie Suche oder Typfilter an."
           }
         />

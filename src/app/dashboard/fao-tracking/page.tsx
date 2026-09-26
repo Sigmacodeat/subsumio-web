@@ -12,6 +12,7 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { ContinuingEducationEntry } from "@/lib/fao-tracking";
 import { FAO_REQUIRED_HOURS } from "@/lib/fao-tracking";
+import { csrfFetch } from "@/lib/csrf";
 
 export default function FAOTrackingPage() {
   const { addToast } = useToast();
@@ -32,7 +33,7 @@ export default function FAOTrackingPage() {
 
   const load = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "fao_education_entry", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "fao_education_entry", max: 500 });
       setEntries(pages.map((p) => p.frontmatter as unknown as ContinuingEducationEntry));
     } catch {
       addToast({ type: "error", title: t("fao.err_load") });
@@ -60,7 +61,7 @@ export default function FAOTrackingPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/fao-tracking", {
+      const res = await csrfFetch("/api/fao-tracking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

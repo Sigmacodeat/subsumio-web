@@ -171,6 +171,21 @@ export function computeBalance(openingBalance: number, transactions: TrustTransa
   return total / 100;
 }
 
+/**
+ * Why a trust account may not be deleted, or `null`. An account that still
+ * holds client money (balance ≠ 0) stays — it must be paid out first.
+ */
+export function trustAccountDeleteBlock(balance: number): { code: string; message: string } | null {
+  if (Math.round(balance * 100) !== 0) {
+    return {
+      code: "trust_balance_not_zero",
+      message:
+        "Das Anderkonto weist noch einen Saldo aus und kann nicht gelöscht werden. Bitte zuerst das Fremdgeld auszahlen.",
+    };
+  }
+  return null;
+}
+
 export const NO_MATTER = "";
 
 /** Guthaben je Akte. Bookings without a matter (older data) collect under NO_MATTER. */

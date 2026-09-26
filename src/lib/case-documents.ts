@@ -49,6 +49,25 @@ function encodeSlug(slug: string): string {
   return slug.split("/").map(encodeURIComponent).join("/");
 }
 
+/**
+ * The matter is archived (or deleted): its document list is closed and is not
+ * written. A permanent condition — callers that retry (the post-upload outbox)
+ * must stop instead of retrying; the document itself stays in the brain, it is
+ * just not listed on a matter that is no longer active.
+ */
+export class CaseArchivedError extends Error {
+  readonly code = "case_archived";
+  constructor(
+    readonly caseSlug: string,
+    readonly caseStatus: string
+  ) {
+    super(`case_archived: ${caseSlug} (${caseStatus})`);
+    this.name = "CaseArchivedError";
+  }
+}
+
+const CLOSED_CASE_STATUSES = new Set(["archived", "tombstoned"]);
+
 async function fetchCaseDocuments(
   headers: Record<string, string>,
   caseSlug: string
@@ -59,14 +78,20 @@ async function fetchCaseDocuments(
   });
   if (!res.ok) throw new Error(`case_fetch_failed_${res.status}`);
   const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
+  const status = page.frontmatter?.status;
+  if (typeof status === "string" && CLOSED_CASE_STATUSES.has(status)) {
+    throw new CaseArchivedError(caseSlug, status);
+  }
   const docs = page.frontmatter?.documents;
   return Array.isArray(docs) ? (docs as Record<string, unknown>[]) : [];
 }
 
 /**
  * Add `docEntry` to the case's documents array, converging under concurrent
- * writers. Idempotent by slug. Throws only if it cannot converge after
- * `maxAttempts` rounds (so the caller can surface / retry via the outbox).
+ * writers. Idempotent by slug. Throws if it cannot converge after
+ * `maxAttempts` rounds (so the caller can surface / retry via the outbox), and
+ * throws CaseArchivedError — without writing — when the matter is archived or
+ * deleted (permanent: do not retry).
  */
 export async function reconcileCaseDocuments(
   headers: Record<string, string>,
@@ -107,4 +132,71 @@ async function reconcileUnlocked(
     lastError = "overwritten_by_concurrent_writer";
   }
   throw new Error(`case_reconcile_convergence_failed: ${lastError}`);
+}
+
+function matchesDoc(entry: Record<string, unknown>, docSlug: string): boolean {
+  return entry.slug === docSlug || entry.id === docSlug || entry.url === docSlug;
+}
+
+/**
+ * Remove a document from the matter's `documents` list (the list the matter
+ * view and the matter export read). Holds the same lock as every other writer
+ * of that list and re-reads to confirm. Returns false when the entry was not
+ * listed. Throws on read/write failure and CaseArchivedError for a closed
+ * matter (its list is not written).
+ */
+export async function removeFromCaseDocuments(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docSlug: string,
+  maxAttempts = 4
+): Promise<boolean> {
+  const key = caseDocumentsLockKey(headers["x-subsumio-source"] ?? "", caseSlug);
+  return withKeyedLock(key, async () => {
+    let removed = false;
+    let lastError = "";
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const existing = await fetchCaseDocuments(headers, caseSlug);
+      const kept = existing.filter((d) => !matchesDoc(d, docSlug));
+      if (kept.length === existing.length) return removed;
+      const patchRes = await enginePatchPage(headers, {
+        slug: caseSlug,
+        frontmatter: { documents: kept },
+      });
+      if (!patchRes.ok) {
+        lastError = `case_patch_failed_${patchRes.status}`;
+        continue;
+      }
+      removed = true;
+      const after = await fetchCaseDocuments(headers, caseSlug);
+      if (!after.some((d) => matchesDoc(d, docSlug))) return true;
+      lastError = "re_added_by_concurrent_writer";
+    }
+    throw new Error(`case_document_remove_failed: ${lastError}`);
+  });
+}
+
+/**
+ * „Aus Akte entfernen": the document leaves the matter's list and becomes an
+ * unassigned inbox item (it is not deleted — it can be reassigned). The
+ * matter list is cleaned first, so a failure never leaves a document that
+ * claims no matter but still shows up in one.
+ */
+export async function detachCaseDocument(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docSlug: string
+): Promise<{ removedFromList: boolean }> {
+  const removedFromList = await removeFromCaseDocuments(headers, caseSlug, docSlug);
+  const res = await enginePatchPage(headers, {
+    slug: docSlug,
+    frontmatter: {
+      case_slug: null,
+      assignment_status: "unassigned",
+      intake_status: "needs_assignment",
+      unassigned_at: new Date().toISOString(),
+    },
+  });
+  if (!res.ok) throw new Error(`document_patch_failed_${res.status}`);
+  return { removedFromList };
 }

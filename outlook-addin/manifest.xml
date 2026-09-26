@@ -5,13 +5,15 @@
   xmlns:mailapp="http://schemas.microsoft.com/office/mailappversionoverrides"
   xsi:type="MailApp">
   <Id>subsumio-outlook-addin</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>Subsumio</ProviderName>
   <DefaultLocale>de-DE</DefaultLocale>
   <DisplayName DefaultValue="Subsumio für Outlook"/>
   <Description DefaultValue="E-Mails in Subsumio-Akten importieren und Brain-Query direkt aus Outlook ausführen."/>
   <IconUrl DefaultValue="https://subsum.io/icon-192.png"/>
   <SupportUrl DefaultValue="https://subsum.io/support"/>
+  <!-- The task pane and the sign-in dialog (/addin-connect) both live on
+       this origin; the dialog hands the add-in token back only to it. -->
   <AppDomains>
     <AppDomain>https://subsum.io</AppDomain>
   </AppDomains>
@@ -30,17 +32,10 @@
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
-    <Form xsi:type="ItemEdit">
-      <DesktopSettings>
-        <SourceLocation DefaultValue="https://subsum.io/outlook-addin/taskpane.html"/>
-        <RequestedHeight>450</RequestedHeight>
-      </DesktopSettings>
-    </Form>
   </FormSettings>
-  <Permissions>ReadWriteItem</Permissions>
+  <Permissions>ReadItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
   </Rule>
   <DisableEntityHighlighting>false</DisableEntityHighlighting>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -90,34 +85,6 @@
                   </Icon>
                   <Action xsi:type="ExecuteFunction">
                     <FunctionName>importCurrentMail</FunctionName>
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
-          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
-            <OfficeTab id="TabDefault">
-              <Group id="Subsumio.ComposeGroup">
-                <Label resid="Group.Label"/>
-                <Icon>
-                  <bt:Image size="16" resid="Icon.16"/>
-                  <bt:Image size="32" resid="Icon.32"/>
-                  <bt:Image size="80" resid="Icon.80"/>
-                </Icon>
-                <Control xsi:type="Button" id="Subsumio.ComposeOpenPane">
-                  <Label resid="Button.Label"/>
-                  <Supertip>
-                    <Title resid="Button.SupertipTitle"/>
-                    <Description resid="Button.SupertipDesc"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>SubsumioComposePane</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
               </Group>

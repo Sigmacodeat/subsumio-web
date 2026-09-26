@@ -8,6 +8,11 @@ import {
   fetchContradictions,
   getRecipientsByBrain,
   createDailyDedup,
+  activeStaffRecipients,
+  matterPermissionsBySlug,
+  mayReceiveMatterNotice,
+  mayReceiveMatterNoticeAnonymously,
+  excludeDemoPages,
 } from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
 import {
@@ -24,7 +29,7 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { env } from "@/lib/env";
 import { engineComplete, isEngineLLMAvailable } from "@/lib/engine-llm";
 import { engineHeadersForBrain } from "@/lib/engine";
-import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
+import { viennaLocalHour, type QuietHours } from "@/lib/whatsapp/outbound-gate";
 
 // One OpenRouter LLM call to sharpen the "Empfehlungen für heute" section.
 // Input: structured briefing data (already computed, $0). Output: 3-5 German sentences.
@@ -103,7 +108,7 @@ function quietHoursFromEnv(now: Date): QuietHours | undefined {
   return {
     startHour: parseInt(m[1], 10),
     endHour: parseInt(m[2], 10),
-    localHour: now.getHours(),
+    localHour: viennaLocalHour(now),
   };
 }
 
@@ -135,17 +140,48 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       // legal_deadline pages, the same second source cron/deadlines.ts
       // reads — a deadline tracked as its own page (not embedded in a
       // case's frontmatter.deadlines[]) was invisible to the briefing.
-      const batch = await batchFetchPages(sender.brainId, ["legal_case", "legal_deadline"], 1000);
-      const pages = batch["legal_case"] ?? [];
-      const standaloneDeadlinePages = batch["legal_deadline"] ?? [];
+      const rawBatch = await batchFetchPages(
+        sender.brainId,
+        ["legal_case", "legal_deadline"],
+        1000
+      );
+      const batch = Object.fromEntries(
+        Object.entries(rawBatch).map(([type, pages]) => [type, excludeDemoPages(pages)])
+      );
+      const allCases = batch["legal_case"] ?? [];
+
+      // The briefing only covers matters its reader may see: a number bound to
+      // a person gets that person's view (active staff only); a number bound
+      // to a role only gets unrestricted matters. Matter-bound items whose
+      // matter is unknown are left out (fail-closed).
+      const brainUsers = recipientsByBrain.get(sender.brainId) ?? [];
+      const reader = sender.userId ? brainUsers.find((u) => u.id === sender.userId) : undefined;
+      if (sender.userId && !reader) continue;
+      const matterPermissions = matterPermissionsBySlug(allCases);
+      const visible = (caseSlug: unknown): boolean => {
+        const slug = typeof caseSlug === "string" && caseSlug ? caseSlug : undefined;
+        return reader
+          ? mayReceiveMatterNotice(reader, slug, matterPermissions)
+          : mayReceiveMatterNoticeAnonymously(sender.role, slug, matterPermissions);
+      };
+      if (!visible(undefined)) continue;
+      const pages = allCases.filter((p) => visible(p.slug));
+      const standaloneDeadlinePages = (batch["legal_deadline"] ?? []).filter((p) =>
+        visible(p.frontmatter?.case_slug)
+      );
 
       // Fetch pending approvals, recent case activity, new documents, contradictions (deterministic, $0)
-      const [approvalPages, recentCases, recentDocs, contradictionsRaw] = await Promise.all([
-        fetchPendingApprovals(sender.brainId),
-        fetchRecentCaseActivity(sender.brainId),
-        fetchRecentDocuments(sender.brainId),
-        fetchContradictions(sender.brainId, 10),
-      ]);
+      const [approvalPagesRaw, recentCasesRaw, recentDocsRaw, contradictionsAll] =
+        await Promise.all([
+          fetchPendingApprovals(sender.brainId),
+          fetchRecentCaseActivity(sender.brainId),
+          fetchRecentDocuments(sender.brainId),
+          fetchContradictions(sender.brainId, 10),
+        ]);
+      const approvalPages = approvalPagesRaw.filter((p) => visible(p.frontmatter?.case_slug));
+      const recentCases = recentCasesRaw.filter((p) => visible(p.slug));
+      const recentDocs = recentDocsRaw.filter((p) => visible(p.frontmatter?.case_slug));
+      const contradictionsRaw = contradictionsAll.filter((c) => visible(c.case_slug));
 
       const approvals: BriefingApproval[] = approvalPages.map((p) => {
         const fm = p.frontmatter ?? {};
@@ -250,24 +286,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (result.sent) sent++;
       else blocked++;
 
-      // Email delivery — once per brain (not per sender), sent to all brain recipients
-      if (mailOn && !emailedBrains.has(sender.brainId)) {
-        emailedBrains.add(sender.brainId);
-        const recipients = recipientsByBrain.get(sender.brainId) ?? [];
+      // Email delivery — a personal briefing goes to its reader only; a
+      // role-only briefing (unrestricted matters only) once per brain to the
+      // active staff. One mail per address.
+      const mailKey = reader ? `user:${reader.id}` : `brain:${sender.brainId}`;
+      if (mailOn && !emailedBrains.has(mailKey)) {
+        emailedBrains.add(mailKey);
+        const recipients = reader ? [reader] : activeStaffRecipients(brainUsers);
         const emails = recipients.map((u) => u.email).filter((e): e is string => Boolean(e));
-        if (emails.length > 0) {
-          const subject = `Subsumio Briefing — ${now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" })}`;
+        const subject = `Subsumio Briefing — ${now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" })}`;
+        let mailedAny = false;
+        for (const to of emails) {
           try {
-            const mailResult = await sendMail({
-              to: emails,
-              subject,
-              text,
-            });
-            if (mailResult.sent) emailed++;
+            const mailResult = await sendMail({ to, subject, text });
+            if (mailResult.sent) mailedAny = true;
           } catch (err) {
             errors.push(`email: ${err instanceof Error ? err.message : String(err)}`);
           }
         }
+        if (mailedAny) emailed++;
       }
     } catch (err) {
       errors.push(String(err instanceof Error ? err.message : err));

@@ -72,7 +72,8 @@ describe("trial length in the copy matches the trial the product grants", () => 
       );
       expect(days, line).toBe(TRIAL_DAYS);
     }
-  });
+    // A grep over all of src/ — slow when the full suite saturates the disk.
+  }, 30_000);
 });
 
 describe("included AI requests are one number everywhere", () => {
@@ -97,5 +98,53 @@ describe("included AI requests are one number everywhere", () => {
     // requests: an account without a plan gets no monthly credits.
     const free = BILLING_PLANS_DISPLAY.find((p) => p.id === "free")!.features.join(" ");
     expect(free).not.toMatch(/KI-Anfragen/);
+  });
+});
+
+describe("validity of purchased credits is disclosed where it is sold", () => {
+  test("pricing page, FAQ and AGB state CREDIT_VALIDITY_MONTHS; billing uses the constant", async () => {
+    const { CREDIT_VALIDITY_DAYS, CREDIT_VALIDITY_MONTHS } = await import("./credit-constants");
+    expect(CREDIT_VALIDITY_MONTHS * 30).toBeLessThanOrEqual(CREDIT_VALIDITY_DAYS);
+    const read = (f: string) => readFileSync(path.join(process.cwd(), f), "utf8");
+    expect(read("src/components/marketing/pricing-page.tsx")).toContain("CREDIT_VALIDITY_MONTHS");
+    expect(read("src/components/legal/legal-content.tsx")).toMatch(
+      /\{CREDIT_VALIDITY_MONTHS\} Monate ab Kauf gültig/
+    );
+    expect(JSON.stringify(PRICING_FAQ)).toContain(
+      `${CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig`
+    );
+    // The expiry the billing code sets comes from the constant, not a literal.
+    expect(read("src/lib/billing/credits.ts")).not.toMatch(/365 \* 24 \* 60 \* 60 \* 1000/);
+  });
+});
+
+describe("every plan price on any public page is a real plan price", () => {
+  test("3–4 digit euro amounts in marketing sources, pages and the chat knowledge", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const out = execFileSync(
+      "grep",
+      [
+        "-rnoE",
+        "(^|[^0-9.,])([0-9]{3}|[0-9]\\.[0-9]{3}) ?€",
+        "src/content",
+        "src/components/marketing",
+        "src/app/at",
+        "src/app/de",
+        "src/lib/concierge",
+        "src/app/layout.tsx",
+      ],
+      { cwd: process.cwd(), encoding: "utf8" }
+    );
+    const allowed = new Set([solo, kanzlei]);
+    const hits = out
+      .split("\n")
+      .filter(
+        (l) => l && !l.includes(".test.") && !l.includes("dashboard.ts") && !l.includes("handbook")
+      );
+    expect(hits.length).toBeGreaterThan(5);
+    for (const line of hits) {
+      const amount = line.match(/(\d\.\d{3}|\d{3}) ?€/)![0].replace(/(\d) ?€/, "$1 €");
+      expect(allowed, line).toContain(amount);
+    }
   });
 });

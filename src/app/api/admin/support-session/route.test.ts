@@ -12,7 +12,7 @@ vi.mock("@/lib/engine", async () => ({
   requireEngineContext: vi.fn(),
 }));
 vi.mock("@/lib/support-session-audit", () => ({
-  writeFirmVisibleSupportAuditEntry: vi.fn().mockResolvedValue(undefined),
+  writeFirmVisibleSupportAuditEntry: vi.fn().mockResolvedValue(true),
 }));
 
 const ORG = { id: "org_a", name: "Kanzlei A", brainId: "brain_org_a", ownerId: "owner_1" };
@@ -23,9 +23,24 @@ vi.mock("@/lib/auth/store", () => ({
 
 const startSupportSession = vi.fn(async (_input: unknown) => ({}) as unknown);
 const getActiveSupportSession = vi.fn(async (_id: string) => null as unknown);
+const endSupportSession = vi.fn(async (_id: string) => null as unknown);
+const WRITE_GRANT = {
+  id: "g1",
+  orgId: "org_a",
+  mode: "write",
+  grantedById: "owner_1",
+  grantedByEmail: "admin@kanzlei-a.example",
+  createdAt: "2099-01-01T00:00:00.000Z",
+  expiresAt: "2099-01-08T00:00:00.000Z",
+  revokedAt: null,
+  revokedByEmail: null,
+};
+const getActiveSupportGrant = vi.fn(async (_orgId: string) => WRITE_GRANT as unknown);
 vi.mock("@/lib/support-session", () => ({
+  getActiveSupportGrant: (orgId: string) => getActiveSupportGrant(orgId),
   startSupportSession: (input: unknown) => startSupportSession(input),
   getActiveSupportSession: (id: string) => getActiveSupportSession(id),
+  endSupportSession: (id: string) => endSupportSession(id),
 }));
 
 import { GET, POST } from "./route";
@@ -38,6 +53,7 @@ const OPERATOR = {
   email: "ops@subsumio.example",
   role: "admin",
   twoFactorEnabled: true,
+  emailVerifiedAt: "2026-01-01T00:00:00.000Z",
 };
 
 function opCtx() {
@@ -67,6 +83,31 @@ describe("POST /api/admin/support-session (start)", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("PLATFORM_OPERATOR_EMAILS", OPERATOR.email);
     vi.mocked(requireEngineContext).mockResolvedValue(opCtx() as any);
+    getActiveSupportGrant.mockResolvedValue(WRITE_GRANT);
+  });
+
+  it("refuses to start without a valid firm approval (403, fail-closed)", async () => {
+    getActiveSupportGrant.mockResolvedValue(null);
+    const res = await POST(postRequest({ orgId: ORG.id, reason: "Ticket #98 — Ansicht prüfen" }));
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("support_grant_required");
+    expect(startSupportSession).not.toHaveBeenCalled();
+    expect(writeFirmVisibleSupportAuditEntry).not.toHaveBeenCalled();
+  });
+
+  it("refuses write access when the firm approved reading only", async () => {
+    getActiveSupportGrant.mockResolvedValue({ ...WRITE_GRANT, mode: "read" });
+    const res = await POST(
+      postRequest({
+        orgId: ORG.id,
+        reason: "Ticket #97 — Import reparieren",
+        mode: "write",
+        writeReason: "Fehlerhafte Importzeilen korrigieren",
+      })
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("support_grant_read_only");
+    expect(startSupportSession).not.toHaveBeenCalled();
   });
 
   it("starts a session for an existing org and writes both audit trails", async () => {
@@ -91,7 +132,7 @@ describe("POST /api/admin/support-session (start)", () => {
     expect(body.data.session).toMatchObject({ orgId: ORG.id, orgName: ORG.name });
 
     expect(startSupportSession).toHaveBeenCalledWith(
-      expect.objectContaining({ operatorId: OPERATOR.id, orgId: ORG.id })
+      expect.objectContaining({ operatorId: OPERATOR.id, orgId: ORG.id, grant: WRITE_GRANT })
     );
     expect(logAudit).toHaveBeenCalledWith(
       "support.session_start",
@@ -103,6 +144,46 @@ describe("POST /api/admin/support-session (start)", () => {
       "support.session_start",
       session
     );
+  });
+
+  it("starts read-only unless write access is asked for", async () => {
+    startSupportSession.mockResolvedValue({ id: "s1", mode: "read", orgId: ORG.id });
+    await POST(postRequest({ orgId: ORG.id, reason: "Ticket #100 — Ansicht prüfen" }));
+    expect(startSupportSession).toHaveBeenCalledWith(expect.objectContaining({ mode: "read" }));
+  });
+
+  it("write access needs its own reason, which lands in the recorded reason", async () => {
+    const missing = await POST(
+      postRequest({ orgId: ORG.id, reason: "Ticket #101 — Import reparieren", mode: "write" })
+    );
+    expect(missing.status).toBe(400);
+    expect(startSupportSession).not.toHaveBeenCalled();
+
+    startSupportSession.mockResolvedValue({ id: "s2", mode: "write", orgId: ORG.id });
+    const ok = await POST(
+      postRequest({
+        orgId: ORG.id,
+        reason: "Ticket #101 — Import reparieren",
+        mode: "write",
+        writeReason: "Fehlerhafte Importzeilen korrigieren",
+      })
+    );
+    expect(ok.status).toBe(201);
+    expect(startSupportSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "write",
+        reason: expect.stringContaining("Fehlerhafte Importzeilen korrigieren"),
+      })
+    );
+  });
+
+  it("ends the session again and answers 503 when the firm's audit entry cannot be stored", async () => {
+    startSupportSession.mockResolvedValue({ id: "s3", mode: "read", orgId: ORG.id });
+    vi.mocked(writeFirmVisibleSupportAuditEntry).mockResolvedValueOnce(false);
+    const res = await POST(postRequest({ orgId: ORG.id, reason: "Ticket #102 — Ansicht prüfen" }));
+    expect(res.status).toBe(503);
+    expect(endSupportSession).toHaveBeenCalledWith(OPERATOR.id);
+    expect(logAudit).not.toHaveBeenCalled();
   });
 
   it("404s for an org that does not exist, without creating a session", async () => {

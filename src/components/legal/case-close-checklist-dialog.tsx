@@ -47,7 +47,7 @@ export function CaseCloseChecklistDialog({
       // Fetch invoices for this case
       let invoices: Array<{ status?: string }> = [];
       try {
-        const invoicePages = await api.brain.listPages({ type: "invoice", limit: 200 });
+        const invoicePages = await api.brain.listAllPages({ type: "invoice", max: 200 });
         invoices = invoicePages
           .map((p) => {
             const ifm = p.frontmatter as Record<string, unknown>;

@@ -15,6 +15,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { daysFromNow, signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = { password: "FristenTest1234!", name: "Fristen Tester" };
@@ -26,8 +27,10 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,
@@ -69,7 +72,8 @@ test.describe("Fristen-Sync zwischen 3 UIs", () => {
     // ── Step 1: Create a legal_case with a deadline via API ──────────
     const csrf = await getCsrfToken(page);
     const caseSlug = `cases/fristen-sync-${Date.now()}`;
-    const dueDate = "2026-12-31";
+    // Relative to the run date — a fixed date would turn "overdue" (docs/TESTING.md).
+    const dueDate = daysFromNow(60);
     const deadlineTitle = "Klagefrist Sync-Test";
 
     const createRes = await page.context().request.post("/api/pages", {
@@ -150,9 +154,9 @@ test.describe("Fristen-Sync zwischen 3 UIs", () => {
           case_number: `AZ-MULTI-${Date.now()}`,
           status: "open",
           deadlines: [
-            { title: "Klagefrist", due_date: "2026-12-31", law: "§ 253 ZPO" },
-            { title: "Berufungsfrist", due_date: "2027-01-31", law: "§ 517 ZPO" },
-            { title: "Revisionsfrist", due_date: "2027-02-28", law: "§ 552 ZPO" },
+            { title: "Klagefrist", due_date: daysFromNow(60), law: "§ 253 ZPO" },
+            { title: "Berufungsfrist", due_date: daysFromNow(90), law: "§ 517 ZPO" },
+            { title: "Revisionsfrist", due_date: daysFromNow(120), law: "§ 552 ZPO" },
           ],
         },
       },
@@ -219,7 +223,7 @@ test.describe("Fristen-Sync zwischen 3 UIs", () => {
           type: "legal_case",
           frontmatter: {
             status: "open",
-            deadlines: [{ title: deadlineTitle, due_date: "2026-12-31", law: "§ 1" }],
+            deadlines: [{ title: deadlineTitle, due_date: daysFromNow(60), law: "§ 1" }],
           },
         },
         headers: csrf ? { "x-csrf-token": csrf } : {},

@@ -1,9 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
+import { middleware, config as middlewareConfig } from "./middleware";
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { withEnv } from "../test/helpers/with-env";
 import { signSession } from "@/lib/auth/session-core";
+
+describe("middleware matcher (SEC-5)", () => {
+  it.each(["/api/legal/deadlines.ics", "/api/openapi.json", "/api/pages/docs/a.pdf"])(
+    "runs for API path with a file-like last segment: %s",
+    (url) => {
+      expect(unstable_doesMiddlewareMatch({ config: middlewareConfig, url })).toBe(true);
+    }
+  );
+
+  it("still skips static assets and Next internals", () => {
+    expect(unstable_doesMiddlewareMatch({ config: middlewareConfig, url: "/logo.svg" })).toBe(
+      false
+    );
+    expect(
+      unstable_doesMiddlewareMatch({ config: middlewareConfig, url: "/_next/static/x.js" })
+    ).toBe(false);
+  });
+
+  it("blocks the deadline calendar export from a foreign IP when an allowlist is set", async () => {
+    await withEnv({ SUBSUMIO_IP_ALLOWLIST: "10.0.0.1" }, async () => {
+      const res = await middleware(
+        new NextRequest("https://subsumio.test/api/legal/deadlines.ics", {
+          headers: { "x-forwarded-for": "8.8.8.8" },
+        })
+      );
+      expect(res.status).toBe(403);
+    });
+  });
+});
 
 function request(
   pathname: string,
@@ -372,6 +402,44 @@ describe("middleware CSP", () => {
     });
   });
 
+  it("img-src has no https: wildcard; fonts and analytics only where used", async () => {
+    await withEnv(
+      {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_ENGINE_URL: "https://engine.example",
+        NEXT_PUBLIC_POSTHOG_KEY: undefined,
+      },
+      async () => {
+        const res = await run("/");
+        const csp = res.headers.get("Content-Security-Policy") || "";
+        const imgSrc = csp.match(/img-src([^;]*)/)?.[1] ?? "";
+        expect(imgSrc.split(/\s+/)).not.toContain("https:");
+        expect(imgSrc).toContain("'self'");
+        expect(imgSrc).toContain("https://engine.example");
+        expect(csp).not.toContain("fonts.googleapis.com");
+        expect(csp).not.toContain("fonts.gstatic.com");
+        expect(csp).not.toContain("posthog");
+      }
+    );
+  });
+
+  it("allows the analytics host only when analytics is configured", async () => {
+    await withEnv(
+      {
+        NEXT_PUBLIC_POSTHOG_KEY: "phc_test",
+        NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
+      },
+      async () => {
+        const res = await run("/");
+        const connect = (res.headers.get("Content-Security-Policy") || "").match(
+          /connect-src([^;]*)/
+        )?.[1];
+        expect(connect).toContain("https://eu.i.posthog.com");
+        expect(connect).not.toContain("app.posthog.com");
+      }
+    );
+  });
+
   it("allows unsafe-eval in development script-src", async () => {
     await withEnv({ NODE_ENV: "development" }, async () => {
       const res = await run("/");
@@ -452,5 +520,60 @@ describe("middleware firm-wide 2FA on the API (must2fa sessions)", () => {
 
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/dashboard/settings/security?require2fa=1");
+  });
+});
+
+describe("middleware Office add-in sign-in dialog", () => {
+  it("lets add-in token requests without a session cookie through to the token check", async () => {
+    const headers = new Headers({ authorization: "Bearer sk_addin_example" });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).not.toBe(403);
+  });
+
+  it("still requires CSRF when an add-in token comes with a session cookie", async () => {
+    const headers = new Headers({
+      authorization: "Bearer sk_addin_example",
+      cookie: "sb_session=anything",
+    });
+    const res = await run("/api/legal/analyze", { method: "POST", headers });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("sends a visitor without session to the sign-in, keeping the add-in and marking the dialog", async () => {
+    const res = await run("/addin-connect?client=word");
+    const location = new URL(res.headers.get("location") ?? "https://invalid.test");
+
+    expect(location.pathname).toBe("/at/login");
+    expect(location.searchParams.get("next")).toBe("/addin-connect?client=word");
+    expect(location.searchParams.get("addin_dialog")).toBe("1");
+  });
+
+  it("confines a session that still has to set up 2FA to the setup page", async () => {
+    const token = await signSession({
+      uid: "member",
+      email: "member@firm.at",
+      role: "lawyer",
+      must2fa: true,
+    });
+    const res = await run("/addin-connect?client=word", {
+      headers: new Headers({ cookie: `sb_session=${token}` }),
+    });
+
+    expect(res.status).toBeGreaterThanOrEqual(300);
+    expect(res.headers.get("location")).not.toContain("/addin-connect");
+  });
+
+  it("allows Office.js only on the dialog page", async () => {
+    const token = await signSession({ uid: "member", email: "member@firm.at", role: "lawyer" });
+    const headers = new Headers({ cookie: `sb_session=${token}` });
+    const dialog = await run("/addin-connect?client=word", { headers });
+    const other = await run("/dashboard", { headers });
+    const scriptSrc = (res: Response) =>
+      (res.headers.get("Content-Security-Policy") ?? "").match(/script-src([^;]*)/)?.[1] ?? "";
+
+    expect(scriptSrc(dialog)).toContain("https://appsforoffice.microsoft.com");
+    expect(scriptSrc(other)).not.toContain("appsforoffice");
   });
 });

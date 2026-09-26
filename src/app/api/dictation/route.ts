@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createHandler, apiSuccess, apiError, recordCreditConsumption } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
-import { engineTranscribe } from "@/lib/engine-llm";
+import { engineTranscribeDetailed } from "@/lib/engine-llm";
+import { EU_ONLY_REFUSAL_CODE } from "@/lib/eu-policy-refusal";
 import {
   createDictationEntry,
   transitionDictationStatus,
@@ -58,14 +59,37 @@ export const POST = createHandler(
       : body.mime_type.includes("ogg")
         ? "ogg"
         : "webm";
-    const result = await engineTranscribe(ctx.headers, {
+    const outcome = await engineTranscribeDetailed(ctx.headers, {
       bytes,
       mimeType: body.mime_type,
       filename: `diktat.${ext}`,
       language: body.language,
       model: "openai/whisper-1",
     });
-    const transcript = result?.text?.trim() ?? "";
+    if (!outcome.ok && outcome.code === EU_ONLY_REFUSAL_CODE) {
+      // EU-only mode without an EU transcription provider (Mistral): say so
+      // instead of asking for a pointless retry. Nothing was sent anywhere.
+      return apiError(
+        "transcription_unavailable_eu",
+        "Das Diktat ist im EU-Datenmodus derzeit nicht verfügbar: Für diese Installation ist kein Verschriftungsdienst mit Verarbeitung in der EU eingerichtet. Die Aufnahme wurde an keinen externen Dienst übermittelt. Bitte wenden Sie sich an den Betreiber.",
+        503
+      );
+    }
+    if (!outcome.ok && outcome.code === "transcription_not_configured") {
+      return apiError(
+        "transcription_not_configured",
+        "Die Verschriftung ist für diese Installation nicht eingerichtet. Die Aufnahme wurde an keinen externen Dienst übermittelt. Bitte wenden Sie sich an den Betreiber.",
+        503
+      );
+    }
+    if (!outcome.ok && outcome.code === "transcription_timeout") {
+      return apiError(
+        "transcription_timeout",
+        "Der Verschriftungsdienst hat nicht rechtzeitig geantwortet. Die Aufnahme bleibt erhalten — bitte in einigen Minuten erneut versuchen oder kürzer diktieren.",
+        504
+      );
+    }
+    const transcript = outcome.ok ? (outcome.result.text?.trim() ?? "") : "";
     // `credits` on createHandler only checks the balance. Without this the
     // transcription would be free forever (see credit-coverage.test.ts).
     if (transcript) void recordCreditConsumption(ctx, "think", body.case_slug || undefined);
@@ -118,7 +142,11 @@ export const POST = createHandler(
 const querySchema = z.object({
   case_slug: z.string().max(300).optional(),
   status: z.enum(["recording", "transcribed", "corrected", "filed", "failed"]).optional(),
-  pending_corrections: z.boolean().optional(),
+  // Query values are strings: "?pending_corrections=true".
+  pending_corrections: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
 });
 
 export const GET = createHandler(

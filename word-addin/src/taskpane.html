@@ -275,13 +275,41 @@
     <!-- Auth -->
     <div id="authSection">
       <p>Verbinden Sie Subsumio mit Word für Vertragsanalyse, Entwürfe und Aktenrecherche.</p>
-      <input type="password" id="token" placeholder="Subsumio API-Token" />
-      <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
+      <button class="btn" id="signInBtn" onclick="signIn()">Anmelden</button>
+      <p style="font-size: 11px; color: #8a8aa8">
+        Die Anmeldung öffnet ein Subsumio-Fenster (mit Zwei-Faktor-Anmeldung). Word erhält einen
+        Zugang, der 24 Stunden gilt und jederzeit widerrufen werden kann.
+      </p>
+      <details style="font-size: 11px; color: #8a8aa8; margin-top: 8px">
+        <summary>Anmeldefenster nicht verfügbar?</summary>
+        <input
+          type="password"
+          id="token"
+          placeholder="Add-in-Zugang (sk_addin_…)"
+          autocomplete="off"
+        />
+        <p>Erstellen unter subsum.io → Word-Add-in → „Add-in-Zugang erstellen“.</p>
+        <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
+      </details>
       <div id="status" style="display: none"></div>
     </div>
 
     <!-- Main Content (nach Login) -->
     <div id="mainContent" style="display: none">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 6px">
+        <button
+          class="btn"
+          id="signOutBtn"
+          onclick="signOut()"
+          style="width: auto; padding: 4px 12px; font-size: 11px"
+        >
+          Abmelden
+        </button>
+      </div>
+      <div id="sessionNotice" class="status err" style="display: none">
+        Ihr Add-in-Zugang läuft in Kürze ab.
+        <button class="btn" onclick="signIn()" style="margin-top: 6px">Erneut anmelden</button>
+      </div>
       <div id="status" style="display: none; margin-top: 10px"></div>
 
       <!-- Tabs -->
@@ -326,9 +354,9 @@
         <div id="contractStatus" class="section-status"></div>
 
         <div class="sec-title">Vertragsentwurf</div>
-        <label>Vertragstyp</label>
+        <label for="draftTemplate">Vertragstyp</label>
         <select id="draftTemplate">
-          <option value="">— Vorlage wählen (optional) —</option>
+          <option value="">— Vertragstyp wählen —</option>
           <option value="nda">NDA / Geheimhaltungsvereinbarung</option>
           <option value="agb">AGB</option>
           <option value="lizenz">Lizenzvertrag</option>
@@ -338,9 +366,19 @@
           <option value="dienstleistung">Dienstleistungsvertrag</option>
           <option value="kooperation">Kooperationsvertrag</option>
         </select>
+        <label for="draftJurisdiction">Rechtsordnung</label>
+        <select id="draftJurisdiction">
+          <option value="at">Österreich</option>
+          <option value="de">Deutschland</option>
+          <option value="ch">Schweiz</option>
+        </select>
+        <label for="draftPartyA">Partei A</label>
+        <input id="draftPartyA" type="text" placeholder="z. B. Muster GmbH" />
+        <label for="draftPartyB">Partei B</label>
+        <input id="draftPartyB" type="text" placeholder="z. B. Beispiel AG" />
         <textarea
           id="draftInstruction"
-          placeholder="Zusätzliche Anweisungen (optional): z.B. 'Bayerisches Recht, Vertragslaufzeit 2 Jahre'"
+          placeholder="Zusätzliche Anweisungen (optional): z.B. 'Vertragslaufzeit 2 Jahre'"
         ></textarea>
         <button class="btn" id="draftBtn" onclick="draftContract()">Entwurf erstellen</button>
         <div id="draftResult" class="result"></div>

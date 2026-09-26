@@ -39,6 +39,8 @@ export async function recordBriefingFeedback(
   const feedbackId = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   await logAudit("whatsapp.briefing_feedback", "secretary", {
+    brainId: input.brain_id,
+    userId: input.user_id,
     entityId: feedbackId,
     details: {
       useful: input.useful,

@@ -128,9 +128,23 @@ export async function revokePortalToken(token: string): Promise<void> {
   await revokePortalTokenHash(tokenHash(token));
 }
 
+/** The revocation could not be stored; the link may still work elsewhere. */
+export class PortalRevocationNotStoredError extends Error {
+  constructor(cause: unknown) {
+    super(
+      `portal revocation not stored: ${cause instanceof Error ? cause.message : String(cause)}`
+    );
+    this.name = "PortalRevocationNotStoredError";
+  }
+}
+
 /**
  * Revoke by the stored hash — the firm only keeps hashes in its link
  * registry (src/lib/portal-links.ts), never the raw token.
+ *
+ * Throws `PortalRevocationNotStoredError` when the revocation list cannot be
+ * written: the in-memory entry alone ends with a restart and does not reach
+ * other instances, so the caller must not report success.
  */
 export async function revokePortalTokenHash(hash: string): Promise<void> {
   REVOKED.add(hash);
@@ -147,6 +161,7 @@ export async function revokePortalTokenHash(hash: string): Promise<void> {
     log.error(
       `[portal-token] revocation persist failed: ${err instanceof Error ? err.message : String(err)}`
     );
+    throw new PortalRevocationNotStoredError(err);
   }
 }
 
@@ -173,7 +188,11 @@ export function isPortalTokenSuperseded(
 }
 
 export async function isPortalTokenRevoked(token: string): Promise<boolean> {
-  const hash = tokenHash(token);
+  return isPortalTokenHashRevoked(tokenHash(token));
+}
+
+/** Same check by the stored hash (fail closed). */
+export async function isPortalTokenHashRevoked(hash: string): Promise<boolean> {
   if (REVOKED.has(hash)) return true;
 
   const pool = getSharedPgPool();

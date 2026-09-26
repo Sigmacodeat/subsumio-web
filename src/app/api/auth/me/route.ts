@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { getStore, toPublic } from "@/lib/auth/store";
+import { LEGAL_VERSIONS, bindsFirm, legalAcceptanceRequired } from "@/lib/auth/legal-acceptance";
 
 const updateProfileSchema = z
   .object({
@@ -23,6 +25,7 @@ export const GET = createHandler(
     // sent here (the firm sees it separately, in its own audit trail).
     const supportSession = ctx.supportSession
       ? {
+          mode: ctx.supportSession.mode,
           orgName: ctx.supportSession.orgName,
           reason: ctx.supportSession.reason,
           startedAt: ctx.supportSession.startedAt,
@@ -41,13 +44,34 @@ export const GET = createHandler(
           ingested: ctx.demo.ingested,
         }
       : null;
-    return Response.json({ user: toPublic(ctx.user), referrals, supportSession, demo });
+    // Binds the device's offline data (IndexedDB) to this person in this
+    // firm; the client wipes it when the scope changes. Opaque on purpose.
+    const offlineScope = `${ctx.user.id}:${createHash("sha256")
+      .update(`${ctx.brainId}\u0000${ctx.demo?.sid ?? ""}`)
+      .digest("hex")
+      .slice(0, 16)}`;
+    // Contract confirmation (AGB, Datenschutz, AVV) — drives the blocking
+    // dialog in the dashboard. Never for demo visitors or support sessions.
+    const legal = {
+      required: !demo && !supportSession && legalAcceptanceRequired(ctx.user),
+      bindsFirm: bindsFirm(ctx.user),
+      versions: LEGAL_VERSIONS,
+    };
+    return Response.json({
+      user: toPublic(ctx.user),
+      referrals,
+      supportSession,
+      demo,
+      offlineScope,
+      legal,
+    });
   }
 );
 
 export const PATCH = createHandler(
   {
-    action: "settings.write",
+    // Own profile only (ctx.user.id) — not the admin-only firm settings.
+    action: "profile.update",
     body: updateProfileSchema,
     audit: (ctx, body) => ({
       action: "settings.update",

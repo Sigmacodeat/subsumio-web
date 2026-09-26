@@ -21,6 +21,8 @@ const listPages = vi.fn(
   ]
 );
 vi.mock("@/lib/server-brain", () => ({ createServerBrainClient: () => ({ listPages }) }));
+vi.mock("@/lib/copilot-memory", () => ({ listMemories: vi.fn(async () => []) }));
+vi.mock("@/lib/concierge/store", () => ({ leadsForEmail: vi.fn(async () => []) }));
 let storedUser: Record<string, unknown> = {};
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ getById: async () => storedUser }),
@@ -93,6 +95,46 @@ describe("GET /api/settings/gdpr/data-export", () => {
     const body = await res.json();
     expect(body.brainPages).toHaveLength(total);
     expect(new Set(body.brainPages.map((p: { slug: string }) => p.slug)).size).toBe(total);
-    expect(listPages).toHaveBeenCalledTimes(3);
+    expect(listPages).toHaveBeenCalledTimes(Math.ceil(total / 100));
+  });
+
+  it("removes the SMTP password from the Kanzlei settings page", async () => {
+    storedUser = {
+      id: "u_solo",
+      email: "solo@example.com",
+      role: "admin",
+      createdAt: "2026-01-01",
+    };
+    vi.mocked(requireEngineContext).mockResolvedValue(ctxFor(storedUser) as any);
+    listPages.mockImplementation(async () => [
+      {
+        slug: "legal/settings/kanzlei",
+        type: "kanzlei_settings",
+        frontmatter: { smtpHost: "h", smtpPassword: "klartext-alt" },
+      },
+    ]);
+    const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
+    const text = await res.text();
+    expect(text).not.toContain("klartext-alt");
+    expect(JSON.parse(text).brainPages[0].frontmatter).toEqual({
+      smtpHost: "h",
+      smtpPasswordSet: true,
+    });
+  });
+});
+
+describe("GET /api/settings/gdpr/data-export — no silent cut (R12-14)", () => {
+  it("answers 503 instead of a cut export when the listing never ends", async () => {
+    storedUser = {
+      id: "u_solo",
+      email: "solo@kanzlei.example",
+      role: "admin",
+      createdAt: "2026-01-01",
+    };
+    vi.mocked(requireEngineContext).mockResolvedValue(ctxFor(storedUser) as any);
+    const full = Array.from({ length: 100 }, (_, i) => ({ slug: `p/${i}`, title: "x" }));
+    listPages.mockImplementation(async () => full);
+    const res = await GET(new NextRequest("http://localhost:3000/api/settings/gdpr/data-export"));
+    expect(res.status).toBe(503);
   });
 });

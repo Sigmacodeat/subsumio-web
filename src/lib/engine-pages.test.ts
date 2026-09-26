@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
 
-import { ENGINE_LIST_MAX, listEnginePages } from "./engine-pages";
+import {
+  ENGINE_LIST_MAX,
+  EnginePagesTruncatedError,
+  listEnginePages,
+  listEnginePagesDetailed,
+} from "./engine-pages";
 
 const fetchMock = vi.fn();
 
@@ -60,5 +65,95 @@ describe("listEnginePages", () => {
     engineWith(1000, 300);
     const pages = await listEnginePages({}, "legal_deadline", 100_000);
     expect(pages).toHaveLength(300);
+  });
+
+  test("follows the keyset cursor past filtered batches (matter scope shrinks pages)", async () => {
+    // Engine with cursor support: every batch carries x-next-cursor while more
+    // rows exist. Second batch returns zero rows (all filtered server-side)
+    // but the cursor still advances — the scan must continue, not stop.
+    fetchMock.mockImplementation(async (url: string) => {
+      const u = new URL(url);
+      const cursor = u.searchParams.get("cursor");
+      const seq = cursor ? Number(cursor.split("|")[1]) : 0;
+      const batches: Array<{ rows: unknown[]; next: string | null }> = [
+        {
+          rows: [{ slug: "legal/a", title: "A", frontmatter: {} }],
+          next: "2026-01-01T00:00:00Z|1",
+        },
+        { rows: [], next: "2026-01-01T00:00:00Z|2" },
+        { rows: [{ slug: "legal/b", title: "B", frontmatter: {} }], next: null },
+      ];
+      const batch = batches[Math.min(seq, batches.length - 1)];
+      const headers = new Headers();
+      if (batch.next) headers.set("x-next-cursor", batch.next);
+      return new Response(JSON.stringify(batch.rows), { status: 200, headers });
+    });
+    const pages = await listEnginePages({}, "legal_deadline", 100_000, { strict: true });
+    expect(pages.map((p) => p.slug)).toEqual(["legal/a", "legal/b"]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // Third request carried the second cursor.
+    expect(new URL(fetchMock.mock.calls[2][0]).searchParams.get("cursor")).toBe(
+      "2026-01-01T00:00:00Z|2"
+    );
+  });
+
+  test("stops when the engine repeats the same cursor (defensive)", async () => {
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(JSON.stringify([{ slug: "legal/a", title: "A", frontmatter: {} }]), {
+          status: 200,
+          headers: { "x-next-cursor": "2026-01-01T00:00:00Z|1" },
+        })
+    );
+    const pages = await listEnginePages({}, "legal_deadline", 100_000, { strict: true });
+    expect(pages).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("drops tombstoned pages unless asked to include them", async () => {
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify([
+            { slug: "legal/a", title: "A", frontmatter: {} },
+            { slug: "legal/b", title: "B", frontmatter: { status: "tombstoned" } },
+          ]),
+          { status: 200 }
+        )
+    );
+    const visible = await listEnginePages({}, "legal_deadline", 100);
+    expect(visible.map((p) => p.slug)).toEqual(["legal/a"]);
+    const all = await listEnginePages({}, "legal_deadline", 100, { includeTombstoned: true });
+    expect(all).toHaveLength(2);
+  });
+
+  test("reaching the limit while more rows exist is reported as truncated", async () => {
+    engineWith(10_050);
+    const r = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(r.pages).toHaveLength(10_000);
+    expect(r.truncated).toBe(true);
+    expect(r.failed).toBe(false);
+    await expect(
+      listEnginePages({}, "legal_deadline", 10_000, { failOnTruncate: true })
+    ).rejects.toBeInstanceOf(EnginePagesTruncatedError);
+  });
+
+  test("a complete read is not truncated; a failed batch is flagged", async () => {
+    engineWith(250);
+    const full = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(full).toMatchObject({ truncated: false, failed: false });
+    expect(full.pages).toHaveLength(250);
+    engineWith(1000, 300);
+    const part = await listEnginePagesDetailed({}, "legal_deadline", 10_000);
+    expect(part).toMatchObject({ truncated: false, failed: true });
+  });
+
+  test("passes the frontmatter filter to the engine", async () => {
+    engineWith(3);
+    await listEnginePages({}, "legal_deadline", 100, {
+      frontmatter: { case_slug: "legal/cases/a b" },
+    });
+    const u = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(u.searchParams.get("fm.case_slug")).toBe("legal/cases/a b");
   });
 });

@@ -67,7 +67,13 @@ export const GET = createHandler(
           // lost deadlines from this fallback with no error surfaced.
           // listEnginePages pages past that cap (see
           // engine-list-cap-and-tombstones).
-          const casePages = await listEnginePages(ctx.headers, "legal_case", 2000);
+          // Every matter (or just the filtered one), complete or an error —
+          // a cut list would silently drop the oldest matters' deadlines.
+          const casePages = await listEnginePages(ctx.headers, "legal_case", 100_000, {
+            strict: true,
+            failOnTruncate: true,
+            ...(caseFilter ? { slugPrefix: caseFilter } : {}),
+          });
           const eintraege: Record<string, unknown>[] = [];
           for (const page of casePages) {
             if (caseFilter && (page as { slug?: string }).slug !== caseFilter) continue;
@@ -101,7 +107,9 @@ export const GET = createHandler(
             };
           }
         } catch {
-          // Fallback failed — return what we have from the engine
+          // Fallback failed — return what we have from the engine, marked
+          // as incomplete so the UI does not show "no deadlines".
+          data.partial = true;
         }
       }
 

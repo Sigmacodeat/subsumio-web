@@ -770,9 +770,13 @@ function MonitoringPageInner() {
     setLoading(true);
     setError(null);
     try {
-      const batch = await api.brain.batchListPages(["regulatory_monitor", "regulatory_alert"], 200);
-      const monitorPages = batch["regulatory_monitor"] ?? [];
-      const alertPages = batch["regulatory_alert"] ?? [];
+      const batch = await api.brain.batchListPagesDetailed(
+        ["regulatory_monitor", "regulatory_alert"],
+        200
+      );
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const monitorPages = batch.results["regulatory_monitor"] ?? [];
+      const alertPages = batch.results["regulatory_alert"] ?? [];
 
       const parsedMonitors = monitorPages
         .map((p) => frontmatterToMonitor(p))
@@ -846,6 +850,8 @@ function MonitoringPageInner() {
     await loadData();
   }
 
+  // Toggles and "mark read" are fire-and-forget clicks: a failed save must
+  // surface as an error instead of an unhandled rejection with no feedback.
   async function toggleMonitorStatus(m: RegulatoryMonitor) {
     const slug = monitorSlug(m.monitor_id);
     const updated: RegulatoryMonitor = {
@@ -853,11 +859,16 @@ function MonitoringPageInner() {
       status: m.status === "active" ? "paused" : "active",
       updated_at: new Date().toISOString(),
     };
-    await api.brain.updatePage({
-      slug,
-      type: "regulatory_monitor",
-      frontmatter: monitorToFrontmatter(updated),
-    });
+    try {
+      await api.brain.updatePage({
+        slug,
+        type: "regulatory_monitor",
+        frontmatter: monitorToFrontmatter(updated),
+      });
+    } catch {
+      setError(t("monitoring.form_error_save"));
+      return;
+    }
     await loadData();
   }
 
@@ -868,20 +879,30 @@ function MonitoringPageInner() {
       email_notifications: !m.email_notifications,
       updated_at: new Date().toISOString(),
     };
-    await api.brain.updatePage({
-      slug,
-      type: "regulatory_monitor",
-      frontmatter: monitorToFrontmatter(updated),
-    });
+    try {
+      await api.brain.updatePage({
+        slug,
+        type: "regulatory_monitor",
+        frontmatter: monitorToFrontmatter(updated),
+      });
+    } catch {
+      setError(t("monitoring.form_error_save"));
+      return;
+    }
     await loadData();
   }
 
   async function markAlertRead(alert: RegulatoryAlert, slug: string) {
-    await api.brain.updatePage({
-      slug,
-      type: "regulatory_alert",
-      frontmatter: { ...alertToFrontmatter(alert), read: true },
-    });
+    try {
+      await api.brain.updatePage({
+        slug,
+        type: "regulatory_alert",
+        frontmatter: { ...alertToFrontmatter(alert), read: true },
+      });
+    } catch {
+      setError(t("monitoring.form_error_save"));
+      return;
+    }
     await loadData();
   }
 

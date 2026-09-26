@@ -19,6 +19,7 @@ import {
 
 import { logger } from "@/lib/logger";
 const log = logger("api/cron/autopilot");
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -92,18 +93,25 @@ async function listPages(type: string, headers: Record<string, string>): Promise
   return response.ok ? pagesFrom(await response.json()) : [];
 }
 
-async function persistExecution(execution: AutopilotExecution, headers: Record<string, string>) {
-  await fetch(`${ENGINE_URL}/api/pages`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      slug: `legal/autopilot-executions/${execution.id}`,
-      title: `Autopilot: ${execution.policyName}`,
-      type: "autopilot_execution",
-      frontmatter: { ...execution, approval_required: true, approval_status: "pending" },
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+async function persistExecution(
+  execution: AutopilotExecution,
+  headers: Record<string, string>
+): Promise<boolean> {
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: `legal/autopilot-executions/${execution.id}`,
+        title: `Autopilot: ${execution.policyName}`,
+        type: "autopilot_execution",
+        frontmatter: { ...execution, approval_required: true, approval_status: "pending" },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    },
+    "Autopilot-Ausführung"
+  );
 }
 
 /**
@@ -119,6 +127,7 @@ async function runForBrain(
   budgetSpentCents: number;
   budgetExhausted: boolean;
   executions: AutopilotExecution[];
+  persistFailures: number;
 }> {
   const headers = engineHeadersForBrain(brainId);
   const storedPolicies = await listPages("autopilot_policy", headers);
@@ -129,6 +138,7 @@ async function runForBrain(
   let budget = { capCents, spentCents: 0 };
   const executions: AutopilotExecution[] = [];
   let budgetExhausted = false;
+  let persistFailures = 0;
 
   for (const source of TRIGGER_SOURCES) {
     const candidates = (await listPages(source.type, headers))
@@ -186,7 +196,7 @@ async function runForBrain(
           execution.error = error instanceof Error ? error.message : String(error);
         }
         executions.push(execution);
-        await persistExecution(execution, headers).catch(() => undefined);
+        if (!(await persistExecution(execution, headers))) persistFailures++;
       }
       if (budgetExhausted) break;
     }
@@ -198,6 +208,7 @@ async function runForBrain(
     budgetSpentCents: budget.spentCents,
     budgetExhausted,
     executions,
+    persistFailures,
   };
 }
 
@@ -234,6 +245,7 @@ async function autopilotHandler(_req: NextRequest): Promise<Response> {
     executions: number;
     budgetSpentCents: number;
     budgetExhausted: boolean;
+    persistFailures: number;
   }> = [];
 
   for (const [brainId] of recipientsByBrain) {
@@ -262,6 +274,7 @@ async function autopilotHandler(_req: NextRequest): Promise<Response> {
       executions: result.totalExecutions,
       budgetSpentCents: result.budgetSpentCents,
       budgetExhausted: result.budgetExhausted,
+      persistFailures: result.persistFailures,
     });
   }
 

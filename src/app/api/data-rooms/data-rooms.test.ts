@@ -8,6 +8,8 @@ const who = vi.hoisted(() => ({
   brainId: "",
   mails: [] as Array<{ to: string; text: string }>,
   audit: [] as Array<{ action: string; brainId?: string }>,
+  casePermissions: {} as Record<string, unknown>,
+  caseHiddenFor: null as string | null,
 }));
 
 vi.mock("@/lib/api-handler", () => ({
@@ -94,11 +96,21 @@ beforeEach(() => {
   setDataRoomStoreForTests(new MemoryDataRoomStore());
   who.mails = [];
   who.audit = [];
+  who.casePermissions = {};
+  who.caseHiddenFor = null;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
       if (url.includes("/api/pages/cases%2Fa")) {
-        return Response.json({ title: "Müller gegen Maier", type: "legal_case", frontmatter: {} });
+        // The engine answers a matter outside the caller's scope with 404.
+        if (who.caseHiddenFor && who.user.id === who.caseHiddenFor) {
+          return new Response("{}", { status: 404 });
+        }
+        return Response.json({
+          title: "Müller gegen Maier",
+          type: "legal_case",
+          frontmatter: { permissions: who.casePermissions },
+        });
       }
       if (url.includes("/api/pages/docs%2Fklage")) {
         return Response.json({
@@ -230,5 +242,44 @@ describe("data rooms", () => {
       params(id)
     );
     expect(res.status).toBe(400);
+  });
+
+  it("hides the room from colleagues of the host who cannot read the matter", async () => {
+    const { id } = await openRoomWithInvite();
+    const walled: User = { ...host, id: "u-walled", email: "walled@host.at" };
+    const client: User = { ...host, id: "u-client", email: "m@client.at", role: "client_viewer" };
+
+    for (const setup of [
+      () => {
+        who.casePermissions = { blocked_users: ["u-walled"] };
+        as(walled, "brain-host");
+      },
+      () => {
+        who.caseHiddenFor = "u-walled";
+        as(walled, "brain-host");
+      },
+      () => as(client, "brain-host"),
+    ]) {
+      who.casePermissions = {};
+      who.caseHiddenFor = null;
+      setup();
+      expect((await room.GET(req("GET", `/api/data-rooms/${id}`), params(id))).status).toBe(404);
+      expect(
+        (
+          await document.GET(
+            req("GET", `/api/data-rooms/${id}/document?slug=docs/klage`),
+            params(id)
+          )
+        ).status
+      ).toBe(404);
+      const list = await (await rooms.GET(req("GET", "/api/data-rooms"))).json();
+      expect(list.data.hosted).toEqual([]);
+    }
+
+    who.casePermissions = {};
+    who.caseHiddenFor = null;
+    as(host, "brain-host");
+    const list = await (await rooms.GET(req("GET", "/api/data-rooms"))).json();
+    expect(list.data.hosted).toHaveLength(1);
   });
 });

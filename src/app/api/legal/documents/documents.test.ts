@@ -16,6 +16,7 @@ vi.mock("@/lib/engine", async () => ({
 import { POST as checkout } from "./checkout/route";
 import { POST as checkin } from "./checkin/route";
 import { POST as release } from "./release/route";
+import { GET as versions } from "./versions/route";
 import { requireEngineContext } from "@/lib/engine";
 
 const ctx = {
@@ -122,5 +123,47 @@ describe("release", () => {
     stubFetch(docPage({ checked_out_by: { userId: "u1", userEmail: "a@k.at", at: "t" } }));
     const res = await post(release, { slug: "legal/akte-1/vertrag" });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("versions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+  });
+
+  it("check-in stamps the document's matter on the snapshot", async () => {
+    stubFetch(
+      docPage({
+        case_slug: "legal/cases/akte-1",
+        checked_out_by: { userId: "u1", userEmail: "a@k.at", at: "t" },
+      })
+    );
+    const res = await post(checkin, { slug: "legal/akte-1/vertrag" });
+    expect(res.status).toBe(200);
+    const snapshot = writes().find((c) => c.body.type === "document_version")!;
+    expect(snapshot.body.frontmatter.case_slug).toBe("legal/cases/akte-1");
+    expect(snapshot.body.frontmatter.doc_frontmatter.case_slug).toBe("legal/cases/akte-1");
+  });
+
+  it("lists no versions of a document the caller cannot read", async () => {
+    calls = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push({ url, body: {} });
+        // The engine answers a document outside the caller's scope with 404.
+        return String(url).includes("slug_prefix")
+          ? Response.json([{ frontmatter: { doc_slug: "legal/akte-1/vertrag", version: 1 } }])
+          : new Response("{}", { status: 404 });
+      })
+    );
+    const res = await versions(
+      new NextRequest(
+        "http://localhost:3000/api/legal/documents/versions?slug=legal/akte-1/vertrag"
+      )
+    );
+    expect(res.status).toBe(404);
+    expect(calls.some((c) => c.url.includes("slug_prefix"))).toBe(false);
   });
 });

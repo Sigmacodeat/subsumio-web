@@ -67,6 +67,8 @@ import {
   renameSync,
 } from "fs";
 import { join, dirname, resolve } from "path";
+import { forwardAlert } from "./pipeline-alert";
+import { jsonAggRows, runPsqlFile, type PsqlResult } from "./psql-env";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
@@ -666,13 +668,20 @@ function sqlLiteral(value: string): string {
 }
 
 function psqlQuery(query: string): string {
+  const r = psqlRun(query);
+  if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+  return r.out;
+}
+
+function psqlRun(query: string): PsqlResult {
   // Write SQL to a temp file and use psql -f to avoid shell escaping issues
   // with multi-line SQL (JSON.stringify turns newlines into literal \n,
   // which psql -c doesn't interpret, causing syntax errors).
   const tmpFile = `/tmp/psql_query_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
+    // Credentials via env (never argv/logs); the error text is masked.
+    return runPsqlFile(tmpFile, dbUrl());
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -724,16 +733,9 @@ function releaseCycleLock(): void {
  * treats as "no rows found", not "the query failed".
  */
 function psqlJSON<T = Record<string, unknown>>(query: string): T[] {
-  const wrapped = `SELECT json_agg(t) FROM (${query}) t`;
-  const raw = psqlQuery(wrapped);
-  if (!raw) return [];
-  try {
-    // json_agg liefert NULL bei 0 Zeilen — kein Array.
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch {
-    return [];
-  }
+  // 0 rows → []; a failed query or non-JSON output throws (masked) instead of
+  // passing for "no rows" — the cycle then stops and releases its lock.
+  return jsonAggRows<T>(psqlRun(`SELECT json_agg(t) FROM (${query}) t`));
 }
 
 /** True wenn source_key zuletzt vor < intervalS Sekunden lief. */
@@ -812,14 +814,8 @@ function raiseAlert(key: string, type: string, severity: string, message: string
        ) sub
      ), updated_at = NOW() WHERE source_key = '${keyEsc}'`
   );
-  // Fire webhook if configured
-  if (ALERT_WEBHOOK) {
-    fetch(ALERT_WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source: key, ...alert }),
-    }).catch(() => {});
-  }
+  // Webhook (ALERT_WEBHOOK) + ops mail for error/critical (pipeline-alert.ts).
+  void forwardAlert({ source: key, ...alert });
   console.log(`  ⚠️ ALERT [${severity}] ${key}: ${type} — ${message}`);
 }
 
@@ -849,10 +845,6 @@ interface CycleState {
   pidMap: Record<string, { pid: number; cmd: string; startedAt: string; timeoutS: number }>;
   /** Consecutive failed import attempts, derived from the stage_history tail. */
   importFailCount: Record<string, number>;
-  /** True when the ris-delta process was running in the previous cycle and is now gone. */
-  deltaJustFinished?: boolean;
-  /** True when the ris-delta process is currently running (set each cycle while alive). */
-  deltaWasRunning?: boolean;
 }
 
 /** Give up restarting a source's import after this many consecutive failures. */
@@ -936,6 +928,9 @@ function sh(cmd: string): string {
   try {
     return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
   } catch {
+    // Only file/process helpers (find, grep, bun scripts) run here; a
+    // non-zero exit is routine for grep. Database access goes through
+    // psqlQuery → runPsqlFile, which logs its failures (masked).
     return "";
   }
 }
@@ -1510,6 +1505,131 @@ function runFassungsSync(): void {
  *  The delta-watcher fetches new/changed documents from RIS OGD API,
  *  writes them to disk, and marks them for import via markiereZumImport.
  *  The regular import stage then picks them up. */
+/** Parse the delta watcher's "summary: …" stage_history line. Exported for tests. */
+export function parseDeltaSummary(details: string): {
+  newCount: number;
+  changedCount: number;
+  failedCount: number;
+  applikationen: string[];
+} {
+  const num = (re: RegExp) => {
+    const m = details.match(re);
+    return m ? parseInt(m[1]!, 10) : 0;
+  };
+  const appMatch = details.match(/applikationen:\s*([^\s,]+(?:,[^\s,]+)*)/);
+  return {
+    newCount: num(/(\d+)\s+neu/),
+    changedCount: num(/(\d+)\s+geändert/),
+    failedCount: num(/(\d+)\s+fehlgeschlagen/),
+    applikationen: appMatch ? appMatch[1]!.split(",").filter(Boolean) : [],
+  };
+}
+
+/**
+ * What a finished delta run means for notification + alerting. Exit 0 is
+ * the only success; anything else (including a missing exit code) is a
+ * failure that must alert. Exported for tests.
+ */
+export function deltaOutcome(
+  exitCode: number | null,
+  summary: ReturnType<typeof parseDeltaSummary>,
+  today: string
+): {
+  ok: boolean;
+  notification: Record<string, unknown>;
+  alert: { type: string; severity: string; message: string } | null;
+} {
+  const total = summary.newCount + summary.changedCount;
+  const base = {
+    newCount: summary.newCount,
+    changedCount: summary.changedCount,
+    failedCount: summary.failedCount,
+    applikationen: summary.applikationen.length > 0 ? summary.applikationen : ["all"],
+    total,
+    url: "/dashboard/admin/corpus",
+    syncDate: today,
+  };
+  if (exitCode !== 0) {
+    const message = `RIS Delta-Sync fehlgeschlagen (Exit ${exitCode ?? "unbekannt"}) — Korpus ist nicht auf aktuellem Stand`;
+    return {
+      ok: false,
+      notification: { ...base, title: message, failed: true },
+      alert: { type: "delta_sync_failed", severity: "error", message },
+    };
+  }
+  return {
+    ok: true,
+    notification: {
+      ...base,
+      title:
+        total > 0
+          ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
+          : "RIS Delta-Sync abgeschlossen — keine Änderungen",
+    },
+    alert: null,
+  };
+}
+
+/**
+ * Evaluate a finished delta run exactly once: its exit file is renamed to
+ * `.evaluated` afterwards. Runs every cycle, independent of the 24 h start
+ * interval, so a failure alerts in the next cycle — not a day later.
+ */
+function evaluateFinishedDelta(key: string): void {
+  const exitFile = exitFileFor("ris-delta");
+  if (!existsSync(exitFile)) return;
+  const exitCode = readExitCode("ris-delta");
+  const deltaRow = psqlJSON<Pick<DBPipelineState, "stage_history">>(
+    `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
+  );
+  let details = "";
+  const stageHistory =
+    Array.isArray(deltaRow) && deltaRow.length > 0 ? deltaRow[0].stage_history : null;
+  if (Array.isArray(stageHistory)) {
+    for (let i = stageHistory.length - 1; i >= 0; i--) {
+      const entry = stageHistory[i];
+      if (entry && typeof entry.action === "string" && entry.action.startsWith("summary:")) {
+        details = entry.action;
+        break;
+      }
+    }
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const outcome = deltaOutcome(exitCode, parseDeltaSummary(details), today);
+  if (outcome.alert) {
+    raiseAlert(key, outcome.alert.type, outcome.alert.severity, outcome.alert.message);
+  } else {
+    clearAlerts(key, "delta_sync_failed");
+  }
+  // Write the notification with psql: this script runs in the engine
+  // image, which does not contain the web app's database helpers.
+  try {
+    const notifId = `notif_corpus_delta_${today}`;
+    psqlQuery(
+      `CREATE TABLE IF NOT EXISTS subsumio_notifications (
+         id text NOT NULL PRIMARY KEY,
+         user_id text NOT NULL,
+         brain_id text NOT NULL,
+         type text NOT NULL,
+         data jsonb NOT NULL DEFAULT '{}'::jsonb,
+         read_at timestamptz,
+         created_at timestamptz NOT NULL DEFAULT now()
+       );
+       INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
+       VALUES (${sqlLiteral(notifId)}, 'system', 'system', 'corpus_delta', ${sqlLiteral(JSON.stringify(outcome.notification))}::jsonb, NULL, now())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, read_at = NULL;`
+    );
+    console.log(`  [ris-delta] Notification geschrieben: ${String(outcome.notification.title)}`);
+  } catch (err) {
+    console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
+  }
+  try {
+    renameSync(exitFile, `${exitFile}.evaluated`);
+  } catch {
+    /* next cycle re-evaluates — notification upsert + alert dedup are idempotent */
+  }
+}
+
 async function runDeltaWatcher(state: CycleState): Promise<void> {
   const key = "ris-delta";
   ensureSourceRow(key);
@@ -1520,105 +1640,18 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
   ).trim();
   const manualTrigger = triggerRaw !== "";
 
-  // Check if we already ran in the last 24h (unless manually triggered)
-  const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
-  if (!manualTrigger && ranWithin(key, intervalS)) return;
-
-  // Check if delta-watcher is already running
   const procState = checkSourceProcess(key, state);
   if (procState.running) {
-    console.log("  [ris-delta] Läuft bereits — überspringe");
-    // Mark that delta was running so next cycle can detect completion
-    state.deltaWasRunning = true;
+    if (manualTrigger) console.log("  [ris-delta] Läuft bereits — überspringe");
     return;
   }
 
-  // Process just finished — was it running in the previous cycle?
-  if (state.deltaWasRunning) {
-    state.deltaJustFinished = true;
-    delete state.deltaWasRunning;
-  }
+  // A run that finished since the last cycle: notify + alert on failure.
+  evaluateFinishedDelta(key);
 
-  // Process just finished — check exit code and write notification
-  if (state.deltaJustFinished) {
-    const exitCode = readExitCode("ris-delta");
-    if (exitCode === 0) {
-      // Read the delta-watcher's summary from stage_history JSONB array
-      // (append_stage_history stores entries as {stage, action, ts} in pipeline_state.stage_history)
-      const deltaRow = psqlJSON<Pick<DBPipelineState, "stage_history">>(
-        `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
-      );
-      if (Array.isArray(deltaRow) && deltaRow.length > 0) {
-        // Find the "summary:" entry in stage_history (written by ris-delta-watcher.ts)
-        const stageHistory = deltaRow[0].stage_history;
-        let details = "";
-        if (Array.isArray(stageHistory) && stageHistory.length > 0) {
-          // Find the latest entry with action starting "summary:"
-          for (let i = stageHistory.length - 1; i >= 0; i--) {
-            const entry = stageHistory[i];
-            if (entry && typeof entry.action === "string" && entry.action.startsWith("summary:")) {
-              details = entry.action;
-              break;
-            }
-          }
-        }
-        let newCount = 0;
-        let changedCount = 0;
-        let failedCount = 0;
-        const applikationen: string[] = [];
-        if (details) {
-          // Parse "summary: N neu, M geändert, F fehlgeschlagen, applikationen: BrKons,..."
-          const newMatch = details.match(/(\d+)\s+neu/);
-          const changedMatch = details.match(/(\d+)\s+geändert/);
-          const failedMatch = details.match(/(\d+)\s+fehlgeschlagen/);
-          if (newMatch) newCount = parseInt(newMatch[1], 10);
-          if (changedMatch) changedCount = parseInt(changedMatch[1], 10);
-          if (failedMatch) failedCount = parseInt(failedMatch[1], 10);
-          // Extract applikationen from details
-          const appMatch = details.match(/applikationen:\s*([^\s,]+)/);
-          if (appMatch) applikationen.push(...appMatch[1].split(","));
-        }
-        // Write the notification with psql: this script runs in the engine
-        // image, which does not contain the web app's database helpers.
-        try {
-          const today = new Date().toISOString().slice(0, 10);
-          const notifId = `notif_corpus_delta_${today}`;
-          const total = newCount + changedCount;
-          const data = {
-            title:
-              total > 0
-                ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
-                : "RIS Delta-Sync abgeschlossen — keine Änderungen",
-            newCount,
-            changedCount,
-            failedCount,
-            applikationen: applikationen.length > 0 ? applikationen : ["all"],
-            total,
-            url: "/dashboard/admin/corpus",
-            syncDate: today,
-          };
-          psqlQuery(
-            `CREATE TABLE IF NOT EXISTS subsumio_notifications (
-               id text NOT NULL PRIMARY KEY,
-               user_id text NOT NULL,
-               brain_id text NOT NULL,
-               type text NOT NULL,
-               data jsonb NOT NULL DEFAULT '{}'::jsonb,
-               read_at timestamptz,
-               created_at timestamptz NOT NULL DEFAULT now()
-             );
-             INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
-             VALUES (${sqlLiteral(notifId)}, 'system', 'system', 'corpus_delta', ${sqlLiteral(JSON.stringify(data))}::jsonb, NULL, now())
-             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, read_at = NULL;`
-          );
-          console.log(`  [ris-delta] Notification geschrieben: ${total} Dokumente`);
-        } catch (err) {
-          console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
-        }
-      }
-    }
-    delete state.deltaJustFinished;
-  }
+  // Check if we already ran in the last 24h (unless manually triggered)
+  const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
+  if (!manualTrigger && ranWithin(key, intervalS)) return;
 
   console.log("  [ris-delta] Starte RIS Delta-Watcher...");
 
@@ -1699,9 +1732,11 @@ function runKnownBadGenerationRepair(state: CycleState): void {
 // Der §-genaue Gesetzes-Abgleich im Ops-Dashboard (/api/admin/corpus-law-
 // coverage) liest _state/ris-inforce{,-landesrecht}.jsonl als Upstream-Soll.
 // Wöchentlicher Re-Crawl, damit Novellen/außer-Kraft-Tretungen im Soll
-// nicht veralten. Beide Crawler nehmen selbst den RIS-Lock + Pacing.
+// nicht veralten. Beide Crawler pausieren selbst (ris-pace.ts); der
+// RIS-Lock ist derzeit abgeschaltet (siehe ris-lock.ts).
 
 const INFORCE_REFRESH_INTERVAL_S = 7 * 86400;
+const INFORCE_RETRY_AFTER_FAILURE_S = 86400;
 const INFORCE_INDEX_DIR = "/law-corpus/_state";
 
 function runInforceIndexRefresh(state: CycleState): void {
@@ -1724,6 +1759,9 @@ function runInforceIndexRefresh(state: CycleState): void {
       existsSync(indexPath) &&
       Date.now() - statSync(indexPath).mtimeMs < INFORCE_REFRESH_INTERVAL_S * 1000;
     if (indexFresh && ranWithin(job.key, INFORCE_REFRESH_INTERVAL_S)) continue;
+    // Ein unvollstaendiger Crawl laesst den Index bewusst unveraendert (alt);
+    // ohne diese Sperre wuerde jeder Zyklus einen neuen Voll-Crawl starten.
+    if (!indexFresh && ranWithin(job.key, INFORCE_RETRY_AFTER_FAILURE_S)) continue;
     if (checkSourceProcess(job.key, state).running) continue;
     startProcess(
       job.key,
@@ -1782,62 +1820,74 @@ function runInforceIndexRefresh(state: CycleState): void {
 // gewartet. Die frischen Dateien landen in at-normen/ und gehen über den
 // normalen normen-at-Import in die DB.
 
+/**
+ * Takes the head of law_fetch_queue in ONE transaction (row lock, then
+ * `value - 0`) and deletes the key only while the list is empty. The Ops
+ * route appends with an atomic upsert; reading the whole list and writing
+ * the remainder back used to drop entries queued in between. psql prints
+ * only the SELECT row (-q -t -A): the popped entry, or nothing.
+ * Exported for tests.
+ */
+export const LAW_FETCH_QUEUE_POP_SQL = `BEGIN;
+SELECT value->0 FROM pipeline_config WHERE key = 'law_fetch_queue' FOR UPDATE;
+UPDATE pipeline_config SET value = value - 0, updated_at = now()
+ WHERE key = 'law_fetch_queue' AND jsonb_typeof(value) = 'array';
+DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'
+   AND CASE WHEN jsonb_typeof(value) = 'array' THEN jsonb_array_length(value) = 0 ELSE true END;
+COMMIT;`;
+
+/** Queue length without modifying it (0 when missing or not a list). */
+export const LAW_FETCH_QUEUE_LEN_SQL = `SELECT CASE WHEN jsonb_typeof(value) = 'array'
+  THEN jsonb_array_length(value) ELSE 0 END FROM pipeline_config WHERE key = 'law_fetch_queue'`;
+
 function runLawFetchQueue(state: CycleState): void {
   const key = "law-fetch";
   ensureSourceRow(key);
 
-  const raw = psqlQuery(
-    "SELECT value::text FROM pipeline_config WHERE key = 'law_fetch_queue'"
-  ).trim();
-  if (!raw) return;
-
-  let queue: Array<{ source?: string; gnr?: string }>;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    queue = Array.isArray(parsed) ? parsed : [];
-  } catch {
-    queue = [];
-  }
-  if (queue.length === 0) {
-    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
+  const len = parseInt(psqlQuery(LAW_FETCH_QUEUE_LEN_SQL).trim() || "0", 10) || 0;
+  if (len === 0) {
+    // Leere/kaputte Liste nur löschen, solange sie leer ist — ein inzwischen
+    // angehängter Eintrag bleibt stehen.
+    psqlQuery(`DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'
+       AND CASE WHEN jsonb_typeof(value) = 'array' THEN jsonb_array_length(value) = 0 ELSE true END`);
     return;
   }
 
   if (checkSourceProcess(key, state).running) {
-    console.log(`  [law-fetch] Läuft bereits — ${queue.length} in Queue`);
+    console.log(`  [law-fetch] Läuft bereits — ${len} in Queue`);
     return;
   }
 
-  const [next, ...rest] = queue;
+  const raw = psqlQuery(LAW_FETCH_QUEUE_POP_SQL).trim();
+  if (!raw) return;
+  let next: { source?: string; gnr?: string } | null = null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    next =
+      parsed && typeof parsed === "object" ? (parsed as { source?: string; gnr?: string }) : null;
+  } catch {
+    next = null;
+  }
   // Ungültige/nicht unterstützte Einträge still verwerfen — die Route
   // validiert bereits, dies ist nur der Defensiv-Pfad.
   if (next?.source !== "law-at-normen" || !next.gnr || !/^\d{4,12}$/.test(next.gnr)) {
-    console.log(`  [law-fetch] Ungültiger Eintrag verworfen: ${JSON.stringify(next)}`);
-  } else {
-    startProcess(
-      `law-fetch-${next.gnr}`,
-      [
-        "scripts/ris-xml-fetch-normen.ts",
-        "--ris",
-        `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
-        "--gnr",
-        next.gnr,
-      ],
-      key,
-      4 * 3600
-    );
-    updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
-    appendHistory(key, "fetch", `gnr ${next.gnr} (${rest.length} weitere in Queue)`);
+    console.log(`  [law-fetch] Ungültiger Eintrag verworfen: ${raw}`);
+    return;
   }
-
-  if (rest.length === 0) {
-    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
-  } else {
-    psqlQuery(
-      `UPDATE pipeline_config SET value = ${sqlLiteral(JSON.stringify(rest))}::jsonb,
-       updated_at = now() WHERE key = 'law_fetch_queue'`
-    );
-  }
+  startProcess(
+    `law-fetch-${next.gnr}`,
+    [
+      "scripts/ris-xml-fetch-normen.ts",
+      "--ris",
+      `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
+      "--gnr",
+      next.gnr,
+    ],
+    key,
+    4 * 3600
+  );
+  updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
+  appendHistory(key, "fetch", `gnr ${next.gnr} (${len - 1} weitere in Queue)`);
 }
 
 // ── Import-Queue Drain ─────────────────────────────────────────────────

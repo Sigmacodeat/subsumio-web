@@ -134,6 +134,18 @@ describe("getConnector", () => {
     expect(connector).not.toBeNull();
     expect(connector?.name).toBe("NetDocuments");
   });
+
+  test("getConnectorForBrain only serves firms listed in DMS_ALLOWED_BRAIN_IDS", async () => {
+    process.env.DMS_PROVIDER = "imanager";
+    process.env.DMS_ALLOWED_BRAIN_IDS = "brain-a, brain-c";
+    vi.resetModules();
+    const { getConnectorForBrain } = await import("./index");
+    expect((await getConnectorForBrain("brain-a"))?.name).toBe("iManage Work");
+    expect(await getConnectorForBrain("brain-b")).toBeNull();
+    expect(await getConnectorForBrain("")).toBeNull();
+    delete process.env.DMS_ALLOWED_BRAIN_IDS;
+    expect(await getConnectorForBrain("brain-a")).toBeNull();
+  });
 });
 
 describe("importToBrainCommon", () => {
@@ -409,12 +421,16 @@ describe("fetchDmsContent", () => {
     expect(res!.mimeType).toBeTruthy();
   });
 
-  test("folgt Redirects (Box liefert 302 auf CDN)", async () => {
+  test("folgt Redirects kontrolliert (Box liefert 302 auf CDN)", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: "https://dl.boxcloud.com/f/1" } })
+      )
       .mockResolvedValueOnce(new Response(new Uint8Array([1]), { status: 200 }));
-    await fetchDmsContent("https://api.box.com/2.0/files/1/content");
-    const init = fetchSpy.mock.calls[0][1] as RequestInit;
-    expect(init.redirect).toBe("follow");
+    const content = await fetchDmsContent("https://api.box.com/2.0/files/1/content");
+    expect(content?.data.byteLength).toBe(1);
+    expect(fetchSpy.mock.calls[1]![0]).toBe("https://dl.boxcloud.com/f/1");
+    expect((fetchSpy.mock.calls[0]![1] as RequestInit).redirect).toBe("manual");
   });
 });

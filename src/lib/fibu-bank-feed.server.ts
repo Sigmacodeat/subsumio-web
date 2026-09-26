@@ -1,4 +1,4 @@
-import { createBankTransaction, type BankTransaction } from "@/lib/fibu";
+import { createBankTransaction, withOccurrence, type BankTransaction } from "@/lib/fibu";
 
 export interface BankFeedProvider {
   readonly name: string;
@@ -39,21 +39,29 @@ export class HttpBankFeedProvider implements BankFeedProvider {
       | { transactions?: ProviderTransaction[] }
       | ProviderTransaction[];
     const transactions = Array.isArray(payload) ? payload : (payload.transactions ?? []);
-    return transactions.map((item) => ({
-      ...createBankTransaction({
+    const inputs = transactions.map((item) => ({
+      item,
+      input: {
         date: item.bookingDate ?? item.date ?? new Date().toISOString().slice(0, 10),
         amount: Math.abs(item.amount),
-        direction: item.amount >= 0 ? "credit" : "debit",
+        direction: (item.amount >= 0 ? "credit" : "debit") as "credit" | "debit",
         iban: this.iban,
         sender_name: item.debtorName ?? item.creditorName,
         sender_iban: item.debtorIban ?? item.creditorIban,
         reference: item.reference,
         purpose: item.remittanceInformation,
-      }),
-      id: item.id
-        ? `bank-${item.id}`
-        : createBankTransaction({ date: "", amount: 0, direction: "credit", iban: this.iban }).id,
+      },
     }));
+    // Deterministic ids: the provider's id when it has one, otherwise a
+    // fingerprint of the booking — a re-fetched period is recognised as
+    // already imported.
+    return withOccurrence(inputs.map((i) => i.input)).map(({ input, occurrence }, idx) => {
+      const item = inputs[idx].item;
+      return {
+        ...createBankTransaction(input, { occurrence }),
+        ...(item.id ? { id: `bank-${item.id}` } : {}),
+      };
+    });
   }
 }
 

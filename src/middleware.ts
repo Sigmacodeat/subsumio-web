@@ -53,7 +53,13 @@ function generateCspNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function buildCspHeader(nonce: string): string {
+/** Office dialog page that hands a short-lived add-in token to Word/Outlook. */
+const ADDIN_CONNECT_PATH = "/addin-connect";
+/** Office.js — loaded only on the add-in dialog page. */
+const OFFICE_JS_ORIGIN = "https://appsforoffice.microsoft.com";
+
+function buildCspHeader(nonce: string, opts: { officeJs?: boolean } = {}): string {
+  const officeJs = opts.officeJs ? ` ${OFFICE_JS_ORIGIN}` : "";
   const isDev = env("NODE_ENV") !== "production";
   const engineUrl = env("SUBSUMIO_API_URL");
   const engineOrigin = engineUrl
@@ -65,15 +71,54 @@ function buildCspHeader(nonce: string): string {
         }
       })()
     : "https://api.subsum.io";
+  const originOf = (url: string | undefined): string | null => {
+    if (!url) return null;
+    try {
+      return new URL(url).origin;
+    } catch {
+      return null;
+    }
+  };
+  // Images: only our own origins. No `https:` wildcard — an injected <img>
+  // (rendered mail, markdown) must not be able to beacon data to any host.
+  // Extra hosts (e.g. an object-storage domain) via SUBSUMIO_CSP_IMG_HOSTS.
+  const publicEngineOrigin = originOf(env("NEXT_PUBLIC_ENGINE_URL"));
+  const extraImgHosts = (env("SUBSUMIO_CSP_IMG_HOSTS") ?? "")
+    .split(/[\s,]+/)
+    .map(originOf)
+    .filter((o): o is string => Boolean(o));
+  const imgSrc = [
+    "'self'",
+    "data:",
+    "blob:",
+    ...Array.from(
+      new Set([engineOrigin, ...(publicEngineOrigin ? [publicEngineOrigin] : []), ...extraImgHosts])
+    ),
+  ].join(" ");
+  // Product analytics only when it is actually configured.
+  const posthogOrigin = env("NEXT_PUBLIC_POSTHOG_KEY")
+    ? originOf(env("NEXT_PUBLIC_POSTHOG_HOST") || "https://app.posthog.com")
+    : null;
+  const connectSrc = [
+    "'self'",
+    "https://api.stripe.com",
+    "https://*.sentry.io",
+    ...(posthogOrigin ? [posthogOrigin] : []),
+    engineOrigin,
+    ...(publicEngineOrigin && publicEngineOrigin !== engineOrigin ? [publicEngineOrigin] : []),
+  ].join(" ");
   return [
     "default-src 'self'",
     isDev
-      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com`
-      : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com ${engineOrigin}`,
+      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com${officeJs}`
+      : `script-src 'self' 'nonce-${nonce}' https://js.stripe.com${officeJs}`,
+    // Fonts are self-hosted by next/font (src/app/layout.tsx) — no Google hosts.
+    // 'unsafe-inline' stays for styles: React style attributes and Next's
+    // injected style tags need it; scripts remain nonce-only.
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${imgSrc}`,
+    "font-src 'self' data:",
+    `connect-src ${connectSrc}`,
     "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
@@ -222,6 +267,12 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   // cookie exists to double-submit.
   "/api/webhooks/resend",
   "/api/docusign/webhook",
+  // RCIID status webhook: server-to-server, authenticated by the HMAC
+  // signature over the raw body inside the route (fail-closed without secret).
+  "/api/rciid/webhook",
+  // CTI webhook with the token in the path (providers without a settable
+  // Authorization header): authenticated by that token inside the route.
+  "/api/cti/webhook/",
 ] as const;
 const API_CSRF_EXEMPT_PATHS = new Set([
   // Presence is an authenticated best-effort heartbeat endpoint. The route
@@ -274,8 +325,8 @@ function isWebhookCsrfExempt(pathname: string): boolean {
 
 /**
  * Requests authenticated with a firm API key (`Authorization: Bearer
- * sk_live_…`, used by the Word/Outlook add-ins and customer integrations)
- * carry no CSRF cookie. CSRF abuses a cookie the browser attaches on its own;
+ * sk_live_…`, customer integrations) or an add-in token (`sk_addin_…`, the
+ * Word/Outlook add-ins) carry no CSRF cookie. CSRF abuses a cookie the browser attaches on its own;
  * a request WITHOUT a session cookie has nothing to abuse, and createHandler
  * authenticates it by the key (or rejects it). A request that has a session
  * cookie still needs the CSRF token, so adding a fake Authorization header
@@ -283,7 +334,7 @@ function isWebhookCsrfExempt(pathname: string): boolean {
  */
 function isApiKeyCsrfExempt(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Bearer sk_live_")) return false;
+  if (!auth?.startsWith("Bearer sk_live_") && !auth?.startsWith("Bearer sk_addin_")) return false;
   return !req.cookies.get(SESSION_COOKIE)?.value;
 }
 
@@ -360,7 +411,7 @@ export async function middleware(req: NextRequest) {
 
   // --- CSP nonce: generate per-request and pass to Next.js via request headers ---
   const nonce = generateCspNonce();
-  const cspHeader = buildCspHeader(nonce);
+  const cspHeader = buildCspHeader(nonce, { officeJs: pathname === ADDIN_CONNECT_PATH });
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
   // Next.js reads the nonce for its own inline scripts (RSC payload, boot
@@ -525,7 +576,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- Protected areas ---
-  if (pathname.startsWith("/dashboard") || isOpsPath(pathname)) {
+  const addinConnect = pathname === ADDIN_CONNECT_PATH;
+  if (pathname.startsWith("/dashboard") || isOpsPath(pathname) || addinConnect) {
     const session = await verifySessionCore(req.cookies.get(SESSION_COOKIE)?.value);
     if (!session) {
       // Expired live-demo session (marker cookie set at /demo entry):
@@ -536,7 +588,11 @@ export async function middleware(req: NextRequest) {
         return applyCsp(NextResponse.redirect(demo));
       }
       const login = new URL("/at/login", req.url);
-      login.searchParams.set("next", pathname);
+      // The add-in dialog keeps its query (which add-in) across the sign-in,
+      // and the login page is marked so it stays reachable for the Office
+      // dialog (see next.config.ts headers).
+      login.searchParams.set("next", addinConnect ? pathname + req.nextUrl.search : pathname);
+      if (addinConnect) login.searchParams.set("addin_dialog", "1");
       return applyCsp(NextResponse.redirect(login));
     }
 
@@ -580,5 +636,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // Match everything except Next internals and static files.
   // API routes ARE included for CSRF validation.
-  matcher: ["/((?!_next/|.*\\.[a-zA-Z0-9]+$).*)"],
+  // API routes are ALWAYS included — also when the last segment looks like a
+  // file name (e.g. /api/legal/deadlines.ics), otherwise IP allow-listing,
+  // CSRF and the 2FA gate would silently skip them.
+  matcher: ["/((?!_next/|.*\\.[a-zA-Z0-9]+$).*)", "/api/:path*"],
 };

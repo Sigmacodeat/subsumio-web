@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   fetchPendingTasks,
   markTaskRunning,
@@ -14,9 +15,15 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { triageMessage, type TriageInput } from "@/lib/triage";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
 import { createAutonomousTaskNotification } from "@/lib/comments";
-import { getStore } from "@/lib/auth/store";
+import {
+  activeStaffRecipients,
+  getRecipientsByBrain,
+  matterPermissionsForSlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
 import { enqueuePostUploadTask } from "@/lib/post-upload-outbox";
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort, engineWriteOrThrow } from "@/lib/engine-write";
 
 const log = logger("autonomous-engine");
 
@@ -94,15 +101,19 @@ async function autonomousEngineHandler(_req: NextRequest): Promise<Response> {
     result?: Record<string, unknown>
   ) {
     try {
-      const store = getStore();
-      const users = await store.list();
-      for (const user of users) {
-        if (user.deactivatedAt) continue;
-        const userBrainId = user.orgId ? user.brainId : user.brainId;
-        if (userBrainId !== taskBrainId && taskBrainId !== "system") continue;
+      // Only the task's own firm hears about it — a task without a firm (or
+      // queued under the aggregator brain) notifies nobody. Within the firm:
+      // active staff only, and a matter's task only to people who may open
+      // that matter (unreadable matter → admins only).
+      if (!taskBrainId || taskBrainId === "system") return;
+      const staff = activeStaffRecipients((await getRecipientsByBrain()).get(taskBrainId) ?? []);
+      const matterPermissions = caseSlug
+        ? await matterPermissionsForSlug(taskBrainId, caseSlug)
+        : new Map();
+      for (const user of recipientsForMatter(staff, caseSlug || null, matterPermissions)) {
         await createAutonomousTaskNotification({
           userId: user.id,
-          brainId: user.brainId,
+          brainId: taskBrainId,
           taskId,
           taskType,
           status,
@@ -336,11 +347,15 @@ async function executeInboxTriage(
 
   // Persist triage result to engine if we have a raw_slug
   if (raw_slug) {
-    try {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(String(raw_slug))}`, {
-        method: "PATCH",
+    // No PATCH route for pages in the engine: merge write via POST.
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
+          slug: String(raw_slug),
+          merge: true,
           frontmatter: {
             triage_urgency: card.urgency,
             triage_action_type: card.actionType,
@@ -354,15 +369,14 @@ async function executeInboxTriage(
           },
         }),
         signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // best-effort — triage result is still returned
-    }
+      },
+      "Triage-Ergebnis"
+    );
   }
 
   // Fire webhook for critical/high urgency triage results
   if (card.urgency === "critical" || card.urgency === "high") {
-    await dispatchWebhookEvent("document.received", {
+    await dispatchWebhookEvent(task.brain_id, "document.received", {
       message_id,
       subject,
       urgency: card.urgency,
@@ -523,28 +537,33 @@ Verwende eine formelle Anrede und Grußformel.`;
     if (res.ok) {
       const data = await res.json();
       draftText = String(data.text ?? data.content ?? data.answer ?? "");
-      draftSlug = draftId;
 
       // Persist the draft as a page in the engine
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: draftId,
-          title: `E-Mail-Entwurf: ${subject}`,
-          type: "email_draft",
-          content: draftText,
-          frontmatter: {
-            case_slug: case_slug ?? null,
-            recipient: recipient ?? null,
-            subject: subject ?? null,
-            status: "draft",
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug: draftId,
+            title: `E-Mail-Entwurf: ${subject}`,
+            type: "email_draft",
+            content: draftText,
+            frontmatter: {
+              case_slug: case_slug ?? null,
+              recipient: recipient ?? null,
+              subject: subject ?? null,
+              status: "draft",
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "E-Mail-Entwurf"
+      );
+      // Only a stored page is reported back as created.
+      draftSlug = draftId;
     }
   } catch (err) {
     log.warn("Email draft generation failed", { case_slug, error: String(err) });
@@ -566,7 +585,7 @@ Verwende eine formelle Anrede und Grußformel.`;
 
 async function executeClientUpdate(
   task: AutonomousTask,
-  headers: HeadersInit
+  headers: Record<string, string>
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
@@ -577,22 +596,24 @@ async function executeClientUpdate(
   let caseContext = "";
   if (case_slug) {
     try {
-      const activityRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=activity&limit=10&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (activityRes.ok) {
-        const activityData = await activityRes.json();
-        const activities = (
-          Array.isArray(activityData) ? activityData : (activityData.pages ?? [])
-        ) as Array<{
-          title: string;
-          frontmatter: { timestamp?: string; description?: string };
-        }>;
-        caseContext = activities
-          .map((a) => `- ${a.title}: ${a.frontmatter.description ?? ""}`)
-          .join("\n");
-      }
+      // case_slug is not an engine query param — filter on frontmatter
+      // (pre-fix this leaked other matters' activity into the context).
+      const activityPages = await listEnginePages(headers, "activity", 10_000, {
+        timeoutMs: 10_000,
+      });
+      const activities = activityPages
+        .filter((p) => p.frontmatter?.case_slug === case_slug)
+        .map(
+          (p) =>
+            p as unknown as {
+              title: string;
+              frontmatter: { timestamp?: string; description?: string; case_slug?: string };
+            }
+        );
+      caseContext = activities
+        .slice(0, 10)
+        .map((a) => `- ${a.title}: ${a.frontmatter.description ?? ""}`)
+        .join("\n");
     } catch {
       // best-effort
     }
@@ -636,29 +657,34 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
     if (res.ok) {
       const data = await res.json();
       updateText = String(data.text ?? data.content ?? data.answer ?? "");
-      updateSlug = slug;
 
       // Persist the client update
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `Mandanten-Update: ${label} — ${case_slug ?? ""}`,
-          type: "client_update",
-          content: updateText,
-          frontmatter: {
-            case_slug: case_slug ?? null,
-            update_type: update_type ?? "general",
-            client_name: client_name ?? null,
-            recipient: recipient ?? null,
-            status: "pending_approval",
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            title: `Mandanten-Update: ${label} — ${case_slug ?? ""}`,
+            type: "client_update",
+            content: updateText,
+            frontmatter: {
+              case_slug: case_slug ?? null,
+              update_type: update_type ?? "general",
+              client_name: client_name ?? null,
+              recipient: recipient ?? null,
+              status: "pending_approval",
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Mandanten-Update"
+      );
+      // Only a stored page is reported back as created.
+      updateSlug = slug;
     }
   } catch (err) {
     log.warn("Client update generation failed", { case_slug, error: String(err) });
@@ -680,7 +706,7 @@ Das Update soll verständlich, höflich und informativ sein. Verwende eine forme
 
 async function executeReportGeneration(
   task: AutonomousTask,
-  headers: HeadersInit
+  headers: Record<string, string>
 ): Promise<{
   requiresApproval: boolean;
   data?: Record<string, unknown>;
@@ -692,22 +718,29 @@ async function executeReportGeneration(
 
   if (case_slug) {
     try {
-      // Fetch time entries for the case
-      const timeRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=time_entry&limit=500&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (timeRes.ok) {
-        const timeData = await timeRes.json();
-        const entries = (Array.isArray(timeData) ? timeData : (timeData.pages ?? [])) as Array<{
-          frontmatter: {
-            minutes?: number;
-            billable?: boolean;
-            billed?: boolean;
-            rate?: number;
-            description?: string;
-          };
-        }>;
+      // Fetch time entries for the case. NOTE: engine /api/pages never
+      // evaluated a case_slug query param — it returned the whole type.
+      // Filtering on frontmatter.case_slug is the correct scope, and
+      // listEnginePages pages past the 100-row cap.
+      {
+        const timePages = await listEnginePages(headers, "time_entry", 10_000, {
+          timeoutMs: 10_000,
+        });
+        const entries = timePages
+          .filter((p) => p.frontmatter?.case_slug === case_slug)
+          .map(
+            (p) =>
+              p as unknown as {
+                frontmatter: {
+                  minutes?: number;
+                  billable?: boolean;
+                  billed?: boolean;
+                  rate?: number;
+                  description?: string;
+                  case_slug?: string;
+                };
+              }
+          );
 
         const totalMinutes = entries.reduce((sum, e) => sum + (e.frontmatter.minutes ?? 0), 0);
         const billableMinutes = entries
@@ -728,18 +761,19 @@ async function executeReportGeneration(
         };
       }
 
-      // Fetch deadlines for the case
-      const deadlineRes = await fetch(
-        `${ENGINE_URL}/api/pages?type=deadline&limit=100&case_slug=${encodeURIComponent(String(case_slug))}`,
-        { headers, signal: AbortSignal.timeout(10_000) }
-      );
-      if (deadlineRes.ok) {
-        const deadlineData = await deadlineRes.json();
-        const deadlines = (
-          Array.isArray(deadlineData) ? deadlineData : (deadlineData.pages ?? [])
-        ) as Array<{
-          frontmatter: { due_date?: string; status?: string };
-        }>;
+      // Fetch deadlines for the case — same case_slug scoping as above.
+      {
+        const deadlinePages = await listEnginePages(headers, "deadline", 10_000, {
+          timeoutMs: 10_000,
+        });
+        const deadlines = deadlinePages
+          .filter((p) => p.frontmatter?.case_slug === case_slug)
+          .map(
+            (p) =>
+              p as unknown as {
+                frontmatter: { due_date?: string; status?: string; case_slug?: string };
+              }
+          );
         reportData = {
           ...reportData,
           total_deadlines: deadlines.length,
@@ -788,28 +822,33 @@ Daten: ${JSON.stringify(reportData, null, 2)}`,
     if (res.ok) {
       const data = await res.json();
       reportText = String(data.text ?? data.content ?? data.summary ?? "");
-      reportSlug = slug;
 
       // Persist the report
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          title: `${label}: ${case_slug ?? ""}`,
-          type: "report",
-          content: reportText,
-          frontmatter: {
-            report_type: report_type ?? "case_summary",
-            case_slug: case_slug ?? null,
-            date_range: date_range ?? null,
-            generated_by: "autonomous_engine",
-            created_at: new Date().toISOString(),
-            ...reportData,
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            title: `${label}: ${case_slug ?? ""}`,
+            type: "report",
+            content: reportText,
+            frontmatter: {
+              report_type: report_type ?? "case_summary",
+              case_slug: case_slug ?? null,
+              date_range: date_range ?? null,
+              generated_by: "autonomous_engine",
+              created_at: new Date().toISOString(),
+              ...reportData,
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Bericht"
+      );
+      // Only a stored page is reported back as created.
+      reportSlug = slug;
     }
   } catch (err) {
     log.warn("Report generation failed", { case_slug, error: String(err) });

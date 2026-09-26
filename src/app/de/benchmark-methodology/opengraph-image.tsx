@@ -4,5 +4,5 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default function Image() {
-  return renderOgImage("Benchmark-Methodik — eine Kennzahl, offen beschrieben", "Methodik");
+  return renderOgImage("Methodik — wie die Suche arbeitet", "Methodik");
 }

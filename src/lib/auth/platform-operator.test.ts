@@ -4,6 +4,7 @@ import { isOpsHost, isPlatformOperator, operatorEmails } from "./platform-operat
 const operator = {
   email: "ops@subsumio.example",
   twoFactorEnabled: true,
+  emailVerifiedAt: "2026-01-01T00:00:00.000Z",
   deactivatedAt: null,
 };
 
@@ -60,5 +61,35 @@ describe("platform operator", () => {
     vi.stubEnv("OPS_HOSTS", "ops.staging.subsum.io");
     expect(isOpsHost("ops.staging.subsum.io")).toBe(true);
     expect(isOpsHost("ops.subsum.io")).toBe(false);
+  });
+});
+
+describe("isPlatformOperator — E-Mail-Bestätigung (SEC-12)", () => {
+  const prev = process.env.PLATFORM_OPERATOR_EMAILS;
+  beforeEach(() => {
+    process.env.PLATFORM_OPERATOR_EMAILS = "ops@subsumio.example";
+  });
+  afterEach(() => {
+    process.env.PLATFORM_OPERATOR_EMAILS = prev;
+  });
+
+  it("refuses a listed address whose email is not verified, even with 2FA", () => {
+    expect(
+      isPlatformOperator({
+        email: "ops@subsumio.example",
+        twoFactorEnabled: true,
+        emailVerifiedAt: null,
+      })
+    ).toBe(false);
+  });
+
+  it("accepts the listed, verified address with 2FA", () => {
+    expect(
+      isPlatformOperator({
+        email: "ops@subsumio.example",
+        twoFactorEnabled: true,
+        emailVerifiedAt: "2026-09-01T00:00:00.000Z",
+      })
+    ).toBe(true);
   });
 });

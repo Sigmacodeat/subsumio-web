@@ -11,6 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 
 export interface SupportSessionInfo {
+  /** Absent in older responses — treated as read-only. */
+  mode?: "read" | "write";
   orgName: string;
   reason: string;
   startedAt: string;
@@ -47,6 +49,7 @@ export function SupportSessionBanner({ session }: { session: SupportSessionInfo 
     >
       <ShieldAlert size={14} className="shrink-0" aria-hidden />
       <span className="font-semibold">Support-Zugriff aktiv</span>
+      <span>{session.mode === "write" ? "mit Schreibrecht" : "nur lesend"}</span>
       <span>
         Kanzlei: <strong>{session.orgName}</strong>
       </span>

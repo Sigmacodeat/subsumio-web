@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { DpaContent, PrivacyContent, PROCESSORS } from "@/components/legal/legal-content";
+import {
+  DpaContent,
+  ImprintContent,
+  PrivacyContent,
+  PROCESSORS,
+  TermsContent,
+} from "@/components/legal/legal-content";
+import { LEGAL_VERSIONS, formatLegalVersion } from "@/lib/auth/legal-acceptance";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
@@ -18,6 +25,7 @@ describe("Datenschutzerklärung und AVV — Auftragsverarbeiter", () => {
     "netcup",
     "Anthropic",
     "OpenRouter",
+    "Mistral",
     "Stripe",
     "Resend",
     "Sentry",
@@ -92,6 +100,32 @@ describe("Datenschutzerklärung — Website-Analyse", () => {
     const text = textOf(<PrivacyContent home="/at" />);
     expect(text).toContain("§ 165 Abs. 3 TKG 2021");
     expect(text).toContain("Cookie-Einstellungen");
-    expect(text).toContain("Stand: September 2026");
+    expect(text).toContain("Fassung vom 01.09.2026");
+  });
+});
+
+describe("Rechtstexte — keine Entwurfsvermerke/Platzhalter, elektronischer AVV", () => {
+  it("AVV: no draft notice, no fill-in placeholders, electronic conclusion", () => {
+    const dpa = textOf(<DpaContent home="/at" />);
+    expect(dpa).not.toMatch(/Entwurf/);
+    expect(dpa).not.toMatch(/\[Name des Verantwortlichen\]|\[Anschrift\]/);
+    expect(dpa).not.toMatch(/unterzeichnen Sie die Vorlage/);
+    expect(dpa).toMatch(/elektronisch abgeschlossen \(Art\. 28 Abs\. 9 DSGVO\)/);
+  });
+
+  it("AGB, Datenschutz and AVV show the version the acceptance record stores", () => {
+    expect(textOf(<TermsContent home="/at" />)).toContain(formatLegalVersion(LEGAL_VERSIONS.terms));
+    expect(textOf(<PrivacyContent home="/at" />)).toContain(
+      formatLegalVersion(LEGAL_VERSIONS.privacy)
+    );
+    expect(textOf(<DpaContent home="/at" />)).toContain(formatLegalVersion(LEGAL_VERSIONS.dpa));
+  });
+
+  it("AGB: contract with express acceptance at registration", () => {
+    expect(textOf(<TermsContent home="/at" />)).toMatch(/ausdrücklich\s+akzeptiert/);
+  });
+
+  it("imprint shows no UID placeholder", () => {
+    expect(textOf(<ImprintContent home="/at" />)).not.toMatch(/wird nach Zuteilung/);
   });
 });

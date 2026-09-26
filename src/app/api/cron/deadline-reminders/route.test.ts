@@ -8,6 +8,7 @@ import type { NextRequest } from "next/server";
 const m = vi.hoisted(() => ({
   settings: {} as Record<string, Record<string, unknown> | Error>,
   pages: {} as Record<string, Record<string, unknown[] | Error>>,
+  users: null as null | Map<string, Array<Record<string, unknown>>>,
   transports: [] as Array<{ host: string; sendMail: ReturnType<typeof vi.fn> }>,
   patch: vi.fn(),
 }));
@@ -28,20 +29,26 @@ vi.mock("@/lib/kanzlei-settings-server", () => ({
   }),
   isSmtpConfigured: (s: Record<string, unknown>) => !!(s.smtpHost && s.smtpUser && s.smtpPassword),
 }));
-vi.mock("@/lib/cron-utils", () => {
+vi.mock("@/lib/cron-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/cron-utils")>();
   const read = async (brainId: string, type: string) => {
     const v = m.pages[brainId]?.[type];
     if (v instanceof Error) throw v;
     return v ?? [];
   };
   return {
+    activeStaffRecipients: actual.activeStaffRecipients,
+    matterPermissionsBySlug: actual.matterPermissionsBySlug,
+    recipientsForMatter: actual.recipientsForMatter,
+    excludeDemoPages: actual.excludeDemoPages,
     fetchAllPagesStrict: vi.fn(read),
     fetchPages: vi.fn(read),
     getRecipientsByBrain: vi.fn(
       async () =>
+        m.users ??
         new Map([
-          ["brain-a", [{ id: "ua", email: "a@firm-a.test" }]],
-          ["brain-b", [{ id: "ub", email: "b@firm-b.test" }]],
+          ["brain-a", [{ id: "ua", email: "a@firm-a.test", role: "lawyer" }]],
+          ["brain-b", [{ id: "ub", email: "b@firm-b.test", role: "lawyer" }]],
         ])
     ),
   };
@@ -73,7 +80,10 @@ vi.mock("@/lib/push-send", () => ({ sendPushToUser: vi.fn(async () => 0) }));
 
 import { GET } from "./route";
 
-const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+// A fixed weekday: on Saturdays/Sundays the quiet-day rule (correctly) defers
+// routine reminders, which made these tests fail every weekend.
+const WEEKDAY_NOW = new Date("2026-09-23T08:00:00.000Z");
+const tomorrow = new Date(WEEKDAY_NOW.getTime() + 86_400_000).toISOString().slice(0, 10);
 const deadline = (slug: string) => ({
   slug,
   title: "Berufungsfrist",
@@ -85,7 +95,10 @@ const run = () =>
   );
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(WEEKDAY_NOW);
   vi.clearAllMocks();
+  m.users = null;
   m.transports.length = 0;
   m.patch.mockResolvedValue(Response.json({ ok: true }));
   vi.stubGlobal(
@@ -157,6 +170,7 @@ describe("cron deadline-reminders — Ruhetage", () => {
   // AbortSignal.timeout & Co. der Route normal weiterlaufen.
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-26T08:00:00Z") });
+    vi.setSystemTime(new Date("2026-09-26T08:00:00Z"));
     const page = (slug: string, fm: Record<string, unknown>) => ({
       slug,
       title: slug,
@@ -219,5 +233,108 @@ describe("cron deadline-reminders — Ruhetage", () => {
         reason: "smtp_not_configured",
       }),
     ]);
+  });
+
+  it("notifies only active staff with access to the matter, one mail per person", async () => {
+    // Not about quiet days: run on the fixed weekday so nothing is deferred.
+    vi.setSystemTime(WEEKDAY_NOW);
+    const { createDeadlineNotification } = await import("@/lib/comments");
+    m.users = new Map([
+      [
+        "brain-a",
+        [
+          { id: "admin", email: "admin@firm-a.test", role: "admin" },
+          { id: "lawyer", email: "lawyer@firm-a.test", role: "lawyer" },
+          { id: "walled", email: "walled@firm-a.test", role: "assistant" },
+          { id: "client", email: "client@client.test", role: "client_viewer" },
+          {
+            id: "gone",
+            email: "gone@firm-a.test",
+            role: "lawyer",
+            deactivatedAt: "2026-01-01T00:00:00Z",
+          },
+        ],
+      ],
+    ]);
+    m.pages = {
+      "brain-a": {
+        legal_case: [
+          {
+            slug: "cases/walled",
+            title: "Akte W",
+            type: "legal_case",
+            frontmatter: { permissions: { blocked_users: ["walled"] } },
+          },
+        ],
+        legal_deadline: [
+          {
+            slug: "legal/deadlines/w1",
+            title: "Berufungsfrist",
+            frontmatter: { due_date: tomorrow, status: "open", case_slug: "cases/walled" },
+          },
+        ],
+      },
+    };
+    const res = await run();
+    expect(res.status).toBe(200);
+    const sent = m.transports[0]!.sendMail.mock.calls.map((c) => (c[0] as { to: string }).to);
+    expect(sent.sort()).toEqual(["admin@firm-a.test", "lawyer@firm-a.test"]);
+    for (const to of sent) expect(to).not.toContain(",");
+    const notified = vi
+      .mocked(createDeadlineNotification)
+      .mock.calls.map((c) => (c[0] as { userId: string }).userId);
+    expect([...new Set(notified)].sort()).toEqual(["admin", "lawyer"]);
+  });
+});
+
+describe("cron deadline-reminders — stale intake notices", () => {
+  it("go to active staff only; an intake tied to a matter only to people with access", async () => {
+    const { createIntakeStaleNotification } = await import("@/lib/comments");
+    m.users = new Map([
+      [
+        "brain-a",
+        [
+          { id: "admin", email: "admin@firm-a.test", role: "admin" },
+          { id: "walled", email: "walled@firm-a.test", role: "lawyer" },
+          { id: "client", email: "client@client.test", role: "client_viewer" },
+          { id: "gone", email: "gone@firm-a.test", role: "lawyer", deactivatedAt: "2026-01-01" },
+        ],
+      ],
+    ]);
+    const old = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    m.pages = {
+      "brain-a": {
+        legal_case: [
+          {
+            slug: "cases/walled",
+            title: "Akte W",
+            frontmatter: { permissions: { blocked_users: ["walled"] } },
+          },
+        ],
+        intake_request: [
+          { slug: "intake/free", title: "I1", frontmatter: { status: "new", created_at: old } },
+          {
+            slug: "intake/tied",
+            title: "I2",
+            frontmatter: {
+              status: "accepted",
+              created_at: old,
+              converted_case_slug: "cases/walled",
+            },
+          },
+        ],
+      },
+    };
+    await run();
+    const calls = vi
+      .mocked(createIntakeStaleNotification)
+      .mock.calls.map((c) => c[0] as { userId: string; intakeSlug: string });
+    const to = (slug: string) =>
+      calls
+        .filter((c) => c.intakeSlug === slug)
+        .map((c) => c.userId)
+        .sort();
+    expect(to("intake/free")).toEqual(["admin", "walled"]);
+    expect(to("intake/tied")).toEqual(["admin"]);
   });
 });

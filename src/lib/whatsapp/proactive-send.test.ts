@@ -16,7 +16,11 @@ vi.mock("./outbound-tracker", () => ({
   getOutboundBrainId: vi.fn(async () => undefined),
 }));
 
-import { sendProactiveMessage } from "./proactive-send";
+// Organisations on this instance (brain → org lookup for the consent gate).
+const orgs: Array<{ id: string; brainId: string }> = [];
+vi.mock("@/lib/auth/store", () => ({ getOrgStore: () => ({ list: async () => orgs }) }));
+
+import { consentTenantKeysForBrain, sendProactiveMessage } from "./proactive-send";
 import { getWhatsAppWindowStore, __resetWhatsAppWindowStoreForTests } from "./window-store";
 import { getWhatsAppConsentStore, __resetWhatsAppConsentStoreForTests } from "./consent-store";
 import { phoneHash } from "./verify";
@@ -129,5 +133,60 @@ describe("sendProactiveMessage", () => {
     expect(res.messageId).toBe("wamid.test");
     expect(sendTemplate).toHaveBeenCalledTimes(1);
     expect(sendText).not.toHaveBeenCalled();
+  });
+
+  it("never relies on another firm's consent for the same number", async () => {
+    await grantConsent(); // recorded by firm "org-a"
+    const res = await sendProactiveMessage({
+      to: PHONE,
+      brainId: "brain-b",
+      orgId: "org-b",
+      scope: "daily_briefing",
+      template: TEMPLATE,
+    });
+    expect(res.sent).toBe(false);
+    expect(res.decision.reason).toBe("no_consent");
+    expect(sendTemplate).not.toHaveBeenCalled();
+  });
+
+  it("accepts the firm's consent recorded under its organisation id", async () => {
+    await grantConsent(); // orgId "org-a"
+    const res = await sendProactiveMessage({
+      to: PHONE,
+      brainId: "brain-of-org-a",
+      orgId: "org-a",
+      scope: "daily_briefing",
+      template: TEMPLATE,
+    });
+    expect(res.sent).toBe(true);
+  });
+
+  it("resolves the firm's organisation from its brain when the caller does not name it", async () => {
+    orgs.push({ id: "org-a", brainId: "brain-of-org-a" }, { id: "org-b", brainId: "brain-b" });
+    try {
+      expect(await consentTenantKeysForBrain("brain-of-org-a")).toEqual([
+        "brain-of-org-a",
+        "org-a",
+      ]);
+      expect(await consentTenantKeysForBrain("brain-solo")).toEqual(["brain-solo"]);
+      await grantConsent(); // orgId "org-a"
+      const own = await sendProactiveMessage({
+        to: PHONE,
+        brainId: "brain-of-org-a",
+        scope: "daily_briefing",
+        template: TEMPLATE,
+      });
+      expect(own.sent).toBe(true);
+      const foreign = await sendProactiveMessage({
+        to: PHONE,
+        brainId: "brain-b",
+        scope: "daily_briefing",
+        template: TEMPLATE,
+      });
+      expect(foreign.sent).toBe(false);
+      expect(foreign.decision.reason).toBe("no_consent");
+    } finally {
+      orgs.length = 0;
+    }
   });
 });

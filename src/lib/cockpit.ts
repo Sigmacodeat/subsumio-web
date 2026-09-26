@@ -1,76 +1,91 @@
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { isTombstoned } from "@/lib/tombstone";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 
+/**
+ * Read budget per type. Counts on the overview (Akten, Rechnungen, …) come
+ * from these lists, so the budget is generous; a type that has more pages than
+ * its budget is reported as capped (`capped_types`) and shown as "N+", never
+ * as an exact total.
+ */
 export const DEFAULT_TYPES: Record<string, number> = {
-  legal_case: 50,
-  legal_deadline: 50,
-  invoice: 50,
-  intake_request: 20,
+  legal_case: 500,
+  // Deadlines on the overviews come from the Fristen read model
+  // (src/lib/fristen-read-model.ts); this list is only the fallback.
+  legal_deadline: 200,
+  invoice: 500,
+  intake_request: 200,
   // bea_draft is intentionally absent: the beA dashboard is retired, so no
   // live surface consumes the type — fetching it would be dead engine load
   // on every cockpit/briefing request.
-  bea_message: 20,
-  document_request: 50,
-  signature_request: 50,
-  review_item: 20,
-  agent_action: 50,
-  document: 100,
-  legal_document: 100,
+  bea_message: 50,
+  document_request: 200,
+  signature_request: 200,
+  review_item: 100,
+  agent_action: 100,
+  document: 300,
+  legal_document: 300,
 };
 
 /** A page-list read that says whether it succeeded — an empty list and a
  *  failed read must never look the same (a hidden Frist is a malpractice
- *  risk). */
+ *  risk) — and whether it hit its budget (`capped`: there are more pages). */
 export interface PageListResult {
   pages: BrainPage[];
   ok: boolean;
+  capped: boolean;
 }
 
+/**
+ * Up to `limit` pages of a type, most recently updated first, paged through
+ * the engine cursor (one request is clamped to 100 rows). Deleted
+ * (tombstoned) pages are left out; a failed batch fails the whole read.
+ */
 export async function fetchPagesByTypeResult(
   headers: Record<string, string>,
   type: string,
   limit: number
 ): Promise<PageListResult> {
   try {
-    const params = new URLSearchParams();
-    params.set("type", type);
-    params.set("limit", String(limit));
-    const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
+    // One row over budget tells "exactly `limit`" apart from "more".
+    const raw = await listEnginePages(headers, type, limit + 1, {
+      strict: true,
+      includeTombstoned: true,
+      timeoutMs: 10_000,
     });
-    if (!res.ok) return { pages: [], ok: false };
-    const data = await res.json();
-    return Array.isArray(data)
-      ? { pages: data as BrainPage[], ok: true }
-      : { pages: [], ok: false };
+    const capped = raw.length > limit;
+    const pages = (capped ? raw.slice(0, limit) : raw).filter((p) => !isTombstoned(p));
+    return { pages: pages as unknown as BrainPage[], ok: true, capped };
   } catch {
-    return { pages: [], ok: false };
+    return { pages: [], ok: false, capped: false };
   }
 }
 
-/** Lenient variant: `[]` on failure. Prefer `fetchPagesByTypeResult` wherever
- *  the caller can surface a failed read. */
-export async function fetchPagesByType(
-  headers: Record<string, string>,
-  type: string,
-  limit: number
-): Promise<BrainPage[]> {
-  return (await fetchPagesByTypeResult(headers, type, limit)).pages;
+export interface PageListsResult {
+  pages: Record<string, BrainPage[]>;
+  /** Types whose read failed — their lists are empty, not "none". */
+  failedTypes: string[];
+  /** Types with more pages than their budget — counts are lower bounds. */
+  cappedTypes: string[];
 }
 
-export async function fetchPagesByTypes(
+export async function fetchPagesByTypesResult(
   headers: Record<string, string>,
   typesMap: Record<string, number>
-): Promise<Record<string, BrainPage[]>> {
+): Promise<PageListsResult> {
+  const entries = Object.entries(typesMap);
   const results = await Promise.all(
-    Object.entries(typesMap).map(([type, limit]) => fetchPagesByType(headers, type, limit))
+    entries.map(([type, limit]) => fetchPagesByTypeResult(headers, type, limit))
   );
-  const pages: Record<string, BrainPage[]> = {};
-  Object.keys(typesMap).forEach((type, i) => {
-    pages[type] = results[i] ?? [];
+  const out: PageListsResult = { pages: {}, failedTypes: [], cappedTypes: [] };
+  entries.forEach(([type], i) => {
+    const result = results[i];
+    out.pages[type] = result?.pages ?? [];
+    if (!result?.ok) out.failedTypes.push(type);
+    if (result?.capped) out.cappedTypes.push(type);
   });
-  return pages;
+  return out;
 }
 
 export async function fetchStats(headers: Record<string, string>): Promise<BrainStats | null> {

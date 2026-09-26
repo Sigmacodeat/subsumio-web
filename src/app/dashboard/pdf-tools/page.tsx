@@ -95,7 +95,14 @@ export default function PdfToolsPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        addToast({ type: "error", title: data.message ?? "PDF-Verarbeitung fehlgeschlagen" });
+        // apiError answers { error: "<Text>", code }.
+        addToast({
+          type: "error",
+          title:
+            typeof data.error === "string" && data.error
+              ? data.error
+              : (data.message ?? "PDF-Verarbeitung fehlgeschlagen"),
+        });
         return;
       }
       const blob = await res.blob();

@@ -30,6 +30,7 @@ vi.mock("@/lib/auth/session", () => ({
 
 import { getTenant } from "@/lib/tenants";
 import {
+  assertMemberMayBeDeactivated,
   reactivateTenant,
   setMemberRole,
   suspendTenant,
@@ -123,6 +124,18 @@ describe("suspending a firm", () => {
   });
 });
 
+describe("reactivation while the firm's data deletion is scheduled or done", () => {
+  it("refuses while a deletion is scheduled (cancel_deletion first) and after the data is deleted", async () => {
+    await suspendTenant(await firm(), { reason: "Vertrag gekündigt", operatorEmail: "ops@x" });
+    orgs.set("org-1", { ...orgs.get("org-1")!, deletionScheduledFor: "2026-10-26T00:00:00Z" });
+    expect(await code(reactivateTenant(await firm()))).toBe("deletion_scheduled");
+    expect(users.get("owner")!.deactivatedAt).toBeTruthy();
+    orgs.set("org-1", { ...orgs.get("org-1")!, dataDeletedAt: "2026-10-27T00:00:00Z" });
+    expect(await code(reactivateTenant(await firm()))).toBe("data_deleted");
+    expect(users.get("lawyer")!.deactivatedAt).toBeTruthy();
+  });
+});
+
 describe("roles and ownership", () => {
   it("keeps the owner admin and never leaves a firm without an admin", async () => {
     expect(await code(setMemberRole(await firm(), "owner", "lawyer"))).toBe(
@@ -151,5 +164,24 @@ describe("roles and ownership", () => {
     expect(revoked).toContain("lawyer");
     expect(await code(transferOwnership(await firm(), "left"))).toBe("member_deactivated");
     expect(await code(transferOwnership(await firm(), "solo"))).toBe("not_a_member");
+  });
+});
+
+describe("deactivating one member (operator)", () => {
+  it("never deactivates the owner alone", async () => {
+    expect(await code(assertMemberMayBeDeactivated(await firm(), "owner"))).toBe(
+      "owner_must_stay_active"
+    );
+  });
+
+  it("keeps an active admin — a deactivated admin does not count", async () => {
+    users.set("owner", member("owner", "lawyer"));
+    users.set("admin2", member("admin2", "admin"));
+    users.set("admin3", member("admin3", "admin", { deactivatedAt: "2026-09-02" }));
+    expect(await code(assertMemberMayBeDeactivated(await firm(), "admin2"))).toBe("last_admin");
+  });
+
+  it("allows other members", async () => {
+    expect(await code(assertMemberMayBeDeactivated(await firm(), "lawyer"))).toBe("ok");
   });
 });

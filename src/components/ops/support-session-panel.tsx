@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { csrfFetch } from "@/lib/csrf";
 
 interface ActiveSession {
+  mode?: "read" | "write";
   orgId: string;
   orgName: string;
   reason: string;
@@ -23,17 +24,23 @@ function fmt(iso: string): string {
 export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName: string }) {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<ActiveSession | null>(null);
+  // The firm's support approval: sessions start only while it is valid.
+  const [grant, setGrant] = useState<{ mode: "read" | "write"; expiresAt: string } | null>(null);
   const [reason, setReason] = useState("");
+  const [writeAccess, setWriteAccess] = useState(false);
+  const [writeReason, setWriteReason] = useState("");
   const [starting, setStarting] = useState(false);
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/admin/support-session")
+    fetch(`/api/admin/support-session?orgId=${encodeURIComponent(orgId)}`)
       .then((r) => r.json())
       .then((body) => {
-        if (!cancelled) setActive(body?.data?.session ?? null);
+        if (cancelled) return;
+        setActive(body?.data?.session ?? null);
+        setGrant(body?.data?.grant ?? null);
       })
       .catch(() => {})
       .finally(() => {
@@ -42,7 +49,7 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [orgId]);
 
   async function start() {
     setError(null);
@@ -50,12 +57,21 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
       setError("Bitte einen aussagekräftigen Grund angeben (mind. 10 Zeichen).");
       return;
     }
+    if (writeAccess && writeReason.trim().length < 10) {
+      setError("Schreibzugriff braucht eine eigene Begründung (mind. 10 Zeichen).");
+      return;
+    }
     setStarting(true);
     try {
       const res = await csrfFetch("/api/admin/support-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId, reason: reason.trim() }),
+        body: JSON.stringify({
+          orgId,
+          reason: reason.trim(),
+          mode: writeAccess ? "write" : "read",
+          ...(writeAccess ? { writeReason: writeReason.trim() } : {}),
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -64,6 +80,8 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
       }
       setActive(body?.data?.session ?? null);
       setReason("");
+      setWriteAccess(false);
+      setWriteReason("");
     } finally {
       setStarting(false);
     }
@@ -96,15 +114,17 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
         Support-Zugriff
       </h2>
       <p className="mb-4 text-xs text-[color:var(--ds-text-muted)]">
-        Direkter, protokollierter Zugriff auf die Kanzlei-Daten — jederzeit, ohne Freigabe durch die
-        Kanzlei, aber mit Pflicht-Grund, für die Kanzlei sichtbar im Audit-Log und auf 60 Minuten
-        begrenzt.
+        Protokollierter Zugriff auf die Kanzlei-Daten — nur solange die Kanzlei eine
+        Support-Freigabe erteilt hat und nur in deren Umfang, mit Pflicht-Grund, für die Kanzlei
+        sichtbar im Audit-Log und auf 60 Minuten begrenzt. Standardmäßig nur lesend; Schreibzugriff
+        nur mit eigener Begründung und wenn die Freigabe ihn umfasst.
       </p>
 
       {activeForThisOrg && active ? (
         <div className="space-y-3 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
           <p className="text-sm font-medium text-[color:var(--ds-warning-text)]">
-            Aktive Sitzung für {orgName}
+            Aktive Sitzung für {orgName} ·{" "}
+            {active.mode === "write" ? "mit Schreibrecht" : "nur lesend"}
           </p>
           <dl className="grid gap-1 text-xs text-[color:var(--ds-warning-text)]">
             <div>
@@ -144,14 +164,39 @@ export function SupportSessionPanel({ orgId, orgName }: { orgId: string; orgName
               wird beendet, wenn Sie hier eine neue starten.
             </p>
           )}
+          <p
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2 text-xs"
+            data-testid="support-grant-status"
+          >
+            {grant
+              ? `Freigabe der Kanzlei: ${grant.mode === "write" ? "lesen und ändern" : "nur lesen"}, gültig bis ${fmt(grant.expiresAt)}.`
+              : "Die Kanzlei hat derzeit keine Support-Freigabe erteilt — ein Zugriff ist nicht möglich."}
+          </p>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Grund für den Zugriff (z. B. Ticket-Nr., gemeldetes Problem)…"
             rows={2}
           />
+          <label className="flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              disabled={grant?.mode !== "write"}
+              checked={writeAccess}
+              onChange={(e) => setWriteAccess(e.target.checked)}
+            />
+            Schreibzugriff (Standard: nur lesen)
+          </label>
+          {writeAccess && (
+            <Textarea
+              value={writeReason}
+              onChange={(e) => setWriteReason(e.target.value)}
+              placeholder="Warum sind Änderungen nötig? (wird der Kanzlei im Audit-Log angezeigt)…"
+              rows={2}
+            />
+          )}
           {error && <p className="text-xs text-[color:var(--ds-danger-text)]">{error}</p>}
-          <Button size="sm" loading={starting} onClick={() => void start()}>
+          <Button size="sm" loading={starting} disabled={!grant} onClick={() => void start()}>
             Support-Zugriff starten (60 Min.)
           </Button>
         </div>

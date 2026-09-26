@@ -20,8 +20,9 @@ import {
   type OutboundScope,
   type QuietHours,
 } from "@/lib/whatsapp/outbound-gate";
-import { getSmsConsentStore, hasActiveSmsConsent } from "./consent-store";
+import { getSmsConsentStore, hasActiveSmsConsent, smsTenantKeys } from "./consent-store";
 import { sendSms, type SmsSendResult } from "./twilio";
+import { recordSmsOutbound } from "./outbound-index";
 
 export type SmsBlockReason = "no_consent" | "quiet_hours" | "not_configured" | "provider_error";
 
@@ -36,17 +37,24 @@ export interface GuardedSmsResult {
 export async function sendGuardedSms(params: {
   to: string;
   brainId: string;
+  /** The sending firm's organisation id; consent is looked up per firm. */
+  orgId?: string | null;
   scope: OutboundScope;
   body: string;
   urgent?: boolean;
   quietHours?: QuietHours;
   /** Injectable for tests — defaults to the Twilio adapter. */
-  send?: (p: { to: string; body: string }) => Promise<SmsSendResult>;
+  send?: (p: { to: string; body: string; statusRef?: string }) => Promise<SmsSendResult>;
 }): Promise<GuardedSmsResult> {
   const normalized = normalizePhone(params.to);
   const hash = phoneHash(normalized);
 
-  const consented = await hasActiveSmsConsent(getSmsConsentStore(), hash, params.scope);
+  const consented = await hasActiveSmsConsent(
+    getSmsConsentStore(),
+    smsTenantKeys(params.brainId, params.orgId),
+    hash,
+    params.scope
+  );
   if (!consented) {
     await logAudit("sms.outbound_blocked", "sms_outbound", {
       brainId: params.brainId,
@@ -64,7 +72,7 @@ export async function sendGuardedSms(params: {
   }
 
   const send = params.send ?? sendSms;
-  const result = await send({ to: normalized, body: params.body });
+  const result = await send({ to: normalized, body: params.body, statusRef: params.brainId });
   if (!result.ok) {
     const reason: SmsBlockReason = result.notConfigured ? "not_configured" : "provider_error";
     await logAudit("sms.outbound_blocked", "sms_outbound", {
@@ -74,6 +82,10 @@ export async function sendGuardedSms(params: {
     return { sent: false, reason, providerError: result.error };
   }
 
+  // Delivery callbacks carry only the SID — remember which firm sent it.
+  if (result.sid) {
+    await recordSmsOutbound(result.sid, params.brainId, hash).catch(() => undefined);
+  }
   await logAudit("sms.outbound_sent", "sms_outbound", {
     brainId: params.brainId,
     details: { phoneHash: hash, scope: params.scope, sid: result.sid },

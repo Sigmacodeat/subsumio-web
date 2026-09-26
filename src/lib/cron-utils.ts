@@ -10,6 +10,7 @@ import { createSchemaInit } from "@/lib/schema-init";
 import { billingUserOf } from "@/lib/billing/billing-account";
 import { effectivePlan } from "@/lib/billing/trial";
 import { listEnginePages } from "@/lib/engine-pages";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
 
 /**
  * Map an async worker over items with a bounded concurrency (default 8), never
@@ -83,6 +84,17 @@ export async function fetchAllPagesStrict(brainId: string, type: string): Promis
 }
 
 /**
+ * The fictional demo matter seeded for every new firm (every page carries
+ * `demo: true`) stays visible in the dashboard, but must never trigger
+ * reminders, escalations or briefings.
+ */
+export function excludeDemoPages<T extends { frontmatter?: Record<string, unknown> | null }>(
+  pages: T[]
+): T[] {
+  return pages.filter((p) => p.frontmatter?.demo !== true);
+}
+
+/**
  * Fetch pages of multiple types in parallel. Returns a map keyed by type.
  * Each type fetch is independent — a failure for one type returns [] for that key.
  */
@@ -97,6 +109,13 @@ export async function batchFetchPages(
   return Object.fromEntries(entries);
 }
 
+/** brainId → firm id for every firm's shared brain. */
+async function firmBrainOwners(): Promise<Map<string, string>> {
+  const owners = new Map<string, string>();
+  for (const org of await getOrgStore().list()) owners.set(org.brainId, org.id);
+  return owners;
+}
+
 /**
  * Build a brainId → User[] mapping from the user store.
  * Org members share the org's brain. Used by all cron routes.
@@ -105,9 +124,11 @@ export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
   const users = await getStore().list();
   const orgStore = getOrgStore();
   const orgCache = new Map<string, string>();
+  const firmBrains = await firmBrainOwners();
   const recipientsByBrain = new Map<string, User[]>();
   for (const user of users) {
     let brainId = user.brainId;
+    let viaFirm = false;
     if (user.orgId) {
       let cachedBrainId = orgCache.get(user.orgId);
       if (!cachedBrainId) {
@@ -115,8 +136,13 @@ export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
         cachedBrainId = org?.brainId;
         if (cachedBrainId) orgCache.set(user.orgId, cachedBrainId);
       }
-      if (cachedBrainId) brainId = cachedBrainId;
+      if (cachedBrainId) {
+        brainId = cachedBrainId;
+        viaFirm = true;
+      }
     }
+    // Someone who left a firm is not a recipient of its brain (auth/firm-brain.ts).
+    if (!viaFirm && firmBrains.has(brainId)) continue;
     const list = recipientsByBrain.get(brainId) ?? [];
     list.push(user);
     recipientsByBrain.set(brainId, list);
@@ -138,6 +164,8 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
   const result = new Map<string, User[]>();
   const brainPaid = new Map<string, boolean>();
 
+  const firmBrains = await firmBrainOwners();
+
   for (const user of users) {
     let brainId = user.brainId;
     let payer: User | undefined = user;
@@ -147,6 +175,9 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
       brainId = org.brainId;
       const payerId = billingUserOf(org);
       payer = byId.get(payerId) ?? (await store.getById(payerId)) ?? undefined;
+    } else if (firmBrains.has(brainId)) {
+      // Left a firm whose brain was their own — not a member of it any more.
+      continue;
     }
     let paid = brainPaid.get(brainId);
     if (paid === undefined) {
@@ -159,6 +190,125 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
     result.set(brainId, list);
   }
   return result;
+}
+
+// ── Matter-aware notification recipients ─────────────────────────────────
+
+const STAFF_ROLES = new Set(["admin", "lawyer", "assistant"]);
+
+/** Active firm staff only — never client accounts, deactivated or role-less users. */
+export function activeStaffRecipients(users: readonly User[]): User[] {
+  return users.filter((u) => !u.deactivatedAt && Boolean(u.role) && STAFF_ROLES.has(u.role));
+}
+
+/** `permissions` of every matter, keyed by slug (from a full legal_case read). */
+export function matterPermissionsBySlug(
+  cases: readonly EnginePage[]
+): Map<string, MatterPermissions> {
+  const map = new Map<string, MatterPermissions>();
+  for (const page of cases) {
+    const raw = page.frontmatter?.permissions;
+    map.set(page.slug, raw && typeof raw === "object" ? (raw as MatterPermissions) : {});
+  }
+  return map;
+}
+
+/**
+ * Access rules of ONE matter, for notices outside the batch crons (webhooks,
+ * the task queue) that must not read every matter of the firm. A matter that
+ * cannot be read yields an empty lookup — admins only (see
+ * mayReceiveMatterNotice).
+ */
+export async function matterPermissionsForSlug(
+  brainId: string,
+  caseSlug: string
+): Promise<Map<string, MatterPermissions>> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${caseSlug.split("/").map(encodeURIComponent).join("/")}`,
+      { headers: engineHeadersForBrain(brainId), signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) return new Map();
+    const page = (await res.json()) as { slug?: unknown; frontmatter?: Record<string, unknown> };
+    // A different page (e.g. a redirect to another slug) is not this matter.
+    if (page.slug !== undefined && page.slug !== caseSlug) return new Map();
+    return matterPermissionsBySlug([{ slug: caseSlug, title: "", frontmatter: page.frontmatter }]);
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * May this person be told about something of this matter (deadline title,
+ * matter name)? Active staff only; the matter's visibility, team, grants and
+ * ethical wall apply exactly as when opening the matter. Notices without a
+ * matter go to all active staff. A matter that is not in the lookup (deleted,
+ * unreadable) is known to firm admins only — fail-closed for everybody else.
+ */
+export function mayReceiveMatterNotice(
+  user: User,
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): boolean {
+  if (activeStaffRecipients([user]).length === 0) return false;
+  if (!caseSlug) return true;
+  const perms = permissions.get(caseSlug);
+  if (!perms) return user.role === "admin";
+  return matterAccessLevel({ userId: user.id, role: user.role }, perms) !== "none";
+}
+
+/** Recipients of a matter notice among the firm's users (see mayReceiveMatterNotice). */
+export function recipientsForMatter(
+  users: readonly User[],
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): User[] {
+  return users.filter((u) => mayReceiveMatterNotice(u, caseSlug, permissions));
+}
+
+/**
+ * Recipients of a firm-wide notice whose content spans ALL matters (e.g. an
+ * AI-written briefing that may name any matter): active staff with access to
+ * every matter of the firm — nobody behind a wall, outside a restricted team
+ * or without a grant on a confidential matter. If the matters cannot be read
+ * completely, firm admins only (fail-closed).
+ */
+export async function recipientsForAllMatters(
+  brainId: string,
+  users: readonly User[]
+): Promise<User[]> {
+  const staff = activeStaffRecipients(users);
+  if (staff.length === 0) return [];
+  let cases: EnginePage[];
+  try {
+    cases = await fetchAllPagesStrict(brainId, "legal_case");
+  } catch {
+    return staff.filter((u) => u.role === "admin");
+  }
+  const permissions = matterPermissionsBySlug(cases);
+  return staff.filter((u) => cases.every((c) => mayReceiveMatterNotice(u, c.slug, permissions)));
+}
+
+/**
+ * Matter notice for a recipient whose person is not known (e.g. a shared
+ * WhatsApp number bound to a role only): only matters without any access
+ * restriction — no wall, no team list, no restricted visibility, no grants.
+ */
+export function mayReceiveMatterNoticeAnonymously(
+  role: string | null | undefined,
+  caseSlug: string | null | undefined,
+  permissions: ReadonlyMap<string, MatterPermissions>
+): boolean {
+  if (!role || !STAFF_ROLES.has(role)) return false;
+  if (!caseSlug) return true;
+  const perms = permissions.get(caseSlug);
+  if (!perms) return false;
+  const restricted =
+    (perms.blocked_users ?? []).length > 0 ||
+    (perms.allowed_users ?? []).length > 0 ||
+    (perms.grants ?? []).length > 0 ||
+    (perms.visibility ?? "full") !== "full";
+  return !restricted;
 }
 
 /**

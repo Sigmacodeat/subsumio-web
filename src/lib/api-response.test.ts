@@ -13,6 +13,7 @@ import {
   apiPaginated,
   apiStream,
   apiCached,
+  readApiError,
 } from "./api-response";
 
 describe("apiError", () => {
@@ -246,5 +247,40 @@ describe("apiCached", () => {
   test("uses custom tag for ETag when provided", () => {
     const res = apiCached({ data: 1 }, { tag: "custom-tag" });
     expect(res.headers.get("ETag")).toBe('"custom-tag"');
+  });
+});
+
+describe("readApiError", () => {
+  test("apiError envelope: `error` is the text, `code` the code", () => {
+    expect(readApiError({ error: "Nicht gefunden", code: "not_found" })).toEqual({
+      message: "Nicht gefunden",
+      code: "not_found",
+    });
+  });
+
+  test("legacy envelope: `error` is the code, `message` the text", () => {
+    expect(readApiError({ error: "page_exists", message: "Existiert bereits." })).toEqual({
+      message: "Existiert bereits.",
+      code: "page_exists",
+    });
+  });
+
+  test("a bare code without text is used for both", () => {
+    expect(readApiError({ error: "csrf_token_invalid" })).toEqual({
+      message: "csrf_token_invalid",
+      code: "csrf_token_invalid",
+    });
+  });
+
+  test("free text without code stays text only", () => {
+    expect(readApiError({ error: "Etwas ist schiefgelaufen" })).toEqual({
+      message: "Etwas ist schiefgelaufen",
+    });
+  });
+
+  test("falls back for empty or non-object bodies", () => {
+    expect(readApiError(null, "Fehler")).toEqual({ message: "Fehler" });
+    expect(readApiError({}, "Fehler")).toEqual({ message: "Fehler" });
+    expect(readApiError("Plain text")).toEqual({ message: "Plain text" });
   });
 });

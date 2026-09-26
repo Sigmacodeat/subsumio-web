@@ -160,6 +160,35 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
     expect(pgResult?.slug).toBe("originals/talks/article-outline-fat-code");
   });
 
+  test("listPages frontmatterAny: same rows on both engines", async () => {
+    for (const eng of [pgEngine, pgliteEngine] as BrainEngine[]) {
+      for (const [slug, fm] of [
+        ["test/parity-fm-a", { case_slug: "legal/cases/parity-a" }],
+        ["test/parity-fm-b", { case_title: "Parity B" }],
+        ["test/parity-fm-c", { case_slug: "legal/cases/parity-c" }],
+      ] as const) {
+        await eng.putPage(slug, {
+          type: "note",
+          title: slug,
+          compiled_truth: "fm parity",
+          frontmatter: { ...fm },
+        });
+      }
+    }
+    const filter = {
+      type: "note" as const,
+      limit: 100,
+      frontmatterAny: [
+        ["case_slug", "legal/cases/parity-a"],
+        ["case_title", "Parity B"],
+      ] as Array<[string, string]>,
+    };
+    const pg = (await pgEngine.listPages(filter)).map((p) => p.slug).sort();
+    const pl = (await pgliteEngine.listPages(filter)).map((p) => p.slug).sort();
+    expect(pg).toEqual(["test/parity-fm-a", "test/parity-fm-b"]);
+    expect(pl).toEqual(pg);
+  });
+
   test("searchVector: top result matches between engines", async () => {
     const queryVec = basisEmbedding(7); // article direction
     const pgResults = await pgEngine.searchVector(queryVec, { limit: 5 });
@@ -375,6 +404,41 @@ describeBoth("Engine parity — Postgres vs PGLite", () => {
       const pglite = await pgliteEngine.getPage(slug);
       expect(pg).toBeNull();
       expect(pglite).toBeNull();
+    }
+  });
+
+  test("purgeDeletedPages parity: files rows go with the purged page on both engines", async () => {
+    for (const engine of [pgEngine, pgliteEngine]) {
+      await engine.putPage("wiki/purge-files", {
+        type: "note",
+        title: "purge",
+        compiled_truth: "body",
+        timeline: "",
+      });
+      await engine.executeRaw(
+        `INSERT INTO files (source_id, page_slug, filename, storage_path, content_hash)
+         VALUES ('default', 'wiki/purge-files', 'x.pdf', 'clean/parity/wiki/purge-files/x.pdf', 'hp')`
+      );
+      await engine.softDeletePage("wiki/purge-files");
+      await engine.executeRaw(
+        `UPDATE pages SET deleted_at = now() - INTERVAL '73 hours' WHERE slug = 'wiki/purge-files'`
+      );
+    }
+    const pg = await pgEngine.purgeDeletedPages(72);
+    const pglite = await pgliteEngine.purgeDeletedPages(72);
+    for (const r of [pg, pglite]) {
+      expect(r.slugs).toContain("wiki/purge-files");
+      expect(r.files).toContainEqual({
+        sourceId: "default",
+        pageSlug: "wiki/purge-files",
+        storagePath: "clean/parity/wiki/purge-files/x.pdf",
+      });
+    }
+    for (const engine of [pgEngine, pgliteEngine]) {
+      const left = await engine.executeRaw<{ n: number }>(
+        `SELECT COUNT(*)::int AS n FROM files WHERE page_slug = 'wiki/purge-files'`
+      );
+      expect(left[0].n).toBe(0);
     }
   });
 
@@ -755,5 +819,183 @@ describeBoth("Engine parity — page array ops", () => {
       { id: "t2", minutes: 30, billed: true, invoice_number: "INV-1" },
       { id: "t3", minutes: 15, billed: true, invoice_number: "INV-2" },
     ]);
+  });
+
+  test("contradiction runs: source_id is stored and loadContradictionsTrend filters by source", async () => {
+    const row = (run_id: string, source_id?: string) => ({
+      run_id,
+      judge_model: "parity",
+      prompt_version: "1",
+      queries_evaluated: 1,
+      queries_with_contradiction: 0,
+      total_contradictions_flagged: 0,
+      wilson_ci_lower: 0,
+      wilson_ci_upper: 1,
+      judge_errors_total: 0,
+      cost_usd_total: 0.25,
+      duration_ms: 1,
+      source_tier_breakdown: {},
+      report_json: { per_query: [] },
+      ...(source_id ? { source_id } : {}),
+    });
+    const load = async (eng: BrainEngine) => {
+      await eng.writeContradictionsRun(row("parity-run-a", "parity-firm-a"));
+      await eng.writeContradictionsRun(row("parity-run-b", "parity-firm-b"));
+      await eng.writeContradictionsRun(row("parity-run-host"));
+      const scoped = await eng.loadContradictionsTrend(1, { sourceIds: ["parity-firm-a"] });
+      const all = await eng.loadContradictionsTrend(1);
+      return {
+        scoped: scoped.map((r) => [r.run_id, r.source_id, r.cost_usd_total]),
+        all: all
+          .filter((r) => r.run_id.startsWith("parity-run-"))
+          .map((r) => [r.run_id, r.source_id])
+          .sort(),
+      };
+    };
+    const pg = await load(pgEngine);
+    const pl = await load(pgliteEngine);
+    expect(pg.scoped).toEqual([["parity-run-a", "parity-firm-a", 0.25]]);
+    expect(pg.all).toEqual([
+      ["parity-run-a", "parity-firm-a"],
+      ["parity-run-b", "parity-firm-b"],
+      ["parity-run-host", null],
+    ]);
+    expect(pl).toEqual(pg);
+  });
+
+  test("takes / scorecard / calibration / salience / anomalies honour the source scope on both engines", async () => {
+    const seed = async (eng: BrainEngine) => {
+      for (const src of ["parity-scope-a", "parity-scope-b"]) {
+        await eng.executeRaw(
+          "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+          [src]
+        );
+        for (const n of [1, 2]) {
+          await eng.putPage(
+            `parity-scope/${src}-${n}`,
+            { type: "note", title: `${src} ${n}`, compiled_truth: "scope", timeline: "" },
+            { sourceId: src }
+          );
+        }
+        const page = await eng.getPage(`parity-scope/${src}-1`, { sourceId: src });
+        await eng.addTakesBatch([
+          {
+            page_id: page!.id,
+            row_num: 1,
+            claim: `parity scope ${src}`,
+            kind: "bet",
+            holder: "parity-scope-holder",
+            weight: 0.8,
+          },
+        ]);
+      }
+      await eng.executeRaw(
+        `UPDATE takes SET resolved_quality = 'correct', resolved_at = now()
+          WHERE holder = 'parity-scope-holder'`
+      );
+    };
+    const read = async (eng: BrainEngine) => {
+      const scope = { sourceId: "parity-scope-a" };
+      const today = new Date().toISOString().slice(0, 10);
+      const takes = await eng.listTakes({ holder: "parity-scope-holder", ...scope });
+      const card = await eng.getScorecard({ holder: "parity-scope-holder", ...scope }, undefined);
+      const curve = await eng.getCalibrationCurve(
+        { holder: "parity-scope-holder", ...scope },
+        undefined
+      );
+      const salience = await eng.getRecentSalience({
+        days: 1,
+        slugPrefix: "parity-scope",
+        ...scope,
+      });
+      const anomalies = await eng.findAnomalies({ since: today, sigma: 0, ...scope });
+      return {
+        takes: takes.map((t) => t.claim),
+        bets: card.total_bets,
+        curveN: curve.reduce((n, b) => n + b.n, 0),
+        salience: salience.map((r) => r.source_id).sort(),
+        anomalySlugs: anomalies
+          .flatMap((a) => a.page_slugs)
+          .filter((x) => x.startsWith("parity-scope/"))
+          .sort(),
+      };
+    };
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    const pg = await read(pgEngine);
+    expect(pg.takes).toEqual(["parity scope parity-scope-a"]);
+    expect(pg.bets).toBe(1);
+    expect(pg.curveN).toBe(1);
+    expect(new Set(pg.salience)).toEqual(new Set(["parity-scope-a"]));
+    expect(pg.anomalySlugs.every((x) => x.includes("parity-scope-a"))).toBe(true);
+    expect(await read(pgliteEngine)).toEqual(pg);
+  });
+
+  test("countPagesByStatus: same grouped counts on both engines", async () => {
+    const src = "parity-counts";
+    const seed = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [src]
+      );
+      const rows: Array<[string, Record<string, unknown>]> = [
+        ["pc/a", { status: "open", due_date: "2030-01-10" }],
+        ["pc/b", { status: "Open", date: "2030-02-10" }],
+        ["pc/c", { status: "done", due_date: "2030-01-01" }],
+        ["pc/d", { status: "tombstoned", due_date: "2030-01-01" }],
+        ["pc/e", {}],
+      ];
+      for (const [slug, fm] of rows) {
+        await eng.putPage(
+          slug,
+          { type: "note", title: slug, compiled_truth: "c", timeline: "", frontmatter: fm },
+          { sourceId: src }
+        );
+      }
+    };
+    const read = async (eng: BrainEngine) =>
+      (
+        await eng.countPagesByStatus({
+          types: ["note"],
+          dateFields: ["due_date", "date"],
+          dateBefore: "2030-01-31",
+          sourceId: src,
+        })
+      ).sort((x, y) => (x.status < y.status ? -1 : 1));
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    const pg = await read(pgEngine);
+    expect(pg.find((r) => r.status === "open")).toMatchObject({ count: 2, before_count: 1 });
+    expect(pg.find((r) => r.status === "tombstoned")).toBeUndefined();
+    expect(await read(pgliteEngine)).toEqual(pg);
+  });
+
+  test("listPages textMatch: same substring matches on both engines", async () => {
+    const src = "parity-textmatch";
+    const seed = async (eng: BrainEngine) => {
+      await eng.executeRaw(
+        "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+        [src]
+      );
+      for (const [slug, title, fm] of [
+        ["ptm/otto", "Otto", { name: "Otto Altgegner", email: "otto@example.test" }],
+        ["ptm/firma", "Firma", { company: "Acme 100% GmbH" }],
+        ["ptm/case", "Akte", { case_number: "3 Cg 12/30" }],
+      ] as const) {
+        await eng.putPage(
+          slug,
+          { type: "note", title, compiled_truth: "t", timeline: "", frontmatter: { ...fm } },
+          { sourceId: src }
+        );
+      }
+    };
+    const read = async (eng: BrainEngine, q: string) =>
+      (await eng.listPages({ sourceId: src, textMatch: q, limit: 50 })).map((p) => p.slug).sort();
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    for (const q of ["OTTO", "example.test", "100%", "cg 12", "%%"]) {
+      expect(await read(pgliteEngine, q)).toEqual(await read(pgEngine, q));
+    }
+    expect(await read(pgEngine, "100%")).toEqual(["ptm/firma"]);
   });
 });

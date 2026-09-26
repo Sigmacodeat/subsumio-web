@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { getStore, getOrgStore, buildNewOrg, toPublic, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { detachFromFirm } from "@/lib/auth/firm-brain";
+import { visibleOrgMembers } from "@/lib/team-visibility";
 
 const orgPostSchema = z.object({
   name: z.string().trim().min(2, "invalid_name").max(80, "invalid_name"),
@@ -21,9 +23,11 @@ export const GET = createHandler(
     const org = await getOrgStore().getById(ctx.user.orgId);
     if (!org) return Response.json({ org: null });
 
-    const members = (await getStore().list())
-      .filter((u) => u.orgId === org.id)
-      .map((u) => ({ ...toPublic(u), isOwner: u.id === org.ownerId }));
+    const orgUsers = await getStore().listByOrg(org.id);
+    const members = visibleOrgMembers(ctx.user, orgUsers).map((u) => ({
+      ...toPublic(u),
+      isOwner: u.id === org.ownerId,
+    }));
     return Response.json({
       org: {
         id: org.id,
@@ -71,7 +75,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: orgPostSchema,
     audit: (_ctx, body) => ({
-      action: "team.invite" as const,
+      action: "org.create" as const,
       entityType: "org",
       details: { name: body.name },
     }),
@@ -112,7 +116,7 @@ export const DELETE = createHandler(
     }
 
     if (ctx.user.id === org.ownerId) {
-      const memberCount = (await getStore().list()).filter((u) => u.orgId === org.id).length;
+      const memberCount = (await getStore().listByOrg(org.id)).length;
       if (memberCount > 1) {
         return apiError("owner_must_remove_members_first", "Zuerst Mitglieder entfernen", 409);
       }
@@ -126,7 +130,8 @@ export const DELETE = createHandler(
     // failed leave then leaves a dead invite (recoverable), not a live one.
     const inviteRevokedAt = withInviteRevoked(org.inviteRevokedAt, ctx.user.email);
     await orgs.update(org.id, { inviteRevokedAt });
-    await getStore().update(ctx.user.id, { orgId: null });
+    // A founder who hands over the firm and leaves does not take its brain.
+    await detachFromFirm(ctx.user, org);
     return Response.json({ ok: true });
   }
 );

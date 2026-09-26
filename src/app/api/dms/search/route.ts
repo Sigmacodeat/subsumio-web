@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { getConnector } from "@/lib/dms";
+import { getConnectorForBrain } from "@/lib/dms";
+import { filterDmsSearchHits } from "@/lib/dms/access";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 import { logger } from "@/lib/logger";
@@ -19,20 +20,29 @@ const dmsSearchSchema = z.object({
 
 export const GET = createHandler(
   {
-    action: "brain.read",
+    // Staff only: client_viewer accounts never reach the firm's DMS.
+    action: "agent.read",
     rateTier: "standard",
     query: dmsSearchSchema,
   },
-  async (_ctx, _body, query, _req) => {
-    const connector = await getConnector();
+  async (ctx, _body, query, _req) => {
+    const connector = await getConnectorForBrain(ctx.brainId);
     if (!connector || !connector.isConfigured()) {
-      return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
+      return apiError("dms_not_configured", "DMS nicht eingerichtet", 503);
     }
 
     const limit = typeof query.limit === "string" ? parseInt(query.limit, 10) : (query.limit ?? 20);
     try {
       const results = await connector.search(query.q, { limit, folderId: query.folderId });
-      return Response.json(results);
+      // Hits imported into a matter the user may not read are dropped;
+      // unlinked hits are for staff only (never client_viewer).
+      const documents = await filterDmsSearchHits(ctx, results.documents);
+      const removed = results.documents.length - documents.length;
+      return Response.json({
+        ...results,
+        documents,
+        totalCount: Math.max(0, results.totalCount - removed),
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error("[dms search] error:", msg);

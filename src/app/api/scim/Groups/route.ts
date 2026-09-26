@@ -5,9 +5,12 @@ import {
   scimListResponse,
   scimResponse,
   SCIM_SCHEMA_GROUP,
+  syncRolesAfterGroupChange,
   type SCIMGroup,
 } from "@/lib/scim";
-import { groups, listGroupsForOrg, type StoredScimGroup } from "@/lib/scim-groups";
+import { getScimGroupStore, listGroupsForOrg, type StoredScimGroup } from "@/lib/scim-groups";
+import { logAudit } from "@/lib/audit";
+import { auditBrainForOrg } from "@/lib/audit-user";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +46,7 @@ export const GET = createScimHandler(
     const startIndex = Math.max(1, parseInt(query.startIndex || "1", 10));
     const count = Math.min(200, Math.max(1, parseInt(query.count || "100", 10)));
 
-    const allGroups = listGroupsForOrg(orgId);
+    const allGroups = await listGroupsForOrg(orgId);
     const total = allGroups.length;
     const paged = allGroups.slice(startIndex - 1, startIndex - 1 + count);
 
@@ -77,13 +80,17 @@ export const POST = createScimHandler(
     }
 
     // Check for duplicate — scoped to this org only
-    for (const g of listGroupsForOrg(orgId)) {
+    const existing = await listGroupsForOrg(orgId);
+    for (const g of existing) {
       if (g.displayName === scimGroup.displayName) {
         return scimError(409, `Group "${scimGroup.displayName}" already exists`, "uniqueness");
       }
     }
 
     const groupId = scimGroup.id || crypto.randomUUID();
+    if (existing.some((g) => g.id === groupId)) {
+      return scimError(409, `Group ${groupId} already exists`, "uniqueness");
+    }
     const created: StoredScimGroup = {
       ...scimGroup,
       id: groupId,
@@ -96,7 +103,13 @@ export const POST = createScimHandler(
       _orgId: orgId,
     };
 
-    groups.set(groupId, created);
+    await getScimGroupStore().put(created);
+    await syncRolesAfterGroupChange(orgId, null, created);
+    await logAudit("scim.group_synced", "group", {
+      brainId: await auditBrainForOrg(orgId),
+      entityId: groupId,
+      details: { operation: "create", displayName: created.displayName },
+    });
 
     return scimResponse(created, 201);
   }

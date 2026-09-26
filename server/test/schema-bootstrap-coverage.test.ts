@@ -728,6 +728,10 @@ const COLUMN_EXEMPTIONS = new Set<string>([
   // + upgrade; no CREATE INDEX references this column, so there is no forward
   // reference for the bootstrap to cover.
   "search_telemetry.vector_disabled",
+  // v152 — contradiction-probe run source. Added (with its index) only by
+  // migration v152; the schema blob references neither the column nor the
+  // index, so there is no forward reference for the bootstrap to cover.
+  "eval_contradictions_runs.source_id",
   // Schema-blob-not-yet-refreshed: each of these columns is added by a
   // migration but NOT (yet) referenced by `PGLITE_SCHEMA_SQL` (neither in a
   // CREATE TABLE body nor in any CREATE INDEX). Bootstrap doesn't need to

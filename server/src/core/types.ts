@@ -340,6 +340,69 @@ export interface PageFilters {
    * pre-v0.34 unscoped behavior is preserved for local CLI callers.
    */
   sourceIds?: string[];
+  /**
+   * Keyset cursor for `sort: "updated_desc"` pagination, format
+   * `"<updated_at ISO>|<page id>"`. Applies
+   * `WHERE (p.updated_at, p.id) < (cursor.updated_at, cursor.id)` so paging
+   * stays correct even when rows are updated mid-scan (offset paging would
+   * shift and skip/dup rows). Ignored for other sort orders.
+   */
+  cursor?: string;
+  /**
+   * Frontmatter equality filter, OR-combined: a page matches when
+   * `frontmatter->>key = value` for ANY of the pairs. Lets callers list the
+   * pages of one matter (case_slug / case_title / case_number) or look up one
+   * record by a business key (invoice_number, …) in SQL instead of reading the
+   * whole type. Keys must match FRONTMATTER_FILTER_KEY_RE (they are spliced
+   * as SQL literals so expression indexes apply); values are bound. At most
+   * FRONTMATTER_FILTER_MAX pairs. `case_slug` is backed by
+   * `pages_list_case_slug_keyset_idx` (migration v151).
+   */
+  frontmatterAny?: Array<[string, string]>;
+  /**
+   * Case-insensitive substring search over the title and the frontmatter
+   * fields in TEXT_MATCH_FIELDS (name, e-mail, company, case number) — e.g.
+   * finding a contact by name or e-mail without reading every contact.
+   * LIKE metacharacters are matched literally. Ignored when shorter than
+   * TEXT_MATCH_MIN; longer than TEXT_MATCH_MAX is cut.
+   */
+  textMatch?: string;
+}
+
+/** Frontmatter fields `textMatch` searches besides the title. */
+export const TEXT_MATCH_FIELDS = ["name", "email", "company", "case_number"] as const;
+export const TEXT_MATCH_MIN = 2;
+export const TEXT_MATCH_MAX = 100;
+
+/** The ILIKE pattern for `textMatch`, or null when no text filter applies. */
+export function textMatchPattern(q: string | undefined): string | null {
+  const text = (q ?? "").trim().slice(0, TEXT_MATCH_MAX);
+  if (text.length < TEXT_MATCH_MIN) return null;
+  return `%${text.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+}
+
+/** Allowed frontmatter filter keys (plain snake_case identifiers). */
+export const FRONTMATTER_FILTER_KEY_RE = /^[a-z][a-z0-9_]{0,62}$/;
+export const FRONTMATTER_FILTER_MAX = 5;
+
+/**
+ * Validate a frontmatter filter. Returns the pairs to apply, or throws on an
+ * invalid key — a key that cannot be applied must never widen the result to
+ * the whole type.
+ */
+export function normalizeFrontmatterFilter(
+  pairs: Array<[string, string]> | undefined
+): Array<[string, string]> {
+  if (!pairs || pairs.length === 0) return [];
+  if (pairs.length > FRONTMATTER_FILTER_MAX) {
+    throw new Error(`frontmatter filter: at most ${FRONTMATTER_FILTER_MAX} pairs`);
+  }
+  return pairs.map(([key, value]) => {
+    if (typeof key !== "string" || !FRONTMATTER_FILTER_KEY_RE.test(key)) {
+      throw new Error(`frontmatter filter: invalid key`);
+    }
+    return [key, String(value)] as [string, string];
+  });
 }
 
 /** v0.26.5 — opts for getPage / softDeletePage / restorePage. */
@@ -363,6 +426,49 @@ export const PAGE_SORT_SQL: Record<NonNullable<PageFilters["sort"]>, string> = {
   created_desc: "p.created_at DESC",
   slug: "p.slug ASC",
 };
+
+/**
+ * Keyset order for `updated_desc` list paging. The cursor carries a
+ * millisecond timestamp (JS Date), while updated_at is stored in
+ * microseconds — ordering and comparing on the millisecond-truncated value
+ * keeps rows written within the same millisecond from being skipped at a
+ * page boundary; p.id breaks ties so the order is total.
+ *
+ * The key is taken in UTC (`AT TIME ZONE 'UTC'` gives a plain timestamp), so
+ * the expression is immutable and matches the list index
+ * `pages_list_updated_keyset_idx` (migration v150) — a list page reads the
+ * index in order instead of sorting the whole firm.
+ */
+export const UPDATED_DESC_KEYSET_KEY =
+  "date_trunc('milliseconds', p.updated_at AT TIME ZONE 'UTC')";
+export const UPDATED_DESC_KEYSET_ORDER = `${UPDATED_DESC_KEYSET_KEY} DESC, p.id DESC`;
+
+/** The cursor timestamp in the key's form (UTC, no time zone). */
+export function updatedDescKeysetCursor(param: string): string {
+  return `(${param}::timestamptz AT TIME ZONE 'UTC')`;
+}
+
+/**
+ * Encode a keyset cursor for `updated_desc` list paging
+ * (`"<updated_at ISO>|<page id>"`). The pair is the position of the last
+ * scanned row; the next page continues strictly after it.
+ */
+export function encodePageCursor(page: { updated_at: Date; id: number }): string {
+  return `${page.updated_at.toISOString()}|${page.id}`;
+}
+
+/** Parse a PageFilters.cursor back into its tuple; null when malformed. */
+export function parsePageCursor(
+  cursor: string | undefined
+): { updatedAt: string; id: number } | null {
+  if (!cursor) return null;
+  const sep = cursor.lastIndexOf("|");
+  if (sep <= 0) return null;
+  const updatedAt = cursor.slice(0, sep);
+  const id = Number(cursor.slice(sep + 1));
+  if (!Number.isFinite(id) || Number.isNaN(Date.parse(updatedAt))) return null;
+  return { updatedAt, id };
+}
 
 /**
  * v0.29 — Salience: pages ranked by emotional + activity salience over a recency window.
@@ -439,6 +545,9 @@ export interface SalienceOpts {
    * Default preserves v0.29.0 ranking; 'on' is opt-in.
    */
   recency_bias?: "flat" | "on";
+  /** Only pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 export interface SalienceResult {
@@ -530,6 +639,9 @@ export interface AnomaliesOpts {
   lookback_days?: number;
   /** Sigma threshold. Default 3.0. */
   sigma?: number;
+  /** Only pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 export interface AnomalyResult {

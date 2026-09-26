@@ -21,9 +21,21 @@ export class ApiGetError extends Error {
  * `.then((r) => r.json())` alone resolved on 4xx/5xx, so a failed change looked
  * like a success in the UI.
  */
+export class ApiMutationError extends Error {
+  constructor(
+    message: string,
+    /** Machine-readable `code` from `apiError` (`{ error, code }`), if any. */
+    public readonly code: string | undefined,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "ApiMutationError";
+  }
+}
+
 export async function jsonOrThrow<T = unknown>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => null)) as
-    | (T & { message?: string; error?: string | { message?: string } })
+    | (T & { message?: string; code?: string; error?: string | { message?: string } })
     | null;
   if (!res.ok) {
     const err = body?.error;
@@ -31,7 +43,11 @@ export async function jsonOrThrow<T = unknown>(res: Response): Promise<T> {
       body?.message ??
       (typeof err === "string" ? err : err?.message) ??
       `Anfrage fehlgeschlagen (HTTP ${res.status})`;
-    throw new Error(message);
+    throw new ApiMutationError(
+      message,
+      typeof body?.code === "string" ? body.code : undefined,
+      res.status
+    );
   }
   return body as T;
 }
@@ -69,8 +85,17 @@ export interface ApiKey {
   scopes: string[];
   active: boolean;
   createdAt: string;
-  lastUsedAt?: string;
+  lastUsedAt?: string | null;
   createdBy?: string;
+  kind?: "api" | "addin";
+  expiresAt?: string | null;
+  /** Still marked active, but past its expiry — no longer accepted. */
+  expired?: boolean;
+}
+
+/** A key in the firm-wide overview (admins), with its owner. */
+export interface FirmApiKey extends ApiKey {
+  owner: { id: string; name: string; email: string };
 }
 
 interface ApiKeyResponse {
@@ -84,14 +109,24 @@ export function useApiKeys() {
   });
 }
 
+/** Every key of every member of the firm — firm admins only. */
+export function useFirmApiKeys(enabled: boolean) {
+  return useQuery({
+    queryKey: ["settings", "api-keys", "firm"],
+    queryFn: () => apiGet<{ keys: FirmApiKey[] }>("/api/api-keys?scope=firm"),
+    enabled,
+  });
+}
+
 export function useCreateApiKey() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) =>
+    // expiresInDays: null = no expiry; omitted = the server default (365 days).
+    mutationFn: (input: string | { name: string; expiresInDays?: number | null }) =>
       csrfFetch("/api/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(typeof input === "string" ? { name: input } : input),
       }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "api-keys"] }),
   });
@@ -143,7 +178,9 @@ export function useUpdateTeamRole() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
-      }).then((r) => r.json()),
+        // A refused change (403 owner_only, 409 last admin, …) must reject —
+        // otherwise the page shows a role the member does not have.
+      }).then((r) => jsonOrThrow<{ ok: true; userId: string; role: string }>(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team"] }),
   });
 }
@@ -182,7 +219,7 @@ export function useCreateOrg() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -190,12 +227,13 @@ export function useCreateOrg() {
 export function useInviteMemberOrg() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (email: string) =>
+    // `role` defaults server-side to the least privileged staff role.
+    mutationFn: (input: string | { email: string; role?: string }) =>
       csrfFetch("/api/org/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      }).then((r) => r.json()),
+        body: JSON.stringify(typeof input === "string" ? { email: input } : input),
+      }).then((r) => jsonOrThrow<{ ok?: boolean; devJoinUrl?: string }>(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -208,7 +246,7 @@ export function useRemoveMemberOrg() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -216,7 +254,7 @@ export function useRemoveMemberOrg() {
 export function useLeaveOrg() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => csrfFetch("/api/org", { method: "DELETE" }).then((r) => r.json()),
+    mutationFn: () => csrfFetch("/api/org", { method: "DELETE" }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
@@ -502,7 +540,7 @@ export function useCreateAclGroup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
-      }).then((r) => r.json()),
+      }).then((r) => jsonOrThrow(r)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });
 }
@@ -512,7 +550,7 @@ export function useDeleteAclGroup() {
   return useMutation({
     mutationFn: (groupId: string) =>
       csrfFetch(`/api/acls/groups/${encodeURIComponent(groupId)}`, { method: "DELETE" }).then((r) =>
-        r.json()
+        jsonOrThrow(r)
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
   });

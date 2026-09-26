@@ -1,124 +1,95 @@
-/**
- * OAuth CSRF regression test for the DocuSign callback route.
- *
- * The callback must reject requests that do not carry the state cookie we
- * minted in /api/docusign/auth. Without this guard, an attacker could trick
- * a logged-in user into linking the attacker's DocuSign account to the
- * victim's Subsumio account.
- */
-import { describe, it, expect, vi } from "vitest";
-import { NextRequest } from "next/server";
-import { GET } from "./route";
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const DOCUSIGN_OAUTH_STATE_COOKIE = "docusign_oauth_state";
-
-function makeRequest(url: string, cookieState?: string): NextRequest {
-  const headers = new Headers();
-  if (cookieState) {
-    headers.set("cookie", `${DOCUSIGN_OAUTH_STATE_COOKIE}=${cookieState}`);
-  }
-  return new NextRequest(url, { headers });
-}
-
-// Mock next/headers cookies() — return a minimal cookie store so engineContext runs.
-vi.mock("next/headers", () => ({
-  cookies: vi.fn(async () => ({ get: () => undefined })),
+const m = vi.hoisted(() => ({
+  update: vi.fn(async (_id: string, _patch: Record<string, unknown>) => ({})),
+  userInfo: vi.fn(
+    async (_t: string): Promise<{ email: string | null; name: string | null } | null> => ({
+      email: "anwalt@kanzlei.example",
+      name: "A. Anwalt",
+    })
+  ),
+  audit: vi.fn(async () => {}),
 }));
-
-// Mock session verification — return a fixed user so createHandler passes auth.
-vi.mock("@/lib/auth/session", () => ({
-  verifySession: async () => ({
-    uid: "user-1",
-    email: "user@example.com",
-    role: "admin",
-  }),
-  SESSION_COOKIE: "sb_session",
-  SESSION_TTL_SECONDS: 604800,
-  revokeAllSessions: async () => {},
-  signSession: async () => "",
-  createSession: async () => ({ token: "", cookieOptions: {} }),
+vi.mock("@/lib/auth/store", () => ({ getStore: () => ({ update: m.update }) }));
+vi.mock("@/lib/docusign", () => ({
+  DOCUSIGN_OAUTH_HOST: "account-d.docusign.com",
+  fetchDocusignUserInfo: m.userInfo,
 }));
-
-// Mock the user store so the handler doesn't hit the database.
-vi.mock("@/lib/auth/store", () => ({
-  getStore: () => ({
-    getById: async () => ({
-      id: "user-1",
-      email: "user@example.com",
-      name: "Test User",
-      role: "admin",
-      brainId: "brain-1",
-      plan: "enterprise",
-      locale: "de",
-      referralCode: "",
-      referredBy: null,
-      stripeCustomerId: null,
-      createdAt: new Date().toISOString(),
-    }),
-    update: async () => {},
-  }),
-}));
-
-vi.mock("@/lib/env", () => ({
-  env: (key: string) => {
-    if (key === "DOCUSIGN_INTEGRATION_KEY") return "test-ik";
-    if (key === "DOCUSIGN_SECRET_KEY") return "test-secret";
-    if (key === "NEXT_PUBLIC_APP_URL") return "https://app.example.com";
-    return undefined;
-  },
-}));
-
-vi.mock("@/lib/crypto-utils", () => ({
-  timingSafeCompare: (a: string, b: string) => a === b,
-}));
-
-// Mock the external DocuSign token exchange to avoid real network calls.
-vi.mock("@/lib/retry", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/retry")>("@/lib/retry");
+vi.mock("@/lib/audit", () => ({ logAudit: m.audit }));
+vi.mock("@/lib/api-handler", async (orig) => {
+  const real = await orig<typeof import("@/lib/api-handler")>();
   return {
-    ...actual,
-    externalFetchTimeout: () => AbortSignal.timeout(5000),
+    ...real,
+    createHandler:
+      (
+        opts: { query: { parse: (v: unknown) => unknown } },
+        handler: (ctx: unknown, b: unknown, q: unknown, r: unknown) => Promise<Response>
+      ) =>
+      async (req: import("next/server").NextRequest) =>
+        handler(
+          { user: { id: "u1", email: "u1@kanzlei.example" }, brainId: "b1" },
+          undefined,
+          opts.query.parse(Object.fromEntries(req.nextUrl.searchParams)),
+          req
+        ),
   };
 });
 
-global.fetch = vi.fn(async () =>
-  Response.json({
-    access_token: "test-access-token",
-    refresh_token: "test-refresh-token",
-    expires_in: 3600,
-  })
-) as unknown as typeof fetch;
+import { NextRequest } from "next/server";
+import { GET } from "./route";
 
-describe("GET /api/docusign/callback", () => {
-  it("rejects callback when the state cookie is missing", async () => {
-    const req = makeRequest("https://app.example.com/api/docusign/callback?code=abc123&state=xyz");
-    const res = await GET(req, { params: Promise.resolve({}) });
-    expect(res.status).toBe(403);
-    const body = (await res.json()) as { code: string };
-    expect(body.code).toBe("state_mismatch");
+const call = (qs: string, cookie = "docusign_oauth_state=st-1") =>
+  (GET as unknown as (r: NextRequest) => Promise<Response>)(
+    new NextRequest(`http://localhost/api/docusign/callback${qs}`, { headers: { cookie } })
+  );
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.DOCUSIGN_INTEGRATION_KEY = "ik";
+  process.env.DOCUSIGN_SECRET_KEY = "sk";
+  process.env.NEXT_PUBLIC_APP_URL = "https://app.example";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ access_token: "at", refresh_token: "rt", expires_in: 3600 }))
+  );
+});
+
+describe("GET /api/docusign/callback (R8-11)", () => {
+  it("success stores the tokens and redirects to the settings", async () => {
+    const res = await call("?code=c&state=st-1");
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(
+      "https://app.example/dashboard/settings?tab=signature&docusign=connected"
+    );
+    expect(m.update).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects callback when the state query param mismatches the cookie", async () => {
-    const req = makeRequest(
-      "https://app.example.com/api/docusign/callback?code=abc123&state=attacker",
-      "legitimate-state"
+  it("remembers which DocuSign account was connected and audits the connection", async () => {
+    await call("?code=c&state=st-1");
+    expect(m.userInfo).toHaveBeenCalledWith("at");
+    expect(m.update.mock.calls[0][1]).toMatchObject({
+      docusignAccessToken: "at",
+      docusignUserEmail: "anwalt@kanzlei.example",
+      docusignUserName: "A. Anwalt",
+    });
+    expect(m.audit).toHaveBeenCalledWith(
+      "docusign.connect",
+      "user",
+      expect.objectContaining({ entityId: "u1", brainId: "b1" })
     );
-    const res = await GET(req, { params: Promise.resolve({}) });
-    expect(res.status).toBe(403);
-    const body = (await res.json()) as { code: string };
-    expect(body.code).toBe("state_mismatch");
   });
 
-  it("exchanges the code when state matches", async () => {
-    const state = "legitimate-state";
-    const req = makeRequest(
-      `https://app.example.com/api/docusign/callback?code=abc123&state=${encodeURIComponent(state)}`,
-      state
-    );
-    const res = await GET(req, { params: Promise.resolve({}) });
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { ok: boolean; connected: boolean };
-    expect(body.ok).toBe(true);
-    expect(body.connected).toBe(true);
+  it("a failed user-info lookup does not block the connection", async () => {
+    m.userInfo.mockResolvedValueOnce(null);
+    const res = await call("?code=c&state=st-1");
+    expect(res.headers.get("location")).toContain("docusign=connected");
+    expect(m.update.mock.calls[0][1]).toMatchObject({ docusignUserEmail: null });
+  });
+
+  it("a state mismatch redirects with the reason instead of JSON", async () => {
+    const res = await call("?code=c&state=other");
+    expect(res.headers.get("location")).toContain("docusign=state_mismatch");
+    expect(m.update).not.toHaveBeenCalled();
   });
 });

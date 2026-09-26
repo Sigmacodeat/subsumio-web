@@ -51,6 +51,44 @@ describe("checkFirmLegalHolds", () => {
     expect(await checkFirmLegalHolds({}, fetchImpl)).toEqual({ status: "unknown" });
   });
 
+  it("pages via x-next-cursor and finds a hold beyond the first 100 cases", async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      const cursor = new URL(url).searchParams.get("cursor");
+      if (!cursor) {
+        const rows = Array.from({ length: 100 }, (_, i) => ({
+          slug: `legal/c${i}`,
+          frontmatter: {},
+        }));
+        return new Response(JSON.stringify(rows), {
+          status: 200,
+          headers: { "x-next-cursor": "2026-01-01T00:00:00Z|last" },
+        });
+      }
+      return new Response(
+        JSON.stringify([{ slug: "legal/held", frontmatter: { legal_hold: true } }]),
+        { status: 200 }
+      );
+    }) as unknown as typeof fetch;
+    expect(await checkFirmLegalHolds({}, fetchImpl)).toEqual({
+      status: "held",
+      cases: ["legal/held"],
+    });
+  });
+
+  it("fails closed when a full batch comes back without a cursor (engine without header)", async () => {
+    const fetchImpl = fakeFetch(
+      () =>
+        new Response(
+          JSON.stringify(
+            Array.from({ length: 100 }, (_, i) => ({ slug: `legal/c${i}`, frontmatter: {} }))
+          ),
+          { status: 200 }
+        )
+    );
+    // 100 rows and no cursor metadata: the list may continue — never "clear".
+    expect(await checkFirmLegalHolds({}, fetchImpl)).toEqual({ status: "unknown" });
+  });
+
   it("forwards the given headers to the engine call", async () => {
     const seen: Record<string, string>[] = [];
     const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {

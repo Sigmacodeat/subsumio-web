@@ -17,7 +17,12 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { caseFrontmatter, type CaseFrontmatter } from "@/lib/legal-types";
-import { extractVariableKeys, fillTemplate, resolveKnownVariables } from "@/lib/templates";
+import {
+  extractVariableKeys,
+  fillTemplate,
+  fillTemplateMarkdown,
+  resolveKnownVariables,
+} from "@/lib/templates";
 import { buildLetterheadFromKanzleiSettings } from "@/lib/letterhead-rubrum";
 
 interface TemplateForDialog {
@@ -55,6 +60,7 @@ export function TemplateUseDialog({
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [loadingCases, setLoadingCases] = useState(true);
+  const [casesError, setCasesError] = useState(false);
 
   // All {{...}} tokens actually present in the body — a superset of the
   // template's declared `variables` if the author added one without
@@ -70,15 +76,17 @@ export function TemplateUseDialog({
   useEffect(() => {
     void loadKanzleiSettings().then(setKanzlei);
     void api.brain
-      .batchListPages(["legal_case"], 500)
-      .then(({ legal_case: pages = [] }) => {
+      .batchListPagesDetailed(["legal_case"], 500)
+      .then(({ results, errors }) => {
+        if (errors.length) throw new Error(`batch list failed: ${errors.join(",")}`);
         setCases(
-          pages.map((p) => {
+          (results.legal_case ?? []).map((p) => {
             const fm = caseFrontmatter(p);
             return { slug: p.slug, title: p.title, caseNumber: fm.case_number || p.slug, fm };
           })
         );
       })
+      .catch(() => setCasesError(true))
       .finally(() => setLoadingCases(false));
   }, []);
 
@@ -101,6 +109,8 @@ export function TemplateUseDialog({
   }, [caseSlug, kanzlei, cases]);
 
   const filled = fillTemplate(template.body, values);
+  const filledMarkdown = fillTemplateMarkdown(template.body, values);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   function copy() {
     void navigator.clipboard.writeText(filled);
@@ -116,7 +126,7 @@ export function TemplateUseDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: template.title,
-          markdown: filled,
+          markdown: filledMarkdown,
           // Aus der Vorlage befüllt, kein KI-Text — keine KI-Kennzeichnung.
           ai_generated: false,
           letterhead: kanzlei ? buildLetterheadFromKanzleiSettings(kanzlei) : undefined,
@@ -130,6 +140,10 @@ export function TemplateUseDialog({
       a.download = `${template.title.replace(/[^a-zA-Z0-9äöüßÄÖÜ]+/g, "_").slice(0, 60)}.docx`;
       a.click();
       URL.revokeObjectURL(url);
+      setDownloadError(null);
+    } catch {
+      // Unhandled before: the button just stopped spinning.
+      setDownloadError("Das Word-Dokument konnte nicht erstellt werden. Bitte erneut versuchen.");
     } finally {
       setDownloading(false);
     }
@@ -159,6 +173,11 @@ export function TemplateUseDialog({
                 ))}
               </SelectContent>
             </Select>
+            {casesError && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Aktenliste konnte nicht geladen werden — Felder bitte manuell befüllen.
+              </p>
+            )}
           </div>
 
           {allKeys.length > 0 && (
@@ -205,6 +224,11 @@ export function TemplateUseDialog({
               Als DOCX herunterladen
             </Button>
           </div>
+          {downloadError && (
+            <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">
+              {downloadError}
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

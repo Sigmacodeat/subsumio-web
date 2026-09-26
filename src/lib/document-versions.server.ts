@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import {
   isLockedFor,
   nextVersionNumber,
   readLock,
+  versionBindingFields,
   versionSlug,
   type DocumentLock,
   type DocumentVersionFrontmatter,
@@ -16,6 +18,9 @@ export class CheckoutConflictError extends Error {
 }
 
 export class VersionError extends Error {}
+
+/** The document does not exist or is outside the caller's matter scope. */
+export class DocumentNotVisibleError extends VersionError {}
 
 interface EnginePage {
   slug: string;
@@ -52,14 +57,16 @@ async function listVersions(
   headers: Record<string, string>,
   docSlug: string
 ): Promise<DocumentVersionFrontmatter[]> {
-  const res = await fetch(
-    `${ENGINE_URL}/api/pages?slug_prefix=${encodeURIComponent(`legal/doc-versions/${docSlug}/`)}&limit=200`,
-    { headers, signal: AbortSignal.timeout(10_000) }
-  );
-  if (!res.ok) throw new VersionError(`Engine returned ${res.status}`);
-  const pages = (await res.json()) as Array<{ frontmatter?: DocumentVersionFrontmatter }>;
-  return (Array.isArray(pages) ? pages : [])
-    .map((p) => p.frontmatter)
+  // Cursor-paginated: a bare /api/pages call is capped at 100 rows.
+  const pages = await listEnginePages(headers, "", 10_000, {
+    slugPrefix: `legal/doc-versions/${docSlug}/`,
+    strict: true,
+    timeoutMs: 10_000,
+  }).catch(() => {
+    throw new VersionError("Engine list failed");
+  });
+  return pages
+    .map((p) => p.frontmatter as DocumentVersionFrontmatter | undefined)
     .filter((f): f is DocumentVersionFrontmatter => !!f && f.doc_slug === docSlug)
     .sort((a, b) => a.version - b.version);
 }
@@ -121,6 +128,8 @@ export async function checkinDocument(
     title: `Version ${version} — ${page.title ?? slug}`,
     type: "document_version",
     frontmatter: {
+      // Same matter as the document — the snapshot is never more visible.
+      ...versionBindingFields(docFrontmatter),
       doc_slug: slug,
       version,
       note: opts?.note?.trim() || undefined,
@@ -170,6 +179,10 @@ export async function listDocumentVersions(
   headers: Record<string, string>,
   slug: string
 ): Promise<DocumentVersionFrontmatter[]> {
+  // Versions are only listed for a document the caller may read itself
+  // (engine matter scope: ethical wall, restricted matters, allow-lists).
+  const doc = await getPage(headers, slug);
+  if (!doc) throw new DocumentNotVisibleError("Dokument nicht gefunden");
   return listVersions(headers, slug);
 }
 
@@ -202,6 +215,7 @@ export async function restoreDocumentVersion(
       title: `Version ${safetyVersion} — ${page.title ?? slug} (vor Wiederherstellung)`,
       type: "document_version",
       frontmatter: {
+        ...versionBindingFields(docFrontmatter),
         doc_slug: slug,
         version: safetyVersion,
         note: `Automatisch gesichert vor Wiederherstellung von Version ${version}`,
@@ -214,14 +228,21 @@ export async function restoreDocumentVersion(
     });
   }
 
+  // Only the TEXT (and title) comes back. Assignment, status, deletion and
+  // hold markers, extraction state and approvals stay as they are now — an
+  // old snapshot must not move the document to a former matter or revive it.
+  // The original file under /api/files is not versioned and stays the latest.
   await putPage(headers, {
     slug,
     merge: true,
     content: target.doc_content,
+    ...(target.doc_title ? { title: target.doc_title } : {}),
     frontmatter: {
       ...page.frontmatter,
-      ...target.doc_frontmatter,
       checked_out_by: null,
+      restored_from_version: version,
+      restored_version_at: new Date().toISOString(),
+      restored_version_by: user.email ?? user.id,
     },
   });
   return { restoredFrom: version, safetyVersion };

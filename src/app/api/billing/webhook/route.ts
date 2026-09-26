@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgStore, getStore, type Plan } from "@/lib/auth/store";
 import { billingAccountFor } from "@/lib/billing/billing-account";
-import { verifyStripeSignature } from "@/lib/stripe-webhook";
+import { checkoutIsPaid, verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { planForPriceId } from "@/lib/billing/plans";
 import { sendMail, isMailConfigured } from "@/lib/mail";
@@ -70,15 +70,25 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     };
     items?: { data?: Array<{ price?: { id?: string } }> };
     payment_intent?: string;
+    payment_status?: string;
     id?: string;
   };
 
   switch (event.type) {
+    case "checkout.session.async_payment_succeeded":
     case "checkout.session.completed": {
       const userId = obj.client_reference_id ?? obj.metadata?.user_id;
       const purchaseType = obj.metadata?.purchase_type;
 
       // ── Credit Purchase (one-time payment) ──────────────────────────
+      // Credited only once the money is there: a delayed method (e.g. SEPA
+      // debit) completes the checkout "unpaid" and settles later with
+      // async_payment_succeeded. The session id keys the credit, so both
+      // events together credit exactly once.
+      if (userId && purchaseType === "credits" && !checkoutIsPaid(event.type, obj)) {
+        log.info(`[stripe-webhook] credit purchase pending payment: session=${obj.id ?? "?"}`);
+        break;
+      }
       if (userId && purchaseType === "credits") {
         const packId = obj.metadata?.pack_id;
         const creditsAmount = parseInt(obj.metadata?.credits ?? "0", 10);
@@ -131,6 +141,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       }
 
       // ── Subscription Purchase (existing logic) ───────────────────────
+      if (event.type !== "checkout.session.completed") break;
       const plan = obj.metadata?.plan;
       if (userId && (plan === "pro" || plan === "team")) {
         await store.update(userId, {
@@ -438,21 +449,8 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
             }
           }
 
-          // Fire outgoing webhook for invoice.paid event
-          try {
-            const { dispatchWebhookEvent } = await import("@/lib/webhook-dispatch");
-            const invoiceObj = obj as Record<string, unknown>;
-            await dispatchWebhookEvent("invoice.paid", {
-              user_id: user.id,
-              customer_id: customerId,
-              plan: user.plan,
-              invoice_id: typeof invoiceObj.id === "string" ? invoiceObj.id : undefined,
-              amount_paid:
-                typeof invoiceObj.amount_paid === "number" ? invoiceObj.amount_paid : undefined,
-            });
-          } catch {
-            // best-effort — webhook delivery should not block billing webhook processing
-          }
+          // No outgoing "invoice.paid" here: that event means a client paid
+          // one of the firm's invoices, not the firm paying its subscription.
         }
       }
       break;

@@ -19,10 +19,14 @@ vi.mock("@/lib/api", () => ({
 }));
 vi.mock("@/lib/use-lang", () => ({ useLang: () => ({ t: (k: string) => k, lang: "de" }) }));
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast: vi.fn() }) }));
-vi.mock("@/lib/queries/auth", () => ({
-  useMe: () => ({ data: { user: { email: "me@example.com" } } }),
+const meState = vi.hoisted(() => ({
+  current: { data: { user: { email: "me@example.com" } } } as Record<string, unknown>,
 }));
-vi.mock("@/lib/csrf", () => ({ csrfFetch: vi.fn() }));
+vi.mock("@/lib/queries/auth", () => ({
+  useMe: () => meState.current,
+}));
+const csrfFetchMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/csrf", () => ({ csrfFetch: csrfFetchMock }));
 
 const suggestion = (id: string, extra: Record<string, unknown>) => ({
   id,
@@ -60,9 +64,11 @@ function stubSuggestions(items: unknown[]) {
 
 describe("time suggestions", () => {
   beforeEach(() => {
+    meState.current = { data: { user: { email: "me@example.com" } }, isSuccess: true };
     mockFetch.mockReset();
     createPage.mockReset().mockResolvedValue({});
     timeCreate.mockReset().mockResolvedValue({ id: "t1" });
+    csrfFetchMock.mockReset().mockResolvedValue(Response.json({ data: {} }, { status: 201 }));
   });
 
   it("hides colleagues' suggestions", async () => {
@@ -82,19 +88,27 @@ describe("time suggestions", () => {
     fireEvent.change(screen.getByLabelText("Minuten"), { target: { value: "30" } });
     fireEvent.change(screen.getByLabelText("Tätigkeit"), { target: { value: "Klage entworfen" } });
     fireEvent.click(screen.getByRole("button", { name: /Übernehmen/ }));
-    await waitFor(() => expect(timeCreate).toHaveBeenCalled());
-    expect(timeCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        minutes: 30,
-        description: "Klage entworfen",
-        case_slug: "legal/cases/a",
-      })
-    );
-    await waitFor(() => expect(createPage).toHaveBeenCalled());
-    const fm = createPage.mock.calls[0][0].frontmatter;
-    expect(fm.status).toBe("modified");
-    expect(fm.time_entry_id).toBe("t1");
-    expect(fm.original).toMatchObject({ duration_minutes: 45, description: "Schriftsatz" });
+    // One server-side accept call books and marks; no separate client writes.
+    await waitFor(() => expect(csrfFetchMock).toHaveBeenCalled());
+    const [url, init] = csrfFetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/time-suggestions/s1/accept");
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      minutes: 30,
+      description: "Klage entworfen",
+      case_slug: "legal/cases/a",
+    });
+    expect(timeCreate).not.toHaveBeenCalled();
+    expect(createPage).not.toHaveBeenCalled();
+  });
+
+  it("does not book again when the server reports the suggestion as taken", async () => {
+    stubSuggestions([suggestion("s1", { case_slug: "legal/cases/a" })]);
+    csrfFetchMock.mockResolvedValueOnce(Response.json({ error: "x" }, { status: 409 }));
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /vor dem Übernehmen ändern/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Übernehmen/ }));
+    await waitFor(() => expect(csrfFetchMock).toHaveBeenCalledTimes(1));
+    expect(timeCreate).not.toHaveBeenCalled();
   });
 
   it("requires a matter before booking a suggestion without one", async () => {
@@ -103,5 +117,27 @@ describe("time suggestions", () => {
     const book = await screen.findByRole("button", { name: /Übernehmen/ });
     expect(book).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent("Bitte eine Akte wählen.");
+  });
+
+  // UIS-1-8: a failed load is an error with retry, never "no suggestions".
+  it("shows a load error instead of the empty state", async () => {
+    mockFetch.mockImplementation((url: string) =>
+      String(url).includes("/api/time-suggestions")
+        ? Promise.resolve(new Response("x", { status: 500 }))
+        : Promise.resolve(Response.json({ data: { enabled: true } }))
+    );
+    vi.stubGlobal("fetch", mockFetch);
+    renderPage();
+    expect(await screen.findByRole("alert")).toHaveTextContent("time_sugg.err_load");
+    expect(screen.queryByText("Keine Zeitvorschläge")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "common.retry" })).toBeInTheDocument();
+  });
+
+  it("does not spin forever when the user could not be loaded", async () => {
+    meState.current = { data: undefined, isError: true, isSuccess: false, refetch: vi.fn() };
+    stubSuggestions([]);
+    renderPage();
+    expect(await screen.findByRole("alert")).toHaveTextContent("time_sugg.err_load");
+    expect(screen.queryByRole("status", { name: "Vorschläge werden geladen" })).toBeNull();
   });
 });

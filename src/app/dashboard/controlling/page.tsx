@@ -8,24 +8,17 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { cn, formatEur } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
-const CASES_LIMIT = 500;
-/** Soll-Stunden je Anwalt: 150 h pro Monat, hochgerechnet auf den gewählten Zeitraum. */
-const TARGET_HOURS = { month: 150, quarter: 450, year: 1800 } as const;
+import {
+  TARGET_HOURS,
+  aggregateLawyerStats,
+  entryFromTimeEntryPage,
+  type LawyerStats,
+} from "@/lib/controlling";
 
-interface LawyerStats {
-  name: string;
-  totalHours: number;
-  totalRevenue: number;
-  caseCount: number;
-  /** Abrechenbare Stunden (entry.billable !== false). */
-  billedHours: number;
-  /** Stunden mit hinterlegtem Stundensatz — Basis für den Ø-Satz. */
-  ratedHours: number;
-  targetHours: number;
-}
+/** Safety stop for one read (paged in batches of 100) — the notice shows when reached. */
+const READ_LIMIT = 20_000;
 
 export default function ControllingPage() {
   const { t, lang } = useLang();
@@ -45,54 +38,25 @@ export default function ControllingPage() {
     let cancelled = false;
     async function load() {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
+        // Matters (with their time lists) and standalone timer entries —
+        // both are recorded time.
+        const [casePages, entryPages] = await Promise.all([
+          api.brain.listAllPages({ type: "legal_case", max: READ_LIMIT }),
+          api.brain.listAllPages({ type: "time_entry", max: READ_LIMIT }),
+        ]);
         if (cancelled) return;
-        setCapped(pages.length >= CASES_LIMIT);
-        const lawyerMap = new Map<string, LawyerStats>();
-
-        pages.forEach((p) => {
-          const fm = caseFrontmatter(p);
-          const lawyer = fm.own_lawyer_name || "Ohne zuständigen Anwalt";
-          if (!lawyerMap.has(lawyer)) {
-            lawyerMap.set(lawyer, {
-              name: lawyer,
-              totalHours: 0,
-              totalRevenue: 0,
-              caseCount: 0,
-              billedHours: 0,
-              ratedHours: 0,
-              targetHours: TARGET_HOURS[period],
-            });
-          }
-          const s = lawyerMap.get(lawyer)!;
-          s.caseCount += 1;
-
-          const entries = (fm.time_entries || []) as TimeEntry[];
-          entries.forEach((entry) => {
-            if (!entry.date) return;
-            const d = new Date(entry.date);
-            const now = new Date();
-            const match =
-              period === "month"
-                ? d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-                : period === "quarter"
-                  ? Math.floor(d.getMonth() / 3) === Math.floor(now.getMonth() / 3) &&
-                    d.getFullYear() === now.getFullYear()
-                  : d.getFullYear() === now.getFullYear();
-            if (!match) return;
-
-            const hours = (entry.minutes || 0) / 60;
-            s.totalHours += hours;
-            if (entry.billable !== false) s.billedHours += hours;
-            // Leistungswert nur aus hinterlegten Stundensätzen — kein erfundener Standardsatz.
-            if (entry.rate) {
-              s.totalRevenue += hours * entry.rate;
-              s.ratedHours += hours;
-            }
-          });
-        });
-
-        if (!cancelled) setStats(Array.from(lawyerMap.values()));
+        setCapped(casePages.length >= READ_LIMIT || entryPages.length >= READ_LIMIT);
+        const stats = aggregateLawyerStats(
+          casePages.map((p) => ({
+            slug: p.slug,
+            frontmatter: (p.frontmatter ?? {}) as Record<string, unknown>,
+          })),
+          entryPages.map((p) =>
+            entryFromTimeEntryPage(p.slug, (p.frontmatter ?? {}) as Record<string, unknown>)
+          ),
+          period
+        );
+        if (!cancelled) setStats(stats);
       } catch (e) {
         console.error("[controlling] load failed:", e instanceof Error ? e.message : e);
         if (!cancelled)
@@ -165,7 +129,7 @@ export default function ControllingPage() {
         </div>
       )}
 
-      {capped && <CappedResultsNotice limit={CASES_LIMIT} />}
+      {capped && <CappedResultsNotice limit={READ_LIMIT} />}
 
       {loading ? (
         <div className="space-y-6" role="status" aria-label={t("aria.loading")}>
@@ -248,7 +212,7 @@ export default function ControllingPage() {
                         {hoursFmt(s.totalHours)}
                       </td>
                       <td className="hidden px-4 py-3 text-right text-[color:var(--ds-text)] lg:table-cell">
-                        {hoursFmt(s.billedHours)}
+                        {hoursFmt(s.billableHours)}
                       </td>
                       <td className="hidden px-4 py-3 text-right md:table-cell">
                         <div className="flex items-center justify-end gap-2">

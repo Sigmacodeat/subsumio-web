@@ -117,17 +117,20 @@ interface TaxBucket {
   category: TaxCategoryCode;
   rate: number;
   taxable: number;
+  reason?: string;
 }
 
 function addToBucket(
   buckets: Map<string, TaxBucket>,
   category: TaxCategoryCode,
   rate: number,
-  amount: number
+  amount: number,
+  reason?: string
 ) {
   const key = `${category}:${rate}`;
-  const bucket = buckets.get(key) ?? { category, rate, taxable: 0 };
+  const bucket = buckets.get(key) ?? { category, rate, taxable: 0, reason };
   bucket.taxable = cents(bucket.taxable + amount);
+  if (!bucket.reason && reason) bucket.reason = reason;
   buckets.set(key, bucket);
 }
 
@@ -157,7 +160,7 @@ export function generateEbInterfaceXml(
   const buckets = new Map<string, TaxBucket>();
   const lines = data.lineItems.map((item, index) => {
     const lineAmount = cents(item.quantity * item.unitPrice);
-    addToBucket(buckets, item.taxCategory, item.taxRate, lineAmount);
+    addToBucket(buckets, item.taxCategory, item.taxRate, lineAmount, item.exemptionReason);
     return { item, index, lineAmount };
   });
   const netLines = cents(lines.reduce((sum, l) => sum + l.lineAmount, 0));
@@ -182,6 +185,16 @@ export function generateEbInterfaceXml(
   );
   x.push(`  <InvoiceNumber>${esc(data.invoiceNumber)}</InvoiceNumber>`);
   x.push(`  <InvoiceDate>${isoDate(data.invoiceDate)}</InvoiceDate>`);
+  // Credit note / Storno: reference to the corrected invoice.
+  if (data.precedingInvoice?.number) {
+    x.push(`  <RelatedDocument>`);
+    x.push(`    <InvoiceNumber>${esc(data.precedingInvoice.number)}</InvoiceNumber>`);
+    if (data.precedingInvoice.date) {
+      x.push(`    <InvoiceDate>${isoDate(data.precedingInvoice.date)}</InvoiceDate>`);
+    }
+    x.push(`    <DocumentType>Invoice</DocumentType>`);
+    x.push(`  </RelatedDocument>`);
+  }
 
   // § 11 UStG requires the date of the service; the invoice date stands in
   // when the invoice carries no separate one.
@@ -239,7 +252,7 @@ export function generateEbInterfaceXml(
   x.push(`  <Tax>`);
   for (const b of taxItems) {
     // Exempt or reverse-charge items must name their legal basis.
-    const comment = b.category !== "S" ? data.taxExemptionReason : undefined;
+    const comment = b.category !== "S" ? (b.reason ?? data.taxExemptionReason) : undefined;
     x.push(...taxItemXml(b.taxable, b.rate, b.category, "    ", comment));
   }
   x.push(`  </Tax>`);

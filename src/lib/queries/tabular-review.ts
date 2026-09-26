@@ -60,7 +60,7 @@ export function useTabularReviewRetry(runSlug: string | null) {
 export function useLegalCaseOptions() {
   return useQuery({
     queryKey: ["brain", "pages", "tabular-review-case-options"],
-    queryFn: () => api.brain.listPages({ type: "legal_case", limit: 250 }),
+    queryFn: () => api.brain.listAllPages({ type: "legal_case", max: 10_000 }),
     staleTime: 60_000,
   });
 }

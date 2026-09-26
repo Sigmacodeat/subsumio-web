@@ -11,6 +11,12 @@
  */
 
 import { test, expect } from "@playwright/test";
+import {
+  createCaseWithTimeEntry,
+  draftInvoicePayload,
+  reserveInvoiceNumber,
+  signupAndConfirm,
+} from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = {
@@ -25,8 +31,10 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,
@@ -71,101 +79,42 @@ test.describe("Invoicing CRUD Flow", () => {
     ).toBeVisible();
   });
 
-  test("create case → add time entry → create invoice via API", async ({ page }) => {
+  test("create case → add time entry → create invoice via /api/invoices", async ({ page }) => {
     const csrf = await getCsrf(page);
     const apiRequest = page.context().request;
 
-    // 1. Create a case
-    const caseSlug = `inv-case-${Date.now()}`;
-    const createCaseRes = await apiRequest.post("/api/pages", {
-      data: {
-        slug: caseSlug,
-        title: "Invoice Test Case",
-        type: "legal_case",
-        content: "Test case for invoicing flow.",
-        frontmatter: {
-          case_number: `INV-${Date.now()}`,
-          status: "open",
-          legal_area: "Zivilrecht",
-          priority: "medium",
-          client_name: "Test Client GmbH",
-        },
-      },
-      headers: { "x-csrf-token": csrf },
+    // 1.–2. Matter with a billable time entry (45 min à 220 €).
+    const setup = await createCaseWithTimeEntry(apiRequest, csrf, {
+      clientName: "Test Client GmbH",
     });
-    expect(createCaseRes.status()).not.toBe(403);
-    expect(createCaseRes.status()).not.toBe(503);
 
-    // 2. Add a time entry
-    const timeRes = await apiRequest.post("/api/time", {
-      data: {
-        case_slug: caseSlug,
-        description: "Beratung Mandant zum Vertragsentwurf",
-        minutes: 45,
-        date: new Date().toISOString().split("T")[0],
-        rate: 220,
-        billable: true,
-        activity_type: "meeting",
-        lawyer: "Test Lawyer",
-      },
-      headers: { "x-csrf-token": csrf },
-    });
-    expect(timeRes.status()).not.toBe(403);
-    expect(timeRes.status()).not.toBe(503);
-
-    // 3. Verify time entry was added
-    const timeListRes = await apiRequest.get(`/api/time?case_slug=${encodeURIComponent(caseSlug)}`);
+    // 3. The time entry is listed and still open.
+    const timeListRes = await apiRequest.get(
+      `/api/time?case_slug=${encodeURIComponent(setup.caseSlug)}`
+    );
     expect(timeListRes.status()).toBe(200);
     const timeData = await timeListRes.json();
     expect(timeData.data?.entries?.length ?? 0).toBeGreaterThan(0);
 
-    // 4. Create invoice
-    const invoiceSlug = `invoice/inv-${Date.now()}`;
-    const invoiceRes = await apiRequest.post("/api/pages", {
-      data: {
-        slug: invoiceSlug,
-        title: `Rechnung R-${new Date().getFullYear()}-0001`,
-        type: "invoice",
-        content: "",
-        frontmatter: {
-          type: "invoice",
-          invoice_number: `R-${new Date().getFullYear()}-0001`,
-          client: "Test Client GmbH",
-          case_number: `INV-${Date.now()}`,
-          date: new Date().toISOString().split("T")[0],
-          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          items: [
-            {
-              description: "Beratung Mandant zum Vertragsentwurf",
-              date: new Date().toISOString().split("T")[0],
-              hours: 0.75,
-              rate: 220,
-              amount: 165,
-            },
-          ],
-          expenses: [],
-          status: "draft",
-          subtotal: 165,
-          expense_total: 0,
-          advance_payment: 0,
-          vat_rate: 0.19,
-          tax: 31.35,
-          total: 196.35,
-        },
-      },
+    // 4. Invoice through the invoice route: the server hands out the number
+    //    and reserves the time entry for it (AT: 20 % USt).
+    const number = await reserveInvoiceNumber(apiRequest, csrf);
+    const payload = draftInvoicePayload(setup, number, "Test Client GmbH");
+    const invoiceRes = await apiRequest.post("/api/invoices", {
+      data: payload,
       headers: { "x-csrf-token": csrf },
     });
-    expect(invoiceRes.status()).not.toBe(403);
-    expect(invoiceRes.status()).not.toBe(503);
+    expect(invoiceRes.status()).toBe(201);
 
     // 5. List invoices
     const listRes = await apiRequest.get("/api/pages?type=invoice");
     expect(listRes.status()).toBe(200);
     const invoices = await listRes.json();
     const found = Array.isArray(invoices)
-      ? invoices.find((p: { slug: string }) => p.slug === invoiceSlug)
-      : invoices.items?.find((p: { slug: string }) => p.slug === invoiceSlug);
+      ? invoices.find((p: { slug: string }) => p.slug === payload.slug)
+      : invoices.items?.find((p: { slug: string }) => p.slug === payload.slug);
     expect(found).toBeTruthy();
+    expect(found.frontmatter?.invoice_number).toBe(number);
   });
 
   test("time tracking API CRUD", async ({ page }) => {

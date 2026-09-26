@@ -51,6 +51,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { issuePortalLink } from "@/lib/portal-link-client";
+import { isAwaitingReview, reviewSubmittedItem } from "@/lib/document-request-review";
 import { cn, encodeSlugPath, formatDateTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -73,8 +75,12 @@ interface DocumentRequestRecord {
       label: string;
       required: boolean;
       received_document_slug?: string;
+      submitted_document_slug?: string;
+      submitted_at?: string;
     }>;
-    portal_token_id?: string;
+    /** The request offers the client portal (link issued fresh on copy). */
+    portal_link?: boolean;
+    /** Older requests: only tells that the portal was offered. */
     portal_url?: string;
     source_event_slug?: string;
     message_draft?: string;
@@ -248,6 +254,22 @@ export default function DocumentRequestsPage() {
     });
   }
 
+  // A client upload only counts as received after the firm checked it.
+  async function reviewItem(
+    item: DocumentRequestRecord,
+    key: string,
+    decision: "accept" | "reject"
+  ) {
+    const next = reviewSubmittedItem(
+      item.frontmatter.items,
+      key,
+      decision,
+      item.frontmatter.status
+    );
+    if (!next) return;
+    await updateMutation.mutateAsync({ slug: item.slug, items: next.items, status: next.status });
+  }
+
   async function createRequest() {
     const caseSlug = createForm.case_slug.trim();
     if (!caseSlug) return;
@@ -266,9 +288,19 @@ export default function DocumentRequestsPage() {
     });
   }
 
-  function copyPortalLink(url: string) {
-    const full = url.startsWith("http") ? url : `${window.location.origin}${url}`;
-    void navigator.clipboard.writeText(full).then(
+  // Portal links are never stored: each copy issues a fresh, registered link.
+  async function copyPortalLink(caseSlug: string) {
+    let full: string;
+    try {
+      full = await issuePortalLink(caseSlug);
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Portal-Link konnte nicht erzeugt werden",
+      });
+      return;
+    }
+    await navigator.clipboard.writeText(full).then(
       () => addToast({ type: "success", title: "Portal-Link kopiert" }),
       () => addToast({ type: "error", title: "Kopieren nicht möglich" })
     );
@@ -522,6 +554,34 @@ export default function DocumentRequestsPage() {
                               *
                             </span>
                           )}
+                          {isAwaitingReview(doc) && (
+                            <>
+                              <a
+                                href={`/dashboard/brain/${encodeURIComponent(doc.submitted_document_slug ?? "")}`}
+                                className="text-[color:var(--ds-warning-text)] underline"
+                              >
+                                eingereicht – prüfen
+                              </a>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void reviewItem(item, doc.key, "accept")}
+                                className="rounded px-1 text-[color:var(--ds-success-text)] hover:underline disabled:opacity-50"
+                                aria-label={`${doc.label}: als erhalten bestätigen`}
+                              >
+                                bestätigen
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => void reviewItem(item, doc.key, "reject")}
+                                className="rounded px-1 text-[color:var(--ds-danger-text)] hover:underline disabled:opacity-50"
+                                aria-label={`${doc.label}: Einreichung ablehnen`}
+                              >
+                                ablehnen
+                              </button>
+                            </>
+                          )}
                         </span>
                       ))}
                     </div>
@@ -548,10 +608,10 @@ export default function DocumentRequestsPage() {
                         Ursprüngliche Nachricht
                       </a>
                     )}
-                    {fm.portal_url && (
+                    {(fm.portal_link === true || !!fm.portal_url) && fm.case_slug && (
                       <button
                         type="button"
-                        onClick={() => copyPortalLink(fm.portal_url || "")}
+                        onClick={() => void copyPortalLink(fm.case_slug)}
                         className="inline-flex items-center gap-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:underline"
                       >
                         <Copy size={12} aria-hidden="true" />

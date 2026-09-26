@@ -132,10 +132,7 @@ const posts: BlogPost[] = [
       },
       {
         heading: "Wie gut findet die Suche die richtige Stelle?",
-        paragraphs: [
-          PROOF.recall8.plain,
-          "Die Zahl stammt aus einem allgemeinen Test, nicht aus Kanzleiakten. Ob eine Antwort trägt, prüfen Sie deshalb immer anhand der Fundstelle — und findet das System nichts, sagt es das.",
-        ],
+        paragraphs: [PROOF.search.plain, "Findet das System nichts, sagt es das."],
       },
     ],
   },

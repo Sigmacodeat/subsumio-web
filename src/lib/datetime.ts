@@ -100,3 +100,45 @@ export function toZonedDateString(iso?: string | null, timeZone: string = FIRM_T
   if (Number.isNaN(d.getTime())) return zonedDateString(new Date(), timeZone);
   return zonedDateString(d, timeZone);
 }
+
+/** Today's calendar day in the firm's timezone ("YYYY-MM-DD") — invoice dates, VAT periods. */
+export function firmToday(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): string {
+  return zonedDateString(now, timeZone);
+}
+
+/** The calendar year in the firm's timezone — the invoice number range ("R-2027-…"). */
+export function firmYear(now: Date = new Date(), timeZone: string = FIRM_TIMEZONE): number {
+  return Number(zonedDateString(now, timeZone).slice(0, 4));
+}
+
+/** "YYYY-MM-DD" plus `days` calendar days (no timezone involved). */
+export function addDaysToIsoDate(dateIso: string, days: number): string {
+  const d = new Date(`${dateIso.slice(0, 10)}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Alias kept for callers that use the older name. */
+export const addDaysToDateString = addDaysToIsoDate;
+
+/** Clock time ("14:30") of an instant in the firm's timezone — public booking
+ *  slots are the firm's wall-clock times, whatever the visitor's timezone. */
+export function formatFirmTime(iso: string, timeZone: string = FIRM_TIMEZONE): string {
+  return new Date(iso).toLocaleTimeString("de-AT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  });
+}
+
+/** Long date label ("Sonntag, 27. September 2026") of a firm calendar day. */
+export function formatFirmDateLabel(dateIso: string, timeZone: string = FIRM_TIMEZONE): string {
+  // Noon UTC stays on the same calendar day in every European timezone.
+  return new Date(`${dateIso.slice(0, 10)}T12:00:00.000Z`).toLocaleDateString("de-AT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone,
+  });
+}

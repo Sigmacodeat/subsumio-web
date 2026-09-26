@@ -10,10 +10,11 @@
  */
 
 import type { TimeEntry } from "@/lib/legal-types";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 import { zonedDateString } from "@/lib/datetime";
 import { createHash } from "node:crypto";
+import { assertEngineWriteOk } from "@/lib/engine-write";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -330,17 +331,25 @@ export async function markTimeEntriesBilled(
   };
 }
 
-/** Clear billed flag + invoice_number on embedded entries — atomically. */
+/**
+ * Clear billed flag + invoice_number on embedded entries — atomically. With
+ * `onlyInvoiceNumber`, entries billed under a different invoice by now are
+ * skipped inside the same UPDATE (`""` = only entries without a number).
+ */
 export async function unbillTimeEntries(
   brain: TimeEntriesArrayClient,
   caseSlug: string,
-  ids: string[]
+  ids: string[],
+  onlyInvoiceNumber?: string
 ): Promise<{ updated: number; not_found: string[] }> {
   if (ids.length === 0) return { updated: 0, not_found: [] };
   const res = await brain.mutatePageArray(caseSlug, TIME_ENTRIES_FIELD, {
     match: ids,
     set: { billed: false },
     unset: ["invoice_number"],
+    ...(onlyInvoiceNumber !== undefined
+      ? { unless: { ne: { invoice_number: onlyInvoiceNumber } } }
+      : {}),
   });
   return { updated: res.updated_ids.length, not_found: res.not_found_ids };
 }
@@ -348,16 +357,53 @@ export async function unbillTimeEntries(
 /** The engine returns at most 100 pages per request; page through the rest. */
 export async function listAllPagesOfType(
   brain: {
-    listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]>;
+    listPages: (opts: {
+      type: string;
+      limit: number;
+      offset: number;
+      cursor?: string;
+    }) => Promise<unknown[]>;
+    listPagesPaged?: (opts: {
+      type: string;
+      limit: number;
+      offset: number;
+      cursor?: string;
+    }) => Promise<{ items: unknown[]; nextCursor: string | null }>;
   },
   type: string,
   max = 5000
 ) {
   const out: unknown[] = [];
-  for (let offset = 0; offset < max; offset += 100) {
-    const batch = await brain.listPages({ type, limit: 100, offset });
-    out.push(...batch);
-    if (batch.length < 100) break;
+  let fetched = 0;
+  let cursor: string | undefined;
+  let iterations = 0;
+  for (;;) {
+    if (++iterations > 1000) break;
+    const want = Math.min(100, max - fetched);
+    if (want <= 0) break;
+    const opts = {
+      type,
+      limit: want,
+      offset: cursor ? 0 : fetched,
+      ...(cursor ? { cursor } : {}),
+    };
+    // listPagesPaged exposes the engine's keyset cursor — a batch shortened
+    // by matter-scope/ACL filtering is not the end of the list.
+    if (brain.listPagesPaged) {
+      const page = await brain.listPagesPaged(opts);
+      fetched += page.items.length;
+      out.push(...page.items);
+      if (page.nextCursor && page.nextCursor !== cursor) {
+        cursor = page.nextCursor;
+        continue;
+      }
+      if (page.items.length < want) break;
+    } else {
+      const batch = await brain.listPages(opts);
+      fetched += batch.length;
+      out.push(...batch);
+      if (batch.length < want) break;
+    }
   }
   return out as Array<{ slug: string; frontmatter?: unknown }>;
 }
@@ -367,9 +413,9 @@ export async function listAllPagesOfType(
  * with the `time_entries` array embedded in each matter. Shared by /api/time
  * and /api/time/billing-summary so both report identical numbers.
  */
-export async function listAllTimeEntries(brain: {
-  listPages: (opts: { type: string; limit: number; offset: number }) => Promise<unknown[]>;
-}): Promise<TimeEntryWithCase[]> {
+export async function listAllTimeEntries(
+  brain: Parameters<typeof listAllPagesOfType>[0]
+): Promise<TimeEntryWithCase[]> {
   const [pages, cases] = await Promise.all([
     listAllPagesOfType(brain, "time_entry"),
     listAllPagesOfType(brain, "legal_case"),
@@ -683,14 +729,12 @@ export async function setCurrentActivity(
 
   if (!create.ok) {
     // Try update instead
-    const update = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-      method: "PATCH",
+    // The engine has no PATCH route for pages — merge writes are POST + merge.
+    const update = await enginePatchPage(
       headers,
-      body: JSON.stringify({
-        frontmatter: payload,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
+      { slug, frontmatter: payload as unknown as Record<string, unknown> },
+      { timeoutMs: 10_000 }
+    );
 
     if (!update.ok) {
       throw new Error(`current_activity_set_failed_${update.status}`);
@@ -739,17 +783,12 @@ export async function updateActivityHeartbeat(
   };
   const slug = currentActivitySlug(userId, brainId);
 
-  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
-    method: "PATCH",
+  // The engine has no PATCH route for pages — merge writes are POST + merge.
+  const res = await enginePatchPage(
     headers,
-    body: JSON.stringify({
-      frontmatter: {
-        ...current,
-        last_activity_at: new Date().toISOString(),
-      },
-    }),
-    signal: AbortSignal.timeout(10_000),
-  });
+    { slug, frontmatter: { ...current, last_activity_at: new Date().toISOString() } },
+    { timeoutMs: 10_000 }
+  );
   if (!res.ok) {
     // Swallowing this failure makes the timer look alive while the
     // inactivity cron is about to stop it — fail loudly instead.
@@ -768,11 +807,14 @@ export async function clearCurrentActivity(
   const headers = timeHeaders(brainId, callerHeaders);
   const slug = currentActivitySlug(userId, brainId);
 
-  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
     method: "DELETE",
     headers,
     signal: AbortSignal.timeout(10_000),
   });
+  // 404: nothing running — already cleared. Any other failure leaves the
+  // timer running, so it must not be reported as stopped.
+  if (res.status !== 404) await assertEngineWriteOk(res, "Laufende Zeiterfassung");
 }
 
 /**

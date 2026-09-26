@@ -36,7 +36,7 @@ import { api } from "@/lib/api";
 import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
 import { UPLOAD_ACCEPT, UPLOAD_FOLDER_ACCEPT_RE } from "@/lib/upload-formats";
 import { runUploadPool } from "@/lib/upload-queue";
-import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
+import { inferUploadRouting, uploadTargetCases, type KnownCase } from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
 import Link from "next/link";
@@ -98,9 +98,11 @@ function FileIcon({ name }: { name: string }) {
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+  const n = (v: number, digits: number) =>
+    v.toLocaleString("de-AT", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  if (bytes < 1024 * 1024) return `${n(bytes / 1024, 1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${n(bytes / 1024 / 1024, 1)} MB`;
+  return `${n(bytes / 1024 / 1024 / 1024, 2)} GB`;
 }
 
 function formatEta(seconds?: number) {
@@ -207,9 +209,12 @@ function UploadPageInner() {
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        // Every open matter — not the newest 200 — so the picker and the
+        // Aktenzeichen detection in file names also find older matters.
+        // Archived matters take no new documents.
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: 10_000 });
         if (cancelled) return;
-        setCases(pages);
+        setCases(uploadTargetCases(pages));
       } catch {
         if (!cancelled) setCases([]);
       } finally {
@@ -261,14 +266,17 @@ function UploadPageInner() {
         setFiles((prev) => [...prev, ...queuedFiles]);
         return;
       }
-      const knownCases: KnownCase[] = cases.map((c) => ({
-        slug: c.slug,
-        title: c.title ?? "",
-        aktenzeichen:
-          typeof (c.frontmatter as Record<string, unknown> | undefined)?.aktenzeichen === "string"
-            ? ((c.frontmatter as Record<string, unknown>).aktenzeichen as string)
-            : undefined,
-      }));
+      const knownCases: KnownCase[] = cases.map((c) => {
+        const fm = (c.frontmatter ?? {}) as Record<string, unknown>;
+        // Matters store their number as case_number; `aktenzeichen` is legacy.
+        const az =
+          typeof fm.aktenzeichen === "string"
+            ? fm.aktenzeichen
+            : typeof fm.case_number === "string"
+              ? fm.case_number
+              : undefined;
+        return { slug: c.slug, title: c.title ?? "", aktenzeichen: az };
+      });
       const newFiles: UploadFile[] = accepted.map((f) => {
         const routing = inferUploadRouting(f.name, knownCases);
         const overrides: FileOverrides = {};

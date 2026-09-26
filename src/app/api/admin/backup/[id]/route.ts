@@ -1,5 +1,5 @@
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getBackupFile, deleteBackup } from "@/lib/backup";
+import { getBackupFile, deleteBackup, backupOriginBrainId } from "@/lib/backup";
 import { z } from "zod";
 
 export const maxDuration = 120;
@@ -46,20 +46,32 @@ export const GET = createHandler(
 
 const restoreSchema = z.object({
   confirm: z.boolean().refine((v) => v === true, "confirmation_required"),
+  /** Why the firm's data is overwritten — goes into the audit log. */
+  reason: z.string().trim().min(10, "reason_required").max(500),
   pageTypes: z.array(z.string()).optional(),
 });
+
+function backupIdFrom(req: Request | undefined): string {
+  if (!req) return "";
+  const last = new URL(req.url).pathname.split("/").filter(Boolean).pop() ?? "";
+  return decodeURIComponent(last);
+}
 
 export const POST = createHandler(
   {
     action: "platform.operator",
     rateTier: "heavy",
     body: restoreSchema,
-    audit: (ctx, body) => ({
+    audit: (ctx, body, _query, req) => ({
       action: "backup.restore" as const,
       entityType: "backup",
+      entityId: backupIdFrom(req),
       details: {
         pageTypes: body.pageTypes ?? null,
         user: ctx.user.email,
+        brainId: ctx.brainId,
+        orgName: ctx.supportSession?.orgName ?? null,
+        reason: body.reason,
       },
     }),
   },
@@ -70,7 +82,31 @@ export const POST = createHandler(
     const result = await getBackupFile(id);
     if (!result) return apiError("not_found", "Backup not found", 404);
 
+    // A restore writes into the firm of the active support session. It is
+    // only allowed back into the firm the backup was taken from.
+    if (!ctx.supportSession) {
+      return apiError(
+        "support_session_required",
+        "Wiederherstellung nur innerhalb einer Support-Sitzung für die Kanzlei des Backups",
+        409
+      );
+    }
     const parsed = JSON.parse(result.content);
+    const origin = backupOriginBrainId(parsed);
+    if (!origin || (result.metadata.brainId && result.metadata.brainId !== origin)) {
+      return apiError(
+        "backup_origin_unknown",
+        "Herkunfts-Kanzlei des Backups ist nicht eindeutig — keine Wiederherstellung",
+        409
+      );
+    }
+    if (origin !== ctx.brainId) {
+      return apiError(
+        "backup_tenant_mismatch",
+        "Backup gehört zu einer anderen Kanzlei als die aktive Support-Sitzung",
+        409
+      );
+    }
     const pages: Array<Record<string, unknown>> = parsed.pages ?? parsed.data ?? [];
 
     const ENGINE_URL = process.env.SUBSUMIO_API_URL || "http://localhost:3001";
@@ -96,8 +132,10 @@ export const POST = createHandler(
           continue;
         }
 
-        const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-          method: "PUT",
+        // Restore replaces the stored page with the backed-up state (the
+        // engine has no PUT for pages; a create without merge replaces).
+        const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
+          method: "POST",
           headers: { ...ctx.headers, "Content-Type": "application/json" },
           body: JSON.stringify({
             slug,
@@ -108,26 +146,10 @@ export const POST = createHandler(
           }),
           signal: AbortSignal.timeout(10_000),
         });
-
-        if (!res.ok) {
-          // Try POST if PUT fails (page doesn't exist yet)
-          const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
-            method: "POST",
-            headers: { ...ctx.headers, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              slug,
-              title,
-              type: page.type,
-              content: page.content,
-              frontmatter: page.frontmatter,
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (!createRes.ok) {
-            failed++;
-            errors.push(`${slug}: ${createRes.status}`);
-            continue;
-          }
+        if (!createRes.ok) {
+          failed++;
+          errors.push(`${slug}: ${createRes.status}`);
+          continue;
         }
         restored++;
       } catch (err) {

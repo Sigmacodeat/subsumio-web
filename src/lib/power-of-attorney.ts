@@ -58,6 +58,18 @@ export function isPoAValid(poa: PowerOfAttorney, date?: Date): boolean {
   return true;
 }
 
+/**
+ * Whether a power of attorney may still be sent for or given a signature:
+ * only drafts and sent requests that have not expired. Signed, revoked and
+ * expired ones are closed.
+ */
+export function isPoAOpenForSignature(poa: PowerOfAttorney, date?: Date): boolean {
+  if (poa.status !== "draft" && poa.status !== "sent") return false;
+  const now = date ?? new Date();
+  if (poa.expires_at && new Date(poa.expires_at) < now) return false;
+  return true;
+}
+
 export function getExpiringPoAs(
   poas: PowerOfAttorney[],
   daysAhead: number,

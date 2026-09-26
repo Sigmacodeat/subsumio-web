@@ -134,3 +134,12 @@ describe("EncryptedStorage decorator", () => {
     expect(await enc.createPresignedUpload()).toBeNull();
   });
 });
+
+describe("storageEncryptionWarning (readiness, not a hard stop)", () => {
+  test("warns in tenant mode without a key", async () => {
+    const { storageEncryptionWarning } = await import("../src/core/file-encryption.ts");
+    expect(storageEncryptionWarning({}, true)).toMatch(/SUBSUMIO_STORAGE_ENCRYPTION_KEY/);
+    expect(storageEncryptionWarning({ SUBSUMIO_STORAGE_ENCRYPTION_KEY: "x" }, true)).toBeNull();
+    expect(storageEncryptionWarning({}, false)).toBeNull();
+  });
+});

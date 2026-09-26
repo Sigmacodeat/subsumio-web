@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildPortalCaseView,
   isPortalVisibleDocument,
+  isPortalVisibleRequest,
+  portalReleasedSummary,
   portalVisibleDocumentSlugs,
+  toPortalQuestionnaire,
+  toPortalRequest,
 } from "./portal-view";
 
 const page = {
@@ -90,5 +94,113 @@ describe("buildPortalCaseView", () => {
     expect(
       Array.from(portalVisibleDocumentSlugs(page.frontmatter.documents as never)).sort()
     ).toEqual(["documents/k", "documents/u"]);
+  });
+
+  it("never exposes the case body; only the released portal summary", () => {
+    const internal = { ...page, content: "INTERN Strategie" };
+    expect(buildPortalCaseView(internal as never).content).toBe("");
+    expect(JSON.stringify(buildPortalCaseView(internal as never))).not.toContain("INTERN");
+    const released = {
+      ...internal,
+      frontmatter: { ...internal.frontmatter, portal_summary: "Freigegebener Sachverhalt" },
+    };
+    expect(buildPortalCaseView(released as never).content).toBe("Freigegebener Sachverhalt");
+    expect(portalReleasedSummary(released.frontmatter)).toBe("Freigegebener Sachverhalt");
+    expect(portalReleasedSummary({ portal_summary: 42 })).toBe("");
+    expect(portalReleasedSummary(undefined)).toBe("");
+  });
+
+  it("hides unreviewed/rejected AI deadlines, pre-deadlines and done ones", () => {
+    const withDeadlines = {
+      ...page,
+      frontmatter: {
+        ...page.frontmatter,
+        deadlines: [
+          { title: "Abgelehnt", due_date: "2026-10-01", review_status: "rejected" },
+          { title: "Ungeprüft", due_date: "2026-10-02", review_status: "unreviewed" },
+          { title: "Vorfrist", due_date: "2026-10-03", status: "vorfrist" },
+          { title: "Erledigt", due_date: "2026-10-04", status: "done" },
+          { title: "Später", due_date: "2026-12-01", review_status: "approved" },
+          { title: "Früher", due_date: "2026-11-01", status: "pending" },
+        ],
+      },
+    };
+    const view = buildPortalCaseView(withDeadlines as never);
+    expect(view.frontmatter.deadlines.map((d) => d.title)).toEqual(["Früher", "Später"]);
+  });
+});
+
+describe("portal document requests", () => {
+  const base = {
+    slug: "legal/document-requests/r1",
+    frontmatter: {
+      type: "document_request" as const,
+      case_slug: "legal/cases/x",
+      recipient_role: "client" as const,
+      channel: "whatsapp" as const,
+      status: "sent" as const,
+      recipient_phone: "+4366012345",
+      message_draft: "interner Entwurf",
+      created_at: "2026-09-01T00:00:00Z",
+      updated_at: "2026-09-01T00:00:00Z",
+      items: [
+        { key: "a", label: "Vertrag", required: true, received_document_slug: "documents/y" },
+        { key: "b", label: "Rechnung", required: false },
+      ],
+    },
+  };
+
+  it("shows only sent requests addressed to the client", () => {
+    expect(isPortalVisibleRequest(base)).toBe(true);
+    expect(
+      isPortalVisibleRequest({ ...base, frontmatter: { ...base.frontmatter, status: "draft" } })
+    ).toBe(false);
+    expect(
+      isPortalVisibleRequest({
+        ...base,
+        frontmatter: { ...base.frontmatter, recipient_role: "assistant" },
+      })
+    ).toBe(false);
+  });
+
+  it("returns an allowlisted shape without draft, phone or internal slugs", () => {
+    const out = toPortalRequest(base);
+    const json = JSON.stringify(out);
+    expect(json).not.toContain("interner Entwurf");
+    expect(json).not.toContain("+4366012345");
+    expect(json).not.toContain("documents/y");
+    expect(out.frontmatter.items).toEqual([
+      { key: "a", label: "Vertrag", required: true, received: true, in_review: false },
+      { key: "b", label: "Rechnung", required: false, received: false, in_review: false },
+    ]);
+  });
+
+  it("an upload awaiting the firm's check shows as in review, not received", () => {
+    const out = toPortalRequest({
+      ...base,
+      frontmatter: {
+        ...base.frontmatter,
+        items: [
+          { key: "c", label: "Pass", required: true, submitted_document_slug: "documents/z" },
+        ],
+      },
+    });
+    expect(out.frontmatter.items).toEqual([
+      { key: "c", label: "Pass", required: true, received: false, in_review: true },
+    ]);
+    expect(JSON.stringify(out)).not.toContain("documents/z");
+  });
+
+  it("drops the author of a questionnaire", () => {
+    const out = toPortalQuestionnaire({
+      id: "q1",
+      title: "Fragen",
+      fields: [{ key: "k", label: "L", type: "text" }],
+      status: "sent",
+      created_by: "user-123",
+      created_at: "2026-09-01",
+    });
+    expect(JSON.stringify(out)).not.toContain("user-123");
+    expect(out.id).toBe("q1");
   });
 });

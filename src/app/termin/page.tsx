@@ -9,6 +9,14 @@ import {
   Loader2,
   Scale,
 } from "lucide-react";
+import { formatFirmDateLabel, formatFirmTime } from "@/lib/datetime";
+import {
+  PublicFirmGate,
+  PublicFirmHeader,
+  PublicPrivacyNotice,
+  consentText,
+  type PublicFirm,
+} from "@/components/public-forms/public-firm";
 
 /**
  * Öffentliche Terminbuchung (WP-3.15) — kein Login, keine Kanzlei-Chrome.
@@ -16,6 +24,9 @@ import {
  * Slots kommen von GET /api/booking/public (serverseitig gegen belegte
  * Termine geprüft); die Buchung wird in POST /api/booking/public erneut
  * verifiziert — ein parallel vergezogener Slot scheitert dort mit 409.
+ *
+ * Angezeigt nur, wenn die empfangende Kanzlei feststeht und benannt werden
+ * kann (Art. 13 DSGVO). Uhrzeiten immer in Wiener Zeit (Kanzleizeit).
  */
 
 interface Slot {
@@ -30,6 +41,10 @@ function toDateInput(d: Date): string {
 }
 
 export default function TerminBuchungsPage() {
+  return <PublicFirmGate form="booking">{(firm) => <TerminBuchung firm={firm} />}</PublicFirmGate>;
+}
+
+function TerminBuchung({ firm }: { firm: PublicFirm }) {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -81,6 +96,10 @@ export default function TerminBuchungsPage() {
       setError("Bitte Termin, Name und Anliegen auswählen/ausfüllen.");
       return;
     }
+    if (!email.trim() && !phone.trim()) {
+      setError("Bitte geben Sie eine E-Mail-Adresse oder Telefonnummer an.");
+      return;
+    }
     if (!consent) {
       setError("Bitte der Verarbeitung Ihrer Angaben zustimmen.");
       return;
@@ -122,14 +141,8 @@ export default function TerminBuchungsPage() {
     }
   }
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
-  const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("de-AT", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const formatTime = formatFirmTime;
+  const dateLabel = formatFirmDateLabel(date);
 
   if (done) {
     return (
@@ -137,8 +150,8 @@ export default function TerminBuchungsPage() {
         <CheckCircle2 size={40} className="text-[color:var(--ds-success-text)]" />
         <h1 className="text-xl font-semibold">Termin gebucht</h1>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
-          Ihr Termin am {dateLabel} um {picked ? formatTime(picked.start) : ""} Uhr ist vorgemerkt.
-          Die Kanzlei bestätigt ihn zeitnah.
+          Ihr Termin am {dateLabel} um {picked ? formatTime(picked.start) : ""} Uhr (Wiener Zeit)
+          ist vorgemerkt. Die Kanzlei bestätigt ihn zeitnah.
         </p>
       </div>
     );
@@ -150,9 +163,12 @@ export default function TerminBuchungsPage() {
         <Scale size={28} className="mx-auto text-[color:var(--brand-primary)]" />
         <h1 className="text-xl font-semibold">Termin buchen</h1>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
-          Wählen Sie einen freien Termin und teilen Sie uns kurz Ihr Anliegen mit.
+          Wählen Sie einen freien Termin und teilen Sie uns kurz Ihr Anliegen mit. Alle Uhrzeiten in
+          Wiener Zeit.
         </p>
       </div>
+
+      <PublicFirmHeader firm={firm} />
 
       {/* Tag wählen */}
       <div className="flex items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
@@ -249,7 +265,7 @@ export default function TerminBuchungsPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="tb-email" className="text-xs font-medium text-[color:var(--ds-text)]">
-              E-Mail
+              E-Mail (oder Telefon) *
             </label>
             <input
               id="tb-email"
@@ -307,9 +323,10 @@ export default function TerminBuchungsPage() {
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-0.5"
           />
-          Ich stimme zu, dass meine Angaben zur Durchführung des Termins verarbeitet werden. Eine
-          Kollisionsprüfung nach § 10 RAO erfolgt vor jeder weiteren Kontaktaufnahme.
+          {consentText(firm)}
         </label>
+
+        <PublicPrivacyNotice firm={firm} purpose="booking" />
 
         {error && (
           <p role="alert" className="text-xs text-[color:var(--ds-danger-text)]">

@@ -94,6 +94,11 @@ export const signupSchema = z.object({
   // Legal jurisdiction of the firm (Rechtsraum). Separate from `locale`
   // (UI language) — a German firm keeps German UI but needs DE law corpus.
   jurisdiction: z.enum(["at", "de"]).optional(),
+  // Contract conclusion (src/lib/auth/legal-acceptance.ts): the account can
+  // only be created with an active confirmation of AGB + Datenschutzerklärung
+  // and the electronic conclusion of the AVV (Art. 28 Abs. 9 DSGVO).
+  acceptTerms: z.literal(true, { message: "terms_not_accepted" }),
+  acceptDpa: z.literal(true, { message: "dpa_not_accepted" }),
 });
 
 export const registerSchema = signupSchema

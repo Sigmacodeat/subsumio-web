@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  loadKanzleiSettings,
+  loadKanzleiSettingsStrict,
   saveKanzleiSettings,
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
@@ -29,7 +29,10 @@ export default function KanzleiSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadKanzleiSettings()
+    // Strict: a failed read shows an error and no form, so saving can never
+    // write defaults over the firm's real data. Only a never-saved profile
+    // (404) opens the empty form.
+    loadKanzleiSettingsStrict()
       .then((s) => {
         setSettings({
           ...s,
@@ -179,6 +182,21 @@ export default function KanzleiSettingsPage() {
               onChange={(v) => update("website", v)}
             />
           </div>
+          <div className="sm:col-span-2">
+            <Field
+              id="k-privacy-url"
+              label={L(
+                "Datenschutzerklärung der Kanzlei (Webadresse)",
+                "Firm privacy policy (web address)"
+              )}
+              hint={L(
+                "Wird auf den öffentlichen Formularen (Erstanfrage, Terminbuchung) neben dem Datenschutzhinweis verlinkt. Die Formulare erscheinen nur, wenn Kanzleiname, Anschrift und E-Mail hinterlegt sind.",
+                "Linked on the public forms (enquiry, booking) next to the privacy notice. The forms are only offered when firm name, address and e-mail are set."
+              )}
+              value={settings.datenschutzUrl ?? ""}
+              onChange={(v) => update("datenschutzUrl", v.trim())}
+            />
+          </div>
           <Field
             id="k-aktenzeichen-prefix"
             label={L("Aktenzeichen-Kürzel (optional)", "Case-number prefix (optional)")}
@@ -314,8 +332,8 @@ export default function KanzleiSettingsPage() {
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
               {L(
-                "Jedes Mitglied muss bei der nächsten Anmeldung einen Code aus einer Authenticator-App einrichten.",
-                "Every member must set up a code from an authenticator app at their next sign-in."
+                "Mitglieder ohne Zwei-Faktor-Anmeldung werden beim Speichern sofort abgemeldet und richten bei der nächsten Anmeldung einen Code aus einer Authenticator-App ein.",
+                "Members without two-factor sign-in are signed out as soon as you save and set up a code from an authenticator app at their next sign-in."
               )}
             </p>
           </div>

@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 
 const TOOL_ICONS: Record<string, typeof FileText> = {
   navigate: ArrowRight,
@@ -160,8 +161,8 @@ export function ToolCallBubble({
                   <dt className="shrink-0 font-medium text-[color:var(--ds-warning-text)]">
                     {formatParamKey(key, t)}:
                   </dt>
-                  <dd className="min-w-0 flex-1 truncate text-[color:var(--ds-warning-text)]">
-                    {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                  <dd className="max-h-60 min-w-0 flex-1 overflow-y-auto break-words whitespace-pre-wrap text-[color:var(--ds-warning-text)]">
+                    {typeof value === "object" ? JSON.stringify(value, null, 2) : String(value)}
                   </dd>
                 </div>
               ))}
@@ -292,6 +293,16 @@ function ToolResultCard({
       {/* Message */}
       {display.message && (
         <p className="px-3 py-2 text-xs text-[color:var(--ds-text-muted)]">{display.message}</p>
+      )}
+
+      {/* Full AI-generated text (Copilot tool output) with grounding + AI notice */}
+      {display.aiText && (
+        <div className="space-y-2 px-3 py-2">
+          <div className="max-h-80 overflow-y-auto text-xs break-words whitespace-pre-wrap text-[color:var(--ds-text)]">
+            {display.aiText}
+          </div>
+          <GroundedOutputPanel text={display.aiText} />
+        </div>
       )}
 
       {/* Items list */}

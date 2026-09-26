@@ -38,6 +38,10 @@ services:
     logging: *default-logging
     image: clamav/clamav:stable
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Signature reloads briefly hold two databases in memory.
+    mem_limit: ${CLAMAV_MEM_LIMIT:-4g}
     environment:
       # Keep ClamAV's INSTREAM ceiling aligned with the application's 500 MB
       # document limit. The image default is only 100 MB and otherwise causes
@@ -62,6 +66,11 @@ services:
       dockerfile: Dockerfile.db
     image: subsumio-engine-db:latest
     restart: unless-stopped
+    # No memory limit on purpose: the database keeps its vector and text
+    # indexes in memory; the other services are capped so they cannot push
+    # it into the OOM killer. (Hardening options such as no-new-privileges
+    # belong here too, but any change to this service recreates the database
+    # on the next deploy — add them in a planned maintenance window.)
     # Memory settings come from .env so one compose file fits both boxes. The
     # defaults suit 16 GB; on the 64 GB server the 14 GB vector index and the
     # text indexes must stay in memory (see server/deploy/netcup/RUNBOOK.md).
@@ -106,6 +115,18 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     shm_size: 1gb
+    # The engine parses untrusted uploads (LibreOffice, Ghostscript, qpdf,
+    # readpst). It runs as uid 10001 (server/Dockerfile), holds no
+    # capabilities, cannot gain privileges through setuid binaries, and is
+    # bounded in memory, CPU and processes so a runaway conversion cannot pull
+    # the database down with it. Limits are tunable in .env.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${ENGINE_MEM_LIMIT:-16g}
+    cpus: ${ENGINE_CPUS:-8}
+    pids_limit: ${ENGINE_PIDS_LIMIT:-4096}
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}
@@ -128,9 +149,12 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
+    # Own edge network, shared only with the reverse proxy (see the
+    # `networks:` section at the end). No other project's container can
+    # reach the engine directly.
     networks:
       default:
-      hetzner_default:
+      subsumio-edge:
         aliases:
           - engine
     healthcheck:
@@ -156,6 +180,13 @@ services:
         NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
         NEXT_PUBLIC_SENTRY_DSN: "${NEXT_PUBLIC_SENTRY_DSN:-}"
     restart: unless-stopped
+    # Runs as the image's `bun` user; needs no capabilities.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${WEB_MEM_LIMIT:-6g}
+    cpus: ${WEB_CPUS:-4}
     env_file: .env
     environment:
       NODE_ENV: production
@@ -174,6 +205,14 @@ services:
       # Operator console (/ops) and operator APIs are served only on this host.
       OPS_HOSTS: ${OPS_DOMAIN:-ops.subsum.io}
       BACKUP_STATUS_FILE: /backup-status/last-success
+      # Firm civil time. Code uses explicit Europe/Vienna helpers
+      # (src/lib/datetime.ts); this is the safety net for anything that
+      # still reads the process timezone.
+      TZ: Europe/Vienna
+      # The edge session verifier asks this origin for revocations. Local
+      # loopback keeps those checks off the public domain (and off its shared
+      # per-IP rate limit).
+      SUBSUMIO_INTERNAL_URL: http://localhost:3000
     volumes:
       # Corpus read-only mount so the dashboard can enumerate local disk files.
       # Mounted at /app/law-corpus to match src/lib/corpus-index.ts (NORMALIZED_ROOT).
@@ -190,7 +229,7 @@ services:
         condition: service_healthy
     networks:
       default:
-      hetzner_default:
+      subsumio-edge:
         aliases:
           - web
     healthcheck:
@@ -204,7 +243,14 @@ services:
       retries: 5
       start_period: 60s
 
+  # Standalone proxy for a box without the shared /opt/caddy proxy (fresh
+  # install, disaster recovery). Production does not start it: it sits behind
+  # a profile, so a plain `docker compose up` never competes for ports 80/443.
+  #   docker compose -p subsumio-engine --profile standalone-proxy up -d caddy
+  # ./Caddyfile is the reference configuration for the shared proxy too.
   caddy:
+    logging: *default-logging
+    profiles: ["standalone-proxy"]
     image: caddy:2
     restart: unless-stopped
     ports:
@@ -224,28 +270,38 @@ services:
 
   cron:
     logging: *default-logging
-    image: alpine:3.20
+    # Tools baked in at build time (images/cron) — no package mirror at start.
+    build:
+      context: ./images/cron
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
     restart: unless-stopped
     depends_on:
       web:
         condition: service_healthy
     environment:
       CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env}
-      # Optional dead-man's-switch pings, curl'd after a SUCCESSFUL run of the
-      # Fristen-critical jobs (see crontab + RUNBOOK "Cron-Überwachung").
-      # Empty = no ping.
+      # Failed jobs mail this address (cronjob.sh; at most once per job/hour).
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Subsumio <hello@subsum.io>}
+      QUEUE_ALERT_EMAIL: ${QUEUE_ALERT_EMAIL:-}
+      # Optional dead-man's-switch pings after a SUCCESSFUL run (cronjob.sh,
+      # RUNBOOK "Cron-Überwachung"). Empty = no ping.
       CRON_HEARTBEAT_URL_DEADLINES: ${CRON_HEARTBEAT_URL_DEADLINES:-}
       CRON_HEARTBEAT_URL_DEADLINE_REMINDERS: ${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS:-}
       CRON_HEARTBEAT_URL_DEADLINE_ALERTS: ${CRON_HEARTBEAT_URL_DEADLINE_ALERTS:-}
       CRON_HEARTBEAT_URL_HEALTH: ${CRON_HEARTBEAT_URL_HEALTH:-}
+      CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS: ${CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS:-}
+      CRON_HEARTBEAT_URL_IMAP_SYNC: ${CRON_HEARTBEAT_URL_IMAP_SYNC:-}
+      CRON_HEARTBEAT_URL_DUNNING_RUN: ${CRON_HEARTBEAT_URL_DUNNING_RUN:-}
+      CRON_HEARTBEAT_URL_MONTHLY_INVOICE: ${CRON_HEARTBEAT_URL_MONTHLY_INVOICE:-}
+      CRON_HEARTBEAT_URL_SANCTIONS_SYNC: ${CRON_HEARTBEAT_URL_SANCTIONS_SYNC:-}
     volumes:
       - ./crontab:/etc/crontab:ro
-    entrypoint: >
-      sh -c "
-        apk add --no-cache curl supercronic &&
-        export CRON_SECRET &&
-        supercronic /etc/crontab
-      "
+      - ./cronjob.sh:/etc/cronjob.sh:ro
 
   # Encrypted offsite backup + restore-verification (restic → Hetzner Object
   # Storage / Storage Box). Daily pg_dump + original files; weekly restore drill.
@@ -253,7 +309,11 @@ services:
   # them (the service just logs that the repo isn't configured and idles).
   backup:
     logging: *default-logging
-    image: alpine:3.20
+    # Tools baked in at build time (images/backup) — no package mirror at start.
+    build:
+      context: ./images/backup
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     depends_on:
       db:
@@ -279,6 +339,9 @@ services:
       BACKUP_LOCAL_DIR: ${BACKUP_LOCAL_DIR:-/backups}
       BACKUP_LOCAL_PASSPHRASE: ${BACKUP_LOCAL_PASSPHRASE:-}
       BACKUP_LOCAL_KEEP_DAYS: ${BACKUP_LOCAL_KEEP_DAYS:-14}
+      # The local archive also holds the original files (/data); needs disk
+      # space for them per retained day. 0 = database only (health then warns).
+      BACKUP_LOCAL_INCLUDE_FILES: ${BACKUP_LOCAL_INCLUDE_FILES:-1}
       # Read by /api/cron/health to alert when backups stop running.
       BACKUP_STATUS_FILE: /backup-status/last-success
     volumes:
@@ -289,11 +352,6 @@ services:
       - ./backup:/backup:ro
       - backup-local:/backups
       - backup-status:/backup-status
-    entrypoint: >
-      sh -c "
-        apk add --no-cache restic postgresql16-client curl supercronic ca-certificates openssl tar &&
-        supercronic /backup/crontab
-      "
 
   # Corpus Pipeline Orchestrator — supervises the legal-corpus ingest chain
   # (backfill → import → embed → reconcile). State is DB-backed via
@@ -316,6 +374,17 @@ services:
         condition: service_healthy
     networks:
       - default
+    # Same image as the engine, but the pipeline writes into the host corpus
+    # directory and /root/subsumio-pipeline-logs (root-owned), so it keeps
+    # running as root — explicitly, since the image default is uid 10001. It
+    # handles the public law corpus, not firm uploads. No privilege gain,
+    # bounded resources.
+    user: "0:0"
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${PIPELINE_MEM_LIMIT:-12g}
+    cpus: ${PIPELINE_CPUS:-6}
+    pids_limit: ${PIPELINE_PIDS_LIMIT:-4096}
     environment:
       # DB connection (same network as db)
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
@@ -327,6 +396,12 @@ services:
       PIPELINE_RECONCILE_GAP: ${PIPELINE_RECONCILE_GAP:-0.05}
       # Alert webhook (optional — set ALERT_WEBHOOK in .env to enable)
       ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
+      # Error alerts (delta sync, index crawls) mail the ops mailbox
+      # (scripts/pipeline-alert.ts; same channel as cronjob.sh).
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Subsumio <hello@subsum.io>}
+      QUEUE_ALERT_EMAIL: ${QUEUE_ALERT_EMAIL:-}
+      PIPELINE_ALERT_STATE_DIR: /root/subsumio-pipeline-logs/alert-state
       # OpenRouter (for embedding calls via auto-embed-pg.ts). Set
       # OPENROUTER_API_KEY_PIPELINE in .env to give bulk embedding its own key
       # with its own spend limit, separate from the engine's answers.
@@ -339,11 +414,6 @@ services:
       # start, with this message.
       SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:?in server/deploy/netcup/.env setzen — muss zum Vektorraum der Spalte content_chunks.embedding passen}
       SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:?in server/deploy/netcup/.env setzen — Breite der Spalte content_chunks.embedding}
-      # RIS Proxy — disabled: all 10 proxies were dead (timeout on every HTTPS request).
-      # Re-enable by setting RIS_PROXY_URLS in .env with working proxy URLs.
-      RIS_PROXY_URLS: ""
-      RIS_PROXY_DELAY: ${RIS_PROXY_DELAY:-1500}
-      RIS_PROXY_CONCURRENCY: ${RIS_PROXY_CONCURRENCY:-0}
       # Pipeline pause flag — when "true", orchestrator reports but starts no jobs.
       # Default false: pipeline runs automatically after deploy.
       PIPELINE_PAUSED: ${PIPELINE_PAUSED:-false}
@@ -420,5 +490,11 @@ volumes:
   web-data:
 
 networks:
-  hetzner_default:
+  # web and engine are reachable only from this stack and from the shared
+  # reverse proxy (/opt/caddy), which deploy-code.sh attaches to this network.
+  # The proxy overwrites X-Real-IP with the TCP peer; the app relies on that
+  # for its IP allowlist, rate limits and audit rows, so no container that
+  # bypasses the proxy may share a network with web or engine.
+  subsumio-edge:
     external: true
+    name: subsumio-edge

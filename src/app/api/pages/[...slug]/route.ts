@@ -1,15 +1,53 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
-import { logAudit } from "@/lib/audit";
+import { getAuditExtra, setAuditExtra, slugFromRoutePath } from "@/lib/audit-context";
+import {
+  archiveCaseDocuments,
+  restoreCaseDocuments,
+  tombstoneCaseDocuments,
+} from "@/lib/case-cascade";
+import {
+  caseRetentionState,
+  caseRetentionUntil,
+  retentionRunningMessage,
+} from "@/lib/case-retention";
+import { removeFromCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import {
+  enforceFirmTwoFactorNow,
+  turnsOnTwoFactorRequirement,
+} from "@/lib/auth/two-factor-enforce";
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
+  checkSignedDocumentWrite,
+  guardProtectedPageWrite,
+  isInvoicePage,
   guardSecondCheckWrite,
+  isKanzleiSettingsTarget,
   readCurrentPage,
   rejectionResponse,
 } from "@/lib/page-write-guards";
+import {
+  canWaiveConflict,
+  checkPartiesConflicts,
+  matterParties,
+  type MatterConflictOutcome,
+} from "@/lib/conflict-gate";
+import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
+import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
+import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { isForeignPersonalEvent } from "@/lib/calendar/personal-events";
+import { can } from "@/lib/permissions";
+import { mayReceiveRecord } from "@/lib/staff-only-records";
+import {
+  applyDeadlineWritePolicy,
+  checkDeadlinePageDelete,
+  isDeadlinePage,
+  type DeadlineChangeEvent,
+} from "@/lib/deadline-write-policy";
+import { logDeadlineEvents } from "@/lib/deadline-audit";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -17,6 +55,11 @@ const log = logger("api/pages/[...slug]");
 function buildPath(slug: string[]): string | null {
   if (slug.some((s) => s.includes(".."))) return null;
   return slug.map(encodeURIComponent).join("/");
+}
+
+function storedVersion(fm: Record<string, unknown>): number {
+  const v = fm.version;
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
 const patchSchema = z
@@ -42,7 +85,12 @@ export const GET = createHandler(
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return Response.json(await res.json());
+      const page = (await res.json()) as Record<string, unknown>;
+      // Firm-internal AML records answer like a missing page for clients.
+      if (!mayReceiveRecord(ctx.user.role, page)) return apiNotFound("not_found");
+      // Another user's personal calendar mirror is theirs alone.
+      if (isForeignPersonalEvent(page, ctx.user?.id)) return apiNotFound("not_found");
+      return Response.json(redactPageSecrets(page));
     } catch (err) {
       log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiNotFound("not_found");
@@ -55,13 +103,13 @@ export const PATCH = createHandler(
     action: "brain.write",
     rateTier: "standard",
     body: patchSchema,
-    audit: (ctx, body) => {
-      const slug = (ctx as unknown as { __slug?: string }).__slug;
+    audit: (ctx, body, _query, req) => {
+      const extra = getAuditExtra(ctx);
       return {
-        action: "case.update" as const,
+        action: extra?.action ?? ("case.update" as const),
         entityType: "page",
-        entityId: slug,
-        details: { fields: Object.keys(body) },
+        entityId: extra?.entityId ?? slugFromRoutePath(req, "/api/pages/"),
+        details: { fields: Object.keys(body), ...extra?.details },
       };
     },
   },
@@ -114,9 +162,85 @@ export const PATCH = createHandler(
           : undefined,
     });
     if (invoiceRejection) return rejectionResponse(invoiceRejection);
+    // A signed document keeps the text its signature was bound to.
+    const signedRejection = checkSignedDocumentWrite(currentPage, {
+      mode: "merge",
+      content: body.content,
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (signedRejection) return rejectionResponse(signedRejection);
+    const invoiceRouteRejection = checkInvoiceGenericWrite(currentPage, {
+      type: body.type,
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (invoiceRouteRejection) return rejectionResponse(invoiceRouteRejection);
 
-    // Increment version on update
+    // Billed time entries / expenses are part of an invoice's basis — the
+    // billing state moves only through the dedicated billing routes.
+    const billedRejection = checkBilledEntriesWrite(currentPage, {
+      mode: "merge",
+      frontmatter:
+        body.frontmatter && typeof body.frontmatter === "object"
+          ? (body.frontmatter as Record<string, unknown>)
+          : undefined,
+    });
+    if (billedRejection) return rejectionResponse(billedRejection);
+
     const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
+    const bodyFrontmatter =
+      patchBody.frontmatter && typeof patchBody.frontmatter === "object"
+        ? (patchBody.frontmatter as Record<string, unknown>)
+        : undefined;
+    // Restore (role-checked below) is the only write an archived matter takes.
+    const restoring =
+      !!bodyFrontmatter?.restored_at &&
+      bodyFrontmatter.status !== "archived" &&
+      bodyFrontmatter.status !== "tombstoned";
+
+    // Records with their own route (Kanzlei-Einstellungen, KYC, Anderkonten,
+    // Freigaben, Kollisions-/Legal-Hold-Felder, Löschen/Archivieren) are not
+    // written here.
+    const protectedWrite = guardProtectedPageWrite({
+      slug: rawSlug,
+      current: currentPage,
+      actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+      mode: "merge",
+      type: body.type,
+      frontmatter: bodyFrontmatter,
+      restore: restoring,
+    });
+    if ("reject" in protectedWrite) return rejectionResponse(protectedWrite.reject);
+    if (protectedWrite.frontmatter) patchBody.frontmatter = protectedWrite.frontmatter;
+
+    // The portal summary is the only case text a client sees — releasing or
+    // changing it is a lawyer/admin decision.
+    if (
+      bodyFrontmatter &&
+      "portal_summary" in bodyFrontmatter &&
+      (bodyFrontmatter.portal_summary ?? "") !== (curFm.portal_summary ?? "") &&
+      ctx.user.role !== "admin" &&
+      ctx.user.role !== "lawyer"
+    ) {
+      return apiError(
+        "portal_summary_forbidden",
+        "Nur Anwältinnen/Anwälte und Admins dürfen die Portal-Zusammenfassung freigeben.",
+        403
+      );
+    }
+    if (isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter)) {
+      patchBody.frontmatter = await sealKanzleiSettingsFrontmatter(
+        (patchBody.frontmatter as Record<string, unknown> | undefined) ?? {},
+        curFm
+      );
+    }
+
+    let deadlineEvents: DeadlineChangeEvent[] = [];
 
     if (patchBody.frontmatter) {
       // Vier-Augen-Kontrolle: second_check_* is stamped only by
@@ -130,8 +254,19 @@ export const PATCH = createHandler(
       if ("reject" in guarded) return rejectionResponse(guarded.reject);
       patchBody.frontmatter = guarded.frontmatter;
 
-      const fm = patchBody.frontmatter as Record<string, unknown>;
-      const isRestore = !!fm.restored_at && fm.status !== "archived";
+      // Fristen: server-stamped identity, Notfrist protection, audit trail.
+      const policy = applyDeadlineWritePolicy({
+        slug: rawSlug,
+        type: patchBody.type ?? currentPage.type,
+        incoming: patchBody.frontmatter as Record<string, unknown>,
+        current: currentPage,
+        user: ctx.user,
+      });
+      if ("reject" in policy) return rejectionResponse(policy.reject);
+      patchBody.frontmatter = policy.frontmatter;
+      deadlineEvents = policy.events;
+
+      const isRestore = restoring;
 
       // RBAC: Restore requires admin or lawyer role (brain.delete level)
       if (isRestore && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
@@ -155,8 +290,9 @@ export const PATCH = createHandler(
 
     if (patchBody.frontmatter) {
       const fm = patchBody.frontmatter as Record<string, unknown>;
-      const currentVersion = ifMatch ? parseInt(ifMatch, 10) : (fm.version as number | undefined);
-      fm.version = (typeof currentVersion === "number" ? currentVersion : 0) + 1;
+      // Always the STORED version + 1 — never a client-sent value, with or
+      // without If-Match (which was verified against the stored one above).
+      fm.version = storedVersion(curFm) + 1;
 
       // Restore: append timeline event
       if (fm.restored_at && fm.status && fm.status !== "archived") {
@@ -174,7 +310,87 @@ export const PATCH = createHandler(
         ];
       }
     } else if (ifMatch) {
-      patchBody.frontmatter = { version: parseInt(ifMatch, 10) + 1 };
+      patchBody.frontmatter = { version: storedVersion(curFm) + 1 };
+    }
+
+    // Kollisionsprüfung beim Parteiwechsel (§ 10 Abs 1 RAO) — BEFORE the
+    // write, with the same gate as the matter creation: a critical hit blocks
+    // (409) until a lawyer/admin waives it with a reason, and a check that
+    // cannot run blocks the change (503). Only parties that are new in this
+    // write are checked, so saving a matter with unchanged parties (or an
+    // earlier, waived conflict) does not re-trigger the gate.
+    let conflictWarning: MatterConflictOutcome | undefined;
+    const isCase =
+      currentPage.type === "legal_case" ||
+      curFm.type === "legal_case" ||
+      body.type === "legal_case";
+    if (isCase && patchBody.frontmatter) {
+      const fm = patchBody.frontmatter as Record<string, unknown>;
+      const partyKey = (p: { side: string; name: string }) => `${p.side}:${p.name.toLowerCase()}`;
+      const before = new Set(matterParties(curFm).map(partyKey));
+      const newParties = matterParties({ ...curFm, ...fm }).filter((p) => !before.has(partyKey(p)));
+      if (newParties.length > 0) {
+        try {
+          conflictWarning = await checkPartiesConflicts(ctx.headers, newParties, {
+            selfCaseSlug: rawSlug,
+          });
+        } catch (err) {
+          log.error(
+            "[pages/...slug] conflict check failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+          return apiError(
+            "conflict_check_unavailable",
+            "Kollisionsprüfung nicht verfügbar. Die Änderung der Parteien wurde nicht gespeichert.",
+            503
+          );
+        }
+        const waiverReason =
+          typeof fm.conflict_waiver_reason === "string" ? fm.conflict_waiver_reason.trim() : "";
+        const blocking = conflictWarning.blocking.length > 0;
+        if (blocking && waiverReason.length === 0) {
+          return Response.json(
+            {
+              error: "conflict_detected",
+              message:
+                "Interessenkonflikt: Eine Partei steht in einer bestehenden Akte auf der Gegenseite. Die Änderung wurde nicht gespeichert.",
+              conflictWarning,
+            },
+            { status: 409 }
+          );
+        }
+        if (blocking && !canWaiveConflict(ctx.user.role)) {
+          return Response.json(
+            {
+              error: "conflict_waiver_unauthorized",
+              message: "Konflikt-Freigabe erfordert die Rolle Anwalt oder Admin.",
+            },
+            { status: 403 }
+          );
+        }
+        if (blocking) {
+          patchBody.frontmatter = {
+            ...fm,
+            conflict_waived_by: ctx.user.email,
+            conflict_waived_by_id: ctx.user.id,
+            conflict_waived_by_role: ctx.user.role,
+            conflict_waived_at: new Date().toISOString(),
+            conflict_status: "conflict_waived",
+          };
+        } else if (curFm.conflict_status !== "conflict_waived") {
+          patchBody.frontmatter = { ...fm, conflict_status: "conflict_cleared" };
+        }
+        setAuditExtra(ctx, {
+          details: {
+            conflict_check: {
+              parties: conflictWarning.parties.map((p) => ({ name: p.name, side: p.side })),
+              severity: conflictWarning.severity,
+              waived: blocking,
+              ...(blocking ? { waived_reason: waiverReason } : {}),
+            },
+          },
+        });
+      }
     }
 
     try {
@@ -191,6 +407,7 @@ export const PATCH = createHandler(
         });
       }
       const result = await res.json();
+      await logDeadlineEvents(ctx, deadlineEvents);
 
       // Restore cascade: if the PATCH sets status to a non-archived value
       // and includes restored_at, un-tombstone all linked documents.
@@ -205,163 +422,32 @@ export const PATCH = createHandler(
 
       const patchedFm = (patchBody.frontmatter ?? {}) as Record<string, unknown>;
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
-        try {
-          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
-          let offset = 0;
-          const pageSize = 500;
-          let fetched: typeof allDocs = [];
-          do {
-            const docsRes = await fetch(
-              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(15_000),
-              }
-            );
-            if (!docsRes.ok) {
-              restoreCascade = {
-                attempted: true,
-                matched: 0,
-                succeeded: 0,
-                failed: [{ slug: "*", status: docsRes.status }],
-              };
-              break;
-            }
-            const raw = await docsRes.json();
-            fetched = Array.isArray(raw)
-              ? raw
-              : Array.isArray(raw?.pages)
-                ? raw.pages
-                : Array.isArray(raw?.items)
-                  ? raw.items
-                  : [];
-            allDocs.push(...fetched);
-            offset += pageSize;
-          } while (fetched.length === pageSize);
-
-          if (!restoreCascade.attempted) {
-            const caseSlugForms = new Set([path, decodeURIComponent(path)]);
-            const tombstoned = allDocs.filter(
-              (d) =>
-                caseSlugForms.has((d.frontmatter ?? {}).case_slug as string) &&
-                (d.frontmatter ?? {}).status === "tombstoned"
-            );
-            const UNTOMBSTONE_BATCH = 5;
-            const untombstones: Array<{
-              slug: string;
-              ok: boolean;
-              status?: number;
-              error?: string;
-            }> = [];
-            for (let i = 0; i < tombstoned.length; i += UNTOMBSTONE_BATCH) {
-              const batch = tombstoned.slice(i, i + UNTOMBSTONE_BATCH);
-              const batchResults = await Promise.all(
-                batch.map(async (doc) => {
-                  try {
-                    const untombstoneRes = await enginePatchPage(
-                      ctx.headers,
-                      {
-                        slug: doc.slug,
-                        frontmatter: {
-                          status: "active",
-                          tombstoned_at: null,
-                          tombstone_reason: null,
-                        },
-                      },
-                      { timeoutMs: 15_000 }
-                    );
-                    return untombstoneRes.ok
-                      ? { slug: doc.slug, ok: true as const }
-                      : { slug: doc.slug, ok: false as const, status: untombstoneRes.status };
-                  } catch (err) {
-                    return {
-                      slug: doc.slug,
-                      ok: false as const,
-                      error: err instanceof Error ? err.message : String(err),
-                    };
-                  }
-                })
-              );
-              untombstones.push(...batchResults);
-            }
-            const failed = untombstones
-              .filter((r) => !r.ok)
-              .map(({ slug, status, error }) => ({ slug, status, error }));
-            restoreCascade = {
-              attempted: true,
-              matched: tombstoned.length,
-              succeeded: untombstones.length - failed.length,
-              failed,
-            };
-          }
-        } catch (err) {
-          log.error(
-            "[pages/...slug] restore cascade failed:",
-            err instanceof Error ? err.message : String(err)
-          );
-          restoreCascade = {
-            attempted: true,
-            matched: 0,
-            succeeded: 0,
-            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
-          };
-        }
-      }
-
-      // B3: Server-side conflict check when client_name or opponent_name is
-      // explicitly included in the PATCH body. Using body.frontmatter (not
-      // patchBody.frontmatter) avoids running the check on every auto-save
-      // that happens to include these fields in the merged frontmatter.
-      let conflictWarning:
-        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
-        | undefined;
-      const bodyFm = (body.frontmatter ?? {}) as Record<string, unknown>;
-      const namesToCheck = [bodyFm.client_name, bodyFm.opponent_name].filter(
-        (n): n is string => typeof n === "string" && n.trim().length > 0
-      );
-      if (namesToCheck.length > 0) {
-        try {
-          const conflicts: Array<{ name: string; slug: string; type: string }> = [];
-          const decodedPath = decodeURIComponent(path);
-          for (const name of namesToCheck) {
-            const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...ctx.headers },
-              body: JSON.stringify({ name }),
-              signal: AbortSignal.timeout(15_000),
-            });
-            if (checkRes.ok) {
-              const checkData = (await checkRes.json()) as {
-                matches?: Array<{ name: string; slug: string; type: string }>;
-              };
-              if (checkData.matches?.length) {
-                // B3 FIX: Exclude self-match — the case being patched
-                // shouldn't trigger a conflict warning against itself.
-                conflicts.push(
-                  ...checkData.matches
-                    .filter((m) => m.slug !== path && m.slug !== decodedPath)
-                    .map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
-                );
-              }
-            }
-          }
-          conflictWarning = {
-            checked: true,
-            matches: conflicts.length > 0 ? conflicts : undefined,
-          };
-        } catch {
-          conflictWarning = { checked: false };
+        // Same semantics as the Papierkorb: only documents the archive
+        // cascade removed come back; deliberately deleted ones stay deleted.
+        restoreCascade = await restoreCaseDocuments(
+          ctx.headers,
+          new Set([path, decodeURIComponent(path), rawSlug]),
+          ctx.user.email
+        );
+        if (restoreCascade.failed.length > 0) {
+          log.error("[pages/...slug] restore cascade incomplete", {
+            failed: restoreCascade.failed.length,
+          });
         }
       }
 
       // Audit log + SSE for restore operations
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
-        void logAudit("case.restore", "page", {
-          entityId: path,
+        setAuditExtra(ctx, {
+          action: "case.restore",
           details: {
-            userId: ctx.user.id,
-            userEmail: ctx.user.email,
             restoredAt: patchedFm.restored_at,
+            ...(restoreCascade.attempted
+              ? {
+                  cascaded: restoreCascade.succeeded,
+                  cascadeFailed: restoreCascade.failed.length,
+                }
+              : {}),
           },
         });
         broadcastSseEvent(ctx.brainId, "case.restored", {
@@ -376,9 +462,15 @@ export const PATCH = createHandler(
           at: new Date().toISOString(),
         });
       }
+      if (
+        isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter) &&
+        turnsOnTwoFactorRequirement(bodyFrontmatter, curFm)
+      ) {
+        await enforceFirmTwoFactorNow(ctx.user);
+      }
       const partialFailure = restoreCascade.attempted && restoreCascade.failed.length > 0;
       return Response.json(
-        { ...result, conflictWarning, restoreCascade },
+        { ...redactPageSecrets(result), conflictWarning, restoreCascade },
         { status: partialFailure ? 207 : 200 }
       );
     } catch (err) {
@@ -392,13 +484,13 @@ export const DELETE = createHandler(
   {
     action: "brain.delete",
     rateTier: "standard",
-    audit: (ctx) => {
-      const slug = (ctx as unknown as { __slug?: string }).__slug;
+    audit: (ctx, _body, _query, req) => {
+      const extra = getAuditExtra(ctx);
       return {
-        action: "case.delete" as const,
+        action: extra?.action ?? ("case.delete" as const),
         entityType: "page",
-        entityId: slug,
-        details: { method: "soft_delete" },
+        entityId: extra?.entityId ?? slugFromRoutePath(req, "/api/pages/"),
+        details: { method: "soft_delete", ...extra?.details },
       };
     },
   },
@@ -441,11 +533,50 @@ export const DELETE = createHandler(
       // § 132 BAO retention; corrections go through the Storno-Note.
       const invoiceRejection = checkInvoiceWrite(casePage, { mode: "delete" });
       if (invoiceRejection) return rejectionResponse(invoiceRejection);
+      const billedRejection = checkBilledEntriesWrite(casePage, { mode: "delete" });
+      if (billedRejection) return rejectionResponse(billedRejection);
+
+      // KYC records, trust accounts, the Kanzlei settings and decided
+      // approvals are deleted (if at all) only through their own routes.
+      const protectedDelete = guardProtectedPageWrite({
+        slug: decodedSlug,
+        current: casePage,
+        actor: { email: ctx.user.email, canWriteSettings: can(ctx.user, "settings.write") },
+        mode: "delete",
+      });
+      if ("reject" in protectedDelete) return rejectionResponse(protectedDelete.reject);
+
+      // A live Notfrist is never deleted — it is cancelled with a reason.
+      const deadlinePage = isDeadlinePage(pageType, fm.type, decodedSlug);
+      if (deadlinePage) {
+        const notfristRejection = checkDeadlinePageDelete(
+          fm,
+          (casePage as { title?: string }).title
+        );
+        if (notfristRejection) return rejectionResponse(notfristRejection);
+      }
+
+      // Matters: DELETE archives (Aktenabschluss, default) — `?mode=trash`
+      // moves a matter created by mistake to the Papierkorb instead. Archiving
+      // is not deleting: an archived matter is kept for the statutory
+      // retention period and never reaches the Papierkorb.
+      const caseMode: "archive" | "trash" =
+        new URL(req.url).searchParams.get("mode") === "trash" ? "trash" : "archive";
+      const retention = caseRetentionState(fm);
 
       // Guard: already archived — return 409 to prevent double-archive
-      if (pageType === "legal_case" && fm.status === "archived") {
+      if (pageType === "legal_case" && caseMode === "archive" && fm.status === "archived") {
         return Response.json(
           { error: "already_archived", message: "Akte ist bereits archiviert." },
+          { status: 409 }
+        );
+      }
+      if (pageType === "legal_case" && fm.status === "tombstoned") {
+        return Response.json(
+          {
+            error: "already_deleted",
+            message: "Akte liegt im Papierkorb — zuerst wiederherstellen.",
+          },
           { status: 409 }
         );
       }
@@ -474,32 +605,101 @@ export const DELETE = createHandler(
             failed: Array<{ slug: string; status?: number; error?: string }>;
           }
         | { attempted: false } = { attempted: false };
+      // Work released from a deleted invoice draft (null: release failed).
+      let released: { time: number; expenses: number } | null | undefined;
 
-      if (pageType === "legal_case") {
+      if (pageType === "legal_case" && caseMode === "trash") {
+        // Papierkorb only for a matter that was never closed (or whose
+        // retention period has run). Fail closed: an undeterminable period
+        // counts as running.
+        if (retention.running) {
+          return Response.json(
+            {
+              error: "retention_period_running",
+              message: retentionRunningMessage(retention.until),
+              retention_until: retention.until,
+            },
+            { status: 409 }
+          );
+        }
+        const now = new Date().toISOString();
+        const existingTimeline = (fm.timeline_events as Array<Record<string, unknown>>) || [];
+        const trashRes = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: decodedSlug,
+            frontmatter: {
+              status: "tombstoned",
+              status_before_delete: typeof fm.status === "string" ? fm.status : "open",
+              tombstoned_at: now,
+              tombstoned_by: ctx.user.email,
+              tombstone_reason: "manual_delete",
+              portal_enabled: false,
+              timeline_events: [
+                ...existingTimeline,
+                {
+                  id: `tl-delete-${Date.now()}`,
+                  timestamp: now,
+                  type: "status_change",
+                  title: "Akte in den Papierkorb verschoben",
+                  description: `Gelöscht von ${ctx.user.email}`,
+                  actor: ctx.user.email,
+                },
+              ],
+            },
+          },
+          { timeoutMs: 15_000 }
+        );
+        if (!trashRes.ok) throw new Error(`Trash merge-update failed: HTTP ${trashRes.status}`);
+        cascade = await tombstoneCaseDocuments(
+          ctx.headers,
+          caseSlugForms,
+          ctx.user.email,
+          "case_deleted",
+          now
+        );
+        if (cascade.failed.length > 0) {
+          log.error("[pages/...slug] delete cascade incomplete", {
+            failed: cascade.failed.length,
+          });
+        }
+      } else if (pageType === "legal_case") {
+        const now = new Date();
+        // Aktenabschluss: the retention period starts with the closing date
+        // (an earlier closed_at is kept) and is stored on the matter.
+        const closedAt =
+          typeof fm.closed_at === "string" && fm.closed_at.trim()
+            ? fm.closed_at
+            : now.toISOString();
+        const retentionUntil =
+          caseRetentionState({ ...fm, status: "archived", closed_at: closedAt }, now).until ??
+          caseRetentionUntil(now.toISOString());
         // Build timeline event for archive
         const existingTimeline = (fm.timeline_events as Array<Record<string, unknown>>) || [];
         const archiveTimeline = [
           ...existingTimeline,
           {
             id: `tl-archive-${Date.now()}`,
-            timestamp: new Date().toISOString(),
+            timestamp: now.toISOString(),
             type: "status_change",
             title: "Akte archiviert",
-            description: `Archiviert von ${ctx.user.email}`,
+            description: `Archiviert von ${ctx.user.email} — Aufbewahrung bis ${retentionUntil}`,
             actor: ctx.user.email,
           },
         ];
 
-        // 2. Archive the case (soft-delete). The engine has no PATCH/If-Match;
-        //    merge-update overlays just these keys (status guarded above).
+        // 2. Archive the case. The engine has no PATCH/If-Match; merge-update
+        //    overlays just these keys (status guarded above).
         const archiveRes = await enginePatchPage(
           ctx.headers,
           {
             slug: decodedSlug,
             frontmatter: {
               status: "archived",
-              archived_at: new Date().toISOString(),
+              archived_at: now.toISOString(),
               archived_by: ctx.user.email,
+              closed_at: closedAt,
+              retention_until: retentionUntil,
               portal_enabled: false,
               timeline_events: archiveTimeline,
             },
@@ -509,138 +709,29 @@ export const DELETE = createHandler(
         if (!archiveRes.ok)
           throw new Error(`Archive merge-update failed: HTTP ${archiveRes.status}`);
 
-        // 3. Tombstone all documents whose frontmatter case_slug matches this case.
-        //    NOTE: the engine does NOT filter by case_slug query param — it returns
-        //    all pages of the given type. We must filter client-side (same pattern
-        //    as fetchCaseDocumentsBySlug in matter-context.ts). The response may be
-        //    a bare array, { pages }, or { items } depending on engine version.
-        try {
-          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
-          let offset = 0;
-          const pageSize = 500;
-          let fetched: typeof allDocs = [];
-          do {
-            const docsRes = await fetch(
-              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(15_000),
-              }
-            );
-            if (!docsRes.ok) {
-              cascade = {
-                attempted: true,
-                matched: 0,
-                succeeded: 0,
-                failed: [{ slug: "*", status: docsRes.status }],
-              };
-              break;
-            }
-            const raw = await docsRes.json();
-            fetched = Array.isArray(raw)
-              ? raw
-              : Array.isArray(raw?.pages)
-                ? raw.pages
-                : Array.isArray(raw?.items)
-                  ? raw.items
-                  : [];
-            allDocs.push(...fetched);
-            offset += pageSize;
-          } while (fetched.length === pageSize);
-
-          if (!cascade.attempted) {
-            const matched = allDocs.filter((d) =>
-              caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
-            );
-            const TOMBSTONE_BATCH = 5;
-            const tombstones: Array<{
-              slug: string;
-              ok: boolean;
-              status?: number;
-              error?: string;
-            }> = [];
-            for (let i = 0; i < matched.length; i += TOMBSTONE_BATCH) {
-              const batch = matched.slice(i, i + TOMBSTONE_BATCH);
-              const batchResults = await Promise.all(
-                batch.map(async (doc) => {
-                  try {
-                    const tombstoneRes = await enginePatchPage(
-                      ctx.headers,
-                      {
-                        slug: doc.slug,
-                        frontmatter: {
-                          status: "tombstoned",
-                          tombstoned_at: new Date().toISOString(),
-                          tombstoned_by: ctx.user.email,
-                          tombstone_reason: "case_archived",
-                        },
-                      },
-                      { timeoutMs: 15_000 }
-                    );
-                    return tombstoneRes.ok
-                      ? { slug: doc.slug, ok: true as const }
-                      : { slug: doc.slug, ok: false as const, status: tombstoneRes.status };
-                  } catch (err) {
-                    return {
-                      slug: doc.slug,
-                      ok: false as const,
-                      error: err instanceof Error ? err.message : String(err),
-                    };
-                  }
-                })
-              );
-              tombstones.push(...batchResults);
-            }
-            const failed = tombstones
-              .filter((result) => !result.ok)
-              .map(({ slug, status, error }) => ({ slug, status, error }));
-            cascade = {
-              attempted: true,
-              matched: matched.length,
-              succeeded: tombstones.length - failed.length,
-              failed,
-            };
-          }
-        } catch (err) {
-          log.error(
-            "[pages/...slug] cascade tombstone failed:",
-            err instanceof Error ? err.message : String(err)
-          );
-          cascade = {
-            attempted: true,
-            matched: 0,
-            succeeded: 0,
-            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
-          };
+        // 3. Hide the matter's active documents with it (retained, not trash;
+        //    paged through the whole type — the engine caps a list at 100 rows).
+        cascade = await archiveCaseDocuments(ctx.headers, caseSlugForms, ctx.user.email);
+        if (cascade.failed.length > 0) {
+          log.error("[pages/...slug] archive cascade incomplete", {
+            failed: cascade.failed.length,
+          });
         }
       } else {
-        // Non-case pages: check if document belongs to a case with legal_hold
-        const docCaseSlug = fm.case_slug as string | undefined;
+        // Non-case pages: a page under its own Legal Hold, or one that belongs
+        // to a matter under Legal Hold, is not deleted. Fail closed: if the
+        // matter cannot be read, nothing is deleted.
+        const holdActive = {
+          error: "legal_hold_active",
+          message: "Dokument gehört zu einer Akte mit Legal Hold und kann nicht gelöscht werden.",
+        };
+        if (fm.legal_hold === true) return Response.json(holdActive, { status: 423 });
+        const docCaseSlug = typeof fm.case_slug === "string" ? fm.case_slug : "";
         if (docCaseSlug) {
-          try {
-            const caseRes = await fetch(
-              `${ENGINE_URL}/api/pages/${encodeURIComponent(docCaseSlug)}`,
-              {
-                headers: ctx.headers,
-                signal: AbortSignal.timeout(5_000),
-              }
-            );
-            if (caseRes.ok) {
-              const caseData = (await caseRes.json()) as { frontmatter?: Record<string, unknown> };
-              const caseFm = caseData.frontmatter ?? {};
-              if (caseFm.legal_hold === true) {
-                return Response.json(
-                  {
-                    error: "legal_hold_active",
-                    message:
-                      "Dokument gehört zu einer Akte mit Legal Hold und kann nicht gelöscht werden.",
-                  },
-                  { status: 423 }
-                );
-              }
-            }
-          } catch {
-            // If case lookup fails, proceed with deletion
+          const caseRead = await readCurrentPage(ENGINE_URL, ctx.headers, docCaseSlug, 5_000);
+          if (caseRead.kind === "error") return rejectionResponse(GUARD_READ_FAILED);
+          if (caseRead.kind === "found" && caseRead.page.frontmatter?.legal_hold === true) {
+            return Response.json(holdActive, { status: 423 });
           }
         }
         // Non-case pages: the engine exposes no DELETE route, so soft-delete by
@@ -662,26 +753,65 @@ export const DELETE = createHandler(
         );
         if (delRes.status === 404) return apiNotFound("not_found");
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
+        // A deleted invoice draft no longer bills its work — put it back to
+        // open, exactly as the invoice route's DELETE does (issued invoices
+        // were rejected above).
+        if (isInvoicePage(casePage)) {
+          released = await releaseWorkOfInvoice(ctx.headers, decodedSlug, fm, "draft_deleted");
+        }
+        // A deleted document also leaves its matter's document list (matter
+        // view, matter export). Best effort: the tombstone above already hides
+        // it everywhere that reads the document itself.
+        if (docCaseSlug) {
+          await removeFromCaseDocuments(ctx.headers, docCaseSlug, decodedSlug).catch((err) => {
+            log.warn("[pages/...slug] matter document list not updated", {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+        }
       }
 
-      void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
-        entityId: path,
+      if (deadlinePage) {
+        await logDeadlineEvents(ctx, [
+          {
+            kind: "delete",
+            deadline_id: decodedSlug,
+            title: String(
+              fm.title ?? fm.description ?? (casePage as { title?: string }).title ?? ""
+            ),
+            is_notfrist: fm.is_notfrist === true || fm.second_check_required === true,
+            due_date_before: typeof fm.due_date === "string" ? fm.due_date : null,
+            due_date_after: null,
+            status_before: typeof fm.status === "string" ? fm.status : null,
+            status_after: "tombstoned",
+          },
+        ]);
+      }
+      // One audit entry (written by createHandler on success): the real
+      // action per page type; both are soft deletes (archive / tombstone).
+      setAuditExtra(ctx, {
+        action: pageType === "legal_case" ? "case.delete" : "document.delete",
         details: {
-          userId: ctx.user.id,
-          method: pageType === "legal_case" ? "soft_delete" : "hard_delete",
+          method: "soft_delete",
+          ...(pageType === "legal_case" ? { mode: caseMode } : {}),
+          ...(cascade.attempted
+            ? { cascaded: cascade.succeeded, cascadeFailed: cascade.failed.length }
+            : {}),
         },
       });
+      const method = pageType === "legal_case" && caseMode === "archive" ? "archived" : "deleted";
       broadcastSseEvent(ctx.brainId, "case.deleted", {
         slug: path,
         by: ctx.user.email,
         at: new Date().toISOString(),
-        method: pageType === "legal_case" ? "archived" : "deleted",
+        method,
       });
       return Response.json(
         {
           ok: !cascade.attempted || cascade.failed.length === 0,
-          method: pageType === "legal_case" ? "archived" : "deleted",
+          method,
           cascade,
+          ...(released !== undefined ? { released } : {}),
         },
         { status: cascade.attempted && cascade.failed.length > 0 ? 207 : 200 }
       );

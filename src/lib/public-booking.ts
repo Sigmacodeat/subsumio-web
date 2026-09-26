@@ -1,13 +1,15 @@
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
 import { KANZLEI_SETTINGS_SLUG } from "@/lib/kanzlei-settings";
 import { generateSlots, type BookingSlot } from "@/lib/online-booking";
 import { FIRM_TIMEZONE, zonedDateString, zonedWallTimeToUtc } from "@/lib/datetime";
+import { resolvePublicFormBrainId } from "@/lib/public-firm";
 
 /**
  * Öffentliche Terminbuchung (WP-3.15) — Server-Seite.
  *
- * Dasselbe Ein-Instanz-pro-Kanzlei-Modell wie die öffentliche Erstanfrage
- * (api/intake/public): die Ziel-Brain kommt aus der Umgebung, die Kanzlei
+ * Dasselbe Modell wie die öffentliche Erstanfrage (api/intake/public): die
+ * Ziel-Brain kommt aus einer ausdrücklichen Konfiguration, die Kanzlei
  * aktiviert die Buchung in den Kanzlei-Settings (bookingEnabled). Belegte
  * Zeiten werden aus `booking`- und `appointment`-Seiten gelesen — WhatsApp-
  * Flows schreiben Termine bereits als `appointment` (siehe
@@ -23,13 +25,10 @@ export interface BookingConfig {
   kanzleiName?: string;
 }
 
+/** Explicit configuration only — see src/lib/public-firm.ts (no fallback
+ *  to the WhatsApp default firm). */
 export function resolvePublicBookingBrainId(): string | null {
-  return (
-    process.env.SUBSUMIO_PUBLIC_BOOKING_BRAIN_ID ||
-    process.env.SUBSUMIO_PUBLIC_INTAKE_BRAIN_ID ||
-    process.env.WHATSAPP_DEFAULT_BRAIN_ID ||
-    null
-  );
+  return resolvePublicFormBrainId("booking");
 }
 
 const DEFAULTS = { start: "09:00", end: "17:00", slotMinutes: 30 };
@@ -66,13 +65,13 @@ async function listTypedPages(
   headers: Record<string, string>,
   type: string
 ): Promise<EnginePage[]> {
-  const res = await fetch(`${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=2000`, {
-    headers,
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) return [];
-  const data = (await res.json().catch(() => ({}))) as { pages?: EnginePage[] };
-  return data.pages ?? [];
+  // Cursor-paginated and strict: a failed read throws instead of looking
+  // like "no bookings" — otherwise every slot would be offered as free.
+  // Tombstoned slots stay out of the availability set.
+  return (await listEnginePages(headers, type, 10_000, {
+    strict: true,
+    timeoutMs: 15_000,
+  })) as unknown as EnginePage[];
 }
 
 /** Belegte Zeitfenster eines Tages aus booking- und appointment-Seiten. */
@@ -111,8 +110,14 @@ export async function bookedRangesForDate(
     // firm zone, not the server's.
     const start = zonedWallTimeToUtc(fm.date, time, timeZone);
     if (Number.isNaN(start.getTime())) continue;
+    // Calendar-editor appointments store `duration`, WhatsApp ones
+    // `duration_minutes` — a 2-hour hearing must block 2 hours, not 30 min.
     const duration =
-      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0 ? fm.duration_minutes : 30;
+      typeof fm.duration_minutes === "number" && fm.duration_minutes > 0
+        ? fm.duration_minutes
+        : typeof fm.duration === "number" && fm.duration > 0
+          ? fm.duration
+          : 30;
     ranges.push({
       start: start.toISOString(),
       end: new Date(start.getTime() + duration * 60_000).toISOString(),
@@ -121,7 +126,10 @@ export async function bookedRangesForDate(
   return ranges;
 }
 
-/** Freie Slots eines Tages — Quelle der Wahrheit für GET und POST. */
+/**
+ * Freie Slots eines Tages — Quelle der Wahrheit für GET und POST.
+ * Wirft, wenn die Belegung nicht gelesen werden kann (nie "alles frei").
+ */
 export async function availableSlots(
   brainId: string,
   dateIso: string

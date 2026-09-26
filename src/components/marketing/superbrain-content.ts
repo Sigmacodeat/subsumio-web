@@ -1,11 +1,12 @@
-import { PROOF } from "@/content/proof-points";
+import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
 import { deepMerge, type Market } from "@/content/site";
 
 const copyAt = {
   hero: {
     eyebrow: "Das Subsumio SuperBrain",
-    title: "Über Nacht geprüft.\nAm Morgen wissen Sie, was sich in Ihren Akten geändert hat.",
-    sub: "Das SuperBrain ist das Gedächtnis hinter Subsumio. Jede Nacht geht es die neuen Dokumente Ihrer Kanzlei durch und führt sie mit dem bestehenden Kanzleiwissen zusammen. Am Morgen sehen Sie in Ihrer Übersicht, was aufgefallen ist: neue Widersprüche, anstehende Fristen, fehlende Unterlagen.",
+    title:
+      "Ein Gedächtnis für Ihre Kanzlei.\nMit Fundstellen, Widerspruchsprüfung und Judikatur-Wächter.",
+    sub: "Das SuperBrain ist das Gedächtnis hinter Subsumio. Neue Dokumente werden nach dem Hochladen erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und innerhalb der Akte auf Widersprüche geprüft. Jede Nacht sucht der Judikatur-Wächter nach neuen Entscheidungen zu den Normen Ihrer Akten, vor Fristablauf werden Sie erinnert. Den Akten-Scan starten Sie bei Bedarf – mit Kostenvorschau.",
     cta: "30 Tage kostenlos testen",
     ctaSecondary: "Funktionen ansehen",
   },
@@ -17,10 +18,10 @@ const copyAt = {
       sub: "Erfassen → Zusammenführen → Bewerten → Widerspruchsprüfung → Schlusskontrolle",
     },
     {
-      value: PROOF.recall8.numeric,
-      suffix: "\u00a0%",
-      label: "Trefferquote beim Wiederfinden",
-      sub: `So oft lag die richtige Textstelle unter den ersten acht Treffern (${PROOF.recall8.benchmark}, ${PROOF.recall8.sampleSize} Testfragen). Gemessen wird das Wiederfinden, nicht die Qualität der Antwort.`,
+      value: TRIAL_DAYS,
+      suffix: "",
+      label: "Tage kostenlos testen",
+      sub: "Mit Ihren eigenen Akten, ohne Kreditkarte.",
     },
   ],
   // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
@@ -75,7 +76,7 @@ const copyAt = {
       icon: "CheckCircle2",
     },
   ],
-  oursNote: "Läuft nachts. Das Ergebnis liegt am Morgen in Ihrer Übersicht.",
+  oursNote: "Läuft nach jedem Hochladen. Ergebnisse legt Subsumio Ihnen zur Prüfung vor.",
   // ── 5-LAYER ARCHITECTURE ──
   architectureTitle: "Fünf Prüfschritte, bevor etwas ins Kanzleiwissen gelangt",
   architectureSub:
@@ -105,7 +106,7 @@ const copyAt = {
     {
       icon: "AlertTriangle",
       title: "Widerspruchsprüfung",
-      desc: "Nachts werden Aussagen aus verschiedenen Dokumenten gegeneinandergehalten. Passt etwas nicht zusammen, wird es markiert und Ihnen vorgelegt – nicht stillschweigend geglättet. Unklare Fälle gehen in eine weitere Prüfung.",
+      desc: "Nach dem Hochladen in eine Akte werden Aussagen aus verschiedenen Dokumenten gegeneinandergehalten. Passt etwas nicht zusammen, wird es markiert und Ihnen vorgelegt – nicht stillschweigend geglättet. Unklare Fälle gehen in eine weitere Prüfung.",
       detail: "Auch über mehrere Dokumente einer Akte hinweg",
       color: "amber",
     },
@@ -120,60 +121,60 @@ const copyAt = {
   costNote:
     "Was die fünf Schritte besteht, wird Ihnen vorgelegt. Ob Sie es verwenden, entscheiden Sie.",
   // ── DREAM CYCLE ──
-  cycleTitle: "Was nachts passiert",
+  cycleTitle: "Was automatisch läuft – und was Sie anstoßen",
   cycleSub:
-    "Nach Kanzleischluss arbeitet das SuperBrain die Dokumente des Tages durch. Der Ablauf ist automatisch und wird protokolliert.",
+    "Manches erledigt das SuperBrain von selbst, anderes starten Sie bewusst. Die Abläufe werden protokolliert.",
   cycleSteps: [
     {
       phase: "extract_facts",
-      label: "Fakten erfassen",
+      label: "Nach dem Hochladen: erfassen",
       icon: "FileSearch",
       desc: "Neue Schriftsätze, E-Mails und Dokumente werden gelesen, Tatsachen mit Quellenverweis festgehalten.",
     },
     {
-      phase: "synthesize",
-      label: "Zusammenführen",
-      icon: "Sparkles",
-      desc: "Neue Tatsachen werden in die Darstellung der jeweiligen Akte eingearbeitet.",
-    },
-    {
-      phase: "consolidate",
-      label: "Doppeltes bereinigen",
-      icon: "Layers",
-      desc: "Dieselbe Angabe aus mehreren Dokumenten wird zu einem Eintrag zusammengelegt.",
-    },
-    {
-      phase: "grade_takes",
-      label: "Bewerten",
-      icon: "Target",
-      desc: "Neue Einschätzungen durchlaufen die unabhängige Prüfung.",
-    },
-    {
       phase: "contradiction_probe",
-      label: "Widersprüche markieren",
+      label: "Nach dem Hochladen: Widersprüche",
       icon: "AlertTriangle",
-      desc: "Aussagen, die einander widersprechen, werden gekennzeichnet.",
-    },
-    {
-      phase: "deadline_monitor",
-      label: "Fristen durchsehen",
-      icon: "CalendarClock",
-      desc: "Anstehende und überfällige Fristen werden durchgesehen.",
-    },
-    {
-      phase: "patterns",
-      label: "Muster erkennen",
-      icon: "Network",
-      desc: "Wiederkehrende Themen, Verbindungen und Risiken über Akten hinweg.",
+      desc: "Aussagen, die anderen Dokumenten derselben Akte widersprechen, werden gekennzeichnet und Ihnen vorgelegt.",
     },
     {
       phase: "embed",
-      label: "Auffindbar machen",
+      label: "Nach dem Hochladen: auffindbar",
       icon: "Database",
-      desc: "Neue Inhalte werden für die Suche über alle Akten aufbereitet.",
+      desc: "Neue Inhalte werden für die Suche über alle Akten aufbereitet, für die Sie berechtigt sind.",
+    },
+    {
+      phase: "deadline_detect",
+      label: "Fristen vorschlagen",
+      icon: "CalendarClock",
+      desc: "Fristen aus neuen Dokumenten werden erkannt und Ihnen zur Bestätigung vorgelegt.",
+    },
+    {
+      phase: "judikatur_watch",
+      label: "Jede Nacht: Judikatur-Wächter",
+      icon: "Gavel",
+      desc: "Sucht nach neuen Entscheidungen zu den Normen, die in Ihren Akten vorkommen, und meldet Treffer.",
+    },
+    {
+      phase: "deadline_reminders",
+      label: "Täglich: Fristen-Erinnerungen",
+      icon: "Clock",
+      desc: "Vor Ablauf bestätigter Fristen werden Sie und Ihr Team erinnert.",
+    },
+    {
+      phase: "case_scan",
+      label: "Auf Abruf: Akten-Scan",
+      icon: "ScanSearch",
+      desc: "Sie starten ihn für eine Akte, eine Auswahl oder alle offenen Akten – nach einer Kostenvorschau in Credits.",
+    },
+    {
+      phase: "review",
+      label: "Ihre Freigabe",
+      icon: "CheckCircle2",
+      desc: "Ergebnisse erscheinen als Prüfpunkte. In die Akte wird nichts ohne Ihre Bestätigung übernommen.",
     },
   ],
-  cycleNote: "Automatisch · jede Nacht · protokolliert",
+  cycleNote: "Nach dem Hochladen · Judikatur-Wächter jede Nacht · Akten-Scan auf Abruf",
   // ── KANZLEI-GEHIRN LERNT MIT ──
   // Belege: docs/architecture/BRAIN_LEARNING.md (Schalter, was er steuert,
   // was weiterläuft), src/components/dashboard/brain-learning-card.tsx.
@@ -206,7 +207,7 @@ const copyAt = {
   learningSwitchTitle: "Ein Schalter für die ganze Kanzlei",
   learningSwitchOn: {
     label: "Eingeschaltet (Voreinstellung)",
-    desc: "Das Kanzleiwissen wird aus Ihrer laufenden Arbeit automatisch erweitert – nach dem Hochladen und jede Nacht.",
+    desc: "Das Kanzleiwissen wird aus Ihrer laufenden Arbeit automatisch erweitert – nach dem Hochladen neuer Dokumente.",
   },
   learningSwitchOff: {
     label: "Ausgeschaltet",
@@ -243,7 +244,7 @@ const copyAt = {
     {
       feature: "Gedächtnis über Akten hinweg",
       others: "Jede Frage steht für sich",
-      subsumio: "Kanzleiwissen, das erhalten bleibt und jede Nacht ergänzt wird",
+      subsumio: "Kanzleiwissen, das erhalten bleibt und mit jedem Dokument ergänzt wird",
     },
   ],
   // ── LEGAL SOURCES ──
@@ -350,8 +351,8 @@ const copyAt = {
   faqSub: "Sechs Fragen, die Kanzleien vor dem Test stellen.",
   faq: [
     {
-      q: "Was passiert nachts mit meinen Daten?",
-      a: "Das SuperBrain geht die Dokumente durch, die tagsüber neu in Ihre Akten gekommen sind: Tatsachen werden erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und auf Widersprüche geprüft. Ihre Daten liegen dabei in der EU-Cloud oder, im Enterprise-Tarif, On-Premise. Der Ablauf wird protokolliert.",
+      q: "Was passiert automatisch mit meinen Daten?",
+      a: "Nach dem Hochladen werden Tatsachen erfasst, mit dem bestehenden Kanzleiwissen zusammengeführt und innerhalb der Akte auf Widersprüche geprüft. Nachts sucht der Judikatur-Wächter nach neuen Entscheidungen zu den Normen Ihrer Akten; dabei werden keine KI-Modelle aufgerufen. Einen Akten-Scan mit KI starten Sie selbst, nach einer Kostenvorschau. Ihre Daten liegen in der EU-Cloud oder, im Enterprise-Tarif, On-Premise. Die Abläufe werden protokolliert.",
     },
     {
       q: "Lernt Subsumio aus meinen Akten – und wird damit KI trainiert?",
@@ -380,7 +381,7 @@ const copyAt = {
   stickyCtaHint: "Ohne Kreditkarte",
   ctaTitle: "Testen Sie das SuperBrain mit Ihren eigenen Akten",
   ctaSub:
-    "Ab der ersten Akte baut sich Ihr Kanzleiwissen auf. Nach der ersten Nacht sehen Sie, was dem SuperBrain aufgefallen ist.",
+    "Ab der ersten Akte baut sich Ihr Kanzleiwissen auf. Schon nach dem ersten Hochladen sehen Sie, was dem SuperBrain aufgefallen ist.",
   ctaButton: "30 Tage kostenlos testen",
   ctaContact: "Schreiben Sie uns – wir antworten persönlich.",
 };

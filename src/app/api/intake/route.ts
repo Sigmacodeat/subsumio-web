@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { listEnginePages } from "@/lib/engine-pages";
 import { buildIntakeRequest, intakeFromPage, type IntakeRequestFrontmatter } from "@/lib/intake";
-import { type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
+import { defaultAcceptanceWorkflow, type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
@@ -24,28 +25,54 @@ const intakePostSchema = z.object({
   source_event_slug: z.string().optional(),
 });
 
+/**
+ * Client-editable parts of the Mandatsannahme. The conflict check is NOT
+ * among them: it is written only by POST /api/intake/conflict-check (server
+ * runs the check, records the real user) and /api/intake/conflict-waiver
+ * (role + justification). A `conflict_check` sent here is ignored.
+ */
+const acceptancePatchSchema = z.object({
+  conflict_check: z.unknown().optional(),
+  kyc: z.object({
+    required: z.boolean(),
+    status: z.enum(["pending", "verified", "failed", "not_required"]),
+    verification_slug: z.string().max(500).optional(),
+    verified_at: z.string().max(40).optional(),
+    risk_level: z.enum(["low", "medium", "high"]).optional(),
+  }),
+  poa: z.object({
+    required: z.boolean(),
+    status: z.enum(["pending", "draft", "sent", "signed", "not_required"]),
+    poa_slug: z.string().max(500).optional(),
+    type: z.enum(["general", "litigation", "transactional", "limited", "post"]).optional(),
+  }),
+  engagement_letter: z.object({
+    status: z.enum(["pending", "draft", "sent"]),
+    document_slug: z.string().max(500).optional(),
+    generated_at: z.string().max(40).optional(),
+    sent_at: z.string().max(40).optional(),
+  }),
+});
+
 const intakePatchSchema = z.object({
   slug: z.string().min(1, "slug_required"),
   status: z
     .enum(["new", "needs_info", "conflict_check", "accepted", "rejected", "converted"])
     .optional(),
-  conflict_check_status: z.enum(["pending", "clear", "conflict", "needs_review"]).optional(),
+  // "clear"/"conflict" are results of the server-side check, never set by hand.
+  conflict_check_status: z.enum(["pending", "needs_review"]).optional(),
   converted_case_slug: z.string().optional(),
   missing_documents: z.array(z.string().min(1).max(120)).optional(),
   summary: z.string().max(10_000).optional(),
-  acceptance: z.record(z.unknown()).optional(),
+  acceptance: acceptancePatchSchema.optional(),
 });
 
-function pagesFrom(data: unknown): BrainPage[] {
-  if (Array.isArray(data)) return data as BrainPage[];
-  if (data && typeof data === "object" && Array.isArray((data as { pages?: unknown }).pages)) {
-    return (data as { pages: BrainPage[] }).pages;
-  }
-  if (data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)) {
-    return (data as { items: BrainPage[] }).items;
-  }
-  return [];
+function encodeSlug(slug: string): string {
+  return slug.split("/").map(encodeURIComponent).join("/");
 }
+
+/** Upper bound for the intake list (all pages of the type, paged). */
+const INTAKE_LIST_MAX = 20_000;
 
 export const GET = createHandler(
   {
@@ -55,15 +82,18 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
-    const limit = Math.min(Number.parseInt(query.limit || "100", 10) || 100, 250);
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=intake_request&limit=${limit}`, {
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
-
-    const pages = pagesFrom(await res.json().catch(() => []));
-    const intakes = pages
+    // Every request, paged past the engine's per-request cap and without
+    // deleted ones; `limit` (optional) only trims the sorted result.
+    let pages: BrainPage[];
+    try {
+      pages = (await listEnginePages(ctx.headers, "intake_request", INTAKE_LIST_MAX, {
+        strict: true,
+      })) as unknown as BrainPage[];
+    } catch {
+      return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
+    }
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : NaN;
+    const all = pages
       .map(intakeFromPage)
       .filter((item): item is NonNullable<ReturnType<typeof intakeFromPage>> => item !== null)
       .filter((item) => !query.status || item.frontmatter.status === query.status)
@@ -72,8 +102,9 @@ export const GET = createHandler(
           new Date(b.frontmatter.created_at).getTime() -
           new Date(a.frontmatter.created_at).getTime()
       );
+    const intakes = Number.isFinite(limit) && limit > 0 ? all.slice(0, limit) : all;
 
-    return Response.json({ intakes, total: intakes.length });
+    return Response.json({ intakes, total: all.length });
   }
 );
 
@@ -120,7 +151,7 @@ export const POST = createHandler(
     // Fire outgoing webhook for intake.new event
     try {
       const { dispatchWebhookEvent } = await import("@/lib/webhook-dispatch");
-      await dispatchWebhookEvent("intake.new", {
+      await dispatchWebhookEvent(ctx.brainId, "intake.new", {
         slug: intake.slug,
         client_name: body.client_name,
         legal_area: body.legal_area,
@@ -144,7 +175,18 @@ export const PATCH = createHandler(
       action: "case.update" as const,
       entityType: "intake_request",
       entityId: body.slug,
-      details: { status: body.status, conflict_check_status: body.conflict_check_status },
+      details: {
+        status: body.status,
+        conflict_check_status: body.conflict_check_status,
+        ...(body.acceptance
+          ? {
+              kyc_status: body.acceptance.kyc.status,
+              kyc_required: body.acceptance.kyc.required,
+              poa_status: body.acceptance.poa.status,
+              engagement_letter_status: body.acceptance.engagement_letter.status,
+            }
+          : {}),
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
@@ -156,8 +198,25 @@ export const PATCH = createHandler(
       summary: body.summary,
       updated_at: new Date().toISOString(),
     };
-    if (body.acceptance && typeof body.acceptance === "object") {
-      patch.acceptance = body.acceptance as unknown as IntakeAcceptanceWorkflow;
+    if (body.acceptance) {
+      // Keep the stored, server-written conflict check; fail closed when the
+      // intake cannot be read.
+      const currentRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(body.slug)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!currentRes.ok)
+        return apiError("intake_not_found", "Intake konnte nicht geladen werden", 404);
+      const stored = intakeFromPage((await currentRes.json()) as BrainPage);
+      if (!stored) return apiError("not_intake_request", "Die Seite ist kein Intake", 400);
+      const storedAcceptance = stored.frontmatter.acceptance;
+      const { conflict_check: _ignored, ...editable } = body.acceptance;
+      patch.acceptance = {
+        ...(storedAcceptance ?? {}),
+        ...editable,
+        conflict_check:
+          storedAcceptance?.conflict_check ?? defaultAcceptanceWorkflow().conflict_check,
+      } as IntakeAcceptanceWorkflow;
     }
     Object.keys(patch).forEach((key) => {
       if ((patch as Record<string, unknown>)[key] === undefined)

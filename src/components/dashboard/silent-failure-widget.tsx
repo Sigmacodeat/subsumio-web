@@ -30,7 +30,7 @@ interface PipelineStatePage {
 const STUCK_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
 async function fetchSilentFailures(): Promise<FailureEntry[]> {
-  const pages = await api.brain.listPages({ type: "pipeline_state", limit: 100 });
+  const pages = await api.brain.listAllPages({ type: "pipeline_state", max: 100 });
   const entries: FailureEntry[] = [];
 
   for (const page of pages as PipelineStatePage[]) {

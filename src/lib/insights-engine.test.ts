@@ -275,3 +275,83 @@ describe("TODO 8: Insights-Engine", () => {
     expect(insights.filter((i: Insight) => i.type === "judgement_match")).toHaveLength(0);
   });
 });
+
+describe("Insights — Fristen aus dem Lesemodell und zentrale Erledigt-Logik", () => {
+  const openCase = {
+    slug: "legal/cases/a",
+    title: "Akte A",
+    frontmatter: {
+      status: "open",
+      deadlines: [],
+      timeline: [{ date: "2026-01-01", title: "Klage eingebracht", type: "filing" }],
+    },
+  };
+
+  it("Akte mit leerem fm.deadlines, aber legal_deadline-Seite → kein 'Keine Fristen gesetzt'", () => {
+    const insights = generateInsights({
+      cases: [openCase],
+      deadlines: [
+        {
+          case_slug: "legal/cases/a",
+          title: "Klagebeantwortung",
+          due_date: "2099-01-01",
+          status: "pending",
+          source: "legal_deadline",
+        },
+      ],
+    });
+    expect(insights.some((i) => i.title === "Keine Fristen gesetzt")).toBe(false);
+  });
+
+  it("überfällige legal_deadline-Seite → 'Frist versäumt'", () => {
+    const insights = generateInsights({
+      cases: [openCase],
+      deadlines: [
+        {
+          case_slug: "legal/cases/a",
+          title: "Berufung",
+          due_date: "2020-01-01",
+          status: "overdue",
+          source: "legal_deadline",
+        },
+      ],
+    });
+    expect(insights.filter((i) => i.title === "Frist versäumt")).toHaveLength(1);
+  });
+
+  it("status cancelled bzw. review_status rejected → kein 'Frist versäumt'", () => {
+    const insights = generateInsights({
+      cases: [
+        {
+          ...openCase,
+          frontmatter: {
+            ...openCase.frontmatter,
+            deadlines: [
+              { title: "Storniert", due_date: "2020-01-01", status: "cancelled" },
+              { title: "Verworfen", due_date: "2020-01-02", review_status: "rejected" },
+              { title: "Erledigt", due_date: "2020-01-03", status: "erledigt" },
+            ],
+          },
+        },
+      ],
+    });
+    expect(insights.some((i) => i.title === "Frist versäumt")).toBe(false);
+  });
+
+  it("Termine aus der Timeline zählen nicht als Fristen", () => {
+    const insights = generateInsights({
+      cases: [openCase],
+      deadlines: [
+        {
+          case_slug: "legal/cases/a",
+          title: "Besprechung",
+          due_date: "2020-01-01",
+          status: "overdue",
+          source: "timeline",
+        },
+      ],
+    });
+    expect(insights.some((i) => i.title === "Frist versäumt")).toBe(false);
+    expect(insights.some((i) => i.title === "Keine Fristen gesetzt")).toBe(true);
+  });
+});

@@ -10,10 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail } from "@/lib/matter-detail-context";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
 import type { BrainPage } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
+
+/** /api/pages/batch reads at most 100 pages per call. */
+const NOTE_BODY_BATCH = 100;
 
 interface NoteItem {
   slug: string;
@@ -28,9 +32,11 @@ export function NotesTab() {
   const { t } = useLang();
   const ctx = useMatterDetail();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const { data: me } = useMe();
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
@@ -41,12 +47,21 @@ export function NotesTab() {
   const load = useCallback(async () => {
     if (!caseSlug) return;
     try {
-      const pages = await api.brain.listPages({ type: "legal_note", limit: 500 });
-      const filtered = pages.filter((p) => p.frontmatter?.case_slug === caseSlug);
-      const mapped: NoteItem[] = filtered.map((p: BrainPage) => ({
+      // The matter's notes, complete (server-side matter scan) — not the
+      // firm's newest notes filtered afterwards. Listings carry no text, so
+      // the note bodies are read in batches.
+      const pages = await api.brain.listPages({ type: "legal_note", caseSlug });
+      const bodies: Record<string, BrainPage> = {};
+      for (let i = 0; i < pages.length; i += NOTE_BODY_BATCH) {
+        Object.assign(
+          bodies,
+          await api.brain.getPages(pages.slice(i, i + NOTE_BODY_BATCH).map((p) => p.slug))
+        );
+      }
+      const mapped: NoteItem[] = pages.map((p: BrainPage) => ({
         slug: p.slug,
         title: p.title,
-        content: String(p.content ?? ""),
+        content: String(bodies[p.slug]?.content ?? p.content ?? ""),
         author: String(p.frontmatter?.author ?? ""),
         created_at: String(p.frontmatter?.created_at ?? ""),
         pinned: Boolean(p.frontmatter?.pinned),
@@ -56,7 +71,9 @@ export function NotesTab() {
         return b.created_at.localeCompare(a.created_at);
       });
       setNotes(mapped);
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("common.error") });
     } finally {
       setLoading(false);
@@ -110,6 +127,13 @@ export function NotesTab() {
   }
 
   async function deleteNote(note: NoteItem) {
+    const ok = await confirm({
+      title: "Notiz löschen?",
+      message: `„${note.title}" wird in den Papierkorb verschoben.`,
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await api.brain.deletePage(note.slug);
       addToast({ type: "success", title: t("mattertab.notes_deleted") });
@@ -174,7 +198,19 @@ export function NotesTab() {
         </form>
       )}
 
-      {notes.length === 0 ? (
+      {loadFailed && notes.length === 0 ? (
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[color:var(--ds-danger-border)] py-12 text-center"
+        >
+          <p className="text-sm font-medium text-[color:var(--ds-text)]">
+            Notizen konnten nicht geladen werden.
+          </p>
+          <Button size="sm" variant="outline" onClick={() => void load()}>
+            Erneut versuchen
+          </Button>
+        </div>
+      ) : notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border)] py-16 text-center">
           <StickyNote
             size={32}

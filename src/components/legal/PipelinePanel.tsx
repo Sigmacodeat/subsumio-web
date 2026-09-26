@@ -615,7 +615,7 @@ export function PipelinePanel({
     if (!showPartyCorrection) return;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "person", limit: 100 });
+        const pages = await api.brain.listAllPages({ type: "person", max: 100 });
         const entities = pages
           .filter((p) => {
             const fm = (p.frontmatter ?? {}) as Record<string, unknown>;

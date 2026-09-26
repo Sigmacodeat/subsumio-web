@@ -3,7 +3,10 @@ import { isDegradedAnswer } from "@/lib/engine-degraded";
 import { uiLanguageSchema } from "@/lib/api-validation";
 import { engineComplete } from "@/lib/engine-llm";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { DEFAULT_TYPES, fetchPagesByTypes } from "@/lib/cockpit";
+import { DEFAULT_TYPES, fetchPagesByTypesResult } from "@/lib/cockpit";
+import { DEADLINE_SOURCES, loadFristenReadModel } from "@/lib/fristen-read-model";
+import { isClosedDeadline } from "@/lib/deadline-reminders";
+import { zonedDateString } from "@/lib/datetime";
 import { overdueReconciliationAccounts } from "@/lib/trust-accounting";
 import { activeDelegateFor, type AbsenceRecord } from "@/lib/absence";
 import type { BrainPage } from "@/lib/types";
@@ -29,19 +32,90 @@ interface BriefingData {
   activeDelegations: Array<{ name: string; delegate: string; until: string }>;
   topDeadlines: Array<{ title: string; due: string; daysLeft: number; delegate?: string }>;
   topCases: Array<{ title: string; status: string }>;
+  /** A deadline source failed to load: the deadline counts are lower bounds
+   *  and the briefing must never say "no critical deadlines". */
+  deadlinesIncomplete: boolean;
+  /** Page types that failed to load — their counts are unknown, not 0. */
+  failedTypes: string[];
+  /** Counts that hit the read budget and are lower bounds ("N+"). */
+  cappedCounts: CountKey[];
+}
+
+type CountKey =
+  | "inboxItems"
+  | "pendingReviews"
+  | "pendingSignatures"
+  | "openInvoices"
+  | "activeCases"
+  | "unassignedDocs"
+  | "reviewGaps"
+  | "followUpsToday";
+
+/** Which page types feed which count — a failed/capped type taints it. */
+const COUNT_SOURCES: Record<CountKey, string[]> = {
+  inboxItems: ["intake_request", "bea_message"],
+  pendingReviews: ["review_item", "agent_action"],
+  pendingSignatures: ["signature_request"],
+  openInvoices: ["invoice"],
+  activeCases: ["legal_case"],
+  unassignedDocs: ["document", "legal_document"],
+  reviewGaps: ["document", "legal_document"],
+  followUpsToday: ["legal_follow_up"],
+};
+
+// Deadlines come from the Fristen read model, not from this list.
+const BRIEFING_TYPES: Record<string, number> = Object.fromEntries(
+  Object.entries({
+    ...DEFAULT_TYPES,
+    legal_follow_up: 500,
+    trust_account: 100,
+    absence_record: 500,
+  }).filter(([type]) => type !== "legal_deadline")
+);
+
+const CLOSED_STATUSES = [
+  "done",
+  "closed",
+  "settled",
+  "won",
+  "lost",
+  "paid",
+  "archived",
+  "approved",
+  "rejected",
+  "fulfilled",
+  "signed",
+  "declined",
+  "cancelled",
+  "canceled",
+];
+const isOpen = (status: unknown) => !CLOSED_STATUSES.includes(String(status ?? "").toLowerCase());
+
+/** Whole calendar days from the firm's today (Europe/Vienna) to `due`. */
+function daysFromToday(due: string, todayKey: string): number {
+  const target = Date.parse(`${due.slice(0, 10)}T00:00:00Z`);
+  const today = Date.parse(`${todayKey}T00:00:00Z`);
+  return Math.round((target - today) / 86_400_000);
 }
 
 async function fetchCockpitData(headers: Record<string, string>): Promise<BriefingData | null> {
   try {
-    const pages = await fetchPagesByTypes(headers, {
-      ...DEFAULT_TYPES,
-      legal_follow_up: 50,
-      trust_account: 50,
-      absence_record: 50,
-    });
+    const [lists, fristenModel] = await Promise.all([
+      fetchPagesByTypesResult(headers, BRIEFING_TYPES),
+      // Every deadline source (Fristenbuch, deadline pages, deadlines in
+      // matters), fully paged — not the 50 most recently edited pages.
+      loadFristenReadModel(headers),
+    ]);
+    const { pages, failedTypes, cappedTypes } = lists;
+    const deadlinesIncomplete = fristenModel.failedSources.some((src) =>
+      DEADLINE_SOURCES.includes(src)
+    );
+    const allFailed =
+      DEADLINE_SOURCES.every((src) => fristenModel.failedSources.includes(src)) &&
+      Object.keys(BRIEFING_TYPES).every((type) => failedTypes.includes(type));
+    if (allFailed) return null;
 
     const cases = pages.legal_case ?? [];
-    const deadlines = pages.legal_deadline ?? [];
     const followUps = pages.legal_follow_up ?? [];
     const invoices = pages.invoice ?? [];
     const intake = pages.intake_request ?? [];
@@ -55,85 +129,24 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     const agentActions = pages.agent_action ?? [];
     const docs = [...(pages.document ?? []), ...(pages.legal_document ?? [])];
 
-    const closedStatuses = [
-      "done",
-      "closed",
-      "settled",
-      "won",
-      "lost",
-      "paid",
-      "archived",
-      "approved",
-      "rejected",
-      "fulfilled",
-      "signed",
-      "declined",
-      "cancelled",
-      "canceled",
-    ];
-    const isOpen = (status: unknown) =>
-      !closedStatuses.includes(String(status ?? "").toLowerCase());
-
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const todayKey = now.toLocaleDateString("en-CA");
+    const todayKey = zonedDateString(new Date());
 
     const absences = (pages.absence_record ?? [])
       .map((p: BrainPage) => p.frontmatter as AbsenceRecord | undefined)
       .filter((a): a is AbsenceRecord => Boolean(a?.user_email || a?.user_name));
-    const responsibleByCase = new Map<string, string>();
-    for (const c of cases) {
-      const lawyer = (c.frontmatter as Record<string, unknown> | undefined)?.own_lawyer_name;
-      if (typeof lawyer === "string" && lawyer.trim()) {
-        responsibleByCase.set(c.slug, lawyer.trim());
-      }
-    }
 
-    const deadlineItems = deadlines
-      .map((p: BrainPage) => {
-        const fm = p.frontmatter ?? {};
-        const dueStr =
-          (fm as Record<string, unknown>).due_date ??
-          (fm as Record<string, unknown>).date ??
-          p.created_at;
-        if (typeof dueStr !== "string" && typeof dueStr !== "number") return null;
-        const due = new Date(dueStr);
-        if (Number.isNaN(due.getTime())) return null;
-        const target = new Date(due);
-        target.setHours(0, 0, 0, 0);
-        const daysLeft = Math.ceil((target.getTime() - now.getTime()) / 86_400_000);
-        const caseSlug = (fm as Record<string, unknown>).case_slug;
-        const responsible =
-          (fm as Record<string, unknown>).responsible ??
-          (fm as Record<string, unknown>).assignee ??
-          (typeof caseSlug === "string" ? responsibleByCase.get(caseSlug) : undefined);
-        const delegate = activeDelegateFor(
-          typeof responsible === "string" ? responsible : undefined,
-          absences,
-          new Date()
-        );
-        return {
-          title: String(p.title ?? "Unbenannte Frist"),
-          due: due.toISOString(),
-          daysLeft,
-          delegate: delegate?.name,
-          overdue: daysLeft < 0 && isOpen((fm as Record<string, unknown>).status),
-          critical:
-            daysLeft >= 0 && daysLeft <= 3 && isOpen((fm as Record<string, unknown>).status),
-        };
-      })
-      .filter(
-        (
-          item
-        ): item is {
-          title: string;
-          due: string;
-          daysLeft: number;
-          delegate: string | undefined;
-          overdue: boolean;
-          critical: boolean;
-        } => item !== null
-      )
+    // Status comes from the read model (Europe/Vienna calendar day, the
+    // central closed/discarded set); the stand-in from the matter's lawyer.
+    const deadlineItems = fristenModel.fristen
+      .filter((f) => f.status !== "done" && !isClosedDeadline(f))
+      .map((f) => ({
+        title: f.title || "Unbenannte Frist",
+        due: f.due_date,
+        daysLeft: daysFromToday(f.due_date, todayKey),
+        delegate: f.deputy,
+        overdue: f.status === "overdue",
+        critical: f.status === "critical",
+      }))
       .sort((a, b) => a.daysLeft - b.daysLeft);
 
     const activeCases = cases.filter((p: BrainPage) =>
@@ -173,6 +186,10 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
     );
     const pendingReviews = [...reviews, ...agentActions].filter((p: BrainPage) =>
       isOpen((p.frontmatter as Record<string, unknown> | undefined)?.status)
+    );
+
+    const cappedCounts = (Object.keys(COUNT_SOURCES) as CountKey[]).filter((key) =>
+      COUNT_SOURCES[key].some((type) => cappedTypes.includes(type))
     );
 
     return {
@@ -218,10 +235,22 @@ async function fetchCockpitData(headers: Record<string, string>): Promise<Briefi
         title: String(p.title ?? "Unbenannte Akte"),
         status: String((p.frontmatter as Record<string, unknown> | undefined)?.status ?? "open"),
       })),
+      deadlinesIncomplete,
+      failedTypes,
+      cappedCounts,
     };
   } catch {
     return null;
   }
+}
+
+/** A count as text: "N+" when it hit the read budget, "unbekannt" when its
+ *  source failed — never a bare number that is really a lower bound or 0. */
+function countText(data: BriefingData, key: CountKey, language: "de" | "en"): string {
+  if (COUNT_SOURCES[key].some((type) => data.failedTypes.includes(type))) {
+    return language === "en" ? "unknown (could not be loaded)" : "unbekannt (nicht geladen)";
+  }
+  return data.cappedCounts.includes(key) ? `${data[key]}+` : String(data[key]);
 }
 
 function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string {
@@ -232,16 +261,16 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
     );
     parts.push("Base it ONLY on the following data. Do not invent information.");
     parts.push("");
-    parts.push(`Active cases: ${data.activeCases}`);
+    parts.push(`Active cases: ${countText(data, "activeCases", "en")}`);
     parts.push(`Critical deadlines (≤3 days): ${data.criticalDeadlines}`);
     parts.push(`Overdue deadlines: ${data.overdueDeadlines}`);
-    parts.push(`Inbox items: ${data.inboxItems}`);
-    parts.push(`Follow-ups today: ${data.followUpsToday}`);
-    parts.push(`Pending reviews: ${data.pendingReviews}`);
-    parts.push(`Pending signatures: ${data.pendingSignatures}`);
-    parts.push(`Open invoices: ${data.openInvoices}`);
-    parts.push(`Unassigned documents: ${data.unassignedDocs}`);
-    parts.push(`Review gaps: ${data.reviewGaps}`);
+    parts.push(`Inbox items: ${countText(data, "inboxItems", "en")}`);
+    parts.push(`Follow-ups today: ${countText(data, "followUpsToday", "en")}`);
+    parts.push(`Pending reviews: ${countText(data, "pendingReviews", "en")}`);
+    parts.push(`Pending signatures: ${countText(data, "pendingSignatures", "en")}`);
+    parts.push(`Open invoices: ${countText(data, "openInvoices", "en")}`);
+    parts.push(`Unassigned documents: ${countText(data, "unassignedDocs", "en")}`);
+    parts.push(`Review gaps: ${countText(data, "reviewGaps", "en")}`);
     parts.push(`Trust reconciliations overdue: ${data.overdueReconciliations}`);
     if (data.activeDelegations.length > 0) {
       parts.push("Active delegations (absent colleague → stand-in):");
@@ -278,16 +307,16 @@ function buildBriefingPrompt(data: BriefingData, language: "de" | "en"): string 
   );
   parts.push("Basiere es NUR auf den folgenden Daten. Erfinde keine Informationen.");
   parts.push("");
-  parts.push(`Aktive Akten: ${data.activeCases}`);
+  parts.push(`Aktive Akten: ${countText(data, "activeCases", "de")}`);
   parts.push(`Kritische Fristen (≤3 Tage): ${data.criticalDeadlines}`);
   parts.push(`Überfällige Fristen: ${data.overdueDeadlines}`);
-  parts.push(`Eingänge: ${data.inboxItems}`);
-  parts.push(`Wiedervorlagen heute: ${data.followUpsToday}`);
-  parts.push(`Offene Freigaben: ${data.pendingReviews}`);
-  parts.push(`Offene Signaturen: ${data.pendingSignatures}`);
-  parts.push(`Offene Rechnungen: ${data.openInvoices}`);
-  parts.push(`Unzugeordnete Dokumente: ${data.unassignedDocs}`);
-  parts.push(`Review-Lücken: ${data.reviewGaps}`);
+  parts.push(`Eingänge: ${countText(data, "inboxItems", "de")}`);
+  parts.push(`Wiedervorlagen heute: ${countText(data, "followUpsToday", "de")}`);
+  parts.push(`Offene Freigaben: ${countText(data, "pendingReviews", "de")}`);
+  parts.push(`Offene Signaturen: ${countText(data, "pendingSignatures", "de")}`);
+  parts.push(`Offene Rechnungen: ${countText(data, "openInvoices", "de")}`);
+  parts.push(`Unzugeordnete Dokumente: ${countText(data, "unassignedDocs", "de")}`);
+  parts.push(`Review-Lücken: ${countText(data, "reviewGaps", "de")}`);
   parts.push(`Überfällige Treuhand-Abgleiche: ${data.overdueReconciliations}`);
   if (data.activeDelegations.length > 0) {
     parts.push("Aktive Vertretungen (abwesend → Vertretung):");
@@ -337,10 +366,21 @@ async function generateNarrative(
   return answer && !isDegradedAnswer(answer) ? answer : null;
 }
 
+const INCOMPLETE_DE =
+  "Fristen konnten nicht vollständig geladen werden — bitte im Fristenbuch prüfen.";
+const INCOMPLETE_EN = "Deadlines could not be loaded completely — please check the deadline book.";
+
 function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
   if (language === "en") {
     const parts: string[] = [];
-    if (data.overdueDeadlines > 0) {
+    if (data.deadlinesIncomplete) {
+      parts.push(INCOMPLETE_EN);
+      if (data.overdueDeadlines > 0) {
+        parts.push(`At least ${data.overdueDeadlines} overdue deadline(s) found.`);
+      } else if (data.criticalDeadlines > 0) {
+        parts.push(`At least ${data.criticalDeadlines} critical deadline(s) found.`);
+      }
+    } else if (data.overdueDeadlines > 0) {
       parts.push(`${data.overdueDeadlines} overdue deadline(s) need immediate attention.`);
     } else if (data.criticalDeadlines > 0) {
       parts.push(`${data.criticalDeadlines} critical deadline(s) due within 3 days.`);
@@ -348,14 +388,21 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
       parts.push("No critical deadlines today.");
     }
     const attention: string[] = [];
-    if (data.inboxItems > 0) attention.push(`${data.inboxItems} inbox items`);
-    if (data.pendingReviews > 0) attention.push(`${data.pendingReviews} pending reviews`);
-    if (data.pendingSignatures > 0) attention.push(`${data.pendingSignatures} signatures`);
-    if (data.unassignedDocs > 0) attention.push(`${data.unassignedDocs} unassigned documents`);
+    if (data.inboxItems > 0) attention.push(`${countText(data, "inboxItems", "en")} inbox items`);
+    if (data.pendingReviews > 0)
+      attention.push(`${countText(data, "pendingReviews", "en")} pending reviews`);
+    if (data.pendingSignatures > 0)
+      attention.push(`${countText(data, "pendingSignatures", "en")} signatures`);
+    if (data.unassignedDocs > 0)
+      attention.push(`${countText(data, "unassignedDocs", "en")} unassigned documents`);
     if (data.overdueReconciliations > 0)
       attention.push(`${data.overdueReconciliations} trust reconciliation(s) overdue`);
     parts.push(
-      attention.length > 0 ? attention.join(", ") + " need attention." : "Inbox is clear."
+      attention.length > 0
+        ? attention.join(", ") + " need attention."
+        : data.failedTypes.length > 0
+          ? "Some areas could not be loaded."
+          : "Inbox is clear."
     );
     if (data.activeDelegations.length > 0) {
       const names = data.activeDelegations
@@ -365,14 +412,23 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
     }
     parts.push(
       data.activeCases > 0
-        ? `Review your ${data.activeCases} active case(s) and prioritize accordingly.`
-        : "No active cases — consider creating one."
+        ? `Review your ${countText(data, "activeCases", "en")} active case(s) and prioritize accordingly.`
+        : data.failedTypes.includes("legal_case")
+          ? "Cases could not be loaded."
+          : "No active cases — consider creating one."
     );
     return parts.join(" ");
   }
 
   const parts: string[] = [];
-  if (data.overdueDeadlines > 0) {
+  if (data.deadlinesIncomplete) {
+    parts.push(INCOMPLETE_DE);
+    if (data.overdueDeadlines > 0) {
+      parts.push(`Mindestens ${data.overdueDeadlines} überfällige Frist(en) gefunden.`);
+    } else if (data.criticalDeadlines > 0) {
+      parts.push(`Mindestens ${data.criticalDeadlines} kritische Frist(en) gefunden.`);
+    }
+  } else if (data.overdueDeadlines > 0) {
     parts.push(
       `${data.overdueDeadlines} überfällige Frist(en) benötigen sofortige Aufmerksamkeit.`
     );
@@ -382,14 +438,21 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
     parts.push("Keine kritischen Fristen heute.");
   }
   const attention: string[] = [];
-  if (data.inboxItems > 0) attention.push(`${data.inboxItems} Eingänge`);
-  if (data.pendingReviews > 0) attention.push(`${data.pendingReviews} offene Freigaben`);
-  if (data.pendingSignatures > 0) attention.push(`${data.pendingSignatures} Signaturen`);
-  if (data.unassignedDocs > 0) attention.push(`${data.unassignedDocs} unzugeordnete Dokumente`);
+  if (data.inboxItems > 0) attention.push(`${countText(data, "inboxItems", "de")} Eingänge`);
+  if (data.pendingReviews > 0)
+    attention.push(`${countText(data, "pendingReviews", "de")} offene Freigaben`);
+  if (data.pendingSignatures > 0)
+    attention.push(`${countText(data, "pendingSignatures", "de")} Signaturen`);
+  if (data.unassignedDocs > 0)
+    attention.push(`${countText(data, "unassignedDocs", "de")} unzugeordnete Dokumente`);
   if (data.overdueReconciliations > 0)
     attention.push(`${data.overdueReconciliations} überfällige Treuhand-Abgleiche`);
   parts.push(
-    attention.length > 0 ? attention.join(", ") + " benötigen Aufmerksamkeit." : "Eingang ist leer."
+    attention.length > 0
+      ? attention.join(", ") + " benötigen Aufmerksamkeit."
+      : data.failedTypes.length > 0
+        ? "Einzelne Bereiche konnten nicht geladen werden."
+        : "Eingang ist leer."
   );
   if (data.activeDelegations.length > 0) {
     const names = data.activeDelegations
@@ -399,8 +462,10 @@ function fallbackBriefing(data: BriefingData, language: "de" | "en"): string {
   }
   parts.push(
     data.activeCases > 0
-      ? `Übersicht über ${data.activeCases} aktive Akte(n) und Prioritäten setzen.`
-      : "Keine aktiven Akten — eventuell neue anlegen."
+      ? `Übersicht über ${countText(data, "activeCases", "de")} aktive Akte(n) und Prioritäten setzen.`
+      : data.failedTypes.includes("legal_case")
+        ? "Akten konnten nicht geladen werden."
+        : "Keine aktiven Akten — eventuell neue anlegen."
   );
   return parts.join(" ");
 }
@@ -422,14 +487,18 @@ export const POST = createHandler(
       return apiError("service_unavailable", "Cockpit-Daten nicht verfügbar", 503);
     }
 
-    const prompt = buildBriefingPrompt(data, body.language);
-    const narrative = await generateNarrative(ctx.headers, prompt);
+    // Incomplete deadlines: no model prose — it could still read "keine
+    // kritischen Fristen". The deterministic text leads with the warning.
+    const narrative = data.deadlinesIncomplete
+      ? null
+      : await generateNarrative(ctx.headers, buildBriefingPrompt(data, body.language));
 
     return apiSuccess({
       narrative: narrative ?? fallbackBriefing(data, body.language),
       data,
       generatedAt: new Date().toISOString(),
       usedFallback: narrative === null,
+      degraded: data.deadlinesIncomplete || data.failedTypes.length > 0,
     });
   }
 );

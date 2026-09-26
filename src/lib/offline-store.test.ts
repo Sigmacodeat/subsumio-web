@@ -2,6 +2,18 @@
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
+// Offline data is bound to a signed-in person+firm (the "owner"); these
+// tests run as one known owner stored on the device.
+const storage = new Map<string, string>([["subsumio-offline-owner", "u1:scope"]]);
+Object.defineProperty(globalThis, "localStorage", {
+  value: {
+    getItem: (k: string) => storage.get(k) ?? null,
+    setItem: (k: string, v: string) => void storage.set(k, v),
+    removeItem: (k: string) => void storage.delete(k),
+  },
+  configurable: true,
+});
+
 // offline-store uses IndexedDB which is not available in Node.
 // We test the error handling paths directly.
 

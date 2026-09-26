@@ -37,6 +37,10 @@ export interface SearchResult {
   score: number;
   evidence?: string;
   source?: string;
+  /** Page type (legal_case, legal_document, …). */
+  type?: string;
+  /** Matter the hit belongs to, when the page is bound to one. */
+  case_slug?: string;
   created_at?: string;
 }
 
@@ -136,10 +140,14 @@ export interface ConflictMatch {
   exact: boolean;
   similarity?: number;
   match_type?: "exact" | "fuzzy" | "substring";
+  /** Relative to the new mandate: critical (other side), review, info (same side). */
+  assessment?: "critical" | "review" | "info";
 }
 
 export interface ConflictCheckResponse {
   name: string;
+  /** Side of the checked name in the new mandate, when the caller gave one. */
+  side?: "client" | "opponent";
   severity: "critical" | "low" | "none";
   explanation: string;
   matches: ConflictMatch[];
@@ -361,15 +369,6 @@ export interface PrecedentSearchResponse {
   warnings?: string[];
 }
 
-export interface CaseScannerResponse {
-  success: boolean;
-  job_id: string;
-  status: "queued";
-  look_ahead_days: number;
-  evidence_threshold: number;
-  max_cases: number;
-}
-
 export interface TranslationGlossaryEntry {
   source_term: string;
   target_term: string;
@@ -429,6 +428,10 @@ export interface GroundedCitation {
   /** One-sentence reason for the support verdict. */
   support_reason?: string;
   unverifiable_reason?: string;
+  /** false: the norm exists but is no longer in force (never counted as verified). */
+  in_force?: boolean;
+  /** Außerkrafttreten of the cited norm (ISO date), when known. */
+  repealed_since?: string;
   category?:
     | "statute"
     | "state_treaty"

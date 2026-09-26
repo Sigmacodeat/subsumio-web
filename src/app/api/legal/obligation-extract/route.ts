@@ -16,6 +16,8 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/obligation-extract",
   body: obligationSchema,
   rateTier: "heavy",
+  // The engine runs an LLM call (up to 8 000 output tokens) per request.
+  credits: "document_analysis",
   citationGate: true,
   label: "obligation-extract",
   audit: (_ctx, b) => ({

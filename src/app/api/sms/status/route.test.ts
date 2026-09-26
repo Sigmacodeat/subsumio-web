@@ -10,6 +10,7 @@ const auditEntries: Array<{
 }> = [];
 
 vi.mock("@/lib/audit", () => ({
+  SYSTEM_BRAIN: "system",
   logAudit: vi.fn(async () => undefined),
   listAuditLogs: vi.fn(async () => auditEntries),
 }));
@@ -30,6 +31,10 @@ vi.mock("@/lib/api-handler", () => ({
 }));
 
 vi.mock("@/lib/sms/twilio-verify", () => ({ verifyTwilioSignature: () => true }));
+const sentIndex = new Map<string, { brainId: string; toHash: string }>();
+vi.mock("@/lib/sms/outbound-index", () => ({
+  lookupSmsOutbound: vi.fn(async (sid: string) => sentIndex.get(sid) ?? null),
+}));
 vi.mock("@/lib/env", () => ({ env: () => "token" }));
 
 const seenKeys = new Set<string>();
@@ -48,7 +53,7 @@ vi.mock("@/lib/caselaw-dedup", () => ({
 
 import type { NextRequest } from "next/server";
 import { GET, POST } from "./route";
-import { logAudit } from "@/lib/audit";
+import { listAuditLogs, logAudit } from "@/lib/audit";
 
 function req(url: string) {
   return new Request(url) as unknown as NextRequest;
@@ -91,9 +96,9 @@ describe("GET /api/sms/status", () => {
   });
 });
 
-function twilioCallback(params: Record<string, string>): NextRequest {
+function twilioCallback(params: Record<string, string>, query = ""): NextRequest {
   const body = new URLSearchParams(params).toString();
-  return new Request("https://app.example.com/api/sms/status", {
+  return new Request(`https://app.example.com/api/sms/status${query}`, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
@@ -138,5 +143,64 @@ describe("POST /api/sms/status — Replay-Dedup", () => {
     await post({ ...base, MessageStatus: "sent" });
     await post(base); // delivered
     expect(vi.mocked(logAudit)).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("Zustellstatus landet bei der sendenden Kanzlei", () => {
+  beforeEach(() => {
+    seenKeys.clear();
+    sentIndex.clear();
+    vi.mocked(logAudit).mockClear();
+    vi.mocked(listAuditLogs).mockClear();
+  });
+
+  async function post(params: Record<string, string>): Promise<Response> {
+    const handler = POST as unknown as (b: unknown, r: NextRequest) => Promise<Response>;
+    return handler(undefined, twilioCallback(params));
+  }
+
+  test("Callback mit bekannter SID wird unter dem Brain der Kanzlei geloggt", async () => {
+    const toHash = hash("+436641234567");
+    sentIndex.set("SM-A", { brainId: "brain_a", toHash });
+    await post({ MessageSid: "SM-A", MessageStatus: "delivered" });
+    expect(vi.mocked(logAudit)).toHaveBeenCalledWith(
+      "sms.delivery_status",
+      "sms_outbound",
+      expect.objectContaining({ brainId: "brain_a", entityId: toHash })
+    );
+  });
+
+  test("GET filtert per SQL auf den Hash der Nummer (kein 100er-Fenster)", async () => {
+    const h = hash("+436641234567");
+    await GET(req(`http://localhost/api/sms/status?hash=${h}`));
+    expect(vi.mocked(listAuditLogs)).toHaveBeenCalledWith(
+      expect.objectContaining({ brainId: "test-brain", entityId: h, limit: 5 })
+    );
+  });
+});
+
+describe("POST /api/sms/status — Kanzlei-Zuordnung (OPS-10)", () => {
+  beforeEach(() => {
+    seenKeys.clear();
+    vi.mocked(logAudit).mockClear();
+  });
+
+  const handler = POST as unknown as (b: unknown, r: NextRequest) => Promise<Response>;
+
+  test("the signed callback URL names the firm — the entry lands in its protocol", async () => {
+    await handler(
+      undefined,
+      twilioCallback({ MessageSid: "SM9", MessageStatus: "delivered" }, "?b=brain-firm-1")
+    );
+    expect(vi.mocked(logAudit).mock.calls[0][2]).toMatchObject({ brainId: "brain-firm-1" });
+  });
+
+  test("without (or with a malformed) reference it goes to the system chain", async () => {
+    await handler(undefined, twilioCallback({ MessageSid: "SM10", MessageStatus: "sent" }));
+    await handler(
+      undefined,
+      twilioCallback({ MessageSid: "SM11", MessageStatus: "sent" }, "?b=..%2Fevil%20x")
+    );
+    expect(vi.mocked(logAudit).mock.calls.map((c) => c[2].brainId)).toEqual(["system", "system"]);
   });
 });

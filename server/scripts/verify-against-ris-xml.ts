@@ -23,6 +23,7 @@
  */
 
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 import { risXmlToText } from "./backfill-utils";
 
 const args = process.argv.slice(2);
@@ -107,7 +108,7 @@ async function main() {
     group by p.slug, p.frontmatter->>'source_url'
     order by md5(p.slug)
     limit ${LIMIT}`;
-  const raw = (await $`psql ${URL_} -tAc ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, URL_);
 
   const docs: Doc[] = [];
   for (const line of raw.split("\n")) {

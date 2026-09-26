@@ -29,7 +29,9 @@ export default function TimeSuggestionsPage() {
   const [enabled, setEnabled] = useState(false);
   // Suggestions are personal (built from the user's own activity): show only
   // the signed-in user's, never a colleague's.
-  const myEmail = (useMe().data?.user?.email as string | undefined)?.toLowerCase();
+  const meQuery = useMe();
+  const myEmail = (meQuery.data?.user?.email as string | undefined)?.toLowerCase();
+  const [loadFailed, setLoadFailed] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -42,12 +44,16 @@ export default function TimeSuggestionsPage() {
       // Serverseitig auf den eigenen User gefiltert — die firmenweite
       // Liste würde fremde Tätigkeitsbeschreibungen im Payload liefern.
       const res = await fetch("/api/time-suggestions");
-      const data = res.ok ? await res.json() : null;
+      // A failed load is an error, never an empty list.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
       const items = ((data?.data?.suggestions ?? []) as TimeSuggestion[]).sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setSuggestions(items);
+      setLoadFailed(false);
     } catch {
+      setLoadFailed(true);
       addToast({ type: "error", title: t("time_sugg.err_load") });
     } finally {
       setLoading(false);
@@ -93,16 +99,42 @@ export default function TimeSuggestionsPage() {
       draft.description.trim() !== suggestion.description ||
       !draft.billable;
     setActing(suggestion.id);
-    let entryId: string | undefined;
+    // One server-side flow books the entry and marks the suggestion; it
+    // refuses a second booking of the same suggestion (409).
     try {
-      const entry = await api.time.create({
-        date: suggestion.date,
-        minutes,
-        description: draft.description.trim(),
+      const res = await csrfFetch(
+        `/api/time-suggestions/${encodeURIComponent(suggestion.id)}/accept`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            case_slug: draft.case_slug,
+            minutes,
+            description: draft.description.trim(),
+            billable: draft.billable,
+          }),
+        }
+      );
+      if (res.status === 409) {
+        addToast({
+          type: "info",
+          title: "Vorschlag bereits übernommen",
+          description: "Für diesen Vorschlag ist schon ein Zeiteintrag gebucht.",
+        });
+        void load();
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated: TimeSuggestion = {
+        ...suggestion,
+        status: modified ? "modified" : "accepted",
         case_slug: draft.case_slug,
-        billable: draft.billable,
-      });
-      entryId = entry.id;
+        duration_minutes: minutes,
+        description: draft.description.trim(),
+      };
+      setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
+      setEditing(null);
+      addToast({ type: "success", title: "Zeiteintrag übernommen" });
     } catch (e) {
       console.error("[time-suggestions] accept failed:", e instanceof Error ? e.message : e);
       addToast({
@@ -110,49 +142,9 @@ export default function TimeSuggestionsPage() {
         title: "Vorschlag konnte nicht übernommen werden",
         description: "Bitte versuchen Sie es erneut oder erfassen Sie die Zeit manuell.",
       });
+    } finally {
       setActing(null);
-      return;
     }
-
-    // The entry is booked. Record that on the suggestion so it cannot be
-    // booked twice; if this write fails the booking still stands.
-    const updated: TimeSuggestion = {
-      ...suggestion,
-      status: modified ? "modified" : "accepted",
-      case_slug: draft.case_slug,
-      duration_minutes: minutes,
-      description: draft.description.trim(),
-    };
-    try {
-      await api.brain.createPage({
-        slug: `legal/time-suggestions/${suggestion.id}`,
-        title: `Zeitvorschlag: ${suggestion.date} ${suggestion.start_time}-${suggestion.end_time}`,
-        type: "time_suggestion",
-        frontmatter: {
-          ...(updated as unknown as Record<string, unknown>),
-          time_entry_id: entryId,
-          original: modified
-            ? {
-                case_slug: suggestion.case_slug ?? null,
-                duration_minutes: suggestion.duration_minutes,
-                description: suggestion.description,
-              }
-            : undefined,
-        },
-      });
-      addToast({ type: "success", title: "Zeiteintrag übernommen" });
-    } catch (e) {
-      console.error("[time-suggestions] mark failed:", e instanceof Error ? e.message : e);
-      addToast({
-        type: "error",
-        title: "Zeit gebucht, Vorschlag nicht aktualisiert",
-        description:
-          "Der Zeiteintrag ist gespeichert. Bitte übernehmen Sie diesen Vorschlag nicht noch einmal.",
-      });
-    }
-    setSuggestions((prev) => prev.map((s) => (s.id === suggestion.id ? updated : s)));
-    setEditing(null);
-    setActing(null);
   }
 
   async function rejectSuggestion(suggestion: TimeSuggestion) {
@@ -227,7 +219,21 @@ export default function TimeSuggestionsPage() {
         </div>
       )}
 
-      {loading || !myEmail ? (
+      {loadFailed || meQuery.isError ? (
+        <div role="alert">
+          <EmptyState
+            icon={Clock}
+            title={t("time_sugg.err_load")}
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              if (meQuery.isError) void meQuery.refetch();
+              setLoadFailed(false);
+              setLoading(true);
+              void load();
+            }}
+          />
+        </div>
+      ) : loading || (!myEmail && !meQuery.isSuccess) ? (
         <div role="status" aria-label="Vorschläge werden geladen">
           <RowSkeleton count={4} />
         </div>

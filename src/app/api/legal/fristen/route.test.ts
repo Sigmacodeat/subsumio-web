@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
@@ -39,6 +39,13 @@ describe("GET /api/legal/fristen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireEngineContext).mockResolvedValue(ctx as any);
+    // Fixed clock: the fixtures carry calendar dates, so "overdue" must not
+    // depend on the day the suite runs.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-15T10:00:00+02:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("adds the responsible lawyer and keeps the completion note of duplicates", async () => {
@@ -208,6 +215,54 @@ describe("GET /api/legal/fristen", () => {
     expect(body.zusammenfassung.overdue).toBe(1);
   });
 
+  it("treats erledigt/completed as done and leaves out rejected or deleted entries", async () => {
+    engine({
+      "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
+      "/api/pages?type=legal_case&limit=100&offset=0": [
+        {
+          slug: "cases/c",
+          title: "C",
+          frontmatter: {
+            deadlines: [
+              {
+                id: "d1",
+                title: "Erledigt eingebettet",
+                due_date: "2020-01-01",
+                status: "erledigt",
+              },
+              {
+                id: "d2",
+                title: "Verworfen eingebettet",
+                due_date: "2020-01-02",
+                review_status: "rejected",
+              },
+            ],
+          },
+        },
+      ],
+      "/api/pages?type=legal_deadline&limit=100&offset=0": [
+        {
+          slug: "legal/deadlines/a",
+          title: "A",
+          frontmatter: { due_date: "2020-01-03", status: "completed", description: "Completed" },
+        },
+        {
+          slug: "legal/deadlines/b",
+          title: "B",
+          frontmatter: { due_date: "2020-01-04", status: "tombstoned", description: "Gelöscht" },
+        },
+      ],
+      "/api/pages?type=absence_record&limit=100&offset=0": [],
+    });
+    const body = await (
+      await GET(new NextRequest("http://localhost:3000/api/legal/fristen"))
+    ).json();
+    const titles = body.fristen.map((f: { title: string }) => f.title).sort();
+    expect(titles).toEqual(["Completed", "Erledigt eingebettet"]);
+    expect(body.fristen.every((f: { status: string }) => f.status === "done")).toBe(true);
+    expect(body.zusammenfassung.overdue).toBe(0);
+  });
+
   it("gives legacy embedded deadlines (no id) a title + due_date reference", async () => {
     engine({
       "/api/legal/fristenbuch": { heute: "", eintraege: [], zusammenfassung: {} },
@@ -228,5 +283,35 @@ describe("GET /api/legal/fristen", () => {
       title: "Klagebeantwortung",
       due_date: "2026-11-02",
     });
+  });
+
+  it("view=warnings: only near-due open deadlines, one read-model build for parallel tabs (R11-2)", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue({
+      ...ctx,
+      headers: { "x-subsumio-source": "brain_warn" },
+    } as any);
+    let fristenbuchCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/legal/fristenbuch") {
+          fristenbuchCalls++;
+          return Response.json({
+            eintraege: [
+              { case_slug: "cases/a", datum: "2026-09-16", frist: "Bald", status: "ok" },
+              { case_slug: "cases/b", datum: "2026-12-01", frist: "Später", status: "ok" },
+            ],
+          });
+        }
+        return Response.json([]);
+      })
+    );
+    const req = () => GET(new NextRequest("http://localhost:3000/api/legal/fristen?view=warnings"));
+    const [a, b] = await Promise.all([req(), req()]);
+    const body = (await a.json()) as { fristen: Array<{ title: string }> };
+    await b.json();
+    expect(body.fristen.map((f) => f.title)).toEqual(["Bald"]);
+    expect(fristenbuchCalls).toBe(1);
   });
 });

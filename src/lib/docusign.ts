@@ -23,7 +23,8 @@ import { docusignOAuthHost, type EnvelopeCustomFields } from "@/lib/docusign-con
 import { logger } from "@/lib/logger";
 const log = logger("lib/docusign");
 
-const BASE = env("DOCUSIGN_BASE_URL") || "https://demo.docusign.net/restapi/v2.1";
+const RAW_BASE = env("DOCUSIGN_BASE_URL") || "";
+const BASE = RAW_BASE || "https://demo.docusign.net/restapi/v2.1";
 const IK = env("DOCUSIGN_INTEGRATION_KEY") || "";
 const SECRET = env("DOCUSIGN_SECRET_KEY") || "";
 const ACCOUNT = env("DOCUSIGN_ACCOUNT_ID") || "";
@@ -33,7 +34,13 @@ export const DOCUSIGN_OAUTH_HOST = docusignOAuthHost(BASE, env("DOCUSIGN_OAUTH_H
 export interface EnvelopeRequest {
   emailSubject: string;
   emailBlurb: string;
-  documents: Array<{ documentBase64: string; name: string; documentId: string }>;
+  documents: Array<{
+    documentBase64: string;
+    name: string;
+    documentId: string;
+    /** "pdf" | "docx" — DocuSign would otherwise guess from the name. */
+    fileExtension?: string;
+  }>;
   recipients: {
     signers: Array<{
       email: string;
@@ -264,7 +271,33 @@ export async function disconnectUser(userId: string): Promise<void> {
     docusignAccessToken: null,
     docusignRefreshToken: null,
     docusignTokenExpiresAt: null,
+    docusignUserEmail: null,
+    docusignUserName: null,
   });
+}
+
+/**
+ * Who the fresh token belongs to (GET /oauth/userinfo on the OAuth host):
+ * shown as "verbunden als …" in the settings. Best effort — null on any
+ * failure, the connection itself is not affected.
+ */
+export async function fetchDocusignUserInfo(
+  accessToken: string
+): Promise<{ email: string | null; name: string | null } | null> {
+  try {
+    const res = await fetch(`https://${DOCUSIGN_OAUTH_HOST}/oauth/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: externalFetchTimeout(),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => ({}))) as { email?: unknown; name?: unknown };
+    return {
+      email: typeof data.email === "string" ? data.email.slice(0, 320) : null,
+      name: typeof data.name === "string" ? data.name.slice(0, 200) : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -451,8 +484,35 @@ export function verifyDocusignConnectSignature(
 // Configuration
 // ---------------------------------------------------------------------------
 
+/** "demo" for DocuSign's developer environment (watermarked, not legally binding). */
+export function docusignEnvironment(): "demo" | "production" {
+  let host = "";
+  try {
+    host = new URL(BASE).hostname;
+  } catch {
+    return "demo";
+  }
+  return host === "demo.docusign.net" || host.endsWith(".demo.docusign.net")
+    ? "demo"
+    : "production";
+}
+
+/**
+ * Why DocuSign must not be used, or null. In production the REST address is
+ * mandatory and the demo environment is refused: envelopes sent there carry
+ * no legal effect while the firm would see "sent"/"signed".
+ */
+export function docusignConfigProblem(): string | null {
+  if (!(IK && SECRET && ACCOUNT)) return "not_configured";
+  if (process.env.NODE_ENV === "production") {
+    if (!RAW_BASE) return "base_url_missing";
+    if (docusignEnvironment() === "demo") return "demo_environment_in_production";
+  }
+  return null;
+}
+
 export function isConfigured(): boolean {
-  return Boolean(IK && SECRET && ACCOUNT);
+  return docusignConfigProblem() === null;
 }
 
 export function getAuthUrl(redirectUri: string, state?: string): string {

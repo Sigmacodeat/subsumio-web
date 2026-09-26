@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
-import { fetchAllPagesStrict, getRecipientsByBrain } from "@/lib/cron-utils";
+import { fetchAllPagesStrict, getRecipientsByBrain, excludeDemoPages } from "@/lib/cron-utils";
 import { broadcastDeadlineAlert } from "@/lib/realtime-bus";
 import { dispatchWebhookEvent } from "@/lib/webhook-dispatch";
 import {
@@ -27,8 +27,8 @@ export const maxDuration = 60;
  */
 async function loadBrain(brainId: string): Promise<{ cases: AlertPage[]; deadlines: AlertPage[] }> {
   const [cases, deadlines] = await Promise.all([
-    fetchAllPagesStrict(brainId, "legal_case"),
-    fetchAllPagesStrict(brainId, "legal_deadline"),
+    fetchAllPagesStrict(brainId, "legal_case").then(excludeDemoPages),
+    fetchAllPagesStrict(brainId, "legal_deadline").then(excludeDemoPages),
   ]);
   return {
     cases: cases as unknown as AlertPage[],
@@ -152,7 +152,7 @@ async function deadlineAlertHandler(_req: NextRequest): Promise<Response> {
       // an unreviewed AI suggestion stays an in-app hint.
       if (item.urgency === "urgent" && !item.unreviewedAi) {
         try {
-          await dispatchWebhookEvent("deadline.critical", {
+          await dispatchWebhookEvent(brainId, "deadline.critical", {
             case_slug: item.caseSlug ?? "unknown",
             deadline_id:
               item.ref.kind === "page" ? item.ref.slug : `${item.ref.caseSlug}#${item.title}`,

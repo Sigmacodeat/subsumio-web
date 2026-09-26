@@ -17,6 +17,7 @@ import {
 import { clampSearchLimit } from "./engine.ts";
 import type { GBrainConfig } from "./config.ts";
 import type { PageType } from "./types.ts";
+import { encodePageCursor, normalizeFrontmatterFilter } from "./types.ts";
 import { importFromContent } from "./import-file.ts";
 import { writePageThrough } from "./write-through.ts";
 import { hybridSearch, hybridSearchCached, stampContentFlags } from "./search/hybrid.ts";
@@ -34,7 +35,7 @@ import {
   makeResolver,
   type UnresolvedFrontmatterRef,
 } from "./link-extraction.ts";
-import { NotFoundError } from "./engine-errors.ts";
+import { NotFoundError, PageExistsError } from "./engine-errors.ts";
 import { isFactsBackstopEligible } from "./facts/eligibility.ts";
 import { stripTakesFence } from "./takes-fence.ts";
 import { stripFactsFence } from "./facts-fence.ts";
@@ -181,6 +182,15 @@ export class OperationError extends Error {
       docs: this.docs,
     };
   }
+}
+
+/** put_page with if_absent found the slug taken; nothing was written. */
+function pageExistsOperationError(slug: string): OperationError {
+  return new OperationError(
+    "page_exists",
+    `Page already exists: ${slug}`,
+    "Use a different slug, or update the existing page explicitly."
+  );
 }
 
 // --- Upload validators (Fix 1 / B5 / H5 / M4) ---
@@ -382,6 +392,14 @@ export interface AuthInfo {
    */
   allowedSources?: string[];
   /**
+   * Shared, public, read-only sources (the law corpus) this caller may name
+   * EXPLICITLY via a per-call `source_id`, in addition to its own grant.
+   * Never widens the default scope — a query without `source_id` still reads
+   * only `allowedSources` / `sourceId`. Set for firm MCP tokens from the
+   * operator-configured shared-read list (core/shared-read-sources.ts).
+   */
+  sharedReadSources?: string[];
+  /**
    * Subsumio P0-SECR-002: Verified matter scope for this caller.
    * "all" = no per-matter restriction (trusted local CLI, admin).
    * string[] = only pages whose slug starts with one of these prefixes
@@ -407,6 +425,11 @@ export interface AuthInfo {
   webUserId?: string;
   /** Matters the bound web user may read but not change. */
   matterReadOnly?: string[];
+  /**
+   * Document-level ACL groups of the bound web user (core/acl.ts): "all" for
+   * admins, otherwise the user's groups ([] = open pages only).
+   */
+  aclGroups?: string[] | "all";
 }
 
 export interface OperationContext {
@@ -551,12 +574,21 @@ export interface OperationContext {
   /**
    * Subsumio R3: Document-level ACL groups for this caller.
    * undefined / "all" = no ACL filtering (trusted admin, legacy).
-   * string[] = only pages accessible to these group UUIDs are visible.
+   * string[] = only pages accessible to these group UUIDs are visible;
+   * [] (a user in no group) = open pages only.
    *
    * Set by buildOperationContext from opts.aclGroups, populated by the
    * web-api middleware from the caller's access_group_members rows.
    */
   aclGroups?: string[] | "all";
+  /**
+   * Set by the web API for every op it runs for a signed-in user: the call
+   * itself is trusted (remote: false), but the written content and
+   * frontmatter come from an end user. Engine-owned frontmatter markers
+   * (content-sanity gate: quarantine, content_flag, embed_skip) are then
+   * dropped exactly as for remote callers — only the gate sets them.
+   */
+  endUserWrite?: boolean;
   /**
    * Subsumio Ethical Wall: Web-app user ID of the caller.
    * Set by the web-api middleware from the session user.
@@ -735,14 +767,63 @@ export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolea
  * Subsumio R3: Async document-level ACL filter for search results.
  * Filters results by page_id against page_permissions + access_group_members.
  * Pages with NO permission rows are open-by-default.
- * Returns the input array unchanged when aclGroups is undefined/"all"/empty.
+ * Returns the input array unchanged when aclGroups is undefined/"all"; an
+ * empty group list keeps open pages only.
  */
+/**
+ * How many hits to rank before the matter-scope and ACL filters. Those filters
+ * run after ranking: for a restricted user (matter access, ethical wall,
+ * document ACL) the firm-wide top-N could hold none of their own documents
+ * even though matching ones exist. Over-fetch, filter, then cut to `limit`.
+ * Unrestricted callers fetch exactly `limit`.
+ */
+export const POST_FILTER_OVERFETCH = 5;
+export const POST_FILTER_FETCH_CAP = 250;
+
+export function postFilterFetchLimit(
+  ctx: Pick<OperationContext, "matterScope" | "aclGroups">,
+  limit: number
+): number {
+  const scoped = Array.isArray(ctx.matterScope);
+  const acl = Array.isArray(ctx.aclGroups) && ctx.aclGroups.length > 0;
+  if (!scoped && !acl) return limit;
+  return Math.max(limit, Math.min(limit * POST_FILTER_OVERFETCH, POST_FILTER_FETCH_CAP));
+}
+
+/**
+ * Rank, filter, and — for a restricted caller whose filtered page came out
+ * short — rank deeper (×4 up to the cap) until `limit` hits survive or the
+ * ranking is exhausted. Returns the last raw ranking and the kept hits.
+ */
+export async function fetchUntilFilled<T>(
+  ctx: Pick<OperationContext, "matterScope" | "aclGroups">,
+  limit: number,
+  fetchRanked: (n: number) => Promise<T[]>,
+  filter: (rows: T[]) => Promise<T[]>
+): Promise<{ raw: T[]; kept: T[] }> {
+  let n = postFilterFetchLimit(ctx, limit);
+  const restricted = n !== limit;
+  // Ranked lists shrink through dedup, so "fewer than n" does not mean the
+  // ranking is exhausted — only "no more hits than last time" does.
+  let previous = -1;
+  for (;;) {
+    const raw = await fetchRanked(n);
+    const kept = await filter(raw);
+    const exhausted = raw.length === 0 || raw.length <= previous;
+    if (!restricted || kept.length >= limit || exhausted || n >= POST_FILTER_FETCH_CAP) {
+      return { raw, kept: kept.slice(0, limit) };
+    }
+    previous = raw.length;
+    n = Math.min(n * 4, POST_FILTER_FETCH_CAP);
+  }
+}
+
 export async function aclFilter<T extends { page_id?: number }>(
   results: T[],
   ctx: OperationContext
 ): Promise<T[]> {
   const groups = ctx.aclGroups;
-  if (!groups || groups === "all" || groups.length === 0) return results;
+  if (groups === undefined || groups === "all") return results;
   if (results.length === 0) return results;
   const { filterPagesByACL } = await import("./acl.ts");
   const pageIds = results.map((r) => r.page_id).filter((id): id is number => id != null);
@@ -769,8 +850,15 @@ export async function aclFilter<T extends { page_id?: number }>(
  *       trusted local (remote === false) → `{}` (spans the whole brain)
  *       remote                           → the caller's grant (sourceScopeOpts)
  *   - explicit `source_id`:
- *       remote + federated grant that doesn't include it → permission_denied
- *       otherwise                                        → `{ sourceId }`
+ *       trusted local                                     → `{ sourceId }`
+ *       remote, allowed when the source is
+ *         in the federated grant (if one is set), or
+ *         equal to the caller's own `ctx.sourceId` (no grant), or
+ *         in `ctx.auth.sharedReadSources` (shared law corpus)
+ *                                                         → `{ sourceId }`
+ *       remote, anything else                             → permission_denied
+ *     Several firms share one database; a remote caller without a federated
+ *     grant is bound to its own source and never reads another one by name.
  *   - neither → the caller's grant (sourceScopeOpts).
  *
  * `code_traversal_cache_clear` is intentionally NOT a caller — it is localOnly
@@ -786,8 +874,14 @@ export function resolveRequestedScope(
     return ctx.remote === false ? {} : sourceScopeOpts(ctx);
   }
   if (sourceIdParam !== undefined) {
+    if (ctx.remote === false) return { sourceId: sourceIdParam };
     const allowed = ctx.auth?.allowedSources;
-    if (ctx.remote !== false && allowed && allowed.length > 0 && !allowed.includes(sourceIdParam)) {
+    const inGrant =
+      allowed && allowed.length > 0
+        ? allowed.includes(sourceIdParam)
+        : !!ctx.sourceId && ctx.sourceId === sourceIdParam;
+    const shared = ctx.auth?.sharedReadSources ?? [];
+    if (!inGrant && !shared.includes(sourceIdParam)) {
       throw new OperationError(
         "permission_denied",
         `source '${sourceIdParam}' is outside your granted sources`,
@@ -1014,7 +1108,7 @@ const get_page: Operation = {
     // set, verify the page is accessible. Pages with no permission rows
     // are open-by-default. Denied pages throw the same error as not-found
     // to prevent information leakage.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all") {
       const { isPageAccessible } = await import("./acl.ts");
       const accessible = await isPageAccessible(ctx.engine, page.id, ctx.aclGroups);
       if (!accessible) {
@@ -1134,11 +1228,18 @@ const put_page: Operation = {
       required: false,
       description: "Richer label paired with source_kind. Remote callers: SERVER-STAMPED.",
     },
+    if_absent: {
+      type: "boolean",
+      required: false,
+      description:
+        "Create-only: fail with page_exists (nothing written) when a page already exists at this slug, including deleted or archived pages. Atomic against concurrent creates.",
+    },
   },
   mutating: true,
   scope: "write",
   handler: async (ctx, p) => {
     const slug = p.slug as string;
+    const ifAbsent = p.if_absent === true;
 
     // v0.39.3.0 CV6 trust gate for provenance write-through (WARN-8).
     // Only trusted LOCAL callers (ctx.remote === false — capture CLI,
@@ -1227,6 +1328,7 @@ const put_page: Operation = {
       slug,
       ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
     );
+    if (ifAbsent && existingPage) throw pageExistsOperationError(slug);
     if (!existingPage) {
       const parsed = await import("./markdown.ts").then((m) =>
         m.parseMarkdown(p.content as string, slug + ".md")
@@ -1273,25 +1375,33 @@ const put_page: Operation = {
       // Pack load failed; fall through to legacy inferType behavior.
       activePack = undefined;
     }
-    const result = await importFromContent(ctx.engine, slug, p.content as string, {
-      noEmbed,
-      // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
-      // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
-      // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
-      remote: ctx.remote !== false,
-      ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
-      // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
-      // inferType behavior when undefined).
-      ...(activePack ? { activePack } : {}),
-      // v0.39.3.0 provenance write-through (WARN-8). Trust-filtered values
-      // computed above; ingested_at is server-stamped at the engine layer.
-      // Null-valued fields signal "no provenance write this call" and the
-      // engine's COALESCE-preserve UPDATE keeps the prior first-write
-      // record intact (CV12 audit-trail survival).
-      source_kind: provenanceKind,
-      source_uri: provenanceUri,
-      ingested_via: provenanceVia,
-    });
+    let result: Awaited<ReturnType<typeof importFromContent>>;
+    try {
+      result = await importFromContent(ctx.engine, slug, p.content as string, {
+        noEmbed,
+        ...(ifAbsent ? { ifAbsent: true } : {}),
+        // v0.42 (#1699): untrusted callers can't smuggle gate-owned frontmatter
+        // markers (quarantine/content_flag/embed_skip). Fail-closed — anything
+        // not strictly local is remote (matches CV6 / v0.26.9 F7b posture).
+        // The web API's end-user writes are treated the same way.
+        remote: ctx.remote !== false || ctx.endUserWrite === true,
+        ...(ctx.sourceId ? { sourceId: ctx.sourceId } : {}),
+        // v0.39.0.0 T1.5: pack-aware type inference (loaded above; legacy
+        // inferType behavior when undefined).
+        ...(activePack ? { activePack } : {}),
+        // v0.39.3.0 provenance write-through (WARN-8). Trust-filtered values
+        // computed above; ingested_at is server-stamped at the engine layer.
+        // Null-valued fields signal "no provenance write this call" and the
+        // engine's COALESCE-preserve UPDATE keeps the prior first-write
+        // record intact (CV12 audit-trail survival).
+        source_kind: provenanceKind,
+        source_uri: provenanceUri,
+        ingested_via: provenanceVia,
+      });
+    } catch (e) {
+      if (e instanceof PageExistsError) throw pageExistsOperationError(slug);
+      throw e;
+    }
     // A new or changed matter changes what matter references resolve to.
     if (existingPage?.type === "legal_case" || result.parsedPage?.type === "legal_case") {
       invalidateMatterIndex(ctx.sourceId ?? "default");
@@ -1854,8 +1964,19 @@ const purge_deleted_pages: Operation = {
     const olderThanHours = (p.older_than_hours as number | undefined) ?? 72;
     if (ctx.dryRun)
       return { dry_run: true, action: "purge_deleted_pages", older_than_hours: olderThanHours };
-    const result = await ctx.engine.purgeDeletedPages(olderThanHours);
-    return { status: "purged", count: result.count, slugs: result.slugs };
+    const { purgeDeletedPagesWithFiles } = await import("./file-store.ts");
+    const result = await purgeDeletedPagesWithFiles(
+      ctx.engine,
+      olderThanHours,
+      ctx.config?.storage
+    );
+    return {
+      status: "purged",
+      count: result.count,
+      slugs: result.slugs,
+      files_deleted: result.filesDeleted,
+      file_errors: result.fileErrors,
+    };
   },
   cliHints: { name: "purge-deleted" },
 };
@@ -1867,11 +1988,29 @@ const purge_deleted_pages: Operation = {
  */
 const FRONTMATTER_ARRAY_FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+/**
+ * Frontmatter keys no array op may touch: the content-sanity gate's markers
+ * (only the gate sets them) and a matter's access rules (only the matter
+ * access route changes them).
+ */
+const RESERVED_ARRAY_FIELDS: ReadonlySet<string> = new Set([
+  "quarantine",
+  "content_flag",
+  "embed_skip",
+  "permissions",
+]);
+
 function assertFrontmatterArrayField(value: unknown, param: string): string {
   if (typeof value !== "string" || !FRONTMATTER_ARRAY_FIELD_RE.test(value)) {
     throw new OperationError(
       "invalid_params",
       `${param} must be a plain top-level frontmatter key (letters, digits, underscore).`
+    );
+  }
+  if (RESERVED_ARRAY_FIELDS.has(value)) {
+    throw new OperationError(
+      "invalid_params",
+      `${param} '${value}' is managed by the engine and cannot be changed with an array operation.`
     );
   }
   return value;
@@ -2131,6 +2270,31 @@ const page_array_mutate: Operation = {
   },
 };
 
+/**
+ * list_pages `frontmatter_any` → PageFilters.frontmatterAny. Rejects anything
+ * that is not a flat { key: string|number|boolean } object — an unusable
+ * filter must fail, never silently widen the listing to the whole type.
+ * Key validation happens in normalizeFrontmatterFilter (engine side).
+ */
+function frontmatterAnyParam(raw: unknown): Array<[string, string]> | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    throw new OperationError("invalid_params", "frontmatter_any must be an object");
+  }
+  const pairs: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+      throw new OperationError("invalid_params", "frontmatter_any values must be scalars");
+    }
+    pairs.push([key, String(value)]);
+  }
+  try {
+    return normalizeFrontmatterFilter(pairs);
+  } catch (e) {
+    throw new OperationError("invalid_params", e instanceof Error ? e.message : "invalid filter");
+  }
+}
+
 const LIST_PAGES_SORT_VALUES = ["updated_desc", "updated_asc", "created_desc", "slug"] as const;
 type ListPagesSort = (typeof LIST_PAGES_SORT_VALUES)[number];
 
@@ -2165,6 +2329,26 @@ const list_pages: Operation = {
       description:
         "v0.43: include each page's frontmatter object in the result (default: false). Lets list views render frontmatter fields (case metadata, deadlines) without N follow-up get_page calls.",
     },
+    cursor: {
+      type: "string",
+      description:
+        "Keyset cursor for sort=updated_desc paging ('<updated_at ISO>|<id>', from a previous response's next_cursor). Unlike offset it never skips/dups rows when pages are updated mid-scan.",
+    },
+    envelope: {
+      type: "boolean",
+      description:
+        "When true, return { pages, has_more, next_cursor } instead of a bare array. has_more reflects rows scanned BEFORE matter-scope/ACL filtering, so a short filtered page does not look like the end of the list.",
+    },
+    frontmatter_any: {
+      type: "object",
+      description:
+        "Frontmatter equality filter as { key: value } (string values, snake_case keys, max 5). A page matches when ANY pair matches (frontmatter->>key = value) — e.g. { case_slug: 'legal/cases/x' } lists one matter's pages in SQL instead of scanning the type.",
+    },
+    match: {
+      type: "string",
+      description:
+        "Case-insensitive substring search over the title and the name / email / company / case_number frontmatter fields (min 2, max 100 chars) — e.g. find a contact by name or e-mail.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
@@ -2181,17 +2365,31 @@ const list_pages: Operation = {
     // were ignored at this op handler and the engine returned every source's
     // pages indiscriminately.
     const scope = sourceScopeOpts(ctx);
+    const effectiveLimit = clampSearchLimit(p.limit as number | undefined, 50, 100);
     const pages = await ctx.engine.listPages({
       type: p.type as any,
       tag: p.tag as string,
-      limit: clampSearchLimit(p.limit as number | undefined, 50, 100),
+      limit: effectiveLimit,
       offset: Math.max(0, Number(p.offset ?? 0) || 0),
       slugPrefix: typeof p.slug_prefix === "string" ? p.slug_prefix : undefined,
       includeDeleted: (p.include_deleted as boolean) === true,
       updated_after: typeof p.updated_after === "string" ? p.updated_after : undefined,
       sort,
+      cursor: typeof p.cursor === "string" ? p.cursor : undefined,
+      frontmatterAny: frontmatterAnyParam(p.frontmatter_any),
+      ...(typeof p.match === "string" ? { textMatch: p.match } : {}),
       ...scope,
     });
+    // Pagination metadata is computed on the UNFILTERED SQL window: matter
+    // scope and document ACLs below can only shrink a page, so "has more"
+    // must mean "the SQL scan returned a full batch" — otherwise a walled
+    // caller would silently lose every entry past a filtered page.
+    const hasMore = pages.length === effectiveLimit;
+    const lastScanned = pages[pages.length - 1];
+    const nextCursor =
+      hasMore && lastScanned && (sort ?? "updated_desc") === "updated_desc"
+        ? encodePageCursor(lastScanned)
+        : null;
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
     // Matter scope is checked on the full page (slug AND every frontmatter
     // matter binding) before the projection below drops the frontmatter —
@@ -2222,7 +2420,7 @@ const list_pages: Operation = {
     }));
 
     // Subsumio R3: Filter by document-level ACLs.
-    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
+    if (ctx.aclGroups !== undefined && ctx.aclGroups !== "all" && pages.length > 0) {
       const { filterPagesByACL } = await import("./acl.ts");
       const accessibleIds = new Set(
         await filterPagesByACL(
@@ -2238,6 +2436,9 @@ const list_pages: Operation = {
       });
     }
 
+    if ((p.envelope as boolean) === true) {
+      return { pages: result, has_more: hasMore, next_cursor: nextCursor };
+    }
     return result;
   },
   scope: "read",
@@ -2304,29 +2505,35 @@ const search: Operation = {
       // The keyword-only escape hatch bypasses hybridSearch (which folds
       // jurisdiction into the exclude set), so fold it in explicitly here or
       // this path would leak foreign statutes.
-      const raw = await ctx.engine.searchKeyword(queryText, {
+      const { raw, kept: finalResults } = await fetchUntilFilled(
+        ctx,
         limit,
-        offset,
-        ...scope,
-        exclude_slug_prefixes: foreignStatutePrefixes(jurisdiction || undefined),
-      });
+        (n) =>
+          ctx.engine.searchKeyword(queryText, {
+            limit: n,
+            offset,
+            ...scope,
+            exclude_slug_prefixes: foreignStatutePrefixes(jurisdiction || undefined),
+          }),
+        // Subsumio WP4 hard source filter → P0-SECR-002 matter scope → R3
+        // ACLs, then dedup: diversity caps applied before the filters dropped
+        // a restricted user's own documents behind other matters' hits.
+        async (rows) =>
+          dedupResults(
+            await aclFilter(await matterScopeFilterResolved(hardSourceFilter(rows, ctx), ctx), ctx)
+          )
+      );
       const results = dedupResults(raw);
-      stampEvidenceSafe(results);
+      stampEvidenceSafe(finalResults);
       // #1699: the keyword-only opt-out must STILL surface the content_flag
       // agent-warning channel (hybridSearch stamps it; this branch bypasses
       // hybridSearch, so stamp explicitly). Fail-open inside the helper.
-      await stampContentFlags(ctx.engine, results);
+      await stampContentFlags(ctx.engine, finalResults);
       bumpLastRetrievedAt(
         ctx.engine,
         results.map((r) => r.page_id)
       );
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
-      // Subsumio WP4: Defense-in-depth hard source filter
-      const sourceFiltered = hardSourceFilter(results, ctx);
-      // Subsumio P0-SECR-002: Filter by verified matter scope
-      const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
-      // Subsumio R3: Filter by document-level ACLs
-      const finalResults = await aclFilter(scoped, ctx);
       if (wantRefine) {
         return {
           results: finalResults,
@@ -2344,32 +2551,34 @@ const search: Operation = {
     // Cheap-hybrid (D4/D15): full vector+keyword+RRF+pool+title+alias, but
     // expansion OFF (no per-call LLM cost). `query` op is the full-control variant.
     let capturedMeta: HybridSearchMeta | null = null;
-    const results = await hybridSearchCached(ctx.engine, queryText, {
+    const { raw: results, kept: finalResults } = await fetchUntilFilled(
+      ctx,
       limit,
-      offset,
-      expansion: false,
-      ...scope,
-      ...(perCallMode ? { mode: perCallMode } : {}),
-      // Hard jurisdiction isolation: foreign-jurisdiction statutes are
-      // hard-excluded when a jurisdiction is resolved (param or config default).
-      jurisdiction: jurisdiction || undefined,
-      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
-      onMeta: (m) => {
-        capturedMeta = m;
-      },
-    });
+      (n) =>
+        hybridSearchCached(ctx.engine, queryText, {
+          limit: n,
+          offset,
+          expansion: false,
+          ...scope,
+          ...(perCallMode ? { mode: perCallMode } : {}),
+          // Hard jurisdiction isolation: foreign-jurisdiction statutes are
+          // hard-excluded when a jurisdiction is resolved (param or config default).
+          jurisdiction: jurisdiction || undefined,
+          asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
+          onMeta: (m) => {
+            capturedMeta = m;
+          },
+        }),
+      // Subsumio WP4 hard source filter → P0-SECR-002 matter scope → R3 ACLs.
+      async (rows) =>
+        aclFilter(await matterScopeFilterResolved(hardSourceFilter(rows, ctx), ctx), ctx)
+    );
     const latency_ms = Date.now() - startedAt;
     bumpLastRetrievedAt(
       ctx.engine,
       results.map((r) => r.page_id)
     );
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
-    // Subsumio WP4: Defense-in-depth hard source filter
-    const sourceFiltered = hardSourceFilter(results, ctx);
-    // Subsumio P0-SECR-002: Filter by verified matter scope
-    const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
-    // Subsumio R3: Filter by document-level ACLs
-    const finalResults = await aclFilter(scoped, ctx);
     if (wantRefine) {
       return {
         results: finalResults,
@@ -2612,77 +2821,89 @@ const query: Operation = {
     // v0.32.x search-lite: route the query op through hybridSearchCached so
     // semantic cache + token budget + intent weighting fire automatically.
     // Plain hybridSearch remains the bare API for callers that opt out.
-    const results = await hybridSearchCached(ctx.engine, queryText, {
-      limit: (p.limit as number) || 20,
-      offset: (p.offset as number) || 0,
-      expansion: expand,
-      jurisdiction: jurisdiction || undefined,
-      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
-      expandFn: expand ? expandQuery : undefined,
-      // T4/D5 — per-call mode (local/trusted only; remote ignored).
-      ...((): { mode?: string } => {
-        const m = resolvePerCallMode(ctx, p.mode);
-        return m ? { mode: m } : {};
-      })(),
-      detail,
-      language: (p.lang as string) || undefined,
-      symbolKind: (p.symbol_kind as string) || undefined,
-      nearSymbol: (p.near_symbol as string) || undefined,
-      walkDepth: typeof p.walk_depth === "number" ? (p.walk_depth as number) : undefined,
-      ...querySourceScope,
-      // v0.29.1 — agent-explicit recency + salience. Omitted = heuristic defaults.
-      salience: p.salience as "off" | "on" | "strong" | undefined,
-      recency: p.recency as "off" | "on" | "strong" | undefined,
-      since: typeof p.since === "string" ? p.since : undefined,
-      until: typeof p.until === "string" ? p.until : undefined,
-      // v0.32.x search-lite: token budget + cache opt-outs.
-      tokenBudget: typeof p.token_budget === "number" ? (p.token_budget as number) : undefined,
-      useCache: typeof p.use_cache === "boolean" ? (p.use_cache as boolean) : undefined,
-      intentWeighting:
-        typeof p.intent_weighting === "boolean" ? (p.intent_weighting as boolean) : undefined,
-      // v0.36 cross-modal routing param.
-      crossModal: p.cross_modal as "text" | "image" | "both" | "auto" | undefined,
-      onMeta: (m) => {
-        capturedMeta = m;
-      },
-      // v0.36 (D15): per-call embedding column override. Resolver rejects
-      // unknown names at hybrid entry with EmbeddingColumnNotRegisteredError;
-      // the error surfaces back to the agent as the op error envelope.
-      // Source scope is already threaded via ...querySourceScope above
-      // (master's #1182 cleanup of the duplicate sourceScopeOpts spread).
-      embeddingColumn: embeddingColumnParam,
-      // v0.41.33 — agent-explicit adaptive return-sizing. Omitted = off
-      // (config default applies). hybridSearchCached skips the cache when on.
-      adaptiveReturn:
-        typeof p.adaptive_return === "boolean" ? (p.adaptive_return as boolean) : undefined,
-      // v0.42.3.0 — autocut ceiling override. Omitted = smart default (ON in
-      // reranked modes). `false` forces the full top-K.
-      autocut: typeof p.autocut === "boolean" ? (p.autocut as boolean) : undefined,
-      // v0.43 — relational recall override. Omitted = smart default (mode bundle).
-      relationalRetrieval:
-        typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
-      // v0.46 — LLM re-ranker for paragraph-level precision. When enabled,
-      // sends query + chunk snippets to an LLM (default: DeepSeek via
-      // OpenRouter) and re-orders by LLM-judged relevance. Eval showed
-      // para Hit@1 from 29% → 79% for natural questions.
-      // Fail-open: any error returns pre-LLM-rerank order.
-      llmRerank:
-        typeof p.llm_rerank === "boolean"
-          ? {
-              enabled: p.llm_rerank as boolean,
-              model:
-                typeof p.llm_rerank_model === "string" ? (p.llm_rerank_model as string) : undefined,
-              topNIn:
-                typeof p.llm_rerank_top_n_in === "number"
-                  ? (p.llm_rerank_top_n_in as number)
-                  : undefined,
-              timeoutMs:
-                typeof p.llm_rerank_timeout_ms === "number"
-                  ? (p.llm_rerank_timeout_ms as number)
-                  : undefined,
-            }
-          : undefined,
-    });
+    const queryLimit = (p.limit as number) || 20;
+    const { raw: results, kept: queryKept } = await fetchUntilFilled(
+      ctx,
+      queryLimit,
+      (n) =>
+        hybridSearchCached(ctx.engine, queryText, {
+          limit: n,
+          offset: (p.offset as number) || 0,
+          expansion: expand,
+          jurisdiction: jurisdiction || undefined,
+          asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
+          expandFn: expand ? expandQuery : undefined,
+          // T4/D5 — per-call mode (local/trusted only; remote ignored).
+          ...((): { mode?: string } => {
+            const m = resolvePerCallMode(ctx, p.mode);
+            return m ? { mode: m } : {};
+          })(),
+          detail,
+          language: (p.lang as string) || undefined,
+          symbolKind: (p.symbol_kind as string) || undefined,
+          nearSymbol: (p.near_symbol as string) || undefined,
+          walkDepth: typeof p.walk_depth === "number" ? (p.walk_depth as number) : undefined,
+          ...querySourceScope,
+          // v0.29.1 — agent-explicit recency + salience. Omitted = heuristic defaults.
+          salience: p.salience as "off" | "on" | "strong" | undefined,
+          recency: p.recency as "off" | "on" | "strong" | undefined,
+          since: typeof p.since === "string" ? p.since : undefined,
+          until: typeof p.until === "string" ? p.until : undefined,
+          // v0.32.x search-lite: token budget + cache opt-outs.
+          tokenBudget: typeof p.token_budget === "number" ? (p.token_budget as number) : undefined,
+          useCache: typeof p.use_cache === "boolean" ? (p.use_cache as boolean) : undefined,
+          intentWeighting:
+            typeof p.intent_weighting === "boolean" ? (p.intent_weighting as boolean) : undefined,
+          // v0.36 cross-modal routing param.
+          crossModal: p.cross_modal as "text" | "image" | "both" | "auto" | undefined,
+          onMeta: (m) => {
+            capturedMeta = m;
+          },
+          // v0.36 (D15): per-call embedding column override. Resolver rejects
+          // unknown names at hybrid entry with EmbeddingColumnNotRegisteredError;
+          // the error surfaces back to the agent as the op error envelope.
+          // Source scope is already threaded via ...querySourceScope above
+          // (master's #1182 cleanup of the duplicate sourceScopeOpts spread).
+          embeddingColumn: embeddingColumnParam,
+          // v0.41.33 — agent-explicit adaptive return-sizing. Omitted = off
+          // (config default applies). hybridSearchCached skips the cache when on.
+          adaptiveReturn:
+            typeof p.adaptive_return === "boolean" ? (p.adaptive_return as boolean) : undefined,
+          // v0.42.3.0 — autocut ceiling override. Omitted = smart default (ON in
+          // reranked modes). `false` forces the full top-K.
+          autocut: typeof p.autocut === "boolean" ? (p.autocut as boolean) : undefined,
+          // v0.43 — relational recall override. Omitted = smart default (mode bundle).
+          relationalRetrieval:
+            typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
+          // v0.46 — LLM re-ranker for paragraph-level precision. When enabled,
+          // sends query + chunk snippets to an LLM (default: DeepSeek via
+          // OpenRouter) and re-orders by LLM-judged relevance. Eval showed
+          // para Hit@1 from 29% → 79% for natural questions.
+          // Fail-open: any error returns pre-LLM-rerank order.
+          llmRerank:
+            typeof p.llm_rerank === "boolean"
+              ? {
+                  enabled: p.llm_rerank as boolean,
+                  model:
+                    typeof p.llm_rerank_model === "string"
+                      ? (p.llm_rerank_model as string)
+                      : undefined,
+                  topNIn:
+                    typeof p.llm_rerank_top_n_in === "number"
+                      ? (p.llm_rerank_top_n_in as number)
+                      : undefined,
+                  timeoutMs:
+                    typeof p.llm_rerank_timeout_ms === "number"
+                      ? (p.llm_rerank_timeout_ms as number)
+                      : undefined,
+                }
+              : undefined,
+        }),
+      // Subsumio WP4 hard source filter (with the scope the search actually
+      // ran with — a per-call source_id may differ from ctx.sourceId) →
+      // P0-SECR-002 matter scope.
+      async (rows) => matterScopeFilterResolved(hardSourceFilter(rows, ctx, querySourceScope), ctx)
+    );
     const latency_ms = Date.now() - startedAt;
 
     // v0.37.0 (D11): op-layer last_retrieved_at write-back. Same shape as the
@@ -2720,12 +2941,8 @@ const query: Operation = {
       );
     }
 
-    // Subsumio WP4: Defense-in-depth hard source filter. Pass the scope the
-    // search actually ran with (querySourceScope) — it can legitimately
-    // differ from ctx.sourceId when the caller passed a per-call source_id.
-    const sourceFiltered = hardSourceFilter(results, ctx, querySourceScope);
-    // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilterResolved(sourceFiltered, ctx);
+    // Source + matter-scope filtered above (fetchUntilFilled).
+    return queryKept;
   },
   scope: "read",
   cliHints: { name: "query", positional: ["query"] },
@@ -2766,6 +2983,8 @@ const takes_list: Operation = {
       // Per-token allow-list — server-side filter for MCP-bound calls.
       // Local CLI callers leave takesHoldersAllowList unset and see all holders.
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only takes on pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-list" },
@@ -2783,6 +3002,8 @@ const takes_search: Operation = {
     return ctx.engine.searchTakes(p.query as string, {
       limit: p.limit as number | undefined,
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only the caller's own sources (several firms share one database).
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-search", positional: ["query"] },
@@ -2817,6 +3038,7 @@ const takes_scorecard: Operation = {
         domainPrefix: p.domain_prefix as string | undefined,
         since: p.since as string | undefined,
         until: p.until as string | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -2842,6 +3064,7 @@ const takes_calibration: Operation = {
       {
         holder: p.holder as string | undefined,
         bucketSize: p.bucket_size as number | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -3694,7 +3917,8 @@ const resolve_slugs: Operation = {
     partial: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
-    return ctx.engine.resolveSlugs(p.partial as string);
+    // Several firms share one database: only the caller's own sources.
+    return ctx.engine.resolveSlugs(p.partial as string, sourceScopeOpts(ctx));
   },
   scope: "read",
 };
@@ -3729,6 +3953,8 @@ const log_ingest: Operation = {
   handler: async (ctx, p) => {
     if (ctx.dryRun) return { dry_run: true, action: "log_ingest" };
     await ctx.engine.logIngest({
+      // The entry belongs to the caller's source, not to the host default.
+      ...(ctx.sourceId ? { source_id: ctx.sourceId } : {}),
       source_type: p.source_type as string,
       source_ref: p.source_ref as string,
       pages_updated: p.pages_updated as string[],
@@ -4446,6 +4672,8 @@ const get_recent_salience: Operation = {
       limit: typeof p.limit === "number" ? p.limit : undefined,
       slugPrefix: typeof p.slugPrefix === "string" ? p.slugPrefix : undefined,
       recency_bias: recencyBias,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "salience" },
@@ -4474,9 +4702,88 @@ const find_anomalies: Operation = {
       since: typeof p.since === "string" ? p.since : undefined,
       lookback_days: typeof p.lookback_days === "number" ? p.lookback_days : undefined,
       sigma: typeof p.sigma === "number" ? p.sigma : undefined,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "anomalies" },
+};
+
+/** Row cap of the matter-restricted count path (one small row per page). */
+const COUNT_ROWS_CAP = 200_000;
+
+/**
+ * Pages per type and status for dashboard badges: counted in SQL instead of
+ * listing every page. Source scope (sourceScopeOpts), document ACL
+ * (ctx.aclGroups) and matter scope (ctx.matterScope, every frontmatter
+ * binding resolved) apply; deleted and tombstoned pages are not counted.
+ * `complete: false` when the matter-restricted path hit its row cap.
+ */
+const count_pages_by_status: Operation = {
+  name: "count_pages_by_status",
+  description:
+    "Count pages per type and status (a frontmatter field), optionally with how many are dated on or before a day. For badge counters.",
+  scope: "read",
+  localOnly: true,
+  params: {
+    types: {
+      type: "array",
+      items: { type: "string" },
+      required: true,
+      description: "Page types to count (max 10).",
+    },
+    status_field: {
+      type: "string",
+      description: "Frontmatter field to group by (default: status).",
+    },
+    date_fields: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Frontmatter date fields, first non-empty wins (creation day as fallback). Max 3.",
+    },
+    date_before: {
+      type: "string",
+      description: "YYYY-MM-DD: also count per group the pages dated on or before this day.",
+    },
+  },
+  handler: async (ctx, p) => {
+    const { validateCountOpts, buildCountRowsSql, aggregateCountRows } =
+      await import("./page-status-counts.ts");
+    const opts = {
+      types: Array.isArray(p.types) ? (p.types as string[]) : [],
+      ...(typeof p.status_field === "string" ? { statusField: p.status_field } : {}),
+      ...(Array.isArray(p.date_fields) ? { dateFields: p.date_fields as string[] } : {}),
+      ...(typeof p.date_before === "string" ? { dateBefore: p.date_before } : {}),
+      ...sourceScopeOpts(ctx),
+      ...(ctx.aclGroups !== undefined ? { aclGroups: ctx.aclGroups } : {}),
+    };
+    const invalid = validateCountOpts(opts);
+    if (invalid) throw new OperationError("invalid_params", invalid);
+    const scope = ctx.matterScope;
+    if (scope === undefined || scope === "all") {
+      return { counts: await ctx.engine.countPagesByStatus(opts), complete: true };
+    }
+    if (scope.length === 0) return { counts: [], complete: true };
+    const { matterBindingSelectSql } = await import("./matter-binding.ts");
+    const { sql, params } = buildCountRowsSql(
+      opts,
+      matterBindingSelectSql("p.frontmatter"),
+      COUNT_ROWS_CAP
+    );
+    const rows = await ctx.engine.executeRaw<{
+      page_id: number;
+      slug: string;
+      source_id: string;
+      type: string;
+      frontmatter: unknown;
+      status: string;
+      before: unknown;
+    }>(sql, params);
+    const complete = rows.length <= COUNT_ROWS_CAP;
+    const kept = await matterScopeFilterResolved(rows.slice(0, COUNT_ROWS_CAP), ctx);
+    return { counts: aggregateCountRows(kept), complete };
+  },
 };
 
 // v0.33: expertise + relationship-proximity routing. CLI: gbrain whoknows.
@@ -4558,7 +4865,19 @@ const find_contradictions: Operation = {
     const slugFilter = typeof p.slug === "string" ? p.slug.toLowerCase() : null;
     const sevFilter =
       p.severity === "low" || p.severity === "medium" || p.severity === "high" ? p.severity : null;
-    const rows = await ctx.engine.loadContradictionsTrend(30);
+    // Probe runs are bound to one source. An untrusted caller reads the
+    // latest run of its own sources only; trusted local callers see all.
+    const runSources = [
+      ...new Set(
+        [ctx.sourceId, ...(ctx.auth?.allowedSources ?? [])].filter(
+          (x): x is string => typeof x === "string" && x.length > 0
+        )
+      ),
+    ];
+    const rows = await ctx.engine.loadContradictionsTrend(
+      30,
+      ctx.remote === false ? undefined : { sourceIds: runSources }
+    );
     if (rows.length === 0) {
       return {
         contradictions: [],
@@ -5219,7 +5538,17 @@ const forget_fact: Operation = {
     const id = p.id as number;
     const reason = typeof p.reason === "string" ? p.reason : undefined;
     const { forgetFactInFence } = await import("./facts/forget.ts");
-    const result = await forgetFactInFence(ctx.engine, id, { reason });
+    // Untrusted callers may only forget facts of their own sources; a fact
+    // of another source behaves exactly like a missing one.
+    const scope = sourceScopeOpts(ctx);
+    const allowedSourceIds =
+      ctx.remote === false
+        ? undefined
+        : (scope.sourceIds ?? (scope.sourceId ? [scope.sourceId] : ["default"]));
+    const result = await forgetFactInFence(ctx.engine, id, {
+      reason,
+      ...(allowedSourceIds ? { allowedSourceIds } : {}),
+    });
     if (!result.ok && result.path === "not_found") {
       throw new OperationError("fact_not_found", `Fact id ${id} not found.`);
     }
@@ -7098,7 +7427,7 @@ const statute_currency_check: Operation = {
     compare_live: {
       type: "boolean",
       description:
-        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI",
+        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Local callers only (default: true); ignored for remote callers.",
     },
   },
   scope: "read",
@@ -7108,7 +7437,9 @@ const statute_currency_check: Operation = {
     const statuteFilter = typeof p.statute_id === "string" ? p.statute_id.toLowerCase() : undefined;
     const isLocal = ctx.remote === false;
     const compareCorpus = typeof p.compare_corpus === "boolean" ? p.compare_corpus : isLocal;
-    const compareLive = typeof p.compare_live === "boolean" ? p.compare_live : isLocal;
+    // Live lookups hit public law portals with strict rate limits (RIS-OGD):
+    // only trusted local callers may trigger them, never a remote client.
+    const compareLive = isLocal && (typeof p.compare_live === "boolean" ? p.compare_live : true);
 
     // Query law pages from the brain. The slug pattern is:
     //   legal/statutes/<jur>/<abbr>/<section-id>
@@ -7761,7 +8092,7 @@ const acl_create_group: Operation = {
       description: "Group name (e.g. 'Familienrecht', 'Assistenten')",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { createAccessGroup } = await import("./acl.ts");
     return createAccessGroup(ctx.engine, ctx.sourceId, String(p.name));
@@ -7775,10 +8106,10 @@ const acl_delete_group: Operation = {
   params: {
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { deleteAccessGroup } = await import("./acl.ts");
-    const ok = await deleteAccessGroup(ctx.engine, String(p.group_id));
+    const ok = await deleteAccessGroup(ctx.engine, String(p.group_id), ctx.sourceId);
     return { success: ok };
   },
   cliHints: { name: "acl-delete-group", positional: ["group_id"] },
@@ -7791,10 +8122,18 @@ const acl_add_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { addGroupMember } = await import("./acl.ts");
-    await addGroupMember(ctx.engine, String(p.group_id), String(p.user_id), ctx.sourceId);
+    const ok = await addGroupMember(
+      ctx.engine,
+      String(p.group_id),
+      String(p.user_id),
+      ctx.sourceId
+    );
+    if (!ok) {
+      throw new OperationError("not_found", "Access group not found", "Check the group id");
+    }
     return { success: true };
   },
   cliHints: { name: "acl-add-member", positional: ["group_id", "user_id"] },
@@ -7807,10 +8146,15 @@ const acl_remove_member: Operation = {
     group_id: { type: "string", required: true, description: "Group UUID" },
     user_id: { type: "string", required: true, description: "Web app user ID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removeGroupMember } = await import("./acl.ts");
-    const ok = await removeGroupMember(ctx.engine, String(p.group_id), String(p.user_id));
+    const ok = await removeGroupMember(
+      ctx.engine,
+      String(p.group_id),
+      String(p.user_id),
+      ctx.sourceId
+    );
     return { success: ok };
   },
   cliHints: { name: "acl-remove-member", positional: ["group_id", "user_id"] },
@@ -7825,7 +8169,7 @@ const acl_list_members: Operation = {
   scope: "read",
   handler: async (ctx, p) => {
     const { listGroupMembers } = await import("./acl.ts");
-    return listGroupMembers(ctx.engine, String(p.group_id));
+    return listGroupMembers(ctx.engine, String(p.group_id), ctx.sourceId);
   },
   cliHints: { name: "acl-list-members", positional: ["group_id"] },
 };
@@ -7843,7 +8187,7 @@ const acl_set_page_permission: Operation = {
       description: "Permission level: 'read' or 'write'",
     },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { setPagePermission } = await import("./acl.ts");
     const slug = String(p.slug);
@@ -7853,12 +8197,16 @@ const acl_set_page_permission: Operation = {
       throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug");
     }
     const permission = p.permission === "write" ? "write" : "read";
-    await setPagePermission(
+    const set = await setPagePermission(
       ctx.engine,
       page.id,
       String(p.group_id),
-      permission as "read" | "write"
+      permission as "read" | "write",
+      ctx.sourceId
     );
+    if (!set) {
+      throw new OperationError("not_found", "Access group not found", "Check the group id");
+    }
     return { success: true, page_id: page.id, permission };
   },
   cliHints: { name: "acl-set-permission", positional: ["slug", "group_id"] },
@@ -7872,7 +8220,7 @@ const acl_remove_page_permission: Operation = {
     slug: { type: "string", required: true, description: "Page slug" },
     group_id: { type: "string", required: true, description: "Group UUID" },
   },
-  scope: "write",
+  scope: "admin", // access groups and document rights: administrators only
   handler: async (ctx, p) => {
     const { removePagePermission } = await import("./acl.ts");
     const slug = String(p.slug);
@@ -8016,6 +8364,7 @@ export const operations: Operation[] = [
   // v0.29: Salience + anomalies + recent transcripts
   get_recent_salience,
   find_anomalies,
+  count_pages_by_status,
   get_recent_transcripts,
   // v0.31: hot memory (facts table)
   extract_facts,

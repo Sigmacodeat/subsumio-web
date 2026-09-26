@@ -37,7 +37,8 @@ export default function JudgementsSyncPage() {
   const { t, lang } = useLang();
   const [sources, setSources] = useState(SOURCES);
   const [overallStatus, setOverallStatus] = useState<"idle" | "running" | "done">("idle");
-  const [existingCount, setExistingCount] = useState(0);
+  /** null = could not be counted (shown as "—", never as 0). */
+  const [existingCount, setExistingCount] = useState<number | null>(0);
 
   useEffect(() => {
     loadExisting();
@@ -45,10 +46,10 @@ export default function JudgementsSyncPage() {
 
   async function loadExisting() {
     try {
-      const pages = await api.brain.listPages({ type: "court_decision", limit: 500 });
+      const pages = await api.brain.listAllPages({ type: "court_decision", max: 100_000 });
       setExistingCount(pages.length);
     } catch {
-      setExistingCount(0);
+      setExistingCount(null);
     }
   }
 
@@ -68,14 +69,15 @@ export default function JudgementsSyncPage() {
             idx === i ? { ...s, status: "done" as const, count: result.imported } : s
           )
         );
-      } catch (e) {
+      } catch {
         setSources((prev) =>
           prev.map((s, idx) =>
             idx === i
               ? {
                   ...s,
                   status: "error" as const,
-                  error: e instanceof Error ? e.message : "Sync fehlgeschlagen",
+                  // A readable message, not the raw technical error.
+                  error: "Abruf fehlgeschlagen — bitte später erneut versuchen.",
                 }
               : s
           )
@@ -119,7 +121,9 @@ export default function JudgementsSyncPage() {
             {t("judgements.stat_in_brain")}
           </div>
           <div className="brand-text text-xl font-bold">
-            {existingCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+            {existingCount === null
+              ? "—"
+              : existingCount.toLocaleString(lang === "en" ? "en-GB" : "de-AT")}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -145,9 +149,9 @@ export default function JudgementsSyncPage() {
         </h2>
         <div className="space-y-2">
           {[
-            "subsumio connector add legal-judgements --jurisdiction at --query 'Haftung'",
-            "subsumio connector sync legal-judgements",
-            "subsumio search 'Haftung' --type court_decision",
+            "gbrain connector add legal-judgements --jurisdiction at --query 'Haftung'",
+            "gbrain connector sync legal-judgements",
+            "gbrain search 'Haftung' --type court_decision",
           ].map((cmd) => (
             <div
               key={cmd}

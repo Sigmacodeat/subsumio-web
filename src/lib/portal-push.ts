@@ -13,6 +13,7 @@ import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { isPushServiceEndpoint, sendWebPush, webPushPublicKey } from "@/lib/web-push-core";
 import { logger } from "@/lib/logger";
+import { isPortalTokenHashRevoked } from "@/lib/portal-token";
 
 const log = logger("portal-push");
 
@@ -21,11 +22,18 @@ export interface PortalPushSubscription {
   keys: { p256dh: string; auth: string };
 }
 
+/**
+ * The page a notification opens. Never the access link itself: the stored
+ * subscription must not hold a usable token. The portal (and the installed
+ * portal app) keeps its session, so the placeholder path opens the matter.
+ */
+export const PORTAL_PUSH_PATH = "/portal/meine-akte";
+
 interface StoredSubscription extends PortalPushSubscription {
   brainId: string;
   caseSlug: string;
-  /** The portal page to open, e.g. /portal/<token>. */
-  portalPath: string;
+  /** Hash of the portal link the device subscribed with (revocation check). */
+  tokenHash: string;
 }
 
 export { isPushServiceEndpoint } from "@/lib/web-push-core";
@@ -46,6 +54,10 @@ const ensureSchema = createSchemaInit([
      created_at timestamptz NOT NULL DEFAULT now()
    )`,
   `CREATE INDEX IF NOT EXISTS subsumio_portal_push_case ON subsumio_portal_push (brain_id, case_slug)`,
+  `ALTER TABLE subsumio_portal_push ADD COLUMN IF NOT EXISTS token_hash text`,
+  // Older rows kept the raw access link as portal_path and no hash to check
+  // revocations against — they are dropped; the portal subscribes again.
+  `DELETE FROM subsumio_portal_push WHERE token_hash IS NULL`,
 ]);
 
 const memory = new Map<string, StoredSubscription>();
@@ -63,10 +75,10 @@ export async function savePortalSubscription(sub: StoredSubscription): Promise<v
   }
   await ensureSchema();
   await pool.query(
-    `INSERT INTO subsumio_portal_push (endpoint_hash, brain_id, case_slug, endpoint, p256dh, auth, portal_path)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO subsumio_portal_push (endpoint_hash, brain_id, case_slug, endpoint, p256dh, auth, portal_path, token_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      ON CONFLICT (endpoint_hash) DO UPDATE
-       SET brain_id = $2, case_slug = $3, p256dh = $5, auth = $6, portal_path = $7`,
+       SET brain_id = $2, case_slug = $3, p256dh = $5, auth = $6, portal_path = $7, token_hash = $8`,
     [
       endpointHash(sub.endpoint),
       sub.brainId,
@@ -74,7 +86,8 @@ export async function savePortalSubscription(sub: StoredSubscription): Promise<v
       sub.endpoint,
       sub.keys.p256dh,
       sub.keys.auth,
-      sub.portalPath,
+      PORTAL_PUSH_PATH,
+      sub.tokenHash,
     ]
   );
 }
@@ -91,7 +104,42 @@ export async function removePortalSubscription(endpoint: string): Promise<void> 
   ]);
 }
 
-async function subscriptionsFor(brainId: string, caseSlug: string): Promise<StoredSubscription[]> {
+/**
+ * Revoking portal links ends their notifications: one link (by hash) or,
+ * without a hash, every device of the matter ("revoke all").
+ */
+export async function removePortalSubscriptionsFor(
+  brainId: string,
+  caseSlug: string,
+  tokenHash?: string
+): Promise<void> {
+  const pool = getSharedPgPool();
+  if (!pool) {
+    for (const [key, s] of memory) {
+      if (s.brainId !== brainId || s.caseSlug !== caseSlug) continue;
+      if (tokenHash && s.tokenHash !== tokenHash) continue;
+      memory.delete(key);
+    }
+    return;
+  }
+  await ensureSchema();
+  if (tokenHash) {
+    await pool.query(
+      "DELETE FROM subsumio_portal_push WHERE brain_id = $1 AND case_slug = $2 AND token_hash = $3",
+      [brainId, caseSlug, tokenHash]
+    );
+  } else {
+    await pool.query("DELETE FROM subsumio_portal_push WHERE brain_id = $1 AND case_slug = $2", [
+      brainId,
+      caseSlug,
+    ]);
+  }
+}
+
+export async function subscriptionsFor(
+  brainId: string,
+  caseSlug: string
+): Promise<StoredSubscription[]> {
   const pool = getSharedPgPool();
   if (!pool) {
     return [...memory.values()].filter((s) => s.brainId === brainId && s.caseSlug === caseSlug);
@@ -106,7 +154,7 @@ async function subscriptionsFor(brainId: string, caseSlug: string): Promise<Stor
     caseSlug: r.case_slug!,
     endpoint: r.endpoint!,
     keys: { p256dh: r.p256dh!, auth: r.auth! },
-    portalPath: r.portal_path!,
+    tokenHash: r.token_hash!,
   }));
 }
 
@@ -122,9 +170,14 @@ export async function notifyPortalClients(
   if (!webPushPublicKey()) return 0;
   let reached = 0;
   for (const sub of await subscriptionsFor(brainId, caseSlug)) {
+    // A revoked link gets no further notifications (and its device is dropped).
+    if (!sub.tokenHash || (await isPortalTokenHashRevoked(sub.tokenHash))) {
+      await removePortalSubscription(sub.endpoint);
+      continue;
+    }
     const result = await sendWebPush(
       { endpoint: sub.endpoint, keys: sub.keys },
-      { ...message, data: { url: sub.portalPath } }
+      { ...message, data: { url: PORTAL_PUSH_PATH } }
     );
     if (result === "sent") reached++;
     else if (result === "gone") await removePortalSubscription(sub.endpoint);

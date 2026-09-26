@@ -32,7 +32,9 @@ import {
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { BrainAvatar } from "@/components/chat/brain-avatar";
-import { useBrainStats, usePages } from "@/lib/queries/brain";
+import { useBrainStats } from "@/lib/queries/brain";
+import { useFristen } from "@/lib/queries/legal";
+import { topbarDeadlineWarnings } from "@/lib/topbar-deadline-warnings";
 import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -154,7 +156,16 @@ export function Topbar({
   }, [notifOpen, brainOpen, quickCreateOpen, utilitiesOpen]);
 
   const statsQuery = useBrainStats();
-  const deadlinesQuery = usePages({ type: "legal_deadline", limit: 20 });
+  // Unified Fristen read model: complete (not just the 20 last-edited
+  // deadline pages), without cancelled/rejected entries, linked to the matter.
+  // Only the near-due open deadlines (view=warnings) — the server answers
+  // from a short per-caller cache instead of rebuilding the whole read
+  // model for every tab every minute.
+  const fristenQuery = useFristen({ view: "warnings" });
+  const deadlineWarnings = useMemo(
+    () => (fristenQuery.data ? topbarDeadlineWarnings(fristenQuery.data.fristen) : null),
+    [fristenQuery.data]
+  );
 
   // API-based notifications (mentions, replies, system, deadline)
   const [apiNotifications, setApiNotifications] = useState<
@@ -165,6 +176,8 @@ export function Topbar({
       type: "deadline" | "dream" | "system" | "mention" | "reply";
       read: boolean;
       caseSlug?: string;
+      /** Deadline notifications: `${caseSlug}|${date}` — dedupes inline warnings. */
+      dueKey?: string;
       createdAt?: string;
     }>
   >([]);
@@ -194,6 +207,7 @@ export function Topbar({
                 type: "deadline" as const,
                 read: false,
                 caseSlug,
+                dueKey: `${caseSlug ?? ""}|${String(n.data?.deadlineDate ?? "").slice(0, 10)}`,
                 createdAt: n.createdAt,
               };
             }
@@ -270,34 +284,16 @@ export function Topbar({
   const lastSyncSignature = useRef("");
   const notificationSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!deadlinesQuery.data || !Array.isArray(deadlinesQuery.data)) return;
-    const now = new Date();
-    const deadlines: Array<{
-      caseSlug: string;
-      caseTitle: string;
-      deadlineDate: string;
-      daysRemaining: number;
-      isOverdue: boolean;
-    }> = [];
-    for (const p of deadlinesQuery.data) {
-      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      const dueStr = (fm.due_date || fm.date || p.created_at) as string | number | undefined;
-      if (!dueStr || fm.status === "done") continue;
-      const due = new Date(dueStr);
-      const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      // Only persist if deadline is within 3 days or overdue
-      if (days > 3 && days >= 0) continue;
-      const isOverdue = days < 0;
-      deadlines.push({
-        caseSlug: p.slug,
-        caseTitle: p.title,
-        deadlineDate: String(dueStr),
-        daysRemaining: days,
-        isOverdue,
-      });
-    }
+    if (!deadlineWarnings) return;
+    const deadlines = deadlineWarnings.map((w) => ({
+      caseSlug: w.caseSlug,
+      caseTitle: w.caseTitle,
+      deadlineDate: w.deadlineDate,
+      daysRemaining: w.daysRemaining,
+      isOverdue: w.isOverdue,
+    }));
     // Skip if nothing changed since last sync
-    const signature = deadlines.map((d) => `${d.caseSlug}:${d.deadlineDate}`).join("|");
+    const signature = deadlineWarnings.map((w) => `${w.id}:${w.deadlineDate}`).join("|");
     if (signature === lastSyncSignature.current) return;
     if (notificationSyncTimer.current) clearTimeout(notificationSyncTimer.current);
     notificationSyncTimer.current = setTimeout(() => {
@@ -318,16 +314,15 @@ export function Topbar({
     return () => {
       if (notificationSyncTimer.current) clearTimeout(notificationSyncTimer.current);
     };
-  }, [deadlinesQuery.data]);
+  }, [deadlineWarnings]);
 
   const notifications = useMemo(() => {
-    const pages = deadlinesQuery.data;
     const stats = statsQuery.data;
-    if (!Array.isArray(pages)) return apiNotifications;
+    if (!deadlineWarnings) return apiNotifications;
     const now = new Date();
-    // Collect case slugs already covered by API deadline notifications to avoid duplicates
-    const apiDeadlineSlugs = new Set(
-      apiNotifications.filter((n) => n.type === "deadline" && n.caseSlug).map((n) => n.caseSlug!)
+    // Deadlines already covered by a persisted notification (same matter + date)
+    const apiDeadlineKeys = new Set(
+      apiNotifications.filter((n) => n.type === "deadline" && n.dueKey).map((n) => n.dueKey!)
     );
     const notifs: Array<{
       id: string;
@@ -337,32 +332,19 @@ export function Topbar({
       read: boolean;
       caseSlug?: string;
     }> = [...apiNotifications];
-    for (const p of pages) {
-      // Skip if already covered by API notification
-      if (apiDeadlineSlugs.has(p.slug)) continue;
-      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      const dueStr = (fm.due_date || fm.date || p.created_at) as string | number | undefined;
-      const due = dueStr ? new Date(dueStr) : new Date();
-      const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      if (days <= 3 && days >= 0 && fm.status !== "done") {
-        notifs.push({
-          id: `dl-${p.slug}`,
-          title: t("topbar.notif_deadline_soon"),
-          message: `${p.title} — ${days} ${t("topbar.notif_days")}`,
-          type: "deadline",
-          read: readInlineIds.has(`dl-${p.slug}`),
-          caseSlug: p.slug,
-        });
-      } else if (days < 0 && fm.status !== "done") {
-        notifs.push({
-          id: `dl-${p.slug}`,
-          title: t("topbar.notif_deadline_overdue"),
-          message: `${p.title} — ${Math.abs(days)} ${t("topbar.notif_days_overdue")}`,
-          type: "deadline",
-          read: readInlineIds.has(`dl-${p.slug}`),
-          caseSlug: p.slug,
-        });
-      }
+    for (const w of deadlineWarnings) {
+      if (apiDeadlineKeys.has(`${w.caseSlug ?? ""}|${w.deadlineDate}`)) continue;
+      const id = `dl-${w.id}`;
+      notifs.push({
+        id,
+        title: w.isOverdue ? t("topbar.notif_deadline_overdue") : t("topbar.notif_deadline_soon"),
+        message: w.isOverdue
+          ? `${w.title} — ${Math.abs(w.daysRemaining)} ${t("topbar.notif_days_overdue")}`
+          : `${w.title} — ${w.daysRemaining} ${t("topbar.notif_days")}`,
+        type: "deadline",
+        read: readInlineIds.has(id),
+        caseSlug: w.caseSlug,
+      });
     }
     const dcStr = stats?.dream_cycle_last;
     if (dcStr && typeof dcStr === "string") {
@@ -379,7 +361,7 @@ export function Topbar({
       }
     }
     return notifs;
-  }, [deadlinesQuery.data, statsQuery.data, t, apiNotifications, readInlineIds]);
+  }, [deadlineWarnings, statsQuery.data, t, apiNotifications, readInlineIds]);
 
   const { brains, activeBrain, selectBrain, loading: brainLoading } = useBrainSelector();
 

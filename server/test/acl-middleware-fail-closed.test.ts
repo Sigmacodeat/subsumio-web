@@ -68,7 +68,7 @@ describe("aclGroupsMiddleware", () => {
     });
   });
 
-  test('valid non-admin token with no groups → aclGroups = "all" (open-by-default)', async () => {
+  test("valid non-admin token with no groups → aclGroups = [] (open pages only, never all)", async () => {
     await withEnv({ SUBSUMIO_WEB_API_KEY: SECRET }, async () => {
       const token = createIdentityToken(
         { sourceId: "tenant-1", matterScope: "all", userId: "user-1" },
@@ -84,7 +84,7 @@ describe("aclGroupsMiddleware", () => {
       });
 
       expect(nextCalled).toBe(true);
-      expect(req.aclGroups).toBe("all");
+      expect(req.aclGroups).toEqual([]);
     });
   });
 

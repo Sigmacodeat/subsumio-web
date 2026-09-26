@@ -2,11 +2,12 @@
 
 /**
  * Mobile: Zeiterfassung (Time Entry)
- * Start/stop timer, manual entry, select matter, save to brain.
- * Saves via POST /api/time when a matter is selected, falls back to brain pages.
+ * Start/stop timer or manual entry, pick a matter, book via POST /api/time —
+ * the same billable entry the desktop creates. Offline, the entry is queued
+ * in exactly that shape and booked on reconnect.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Play,
   Pause,
@@ -21,6 +22,15 @@ import {
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
+import { toMobileMatter, type MobileMatter } from "@/lib/mobile-cases";
+import {
+  IDLE_TIMER,
+  buildMobileTimeEntry,
+  pauseTimer,
+  startTimer,
+  timerElapsedSeconds,
+  type TimerState,
+} from "@/lib/mobile-time";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -31,11 +41,15 @@ function formatDuration(seconds: number): string {
 }
 
 export default function MobileTimePage() {
-  const [running, setRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [timer, setTimer] = useState<TimerState>(IDLE_TIMER);
+  // Re-render trigger only; the elapsed time comes from the wall clock.
+  const [now, setNow] = useState(() => Date.now());
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [description, setDescription] = useState("");
-  const [matter, setMatter] = useState("");
+  const [caseSlug, setCaseSlug] = useState("");
+  const [matters, setMatters] = useState<MobileMatter[]>([]);
+  const [mattersError, setMattersError] = useState(false);
+  const [billable, setBillable] = useState(true);
   const [manualHours, setManualHours] = useState("");
   const [manualMinutes, setManualMinutes] = useState("");
   const [mode, setMode] = useState<"timer" | "manual">("timer");
@@ -46,128 +60,141 @@ export default function MobileTimePage() {
   const [todayEntries, setTodayEntries] = useState<
     { duration: number; description: string; matter?: string }[]
   >([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const running = timer.runningSince !== null;
+  const elapsed = timerElapsedSeconds(timer, now);
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    // Back from the background: show the real elapsed time at once.
+    const onVisible = () => setNow(Date.now());
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [running]);
+
+  // Matters to book on — the same scoped list as the matter screen.
+  useEffect(() => {
+    let cancelled = false;
+    api.brain
+      .listAllPages({ type: "legal_case", max: 10_000 })
+      .then((pages) => {
+        if (cancelled) return;
+        setMatters(
+          pages
+            .map(toMobileMatter)
+            .filter((m): m is MobileMatter => m !== null)
+            .sort((a, b) => a.title.localeCompare(b.title, "de"))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setMattersError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const matterTitle = useMemo(
+    () => new Map(matters.map((m) => [m.slug, m.title] as const)),
+    [matters]
+  );
 
   const totalTodaySecs = todayEntries.reduce((sum, e) => sum + e.duration, 0);
 
   const start = () => {
-    setStartTime(new Date());
-    setElapsed(0);
-    setRunning(true);
+    const t = Date.now();
+    setStartTime(new Date(t));
+    setTimer(startTimer(IDLE_TIMER, t));
+    setNow(t);
     setSaved(false);
   };
 
-  const pause = () => setRunning(false);
-  const resume = () => setRunning(true);
+  const pause = () => {
+    const t = Date.now();
+    setTimer((s) => pauseTimer(s, t));
+    setNow(t);
+  };
+  const resume = () => {
+    const t = Date.now();
+    setTimer((s) => startTimer(s, t));
+    setNow(t);
+  };
+  const stop = pause;
 
-  const stop = () => {
-    setRunning(false);
+  const resetTimer = () => {
+    setTimer(IDLE_TIMER);
+    setNow(Date.now());
   };
 
   const save = async () => {
     const durationSecs =
       mode === "timer"
-        ? elapsed
+        ? timerElapsedSeconds(timer, Date.now())
         : parseInt(manualHours || "0") * 3600 + parseInt(manualMinutes || "0") * 60;
 
-    if (durationSecs === 0) return;
+    const entry = buildMobileTimeEntry({
+      caseSlug,
+      description,
+      durationSecs,
+      at: mode === "timer" && startTime ? startTime : new Date(),
+      billable,
+    });
+    if (!entry.ok) {
+      setSaveError(entry.error);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
-    const durationHours = durationSecs / 3600;
-    const now = new Date();
-    try {
-      // Primary: dedicated time API (POST /api/time). Requires a selected matter —
-      // case_slug is mandatory server-side. csrfFetch attaches the CSRF header.
-      let savedViaApi = false;
-      if (matter) {
-        const ttRes = await csrfFetch("/api/time", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            case_slug: matter,
-            description: description || "Zeiteintrag",
-            minutes: Math.max(1, Math.round(durationSecs / 60)),
-            date: now.toISOString().split("T")[0],
-          }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        savedViaApi = ttRes.ok;
-      }
 
-      // Fallback: save as brain page
-      if (!savedViaApi) {
-        await api.brain.createPage({
-          slug: `time-${Date.now()}`,
-          title: `Zeit ${now.toLocaleDateString("de-AT")} — ${description || "Zeiteintrag"}`,
-          content: `## Zeiteintrag\n\n**Dauer:** ${formatDuration(durationSecs)}\n**Beschreibung:** ${description || "—"}\n**Akte:** ${matter || "—"}\n**Datum:** ${now.toLocaleDateString("de-AT")}`,
-          type: "time_entry",
-          frontmatter: {
-            type: "time_entry",
-            date: now.toISOString().split("T")[0],
-            matter: matter || undefined,
-            description: description || "Zeiteintrag",
-            duration_hours: durationHours,
-            started_at: startTime?.toISOString(),
-          },
-        });
-      }
-
+    const booked = () => {
       setTodayEntries((prev) => [
         ...prev,
         {
           duration: durationSecs,
-          description: description || "Zeiteintrag",
-          matter: matter || undefined,
+          description: entry.body.description,
+          matter: matterTitle.get(entry.body.case_slug) ?? entry.body.case_slug,
         },
       ]);
-      setSaved(true);
-      setElapsed(0);
+      resetTimer();
       setStartTime(null);
       setDescription("");
       setManualHours("");
       setManualMinutes("");
-      setSaveError(null);
+    };
+
+    try {
+      if (!isOnline()) {
+        // Offline: queued in exactly the /api/time shape, booked on reconnect.
+        await enqueueMutation({ type: "createTimeEntry", payload: { ...entry.body } });
+        booked();
+        setPendingSync(true);
+        return;
+      }
+      const res = await csrfFetch("/api/time", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry.body),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: unknown } | null;
+        setSaveError(
+          typeof data?.error === "string" && data.error.includes(" ")
+            ? data.error
+            : "Zeiteintrag konnte nicht gespeichert werden."
+        );
+        return;
+      }
+      booked();
+      setSaved(true);
       setPendingSync(false);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Speichern fehlgeschlagen";
-      setSaveError(msg);
-      // Store offline for later sync
-      if (!isOnline()) {
-        try {
-          await enqueueMutation({
-            type: "createPage",
-            payload: {
-              slug: `time-${Date.now()}`,
-              title: `Zeit ${now.toLocaleDateString("de-AT")} — ${description || "Zeiteintrag"}`,
-              content: `## Zeiteintrag\n\n**Dauer:** ${formatDuration(durationSecs)}\n**Beschreibung:** ${description || "—"}\n**Akte:** ${matter || "—"}\n**Datum:** ${now.toLocaleDateString("de-AT")}`,
-              type: "time_entry",
-              frontmatter: {
-                type: "time_entry",
-                date: now.toISOString().split("T")[0],
-                matter: matter || undefined,
-                description: description || "Zeiteintrag",
-                duration_hours: durationHours,
-                started_at: startTime?.toISOString(),
-              },
-            },
-          });
-          setPendingSync(true);
-        } catch {
-          // offline store also failed — nothing more we can do
-        }
-      }
+      setSaveError(e instanceof Error ? e.message : "Speichern fehlgeschlagen");
     } finally {
       setSaving(false);
     }
@@ -212,8 +239,7 @@ export default function MobileTimePage() {
               key={m}
               onClick={() => {
                 setMode(m);
-                setRunning(false);
-                setElapsed(0);
+                resetTimer();
               }}
               style={{
                 padding: "4px 14px",
@@ -433,6 +459,7 @@ export default function MobileTimePage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
             {saveError && (
               <div
+                role="alert"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -514,10 +541,10 @@ export default function MobileTimePage() {
                   color: "var(--ds-text-muted)",
                 }}
               />
-              <input
-                value={matter}
-                onChange={(e) => setMatter(e.target.value)}
-                placeholder="Akte (optional)"
+              <select
+                value={caseSlug}
+                onChange={(e) => setCaseSlug(e.target.value)}
+                aria-label="Akte"
                 style={
                   {
                     width: "100%",
@@ -531,11 +558,36 @@ export default function MobileTimePage() {
                     boxSizing: "border-box",
                   } as React.CSSProperties
                 }
-              />
+              >
+                <option value="">
+                  {mattersError ? "Akten konnten nicht geladen werden" : "Akte wählen…"}
+                </option>
+                {matters.map((m) => (
+                  <option key={m.slug} value={m.slug}>
+                    {m.caseNumber ? `${m.caseNumber} · ${m.title}` : m.title}
+                  </option>
+                ))}
+              </select>
             </div>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                color: "var(--ds-text-muted)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={billable}
+                onChange={(e) => setBillable(e.target.checked)}
+              />
+              Abrechenbar
+            </label>
             <button
               onClick={save}
-              disabled={currentSecs === 0 || saving}
+              disabled={currentSecs === 0 || saving || !caseSlug}
               style={{
                 width: "100%",
                 padding: "13px",

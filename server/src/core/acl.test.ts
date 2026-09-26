@@ -29,9 +29,15 @@ describe("ACL helpers", () => {
     expect(result).toBe(true);
   });
 
-  it("isPageAccessible returns true when aclGroups is empty", async () => {
+  it("isPageAccessible with no groups denies a restricted page", async () => {
     const { isPageAccessible } = await import("../core/acl.ts");
-    const result = await isPageAccessible(engine, 1, []);
+    const result = await isPageAccessible(mockEngine([{ count: 1 }]), 1, []);
+    expect(result).toBe(false);
+  });
+
+  it("isPageAccessible with no groups allows an open page", async () => {
+    const { isPageAccessible } = await import("../core/acl.ts");
+    const result = await isPageAccessible(mockEngine([{ count: 0 }]), 1, []);
     expect(result).toBe(true);
   });
 

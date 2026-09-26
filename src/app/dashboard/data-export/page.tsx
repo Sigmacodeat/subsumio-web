@@ -1,13 +1,23 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Download, FileJson, Shield, Loader2, Database, Upload, CheckCircle2 } from "lucide-react";
+import {
+  Download,
+  FileJson,
+  Shield,
+  Loader2,
+  Database,
+  Upload,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { backupNotice, type BackupMetadata, type BackupNotice } from "@/lib/backup-completeness";
 
 /** Anwaltsverständliche Namen der exportierten Datensatzarten. */
 const TYPE_LABELS: Record<string, string> = {
@@ -54,6 +64,7 @@ export default function DataExportPage() {
   const [error, setError] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
   const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
+  const [backupResult, setBackupResult] = useState<BackupNotice | null>(null);
   const [stats, setStats] = useState<{ total: number; byType: Record<string, number> } | null>(
     null
   );
@@ -84,13 +95,26 @@ export default function DataExportPage() {
   async function createBackup() {
     setBackupLoading(true);
     setBackupError(null);
+    setBackupResult(null);
     try {
+      // The server may take up to its 300 s limit for a large firm.
       const res = await fetch("/api/data-export/backup", {
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(300_000),
       });
+      if (res.status === 413) {
+        // Too large for the in-request backup: the server names the full
+        // export (background job, with originals) instead.
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setBackupError(
+          body?.error ??
+            "Der Bestand ist zu groß für die Sofort-Sicherung. Bitte den Kanzlei-Export unter Einstellungen → Privatsphäre verwenden."
+        );
+        return;
+      }
       if (!res.ok) throw new Error("backup_failed");
-      const data = await res.json();
+      const data = (await res.json()) as { export_metadata?: BackupMetadata };
       downloadJson(data, `subsumio-sicherung-${today()}.json`);
+      setBackupResult(backupNotice(data.export_metadata));
     } catch {
       setBackupError(
         "Die Sicherung konnte nicht erstellt werden. Bitte versuchen Sie es in einigen Minuten erneut."
@@ -275,6 +299,32 @@ export default function DataExportPage() {
             )}
             {backupLoading ? "Sicherung wird erstellt …" : "Sicherung herunterladen"}
           </Button>
+
+          {backupResult?.kind === "complete" && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-4 py-3 text-sm text-[color:var(--ds-success-text)]"
+            >
+              <CheckCircle2 size={14} aria-hidden />
+              {backupResult.message}
+            </div>
+          )}
+          {backupResult?.kind === "incomplete" && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]"
+            >
+              <div className="flex items-start gap-2 font-medium">
+                <AlertTriangle size={14} aria-hidden className="mt-0.5 shrink-0" />
+                {backupResult.message}
+              </div>
+              <ul className="list-disc space-y-1 pl-6 text-xs">
+                {backupResult.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Einspielen */}
           <div className="border-t border-[color:var(--ds-border)] pt-4">

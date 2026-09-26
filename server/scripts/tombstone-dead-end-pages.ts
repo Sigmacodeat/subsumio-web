@@ -25,7 +25,9 @@
  * immediately, reversible, and a real hard purge stays that script's own
  * separate, deliberate decision. Writes an inventory (slug, title, doc_id)
  * before touching anything, same reasoning as that script: what was
- * removed should stay answerable later.
+ * removed should stay answerable later. Each run gets its own file
+ * (`<inventory-out>-<run id>.jsonl`); every scan batch is appended and
+ * fsynced before its updates run. Dry run is the default.
  *
  * Usage:
  *   bun run scripts/tombstone-dead-end-pages.ts --dry-run
@@ -33,10 +35,15 @@
  */
 
 import { parseArgs } from "util";
-import { writeFileSync } from "fs";
 import { assessPage, DOC_CLASS_OF_SOURCE, type PageRow } from "./audit-plausibility-full.ts";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
+import {
+  InventoryWriter,
+  inventoryPathFor,
+  makeRunId,
+  tombstoneWithInventory,
+} from "./tombstone-inventory.ts";
 
 /** The only issue codes this script ever acts on — see file header for why. */
 export const DEAD_END_CODES = new Set([
@@ -66,16 +73,24 @@ interface DbRow extends PageRow {
   title: string | null;
 }
 
-async function main() {
+/** CLI parsing, exported so tests can pin the accepted flags. */
+export function parseCliArgs(argv: string[]) {
   const { values } = parseArgs({
-    args: Bun.argv.slice(2),
+    args: argv,
     options: {
       source: { type: "string" },
       yes: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
       "inventory-out": { type: "string", default: "/data/tombstone-dead-end-inventory.jsonl" },
     },
     allowPositionals: false,
   });
+  if (values.yes && values["dry-run"]) throw new Error("--yes und --dry-run schließen sich aus.");
+  return values;
+}
+
+async function main() {
+  const values = parseCliArgs(Bun.argv.slice(2));
   const APPLY = values.yes as boolean;
   const sources = values.source ? [values.source as string] : Object.keys(DOC_CLASS_OF_SOURCE);
 
@@ -86,7 +101,8 @@ async function main() {
   await engine.connect(cfg);
 
   const PAGE_SIZE = 2000;
-  const inventoryLines: string[] = [];
+  const runId = makeRunId(`${values.source ?? "all"}${APPLY ? "" : "-dryrun"}`);
+  const inventory = new InventoryWriter(inventoryPathFor(values["inventory-out"] as string, runId));
   let totalPages = 0;
 
   try {
@@ -106,25 +122,27 @@ async function main() {
         )) as DbRow[];
         if (batch.length === 0) break;
 
+        const entries: Array<{ id: number; line: string }> = [];
         for (const row of batch) {
           const verdict = assessPage(row, docClass);
           if (!isDeadEndOnly(verdict.issues)) continue;
 
           sourcePages++;
-          inventoryLines.push(
-            JSON.stringify({
+          entries.push({
+            id: row.id,
+            line: JSON.stringify({
+              run_id: runId,
               source_id: source,
               page_id: row.id,
               slug: row.slug,
               title: row.title,
               doc_id: row.frontmatter?.["doc_id"] ?? row.frontmatter?.["nor_id"] ?? null,
               issues: verdict.issues,
-            })
-          );
-          if (APPLY) {
-            await engine.executeRaw(`UPDATE pages SET deleted_at = now() WHERE id = $1`, [row.id]);
-          }
+            }),
+          });
         }
+        if (APPLY) await tombstoneWithInventory(engine, entries, inventory);
+        else inventory.append(entries.map((e) => e.line));
         lastId = batch[batch.length - 1]!.id;
       }
 
@@ -136,13 +154,13 @@ async function main() {
       totalPages += sourcePages;
     }
   } finally {
+    inventory.close();
     await engine.disconnect();
   }
 
-  if (inventoryLines.length > 0) {
-    writeFileSync(values["inventory-out"] as string, inventoryLines.join("\n") + "\n");
+  if (inventory.lines > 0) {
     console.log(
-      `Inventar geschrieben: ${values["inventory-out"]} (${inventoryLines.length} Zeilen)`
+      `Inventar geschrieben: ${inventory.path} (${inventory.lines} Zeilen, Lauf ${runId})`
     );
   }
 

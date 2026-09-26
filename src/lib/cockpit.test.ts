@@ -1,8 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
-  fetchPagesByType,
   fetchPagesByTypeResult,
-  fetchPagesByTypes,
+  fetchPagesByTypesResult,
   fetchStats,
   fetchRecentQueries,
 } from "./cockpit";
@@ -18,32 +17,30 @@ function mockFetch(handler: (url: string) => Response | Promise<Response>) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("fetchPagesByType", () => {
-  it("returns parsed page arrays", async () => {
-    mockFetch(() => Response.json([{ slug: "a", title: "Akte A", type: "legal_case" }]));
-    const pages = await fetchPagesByType(HEADERS, "legal_case", 50);
-    expect(pages).toHaveLength(1);
-    expect(pages[0]?.slug).toBe("a");
-  });
-
-  it("returns [] on engine error and on non-ok status", async () => {
-    mockFetch(() => new Response("boom", { status: 500 }));
-    expect(await fetchPagesByType(HEADERS, "legal_case", 50)).toEqual([]);
-
-    mockFetch(() => Promise.reject(new Error("offline")));
-    expect(await fetchPagesByType(HEADERS, "legal_case", 50)).toEqual([]);
-  });
-});
-
-describe("fetchPagesByTypes", () => {
+describe("fetchPagesByTypesResult", () => {
   it("maps each requested type to its result bucket", async () => {
     mockFetch((url) => {
       const type = new URL(url).searchParams.get("type");
       return Response.json([{ slug: `p-${type}`, type }]);
     });
-    const out = await fetchPagesByTypes(HEADERS, { legal_case: 5, invoice: 5 });
-    expect(out.legal_case?.[0]?.type).toBe("legal_case");
-    expect(out.invoice?.[0]?.type).toBe("invoice");
+    const out = await fetchPagesByTypesResult(HEADERS, { legal_case: 5, invoice: 5 });
+    expect(out.pages.legal_case?.[0]?.type).toBe("legal_case");
+    expect(out.pages.invoice?.[0]?.type).toBe("invoice");
+    expect(out.failedTypes).toEqual([]);
+    expect(out.cappedTypes).toEqual([]);
+  });
+
+  it("reports failed and capped types separately", async () => {
+    mockFetch((url) => {
+      const u = new URL(url);
+      if (u.searchParams.get("type") === "invoice") return new Response("x", { status: 500 });
+      const n = Number(u.searchParams.get("limit"));
+      return Response.json(Array.from({ length: n }, (_, i) => ({ slug: `c${i}` })));
+    });
+    const out = await fetchPagesByTypesResult(HEADERS, { legal_case: 5, invoice: 5 });
+    expect(out.failedTypes).toEqual(["invoice"]);
+    expect(out.cappedTypes).toEqual(["legal_case"]);
+    expect(out.pages.legal_case).toHaveLength(5);
   });
 });
 
@@ -79,6 +76,7 @@ describe("fetchPagesByTypeResult", () => {
     expect(await fetchPagesByTypeResult(HEADERS, "legal_deadline", 50)).toEqual({
       pages: [],
       ok: false,
+      capped: false,
     });
 
     mockFetch(() => Promise.reject(new Error("offline")));
@@ -88,6 +86,7 @@ describe("fetchPagesByTypeResult", () => {
     expect(await fetchPagesByTypeResult(HEADERS, "legal_deadline", 50)).toEqual({
       pages: [],
       ok: true,
+      capped: false,
     });
   });
 });

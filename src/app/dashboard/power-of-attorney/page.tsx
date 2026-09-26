@@ -15,10 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { usePortalVisitEvents } from "@/lib/use-portal-visit-events";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { csrfFetch } from "@/lib/csrf";
 import type { PowerOfAttorney } from "@/lib/power-of-attorney";
-import { POA_TYPE_LABELS, POA_STATUS_LABELS, isPoAValid } from "@/lib/power-of-attorney";
+import {
+  POA_TYPE_LABELS,
+  POA_STATUS_LABELS,
+  isPoAOpenForSignature,
+  isPoAValid,
+} from "@/lib/power-of-attorney";
 import { SignatureDialog } from "@/components/legal/SignatureDialog";
 import { SendLinkDialog } from "@/components/legal/SendLinkDialog";
 
@@ -31,6 +37,7 @@ export default function PowerOfAttorneyPage() {
   const [poas, setPoas] = useState<PowerOfAttorney[]>([]);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [signPoa, setSignPoa] = useState<PowerOfAttorney | null>(null);
@@ -60,11 +67,18 @@ export default function PowerOfAttorneyPage() {
     }
   }, [searchParams]);
 
+  const [listCapped, setListCapped] = useState(false);
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
-      const pages = await api.brain.listPages({ type: "power_of_attorney", limit: 200 });
+      const { pages, capped } = await api.brain.listAllPagesDetailed({
+        type: "power_of_attorney",
+        max: CASE_PICKER_MAX,
+      });
+      if (capped) setListCapped(true);
       setPoas(pages.map((p) => p.frontmatter as unknown as PowerOfAttorney));
     } catch {
+      setLoadError(true);
       addToast({ type: "error", title: t("poa.err_load") });
     } finally {
       setLoading(false);
@@ -75,7 +89,11 @@ export default function PowerOfAttorneyPage() {
     void load();
     // Akten for the picker and to show titles instead of internal identifiers.
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPagesDetailed({ type: "legal_case", max: CASE_PICKER_MAX })
+      .then(({ pages, capped }) => {
+        setListCapped(capped);
+        return pages;
+      })
       .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title }))))
       .catch(() => setCases([]));
   }, [load]);
@@ -89,7 +107,7 @@ export default function PowerOfAttorneyPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/power-of-attorney", {
+      const res = await csrfFetch("/api/power-of-attorney", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,7 +119,10 @@ export default function PowerOfAttorneyPage() {
           expires_at: form.expires_at || undefined,
         }),
       });
-      if (!res.ok) throw new Error("save_failed");
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error || "save_failed");
+      }
       addToast({ type: "success", title: t("poa.ok_create") });
       setShowCreate(false);
       setForm({
@@ -113,11 +134,12 @@ export default function PowerOfAttorneyPage() {
         expires_at: "",
       });
       void load();
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error && e.message !== "save_failed" ? e.message : null;
       addToast({
         type: "error",
         title: t("poa.err_save"),
-        description: "Bitte versuchen Sie es erneut.",
+        description: msg ?? "Bitte versuchen Sie es erneut.",
       });
     } finally {
       setSaving(false);
@@ -176,6 +198,7 @@ export default function PowerOfAttorneyPage() {
           </PrimaryAction>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {expiringCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
@@ -302,6 +325,23 @@ export default function PowerOfAttorneyPage() {
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
         </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+        >
+          <span>Die Vollmachten konnten nicht geladen werden.</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              void load();
+            }}
+          >
+            Erneut laden
+          </Button>
+        </div>
       ) : poas.length === 0 ? (
         <EmptyState
           icon={FileCheck}
@@ -360,7 +400,7 @@ export default function PowerOfAttorneyPage() {
                     )}
                     <span className="hidden sm:inline">{t("poa.btn_pdf")}</span>
                   </Button>
-                  {poa.status !== "signed" && (
+                  {isPoAOpenForSignature(poa) && (
                     <>
                       <Button
                         variant="secondary"

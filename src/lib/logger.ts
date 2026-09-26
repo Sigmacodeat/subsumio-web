@@ -101,9 +101,42 @@ export function normalizeLogArgs(msg: unknown, rest: unknown[]): { msg: string; 
   return Object.keys(meta).length ? { msg: text, meta } : { msg: text };
 }
 
+// ── Redaction ─────────────────────────────────────────────────────────
+// Logs leave the app (container logs, log shipping) and must carry neither
+// secrets nor more personal data than needed. Applied to every line:
+//  - string values under secret-looking keys (password, token, api key,
+//    authorization, cookie, …) become "[redacted]" — numbers such as token
+//    counts stay;
+//  - e-mail addresses are shortened to their first letter + domain;
+//  - bearer/basic credentials inside any string are masked.
+const SECRET_KEY_RE =
+  /pass(word|phrase)?|secret|token|api[-_]?key|authorization|cookie|credential|private[-_]?key/i;
+const EMAIL_RE = /([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+const AUTH_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/g;
+
+export function redactLogString(value: string): string {
+  return value.replace(AUTH_RE, "$1 [redacted]").replace(EMAIL_RE, "$1***@$2");
+}
+
+export function redactLogValue(value: unknown, key = "", depth = 0): unknown {
+  if (typeof value === "string") {
+    return key && SECRET_KEY_RE.test(key) ? "[redacted]" : redactLogString(value);
+  }
+  if (depth > 6 || value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((v) => redactLogValue(v, key, depth + 1));
+  const out: Meta = {};
+  for (const [k, v] of Object.entries(value as Meta)) {
+    // Stack traces are code locations; keep them readable.
+    out[k] = k === "stack" ? v : redactLogValue(v, k, depth + 1);
+  }
+  return out;
+}
+
 function emit(level: LogLevel, module: string, rawMsg: unknown, rest: unknown[]): void {
   if (!shouldLog(level)) return;
-  const { msg, meta } = normalizeLogArgs(rawMsg, rest);
+  const normalized = normalizeLogArgs(rawMsg, rest);
+  const msg = redactLogString(normalized.msg);
+  const meta = normalized.meta ? (redactLogValue(normalized.meta) as Meta) : undefined;
   const entry: LogEntry = {
     ts: new Date().toISOString(),
     level,

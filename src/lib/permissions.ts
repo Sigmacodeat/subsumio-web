@@ -121,6 +121,9 @@ export type RouteAction =
   | "share.receive" // POST /api/share — all authenticated roles
   | "presence.update" // POST /api/realtime/presence — all authenticated roles
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
+  | "audit.read" // GET /api/audit — kanzleiweites Protokoll, nur admin
+  | "mail.read" // GET /api/email/* — Kanzleipostfach, nur Kanzleirollen (kein client_viewer)
+  | "profile.update" // PATCH /api/auth/me — eigener Name/Sprache, alle Rollen (nur Selbstbezug)
   | "admin.*" // nur admin
   | "admin.user_update"
   | "admin.user_deactivate"
@@ -128,7 +131,10 @@ export type RouteAction =
   | "admin.data_export"
   | "admin.audit_export" // nur admin
   | "platform.operator" // Subsumio-Betreiber (ops.subsum.io), nie über KanzleiRole
-  | "platform.support_session"; // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
+  | "platform.support_session" // Support-Sitzung beenden — wie platform.operator, aber ohne Ops-Host-Bindung (Banner läuft auf der Kanzlei-App)
+  | "staff.read" // GET /api/staff — Personalstamm + Urlaubskonten (HR-Daten, ohne Mandantenzugang)
+  | "staff.write" // POST/PATCH /api/staff — Personalstamm ändern: nur admin
+  | "notifications.write"; // POST/PATCH/DELETE /api/notifications — nur eigene Benachrichtigungen, alle Rollen
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   // Auth endpoints are public (no auth required), but we still declare them for audit consistency
@@ -141,7 +147,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "auth.verify": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.2fa": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.sso": ["admin", "lawyer", "assistant", "client_viewer"],
-  "auth.sessions": ["admin", "lawyer", "assistant"],
+  // Own sessions only (scoped in the routes): a client account must be able to
+  // sign out a lost device too.
+  "auth.sessions": ["admin", "lawyer", "assistant", "client_viewer"],
   "auth.email_change": ["admin", "lawyer", "assistant"],
   "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.write": ["admin", "lawyer", "assistant"],
@@ -196,6 +204,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "share.receive": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
+  "audit.read": ["admin"],
+  "mail.read": ["admin", "lawyer", "assistant"],
   "admin.*": ["admin"],
   "admin.user_update": ["admin"],
   "admin.user_deactivate": ["admin"],
@@ -220,8 +230,16 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.case_investigation": ["admin", "lawyer"],
   "legal.case_investigation_review": ["admin", "lawyer"],
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
-  "legal.case_scanner": ["admin", "lawyer", "assistant"],
+  // Starts paid agent runs across matters: lawyers and admins only.
+  "legal.case_scanner": ["admin", "lawyer"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
+  // Wirkt ausschließlich auf die eigenen Benachrichtigungen (userId-Scope in der Route).
+  "notifications.write": ["admin", "lawyer", "assistant", "client_viewer"],
+  // HR-Stammdaten (Urlaubsanspruch, Vertragsende, Notizen): lesen intern,
+  // ändern nur die Kanzleiverwaltung — niemand erhöht den eigenen Anspruch.
+  "staff.read": ["admin", "lawyer", "assistant"],
+  "staff.write": ["admin"],
+  "profile.update": ["admin", "lawyer", "assistant", "client_viewer"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -330,6 +348,9 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "share.receive": "share.receive",
     "presence.update": "case.view",
     "presence.list": "case.view",
+    "audit.read": "settings.update",
+    "mail.read": "case.view",
+    "profile.update": "settings.update",
     "admin.*": "settings.update",
     "admin.user_update": "admin.user_update",
     "admin.user_deactivate": "admin.user_deactivate",
@@ -338,6 +359,9 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "admin.audit_export": "admin.audit_export",
     "platform.operator": "settings.update",
     "platform.support_session": "support.session_end",
+    "notifications.write": "settings.update",
+    "staff.read": "settings.update",
+    "staff.write": "settings.update",
   };
   return map[routeAction] ?? "settings.update";
 }

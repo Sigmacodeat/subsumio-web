@@ -47,6 +47,8 @@ interface SLOAlert {
 
 interface SLOResponse {
   timestamp: string;
+  /** false = no metrics source attached; nothing is measured or alerted. */
+  connected?: boolean;
   summary: SLOSummary;
   slo_statuses: SLOStatus[];
   alerts: SLOAlert[];
@@ -156,6 +158,21 @@ export default function SLOPage() {
           Aktualisieren
         </Button>
       </div>
+
+      {data && data.connected === false && (
+        <Card>
+          <CardContent className="flex items-start gap-3 p-4" role="status">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
+            <div className="text-sm">
+              <p className="font-semibold">SLO-Messung nicht angebunden</p>
+              <p className="text-[color:var(--ds-text-muted)]">
+                Für diese Ziele wird derzeit nichts gemessen, und es werden keine SLO-Alarme
+                ausgelöst. Die Liste zeigt nur die Zielvorgaben.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -288,10 +305,7 @@ export default function SLOPage() {
         <Card>
           <CardContent className="p-8 text-center">
             <Activity className="mx-auto mb-3 h-12 w-12 text-[color:var(--ds-text-muted)]" />
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              Keine SLO-Daten verfügbar. Metriken werden gesammelt, sobald Workflows ausgeführt
-              werden.
-            </p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">Keine SLO-Daten verfügbar.</p>
           </CardContent>
         </Card>
       )}

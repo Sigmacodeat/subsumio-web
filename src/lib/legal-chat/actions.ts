@@ -1,5 +1,14 @@
+import { requestConflictCheck } from "@/lib/conflict-gate";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { randomUUID } from "node:crypto";
-import { ENGINE_URL, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { engineHeadersForBrain, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { createServerBrainClient } from "@/lib/server-brain";
+import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
+import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbering";
+import { computeInvoiceTotals, roundEur } from "@/lib/invoice-totals";
+import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
+import { vatRateFor } from "@/lib/kanzlei-settings";
 import { engineRequest, listPages, think, type EnginePageInput } from "@/lib/engine-client";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
@@ -10,11 +19,25 @@ import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { calculateRvg } from "@/lib/rvg";
-import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
+import { computeFrist, fristOptionsFor } from "@/lib/legal/frist-options";
+import { getRechtsraumParams } from "@/lib/legal/rechtsraum";
+import { loadKanzleiSettingsForBrain } from "@/lib/kanzlei-settings-server";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 
 import { logger } from "@/lib/logger";
+import {
+  FIRM_TIMEZONE,
+  addDaysToIsoDate,
+  firmToday,
+  firmYear,
+  zonedWallTimeToUtc,
+} from "@/lib/datetime";
 const log = logger("lib/legal-chat/actions");
+
+/** VAT rate as a German percent label (0.2 → "20", 0.081 → "8,1"). */
+function vatPercentLabel(rate: number): string {
+  return (Math.round(rate * 1000) / 10).toLocaleString("de-DE");
+}
 
 interface ChatContext {
   sender: WhatsAppIdentity;
@@ -41,7 +64,15 @@ export type ParsedIntent =
   | { kind: "case_summary"; caseRef: string }
   | { kind: "brain_query"; query: string }
   | { kind: "rvg_calc"; streitwert: number }
-  | { kind: "deadline_calc"; ruleKey: string; startDate: string; bundesland: string }
+  | {
+      kind: "deadline_calc";
+      ruleKey: string;
+      startDate: string;
+      /** Only for DE/CH firms (Land/Kanton); never defaulted. */
+      bundesland?: string;
+      /** § 222 Abs 2 ZPO — "ferialsache" in the command. */
+      ferialsache?: boolean;
+    }
   | { kind: "conflict_check"; name: string; caseRef?: string }
   | { kind: "document_fetch"; caseRef: string; query: string }
   | { kind: "list_cases" }
@@ -92,11 +123,10 @@ async function batchListPages(
   types: string[],
   limit = 200
 ): Promise<Record<string, BrainPage[]>> {
+  // Fail-closed: a failed type must surface as an error reply — silently
+  // treating it as an empty list would produce false "Du hast 0 …" answers.
   const entries = await Promise.all(
-    types.map(
-      async (type) =>
-        [type, await listPages(brainId, type, limit).catch(() => [] as BrainPage[])] as const
-    )
+    types.map(async (type) => [type, await listPages(brainId, type, limit)] as const)
   );
   return Object.fromEntries(entries);
 }
@@ -253,17 +283,20 @@ export function parseIntent(text: string): ParsedIntent {
     if (caseMatch) return { kind: "invoice_status", caseRef: caseMatch[1].trim() };
   }
 
-  // Deadline calculation: "frist berechnen berufung ab 2026-03-15 BY" or "berechne frist zpo-berufung 15.03.2026"
-  // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
+  // Deadline calculation: "frist berechnen berufung ab 2026-03-15" (AT keys use
+  // underscores, e.g. einspruch_zahlungsbefehl), optional Land/Kanton for DE/CH
+  // firms and "ferialsache" (§ 222 Abs 2 ZPO). Must be checked BEFORE the
+  // deadline/task matchers to avoid being swallowed.
   const deadlineCalcMatch = trimmed.match(
-    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?/i
+    /^(?:frist|deadline)\s+berechnen\s+([a-z_-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?(?:\s+(ferialsache))?\s*$/i
   );
   if (deadlineCalcMatch) {
     return {
       kind: "deadline_calc",
       ruleKey: deadlineCalcMatch[1].toLowerCase(),
       startDate: normalizeDate(deadlineCalcMatch[2]),
-      bundesland: (deadlineCalcMatch[3] || "BY").toUpperCase(),
+      ...(deadlineCalcMatch[3] ? { bundesland: deadlineCalcMatch[3].toUpperCase() } : {}),
+      ...(deadlineCalcMatch[4] ? { ferialsache: true } : {}),
     };
   }
 
@@ -1191,8 +1224,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     const opponentName = str(payload.opponentName);
     const legalArea = str(payload.legalArea) || "civil";
     const description = str(payload.description);
-    const caseNumber = `2026-${String(Date.now()).slice(-4)}`;
-    const caseSlug = `legal/cases/${caseNumber}`;
+    // Aktenzeichen and slug come from the server; the shared safe path never
+    // overwrites an existing matter and runs the conflict check (§ 10 RAO).
+    const caseNumber = `WA-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     const legalAreaLabels: Record<string, string> = {
       family: "Familienrecht",
       civil: "Zivilrecht",
@@ -1204,38 +1238,55 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       ip: "Gewerblicher Rechtsschutz",
     };
     const title = opponentName ? `${clientName} vs. ${opponentName}` : clientName;
-    await putPage(ctx.sender.brainId, {
-      slug: caseSlug,
-      title,
-      type: "legal_case",
-      content: description ? `## Sachverhalt\n\n${description}` : "",
-      frontmatter: {
-        type: "legal_case",
-        case_number: caseNumber,
-        client_name: clientName,
-        opponent_name: opponentName,
-        legal_area: legalArea,
-        legal_area_label: legalAreaLabels[legalArea] || legalArea,
-        status: "intake",
-        created_via: "whatsapp",
-        created_at: new Date().toISOString(),
-        time_entries: [],
-        expenses: [],
-        tasks: [],
-        deadlines: [],
-        documents: [],
-        notes: [],
-        audit_log: [
-          {
-            id: randomUUID(),
-            at: new Date().toISOString(),
-            action: "created",
-            actor: ctx.sender.name || "WhatsApp",
-            note: "Akte via WhatsApp angelegt",
-          },
-        ],
-      },
-    });
+    const created = await createCaseSafely(
+      engineCaseCreateDeps(
+        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope)
+      ),
+      {
+        title,
+        slugHint: caseNumber,
+        content: description ? `## Sachverhalt\n\n${description}` : "",
+        frontmatter: {
+          type: "legal_case",
+          case_number: caseNumber,
+          client_name: clientName,
+          opponent_name: opponentName,
+          legal_area: legalArea,
+          legal_area_label: legalAreaLabels[legalArea] || legalArea,
+          status: "intake",
+          created_via: "whatsapp",
+          created_at: new Date().toISOString(),
+          time_entries: [],
+          expenses: [],
+          tasks: [],
+          deadlines: [],
+          documents: [],
+          notes: [],
+          audit_log: [
+            {
+              id: randomUUID(),
+              at: new Date().toISOString(),
+              action: "created",
+              actor: ctx.sender.name || "WhatsApp",
+              note: "Akte via WhatsApp angelegt",
+            },
+          ],
+        },
+      }
+    );
+    if (created.status === "conflict") {
+      await markAction(ctx, action, "failed");
+      return [
+        "⚠️ Keine Akte angelegt: Die Kollisionsprüfung meldet einen möglichen Interessenkonflikt.",
+        "Bitte in Subsumio über die Mandatsannahme prüfen.",
+      ].join("\n");
+    }
+    if (created.status !== "created") {
+      await markAction(ctx, action, "failed");
+      return `Akte konnte nicht angelegt werden: ${
+        created.status === "exists" ? "Kennung bereits vergeben" : created.message
+      }`;
+    }
     await markAction(ctx, action, "executed");
     return [
       `✅ Neue Akte angelegt:`,
@@ -1310,69 +1361,125 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   // create_invoice needs the target case
   if (front.intent === "create_invoice") {
     if (!targetSlug) throw new Error("create_invoice: no target case");
-    const casePage = await getPage(ctx.sender.brainId, targetSlug);
+    const brainId = ctx.sender.brainId;
+    const casePage = await getPage(brainId, targetSlug);
     const caseFm = fm(casePage);
-    const amount = Number(payload.amount) || 0;
     const description = str(payload.description) || "Rechnung via WhatsApp";
-    const invoiceId = `INV-${Date.now()}`;
-    const invoiceSlug = `legal/invoices/${invoiceId}`;
     const caseNumber = str(caseFm.case_number);
-    const mwst = amount * 0.19;
-    const total = amount + mwst;
-    await putPage(ctx.sender.brainId, {
+    const client = str(caseFm.client_name);
+
+    // Same path as POST /api/invoices and the Copilot draft: the firm's VAT
+    // rate (country / Kleinunternehmer), sums in cents, a consecutive number
+    // from the firm's counter, create-only write via the shared helper.
+    // Without readable firm settings no invoice is created (no guessed rate).
+    const kanzlei = await loadKanzleiSettingsForBrain(brainId);
+    const vatRate = vatRateFor(kanzlei);
+    const now = new Date();
+    const today = firmToday(now);
+    const items = [
+      { description, date: today, hours: 0, rate: 0, amount: roundEur(payload.amount) },
+    ];
+    const totals = computeInvoiceTotals({ items, vatRate });
+    if (totals.subtotal <= 0) {
+      await markAction(ctx, action, "failed", "invalid_amount");
+      return "Der Rechnungsbetrag muss größer als 0 sein. Es wurde keine Rechnung angelegt.";
+    }
+
+    let existingNumbers: string[] = [];
+    try {
+      const pages = await listEnginePages(engineHeadersForBrain(brainId), "invoice", 50_000);
+      existingNumbers = pages.map((p) => String(p.frontmatter?.invoice_number ?? ""));
+    } catch {
+      // The counter alone still guarantees a unique number.
+    }
+    const year = firmYear(now);
+    const invoiceNumber = await allocateInvoiceNumber(
+      brainId,
+      year,
+      highestInvoiceNumber(existingNumbers, year)
+    );
+    const paymentDays = Math.max(1, parseInt(kanzlei.zahlungszielTage || "14", 10) || 14);
+    const hash = await sha256Hex(
+      invoiceContentString({
+        number: invoiceNumber,
+        client,
+        caseNumber,
+        date: today,
+        subtotal: totals.subtotal,
+        tax: totals.tax,
+        total: totals.total,
+        items,
+      })
+    );
+    const invoiceSlug = `legal/invoices/${invoiceNumber}`;
+    const vatLabel = vatPercentLabel(vatRate);
+    const headers = engineHeadersForBrainWithMatterScope(brainId, ctx.sender.matterScope);
+    const outcome = await createInvoiceReservingEntries(headers, createServerBrainClient(headers), {
       slug: invoiceSlug,
-      title: `Rechnung ${invoiceId} — ${casePage.title}`,
-      type: "invoice",
-      content: `## Rechnung\n\n**Aktenzeichen:** ${caseNumber}\n**Leistung:** ${description}\n**Netto:** ${amount.toFixed(2)} EUR\n**MwSt (19%):** ${mwst.toFixed(2)} EUR\n**Brutto:** ${total.toFixed(2)} EUR`,
+      title: `Rechnung ${invoiceNumber} — ${casePage.title}`,
+      content: `## Rechnung\n\n**Aktenzeichen:** ${caseNumber}\n**Leistung:** ${description}\n**Netto:** ${totals.subtotal.toFixed(2)} EUR\n**USt (${vatLabel} %):** ${totals.tax.toFixed(2)} EUR\n**Brutto:** ${totals.total.toFixed(2)} EUR`,
+      caseSlug: casePage.slug,
+      invoiceNumber,
+      // A WhatsApp invoice is a free amount — it lists no recorded entries.
+      timeEntryIds: [],
+      expenseIds: [],
       frontmatter: {
-        type: "invoice",
-        invoice_id: invoiceId,
-        case_slug: casePage.slug,
-        case_title: casePage.title,
-        case_number: caseNumber,
-        client_name: str(caseFm.client_name),
-        net_amount: amount,
-        mwst,
-        total,
+        invoice_number: invoiceNumber,
         status: "draft",
-        description,
+        invoice_type: "standard",
+        client,
+        client_slug: str(caseFm.client_slug) || undefined,
+        case_number: caseNumber,
+        case_slugs: [casePage.slug],
+        date: today,
+        due_date: addDaysToIsoDate(today, paymentDays),
+        items,
+        time_entry_ids: [],
+        expense_entry_ids: [],
+        subtotal: totals.subtotal,
+        vat_rate: vatRate,
+        tax: totals.tax,
+        total: totals.total,
+        tax_breakdown: totals.tax_breakdown,
+        payment_terms: `${paymentDays} Tage netto`,
+        notes: description,
+        source: "whatsapp",
         created_via: "whatsapp",
-        created_at: new Date().toISOString(),
+        ...gobdFrontmatter(hash, now),
       },
     });
-    const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
-    const invoices = Array.isArray(caseFm.invoices) ? caseFm.invoices : [];
-    await putPage(ctx.sender.brainId, {
-      slug: casePage.slug,
-      title: casePage.title,
-      type: "legal_case",
-      frontmatter: {
-        invoices: [
-          ...invoices,
-          { invoice_id: invoiceId, slug: invoiceSlug, total, status: "draft" },
-        ],
-        audit_log: [
-          ...audit,
-          {
-            id: randomUUID(),
-            at: new Date().toISOString(),
-            action: "updated",
-            actor: ctx.sender.name || "WhatsApp",
-            field: "invoices",
-            note: `Rechnung ${invoiceId} über ${total.toFixed(2)} EUR via WhatsApp erstellt`,
-          },
-        ],
+    if (outcome.kind !== "created") {
+      await markAction(ctx, action, "failed", outcome.kind);
+      return "Die Rechnung konnte nicht angelegt werden. Bitte im Dashboard erneut versuchen.";
+    }
+
+    // Link on the matter: atomic appends, never a read-modify-write.
+    await appendPageArrayItems(brainId, casePage.slug, "invoices", [
+      {
+        invoice_id: invoiceNumber,
+        slug: invoiceSlug,
+        total: totals.total,
+        status: "draft",
       },
-      merge: true,
-    });
+    ]);
+    await appendPageArrayItems(brainId, casePage.slug, "audit_log", [
+      {
+        id: randomUUID(),
+        at: now.toISOString(),
+        action: "updated",
+        actor: ctx.sender.name || "WhatsApp",
+        field: "invoices",
+        note: `Rechnung ${invoiceNumber} über ${totals.total.toFixed(2)} EUR via WhatsApp erstellt`,
+      },
+    ]);
     await markAction(ctx, action, "executed");
     return [
       `✅ Rechnung erstellt:`,
-      `Rechnungsnummer: ${invoiceId}`,
+      `Rechnungsnummer: ${invoiceNumber}`,
       `Akte: ${casePage.title}`,
-      `Netto: ${amount.toFixed(2)} EUR`,
-      `MwSt (19%): ${mwst.toFixed(2)} EUR`,
-      `Brutto: ${total.toFixed(2)} EUR`,
+      `Netto: ${totals.subtotal.toFixed(2)} EUR`,
+      `USt (${vatLabel} %): ${totals.tax.toFixed(2)} EUR`,
+      `Brutto: ${totals.total.toFixed(2)} EUR`,
       `Status: Entwurf (im Dashboard finalisieren)`,
     ].join("\n");
   }
@@ -1831,8 +1938,10 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     const title = str(payload.title) || "Termin";
     const location = str(payload.location);
     const reminderHours = Number(payload.reminderHours) || 24;
-    const reminderAt = new Date(`${date}T${time}:00`);
-    reminderAt.setHours(reminderAt.getHours() - reminderHours);
+    // date/time are Vienna wall time — the server runs in UTC.
+    const reminderAt = new Date(
+      zonedWallTimeToUtc(date, time, FIRM_TIMEZONE).getTime() - reminderHours * 3_600_000
+    );
     const hasCase = !!targetSlug;
     const casePage = hasCase ? await getPage(ctx.sender.brainId, targetSlug!) : null;
     const caseFm = casePage ? fm(casePage) : {};
@@ -2250,57 +2359,29 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "deadline_calc") {
-    const rule = DEADLINE_RULES.find((r) => r.key === intent.ruleKey);
-    if (!rule) {
-      const available = DEADLINE_RULES.map((r) => r.key).join(", ");
-      return `Unbekannte Fristregel: ${intent.ruleKey}. Verfügbare Regeln: ${available}`;
-    }
-    const land = intent.bundesland as Bundesland;
-    const result = calculateDeadline(rule, intent.startDate, land);
-    return [
-      `Fristberechnung: ${rule.label}`,
-      `Startdatum: ${intent.startDate}`,
-      `Bundesland: ${intent.bundesland}`,
-      `Enddatum: ${result.due_date}`,
-      // Followup D.14: rule.law already carries the precise statutory basis
-      // (calculateDeadline returns it too, as result.law) — was computed but
-      // never surfaced in the WhatsApp reply text.
-      `Rechtsgrundlage: ${result.law}`,
-      `Hinweis: ${result.calculation_note || "Bitte im Fristenkalender fachlich prüfen."}`,
-    ].join("\n");
+    return deadlineCalcReply(intent, ctx.sender.brainId);
   }
 
   if (intent.kind === "conflict_check") {
-    // Query the conflict-check API
     try {
-      const res = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
-        },
-        body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) throw new Error(`Conflict-Check HTTP ${res.status}`);
-      const data = (await res.json().catch(() => ({}))) as {
-        conflicts?: Array<{
-          case_title: string;
-          case_slug: string;
-          reason: string;
-          severity: string;
-        }>;
-        clean?: boolean;
-      };
-      if (data.conflicts && data.conflicts.length > 0) {
+      const result = await requestConflictCheck(
+        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
+        { name: intent.name }
+      );
+      const relevant = result.matches.filter((m) => m.assessment !== "info");
+      if (relevant.length > 0) {
         return [
-          `⚠️ Konflikt gefunden für "${intent.name}":`,
-          ...data.conflicts.map((c) => `• ${c.case_title} (${c.severity}): ${c.reason}`),
+          `⚠️ Treffer für "${intent.name}" — anwaltlich zu prüfen:`,
+          ...relevant.map(
+            (m) =>
+              `• ${m.title}${m.role === "opponent" ? " (Gegner)" : m.role === "client" ? " (Mandant)" : ""}`
+          ),
+          result.explanation,
         ].join("\n");
       }
-      return `✅ Kein Konflikt gefunden für "${intent.name}".`;
-    } catch (err) {
-      return `Konflikt-Check fehlgeschlagen: ${err instanceof Error ? err.message : "Unbekannter Fehler"}`;
+      return `✅ Kein Treffer für "${intent.name}". ${result.explanation}`;
+    } catch {
+      return `Kollisionsprüfung für "${intent.name}" ist gerade nicht verfügbar. Ohne Prüfung bitte kein Mandat annehmen.`;
     }
   }
 
@@ -2933,15 +3014,21 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
     const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
     if (!resolved.ok) return resolved.message;
     const target = resolved.page;
-    const mwst = intent.amount * 0.19;
-    const total = intent.amount + mwst;
+    // The firm's own VAT rate — the same one the invoice is created with.
+    let vatRate: number;
+    try {
+      vatRate = vatRateFor(await loadKanzleiSettingsForBrain(ctx.sender.brainId));
+    } catch {
+      return "Die Kanzlei-Einstellungen sind gerade nicht lesbar — ohne sie kann ich den USt-Satz nicht bestimmen. Bitte später erneut versuchen.";
+    }
+    const totals = computeInvoiceTotals({ items: [{ amount: intent.amount }], vatRate });
     await createPendingAction(ctx, intent, target);
     return [
       `Erkannt: Rechnung für "${target.title}"`,
       `Leistung: ${intent.description}`,
-      `Netto: ${intent.amount.toFixed(2)} EUR`,
-      `MwSt (19%): ${mwst.toFixed(2)} EUR`,
-      `Brutto: ${total.toFixed(2)} EUR`,
+      `Netto: ${totals.subtotal.toFixed(2)} EUR`,
+      `USt (${vatPercentLabel(vatRate)} %): ${totals.tax.toFixed(2)} EUR`,
+      `Brutto: ${totals.total.toFixed(2)} EUR`,
       `Antworte mit JA zum Erstellen.`,
     ].join("\n");
   }
@@ -3177,4 +3264,57 @@ async function smartAssignCase(
   if (accessible.length === 1) return accessible[0];
 
   return null;
+}
+
+/**
+ * "frist berechnen …" over chat/WhatsApp — the same engine as the Fristen
+ * page: the firm's Rechtsraum decides (Austria → AT frist-engine with § 222
+ * ZPO, § 126 ZPO and Austrian holidays). Unreadable settings → no result,
+ * never a guessed country or Land.
+ */
+async function deadlineCalcReply(
+  intent: { ruleKey: string; startDate: string; bundesland?: string; ferialsache?: boolean },
+  brainId: string
+): Promise<string> {
+  let rechtsraum: { country?: string; state?: string };
+  try {
+    rechtsraum = getRechtsraumParams(await loadKanzleiSettingsForBrain(brainId));
+  } catch {
+    return "Fristberechnung nicht möglich: Die Kanzlei-Einstellungen (Rechtsraum) konnten nicht gelesen werden. Bitte im Fristenrechner der Web-App berechnen.";
+  }
+  const country = rechtsraum.country ?? "AT";
+  // A Land/Kanton only matters for DE/CH; Austria has no regional holidays here.
+  const state = country === "AT" ? rechtsraum.state : (intent.bundesland ?? rechtsraum.state);
+  const options = fristOptionsFor(country);
+  // Accept "zpo-berufung"-style keys by also trying the underscore form.
+  const key = options.some((o) => o.key === intent.ruleKey)
+    ? intent.ruleKey
+    : intent.ruleKey.replace(/-/g, "_");
+  if (!options.some((o) => o.key === key)) {
+    return `Unbekannte Fristart: ${intent.ruleKey}. Verfügbare Fristarten (${country}): ${options
+      .map((o) => o.key)
+      .join(", ")}`;
+  }
+  let result;
+  try {
+    result = computeFrist(key, intent.startDate, {
+      country,
+      state,
+      ferialsache: intent.ferialsache === true,
+    });
+  } catch (err) {
+    return `Fristberechnung nicht möglich: ${err instanceof Error ? err.message : String(err)}`;
+  }
+  return [
+    `Fristberechnung: ${result.label}${country !== "AT" ? ` (${country})` : ""}`,
+    `Zustellung/Beginn: ${intent.startDate}`,
+    ...(country !== "AT" && state ? [`Bundesland/Kanton: ${state}`] : []),
+    `Enddatum: ${result.dueDate}`,
+    ...(result.vorfrist ? [`Vorfrist: ${result.vorfrist}`] : []),
+    `Rechtsgrundlage: ${result.law}`,
+    ...(result.notfrist ? ["Notfrist — Vier-Augen-Kontrolle im Fristenbuch."] : []),
+    ...(result.hinweise.length > 0
+      ? result.hinweise.map((h) => `Hinweis: ${h}`)
+      : ["Hinweis: Bitte im Fristenkalender fachlich prüfen."]),
+  ].join("\n");
 }

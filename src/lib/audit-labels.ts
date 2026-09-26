@@ -16,10 +16,14 @@ export type AuditAction =
   | "user.login"
   | "user.logout"
   | "user.signup"
+  | "user.legal_accepted"
   | "user.session_revoked"
   | "user.sessions_revoked_others"
   | "user.email_change_requested"
   | "user.email_changed"
+  | "user.2fa_failed"
+  | "user.2fa_locked"
+  | "user.2fa_replaced"
   | "case.create"
   | "case.update"
   | "matter.access_update"
@@ -37,11 +41,16 @@ export type AuditAction =
   | "trust.reversal"
   | "trust.reconciliation"
   | "trust.status"
+  | "trust.delete"
   | "kyc.create"
   | "kyc.update"
   | "kyc.verify"
   | "kyc.fail"
   | "kyc.mandate_end"
+  | "kyc.sanctions_cleared"
+  | "approval.approve"
+  | "approval.reject"
+  | "approval.execute"
   | "case.delete"
   | "case.restore"
   | "trash.purge"
@@ -85,6 +94,7 @@ export type AuditAction =
   | "drafting.generate"
   | "drafting.export"
   | "conflict.check"
+  | "conflict.waive"
   | "judgements.search"
   | "legal.contract_draft"
   | "legal.document_review"
@@ -171,9 +181,13 @@ export type AuditAction =
   | "automation.delete"
   | "admin.tenant_role_change"
   | "admin.tenant_owner_transfer"
+  | "admin.tenant_deletion_scheduled"
+  | "admin.tenant_deletion_cancelled"
+  | "admin.tenant_data_deleted"
   | "admin.user_deactivate"
   | "admin.data_delete"
   | "admin.data_export"
+  | "admin.data_export_download"
   | "admin.audit_export"
   | "admin.backup"
   | "admin.dr"
@@ -192,6 +206,8 @@ export type AuditAction =
   | "admin.chunk_clear_flag"
   | "support.session_start"
   | "support.session_end"
+  | "support.grant_created"
+  | "support.grant_revoked"
   | "acl.add_member"
   | "acl.remove_member"
   | "acl.delete_group"
@@ -199,6 +215,8 @@ export type AuditAction =
   | "acl.remove_permission"
   | "dms.push"
   | "dms.content_download"
+  | "dms.config_update"
+  | "dms.config_delete"
   | "space.update"
   | "email.send"
   | "docusign.send"
@@ -253,6 +271,7 @@ export type AuditAction =
   | "workflow.advance"
   | "legal.pipeline_trigger"
   | "org.join"
+  | "org.create"
   | "gdpr.data_deletion"
   | "absence.create"
   | "absence.update"
@@ -274,6 +293,9 @@ export type AuditAction =
   | "corpus_command_center.trigger_delta"
   | "corpus.law_refetch"
   | "acl.group_create"
+  | "docusign.connect"
+  | "webhook.auto_disable"
+  | "webhook.reactivate"
   | "docusign.disconnect"
   | "copilot.explain"
   | "copilot.memory_create"
@@ -363,10 +385,14 @@ const ACTION_LABELS: Record<string, string> = {
   "user.login": "Anmeldung",
   "user.logout": "Abmeldung",
   "user.signup": "Registrierung",
+  "user.legal_accepted": "AGB, Datenschutzerklärung und AVV bestätigt",
   "user.session_revoked": "Sitzung abgemeldet",
   "user.sessions_revoked_others": "Alle anderen Sitzungen abgemeldet",
   "user.email_change_requested": "E-Mail-Änderung angefordert",
   "user.email_changed": "E-Mail-Adresse geändert",
+  "user.2fa_failed": "Zweiter Faktor falsch eingegeben",
+  "user.2fa_locked": "Zweiter Faktor gesperrt (zu viele Fehlversuche)",
+  "user.2fa_replaced": "Zwei-Faktor-Anmeldung neu eingerichtet",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
   "matter.access_update": "Aktenzugriff geändert",
@@ -384,11 +410,16 @@ const ACTION_LABELS: Record<string, string> = {
   "trust.reversal": "Treuhandbuchung storniert",
   "trust.reconciliation": "Treuhandkonto abgeglichen",
   "trust.status": "Status des Treuhandkontos geändert",
+  "trust.delete": "Treuhandkonto gelöscht",
   "kyc.create": "Identitätsprüfung angelegt",
   "kyc.update": "Identitätsprüfung bearbeitet",
   "kyc.verify": "Identitätsprüfung abgeschlossen",
   "kyc.fail": "Identitätsprüfung nicht bestanden",
   "kyc.mandate_end": "Mandatsende für Aufbewahrung erfasst",
+  "kyc.sanctions_cleared": "Sanktionstreffer mit Begründung ausgeräumt",
+  "approval.approve": "Freigabe erteilt",
+  "approval.reject": "Freigabe abgelehnt",
+  "approval.execute": "Freigegebene Aktion ausgeführt",
   "case.delete": "Akte archiviert",
   "case.restore": "Akte wiederhergestellt",
   "trash.purge": "Papierkorb endgültig gelöscht",
@@ -427,6 +458,7 @@ const ACTION_LABELS: Record<string, string> = {
   "drafting.generate": "Schriftsatz generiert",
   "drafting.export": "Schriftsatz exportiert",
   "conflict.check": "Kollisionsprüfung",
+  "conflict.waive": "Kollision begründet freigegeben",
   "judgements.search": "Rechtsprechung gesucht",
   "legal.playbook": "Playbook geändert",
   "legal.tabular": "Tabellarische Prüfung",
@@ -494,9 +526,13 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.tenant_reactivate": "Betreiber: Kanzlei entsperrt",
   "admin.tenant_role_change": "Betreiber: Rolle in Kanzlei geändert",
   "admin.tenant_owner_transfer": "Betreiber: Kanzlei-Inhaber gewechselt",
+  "admin.tenant_deletion_scheduled": "Betreiber: Löschung der Kanzleidaten angesetzt",
+  "admin.tenant_deletion_cancelled": "Betreiber: Löschung der Kanzleidaten abgebrochen",
+  "admin.tenant_data_deleted": "Kanzleidaten nach Vertragsende gelöscht",
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
   "admin.data_delete": "Admin: Benutzerdaten gelöscht",
   "admin.data_export": "Admin: Benutzerdaten exportiert",
+  "admin.data_export_download": "Admin: Kanzlei-Export heruntergeladen",
   "admin.audit_export": "Admin: Audit-Log exportiert",
   "admin.backup": "Admin: Backup erstellt/wiederhergestellt",
   "admin.dr": "Admin: Disaster Recovery",
@@ -515,8 +551,12 @@ const ACTION_LABELS: Record<string, string> = {
   "admin.chunk_clear_flag": "Admin: Chunk-Markierung entfernt",
   "support.session_start": "Subsumio-Support: Zugriff gestartet",
   "support.session_end": "Subsumio-Support: Zugriff beendet",
+  "support.grant_created": "Subsumio-Support: Freigabe erteilt",
+  "support.grant_revoked": "Subsumio-Support: Freigabe widerrufen",
   "dms.push": "Dokument an DMS gepusht",
   "dms.content_download": "DMS-Dokument geöffnet",
+  "dms.config_update": "DMS-Anbindung eingerichtet/geändert",
+  "dms.config_delete": "DMS-Anbindung entfernt",
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",
   "whatsapp.document_to_space": "WhatsApp-Dokument zugeordnet",
@@ -567,6 +607,7 @@ const ACTION_LABELS: Record<string, string> = {
   "workflow.advance": "Workflow-Schritt fortgeführt",
   "legal.pipeline_trigger": "Automatische Fallaufarbeitung gestartet",
   "org.join": "Organisation beigetreten",
+  "org.create": "Kanzlei gegründet",
   "gdpr.data_deletion": "DSGVO-Accountlöschung",
   "absence.create": "Abwesenheit angelegt",
   "absence.update": "Abwesenheit geändert",
@@ -588,6 +629,9 @@ const ACTION_LABELS: Record<string, string> = {
   "corpus_command_center.trigger_delta": "Corpus-Delta getriggert",
   "corpus.law_refetch": "Gesetz zum Nachladen vorgemerkt",
   "acl.group_create": "ACL-Gruppe erstellt",
+  "docusign.connect": "DocuSign verbunden",
+  "webhook.auto_disable": "Webhook automatisch deaktiviert",
+  "webhook.reactivate": "Webhook reaktiviert",
   "docusign.disconnect": "DocuSign getrennt",
   "copilot.explain": "Assistent: Begründung abgerufen",
   "copilot.memory_create": "Assistent: Erinnerung erstellt",

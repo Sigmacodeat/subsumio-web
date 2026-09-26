@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { reconcileCaseDocuments, type CaseDocumentEntry } from "./case-documents";
+import {
+  CaseArchivedError,
+  detachCaseDocument,
+  reconcileCaseDocuments,
+  removeFromCaseDocuments,
+  type CaseDocumentEntry,
+} from "./case-documents";
 
 // In-memory fake engine: /api/pages/<slug> GET returns the page; POST /api/pages
 // with merge:true overlays the documents array. Lets us drive the convergence
@@ -118,5 +124,102 @@ describe("reconcileCaseDocuments under parallel uploads", () => {
       )
     );
     expect(engine.state.documents.map((d) => d.slug).sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("reconcileCaseDocuments on a closed matter", () => {
+  function engineWithStatus(status: string) {
+    let posts = 0;
+    let documents: unknown[] = [];
+    global.fetch = (async (url: string, init?: { method?: string; body?: string }) => {
+      const path = new URL(url, "http://localhost").pathname;
+      if (init?.method === "POST" && path === "/api/pages") {
+        posts++;
+        const body = JSON.parse(init.body ?? "{}") as { frontmatter?: { documents?: unknown[] } };
+        documents = body.frontmatter?.documents ?? documents;
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ frontmatter: { status, documents } }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+    return {
+      get posts() {
+        return posts;
+      },
+    };
+  }
+
+  it.each(["archived", "tombstoned"])(
+    "a %s matter is not written and reports a permanent CaseArchivedError",
+    async (status) => {
+      const eng = engineWithStatus(status);
+      const err = await reconcileCaseDocuments(
+        { "x-subsumio-source": "b1" },
+        "legal/cases/alt",
+        entry("documents/a")
+      ).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(CaseArchivedError);
+      expect((err as CaseArchivedError).code).toBe("case_archived");
+      expect((err as CaseArchivedError).caseSlug).toBe("legal/cases/alt");
+      expect(eng.posts).toBe(0);
+    }
+  );
+
+  it("an open matter is written as before", async () => {
+    const eng = engineWithStatus("open");
+    await reconcileCaseDocuments({ "x-subsumio-source": "b1" }, "legal/cases/neu", entry("d"));
+    expect(eng.posts).toBe(1);
+  });
+});
+
+describe("detachCaseDocument / removeFromCaseDocuments (Aus Akte entfernen)", () => {
+  it("removes the entry from the matter list and unassigns the document", async () => {
+    const eng = fakeEngine([
+      entry("documents/a") as unknown as Record<string, unknown>,
+      entry("documents/b") as unknown as Record<string, unknown>,
+    ]);
+    const posted: Array<Record<string, unknown>> = [];
+    const inner = global.fetch;
+    global.fetch = (async (url: string, init?: { method?: string; body?: string }) => {
+      if (init?.method === "POST") posted.push(JSON.parse(init.body ?? "{}"));
+      return inner(url, init as RequestInit);
+    }) as typeof fetch;
+
+    const result = await detachCaseDocument(
+      { "x-subsumio-source": "b1" },
+      "legal/cases/x",
+      "documents/a"
+    );
+    expect(result.removedFromList).toBe(true);
+    expect(eng.state.documents.map((d) => d.slug)).toEqual(["documents/b"]);
+    const docPatch = posted.find((b) => b.slug === "documents/a");
+    expect(docPatch?.frontmatter).toMatchObject({
+      case_slug: null,
+      assignment_status: "unassigned",
+    });
+  });
+
+  it("an entry that is not listed is a no-op for the list", async () => {
+    const eng = fakeEngine([entry("documents/b") as unknown as Record<string, unknown>]);
+    const removed = await removeFromCaseDocuments(
+      { "x-subsumio-source": "b1" },
+      "legal/cases/x",
+      "documents/a"
+    );
+    expect(removed).toBe(false);
+    expect(eng.calls.post).toBe(0);
+  });
+
+  it("a failing engine write surfaces as an error (nothing reported as done)", async () => {
+    fakeEngine([entry("documents/a") as unknown as Record<string, unknown>]);
+    const inner = global.fetch;
+    global.fetch = (async (url: string, init?: { method?: string; body?: string }) =>
+      init?.method === "POST"
+        ? new Response("{}", { status: 500 })
+        : inner(url, init as RequestInit)) as typeof fetch;
+    await expect(
+      detachCaseDocument({ "x-subsumio-source": "b1" }, "legal/cases/x", "documents/a")
+    ).rejects.toThrow(/case_document_remove_failed/);
   });
 });

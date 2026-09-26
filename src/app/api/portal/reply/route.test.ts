@@ -138,6 +138,39 @@ describe("POST /api/portal/reply — WP-3.16 Leistungsbuchung", () => {
     expect(entry.lawyer).toBe("Anwalt A");
   });
 
+  test("bucht eine Antwort kurz nach Mitternacht auf den Wiener Kalendertag", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-25T22:30:00Z")); // 00:30 am 26.09. in Wien
+    try {
+      mockFetch.mockImplementation((url: string, init?: RequestInit) => {
+        const u = String(url);
+        if (init?.method === "POST" && u.endsWith("/api/pages/array-append")) {
+          const payload = JSON.parse(String(init.body));
+          return Promise.resolve(
+            new Response(JSON.stringify({ items: payload.items }), { status: 200 })
+          );
+        }
+        if (init?.method === "POST" && u.endsWith("/api/pages")) {
+          return Promise.resolve(new Response(JSON.stringify({ slug: "x" }), { status: 200 }));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ slug: CS, frontmatter: CASE_PAGE.frontmatter }), {
+            status: 200,
+          })
+        );
+      });
+      await post({ case_slug: CS, message: "Antwort", bill_minutes: 6 });
+      const append = mockFetch.mock.calls
+        .map((c) => ({ url: String(c[0]), init: c[1] as RequestInit | undefined }))
+        .filter((c) => c.init?.method === "POST" && c.url.endsWith("/api/pages/array-append"))
+        .map((c) => JSON.parse(String(c.init!.body)))
+        .find((p) => p.field === "time_entries");
+      expect(append.items[0].date).toBe("2026-09-26");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("meldet billed=false, wenn der Zeiteintrag nicht persistiert werden kann", async () => {
     mockFetch.mockImplementation((url: string, init?: RequestInit) => {
       const u = String(url);

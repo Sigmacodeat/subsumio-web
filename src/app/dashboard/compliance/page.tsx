@@ -20,12 +20,14 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Skeleton } from "@/components/dashboard/skeleton";
 
-type CheckStatus = "ok" | "warn" | "fail";
+import { loadComplianceStatuses, type CheckStatus } from "./load-statuses";
 
 interface ComplianceCheck {
   id: string;
@@ -205,19 +207,21 @@ export default function CompliancePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadFailed(false);
     (async () => {
       try {
-        const page = await api.brain.getPage(STATE_SLUG);
-        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-        const stored = fm.check_statuses;
-        if (!cancelled && stored && typeof stored === "object") {
-          setStatuses(stored as Record<string, CheckStatus>);
-        }
+        // A missing page (404) starts every check as "warn"; any other failure
+        // blocks editing so no click can overwrite the stored statuses.
+        const stored = await loadComplianceStatuses((slug) => api.brain.getPage(slug), STATE_SLUG);
+        if (!cancelled) setStatuses(stored);
       } catch {
-        // Seite existiert noch nicht — alle Checks starten als "warn" (offen)
+        if (!cancelled) setLoadFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -225,7 +229,7 @@ export default function CompliancePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   const persist = useCallback(
     async (next: Record<string, CheckStatus>) => {
@@ -251,6 +255,7 @@ export default function CompliancePage() {
   );
 
   function cycleStatus(id: string) {
+    if (loadFailed) return;
     setStatuses((prev) => {
       const current = prev[id] ?? "warn";
       const nextStatus = STATUS_CYCLE[(STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length];
@@ -401,7 +406,17 @@ export default function CompliancePage() {
         </div>
 
         {/* Checks list */}
-        {loading ? (
+        {!loading && loadFailed ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]"
+          >
+            <span>{t("compliance.error_load" as DashboardKey)}</span>
+            <Button size="sm" variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        ) : loading ? (
           <div className="space-y-2" role="status" aria-label={t("aria.checklist_loading")}>
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-16 w-full rounded-xl" />

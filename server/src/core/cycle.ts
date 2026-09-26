@@ -1343,8 +1343,19 @@ async function runPhasePurge(engine: BrainEngine, dryRun: boolean): Promise<Phas
     }
     const { purgeExpiredSources } = await import("./destructive-guard.ts");
     const purgedSources = await purgeExpiredSources(engine);
-    const purgedPages = await engine.purgeDeletedPages(SOFT_DELETE_TTL_HOURS_FOR_PURGE);
+    // Pages and their uploaded originals (files rows + storage objects).
+    const { purgeDeletedPagesWithFiles } = await import("./file-store.ts");
+    const { loadConfig } = await import("./config.ts");
+    const purgedPages = await purgeDeletedPagesWithFiles(
+      engine,
+      SOFT_DELETE_TTL_HOURS_FOR_PURGE,
+      loadConfig()?.storage
+    );
     const purgedClones = await purgeOrphanClones(SOFT_DELETE_TTL_HOURS_FOR_PURGE);
+    // Search cache: expired rows carry query texts and chunk texts — delete
+    // them instead of only skipping them on read. Best-effort (0 on error).
+    const { SemanticQueryCache } = await import("./search/query-cache.ts");
+    const prunedCacheRows = await new SemanticQueryCache(engine).prune();
     // v0.36+ folded scope item +C: GC stale op_checkpoints rows.
     // 7-day TTL is deliberately generous; any reasonable long-running op
     // finishes inside that window. Cheap (few KB per row).
@@ -1378,10 +1389,14 @@ async function runPhasePurge(engine: BrainEngine, dryRun: boolean): Promise<Phas
     }
     return {
       phase: "purge",
-      status: "ok",
+      // Originals that could not be removed from storage must not look like
+      // a clean run — the rows are gone, the objects need an operator.
+      status: purgedPages.fileErrors.length > 0 ? "warn" : "ok",
       duration_ms: 0,
       summary:
-        `purged ${purgedSources.length} source(s), ${purgedPages.count} page(s), ` +
+        `purged ${purgedSources.length} source(s), ${purgedPages.count} page(s) ` +
+        `(${purgedPages.filesDeleted} original file(s)` +
+        `${purgedPages.fileErrors.length > 0 ? `, ${purgedPages.fileErrors.length} storage delete(s) failed` : ""}), ` +
         `${purgedClones.count} orphan clone temp dir(s), ${purgedCheckpoints} stale op_checkpoint(s), ` +
         `${purgedBrainstormCheckpoints} stale brainstorm checkpoint(s), ` +
         `and ${purgedBatchRetryAuditFiles} stale batch-retry audit file(s)`,
@@ -1392,6 +1407,9 @@ async function runPhasePurge(engine: BrainEngine, dryRun: boolean): Promise<Phas
         purged_orphan_clone_names: purgedClones.names,
         purged_sources: purgedSources,
         purged_page_slugs: purgedPages.slugs,
+        purged_files_count: purgedPages.filesDeleted,
+        purged_cache_rows_count: prunedCacheRows + purgedPages.cacheRowsDeleted,
+        purged_file_errors: purgedPages.fileErrors,
         purged_checkpoints_count: purgedCheckpoints,
         purged_brainstorm_checkpoints_count: purgedBrainstormCheckpoints,
         purged_batch_retry_audit_files_count: purgedBatchRetryAuditFiles,

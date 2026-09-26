@@ -40,6 +40,8 @@ type BackupItem = {
   totalSize: number;
   pageTypes: Record<string, number>;
   status: string;
+  brainId?: string;
+  orgName?: string;
 };
 
 function formatBytes(bytes: number): string {
@@ -67,6 +69,7 @@ export default function BackupRestorePage() {
   const [deleteTarget, setDeleteTarget] = useState<BackupItem | null>(null);
   const [previewTarget, setPreviewTarget] = useState<BackupItem | null>(null);
   const [restorePageTypes, setRestorePageTypes] = useState<string[]>([]);
+  const [restoreReason, setRestoreReason] = useState("");
   const [restoreResult, setRestoreResult] = useState<{
     restored: number;
     skipped: number;
@@ -82,13 +85,17 @@ export default function BackupRestorePage() {
   const createMutation = useMutation({
     mutationFn: () => api.backup.create(),
     onSuccess: (result) => {
-      const totalPages = (result.backup as { total_pages?: number })?.total_pages ?? 0;
-      tracking.backup.created(totalPages);
+      const backup = result.backup as { totalPages?: number; complete?: boolean };
+      tracking.backup.created(backup?.totalPages ?? 0);
       queryClient.invalidateQueries({ queryKey: ["backups"] });
+      // An incomplete run is saved, but never reported as a full backup.
+      const incomplete = backup?.complete === false;
       addToast({
-        title: t("admin.backup.created"),
-        description: t("admin.backup.created_desc"),
-        type: "success",
+        title: t(incomplete ? "admin.backup.created_incomplete" : "admin.backup.created"),
+        description: t(
+          incomplete ? "admin.backup.created_incomplete_desc" : "admin.backup.created_desc"
+        ),
+        type: incomplete ? "warning" : "success",
       });
     },
     onError: (err: Error) => {
@@ -97,8 +104,8 @@ export default function BackupRestorePage() {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: ({ id, pageTypes }: { id: string; pageTypes?: string[] }) =>
-      api.backup.restore(id, pageTypes),
+    mutationFn: ({ id, reason, pageTypes }: { id: string; reason: string; pageTypes?: string[] }) =>
+      api.backup.restore(id, reason, pageTypes),
     onSuccess: (result) => {
       tracking.backup.restored(result.restored, result.failed);
       setRestoreResult({
@@ -252,9 +259,15 @@ export default function BackupRestorePage() {
                           Fehlgeschlagen
                         </Badge>
                       )}
+                      {backup.complete === false && (
+                        <Badge variant="warning" className="text-xs">
+                          Unvollständig
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                      Erstellt von {backup.createdBy}
+                      Kanzlei: {backup.orgName ?? "unbekannt (nicht wiederherstellbar)"} · Erstellt
+                      von {backup.createdBy}
                       {Object.keys(backup.pageTypes).length > 0 && (
                         <>
                           {" "}
@@ -291,6 +304,7 @@ export default function BackupRestorePage() {
                       onClick={() => {
                         setRestoreTarget(backup);
                         setRestorePageTypes([]);
+                        setRestoreReason("");
                         setRestoreResult(null);
                       }}
                       aria-label="Einspielen"
@@ -330,7 +344,8 @@ export default function BackupRestorePage() {
               {restoreTarget && (
                 <>
                   Backup vom {formatDate(restoreTarget.createdAt)} — {restoreTarget.totalPages}{" "}
-                  Pages
+                  Pages. Herkunft: {restoreTarget.orgName ?? "unbekannt"} · Ziel:{" "}
+                  {data?.tenant?.orgName ?? "keine Support-Sitzung aktiv"}
                 </>
               )}
             </DialogDescription>
@@ -382,8 +397,26 @@ export default function BackupRestorePage() {
                   <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--ds-warning-text)]" />
                   <div className="text-sm text-[color:var(--ds-text-muted)]">
                     Vorhandene Pages mit gleichem Slug werden überschrieben. Dies kann nicht
-                    rückgängig gemacht werden.
+                    rückgängig gemacht werden. Ein Backup wird nur in die Kanzlei eingespielt, aus
+                    der es stammt, und nur innerhalb einer Support-Sitzung dieser Kanzlei.
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor="restore-reason"
+                    className="text-sm font-medium text-[color:var(--ds-text)]"
+                  >
+                    Begründung (Pflicht, wird protokolliert)
+                  </label>
+                  <textarea
+                    id="restore-reason"
+                    value={restoreReason}
+                    onChange={(e) => setRestoreReason(e.target.value)}
+                    rows={2}
+                    maxLength={500}
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                  />
                 </div>
 
                 {allPageTypes.size > 0 && (
@@ -424,11 +457,17 @@ export default function BackupRestorePage() {
                     if (restoreTarget) {
                       restoreMutation.mutate({
                         id: restoreTarget.id,
+                        reason: restoreReason.trim(),
                         pageTypes: restorePageTypes.length > 0 ? restorePageTypes : undefined,
                       });
                     }
                   }}
-                  disabled={restoreMutation.isPending}
+                  disabled={
+                    restoreMutation.isPending ||
+                    restoreReason.trim().length < 10 ||
+                    !restoreTarget?.brainId ||
+                    restoreTarget.brainId !== data?.tenant?.brainId
+                  }
                 >
                   {restoreMutation.isPending
                     ? t("admin.backup.restoring")

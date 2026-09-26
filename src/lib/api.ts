@@ -2,7 +2,6 @@ import type {
   AnonymizeResponse,
   BrainPage,
   BrainStats,
-  CaseScannerResponse,
   Citation,
   ConflictCheckResponse,
   ConnectorStatus,
@@ -35,9 +34,25 @@ import type {
 } from "./server-brain";
 import type { QueryMode } from "./matter-context-types";
 import type { WorkProductReceipt } from "./work-product-receipts";
+import type { IntakeConflictCheck } from "./intake-acceptance";
+import type {
+  CaseScanPreview,
+  CaseScanScope,
+  CaseScanStartResult,
+  CaseScanStatus,
+} from "./legal/case-scan";
+
+interface CaseScanRequest {
+  scope: CaseScanScope;
+  case_slugs?: string[];
+  look_ahead_days?: number;
+  evidence_threshold?: number;
+}
+import type { MatterConflictOutcome as IntakeConflictOutcome } from "./conflict-gate";
 import { csrfFetch, getCsrfToken } from "./csrf";
 import { unwrapApiBody } from "./api-body";
 import { consumeSSEStream } from "./sse-stream";
+import { readApiError } from "./api-response";
 
 /** Areas that require a firm session; a 401 there means "log in again". */
 export function isAuthenticatedArea(pathname: string): boolean {
@@ -95,6 +110,8 @@ interface ThinkOptions {
   mode?: ThinkMode;
   /** System-prompt instructions (persona, tools); never part of the retrieval query. */
   instructions?: string;
+  /** Conversation history / memory as data — sent apart from instructions. */
+  context?: string;
   queryMode?: QueryMode;
   caseSlug?: string;
   model?: string;
@@ -201,9 +218,9 @@ async function requestUncached<T>(path: string, options?: RequestInit): Promise<
     const error = await res.text().catch(() => "");
     if (error) {
       try {
-        const parsed = JSON.parse(error) as { message?: unknown; error?: unknown };
-        const code = typeof parsed.error === "string" ? parsed.error : undefined;
-        const message = typeof parsed.message === "string" ? parsed.message : code ? code : "";
+        const parsed = JSON.parse(error) as unknown;
+        // Both envelopes ({error:text, code} and {error:code, message}).
+        const { message, code } = readApiError(parsed, "");
         if (message) throw new ApiRequestError(message, res.status, code, parsed);
       } catch (parseErr) {
         if (parseErr instanceof ApiRequestError) throw parseErr;
@@ -295,11 +312,102 @@ async function parseSseConfirm(
   }
 }
 
+/** Shared fetch for `api.brain.listPages` and the paged `listAllPages` loop. */
+function brainListPagesRaw(options?: {
+  limit?: number;
+  offset?: number;
+  source?: string;
+  type?: string;
+  tag?: string;
+  q?: string;
+  cursor?: string;
+  slugPrefix?: string;
+  includeTombstoned?: boolean;
+  caseSlug?: string;
+  caseTitle?: string;
+  caseNumber?: string;
+}): Promise<BrainPage[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.source) params.set("source", options.source);
+  if (options?.type) params.set("type", options.type);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.q) params.set("q", options.q);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
+  if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+  if (options?.caseSlug) params.set("case_slug", options.caseSlug);
+  if (options?.caseTitle) params.set("case_title", options.caseTitle);
+  if (options?.caseNumber) params.set("case_number", options.caseNumber);
+  // The route relays the engine's keyset cursor by wrapping the list as
+  // { items, nextCursor } whenever more rows exist. Single-page callers get
+  // the items; paging callers (listAllPages) read the cursor too.
+  return request<BrainPage[] | { items: BrainPage[]; nextCursor?: string | null }>(
+    `/api/pages?${params.toString()}`
+  ).then((raw) => (Array.isArray(raw) ? raw : (raw?.items ?? [])));
+}
+
+/**
+ * One list page plus the relayed keyset cursor. Internal — used by
+ * listAllPages so it can continue past matter-scope/ACL-filtered batches.
+ */
+function brainListPageWithCursor(
+  options: Parameters<typeof brainListPagesRaw>[0],
+  /** Engine-side frontmatter equality filter (`fm.<key>`), any pair matches. */
+  frontmatter?: Record<string, string>
+): Promise<{
+  items: BrainPage[];
+  nextCursor: string | null;
+}> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+  if (options?.source) params.set("source", options.source);
+  if (options?.type) params.set("type", options.type);
+  if (options?.tag) params.set("tag", options.tag);
+  if (options?.q) params.set("q", options.q);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
+  if (options?.includeTombstoned) params.set("include_tombstoned", "1");
+  for (const [k, v] of Object.entries(frontmatter ?? {})) params.set(`fm.${k}`, v);
+  return request<BrainPage[] | { items: BrainPage[]; nextCursor?: string | null }>(
+    `/api/pages?${params.toString()}`
+  ).then((raw) =>
+    Array.isArray(raw)
+      ? { items: raw, nextCursor: null }
+      : { items: raw?.items ?? [], nextCursor: raw?.nextCursor ?? null }
+  );
+}
+
+/** Bound for matter selection lists (`api.cases.list` and matter pickers). */
+export const CASE_PICKER_MAX = 10_000;
+
 export const api = {
   search(query: string, limit = 10, type?: string): Promise<SearchResult[]> {
     const params = new URLSearchParams({ q: query, limit: String(limit) });
     if (type) params.set("type", type);
     return request(`/api/search?${params.toString()}`);
+  },
+
+  /**
+   * The command palette's federated search — one request (one quota unit)
+   * for every section. Pass a signal so a superseded query is cancelled.
+   */
+  searchPalette(
+    query: string,
+    signal?: AbortSignal
+  ): Promise<{
+    results: SearchResult[];
+    cases: SearchResult[];
+    contacts: SearchResult[];
+    deadlines: SearchResult[];
+    documents: SearchResult[];
+    failed: string[];
+  }> {
+    return requestUncached(`/api/search/palette?q=${encodeURIComponent(query)}`, {
+      ...(signal ? { signal } : {}),
+    });
   },
 
   get<T>(path: string): Promise<T> {
@@ -350,7 +458,7 @@ export const api = {
       q?: string;
       cursor?: string;
       slugPrefix?: string;
-      /** Also return deleted (tombstoned) pages — needed when paging by offset. */
+      /** Also return deleted (tombstoned) pages — needed when paging through. */
       includeTombstoned?: boolean;
       /**
        * Only pages of one matter (frontmatter case_slug / case_title /
@@ -361,64 +469,133 @@ export const api = {
       caseTitle?: string;
       caseNumber?: string;
     }): Promise<BrainPage[]> {
-      const params = new URLSearchParams();
-      if (options?.limit) params.set("limit", String(options.limit));
-      if (options?.offset) params.set("offset", String(options.offset));
-      if (options?.source) params.set("source", options.source);
-      if (options?.type) params.set("type", options.type);
-      if (options?.tag) params.set("tag", options.tag);
-      if (options?.q) params.set("q", options.q);
-      if (options?.cursor) params.set("cursor", options.cursor);
-      if (options?.slugPrefix) params.set("slug_prefix", options.slugPrefix);
-      if (options?.includeTombstoned) params.set("include_tombstoned", "1");
-      if (options?.caseSlug) params.set("case_slug", options.caseSlug);
-      if (options?.caseTitle) params.set("case_title", options.caseTitle);
-      if (options?.caseNumber) params.set("case_number", options.caseNumber);
-      return request(`/api/pages?${params.toString()}`);
+      return brainListPagesRaw(options);
     },
 
     /**
      * Every page of a type, in batches. The engine returns at most 100 per
-     * request, so a plain listPages call silently stops there.
+     * request, so a plain listPages call silently stops there. Pages through
+     * the keyset cursor the server relays — a batch shortened by filters
+     * (matter scope, tombstones) no longer looks like the end of the list.
      */
     async listAllPages(
-      options: { type: string; max?: number } & Record<string, unknown>
+      options: {
+        type?: string;
+        max?: number;
+        /** Engine-side frontmatter equality filter, any pair matches. */
+        frontmatter?: Record<string, string>;
+      } & Record<string, unknown>
     ): Promise<BrainPage[]> {
-      const max = options.max ?? 10_000;
-      const seen = new Map<string, BrainPage>();
-      const size = 100;
-      for (let offset = 0; offset < max; offset += size) {
-        const want = Math.min(size, max - offset);
-        const batch = await this.listPages({
-          type: options.type,
-          limit: want,
-          offset,
-          includeTombstoned: true,
-        });
-        for (const page of batch) seen.set(page.slug, page);
-        if (batch.length < want) break;
-      }
-      return [...seen.values()].filter(
-        (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "tombstoned"
-      );
+      return (await api.brain.listAllPagesDetailed(options)).pages;
     },
 
-    batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
-      if (types.length === 0) return Promise.resolve({});
+    /**
+     * listAllPages plus `capped`: true when `max` was reached while more
+     * pages existed — the caller must say the list is incomplete
+     * (CappedResultsNotice), never present it as all there is.
+     */
+    async listAllPagesDetailed(
+      options: {
+        type?: string;
+        max?: number;
+        frontmatter?: Record<string, string>;
+      } & Record<string, unknown>
+    ): Promise<{ pages: BrainPage[]; capped: boolean }> {
+      const max = options.max ?? 10_000;
+      const seen = new Map<string, BrainPage>();
+      let fetched = 0;
+      let cursor: string | undefined;
+      let iterations = 0;
+      let more = false;
+      for (;;) {
+        if (++iterations > 1000) break;
+        const want = Math.min(100, max - fetched);
+        if (want <= 0) break;
+        const { items, nextCursor: next } = await brainListPageWithCursor(
+          {
+            type: options.type,
+            limit: want,
+            ...(cursor ? { cursor } : { offset: fetched }),
+            includeTombstoned: true,
+          },
+          options.frontmatter
+        );
+        fetched += items.length;
+        for (const page of items) if (page?.slug) seen.set(page.slug, page);
+        if (next && next !== cursor) {
+          cursor = next;
+          more = true;
+          continue;
+        }
+        more = false;
+        // Reaching here means the engine reported no further cursor (or a
+        // repeated one). Once a cursor was seen the engine is cursor-aware,
+        // so a missing/stuck cursor means "done" — not "fall back to offset".
+        if (cursor || items.length < want) break;
+        more = true;
+      }
+      const pages = [...seen.values()].filter(
+        (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "tombstoned"
+      );
+      return { pages, capped: more };
+    },
+
+    /**
+     * Batch list with per-type error reporting. `batchListPages` keeps its
+     * legacy shape (results only); callers that must distinguish "empty"
+     * from "failed" use this variant and render an error state.
+     */
+    async batchListPagesDetailed(
+      types: string[],
+      limit = 100
+    ): Promise<{ results: Record<string, BrainPage[]>; errors: string[] }> {
+      if (types.length === 0) return { results: {}, errors: [] };
       return request<{ results: Record<string, BrainPage[]>; errors: string[] }>(
         "/api/pages/batch-list",
         { method: "POST", body: JSON.stringify({ types, limit }) }
-      ).then((r) => r.results);
+      );
     },
 
-    createPage(page: {
-      slug: string;
-      title: string;
-      content?: string;
-      type?: string;
-      frontmatter?: Record<string, unknown>;
-    }): Promise<{ slug: string }> {
-      return request("/api/pages", { method: "POST", body: JSON.stringify(page) });
+    /**
+     * Results only. A type the server could not list rejects the whole call
+     * — an unreadable type must surface as an error, never as an empty list.
+     */
+    batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
+      return api.brain.batchListPagesDetailed(types, limit).then((r) => {
+        const failed = r.errors ?? [];
+        if (failed.length > 0) {
+          throw new ApiRequestError(
+            `Liste konnte nicht geladen werden (${failed.join(", ")})`,
+            503,
+            "batch_list_incomplete",
+            r
+          );
+        }
+        return r.results;
+      });
+    },
+
+    /**
+     * Create a page. Matters and invoices are never replaced by a create: an
+     * existing slug answers 409 `page_exists`. `ifMatch` replaces the stored
+     * page on purpose — only while it still has that version (409
+     * `version_conflict` otherwise).
+     */
+    createPage(
+      page: {
+        slug: string;
+        title: string;
+        content?: string;
+        type?: string;
+        frontmatter?: Record<string, unknown>;
+      },
+      opts?: { ifMatch?: number }
+    ): Promise<{ slug: string }> {
+      return request("/api/pages", {
+        method: "POST",
+        ...(opts?.ifMatch !== undefined ? { headers: { "If-Match": String(opts.ifMatch) } } : {}),
+        body: JSON.stringify(page),
+      });
     },
 
     /**
@@ -439,9 +616,32 @@ export const api = {
       });
     },
 
-    deletePage(slug: string): Promise<{ success: boolean }> {
+    /**
+     * Versioned partial update: the server refuses with 409 when the page's
+     * version is no longer `version` (someone else wrote in between).
+     */
+    patchPageIfMatch(
+      slug: string,
+      frontmatter: Record<string, unknown>,
+      version: number
+    ): Promise<{ slug: string }> {
       const path = slug.split("/").map(encodeURIComponent).join("/");
-      return request(`/api/pages/${path}`, { method: "DELETE" });
+      return request(`/api/pages/${path}`, {
+        method: "PATCH",
+        headers: { "If-Match": String(version) },
+        body: JSON.stringify({ frontmatter }),
+      });
+    },
+
+    /**
+     * Delete a page. For a matter this archives it (Aktenabschluss, kept for
+     * the retention period); `mode: "trash"` moves a matter created by
+     * mistake to the Papierkorb instead (refused while a retention period runs).
+     */
+    deletePage(slug: string, opts?: { mode?: "trash" }): Promise<{ success: boolean }> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      const query = opts?.mode === "trash" ? "?mode=trash" : "";
+      return request(`/api/pages/${path}${query}`, { method: "DELETE" });
     },
 
     /**
@@ -470,6 +670,23 @@ export const api = {
       });
     },
 
+    /**
+     * Take back the time entries a Kanzlei data import appended to a matter.
+     * The server removes only this import's entries and keeps invoiced ones.
+     */
+    removeImportedTimeEntries(
+      caseSlug: string,
+      importProjectId: string,
+      ids: string[]
+    ): Promise<{ removed_ids: string[]; kept_ids: string[]; not_found_ids: string[] }> {
+      return request("/api/kanzlei-import/rollback-time-entries", {
+        method: "POST",
+        body: JSON.stringify({ case_slug: caseSlug, import_project_id: importProjectId, ids }),
+      }).then((r) =>
+        unwrapApiBody<{ removed_ids: string[]; kept_ids: string[]; not_found_ids: string[] }>(r)
+      );
+    },
+
     graph(): Promise<{ nodes: GraphNode[]; links: GraphLink[] }> {
       return request("/api/graph");
     },
@@ -485,6 +702,8 @@ export const api = {
       /** A page list failed to load — counts may be incomplete. */
       degraded?: boolean;
       failed_types?: string[];
+      /** Lists with more pages than were read — counts are lower bounds. */
+      capped_types?: string[];
     }> {
       const params = new URLSearchParams();
       if (opts?.types) params.set("types", opts.types);
@@ -617,6 +836,7 @@ export const api = {
         body: JSON.stringify({
           query,
           ...(options.instructions ? { instructions: options.instructions } : {}),
+          ...(options.context ? { context: options.context } : {}),
           mode,
           query_mode: options.queryMode,
           case_slug: options.caseSlug,
@@ -693,7 +913,14 @@ export const api = {
   },
 
   legal: {
-    fristen(params?: { case?: string; status?: string; heute?: string }): Promise<{
+    fristen(params?: {
+      case?: string;
+      status?: string;
+      heute?: string;
+      /** "warnings": only open deadlines due within a few days (topbar),
+       *  served from a short server-side cache. */
+      view?: "warnings";
+    }): Promise<{
       fristen: Array<{
         id: string;
         case_slug?: string;
@@ -744,6 +971,7 @@ export const api = {
       if (params?.case) qs.set("case", params.case);
       if (params?.status) qs.set("status", params.status);
       if (params?.heute) qs.set("heute", params.heute);
+      if (params?.view) qs.set("view", params.view);
       return request(`/api/legal/fristen${qs.toString() ? `?${qs}` : ""}`);
     },
 
@@ -770,16 +998,30 @@ export const api = {
 
     /** Allocate the next sequential Aktenzeichen for this Kanzlei (yearly-resetting). */
     allocateCaseNumber(prefix?: string): Promise<{ caseNumber: string }> {
-      return request("/api/legal/case-number/allocate", {
-        method: "POST",
-        body: JSON.stringify(prefix ? { prefix } : {}),
+      // The route answers apiSuccess → { data: { caseNumber } }; request() does not unwrap.
+      return requestUncached<{ data?: { caseNumber?: string } }>(
+        "/api/legal/case-number/allocate",
+        {
+          method: "POST",
+          body: JSON.stringify(prefix ? { prefix } : {}),
+        }
+      ).then((res) => {
+        const caseNumber = res?.data?.caseNumber;
+        if (typeof caseNumber !== "string" || !caseNumber) {
+          throw new Error("Aktenzeichen konnte nicht vergeben werden");
+        }
+        return { caseNumber };
       });
     },
 
-    conflictCheck(name: string): Promise<ConflictCheckResponse> {
+    /**
+     * `side`: role of the name in the NEW mandate. Without it the engine cannot
+     * tell a returning client from a client who is the opponent elsewhere.
+     */
+    conflictCheck(name: string, side?: "client" | "opponent"): Promise<ConflictCheckResponse> {
       return request("/api/legal/conflict-check", {
         method: "POST",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(side ? { name, side } : { name }),
       });
     },
 
@@ -806,15 +1048,33 @@ export const api = {
       });
     },
 
-    caseScan(input: {
-      look_ahead_days?: number;
-      evidence_threshold?: number;
-      max_cases?: number;
-    }): Promise<CaseScannerResponse> {
-      return request("/api/legal/case-scanner", {
+    /** Which matters a case scan covers and what it costs (nothing starts). */
+    async caseScanPreview(input: CaseScanRequest): Promise<CaseScanPreview> {
+      const res = await request<{ data: CaseScanPreview }>("/api/legal/case-scanner", {
         method: "POST",
-        body: JSON.stringify(input),
+        body: JSON.stringify({ ...input, mode: "preview" }),
       });
+      return res.data;
+    },
+
+    /** Starts the confirmed scan (`expected_credits` = the previewed total). */
+    async caseScanStart(
+      input: CaseScanRequest & { expected_credits: number }
+    ): Promise<CaseScanStartResult> {
+      const res = await request<{ data: CaseScanStartResult }>("/api/legal/case-scanner", {
+        method: "POST",
+        body: JSON.stringify({ ...input, mode: "start" }),
+        signal: AbortSignal.timeout(300_000),
+      });
+      return res.data;
+    },
+
+    /** Status of one scan's runs; runs without a result are refunded. */
+    async caseScanStatus(scanId: string): Promise<CaseScanStatus> {
+      const res = await request<{ data: CaseScanStatus }>(
+        `/api/legal/case-scanner?scan_id=${encodeURIComponent(scanId)}`
+      );
+      return res.data;
     },
 
     translate(input: {
@@ -1145,6 +1405,8 @@ export const api = {
       };
       success_probability: number;
       generatedAt: string;
+      /** Documents of the matter the strategy is based on. */
+      documentsConsidered?: number;
     }> {
       return request("/api/legal/case-strategy", {
         method: "POST",
@@ -1167,7 +1429,10 @@ export const api = {
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         if (options?.contract_type) params.set("contract_type", options.contract_type);
         const qs = params.toString();
-        return request(`/api/legal/playbooks${qs ? `?${qs}` : ""}`);
+        // Route answers { data: [...] } — unwrap, or the list reads as empty.
+        return request(`/api/legal/playbooks${qs ? `?${qs}` : ""}`).then((r) =>
+          unwrapApiBody<BrainPage[]>(r)
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
@@ -1185,7 +1450,7 @@ export const api = {
         return request("/api/legal/playbooks", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapApiBody<{ slug: string }>(r));
       },
 
       update(
@@ -1222,7 +1487,10 @@ export const api = {
         if (options?.category) params.set("category", options.category);
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
         const qs = params.toString();
-        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`);
+        // Route answers { data: [...] } — unwrap, or the list reads as empty.
+        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`).then((r) =>
+          unwrapApiBody<BrainPage[]>(r)
+        );
       },
 
       get(slug: string): Promise<BrainPage> {
@@ -1241,7 +1509,7 @@ export const api = {
         return request("/api/legal/templates", {
           method: "POST",
           body: JSON.stringify(input),
-        });
+        }).then((r) => unwrapApiBody<{ slug: string }>(r));
       },
 
       update(
@@ -2013,7 +2281,15 @@ export const api = {
   },
 
   email: {
-    import(email: { subject: string; from: string; body: string; date?: string }): Promise<{
+    import(email: {
+      subject: string;
+      from: string;
+      body: string;
+      date?: string;
+      force_case_slug?: string;
+      /** The original .eml — stored unchanged in the matter, attachments included. */
+      raw_eml?: string;
+    }): Promise<{
       success: boolean;
       duplicate?: boolean;
       error?: string;
@@ -2078,6 +2354,9 @@ export const api = {
         totalSize: number;
         pageTypes: Record<string, number>;
         status: string;
+        complete?: boolean;
+        brainId?: string;
+        orgName?: string;
       }>;
       stats: {
         totalBackups: number;
@@ -2085,6 +2364,8 @@ export const api = {
         lastBackupAt: string | null;
         oldestBackupAt: string | null;
       };
+      /** Firm of the active support session; null outside one. */
+      tenant: { brainId: string; orgName: string } | null;
     }> {
       return request("/api/admin/backup");
     },
@@ -2110,6 +2391,7 @@ export const api = {
 
     restore(
       id: string,
+      reason: string,
       pageTypes?: string[]
     ): Promise<{
       ok: boolean;
@@ -2120,7 +2402,7 @@ export const api = {
     }> {
       return request(`/api/admin/backup/${encodeURIComponent(id)}`, {
         method: "POST",
-        body: JSON.stringify({ confirm: true, pageTypes }),
+        body: JSON.stringify({ confirm: true, reason, pageTypes }),
       });
     },
 
@@ -2163,6 +2445,31 @@ export const api = {
       acceptance?: Record<string, unknown>;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake", { method: "PATCH", body: JSON.stringify(input) });
+    },
+
+    /** Server-side Kollisionsprüfung of an intake; the server records the result. */
+    conflictCheck(slug: string): Promise<{
+      data: {
+        conflict_check: IntakeConflictCheck;
+        conflict_check_status: "clear" | "conflict" | "needs_review";
+        outcome: IntakeConflictOutcome;
+      };
+    }> {
+      return request("/api/intake/conflict-check", {
+        method: "POST",
+        body: JSON.stringify({ slug }),
+      });
+    },
+
+    /** Justified waiver of a server-recorded conflict (lawyer/admin only). */
+    waiveConflict(
+      slug: string,
+      reason: string
+    ): Promise<{ data: { conflict_check: IntakeConflictCheck } }> {
+      return request("/api/intake/conflict-waiver", {
+        method: "POST",
+        body: JSON.stringify({ slug, reason }),
+      });
     },
 
     convert(input: {
@@ -2211,7 +2518,8 @@ export const api = {
           | "suggested_deadline"
           | "client_submission"
           | "suggested_party"
-          | "pending_fact";
+          | "pending_fact"
+          | "case_scan_finding";
         title: string;
         description: string;
         caseSlug: string | null;
@@ -2226,7 +2534,7 @@ export const api = {
         requestSlug: string | null;
         items: string[];
         channel: string | null;
-        portalUrl: string | null;
+        portalLink: boolean;
         messageDraft: string | null;
         dueDate: string | null;
         urgency: string | null;
@@ -2242,7 +2550,9 @@ export const api = {
       }>;
       total: number;
     }> {
-      return request("/api/review-inbox");
+      // The route answers { data: { items, total } } — unwrap, or every
+      // reader sees an empty inbox.
+      return request("/api/review-inbox").then((body) => unwrapApiBody(body));
     },
   },
 
@@ -2265,11 +2575,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
       documents: Array<{
         title: string;
         file_path: string;
@@ -2288,11 +2599,12 @@ export const api = {
       court: string;
       case_number?: string;
       subject: string;
-      sender_name: string;
+      sender_name?: string;
       sender_id?: string;
       priority?: "normal" | "urgent" | "fristgebunden";
       deadline_date?: string;
       deadline_id?: string;
+      verification_override?: { reason: string };
     }): Promise<Record<string, unknown>> {
       return request("/api/bea/send/retry", { method: "POST", body: JSON.stringify(input) });
     },
@@ -2373,7 +2685,14 @@ export const api = {
       status?: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
       items?: Array<
         | string
-        | { key?: string; label?: string; required?: boolean; received_document_slug?: string }
+        | {
+            key?: string;
+            label?: string;
+            required?: boolean;
+            received_document_slug?: string;
+            submitted_document_slug?: string;
+            submitted_at?: string;
+          }
       >;
       message_draft?: string;
       sent_at?: string;
@@ -2391,8 +2710,13 @@ export const api = {
       return request("/api/auth/2fa/login-verify", { method: "POST", body: JSON.stringify(input) });
     },
 
-    logout(): Promise<{ ok?: boolean }> {
-      return request("/api/auth/logout", { method: "POST" });
+    logout(opts?: { pushEndpoint?: string }): Promise<{ ok?: boolean }> {
+      return request("/api/auth/logout", {
+        method: "POST",
+        ...(opts?.pushEndpoint
+          ? { body: JSON.stringify({ pushEndpoint: opts.pushEndpoint }) }
+          : {}),
+      });
     },
 
     async me(): Promise<LooseAuthResponse | null> {
@@ -2529,6 +2853,9 @@ export const api = {
               tags: options?.tags,
               password: options?.password,
               expected_sha256: fileSha256 ?? undefined,
+              // Also carried by the signed upload token; a bulk import must
+              // never start one pipeline per file.
+              defer_pipeline: options?.defer_pipeline,
             }),
             signal: AbortSignal.timeout(15_000),
           });
@@ -2649,7 +2976,6 @@ export const api = {
                       source: options.source,
                       tags: options.tags,
                       case_slug: options.case_slug,
-                      password: options.password,
                       pause_for_review: options.pause_for_review,
                       jurisdiction: options.jurisdiction,
                       doc_type: options.doc_type,
@@ -3176,11 +3502,18 @@ export const api = {
   },
 
   cases: {
+    /**
+     * Every matter (not deleted), for selection lists. Pages through the page
+     * listing — the full-text search this used before answers an empty query
+     * with an empty list, so every matter picker stayed empty. `limit` is a
+     * legacy hint: a picker must offer every matter, so it never cuts below
+     * the listing bound.
+     */
     list(params?: { type?: string; limit?: number }): Promise<BrainPage[]> {
-      const searchParams = new URLSearchParams();
-      searchParams.set("type", params?.type ?? "legal_case");
-      if (params?.limit) searchParams.set("limit", String(params.limit));
-      return request(`/api/search?type=legal_case&limit=${params?.limit ?? 200}`);
+      return api.brain.listAllPages({
+        type: params?.type ?? "legal_case",
+        max: Math.max(params?.limit ?? 0, CASE_PICKER_MAX),
+      });
     },
   },
 
@@ -3197,6 +3530,25 @@ export const api = {
   },
 
   invoices: {
+    /**
+     * Create a draft invoice and reserve its time entries / expenses in one
+     * server step. 409 `entries_already_billed` = nothing was created.
+     */
+    create(payload: {
+      slug: string;
+      title: string;
+      content?: string;
+      frontmatter: Record<string, unknown>;
+    }): Promise<{
+      slug: string;
+      invoice_number: string;
+      billed: { time: string[]; expenses: string[] };
+    }> {
+      return request("/api/invoices", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }).then((r) => unwrapApiBody(r));
+    },
     /**
      * Status/field changes on an ISSUED invoice — routes through
      * /api/invoices/[slug] (PATCH), which refuses any change once status is
@@ -3247,6 +3599,8 @@ export const api = {
         activity_type?: string;
       }>;
       total: number;
+      /** More entries match than were returned (`limit`). */
+      capped?: boolean;
       summary: { total_minutes: number; total_hours: number; billable_amount: number };
     }> {
       const searchParams = new URLSearchParams();

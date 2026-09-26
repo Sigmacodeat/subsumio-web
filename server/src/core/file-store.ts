@@ -236,7 +236,7 @@ export async function findStoredUploadForPage(
  * back to LocalStorage rooted under the gbrain home dir (the production /data
  * volume), so bytes are always persisted somewhere durable.
  */
-function resolveStorageConfig(storageConfig?: unknown): StorageConfig {
+export function resolveStorageConfig(storageConfig?: unknown): StorageConfig {
   if (storageConfig && typeof storageConfig === "object") {
     return storageConfig as StorageConfig;
   }
@@ -571,6 +571,98 @@ export async function purgeStoredFilesForPage(
   const ids = rows.map((row) => row.id);
   await sql`DELETE FROM files WHERE source_id = ${sourceId} AND id = ANY(${ids}::int[])`;
   return rows.length;
+}
+
+/**
+ * S3-compatible storage from env (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
+ * R2_BUCKET; optional R2_ENDPOINT, R2_REGION). Undefined when not set — the
+ * caller then falls back to local disk.
+ */
+export function storageConfigFromEnv(): StorageConfig | undefined {
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET;
+  if (!accessKeyId || !secretAccessKey || !bucket) return undefined;
+  return {
+    backend: "s3",
+    bucket,
+    accessKeyId,
+    secretAccessKey,
+    ...(process.env.R2_ENDPOINT ? { endpoint: process.env.R2_ENDPOINT } : {}),
+    ...(process.env.R2_REGION ? { region: process.env.R2_REGION } : {}),
+  };
+}
+
+export interface PurgeWithFilesResult {
+  slugs: string[];
+  count: number;
+  /** Original objects removed from storage. */
+  filesDeleted: number;
+  /** Storage objects that could not be removed (row already gone) — logged by the caller. */
+  fileErrors: string[];
+  /** Search-cache rows dropped because they contained a purged page. */
+  cacheRowsDeleted: number;
+}
+
+/**
+ * The one way to hard-delete soft-deleted pages: purges the pages and their
+ * `files` rows (engine, one transaction) and then removes the original
+ * objects from storage. "Endgültig gelöscht" must take the uploaded original
+ * along — a page row alone would leave the PDF stored and downloadable.
+ */
+export async function purgeDeletedPagesWithFiles(
+  engine: {
+    purgeDeletedPages(hours: number): Promise<{
+      slugs: string[];
+      count: number;
+      files?: Array<{ sourceId: string; pageSlug: string | null; storagePath: string }>;
+    }>;
+    executeRaw?: (sql: string, params?: unknown[]) => Promise<unknown>;
+  },
+  olderThanHours: number,
+  storageConfig?: unknown
+): Promise<PurgeWithFilesResult> {
+  const result = await engine.purgeDeletedPages(olderThanHours);
+  // The search cache keeps matched chunk texts — purged pages leave it too.
+  let cacheRowsDeleted = 0;
+  if (engine.executeRaw && result.slugs.length > 0) {
+    const { deleteCachedResultsForSlugs } = await import("./search/query-cache.ts");
+    cacheRowsDeleted = await deleteCachedResultsForSlugs(
+      engine as Parameters<typeof deleteCachedResultsForSlugs>[0],
+      result.slugs
+    );
+  }
+  const files = result.files ?? [];
+  const fileErrors: string[] = [];
+  let filesDeleted = 0;
+  if (files.length > 0) {
+    const storage = await createStorage(
+      resolveStorageConfig(storageConfig ?? storageConfigFromEnv())
+    );
+    for (const f of files) {
+      try {
+        await storage.delete(f.storagePath);
+        filesDeleted++;
+      } catch (err) {
+        fileErrors.push(`${f.storagePath}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    // Logical filings of the purged pages (Postgres only; absent on PGLite).
+    if (engine.executeRaw) {
+      for (const f of files) {
+        if (!f.pageSlug) continue;
+        try {
+          await engine.executeRaw(
+            `DELETE FROM document_refs WHERE source_id = $1 AND page_slug = $2`,
+            [f.sourceId, f.pageSlug]
+          );
+        } catch {
+          // No document_refs table on this engine — nothing to clean up.
+        }
+      }
+    }
+  }
+  return { slugs: result.slugs, count: result.count, filesDeleted, fileErrors, cacheRowsDeleted };
 }
 
 /** Permanently delete every original object owned by one tenant source. */

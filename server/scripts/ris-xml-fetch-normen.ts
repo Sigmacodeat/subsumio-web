@@ -22,6 +22,7 @@ import { join } from "path";
 import { createHash } from "crypto";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_PAUSE_MS, RIS_USER_AGENT } from "./ris-pace";
+import { bundesnormDirName, normFileKey, normKey, slugify } from "./ris-norm-paths";
 import { recordFetchOutcome } from "./ris-fetch-outcomes";
 
 function arg(name: string, fb?: string) {
@@ -65,10 +66,9 @@ const FROM_XML = arg("from-xml");
  * data.bka.gv.at ist davon nicht betroffen — das ist ein anderer Host.
  * Etwa 6 Anfragen/Sekunde laufen stabil; der Vollbestand braucht damit ~7h.
  */
-// RIS OGD: one connection per process; two processes in parallel are
-// allowed (RIS-IT mail 2026-09-22, enforced via ris-lock's 2 slots). Keep
-// the default at 1 — with two slots occupied, higher in-process
-// concurrency would exceed the permitted ~1 req/s combined.
+// RIS OGD: one connection per process. The cross-process slot limit in
+// ris-lock.ts is currently switched off (see its header), so keep the
+// default at 1 — higher in-process concurrency multiplies the request rate.
 const CONCURRENCY = Number(arg("concurrency", "1"));
 const REQUEST_TIMEOUT_MS = Number(arg("timeout-ms", "20000"));
 const THROTTLE_MS = Number(arg("throttle-ms", String(RIS_PAUSE_MS)));
@@ -92,44 +92,9 @@ type Norm = {
   indizes: string[];
 };
 
-/**
- * "§ 1152" → "p-1152", "Art. 5" → "art-5", "Anl. 2" → "anl-2"
- *
- * Zusammengesetzte Bezeichnungen werden VOLLSTÄNDIG abgebildet:
- * "Art. 4 § 1" → "art-4-p-1". Eine frühere Fassung schnitt nach der
- * Artikelnummer ab, wodurch Art. 4 § 1 bis § 4 alle auf "art-4" fielen und
- * einander überschrieben — 2.847 Normen gingen so verloren.
- *
- * § 0 (Inhaltsverzeichnis ohne Normtext) wird bewusst nicht abgebildet.
- */
-function normKey(apa: string | null): string | null {
-  if (!apa) return null;
-  const s = apa.trim();
-  if (/^§+\s*0\s*$/.test(s)) return null;
-
-  const teile: string[] = [];
-  const rx = /(§+|Art\.?|Anl\.?)\s*([0-9]+[a-zA-Z]*)/gi;
-  let m: RegExpExecArray | null;
-  while ((m = rx.exec(s)) !== null) {
-    const art = m[1].toLowerCase();
-    const praefix = art.startsWith("§") ? "p" : art.startsWith("art") ? "art" : "anl";
-    teile.push(`${praefix}-${m[2].toLowerCase()}`);
-  }
-  if (teile.length === 0) return null;
-  return teile.join("-");
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
-}
+// "§ 1152" → "p-1152", "Art. 4 § 1" → "art-4-p-1": normKey, slugify and the
+// folder/file naming live in ris-norm-paths.ts, shared with the daily delta
+// (ris-delta-watcher.ts) so both write a norm to the same file.
 
 function esc(s: string): string {
   return s.replace(/"/g, '\\"');
@@ -433,11 +398,8 @@ async function main() {
 
   if (!existsSync(OUT_ROOT)) mkdirSync(OUT_ROOT, { recursive: true });
 
-  const dirFor = (n: Norm): string => {
-    if (!n.abk) return `gnr-${n.gnr}`;
-    const s = slugify(n.abk);
-    return (abkZuGnrs.get(s)?.size ?? 0) > 1 ? `${s}-${n.gnr}` : s;
-  };
+  const dirFor = (n: Norm): string =>
+    bundesnormDirName(n.abk, n.gnr, (abkZuGnrs.get(slugify(n.abk ?? ""))?.size ?? 0) > 1);
   const kollidierend = [...abkZuGnrs.entries()].filter(([, v]) => v.size > 1);
   if (kollidierend.length > 0) {
     console.log(
@@ -467,9 +429,7 @@ async function main() {
       }
       // Mehrfach belegter Schlüssel → NOR-ID anhängen, damit beide Normen
       // erhalten bleiben (siehe mehrfachSchluessel oben).
-      const key = mehrfachSchluessel.has(`${n.gnr}|${basisKey}`)
-        ? `${basisKey}-${n.nor.toLowerCase()}`
-        : basisKey;
+      const key = normFileKey(basisKey, n.nor, mehrfachSchluessel.has(`${n.gnr}|${basisKey}`));
 
       const dir = join(OUT_ROOT, dirFor(n));
       const path = join(dir, `${key}.md`);

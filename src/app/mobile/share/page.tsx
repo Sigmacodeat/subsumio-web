@@ -2,32 +2,36 @@
 
 /**
  * Mobile: „An Subsumio senden" (Android Share-Target, WP-4.22).
- * Empfängt geteilten Text/URLs (?text=&subject=) und Datei-Streams
- * (?stream=content://…) vom nativen Intent-Filter — speichert Text als
- * Brain-Notiz bzw. lädt Dateien in die gewählte Akte.
+ * Empfängt geteilten Text und Datei-Streams (content://) vom nativen
+ * Intent-Filter über das ShareIntent-Plugin (nicht über die URL) —
+ * speichert Text als Notiz bzw. lädt Dateien in die gewählte Akte.
  */
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, FileUp, FolderOpen, Loader2, Save, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { buildMobileNotePage } from "@/lib/mobile-note";
+import { consumePendingShare, shareFileName } from "@/lib/share-intent";
 import { csrfFetch } from "@/lib/csrf";
 
-function base64ToFile(base64: string, name: string): File {
+function base64ToFile(base64: string, name: string, mimeType?: string): File {
   const bin = atob(base64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new File([bytes], name || "geteilte-datei");
+  return new File([bytes], name || "geteilte-datei", mimeType ? { type: mimeType } : undefined);
 }
 
 function MobileShareInner() {
+  // Older app builds still pass the share in the URL; current builds hand it
+  // over through the native ShareIntent plugin (nothing in the URL).
   const params = useSearchParams();
-  const sharedText = params.get("text") ?? "";
-  const sharedSubject = params.get("subject") ?? "";
-  const streamUri = params.get("stream") ?? "";
-  const streamName = params.get("name") ?? "geteilte-datei";
+  const [sharedSubject, setSharedSubject] = useState(params.get("subject") ?? "");
+  const [streamUri, setStreamUri] = useState(params.get("stream") ?? "");
+  const [streamName, setStreamName] = useState(params.get("name") ?? "");
+  const [streamMime, setStreamMime] = useState<string | undefined>(undefined);
 
-  const [text, setText] = useState(sharedText);
+  const [text, setText] = useState(params.get("text") ?? "");
   const [matter, setMatter] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +39,23 @@ function MobileShareInner() {
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
   const [fileData, setFileData] = useState<File | null>(null);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void consumePendingShare().then((share) => {
+      if (cancelled || !share) return;
+      if (share.text) setText(share.text);
+      if (share.subject) setSharedSubject(share.subject);
+      if (share.stream) {
+        setStreamUri(share.stream);
+        setStreamName(share.name ?? "");
+        setStreamMime(share.mimeType);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Datei-Stream (content://) via Capacitor-Filesystem lesen.
   useEffect(() => {
@@ -46,7 +67,8 @@ function MobileShareInner() {
         const res = await Filesystem.readFile({ path: streamUri });
         const base64 =
           typeof res.data === "string" ? res.data : await blobToBase64(res.data as Blob);
-        const f = base64ToFile(base64, streamName);
+        // Content URIs often lack an extension — the provider's MIME type adds it.
+        const f = base64ToFile(base64, shareFileName(streamName, streamMime), streamMime);
         if (cancelled) return;
         setFileData(f);
         setFileInfo({ name: f.name, size: f.size });
@@ -58,13 +80,21 @@ function MobileShareInner() {
     return () => {
       cancelled = true;
     };
-  }, [streamUri, streamName]);
+  }, [streamUri, streamName, streamMime]);
 
   // Aktenliste für die Zuordnung.
   useEffect(() => {
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
-      .then((pages) => setCases(pages.map((p) => ({ slug: p.slug, title: p.title })).slice(0, 200)))
+      .listAllPages({ type: "legal_case", max: 10_000 })
+      .then((pages) =>
+        setCases(
+          pages
+            .filter(
+              (p) => (p.frontmatter as Record<string, unknown> | undefined)?.status !== "archived"
+            )
+            .map((p) => ({ slug: p.slug, title: p.title }))
+        )
+      )
       .catch(() => {});
   }, []);
 
@@ -74,18 +104,16 @@ function MobileShareInner() {
     setError(null);
     try {
       const title = sharedSubject || text.slice(0, 60) + (text.length > 60 ? "…" : "");
-      const result = await api.brain.createPage({
-        slug: `share-${Date.now()}`,
-        title: `Geteilt: ${title}`,
-        content: text,
-        type: "note",
-        frontmatter: {
-          type: "note",
-          created_at: new Date().toISOString(),
-          matter: matter || undefined,
+      // With a matter chosen, a matter note (case_slug) the matter lists.
+      const result = await api.brain.createPage(
+        buildMobileNotePage({
+          slug: matter ? `legal/notes/${Date.now().toString(36)}` : `share-${Date.now()}`,
+          title: `Geteilt: ${title}`,
+          text,
+          caseSlug: matter,
           source: "mobile_share",
-        },
-      });
+        })
+      );
       setDone(result.slug);
     } catch {
       setError("Speichern fehlgeschlagen. Bitte erneut versuchen.");

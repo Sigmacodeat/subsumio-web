@@ -2,6 +2,11 @@
  * Offline-Store für Subsumio Dashboard.
  * Cacht Brain-Daten (Akten, Fristen, Kontakte, Rechnungen) in IndexedDB.
  * Bei fehlender Internet-Verbindung → Fallback auf gecachte Daten.
+ *
+ * Every entry belongs to one person in one firm (the "owner", set from
+ * /api/auth/me). Reads and the replay queue only see the current owner's
+ * entries; without a known owner nothing is read or written. Logout and a
+ * change of person or firm on this device delete the whole database.
  */
 
 const DB_NAME = "subsumio-offline";
@@ -17,9 +22,98 @@ interface CacheEntry<T> {
   fetchedAt: string;
 }
 
+// --- Owner (person + firm) ---
+
+const OWNER_STORAGE_KEY = "subsumio-offline-owner";
+/** undefined = not read yet; null = nobody signed in on this device. */
+let owner: string | null | undefined;
+
+function readStoredOwner(): string | null {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(OWNER_STORAGE_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredOwner(value: string | null): void {
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (value) localStorage.setItem(OWNER_STORAGE_KEY, value);
+    else localStorage.removeItem(OWNER_STORAGE_KEY);
+  } catch {
+    /* storage blocked — the in-memory owner still applies */
+  }
+}
+
+/** The person+firm offline data currently belongs to (null: nobody). */
+export function currentOfflineOwner(): string | null {
+  if (owner === undefined) owner = readStoredOwner();
+  return owner;
+}
+
+async function deleteOfflineDatabase(): Promise<void> {
+  const pending = dbPromise;
+  dbPromise = null;
+  if (pending) {
+    try {
+      (await pending).close();
+    } catch {
+      /* never opened */
+    }
+  }
+  if (typeof indexedDB === "undefined") return;
+  await new Promise<void>((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      // Another tab still holds the database: the delete completes when it
+      // closes; until then the owner filter keeps its entries unused.
+      req.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+/**
+ * Binds offline data to a person in a firm. A different owner than the one
+ * the stored data belongs to (another person, another firm, or data from
+ * before owners were recorded) deletes everything first.
+ */
+export async function setOfflineOwner(scope: string): Promise<void> {
+  if (!scope) return;
+  if (currentOfflineOwner() === scope) return;
+  owner = scope;
+  writeStoredOwner(scope);
+  await deleteOfflineDatabase();
+}
+
+/** Logout: delete every cache, queue and chat entry on this device. */
+export async function clearOfflineData(): Promise<void> {
+  owner = null;
+  writeStoredOwner(null);
+  await deleteOfflineDatabase();
+}
+
+/** True when stored offline data may belong to someone other than `userId`. */
+export function offlineOwnerDiffersFromUser(userId: string): boolean {
+  const current = currentOfflineOwner();
+  return !!current && !current.startsWith(`${userId}:`);
+}
+
+function ownedKey(key: string): string | null {
+  const o = currentOfflineOwner();
+  return o ? `${o}|${key}` : null;
+}
+
 export interface QueuedMutation {
   id: string;
-  type: "createPage" | "updatePage" | "deletePage";
+  /** Person+firm that queued it; the replay only runs the current owner's. */
+  owner?: string;
+  /** `createTimeEntry`: a POST /api/time body (mobile time tracking offline). */
+  type: "createPage" | "updatePage" | "deletePage" | "createTimeEntry";
   payload: Record<string, unknown>;
   createdAt: string;
   retries?: number;
@@ -86,11 +180,13 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export async function setCache<T>(key: string, data: T): Promise<void> {
+  const scoped = ownedKey(key);
+  if (!scoped) return;
   try {
     const db = await openDb();
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    store.put({ key, data, fetchedAt: new Date().toISOString() } as CacheEntry<T>);
+    store.put({ key: scoped, data, fetchedAt: new Date().toISOString() } as CacheEntry<T>);
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -101,11 +197,13 @@ export async function setCache<T>(key: string, data: T): Promise<void> {
 }
 
 export async function getCache<T>(key: string): Promise<T | null> {
+  const scoped = ownedKey(key);
+  if (!scoped) return null;
   try {
     const db = await openDb();
     const tx = db.transaction(STORE_NAME, "readonly");
     const store = tx.objectStore(STORE_NAME);
-    const req = store.get(key);
+    const req = store.get(scoped);
     const entry = await new Promise<CacheEntry<T> | undefined>((resolve) => {
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => resolve(undefined);
@@ -154,13 +252,23 @@ export const OFFLINE_KEYS = {
 // --- Mutation Queue ---
 
 export async function enqueueMutation(
-  mutation: Omit<QueuedMutation, "id" | "createdAt">
+  mutation: Omit<QueuedMutation, "id" | "createdAt" | "owner">
 ): Promise<void> {
+  const o = currentOfflineOwner();
+  if (!o) {
+    report(new Error("offline owner unknown — change not queued"), "enqueueMutation");
+    return;
+  }
   try {
     const db = await openDb();
     const tx = db.transaction(MUTATION_STORE, "readwrite");
     const store = tx.objectStore(MUTATION_STORE);
-    store.put({ ...mutation, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+    store.put({
+      ...mutation,
+      owner: o,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    });
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -171,6 +279,8 @@ export async function enqueueMutation(
 }
 
 export async function getPendingMutations(): Promise<QueuedMutation[]> {
+  const o = currentOfflineOwner();
+  if (!o) return [];
   try {
     const db = await openDb();
     const tx = db.transaction(MUTATION_STORE, "readonly");
@@ -180,9 +290,10 @@ export async function getPendingMutations(): Promise<QueuedMutation[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return entries.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
+    // Never another person's or firm's queue.
+    return entries
+      .filter((m) => m.owner === o)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   } catch (e) {
     report(e, "getPendingMutations");
     return [];
@@ -275,6 +386,7 @@ export async function clearMutations(): Promise<void> {
 
 export interface ChatHistoryEntry {
   id: string;
+  owner?: string;
   role: "user" | "assistant";
   content: string;
   timestamp: string;
@@ -283,10 +395,12 @@ export interface ChatHistoryEntry {
 }
 
 export async function saveChatMessage(msg: ChatHistoryEntry): Promise<void> {
+  const o = currentOfflineOwner();
+  if (!o) return;
   try {
     const db = await openDb();
     const tx = db.transaction(CHAT_STORE, "readwrite");
-    tx.objectStore(CHAT_STORE).put(msg);
+    tx.objectStore(CHAT_STORE).put({ ...msg, owner: o });
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -297,6 +411,8 @@ export async function saveChatMessage(msg: ChatHistoryEntry): Promise<void> {
 }
 
 export async function loadChatHistory(): Promise<ChatHistoryEntry[]> {
+  const o = currentOfflineOwner();
+  if (!o) return [];
   try {
     const db = await openDb();
     const tx = db.transaction(CHAT_STORE, "readonly");
@@ -305,9 +421,9 @@ export async function loadChatHistory(): Promise<ChatHistoryEntry[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return entries.sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    return entries
+      .filter((e) => e.owner === o)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   } catch (e) {
     report(e, "loadChatHistory");
     return [];
@@ -332,6 +448,7 @@ export async function clearChatHistory(): Promise<void> {
 
 export interface FileUploadEntry {
   id: string;
+  owner?: string;
   fileName: string;
   fileSize: number;
   fileType: string;
@@ -347,14 +464,20 @@ export interface FileUploadEntry {
 }
 
 export async function enqueueFileUpload(
-  entry: Omit<FileUploadEntry, "id" | "createdAt">
+  entry: Omit<FileUploadEntry, "id" | "createdAt" | "owner">
 ): Promise<string> {
   const id = crypto.randomUUID();
+  const o = currentOfflineOwner();
+  if (!o) {
+    report(new Error("offline owner unknown — upload not queued"), "enqueueFileUpload");
+    return id;
+  }
   try {
     const db = await openDb();
     const tx = db.transaction(FILE_UPLOAD_STORE, "readwrite");
     tx.objectStore(FILE_UPLOAD_STORE).put({
       ...entry,
+      owner: o,
       id,
       createdAt: new Date().toISOString(),
     });
@@ -369,6 +492,8 @@ export async function enqueueFileUpload(
 }
 
 export async function getPendingFileUploads(): Promise<FileUploadEntry[]> {
+  const o = currentOfflineOwner();
+  if (!o) return [];
   try {
     const db = await openDb();
     const tx = db.transaction(FILE_UPLOAD_STORE, "readonly");
@@ -377,9 +502,9 @@ export async function getPendingFileUploads(): Promise<FileUploadEntry[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return entries.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
+    return entries
+      .filter((e) => e.owner === o)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   } catch (e) {
     report(e, "getPendingFileUploads");
     return [];

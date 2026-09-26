@@ -15,6 +15,7 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,25 +25,20 @@ import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
-import { cn, daysUntil, formatDate } from "@/lib/utils";
-import type { AbsenceRecord } from "@/lib/absence";
+import { cn, formatDate } from "@/lib/utils";
+import {
+  ABSENCE_KINDS,
+  absenceDisplayStatus,
+  delegateLabel,
+  type AbsenceKind,
+  type AbsenceRecord,
+} from "@/lib/absence";
 import type { DashboardKey } from "@/content/dashboard";
 
 type DisplayStatus = AbsenceRecord["status"];
 
-/**
- * Der gespeicherte Status wird nicht automatisch fortgeschrieben; maßgeblich für die
- * Anzeige ist der Zeitraum (Kalendertage, Ortszeit — der letzte Tag zählt mit).
- */
-function displayStatus(a: AbsenceRecord): DisplayStatus {
-  if (a.status === "cancelled") return "cancelled";
-  const fromStart = daysUntil(a.start_date);
-  const toEnd = daysUntil(a.end_date);
-  if (fromStart === null || toEnd === null) return a.status;
-  if (toEnd < 0) return "completed";
-  if (fromStart <= 0) return "active";
-  return "planned";
-}
+/** Anzeige-Status: Zeitraum, aber gespeichertes „abgeschlossen“/„storniert“ gewinnt. */
+const displayStatus = (a: AbsenceRecord): DisplayStatus => absenceDisplayStatus(a);
 
 const STATUS_BADGE: Record<DisplayStatus, { labelKey: DashboardKey; className: string }> = {
   planned: {
@@ -74,13 +70,28 @@ const STATUS_ORDER: Record<DisplayStatus, number> = {
   cancelled: 3,
 };
 
+/** Die Art entscheidet, ob die Abwesenheit das Urlaubskonto belastet. */
+const ABSENCE_KIND_LABELS: Record<AbsenceKind, string> = {
+  urlaub: "Urlaub",
+  krankheit: "Krankenstand",
+  fortbildung: "Fortbildung",
+  sonstiges: "Sonstiges",
+};
+
+/** Upper bound for the absence list; reaching it shows a notice. */
+const ABSENCES_LIST_MAX = 10_000;
+
 const EMPTY_FORM = {
   user_name: "",
   user_email: "",
   delegate_name: "",
   delegate_email: "",
+  /** "member" = Kanzleimitglied (Konto wird geprüft), "external" = § 34 RAO. */
+  delegate_kind: "member" as "member" | "external",
+  delegate_firm: "",
   start_date: "",
   end_date: "",
+  kind: "" as AbsenceKind | "",
   reason: "",
   notes: "",
   auto_route: true,
@@ -92,6 +103,7 @@ export default function AbsencePage() {
   const [absences, setAbsences] = useState<Array<AbsenceRecord & { slug: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [capped, setCapped] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -100,7 +112,12 @@ export default function AbsencePage() {
 
   const loadAbsences = useCallback(async () => {
     try {
-      const pages = await api.brain.listPages({ type: "absence_record", limit: 100 });
+      // Complete list: past absences must not push current ones out.
+      const pages = await api.brain.listAllPages({
+        type: "absence_record",
+        max: ABSENCES_LIST_MAX,
+      });
+      setCapped(pages.length >= ABSENCES_LIST_MAX);
       const records = pages
         .map((p) => ({
           ...(p.frontmatter as unknown as AbsenceRecord),
@@ -126,9 +143,10 @@ export default function AbsencePage() {
       !form.user_name.trim() ||
       !form.user_email.trim() ||
       !form.delegate_name.trim() ||
-      !form.delegate_email.trim() ||
+      (form.delegate_kind === "member" && !form.delegate_email.trim()) ||
       !form.start_date ||
-      !form.end_date
+      !form.end_date ||
+      !form.kind
     ) {
       setFormError(t("absence.err_required"));
       return;
@@ -146,19 +164,30 @@ export default function AbsencePage() {
           user_name: form.user_name.trim(),
           user_email: form.user_email.trim(),
           delegate_name: form.delegate_name.trim(),
-          delegate_email: form.delegate_email.trim(),
+          delegate_email: form.delegate_email.trim() || undefined,
+          substitute_external: form.delegate_kind === "external",
+          delegate_firm:
+            form.delegate_kind === "external" ? form.delegate_firm.trim() || undefined : undefined,
           start_date: form.start_date,
           end_date: form.end_date,
+          kind: form.kind,
           reason: form.reason.trim() || undefined,
           notes: form.notes.trim() || undefined,
           auto_route_enabled: form.auto_route,
         }),
       });
       if (!res.ok) {
+        // Overlap (409) and a stand-in outside the firm (422) come with a
+        // specific explanation from the server.
+        const serverMessage =
+          res.status === 409 || res.status === 422
+            ? ((await res.json().catch(() => null)) as { error?: string } | null)?.error
+            : undefined;
         setFormError(
-          res.status === 400 || res.status === 422
-            ? "Bitte prüfen Sie die Eingaben — insbesondere die beiden E-Mail-Adressen und den Zeitraum."
-            : "Die Abwesenheit konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+          serverMessage ??
+            (res.status === 400 || res.status === 422
+              ? "Bitte prüfen Sie die Eingaben — insbesondere die beiden E-Mail-Adressen und den Zeitraum."
+              : "Die Abwesenheit konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.")
         );
         return;
       }
@@ -225,6 +254,8 @@ export default function AbsencePage() {
           </PrimaryAction>
         }
       />
+
+      {capped && <CappedResultsNotice limit={ABSENCES_LIST_MAX} />}
 
       {activeCount > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-[color:var(--ds-attention-border)] bg-[color:var(--ds-attention-bg)] px-4 py-3">
@@ -296,6 +327,31 @@ export default function AbsencePage() {
                 required
               />
             </div>
+            <fieldset className="space-y-1 sm:col-span-2">
+              <legend className="text-xs text-[color:var(--ds-text-muted)]">
+                Art der Vertretung
+              </legend>
+              <div className="flex flex-wrap gap-4 text-sm text-[color:var(--ds-text)]">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="absence-delegate-kind"
+                    checked={form.delegate_kind === "member"}
+                    onChange={() => setForm({ ...form, delegate_kind: "member" })}
+                  />
+                  Kanzleimitglied
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="absence-delegate-kind"
+                    checked={form.delegate_kind === "external"}
+                    onChange={() => setForm({ ...form, delegate_kind: "external" })}
+                  />
+                  Externe Vertretung (Substitut, § 34 RAO)
+                </label>
+              </div>
+            </fieldset>
             <div className="space-y-1">
               <Label
                 htmlFor="absence-delegate"
@@ -316,7 +372,8 @@ export default function AbsencePage() {
                 htmlFor="absence-delegate-email"
                 className="text-xs text-[color:var(--ds-text-muted)]"
               >
-                {t("absence.delegate_email")} *
+                {t("absence.delegate_email")}
+                {form.delegate_kind === "member" ? " *" : " (optional)"}
               </Label>
               <Input
                 id="absence-delegate-email"
@@ -326,9 +383,24 @@ export default function AbsencePage() {
                 value={form.delegate_email}
                 onChange={(e) => setForm({ ...form, delegate_email: e.target.value })}
                 placeholder="anna@kanzlei.at"
-                required
+                required={form.delegate_kind === "member"}
               />
             </div>
+            {form.delegate_kind === "external" && (
+              <div className="space-y-1">
+                <Label
+                  htmlFor="absence-delegate-firm"
+                  className="text-xs text-[color:var(--ds-text-muted)]"
+                >
+                  Kanzlei der Vertretung (optional)
+                </Label>
+                <Input
+                  id="absence-delegate-firm"
+                  value={form.delegate_firm}
+                  onChange={(e) => setForm({ ...form, delegate_firm: e.target.value })}
+                />
+              </div>
+            )}
             <div className="space-y-1">
               <Label htmlFor="absence-from" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("absence.from")} *
@@ -354,6 +426,25 @@ export default function AbsencePage() {
                 required
               />
             </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="absence-kind" className="text-xs text-[color:var(--ds-text-muted)]">
+              Art der Abwesenheit
+            </Label>
+            <select
+              id="absence-kind"
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as AbsenceKind | "" })}
+              required
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1"
+            >
+              <option value="">Bitte wählen</option>
+              {ABSENCE_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {ABSENCE_KIND_LABELS[kind]}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="absence-reason" className="text-xs text-[color:var(--ds-text-muted)]">
@@ -485,7 +576,7 @@ export default function AbsencePage() {
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-[color:var(--ds-text-muted)]">
                     <span className="inline-flex items-center gap-1">
                       <UserCheck size={10} aria-hidden="true" />
-                      {t("absence.delegate_label")} {absence.delegate_name}
+                      {t("absence.delegate_label")} {delegateLabel(absence)}
                     </span>
                     {absence.reason && <span>· {absence.reason}</span>}
                     {forwarded > 0 && (

@@ -45,6 +45,13 @@ import { loadKanzleiSettingsStrict } from "@/lib/kanzlei-settings";
 import { isTombstoned } from "@/lib/tombstone";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { zonedDateString } from "@/lib/datetime";
+import {
+  FerialsacheField,
+  ferialsacheAnswerMissing,
+  ferialsacheQuestionVisible,
+  type FerialsacheAnswer,
+} from "@/components/legal/ferialsache-field";
 
 interface DeadlineQuickCreateDialogProps {
   open: boolean;
@@ -75,7 +82,7 @@ export function DeadlineQuickCreateDialog({
   const { addToast } = useToast();
 
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(zonedDateString(new Date()));
   const [caseSlug, setCaseSlug] = useState(presetCaseSlug ?? "");
   const [type, setType] = useState<string>("deadline");
   const [law, setLaw] = useState("");
@@ -95,6 +102,7 @@ export function DeadlineQuickCreateDialog({
   const [isErvDate, setIsErvDate] = useState(false);
   const [fristCalc, setFristCalc] = useState<FristComputation | null>(null);
   const [fristError, setFristError] = useState<string | null>(null);
+  const [ferialsache, setFerialsache] = useState<FerialsacheAnswer>(null);
   const fristOptions = useMemo(() => fristOptionsFor(rechtsraum.country), [rechtsraum.country]);
 
   const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
@@ -111,7 +119,10 @@ export function DeadlineQuickCreateDialog({
       pages.push(...batch);
       if (batch.length < 100) break;
     }
-    return pages
+    // Paging by "recently updated" can return a page twice when it changes
+    // meanwhile — dedupe on slug so the picker can't show a case twice.
+    const unique = [...new Map(pages.map((p) => [p.slug, p])).values()];
+    return unique
       .filter((p) => !isTombstoned(p))
       .map((p: BrainPage) => ({
         slug: p.slug,
@@ -165,6 +176,7 @@ export function DeadlineQuickCreateDialog({
         country: rechtsraum.country,
         state: rechtsraum.state,
         ervEinlangen: isErvDate,
+        ferialsache: ferialsache === true,
       });
       setFristCalc(result);
       setFristError(null);
@@ -176,7 +188,7 @@ export function DeadlineQuickCreateDialog({
       setCalcPreview(null);
       setFristError(err instanceof Error ? err.message : String(err));
     }
-  }, [ruleKey, date, rechtsraum, isErvDate, settingsState]);
+  }, [ruleKey, date, rechtsraum, isErvDate, settingsState, ferialsache]);
 
   // Auto-compute Vorfrist from the final deadline date
   useEffect(() => {
@@ -203,7 +215,7 @@ export function DeadlineQuickCreateDialog({
 
   const resetForm = useCallback(() => {
     setDescription("");
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(zonedDateString(new Date()));
     setCaseSlug(presetCaseSlug ?? "");
     setType("deadline");
     setLaw("");
@@ -215,6 +227,7 @@ export function DeadlineQuickCreateDialog({
     setIsErvDate(false);
     setFristCalc(null);
     setFristError(null);
+    setFerialsache(null);
   }, [presetCaseSlug]);
 
   useEffect(() => {
@@ -232,6 +245,7 @@ export function DeadlineQuickCreateDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!description.trim() || !date) return;
+    if (ferialsacheAnswerMissing(fristCalc, ferialsache)) return;
     setSubmitting(true);
 
     const selectedCase = (cases ?? []).find((c) => c.slug === caseSlug);
@@ -258,7 +272,10 @@ export function DeadlineQuickCreateDialog({
         due_date: finalDate,
         vorfrist_date: vorfristPreview || undefined,
         is_notfrist: isNotfrist || undefined,
-        second_check_required: isNotfrist || undefined,
+        // A period extended by the verhandlungsfreie Zeit is only right if the
+        // matter is no Ferialsache — a second person confirms that.
+        second_check_required: isNotfrist || rule?.vhfzVerlaengert || undefined,
+        ferialsache: rule?.ferialsacheRelevant ? ferialsache === true : undefined,
         description: description.trim(),
         status: "pending",
         review_status: "unreviewed",
@@ -297,7 +314,10 @@ export function DeadlineQuickCreateDialog({
     }
   }
 
-  const canSubmit = description.trim().length > 0 && date.length > 0;
+  const canSubmit =
+    description.trim().length > 0 &&
+    date.length > 0 &&
+    !ferialsacheAnswerMissing(fristCalc, ferialsache);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -478,7 +498,7 @@ export function DeadlineQuickCreateDialog({
                       {t("deadlines.calc_due" as DashboardKey)}{" "}
                       <strong>
                         {new Date(`${calcPreview}T12:00:00Z`).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE",
+                          lang === "en" ? "en-GB" : "de-AT",
                           { weekday: "long", day: "numeric", month: "long", year: "numeric" }
                         )}
                       </strong>
@@ -491,6 +511,15 @@ export function DeadlineQuickCreateDialog({
                       {t("deadlines.calc_remaining" as DashboardKey)}
                     </p>
                   </div>
+                )}
+
+                {ferialsacheQuestionVisible(fristCalc, ferialsache) && (
+                  <FerialsacheField
+                    id="quick-deadline-ferialsache"
+                    value={ferialsache}
+                    onChange={setFerialsache}
+                    missing={ferialsacheAnswerMissing(fristCalc, ferialsache)}
+                  />
                 )}
 
                 {fristError && (
@@ -571,7 +600,7 @@ export function DeadlineQuickCreateDialog({
                         <span className="text-[color:var(--ds-text-muted)]">Vorfrist: </span>
                         <strong className="text-[color:var(--ds-info-text)]">
                           {new Date(`${vorfristPreview}T12:00:00Z`).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE",
+                            lang === "en" ? "en-GB" : "de-AT",
                             { weekday: "short", day: "numeric", month: "short", year: "numeric" }
                           )}
                         </strong>

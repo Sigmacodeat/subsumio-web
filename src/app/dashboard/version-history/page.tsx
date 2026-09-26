@@ -75,17 +75,20 @@ export default function VersionHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [auditNote, setAuditNote] = useState<string | null>(null);
 
   const loadVersions = useCallback(async (docSlug: string) => {
     try {
       const res = await fetch(`/api/legal/documents/versions?slug=${encodeURIComponent(docSlug)}`, {
         signal: AbortSignal.timeout(15_000),
       });
-      if (!res.ok) return [] as DocumentVersionFrontmatter[];
+      // 404: the page is no versioned document — no versions, not an error.
+      if (res.status === 404) return [] as DocumentVersionFrontmatter[];
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { data?: DocumentVersionFrontmatter[] };
       return data.data ?? [];
     } catch {
-      return [] as DocumentVersionFrontmatter[];
+      throw new Error("versions_unavailable");
     }
   }, []);
 
@@ -96,19 +99,35 @@ export default function VersionHistoryPage() {
       setSearched(true);
       setCandidates([]);
       try {
-        const [pageData, auditData, versionList] = await Promise.all([
+        // The audit trail of THIS entry, filtered on the server — not the
+        // firm's last 200 actions filtered here (older entries were missing).
+        const [pageData, audit, versionList] = await Promise.all([
           api.brain.getPage(target).catch(() => null),
-          fetch("/api/audit?entityType=page&limit=200", { signal: AbortSignal.timeout(30_000) })
-            .then((r) => (r.ok ? r.json() : { entries: [] }))
-            .catch(() => ({ entries: [] })),
-          loadVersions(target),
+          fetch(`/api/audit?entityId=${encodeURIComponent(target)}&limit=500`, {
+            signal: AbortSignal.timeout(30_000),
+          })
+            .then(async (r) =>
+              r.ok
+                ? { entries: ((await r.json()) as { entries?: AuditEntry[] }).entries ?? [] }
+                : { entries: [] as AuditEntry[], status: r.status }
+            )
+            .catch(() => ({ entries: [] as AuditEntry[], status: 0 })),
+          loadVersions(target).catch(() => null),
         ]);
 
-        setVersions(versionList);
-        const allEntries = (auditData as { entries?: AuditEntry[] }).entries ?? [];
-        const filtered = allEntries.filter((e) => e.entityId === target);
-        setEntries(filtered);
+        setVersions(versionList ?? []);
+        setEntries(audit.entries);
         setPage((pageData as BrainPage | null) ?? null);
+        const problems: string[] = [];
+        if (versionList === null) problems.push("Die Versionen konnten nicht geladen werden.");
+        if ("status" in audit && audit.status === 403) {
+          setAuditNote("Das Änderungsprotokoll ist nur für Administratoren einsehbar.");
+        } else if ("status" in audit) {
+          problems.push("Das Änderungsprotokoll konnte nicht geladen werden.");
+        } else {
+          setAuditNote(null);
+        }
+        if (problems.length > 0) setError(problems.join(" "));
       } catch {
         setError(t("vhist.err_load"));
       } finally {
@@ -124,7 +143,8 @@ export default function VersionHistoryPage() {
     if (!page) return;
     const ok = await confirm({
       title: `Version ${version} wiederherstellen`,
-      message: "Der aktuelle Stand wird vorher automatisch als neue Version gesichert. Fortfahren?",
+      message:
+        "Wiederhergestellt wird der Text dieser Version (nicht die Originaldatei). Akte, Status und Bearbeitungsstand bleiben unverändert; der aktuelle Stand wird vorher automatisch als neue Version gesichert. Fortfahren?",
       confirmLabel: "Wiederherstellen",
       cancelLabel: "Abbrechen",
       variant: "primary",
@@ -344,6 +364,10 @@ export default function VersionHistoryPage() {
             </p>
           ) : null}
         </div>
+      )}
+
+      {page && auditNote && (
+        <p className="text-xs text-[color:var(--ds-text-muted)]">{auditNote}</p>
       )}
 
       {/* Timeline */}

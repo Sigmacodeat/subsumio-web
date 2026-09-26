@@ -290,3 +290,172 @@ describe("POST /api/copilot/tools", () => {
     expect(creates).toHaveLength(1);
   });
 });
+
+describe("copilot conflict tools (§ 10 RAO)", () => {
+  function conflictEngine(opts: { hit?: boolean; down?: boolean }) {
+    const writes: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/api/legal/conflict-check")) {
+          if (opts.down) return new Response("down", { status: 503 });
+          const { name } = JSON.parse(String(init?.body)) as { name: string };
+          return Response.json({
+            name,
+            severity: opts.hit ? "critical" : "none",
+            explanation: opts.hit ? "Interessenkonflikt" : "Kein Konflikt erkennbar.",
+            matches: opts.hit
+              ? [
+                  {
+                    slug: "legal/cases/alt",
+                    title: "Alte Akte",
+                    role: "opponent",
+                    matched_name: name,
+                    assessment: "critical",
+                  },
+                ]
+              : [],
+          });
+        }
+        if (init?.method === "POST" && url.endsWith("/api/pages")) {
+          writes.push(JSON.parse(String(init.body)));
+          return Response.json({ ok: true });
+        }
+        if (url.includes("/api/pages/")) return new Response("{}", { status: 404 });
+        return Response.json({ ok: true });
+      })
+    );
+    return writes;
+  }
+
+  async function runWrite(tool: string, params: Record<string, unknown>) {
+    const prepared = await (await call({ tool, params, mode: "prepare" })).json();
+    return call({ tool, params, confirmation: prepared.data.confirmation });
+  }
+
+  it("intake_create creates no matter when the client is an opponent elsewhere", async () => {
+    const writes = conflictEngine({ hit: true });
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("conflict_detected");
+    expect(writes.filter((w) => w.type === "legal_case")).toHaveLength(0);
+  });
+
+  it("intake_create writes nothing when the conflict check is unavailable", async () => {
+    const writes = conflictEngine({ down: true });
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    expect((await res.json()).success).toBe(false);
+    expect(writes).toHaveLength(0);
+  });
+
+  it("intake_create creates the matter through the safe path when there is no conflict", async () => {
+    const writes = conflictEngine({});
+    const res = await runWrite("intake_create", { client_name: "Neue GmbH", matter_type: "Zivil" });
+    expect((await res.json()).success).toBe(true);
+    const created = writes.find((w) => w.type === "legal_case") as
+      | { slug: string; frontmatter: Record<string, unknown> }
+      | undefined;
+    expect(created?.slug).toMatch(/^legal\/cases\/neue-gmbh-[0-9a-f]{8}$/);
+    expect(created?.frontmatter.conflict_status).toBe("conflict_cleared");
+  });
+
+  it("create_case goes through the safe path and creates nothing on a conflict", async () => {
+    const writes = conflictEngine({ hit: true });
+    const res = await runWrite("create_case", { title: "Neu ./. Alt", client_name: "Neue GmbH" });
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("conflict_detected");
+    expect(writes.filter((w) => w.type === "legal_case")).toHaveLength(0);
+  });
+
+  it("create_case creates with a server slug when there is no conflict", async () => {
+    const writes = conflictEngine({});
+    const res = await runWrite("create_case", { title: "Neu ./. Alt", client_name: "Neue GmbH" });
+    expect((await res.json()).success).toBe(true);
+    const created = writes.find((w) => w.type === "legal_case") as { slug: string } | undefined;
+    expect(created?.slug).toMatch(/^legal\/cases\/neu-alt-[0-9a-f]{8}$/);
+  });
+
+  it("conflict_check sends the side and reports an unavailable check as failure", async () => {
+    conflictEngine({ down: true });
+    const res = await call({ tool: "conflict_check", params: { name: "Meier", side: "opponent" } });
+    expect((await res.json()).success).toBe(false);
+  });
+});
+
+describe("search_calendar", () => {
+  it("finds Outlook-synced calendar events by their start time", async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          {
+            slug: "calendar/outlook/l@x.at/E1",
+            title: "Termin: Mandantengespräch",
+            frontmatter: {
+              type: "calendar_event",
+              start: `${tomorrow}T09:00:00.0000000`,
+              timezone: "Europe/Vienna",
+            },
+          },
+        ])
+      )
+    );
+    const res = await call({ tool: "search_calendar", params: { range: "week" } });
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveLength(1);
+    expect(json.data[0].label).toBe("Termin: Mandantengespräch");
+  });
+
+  it("never shows a colleague's personal calendar mirror (R8-5)", async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    const ev = (slug: string, title: string, owner: string) => ({
+      slug,
+      title,
+      type: "calendar_event",
+      frontmatter: { type: "calendar_event", owner_user_id: owner, start: `${tomorrow}T09:00:00` },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json([
+          ev("calendar/outlook/k@x.at/E1", "Termin: privat", "u-colleague"),
+          ev("calendar/outlook/l@x.at/E2", "Termin: eigener", "u-lawyer"),
+        ])
+      )
+    );
+    const json = await (await call({ tool: "search_calendar", params: { range: "week" } })).json();
+    expect(json.data.map((d: { label: string }) => d.label)).toEqual(["Termin: eigener"]);
+  });
+});
+
+describe("search_knowledge", () => {
+  it("drops search hits that are a colleague's personal calendar mirror (R8-5)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const u = new URL(url);
+        if (u.pathname.startsWith("/api/pages/")) {
+          const slug = decodeURIComponent(u.pathname.slice("/api/pages/".length));
+          return Response.json({
+            slug,
+            type: "calendar_event",
+            frontmatter: { owner_user_id: slug.includes("k@x.at") ? "u-colleague" : "u-lawyer" },
+          });
+        }
+        return Response.json([
+          { slug: "calendar/outlook/k@x.at/E1", type: "calendar_event", title: "privat" },
+          { slug: "legal/cases/a", type: "legal_case", title: "Akte A" },
+        ]);
+      })
+    );
+    const json = await (
+      await call({ tool: "search_knowledge", params: { query: "Termin" } })
+    ).json();
+    expect(json.success).toBe(true);
+    expect(json.data.map((d: { slug: string }) => d.slug)).toEqual(["legal/cases/a"]);
+  });
+});

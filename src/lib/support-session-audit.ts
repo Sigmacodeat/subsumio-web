@@ -16,24 +16,43 @@
 // routes import this file, never engine.ts itself.
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { SupportSession } from "@/lib/support-session";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 
+/**
+ * Writes the entry and reports whether it was stored. The start route treats
+ * `false` as fatal (the session is ended again): a firm is never entered
+ * without the entry in its own audit trail.
+ */
 export async function writeFirmVisibleSupportAuditEntry(
   orgBrainId: string,
   action: "support.session_start" | "support.session_end",
   session: SupportSession
-): Promise<void> {
+): Promise<boolean> {
   const now = new Date().toISOString();
   const slug = `audit/${now.slice(0, 10)}/${action.replace(/\./g, "-")}-${Date.now()}`;
   const details =
     action === "support.session_start"
-      ? { reason: session.reason, expiresAt: session.expiresAt, by: session.operatorEmail }
-      : { reason: session.reason, endedAt: session.endedAt, by: session.operatorEmail };
+      ? {
+          reason: session.reason,
+          mode: session.mode,
+          expiresAt: session.expiresAt,
+          by: session.operatorEmail,
+        }
+      : {
+          reason: session.reason,
+          mode: session.mode,
+          endedAt: session.endedAt,
+          by: session.operatorEmail,
+        };
   const title =
     action === "support.session_start"
-      ? "Subsumio-Support: Zugriff gestartet"
+      ? session.mode === "write"
+        ? "Subsumio-Support: Zugriff mit Schreibrecht gestartet"
+        : "Subsumio-Support: Lesezugriff gestartet"
       : "Subsumio-Support: Zugriff beendet";
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/json", ...engineHeadersForBrain(orgBrainId) },
       body: JSON.stringify({
@@ -51,8 +70,54 @@ export async function writeFirmVisibleSupportAuditEntry(
         },
       }),
       signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    // Best-effort — the operator-side Postgres audit entry is the durable record.
-  }
+    },
+    "Support-Protokolleintrag"
+  );
+}
+
+/**
+ * One firm-visible entry per accessed path inside a support session (see
+ * requireEngineContext). Records method, path and route action — never
+ * query strings or bodies. Returns whether it was stored; the caller refuses
+ * the request otherwise.
+ */
+export async function writeSupportAccessAuditEntry(
+  orgBrainId: string,
+  session: SupportSession,
+  access: { method: string; path: string; action: string }
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  const action = "support.access";
+  const slug = `audit/${now.slice(0, 10)}/support-access-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const details = {
+    method: access.method,
+    path: access.path,
+    route_action: access.action,
+    mode: session.mode,
+    session_id: session.id,
+    by: session.operatorEmail,
+  };
+  return engineWriteBestEffort(
+    `${ENGINE_URL}/api/pages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...engineHeadersForBrain(orgBrainId) },
+      body: JSON.stringify({
+        slug,
+        title: `Subsumio-Support: Zugriff ${access.method} ${access.path}`,
+        type: "audit_log",
+        content: JSON.stringify({ action, entityType: "org", details, timestamp: now }),
+        frontmatter: {
+          action,
+          entity_type: "org",
+          entity_id: session.orgId,
+          details,
+          timestamp: now,
+          date: now.split("T")[0],
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    },
+    "Support-Zugriffsprotokoll"
+  );
 }

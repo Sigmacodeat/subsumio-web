@@ -20,6 +20,7 @@
 
 import { test, expect } from "@playwright/test";
 import { createHash } from "node:crypto";
+import { signupAndConfirm } from "./helpers";
 
 let testCounter = 0;
 const TEST_USER = { password: "VerifyPolicy123!", name: "Verify Tester" };
@@ -31,8 +32,10 @@ function getTestEmail() {
 
 async function signUpViaApi(page: import("@playwright/test").Page) {
   const email = getTestEmail();
-  const res = await page.context().request.post("/api/auth/signup", {
+  const res = await signupAndConfirm(page.context().request, {
     data: {
+      acceptTerms: true,
+      acceptDpa: true,
       email,
       name: TEST_USER.name,
       password: TEST_USER.password,

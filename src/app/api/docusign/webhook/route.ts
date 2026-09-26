@@ -17,7 +17,12 @@ import {
 import { appendDocumentsToMatter, uploadFileToMatter } from "@/lib/email/mail-filing";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { createNotificationFailureNotification } from "@/lib/comments";
-import { getRecipientsByBrain } from "@/lib/cron-utils";
+import {
+  activeStaffRecipients,
+  getRecipientsByBrain,
+  matterPermissionsForSlug,
+  recipientsForMatter,
+} from "@/lib/cron-utils";
 import { logAudit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 
@@ -105,63 +110,59 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         { timeoutMs: 15_000 }
       );
       updated = patch.ok;
+      if (!updated) throw new Error(`status patch failed: HTTP ${patch.status}`);
 
       const caseSlug = String(fm.case_slug ?? event.customFields.case_slug ?? "");
       if (status === "completed" && caseSlug) {
-        try {
-          const pdf = await downloadEnvelopeDocuments(envelopeId);
-          const title = String(fm.title ?? "Dokument")
-            .replace(/[^\p{L}\p{N} ._-]/gu, "")
-            .slice(0, 80);
-          const entry = await uploadFileToMatter(
-            brainId,
-            caseSlug,
-            {
-              filename: `${title || "Dokument"} (unterschrieben).pdf`,
-              contentType: "application/pdf",
-              size: pdf.byteLength,
-              content: pdf,
-            },
-            "docusign"
-          );
-          if (entry) {
-            documentStored = await appendDocumentsToMatter(brainId, caseSlug, [entry]);
+        if (typeof fm.signed_document_slug === "string" && fm.signed_document_slug) {
+          // An earlier delivery already filed the signed PDF (retry).
+          documentStored = true;
+        } else {
+          let signedSlug: string | null = null;
+          try {
+            signedSlug = await storeSignedDocument(brainId, caseSlug, envelopeId, fm);
+            documentStored = signedSlug !== null;
+          } catch (docErr) {
+            log.error(
+              "[docusign-webhook] signed document not stored",
+              docErr instanceof Error ? docErr.message : String(docErr)
+            );
+            documentStored = false;
+          }
+          if (!documentStored) {
+            // Not marked as processed: DocuSign delivers the event again. After a
+            // few failed attempts the firm is told to fetch the document itself.
+            const failures = Number(fm.docusign_store_failures ?? 0) + 1;
             await enginePatchPage(
               headers,
-              { slug: page.slug, frontmatter: { signed_document_slug: entry.slug } },
+              { slug: page.slug, frontmatter: { docusign_store_failures: failures } },
+              { timeoutMs: 15_000 }
+            ).catch(() => null);
+            if (failures === STORE_FAILURE_NOTIFY_AFTER) {
+              await notifyStaff(
+                brainId,
+                caseSlug,
+                page.slug,
+                fm,
+                now,
+                "signed_document_not_stored"
+              );
+            }
+            return Response.json({ ok: false, error: "document_not_stored" }, { status: 500 });
+          }
+          if (signedSlug) {
+            await enginePatchPage(
+              headers,
+              { slug: page.slug, frontmatter: { signed_document_slug: signedSlug } },
               { timeoutMs: 15_000 }
             );
           }
-        } catch (docErr) {
-          log.error(
-            "[docusign-webhook] signed document not stored",
-            docErr instanceof Error ? docErr.message : String(docErr)
-          );
         }
       }
 
       if (status === "declined") {
         declined = true;
-        try {
-          const recipients = (await getRecipientsByBrain()).get(brainId) ?? [];
-          for (const recipient of recipients) {
-            await createNotificationFailureNotification({
-              userId: recipient.id,
-              brainId,
-              caseSlug: caseSlug || page.slug,
-              caseTitle: String(fm.case_title ?? fm.title ?? "Signaturanfrage"),
-              deadlineTitle: "DocuSign-Signatur",
-              deadlineDate: now,
-              channels: ["docusign"],
-              reason: "envelope_declined",
-            });
-          }
-        } catch (notifErr) {
-          log.error(
-            "[docusign-webhook] declined notification failed",
-            notifErr instanceof Error ? notifErr.message : String(notifErr)
-          );
-        }
+        await notifyStaff(brainId, caseSlug, page.slug, fm, now, "envelope_declined");
       }
 
       void logAudit("docusign.status", "envelope", {
@@ -180,6 +181,86 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   return Response.json({ ok: true, envelopeId, mapped, updated, documentStored, declined });
 });
 
+/** Failed attempts to file the signed PDF after which the firm is told. */
+const STORE_FAILURE_NOTIFY_AFTER = 3;
+/** Upper bound for a signed envelope PDF. */
+const MAX_SIGNED_PDF_BYTES = 50 * 1024 * 1024;
+
+/**
+ * Downloads the signed envelope and files it in the matter. Returns the new
+ * document slug, or null when it could not be filed.
+ */
+async function storeSignedDocument(
+  brainId: string,
+  caseSlug: string,
+  envelopeId: string,
+  fm: Record<string, unknown>
+): Promise<string | null> {
+  const pdf = await downloadEnvelopeDocuments(envelopeId);
+  if (pdf.byteLength === 0 || pdf.byteLength > MAX_SIGNED_PDF_BYTES) {
+    throw new Error(`unexpected document size ${pdf.byteLength}`);
+  }
+  if (pdf.subarray(0, 5).toString("latin1") !== "%PDF-") {
+    throw new Error("downloaded document is not a PDF");
+  }
+  const title = String(fm.title ?? "Dokument")
+    .replace(/[^\p{L}\p{N} ._-]/gu, "")
+    .slice(0, 80);
+  const entry = await uploadFileToMatter(
+    brainId,
+    caseSlug,
+    {
+      filename: `${title || "Dokument"} (unterschrieben).pdf`,
+      contentType: "application/pdf",
+      size: pdf.byteLength,
+      content: pdf,
+    },
+    "docusign"
+  );
+  if (!entry) return null;
+  const appended = await appendDocumentsToMatter(brainId, caseSlug, [entry]);
+  // "" = filed, but the storage returned no page slug to link.
+  return appended ? (entry.slug ?? "") : null;
+}
+
+/**
+ * In-app notice to active firm staff; for a matter only to people who may
+ * open it (unreadable matter → admins only).
+ */
+async function notifyStaff(
+  brainId: string,
+  caseSlug: string,
+  pageSlug: string,
+  fm: Record<string, unknown>,
+  now: string,
+  reason: "envelope_declined" | "signed_document_not_stored"
+): Promise<void> {
+  try {
+    const staff = activeStaffRecipients((await getRecipientsByBrain()).get(brainId) ?? []);
+    const matterPermissions = caseSlug
+      ? await matterPermissionsForSlug(brainId, caseSlug)
+      : new Map();
+    const recipients = recipientsForMatter(staff, caseSlug || null, matterPermissions);
+    for (const recipient of recipients) {
+      await createNotificationFailureNotification({
+        userId: recipient.id,
+        brainId,
+        caseSlug: caseSlug || pageSlug,
+        caseTitle: String(fm.case_title ?? fm.title ?? "Signaturanfrage"),
+        deadlineTitle: "DocuSign-Signatur",
+        deadlineDate: now,
+        channels: ["docusign"],
+        reason,
+      });
+    }
+  } catch (notifErr) {
+    log.error(
+      "[docusign-webhook] notification failed",
+      notifErr instanceof Error ? notifErr.message : String(notifErr)
+    );
+  }
+}
+
 async function findSignatureRequest(
   headers: Record<string, string>,
   envelopeId: string
@@ -193,6 +274,8 @@ async function findSignatureRequest(
     return (await direct.json()) as { slug: string; frontmatter?: Record<string, unknown> };
 
   // Older requests: search the list.
-  const pages = await listEnginePages(headers, "signature_request", 50_000);
+  // Strict: a failed read must not look like "no request" (the event would be
+  // marked processed and never retried).
+  const pages = await listEnginePages(headers, "signature_request", 50_000, { strict: true });
   return pages.find((p) => p.frontmatter?.docusign_envelope_id === envelopeId) ?? null;
 }

@@ -25,7 +25,7 @@ function encodeSlug(slug: string): string {
 // "not_found"   → the engine authoritatively says it isn't there (404 / wrong type)
 // "unavailable" → transient (engine 5xx, timeout, network) — the case may well
 //                 exist; we must NOT tell the user it's missing (P1-4).
-type CaseSlugCheck = "exists" | "not_found" | "unavailable";
+type CaseSlugCheck = "exists" | "archived" | "not_found" | "unavailable";
 
 async function validateCaseSlug(
   headers: Record<string, string>,
@@ -45,8 +45,10 @@ async function validateCaseSlug(
   // Any other non-OK (5xx, 429, 401 from an engine hiccup) is transient.
   if (!res.ok) return "unavailable";
   try {
-    const page = (await res.json()) as { type?: string };
-    return page.type === "legal_case" ? "exists" : "not_found";
+    const page = (await res.json()) as { type?: string; frontmatter?: Record<string, unknown> };
+    if (page.type !== "legal_case") return "not_found";
+    // An archived matter is closed: nothing is filed into it any more.
+    return page.frontmatter?.status === "archived" ? "archived" : "exists";
   } catch {
     return "unavailable";
   }
@@ -66,7 +68,18 @@ export const POST = createHandler(
   async (ctx, _body, _query, req) => {
     // Pre-check Content-Length against our limit so we return a meaningful
     // error instead of letting the framework silently abort with a bare 413.
-    const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
+    const rawLength = req.headers.get("content-length");
+    const contentLength = parseInt(rawLength ?? "0", 10);
+    // Without a declared length (chunked body) neither the size limit nor the
+    // concurrency slot below could apply before the whole body is buffered —
+    // browsers always declare it for a form upload, so refuse the rest.
+    if (rawLength === null || !Number.isFinite(contentLength) || contentLength <= 0) {
+      return apiError(
+        "length_required",
+        "Upload ohne Größenangabe (Content-Length) wird nicht angenommen.",
+        411
+      );
+    }
     if (contentLength > MAX_FILE_SIZE) {
       return apiError(
         "file_too_large",
@@ -153,6 +166,13 @@ export const POST = createHandler(
           const caseCheck = await validateCaseSlug(ctx.headers, caseSlugStr);
           if (caseCheck === "not_found") {
             return apiError("case_not_found", "Die angegebene Akte existiert nicht.", 404);
+          }
+          if (caseCheck === "archived") {
+            return apiError(
+              "case_archived",
+              "Die Akte ist archiviert — zuerst wiederherstellen, um Dokumente abzulegen.",
+              409
+            );
           }
           if (caseCheck === "unavailable") {
             // Don't claim the case is missing on a transient engine problem.
@@ -307,6 +327,8 @@ export const POST = createHandler(
                     doc_title: uploadResult.title ?? result.cleanName,
                     doc_size: result.buffer.byteLength,
                     uploaded_at: new Date().toISOString(),
+                    owner_id: ctx.billing.ownerId,
+                    owner_type: ctx.billing.ownerType,
                   });
                 } catch (err) {
                   analysisStatus = "failed";

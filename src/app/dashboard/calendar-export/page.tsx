@@ -7,30 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { cn, daysUntil, formatDate, formatDaysUntil } from "@/lib/utils";
-import { minutesToTime, parseTimeToMinutes, toLocalIsoDate } from "@/lib/calendar-conflicts";
+import { toLocalIsoDate } from "@/lib/calendar-conflicts";
+import {
+  generateIcal,
+  type CalendarExportEvent as CalendarEvent,
+  type ExportKind,
+} from "@/lib/calendar/export-ics";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { useLang } from "@/lib/use-lang";
 import { EmptyState } from "@/components/dashboard/empty-state";
-
-type ExportKind = "deadline" | "hearing" | "appointment";
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  /** `YYYY-MM-DD` */
-  date: string;
-  /** `HH:MM` */
-  time?: string;
-  durationMin?: number;
-  description?: string;
-  kind: ExportKind;
-  isNotfrist?: boolean;
-  caseLabel?: string;
-  location?: string;
-  vorfristDate?: string;
-}
 
 const KIND_LABEL: Record<ExportKind, string> = {
   deadline: "Frist",
@@ -45,81 +33,9 @@ const FILTER_LABEL: Record<"all" | ExportKind, string> = {
   appointment: "Termine",
 };
 
-function icsDate(iso: string): string {
-  return iso.replace(/-/g, "");
-}
-
-function nextDay(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return toLocalIsoDate(new Date(y, m - 1, d + 1));
-}
-
-function escapeIcalText(s: string): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
-}
-
-/** RFC 5545: Zeitangaben im Wiener Ortszeit-Kontext, ganztägige Einträge mit Folgetag als Ende. */
-function generateIcal(events: CalendarEvent[]): string {
-  const stamp = `${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Subsumio//DE",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    "X-WR-CALNAME:Subsumio Kanzlei-Fristen",
-    "X-WR-TIMEZONE:Europe/Vienna",
-  ];
-
-  for (const ev of events) {
-    lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${ev.id.replace(/[^\w.-]/g, "-")}@subsumio.local`);
-    const start = parseTimeToMinutes(ev.time);
-    if (ev.kind !== "deadline" && start !== null) {
-      const end = start + (ev.durationMin ?? 60);
-      lines.push(
-        `DTSTART;TZID=Europe/Vienna:${icsDate(ev.date)}T${minutesToTime(start).replace(":", "")}00`
-      );
-      lines.push(
-        `DTEND;TZID=Europe/Vienna:${icsDate(ev.date)}T${minutesToTime(end).replace(":", "")}00`
-      );
-    } else {
-      lines.push(`DTSTART;VALUE=DATE:${icsDate(ev.date)}`);
-      lines.push(`DTEND;VALUE=DATE:${icsDate(nextDay(ev.date))}`);
-    }
-    const prefix = ev.isNotfrist ? "Notfrist: " : ev.kind === "deadline" ? "Frist: " : "";
-    lines.push(`SUMMARY:${escapeIcalText(`${prefix}${ev.title}`)}`);
-    if (ev.description) lines.push(`DESCRIPTION:${escapeIcalText(ev.description)}`);
-    if (ev.location) lines.push(`LOCATION:${escapeIcalText(ev.location)}`);
-    if (ev.kind === "deadline") {
-      if (ev.vorfristDate) {
-        lines.push("BEGIN:VALARM");
-        lines.push(`TRIGGER;VALUE=DATE-TIME:${icsDate(ev.vorfristDate)}T080000`);
-        lines.push("ACTION:DISPLAY");
-        lines.push(`DESCRIPTION:${escapeIcalText(`Vorfrist: ${ev.title}`)}`);
-        lines.push("END:VALARM");
-      }
-      // Zusätzlich immer eine Erinnerung zwei Tage vorher.
-      lines.push("BEGIN:VALARM");
-      lines.push("TRIGGER:-P2D");
-      lines.push("ACTION:DISPLAY");
-      lines.push(`DESCRIPTION:${escapeIcalText(`Frist: ${ev.title}`)}`);
-      lines.push("END:VALARM");
-    }
-    lines.push(`DTSTAMP:${stamp}`);
-    lines.push("END:VEVENT");
-  }
-
-  lines.push("END:VCALENDAR");
-  return lines.join("\r\n");
-}
-
 export default function CalendarExportPage() {
   const { t } = useLang();
+  const confirm = useConfirm();
   const router = useRouter();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,6 +79,18 @@ export default function CalendarExportPage() {
   }
 
   async function createDavToken() {
+    if (
+      davActive &&
+      !(await confirm({
+        title: "Neuen Zugang erzeugen?",
+        message:
+          "Der bisherige Zugang wird ungültig. Verbundene Programme verlieren den Zugriff, bis Sie den neuen Zugang dort eintragen.",
+        confirmLabel: "Neuen Zugang erzeugen",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     setDavBusy(true);
     setDavError(null);
     try {
@@ -178,6 +106,17 @@ export default function CalendarExportPage() {
   }
 
   async function revokeDavToken() {
+    if (
+      !(await confirm({
+        title: "Zugang widerrufen?",
+        message:
+          "Verbundene Programme verlieren sofort den Zugriff. Das lässt sich nicht rückgängig machen.",
+        confirmLabel: "Widerrufen",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     setDavBusy(true);
     setDavError(null);
     try {
@@ -213,6 +152,18 @@ export default function CalendarExportPage() {
   }
 
   async function createFeedLink() {
+    if (
+      feedActive &&
+      !(await confirm({
+        title: "Neue Adresse erzeugen?",
+        message:
+          "Die bisherige Abo-Adresse wird ungültig. Kalender, die sie abonniert haben, erhalten keine Fristen mehr, bis Sie die neue Adresse eintragen.",
+        confirmLabel: "Neue Adresse erzeugen",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     setFeedBusy(true);
     setFeedError(null);
     try {
@@ -228,6 +179,17 @@ export default function CalendarExportPage() {
   }
 
   async function revokeFeedLink() {
+    if (
+      !(await confirm({
+        title: "Abo-Adresse widerrufen?",
+        message:
+          "Abonnierte Kalender erhalten ab sofort keine Fristen mehr. Das lässt sich nicht rückgängig machen.",
+        confirmLabel: "Widerrufen",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     setFeedBusy(true);
     setFeedError(null);
     try {
@@ -250,7 +212,10 @@ export default function CalendarExportPage() {
       // Termine aus dem Kanzleikalender.
       const [fristenData, batch] = await Promise.all([
         api.legal.fristen(),
-        api.brain.batchListPages(["appointment"], 300),
+        api.brain.batchListPagesDetailed(["appointment"], 10_000).then((r) => {
+          if (r.errors.length) throw new Error(`batch list failed: ${r.errors.join(",")}`);
+          return r.results;
+        }),
       ]);
       const loaded: CalendarEvent[] = [];
       for (const f of fristenData.fristen) {

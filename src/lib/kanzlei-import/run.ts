@@ -4,7 +4,6 @@
 
 import type { ImportPlan, ImportedTimeEntry, PlanRow } from "./plan";
 import { normaliseName } from "./values";
-import type { PageArrayMutation, PageArrayMutateResult } from "@/lib/server-brain";
 
 export interface ImportClient {
   /** Null when the page does not exist. */
@@ -29,15 +28,29 @@ export interface ImportClient {
    */
   appendPageArray(slug: string, field: string, items: unknown[]): Promise<unknown>;
   /**
-   * Atomic element patch/remove (engine page_array_mutate) — rollback drops
-   * imported entries in one guarded statement so entries invoiced in the
-   * meantime are skipped, never removed.
+   * Rollback of imported time entries (/api/kanzlei-import/rollback-time-entries).
+   * The server removes only entries this import appended — also those that
+   * arrived marked billed from the previous system — and keeps every entry an
+   * invoice of this system holds, checked inside one atomic statement.
    */
-  mutatePageArray(
-    slug: string,
-    field: string,
-    mutation: PageArrayMutation
-  ): Promise<PageArrayMutateResult>;
+  removeImportedTimeEntries(
+    caseSlug: string,
+    importProjectId: string,
+    ids: string[]
+  ): Promise<ImportedTimeEntriesRemoval>;
+}
+
+export interface ImportedTimeEntriesRemoval {
+  removed_ids: string[];
+  /** Left in place: invoiced here, or not written by this import. */
+  kept_ids: string[];
+  not_found_ids: string[];
+}
+
+/** The server refused a create because the slug is taken (409 page_exists). */
+function isPageExists(err: unknown): boolean {
+  const e = err as { status?: unknown; code?: unknown } | null;
+  return !!e && e.status === 409 && e.code === "page_exists";
 }
 
 /** What an import wrote, enough to take it back later. */
@@ -71,12 +84,44 @@ function timeKey(e: { date?: unknown; minutes?: unknown; description?: unknown }
   return `${String(e.date ?? "").slice(0, 10)}|${Number(e.minutes ?? 0)}|${normaliseName(e.description)}`;
 }
 
+/** Rows written between two saved checkpoints of the import's refs. */
+export const REFS_CHECKPOINT_EVERY = 10;
+
+function copyRefs(refs: ImportRefs): ImportRefs {
+  return {
+    pages: [...refs.pages],
+    contactCompletions: refs.contactCompletions.map((c) => ({
+      slug: c.slug,
+      fields: { ...c.fields },
+    })),
+    timeEntries: refs.timeEntries.map((t) => ({ caseSlug: t.caseSlug, ids: [...t.ids] })),
+  };
+}
+
 export async function executeImport(
   plan: ImportPlan,
   client: ImportClient,
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  opts: {
+    /**
+     * Saves what was written so far, so the import can be taken back even
+     * when it stops half-way (tab closed, network gone). Called every
+     * REFS_CHECKPOINT_EVERY written rows and after each matter's time
+     * entries. A failing checkpoint stops the import: nothing is written
+     * that could not be taken back.
+     */
+    onCheckpoint?: (refs: ImportRefs) => Promise<void>;
+    checkpointEvery?: number;
+  } = {}
 ): Promise<ImportOutcome> {
   const refs: ImportRefs = { pages: [], contactCompletions: [], timeEntries: [] };
+  const every = Math.max(1, opts.checkpointEvery ?? REFS_CHECKPOINT_EVERY);
+  let unsaved = 0;
+  const checkpoint = async (force = false) => {
+    if (!opts.onCheckpoint || unsaved === 0 || (!force && unsaved < every)) return;
+    await opts.onCheckpoint(copyRefs(refs));
+    unsaved = 0;
+  };
   const outcomes = new Map<PlanRow, RowOutcome>();
   const set = (r: PlanRow, status: RowStatus, reason?: string) =>
     outcomes.set(r, { row: r.row, label: r.label, status, reason, warnings: r.warnings });
@@ -107,14 +152,26 @@ export async function executeImport(
         if (await client.getPage(w.slug)) {
           set(r, "skipped", "Wurde inzwischen angelegt");
         } else {
-          await client.createPage({
-            slug: w.slug,
-            title: w.title,
-            type: w.type,
-            content: w.content,
-            frontmatter: w.frontmatter,
-          });
+          try {
+            await client.createPage({
+              slug: w.slug,
+              title: w.title,
+              type: w.type,
+              content: w.content,
+              frontmatter: w.frontmatter,
+            });
+          } catch (err) {
+            // Created between the check above and this write: the server
+            // refused the create (nothing replaced) — same outcome as above.
+            if (isPageExists(err)) {
+              set(r, "skipped", "Wurde inzwischen angelegt");
+              tick();
+              continue;
+            }
+            throw err;
+          }
           refs.pages.push(w.slug);
+          unsaved++;
           set(r, "imported");
         }
       } else {
@@ -132,6 +189,7 @@ export async function executeImport(
           } else {
             await client.updatePage({ slug: w.slug, frontmatter: fields });
             refs.contactCompletions.push({ slug: w.slug, fields });
+            unsaved++;
             set(r, "completed", `Ergänzt: ${Object.keys(fields).join(", ")}`);
           }
         }
@@ -140,6 +198,7 @@ export async function executeImport(
       set(r, "failed", message(err));
     }
     tick();
+    await checkpoint();
   }
 
   for (const [caseSlug, rows] of byCase) {
@@ -169,6 +228,7 @@ export async function executeImport(
           // drop an entry another writer just added.
           await client.appendPageArray(caseSlug, "time_entries", added);
           refs.timeEntries.push({ caseSlug, ids: added.map((e) => e.id) });
+          unsaved += added.length;
           const addedIds = new Set(added.map((e) => e.id));
           for (const r of rows) {
             if (addedIds.has((r.write as { entry: ImportedTimeEntry }).entry.id))
@@ -182,7 +242,9 @@ export async function executeImport(
           set(r, "failed", message(err));
     }
     for (let i = 0; i < rows.length; i++) tick();
+    await checkpoint(true);
   }
+  await checkpoint(true);
 
   const rowsOut = plan.rows.map((r) => outcomes.get(r)!);
   const counts: Record<RowStatus, number> = { imported: 0, completed: 0, skipped: 0, failed: 0 };
@@ -202,7 +264,9 @@ export interface RollbackResult {
 
 export async function rollbackImport(
   refs: ImportRefs,
-  client: ImportClient
+  client: ImportClient,
+  /** The import's project id — stamped as import_project_id on its entries. */
+  importProjectId: string
 ): Promise<RollbackResult> {
   const result: RollbackResult = {
     archivedCases: 0,
@@ -215,18 +279,15 @@ export async function rollbackImport(
 
   for (const { caseSlug, ids } of refs.timeEntries) {
     try {
-      // Atomic remove with an in-statement guard: an entry invoiced since
-      // the import (non-empty invoice_number) is skipped, never dropped —
-      // removing it would break that invoice's basis.
-      const res = await client.mutatePageArray(caseSlug, "time_entries", {
-        match: ids,
-        remove: true,
-        unless: { ne: { invoice_number: "" } },
-      });
-      result.removedTimeEntries += res.updated_ids.length;
-      if (res.skipped_ids.length > 0)
+      // Server-checked removal: an entry invoiced since the import (it has an
+      // invoice number) is kept, never dropped — removing it would break that
+      // invoice's basis. Entries imported as already billed in the previous
+      // system carry no invoice number here and are taken back.
+      const res = await client.removeImportedTimeEntries(caseSlug, importProjectId, ids);
+      result.removedTimeEntries += res.removed_ids.length;
+      if (res.kept_ids.length > 0)
         result.kept.push(
-          `${res.skipped_ids.length} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`
+          `${res.kept_ids.length} Zeiteintrag/-einträge in ${caseSlug}: inzwischen verrechnet`
         );
     } catch (err) {
       result.failed.push(`${caseSlug}: ${message(err)}`);

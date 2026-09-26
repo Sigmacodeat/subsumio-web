@@ -7,6 +7,7 @@ import { buildWorkProductReceipt } from "@/lib/work-product-receipts";
 import { storeReceipt } from "@/lib/work-product-receipt-store";
 
 import { logger } from "@/lib/logger";
+import { addDaysToDateString, firmToday } from "@/lib/datetime";
 const log = logger("api/legal/fristenreport");
 
 export const dynamic = "force-dynamic";
@@ -55,10 +56,10 @@ export const POST = createHandler(
     }
     const { fristen, partial } = (await res.json()) as { fristen: Frist[]; partial?: boolean };
 
-    const today = new Date().toISOString().slice(0, 10);
-    const horizon = new Date(Date.now() + body.include_upcoming_days * 86_400_000)
-      .toISOString()
-      .slice(0, 10);
+    // Firm calendar day (Vienna) — a deadline due today is overdue from
+    // 00:00 Vienna time, not from 00:00 UTC.
+    const today = firmToday();
+    const horizon = addDaysToDateString(today, body.include_upcoming_days);
     const open = fristen.filter((f) => f.status !== "done");
     const overdue = body.include_overdue ? open.filter((f) => f.due_date < today) : [];
     const upcoming = open

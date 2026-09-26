@@ -104,6 +104,18 @@ function getNotificationMessage(n: NotificationItem): {
           : undefined,
       };
     case "notification_failure":
+      if (data?.reason === "envelope_declined" || data?.reason === "signed_document_not_stored") {
+        return {
+          title: "DocuSign-Signatur",
+          message:
+            data.reason === "envelope_declined"
+              ? `Die Signaturanfrage „${String(data?.title ?? "ohne Bezeichnung")}" wurde abgelehnt.`
+              : `Das unterschriebene Dokument „${String(data?.title ?? "ohne Bezeichnung")}" konnte nicht automatisch in der Akte abgelegt werden. Bitte laden Sie es in DocuSign herunter und legen Sie es selbst ab.`,
+          href: data?.caseSlug
+            ? `/dashboard/cases/${encodeURIComponent(data.caseSlug as string)}`
+            : undefined,
+        };
+      }
       return {
         title: "Benachrichtigung fehlgeschlagen",
         message: `Die Erinnerung zur Frist „${String(data?.deadlineTitle ?? "ohne Bezeichnung")}" konnte nicht zugestellt werden. Bitte prüfen Sie die Frist selbst.`,
@@ -298,6 +310,16 @@ function NotificationCenterInner() {
     if (ok) deleteAllReadMutation.mutate();
   }
 
+  async function deleteOne(id: string) {
+    const ok = await confirm({
+      title: "Benachrichtigung löschen",
+      message: "Die Benachrichtigung wird endgültig entfernt.",
+      confirmLabel: "Löschen",
+      variant: "danger",
+    });
+    if (ok) deleteMutation.mutate(id);
+  }
+
   return (
     <div className="ds-page space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -472,7 +494,7 @@ function NotificationCenterInner() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => deleteMutation.mutate(n.id)}
+                        onClick={() => void deleteOne(n.id)}
                         disabled={deleteMutation.isPending}
                         aria-label={t("notifications.aria_delete")}
                         title={t("notifications.aria_delete")}

@@ -449,3 +449,49 @@ export function parseReviewSet(
     createdBy: frontmatter.created_by as string | undefined,
   };
 }
+
+/** One reviewer's change to one document of a set (`null` clears a field). */
+export interface ReviewDocumentUpdate {
+  slug: string;
+  decision?: ReviewDecision;
+  decisionNotes?: string | null;
+  privilegeType?: PrivilegeType;
+  privilegeBasis?: string | null;
+  redactionCode?: RedactionCode | null;
+  redactionNotes?: string | null;
+  qcDecision?: ReviewDecision;
+  qcNotes?: string | null;
+  finalDecision?: ReviewDecision;
+  finalNotes?: string | null;
+}
+
+/**
+ * Apply one reviewer change to the stored document entry; who/when are
+ * stamped here (server side), not taken from the browser.
+ */
+export function applyReviewDocumentUpdate(
+  doc: ReviewSetDocument,
+  update: ReviewDocumentUpdate,
+  actor: string,
+  now: string
+): ReviewSetDocument {
+  const next: Record<string, unknown> = { ...doc };
+  for (const [key, value] of Object.entries(update)) {
+    if (key === "slug" || value === undefined) continue;
+    if (value === null) delete next[key];
+    else next[key] = value;
+  }
+  if (update.decision !== undefined) {
+    next.decisionBy = actor;
+    next.decisionAt = now;
+  }
+  if (update.qcDecision !== undefined) {
+    next.qcBy = actor;
+    next.qcAt = now;
+  }
+  if (update.finalDecision !== undefined) {
+    next.finalBy = actor;
+    next.finalAt = now;
+  }
+  return next as unknown as ReviewSetDocument;
+}

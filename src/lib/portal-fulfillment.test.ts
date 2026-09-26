@@ -3,7 +3,7 @@ import {
   appendCaseDocument,
   buildPortalDocumentEntry,
   findDocumentRequestItemIndex,
-  fulfillDocumentRequestItems,
+  submitDocumentRequestItem,
 } from "./portal-fulfillment";
 import type { DocumentRequestFrontmatter } from "./document-requests";
 
@@ -22,40 +22,49 @@ const baseFrontmatter: DocumentRequestFrontmatter = {
 };
 
 describe("portal fulfillment", () => {
-  test("matches requested item from filename", () => {
-    expect(findDocumentRequestItemIndex(baseFrontmatter.items, "scan-vollmacht.pdf")).toBe(0);
-    expect(findDocumentRequestItemIndex(baseFrontmatter.items, "kuendigung-mai.pdf")).toBe(1);
+  test("an upload without a chosen item matches nothing — no guessing from the file name", () => {
+    const items = [
+      { key: "reisepass", label: "Reisepass", required: true },
+      { key: "meldezettel", label: "Meldezettel", required: true },
+    ];
+    expect(findDocumentRequestItemIndex(items)).toBe(-1);
+    expect(findDocumentRequestItemIndex(items, "unknown")).toBe(-1);
+    const result = submitDocumentRequestItem(
+      { ...baseFrontmatter, items },
+      "uploads/IMG_1234",
+      undefined
+    );
+    expect(result.matchedItem).toBeUndefined();
+    expect(result.items).toEqual(items);
+    expect(result.status).toBe("sent");
   });
 
-  test("marks request partially fulfilled until all required items are received", () => {
-    const result = fulfillDocumentRequestItems(
+  test("the chosen item is marked as submitted, not received; status unchanged", () => {
+    const result = submitDocumentRequestItem(
       baseFrontmatter,
-      "uploads/vollmacht",
-      "vollmacht.pdf"
+      "uploads/kuendigung",
+      "kuendigung",
+      "2026-09-26T10:00:00.000Z"
     );
-    expect(result.status).toBe("partially_fulfilled");
-    expect(result.items[0].received_document_slug).toBe("uploads/vollmacht");
+    expect(findDocumentRequestItemIndex(baseFrontmatter.items, "kuendigung")).toBe(1);
+    expect(result.matchedItem?.key).toBe("kuendigung");
+    expect(result.items[1].submitted_document_slug).toBe("uploads/kuendigung");
+    expect(result.items[1].submitted_at).toBe("2026-09-26T10:00:00.000Z");
+    expect(result.items[1].received_document_slug).toBeUndefined();
+    expect(result.items[0]).toEqual(baseFrontmatter.items[0]);
+    expect(result.status).toBe("sent");
   });
 
-  test("marks request fulfilled when all required items are received", () => {
-    const result = fulfillDocumentRequestItems(
-      {
-        ...baseFrontmatter,
-        items: [
-          {
-            key: "vollmacht",
-            label: "Vollmacht",
-            required: true,
-            received_document_slug: "uploads/vollmacht",
-          },
-          { key: "kuendigung", label: "Kündigung", required: true },
-        ],
-      },
-      "uploads/kuendigung",
-      "kuendigung.pdf"
-    );
-    expect(result.status).toBe("fulfilled");
-    expect(result.items[1].received_document_slug).toBe("uploads/kuendigung");
+  test("an item the firm already confirmed is not overwritten", () => {
+    const fm = {
+      ...baseFrontmatter,
+      items: [
+        { key: "vollmacht", label: "Vollmacht", required: true, received_document_slug: "x" },
+      ],
+    };
+    const result = submitDocumentRequestItem(fm, "uploads/other", "vollmacht");
+    expect(result.matchedItem).toBeUndefined();
+    expect(result.items[0].submitted_document_slug).toBeUndefined();
   });
 
   test("does not duplicate case documents", () => {

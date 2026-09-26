@@ -1,7 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { api } from "./api";
+import { api, ApiRequestError } from "./api";
+import { csrfFetch } from "./csrf";
 import {
   isOnline,
   enqueueMutation,
@@ -22,17 +23,43 @@ const MAX_RETRIES = 5;
 const SKEW_TOLERANCE_MS = 60_000;
 const NOTICE_DISMISS_MS = 8000;
 
-async function replayMutation(mut: QueuedMutation): Promise<void> {
+/** The server refused a create because the slug is taken (nothing was written). */
+function isPageExists(err: unknown): boolean {
+  return err instanceof ApiRequestError && err.status === 409 && err.code === "page_exists";
+}
+
+/** Stored version of a page, as If-Match expects it (0 when never versioned). */
+function pageVersion(page: { frontmatter?: Record<string, unknown> }): number {
+  const v = page.frontmatter?.version;
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+async function replayMutation(
+  mut: QueuedMutation,
+  opts: { replaceExisting?: boolean } = {}
+): Promise<void> {
   if (mut.type === "createPage") {
-    await api.brain.createPage(
-      mut.payload as {
-        slug: string;
-        title: string;
-        type: string;
-        content?: string;
-        frontmatter?: Record<string, unknown>;
+    const payload = mut.payload as {
+      slug: string;
+      title: string;
+      type: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    };
+    if (opts.replaceExisting) {
+      // "Keep mine" on a create over an existing page: a deliberate
+      // replacement of exactly the version the user decided against.
+      // Matters/invoices refuse it if the page changed again meanwhile.
+      let ifMatch: number | undefined;
+      try {
+        ifMatch = pageVersion(await api.brain.getPage(payload.slug));
+      } catch {
+        ifMatch = undefined; // page gone — a plain create
       }
-    );
+      await api.brain.createPage(payload, ifMatch !== undefined ? { ifMatch } : undefined);
+      return;
+    }
+    await api.brain.createPage(payload);
   } else if (mut.type === "updatePage") {
     await api.brain.updatePage(
       mut.payload as {
@@ -42,6 +69,15 @@ async function replayMutation(mut: QueuedMutation): Promise<void> {
         frontmatter?: Record<string, unknown>;
       }
     );
+  } else if (mut.type === "createTimeEntry") {
+    // The same route the desktop books time through — billable like any entry.
+    const res = await csrfFetch("/api/time", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(mut.payload),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`createTimeEntry failed: HTTP ${res.status}`);
   } else if (mut.type === "deletePage") {
     const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
     if (!slug) throw new Error("deletePage mutation missing slug");
@@ -255,6 +291,14 @@ async function syncPending() {
         await removeMutation(mut.id);
         syncedMutations++;
       } catch (err) {
+        if (mut.type === "createPage" && isPageExists(err)) {
+          // Created by someone else between the check above and the
+          // replay — nothing was written; the user decides (like above).
+          const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
+          await setMutationConflicted(mut.id, true);
+          conflicts.push(slug);
+          continue;
+        }
         console.error(
           "[mutation-sync] failed for",
           mut.id,
@@ -393,7 +437,7 @@ async function resolveConflict(
         lastNotice: `Kopie gespeichert als ${copySlug}`,
       }));
     } else {
-      await replayMutation(mut);
+      await replayMutation(mut, { replaceExisting: true });
       setState((s) => ({
         ...s,
         lastNotice: `Änderung${slug ? ` an ${slug}` : ""} gesendet`,

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signupAndConfirm } from "./helpers";
 
 async function signUpViaApi(
   page: import("@playwright/test").Page,
@@ -6,8 +7,16 @@ async function signUpViaApi(
   name: string,
   password: string
 ) {
-  const res = await page.context().request.post("/api/auth/signup", {
-    data: { email, name, password, locale: "en", industry: "legal" },
+  const res = await signupAndConfirm(page.context().request, {
+    data: {
+      acceptTerms: true,
+      acceptDpa: true,
+      email,
+      name,
+      password,
+      locale: "en",
+      industry: "legal",
+    },
   });
   expect(res.status()).toBe(201);
   await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });

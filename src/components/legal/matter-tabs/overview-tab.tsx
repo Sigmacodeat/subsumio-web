@@ -29,7 +29,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, formatEur } from "@/lib/utils";
 import { sourceLabel } from "./format";
 import { useLang } from "@/lib/use-lang";
 import { useMatterDetail, STATUS_CONFIG } from "@/lib/matter-detail-context";
@@ -39,6 +39,7 @@ import {
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
 import { PortalLinksPanel } from "@/components/legal/PortalLinksPanel";
+import { PortalSummaryEditor } from "@/components/legal/PortalSummaryEditor";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import { WORKFLOW_TEMPLATES } from "@/lib/workflow";
 import { EmailComposeDialog } from "@/components/legal/EmailComposeDialog";
@@ -458,6 +459,18 @@ export function OverviewTab() {
       {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
         <PortalLinksPanel caseSlug={caseData.slug} />
       )}
+
+      {/* The only case text the client portal shows — released explicitly. */}
+      <PortalSummaryEditor
+        value={caseData.portalSummary}
+        canEdit={ctx.userRole === "admin" || ctx.userRole === "lawyer"}
+        disabled={caseData.status === "archived"}
+        lang={lang}
+        onSave={async (next) => {
+          ctx.setCaseData({ ...caseData, portalSummary: next });
+          await ctx.saveCaseUpdate({ portalSummary: next });
+        }}
+      />
 
       {/* WP-7.40: Self-Service-Workflows fürs Mandantenportal freigeben */}
       {caseData.portalEnabled && (ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
@@ -908,6 +921,7 @@ export function OverviewTab() {
                       impact: r.impact,
                     })),
                     generatedAt: result.generatedAt,
+                    documentsConsidered: result.documentsConsidered,
                   },
                 });
               } catch (err) {
@@ -934,6 +948,23 @@ export function OverviewTab() {
         </div>
         {caseData?.strategy ? (
           <>
+            {typeof caseData.strategy.documentsConsidered === "number" && (
+              <p
+                className={
+                  caseData.strategy.documentsConsidered === 0
+                    ? "mb-2 rounded border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-1 text-xs text-[color:var(--ds-warning-text)]"
+                    : "mb-2 text-xs text-[color:var(--ds-text-subtle)]"
+                }
+              >
+                {caseData.strategy.documentsConsidered === 0
+                  ? lang === "en"
+                    ? "No documents of this matter were available — the strategy rests on the matter data only."
+                    : "Keine Dokumente der Akte berücksichtigt — die Strategie beruht nur auf den Aktendaten."
+                  : lang === "en"
+                    ? `${caseData.strategy.documentsConsidered} documents considered`
+                    : `${caseData.strategy.documentsConsidered} Dokumente berücksichtigt`}
+              </p>
+            )}
             <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
               {caseData.strategy.recommended}
             </p>
@@ -1023,7 +1054,7 @@ export function OverviewTab() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {t("cases.detail_exp_total")}{" "}
-                {ctx.expensesList.reduce((s, e) => s + e.amount, 0).toFixed(2)} €
+                {formatEur(ctx.expensesList.reduce((s, e) => s + e.amount, 0))}
               </span>
             </div>
             {ctx.expensesList.map((entry) => (
@@ -1052,7 +1083,7 @@ export function OverviewTab() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="font-mono text-sm text-[color:var(--ds-text-muted)]">
-                    {entry.amount.toFixed(2)} €
+                    {formatEur(entry.amount)}
                   </span>
                   {!entry.billed && (
                     <button

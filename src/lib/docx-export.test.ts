@@ -134,3 +134,21 @@ describe("generateDocx — KI-Kennzeichnung nach Art. 50 Abs. 2 KI-VO", () => {
     expect(files["word/header1.xml"]).toContain("A &amp; B &lt;C&gt;");
   });
 });
+
+describe("generateDocx — maskierte Zeichen (OPS-25)", () => {
+  test("escaped value renders literally, without formatting runs", async () => {
+    const docx = await generateDocx("An: \\*Neu\\* M\\_B\\_C", { title: "T" });
+    const xml = (await extractDocxFiles(docx))["word/document.xml"];
+    expect(xml).toContain("*Neu*");
+    expect(xml).toContain("M_B_C");
+    expect(xml).not.toContain("<w:i/>");
+    expect(xml).not.toContain("\\");
+  });
+
+  test("an escaped list marker at line start stays plain text", async () => {
+    const docx = await generateDocx("\\- kein Aufzählungspunkt", { title: "T" });
+    const xml = (await extractDocxFiles(docx))["word/document.xml"];
+    expect(xml).not.toContain("ListBullet");
+    expect(xml).toContain("- kein Aufzählungspunkt");
+  });
+});

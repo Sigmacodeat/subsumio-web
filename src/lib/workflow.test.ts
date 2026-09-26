@@ -92,6 +92,16 @@ describe("buildWorkflowSteps", () => {
 // ── buildWorkflowFrontmatter ──────────────────────────────────────────
 
 describe("buildWorkflowFrontmatter", () => {
+  it("links the agent run that executes the workflow", () => {
+    const fm = buildWorkflowFrontmatter({
+      template_id: "due_diligence",
+      prompt: "p",
+      started_by: "u",
+      agent_job_id: 42,
+    });
+    expect(fm.agent_job_id).toBe(42);
+  });
+
   it("builds valid frontmatter", () => {
     const fm = buildWorkflowFrontmatter({
       template_id: "due_diligence",

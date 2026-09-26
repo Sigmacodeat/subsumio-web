@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { AIActConformityBanner } from "@/components/legal/AIActConformityBanner";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
+import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { AI_FRONTMATTER } from "@/lib/ai-act";
 import { useAutosave } from "@/lib/hooks/use-autosave";
 import type { BerufungsGrund } from "@/app/dashboard/berufungs-agent/page";
@@ -472,14 +473,20 @@ Der Schriftsatz soll enthalten:
             placeholder="Der generierte Schriftsatz erscheint hier — Sie können ihn bearbeiten."
             aria-label="Schriftsatz-Entwurf Editor"
           />
-          <CitationPanel
-            data={{
-              citations,
-              grounding,
-              isStreaming: generating,
-            }}
-            compact
-          />
+          {grounding || generating ? (
+            <CitationPanel
+              data={{
+                citations,
+                grounding,
+                isStreaming: generating,
+              }}
+              compact
+            />
+          ) : (
+            // A draft restored from an earlier step carries no server check:
+            // check it here instead of showing an empty panel.
+            <GroundedOutputPanel text={displayContent} citations={citations} />
+          )}
         </div>
       )}
 

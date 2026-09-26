@@ -47,15 +47,36 @@ async function enginePagesList(
   headers: EngineHeaders,
   params: { type: string; limit: number }
 ): Promise<BrainPage[]> {
-  if (!headers) return api.brain.listPages(params) as Promise<BrainPage[]>;
-  const qs = new URLSearchParams({ type: params.type, limit: String(params.limit) });
-  const res = await fetch(`${ENGINE_URL}/api/pages?${qs.toString()}`, {
-    headers,
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) throw new Error(`engine_pages_list_failed_${res.status}`);
-  const data = await res.json();
-  return Array.isArray(data) ? (data as BrainPage[]) : [];
+  // Cursor-paginated on both paths: a bare listPages call stops silently at
+  // the engine's 100-row cap. (This file is also imported client-side, so it
+  // must not pull @/lib/engine-pages — that module is server-only.)
+  if (!headers) return api.brain.listAllPages({ type: params.type, max: params.limit });
+  const out = new Map<string, BrainPage>();
+  let fetched = 0;
+  let cursor: string | undefined;
+  let iterations = 0;
+  for (;;) {
+    if (++iterations > 1000) break;
+    const want = Math.min(100, params.limit - fetched);
+    if (want <= 0) break;
+    const pageParam = cursor ? `&cursor=${encodeURIComponent(cursor)}` : `&offset=${fetched}`;
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=${encodeURIComponent(params.type)}&limit=${want}${pageParam}`,
+      { headers, signal: AbortSignal.timeout(10_000) }
+    );
+    if (!res.ok) throw new Error(`engine_pages_list_failed_${res.status}`);
+    const data = (await res.json()) as unknown;
+    const batch = Array.isArray(data) ? (data as BrainPage[]) : [];
+    fetched += batch.length;
+    for (const p of batch) if (p?.slug) out.set(p.slug, p);
+    const next = res.headers.get("x-next-cursor");
+    if (next && next !== cursor) {
+      cursor = next;
+      continue;
+    }
+    if (batch.length < want) break;
+  }
+  return [...out.values()];
 }
 
 async function enginePageGet(headers: EngineHeaders, slug: string): Promise<BrainPage | null> {
@@ -139,7 +160,15 @@ async function engineSearch(
   return (await res.json()) as Array<{ slug: string }>;
 }
 
-export type MemoryType = "preference" | "fact" | "topic" | "instruction" | "case_note";
+/** The memory kinds — the API schema is derived from this list. */
+export const MEMORY_TYPES = ["preference", "fact", "topic", "instruction", "case_note"] as const;
+export type MemoryType = (typeof MEMORY_TYPES)[number];
+
+/**
+ * "proposed": recognised automatically but not yet confirmed by the user —
+ * never part of the prompt context until confirmed ("Merken").
+ */
+export type MemoryStatus = "active" | "proposed";
 
 export type MemorySource = "user_explicit" | "inferred" | "system";
 
@@ -160,6 +189,8 @@ export interface CopilotMemoryEntry {
   validTo?: string;
   /** WP-5.30: user who owns this entry. Missing on legacy firm-shared rows. */
   ownerId?: string;
+  /** Missing on existing rows = active. */
+  status?: MemoryStatus;
 }
 
 /** Who is acting on a memory — drives the per-user ownership check. */
@@ -217,6 +248,7 @@ function parseMemoryPage(page: BrainPage): CopilotMemoryEntry | null {
     validFrom: fm.valid_from ? String(fm.valid_from) : undefined,
     validTo: fm.valid_to ? String(fm.valid_to) : undefined,
     ownerId: fm.owner_id ? String(fm.owner_id) : undefined,
+    status: fm.memory_status === "proposed" ? "proposed" : "active",
   };
 }
 
@@ -274,6 +306,7 @@ export async function createMemory(
     validFrom?: string;
     validTo?: string;
     ownerId?: string;
+    status?: MemoryStatus;
   },
   headers?: EngineHeaders
 ): Promise<CopilotMemoryEntry> {
@@ -302,6 +335,7 @@ export async function createMemory(
         valid_from: opts.validFrom,
         valid_to: opts.validTo,
         owner_id: opts.ownerId,
+        memory_status: opts.status ?? "active",
         created_at: now,
         updated_at: now,
       },
@@ -324,12 +358,13 @@ export async function createMemory(
     validFrom: opts.validFrom,
     validTo: opts.validTo,
     ownerId: opts.ownerId,
+    status: opts.status ?? "active",
   };
 }
 
 export async function updateMemory(
   id: string,
-  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type">>,
+  updates: Partial<Pick<CopilotMemoryEntry, "value" | "pinned" | "type" | "status">>,
   headers?: EngineHeaders,
   actor?: MemoryActor
 ): Promise<void> {
@@ -355,6 +390,7 @@ export async function updateMemory(
         memory_type: updates.type ?? fm.memory_type ?? "fact",
         memory_value: updates.value ?? fm.memory_value ?? "",
         pinned: updates.pinned ?? fm.pinned ?? false,
+        ...(updates.status ? { memory_status: updates.status } : {}),
         updated_at: now,
       },
     },
@@ -668,6 +704,9 @@ export async function buildMemoryContext(
     selected = [...pinned, ...unpinned].slice(0, max);
   }
 
+  // Unconfirmed proposals never steer answers.
+  selected = selected.filter((m) => m.status !== "proposed");
+
   if (selected.length === 0) return "";
 
   const lines: string[] = ["## GEDÄCHTNIS — Persönliche Kontextinformationen"];
@@ -687,6 +726,19 @@ export async function buildMemoryContext(
   );
 
   return lines.join("\n");
+}
+
+/**
+ * The part of a chat message that is the user's own words: quoted lines
+ * ("> …", pasted mail/brief text) are not the user speaking to the Copilot
+ * and must not become memories.
+ */
+export function ownWordsOf(message: string): string {
+  return message
+    .split("\n")
+    .filter((line) => !/^\s*>/.test(line))
+    .join("\n")
+    .trim();
 }
 
 /**

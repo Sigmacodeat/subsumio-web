@@ -4,6 +4,8 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
 import { isSupportedUploadName, SUPPORTED_UPLOAD_MIME_TYPES } from "@/lib/upload-formats";
+import { matterAccessLevel, type MatterPermissions } from "@/lib/matter-access";
+import { matterAccessUserFor } from "@/lib/support-session-policy";
 
 export const maxDuration = 10;
 
@@ -153,10 +155,36 @@ export const POST = createHandler(
           headers: ctx.headers,
           signal: AbortSignal.timeout(10_000),
         });
-        if (!caseRes.ok || ((await caseRes.json()) as { type?: string }).type !== "legal_case") {
+        const casePage = caseRes.ok
+          ? ((await caseRes.json()) as { type?: string; frontmatter?: Record<string, unknown> })
+          : null;
+        if (!casePage || casePage.type !== "legal_case") {
           return Response.json(
             { error: "case_not_found", message: "Die angegebene Akte existiert nicht." },
             { status: 404 }
+          );
+        }
+        // Filing a document changes the matter: read access is not enough.
+        // (The direct upload the token authorises carries no session, so
+        // this is where write access is decided.)
+        const permissions = casePage.frontmatter?.permissions as MatterPermissions | undefined;
+        if (matterAccessLevel(matterAccessUserFor(ctx), permissions) !== "write") {
+          return Response.json(
+            {
+              error: "matter_read_only",
+              message: "Sie haben für diese Akte nur Leserechte.",
+            },
+            { status: 403 }
+          );
+        }
+        // An archived matter is closed: nothing is filed into it any more.
+        if (casePage.frontmatter?.status === "archived") {
+          return Response.json(
+            {
+              error: "case_archived",
+              message: "Die Akte ist archiviert — zuerst wiederherstellen, um Dokumente abzulegen.",
+            },
+            { status: 409 }
           );
         }
       } catch {

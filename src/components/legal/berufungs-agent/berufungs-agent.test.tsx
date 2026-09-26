@@ -20,6 +20,7 @@ vi.mock("@/lib/api", () => ({
   api: {
     brain: {
       listPages: vi.fn(async () => []),
+      listAllPages: vi.fn(async () => []),
       createPage: vi.fn(async () => ({})),
       updatePage: vi.fn(async () => ({ slug: "", success: true })),
       getPage: vi.fn(async () => ({ slug: "", frontmatter: {} })),
@@ -168,6 +169,25 @@ describe("Berufungs-Agent Steps", () => {
       await waitFor(() => {
         expect(screen.getByText(/Keine Akten gefunden/)).toBeDefined();
       });
+    });
+
+    test("a failed case list load is an error, not 'no cases'", async () => {
+      const { api } = await import("@/lib/api");
+      vi.mocked(api.brain.listAllPages).mockRejectedValueOnce(new Error("down"));
+      withQueryClient(
+        <ActAnalysisStep
+          caseSlug=""
+          onCaseSelect={vi.fn()}
+          analysis={null}
+          onAnalysisComplete={vi.fn()}
+          onNext={vi.fn()}
+          canProceed={false}
+        />
+      );
+      await waitFor(() => {
+        expect(screen.getByText(/konnten nicht geladen werden/)).toBeDefined();
+      });
+      expect(screen.queryByText(/Keine Akten gefunden/)).toBeNull();
     });
 
     test("renders AI Act conformity banner when analysis present", () => {

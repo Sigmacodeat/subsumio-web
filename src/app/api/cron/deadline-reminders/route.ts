@@ -6,10 +6,14 @@ import { isQuietDay } from "@/lib/deadline-notify";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
 import {
+  activeStaffRecipients,
   fetchAllPagesStrict,
   fetchPages,
   getRecipientsByBrain,
+  matterPermissionsBySlug,
+  recipientsForMatter,
   type EnginePage,
+  excludeDemoPages,
 } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import {
@@ -139,8 +143,11 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     reason: string;
   }> = [];
 
-  for (const [brainId, recipients] of recipientsByBrain) {
+  for (const [brainId, brainUsers] of recipientsByBrain) {
     brainsChecked++;
+    // Only active firm staff are ever notified — never client accounts or
+    // deactivated users. Per matter, the matter's access rules narrow further.
+    const recipients = activeStaffRecipients(brainUsers);
     let casePages: EnginePage[];
     let deadlinePages: EnginePage[];
     let followUpPages: EnginePage[];
@@ -148,8 +155,8 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     let intakePages: EnginePage[];
     try {
       [casePages, deadlinePages, followUpPages, absencePages, intakePages] = await Promise.all([
-        fetchAllPagesStrict(brainId, "legal_case"),
-        fetchAllPagesStrict(brainId, "legal_deadline"),
+        fetchAllPagesStrict(brainId, "legal_case").then(excludeDemoPages),
+        fetchAllPagesStrict(brainId, "legal_deadline").then(excludeDemoPages),
         fetchAllPagesStrict(brainId, "legal_follow_up"),
         fetchPages(brainId, "absence_record", 10_000),
         fetchPages(brainId, "intake_request", 10_000),
@@ -162,9 +169,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     }
 
     // Erstanfragen verlieren Mandate, wenn sie liegen — offene Intakes
-    // älter als 24h eskalieren einmalig (deterministische ID) an alle.
+    // älter als 24h eskalieren einmalig (deterministische ID) an alle aktiven
+    // Mitarbeiter; eine bereits einer Akte zugeordnete Anfrage nur an
+    // Personen mit Zugriff auf diese Akte.
     const STALE_INTAKE_MS = 24 * 60 * 60 * 1000;
     const OPEN_INTAKE_STATUS = new Set(["new", "needs_info", "conflict_check", "accepted"]);
+    const intakeMatterPermissions = matterPermissionsBySlug(casePages);
     for (const page of intakePages) {
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
       if (!OPEN_INTAKE_STATUS.has(String(fm.status ?? "new"))) continue;
@@ -172,7 +182,14 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (!Number.isFinite(created) || now.getTime() - created < STALE_INTAKE_MS) continue;
       staleIntakes++;
       const hoursOpen = Math.floor((now.getTime() - created) / 3_600_000);
-      for (const recipient of recipients) {
+      const intakeCase = [fm.converted_case_slug, fm.case_slug].find(
+        (v): v is string => typeof v === "string" && v.length > 0
+      );
+      for (const recipient of recipientsForMatter(
+        recipients,
+        intakeCase,
+        intakeMatterPermissions
+      )) {
         try {
           await createIntakeStaleNotification({
             userId: recipient.id,
@@ -228,7 +245,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       : null;
     const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
 
-    // Vertretungsregelung: die Erinnerung geht an alle Kanzlei-Mitglieder —
+    // Vertretungsregelung: die Erinnerung geht an alle berechtigten Mitglieder —
     // was fehlte, ist die Zurechnung. Ist die verantwortliche Person der
     // Akte abwesend, nennt die Nachricht die Vertretung mit Rückkehrdatum.
     const responsibleByCase = new Map<string, string>();
@@ -259,10 +276,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const activeGroups = groups.filter((g) => g.items.length > 0);
     if (activeGroups.length === 0) continue;
 
-    // P3-3: Send email to ALL recipients, not just the first one
-    const emailRecipients = recipients.map((r) => r.email).filter((e): e is string => !!e);
-    const toEmails =
-      emailRecipients.length > 0 ? emailRecipients.join(", ") : (settings.smtpUser ?? "");
+    const matterPermissions = matterPermissionsBySlug(casePages);
 
     // P3-1: Collect WhatsApp identities for this brain's orgs
     const orgIds = new Set<string>();
@@ -287,6 +301,13 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const due = group.items;
       const caseSlugForNotif = group.caseSlug ?? "";
       total += due.length;
+      // Who may learn about this matter: its visibility, team, grants and
+      // ethical wall apply to reminders exactly as to opening the matter.
+      const groupRecipients = recipientsForMatter(recipients, group.caseSlug, matterPermissions);
+      // One mail per person — recipients never see each other's addresses.
+      const emailRecipients = groupRecipients.map((r) => r.email).filter((e): e is string => !!e);
+      const toList =
+        emailRecipients.length > 0 ? emailRecipients : settings.smtpUser ? [settings.smtpUser] : [];
 
       const esc = (s: unknown) =>
         String(s).replace(
@@ -318,11 +339,20 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
       try {
         let notificationSent = false;
 
-        // B2: Send email only when SMTP is configured — to ALL recipients
+        // B2: Send email only when SMTP is configured — one mail per recipient
         const emailChannels: string[] = [];
-        if (transporter && toEmails) {
-          try {
-            await transporter.sendMail({ from: fromAddr, to: toEmails, subject, html });
+        if (transporter && toList.length > 0) {
+          let mailedAny = false;
+          let mailError: string | null = null;
+          for (const to of toList) {
+            try {
+              await transporter.sendMail({ from: fromAddr, to, subject, html });
+              mailedAny = true;
+            } catch (err) {
+              mailError = err instanceof Error ? err.message : String(err);
+            }
+          }
+          if (mailedAny) {
             notificationSent = true;
             emailed++;
             emailChannels.push("email");
@@ -331,10 +361,15 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
             void logTrackingEvent({
               trackingId,
               eventType: "sent",
-              raw: { source: "smtp", route: "deadline-reminders", recipients: toEmails },
+              raw: {
+                source: "smtp",
+                route: "deadline-reminders",
+                recipient_count: toList.length,
+              },
             });
-          } catch (err) {
-            const reason = err instanceof Error ? err.message : String(err);
+          }
+          if (mailError !== null) {
+            const reason = mailError;
             errors.push(`Email deadline reminder failed: ${reason}`);
             for (const item of due) {
               failed.push({
@@ -343,7 +378,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
                 channels: ["email"],
                 reason,
               });
-              for (const recipient of recipients) {
+              for (const recipient of groupRecipients) {
                 await createNotificationFailureNotification({
                   userId: recipient.id,
                   brainId,
@@ -388,7 +423,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
         const waBody = waBodyLines.join("\n");
         let waSentAny = false;
         let waFailedAny = false;
-        for (const recipient of recipients) {
+        for (const recipient of groupRecipients) {
           const identityEntry = allIdentities.find((id) => id.userId === recipient.id);
           if (!identityEntry) continue;
           try {
@@ -431,7 +466,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
         const delegationNote = group.delegation
           ? `Vertretung: ${group.delegation.delegateName} vertritt ${group.delegation.responsible} (bis ${group.delegation.until})`
           : undefined;
-        for (const recipient of recipients) {
+        for (const recipient of groupRecipients) {
           for (const item of due) {
             await createDeadlineNotification({
               userId: recipient.id,
@@ -458,7 +493,7 @@ ${group.delegation ? `<p><strong>Vertretung:</strong> ${esc(group.delegation.del
         const unconfirmed = due.filter((i) => i.unreviewedAi).length;
         const pushBody = `${group.caseSlug ? `Akte ${group.caseLabel}` : "Ohne Akte"} — ${due.length} Frist(en) anstehend${unconfirmed ? `, davon ${unconfirmed} unbestätigte KI-Vorschläge – bitte prüfen` : ""}${delegationNote ? ` · ${delegationNote}` : ""}`;
         let pushSentAny = false;
-        for (const recipient of recipients) {
+        for (const recipient of groupRecipients) {
           try {
             const pushed = await sendPushToUser(recipient.id, {
               title: pushTitle,

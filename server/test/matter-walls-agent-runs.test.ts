@@ -124,6 +124,8 @@ describe("stamps spawned jobs inherit", () => {
     expect(supervisorChildStamps(data)).toEqual({
       _source_id: "firm-a",
       _matter_scope: WALLED,
+      // A firm job without an ACL stamp passes on "open pages only".
+      _acl_groups: [],
       _owner_user_id: "alice",
       _case_slug: "cases/open",
     });

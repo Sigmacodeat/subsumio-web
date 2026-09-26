@@ -52,6 +52,53 @@ function refKey(ref: EmbeddedDeadlineRef): string {
     : embeddedDeadlineKey({ title: ref.title ?? "", due_date: ref.due_date ?? "" });
 }
 
+export interface EmbeddedDeadlineWriter {
+  mutatePageArray(
+    slug: string,
+    field: string,
+    mutation: { match: string[]; match_key?: string; set?: Record<string, unknown> }
+  ): Promise<{ matched_ids?: string[]; not_found_ids?: string[] }>;
+  getPage(slug: string): Promise<{ frontmatter?: Record<string, unknown> }>;
+  patchPageIfMatch(
+    slug: string,
+    frontmatter: Record<string, unknown>,
+    version: number
+  ): Promise<unknown>;
+}
+
+/**
+ * Write `patch` into ONE entry of a matter's `deadlines[]` without a blind
+ * read-modify-write of the whole array:
+ *  - entries with an id → the server's atomic array mutation (a parallel
+ *    change to another entry — or a new Frist — is never overwritten);
+ *  - legacy entries without an id → versioned write (If-Match); a concurrent
+ *    change makes it fail with 409 instead of being lost. The server assigns
+ *    ids on that write, so the next change is atomic.
+ */
+export async function writeEmbeddedDeadline(
+  writer: EmbeddedDeadlineWriter,
+  caseSlug: string,
+  ref: EmbeddedDeadlineRef,
+  patch: Record<string, unknown>
+): Promise<void> {
+  const set = { ...patch, updated_at: new Date().toISOString() };
+  if (ref.id) {
+    const res = await writer.mutatePageArray(caseSlug, "deadlines", {
+      match_key: "id",
+      match: [ref.id],
+      set,
+    });
+    if (!res.matched_ids?.includes(ref.id)) throw new Error("embedded deadline not found");
+    return;
+  }
+  const page = await writer.getPage(caseSlug);
+  const fm = page.frontmatter ?? {};
+  const deadlines = patchEmbeddedDeadline(fm.deadlines, ref, patch);
+  if (!deadlines) throw new Error("embedded deadline not found");
+  const version = Number(fm.version);
+  await writer.patchPageIfMatch(caseSlug, { deadlines }, Number.isFinite(version) ? version : 0);
+}
+
 /**
  * Returns the matter's `deadlines[]` with `patch` merged into the ONE entry
  * matching `ref` (the whole array is written back — the engine merges

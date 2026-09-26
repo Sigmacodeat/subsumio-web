@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { formatDateTime } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 interface CommunicationItem {
   id: string;
@@ -55,7 +56,7 @@ export function CommunicationsPanel({ caseSlug }: { caseSlug: string }) {
     if (!mins || mins <= 0) return;
     setBillBusy(true);
     try {
-      const res = await fetch("/api/time", {
+      const res = await csrfFetch("/api/time", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

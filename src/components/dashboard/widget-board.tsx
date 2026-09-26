@@ -67,6 +67,7 @@ import { DeadlineCheckWidget } from "./deadline-check-widget";
 import { MatterBudgetWidget } from "./matter-budget-widget";
 import { LegalHoldWidget } from "./legal-hold-widget";
 import type { WidgetPreset } from "@/lib/widget-registry";
+import { isInPeriod } from "@/lib/cockpit-deadlines";
 
 const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
   loading: () => (
@@ -310,7 +311,7 @@ function RecentQueriesPanel({ data }: { data: CockpitData }) {
             </div>
             {rq.created_at && (
               <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+                {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
                   day: "2-digit",
                   month: "short",
                 })}
@@ -344,17 +345,8 @@ export function WidgetBoard() {
   const filteredData = useMemo(() => {
     if (period === "all") return data;
     const now = new Date();
-    const windowMs = period === "today" ? 86400000 : 7 * 86400000;
-    const relevant = (item: {
-      due?: Date;
-      created_at?: string;
-      frontmatter?: Record<string, unknown>;
-    }) => {
-      const raw =
-        item.frontmatter?.due_date ?? item.frontmatter?.date ?? item.created_at ?? item.due;
-      const time = raw ? new Date(String(raw)).getTime() : NaN;
-      return Number.isFinite(time) && Math.abs(time - now.getTime()) <= windowMs;
-    };
+    // Overdue open deadlines stay visible in every period (isInPeriod).
+    const relevant = (item: Parameters<typeof isInPeriod>[0]) => isInPeriod(item, period, now);
     return {
       ...data,
       deadlines: data.deadlines.filter(relevant),
@@ -437,21 +429,25 @@ export function WidgetBoard() {
               {
                 label: t("cockpit.stat_cases"),
                 value: data.activeCases.length,
+                capped: data.isCapped("legal_case"),
                 href: "/dashboard/cases",
               },
               {
                 label: t("cockpit.stat_inbox"),
                 value: data.inboxItems.length,
+                capped: data.isCapped("intake_request"),
                 href: "/dashboard/intake",
               },
               {
                 label: t("cockpit.stat_reviews"),
                 value: data.pendingReviews.length,
+                capped: data.isCapped("review_item", "agent_action"),
                 href: "/dashboard/review-queue",
               },
               {
                 label: t("cockpit.stat_billing"),
                 value: data.openInvoices.length,
+                capped: data.isCapped("invoice"),
                 href: "/dashboard/invoicing",
               },
             ]}

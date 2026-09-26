@@ -52,7 +52,7 @@ import type { QuotaType } from "@/lib/plans";
 import type { CreditOperation } from "@/lib/billing/credits";
 import { demoGuard } from "@/lib/demo/guard";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
-import { logAudit, type AuditAction } from "@/lib/audit";
+import { logAudit, SYSTEM_BRAIN, type AuditAction } from "@/lib/audit";
 import { apiError, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
 import { emptyGroundingMetadata, userJurisdiction } from "@/lib/citation-gate-client";
@@ -67,9 +67,43 @@ import { isOpsHost, isPlatformOperator } from "@/lib/auth/platform-operator";
 import { hit } from "@/lib/auth/rate-limit";
 import { storeReceipt, type WorkProductReceipt } from "@/lib/work-product-receipt-store";
 import type { WorkProductType } from "@/lib/work-product-receipts";
+import { euOnlyRefusalResponse, isEuOnlyRefusal } from "@/lib/eu-policy-refusal";
 
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 const log = logger("lib/api-handler");
+
+/**
+ * An exception the handler did not turn into a response. The route answers
+ * a generic 500; the cause goes to the log WITH its stack and to Sentry —
+ * `onRequestError` never sees it, because the wrapper already caught it.
+ */
+export function reportUncaughtError(
+  err: unknown,
+  context: { kind: "route" | "webhook" | "cron"; action?: string; requestId?: string }
+): void {
+  const error =
+    err instanceof Error
+      ? { name: err.name, message: err.message, ...(err.stack ? { stack: err.stack } : {}) }
+      : { message: String(err) };
+  log.error(`[api-handler] uncaught error (${context.kind})`, {
+    ...(context.action ? { action: context.action } : {}),
+    ...(context.requestId ? { requestId: context.requestId } : {}),
+    error,
+  });
+  try {
+    Sentry.captureException(err, {
+      tags: {
+        source: "api-handler",
+        kind: context.kind,
+        ...(context.action ? { action: context.action } : {}),
+      },
+      ...(context.requestId ? { extra: { requestId: context.requestId } } : {}),
+    });
+  } catch {
+    // Monitoring must never change the response.
+  }
+}
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -112,6 +146,8 @@ export interface AuditSpec {
   entityType: string;
   entityId?: string;
   details?: Record<string, unknown>;
+  /** Webhook handlers only: tenant of the entry (session handlers use ctx.brainId). */
+  brainId?: string;
 }
 
 export interface HandlerOptions<
@@ -562,10 +598,7 @@ export function createHandler<
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          `[api-handler] uncaught error for action '${options.action}':`,
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, { kind: "route", action: options.action, requestId });
         response = apiError("internal_error", "An unexpected error occurred", 500);
       }
     }
@@ -763,10 +796,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          "[api-handler] uncaught error in webhook handler:",
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, { kind: "webhook" });
         response = apiError("internal_error", "Webhook processing failed", 500);
       }
     }
@@ -778,6 +808,8 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
         const specs = Array.isArray(spec) ? spec : [spec];
         for (const s of specs) {
           void logAudit(s.action, s.entityType, {
+            // Webhooks carry no session: the spec names the tenant, else system.
+            brainId: s.brainId ?? SYSTEM_BRAIN,
             entityId: s.entityId,
             details: s.details,
             ip: clientIpOf(req),
@@ -828,10 +860,10 @@ export function createCronHandler(
       if (isAppError(err)) {
         response = apiError(err.code, err.message, err.statusCode, err.details);
       } else {
-        log.error(
-          "[api-handler] uncaught error in cron handler:",
-          err instanceof Error ? err.message : String(err)
-        );
+        reportUncaughtError(err, {
+          kind: "cron",
+          requestId: req?.headers?.get?.("x-request-id") ?? undefined,
+        });
         response = apiError("internal_error", "Cron job failed", 500);
       }
     }
@@ -1015,15 +1047,19 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
 
         if (!upstream.ok) {
           const errPayload = await upstream.json().catch(() => ({}));
-          // If the engine doesn't support this endpoint (404), return 503
-          // instead of passing through 404 — the route exists, the engine just
-          // doesn't have this feature.
-          if (upstream.status === 404) {
+          // If the engine doesn't support this endpoint (404 without a JSON
+          // error body), return 503 instead of passing through 404 — the
+          // route exists, the engine just doesn't have this feature. A JSON
+          // 404 from the handler itself ("document not found") passes through
+          // so the UI can name the actual problem.
+          if (upstream.status === 404 && typeof errPayload?.error !== "string") {
             return Response.json(
               { error: "service_unavailable", message: "Engine unterstützt diesen Endpunkt nicht" },
               { status: 503 }
             );
           }
+          // "Nur EU": the engine refused a non-EU model for this firm.
+          if (isEuOnlyRefusal(errPayload)) return euOnlyRefusalResponse();
           return Response.json(
             errPayload.error ? errPayload : { error: `Engine returned ${upstream.status}` },
             { status: upstream.status }

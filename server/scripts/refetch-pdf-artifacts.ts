@@ -23,6 +23,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import { $ } from "bun";
+import { psqlQueryOrThrow } from "./psql-env";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
@@ -336,7 +337,7 @@ async function main() {
 
   // Verwende | als Separator (zuverlässiger als \x1f in Shell)
   const sep = "|";
-  const raw = (await $`psql ${URL_} -tAF${sep} -c ${sql}`.quiet()).stdout.toString();
+  const raw = psqlQueryOrThrow(sql, URL_, { fieldSeparator: sep });
   const entries: { slug: string; sourceId: string }[] = [];
   for (const line of raw.split("\n")) {
     if (!line.trim()) continue;

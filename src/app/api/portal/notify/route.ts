@@ -29,8 +29,8 @@ export const POST = createPublicHandler(
     if (access instanceof Response) return access;
     const ok = await requestPortalNotify({
       headers: access.headers,
+      brainId: access.payload.brain_id,
       caseSlug: access.caseSlug,
-      token,
       email: body.email,
     });
     if (!ok) return apiError("save_failed", "Das hat leider nicht geklappt.", 502);

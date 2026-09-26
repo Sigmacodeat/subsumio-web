@@ -2,7 +2,9 @@ import { z } from "zod";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { executeApprovedAction } from "@/lib/approval-execution";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { canDecideApprovals } from "@/lib/approval-decision";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/approvals/execute");
@@ -21,13 +23,21 @@ export const POST = createHandler(
     rateTier: "standard",
     body: executeSchema,
     audit: (ctx, body) => ({
-      action: "settings.update" as const,
+      action: "approval.execute" as const,
       entityType: "agent_action",
       entityId: body.id,
       details: { execution_requested_by: ctx.user.email, force: body.force === true },
     }),
   },
   async (ctx, body) => {
+    // Executing a Freigabe is part of the four-eyes decision: lawyer/admin.
+    if (!canDecideApprovals(ctx.user.role)) {
+      return apiError(
+        "approval_forbidden",
+        "Freigaben führen nur Anwältinnen/Anwälte und Administratoren aus.",
+        403
+      );
+    }
     try {
       const brain = createServerBrainClient(ctx.headers);
       const result = await executeApprovedAction(
@@ -38,6 +48,7 @@ export const POST = createHandler(
           updatePage: brain.updatePage,
           mutatePageArray: brain.mutatePageArray,
           sendProactiveWhatsApp: sendProactiveMessage,
+          createCase: (input) => createCaseSafely(engineCaseCreateDeps(ctx.headers), input),
         },
         {
           actionSlug: body.id,

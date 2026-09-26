@@ -13,7 +13,8 @@
  *     ├── SchemaError      — schema mismatch, missing column/index, migration drift
  *     ├── ConfigError      — bad configuration (invalid dims, missing URL, bad pool size)
  *     ├── ConnectionError  — connection-level failure (pool exhausted, socket reaped, auth)
- *     └── NotFoundError    — entity not found (page, tag, file, version)
+ *     ├── NotFoundError    — entity not found (page, tag, file, version)
+ *     └── PageExistsError  — create-only write found the page already present
  *
  * Relationship to existing error types:
  *   - `GBrainError` (types.ts) — user-facing error with problem/cause/fix. EngineError
@@ -26,7 +27,13 @@
  * ConnectionError is retryable; ConfigError and NotFoundError are not.
  */
 
-export type EngineErrorKind = "query" | "schema" | "config" | "connection" | "not_found";
+export type EngineErrorKind =
+  | "query"
+  | "schema"
+  | "config"
+  | "connection"
+  | "not_found"
+  | "page_exists";
 
 export class EngineError extends Error {
   readonly kind: EngineErrorKind;
@@ -88,6 +95,20 @@ export class NotFoundError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
     super("not_found", message, { retryable: false, ...opts });
     this.name = "NotFoundError";
+  }
+}
+
+/**
+ * A create-only page write (`putPage(..., { ifAbsent: true })`) found a row
+ * at (source_id, slug) — live, soft-deleted or tombstoned alike. Nothing was
+ * written.
+ */
+export class PageExistsError extends EngineError {
+  readonly slug: string;
+  constructor(slug: string) {
+    super("page_exists", `Page already exists: ${slug}`, { retryable: false });
+    this.name = "PageExistsError";
+    this.slug = slug;
   }
 }
 

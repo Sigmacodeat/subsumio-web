@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getSmsConsentStore, type SmsConsent } from "@/lib/sms/consent-store";
+import { getSmsConsentStore, smsTenantKeys, type SmsConsent } from "@/lib/sms/consent-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { logAudit } from "@/lib/audit";
@@ -49,9 +49,11 @@ export const POST = createHandler(
     const hash = phoneHash(normalizePhone(body.phone));
     const store = getSmsConsentStore();
     const now = new Date().toISOString();
-    const existing = (await store.getByPhoneHash(hash)).find(
-      (c) => c.subjectRef === body.subjectRef
-    );
+    // Only this firm's own records: another firm's opt-in for the same
+    // number is neither reused nor overwritten nor revoked from here.
+    const existing = (
+      await store.getByPhoneHash(smsTenantKeys(ctx.brainId, ctx.user.orgId), hash)
+    ).find((c) => c.subjectRef === body.subjectRef);
 
     if (body.revoke) {
       if (!existing) return apiError("consent_not_found", "Kein Opt-in für diesen Kontakt", 404);
@@ -65,7 +67,7 @@ export const POST = createHandler(
 
     const record: SmsConsent = {
       id: existing?.id ?? `smscons_${randomUUID()}`,
-      orgId: ctx.user.orgId || ctx.brainId,
+      orgId: existing?.orgId ?? (ctx.user.orgId || ctx.brainId),
       subjectType: body.subjectType,
       subjectRef: body.subjectRef,
       phoneHash: hash,
@@ -93,9 +95,12 @@ export const GET = createHandler(
     rateTier: "standard",
     query: z.object({ phone: z.string().min(5).max(30) }),
   },
-  async (_ctx, _body, query) => {
+  async (ctx, _body, query) => {
     const hash = phoneHash(normalizePhone(query.phone));
-    const rows = await getSmsConsentStore().getByPhoneHash(hash);
+    const rows = await getSmsConsentStore().getByPhoneHash(
+      smsTenantKeys(ctx.brainId, ctx.user.orgId),
+      hash
+    );
     return Response.json({
       consents: rows.map((c) => ({
         id: c.id,

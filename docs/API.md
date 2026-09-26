@@ -288,7 +288,7 @@
 | `/api/files/{...slug}`                                      | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/graph`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/health`                                               | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
-| `/api/health/credits`                                       | GET                      | Öffentlich (rate-limited) | `—`                               | standard |
+| `/api/health/credits`                                       | GET                      | Session                   | `platform.operator`               | standard |
 | `/api/inbound-register`                                     | GET, POST                | Session                   | `brain.write`                     | standard |
 | `/api/inbox`                                                | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/inbox/read`                                           | PATCH                    | Session                   | `brain.write`                     | standard |
@@ -321,7 +321,7 @@
 | `/api/legal/case-investigation/{runId}`                     | GET                      | Session                   | `brain.read`                      | standard |
 | `/api/legal/case-investigation/{runId}/contradictions/{id}` | PATCH                    | Session                   | `legal.case_investigation_review` | standard |
 | `/api/legal/case-number/allocate`                           | POST                     | Session                   | `brain.write`                     | standard |
-| `/api/legal/case-scanner`                                   | POST                     | Session → Engine          | `legal.case_scanner`              | heavy    |
+| `/api/legal/case-scanner`                                   | GET, POST                | Session                   | `legal.case_scanner`              | heavy    |
 | `/api/legal/case-strategy`                                  | POST                     | Session                   | `legal.strategy`                  | heavy    |
 | `/api/legal/chronology`                                     | POST                     | Session                   | `brain.read`                      | standard |
 | `/api/legal/commentaries`                                   | GET, POST                | Session                   | `brain.read`                      | standard |

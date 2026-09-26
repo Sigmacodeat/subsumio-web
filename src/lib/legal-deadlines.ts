@@ -1,4 +1,5 @@
 import type { DeadlineAuditEntry, DeadlineEntry, TimelineEntry } from "@/lib/legal-types";
+import { zonedDateString } from "@/lib/datetime";
 
 export type DeadlineStatus = "pending" | "warning" | "critical" | "overdue" | "done" | "vorfrist";
 
@@ -302,14 +303,9 @@ function swissHolidays(
     add(offsetDays(apr1, daysToThu), "Näfelser Fahrt");
   }
 
-  // Sechseläuten (ZH): dritter Montag im April
-  if (canton === "ZH") {
-    const apr1 = new Date(Date.UTC(year, 3, 1, 12));
-    const dow = apr1.getUTCDay();
-    const daysToMon = dow === 1 ? 0 : dow === 0 ? 1 : 8 - dow + 1;
-    const firstMon = offsetDays(apr1, daysToMon);
-    add(offsetDays(firstMon, 14), "Sechseläuten");
-  }
+  // Sechseläuten (Stadt Zürich) ist ein halbtägiger städtischer Anlass, kein
+  // kantonaler Feiertag i. S. v. Art. 142 Abs. 3 ZPO — er verschiebt keine
+  // Frist und steht daher bewusst nicht in dieser Liste.
 
   // Fronleichnam (60 Tage nach Ostern): katholische Kantone
   const corpusChristiCantons = new Set([
@@ -831,17 +827,21 @@ export function computeDeadlineStatus(
   ervZustelldatum?: string
 ): DeadlineStatus {
   if (existingStatus === "done") return "done";
-  // Normalize both to midnight UTC to avoid DST / timezone skew.
-  const now = new Date();
-  now.setUTCHours(0, 0, 0, 0);
+  // "Heute" is the firm's calendar day (Europe/Vienna), compared as whole
+  // calendar days — UTC midnight lagged a day behind between 00:00 and
+  // 01:00/02:00 Vienna time.
+  const now = new Date(`${zonedDateString(new Date())}T00:00:00Z`);
+  const dayOf = (s: string) => {
+    const d = new Date(/^\d{4}-\d{2}-\d{2}/.test(s) ? `${s.slice(0, 10)}T00:00:00Z` : s);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  };
   // E3: If ERV-Zustelldatum is in the future, the deadline hasn't started yet
   if (ervZustelldatum) {
-    const erv = new Date(ervZustelldatum);
-    erv.setUTCHours(0, 0, 0, 0);
+    const erv = dayOf(ervZustelldatum);
     if (erv.getTime() > now.getTime()) return "pending";
   }
-  const target = new Date(dateStr);
-  target.setUTCHours(0, 0, 0, 0);
+  const target = dayOf(dateStr);
   const diff = target.getTime() - now.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
   if (days < 0) return "overdue";
@@ -849,8 +849,7 @@ export function computeDeadlineStatus(
   if (days <= 7) return "warning";
   // E1: Check Vorfrist before falling back to 'pending'
   if (vorfristDate) {
-    const vf = new Date(vorfristDate);
-    vf.setUTCHours(0, 0, 0, 0);
+    const vf = dayOf(vorfristDate);
     if (vf.getTime() <= now.getTime()) return "vorfrist";
   }
   return "pending";

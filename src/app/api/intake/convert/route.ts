@@ -1,13 +1,22 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
+import { listEnginePages } from "@/lib/engine-pages";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { intakeFromPage } from "@/lib/intake";
 import { buildCaseFromIntake } from "@/lib/intake-conversion";
 import { validateAcceptanceForConversion } from "@/lib/intake-acceptance";
+import {
+  canWaiveConflict,
+  checkPartiesConflicts,
+  conflictCheckRecord,
+  intakeParties,
+} from "@/lib/conflict-gate";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
+import { emitCaseCreated } from "@/lib/webhook-dispatch";
 const log = logger("api/intake/convert");
 
 export const dynamic = "force-dynamic";
@@ -86,6 +95,60 @@ export const POST = createHandler(
       }
     }
 
+    // Kollisionsprüfung (§ 10 Abs 1 RAO): the stored check must come from the
+    // server (real user id), and the check runs AGAIN now — a conflict that
+    // appeared after the check, or one no justified waiver covers, blocks.
+    const storedCheck = workflow.conflict_check;
+    if (!storedCheck.performed_by_id || !storedCheck.performed_at) {
+      return apiError(
+        "acceptance_incomplete",
+        "Mandatsannahme unvollständig: Die Kollisionsprüfung wurde nicht serverseitig durchgeführt. Bitte die Prüfung erneut ausführen.",
+        422,
+        { code: "conflict_check_not_server_verified" }
+      );
+    }
+    const parties = intakeParties(intakePage.frontmatter as unknown as Record<string, unknown>);
+    let conflictOutcome;
+    try {
+      conflictOutcome = await checkPartiesConflicts(ctx.headers, parties);
+    } catch (err) {
+      log.error(
+        "[intake/convert] conflict check failed:",
+        err instanceof Error ? err.message : err
+      );
+      return apiError(
+        "conflict_check_unavailable",
+        "Kollisionsprüfung nicht verfügbar. Akte wurde nicht angelegt.",
+        503
+      );
+    }
+    if (!conflictOutcome.checked) {
+      return apiError(
+        "acceptance_incomplete",
+        "Mandatsannahme unvollständig: Mandantenname fehlt für die Kollisionsprüfung.",
+        422,
+        { code: "conflict_check_no_parties" }
+      );
+    }
+    const blocking = conflictOutcome.blocking.length > 0;
+    const waiverCovers =
+      storedCheck.waived === true &&
+      Boolean(storedCheck.waived_by_id) &&
+      Boolean(storedCheck.waived_reason?.trim()) &&
+      canWaiveConflict(storedCheck.waived_by_role) &&
+      conflictOutcome.blocking.every((hit) => (storedCheck.matches ?? []).includes(hit.slug));
+    if (blocking && !waiverCovers) {
+      return Response.json(
+        {
+          error: "conflict_detected",
+          message:
+            "Interessenkonflikt festgestellt, der nicht begründet freigegeben ist. Akte wurde nicht angelegt.",
+          conflictWarning: conflictOutcome,
+        },
+        { status: 409 }
+      );
+    }
+
     const casePage = buildCaseFromIntake(intakePage, {
       caseSlug: body.case_slug,
       caseNumber: body.case_number,
@@ -93,6 +156,39 @@ export const POST = createHandler(
       priority: body.priority,
       portalEnabled: body.portal_enabled,
       convertedBy: ctx.user.email,
+    });
+    // The matter carries the conversion-time result, not the stored claim.
+    const conflictRecord = conflictCheckRecord(
+      conflictOutcome,
+      { id: ctx.user.id, email: ctx.user.email, role: ctx.user.role },
+      blocking
+        ? {
+            reason: storedCheck.waived_reason ?? "",
+            actor: {
+              id: storedCheck.waived_by_id ?? "",
+              email: storedCheck.waived_by ?? "",
+              role: storedCheck.waived_by_role,
+            },
+          }
+        : undefined
+    );
+    if (blocking && storedCheck.waived_at) conflictRecord.waived_at = storedCheck.waived_at;
+    casePage.mandate_acceptance = {
+      ...casePage.mandate_acceptance,
+      conflict_check: conflictRecord,
+    };
+    Object.assign(casePage.frontmatter, {
+      mandate_acceptance: casePage.mandate_acceptance,
+      conflict_status: blocking ? "conflict_waived" : "conflict_cleared",
+      ...(blocking
+        ? {
+            conflict_waiver_reason: storedCheck.waived_reason,
+            conflict_waived_by: storedCheck.waived_by,
+            conflict_waived_by_id: storedCheck.waived_by_id,
+            conflict_waived_by_role: storedCheck.waived_by_role,
+            conflict_waived_at: storedCheck.waived_at,
+          }
+        : {}),
     });
 
     // A retry after "case created, intake update failed" must not produce a
@@ -119,17 +215,30 @@ export const POST = createHandler(
     }
 
     if (!caseAlreadyCreated) {
+      // Paket C5 ("Akte sicher anlegen") replaces this direct engine write.
+      // The conflict gate above must stay BEFORE that call and hand over
+      // `casePage.frontmatter` (conflict_status + mandate_acceptance) as-is.
+      // Create-only: a matter written at this slug since the check above is
+      // refused by the engine, never replaced.
       const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(casePage),
+        body: JSON.stringify({ ...casePage, if_absent: true }),
         signal: AbortSignal.timeout(15_000),
       });
+      if (createRes.status === 409) {
+        return apiError(
+          "case_slug_exists",
+          "Eine Akte mit diesem Slug existiert bereits. Bitte einen anderen Slug oder Aktenzeichen verwenden.",
+          409
+        );
+      }
       if (!createRes.ok) {
         const message = await createRes.text().catch(() => "");
         log.error("[intake/convert] case create failed:", createRes.status, message);
         return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
       }
+      emitCaseCreated(ctx.brainId, casePage);
     }
 
     const now = new Date().toISOString();
@@ -157,18 +266,14 @@ export const POST = createHandler(
     // tasks. Best-effort: the case must never fail because of this.
     const missingDocs = intakePage.frontmatter.missing_documents ?? [];
     let documentRequestSlug: string | undefined;
+    let requestSent = false;
     if (missingDocs.length > 0) {
       try {
-        const listRes = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=250`, {
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        });
-        const data = listRes.ok ? await listRes.json().catch(() => []) : [];
-        const existing: BrainPage[] = Array.isArray(data)
-          ? data
-          : (((data as { pages?: BrainPage[] }).pages ??
-              (data as { items?: BrainPage[] }).items ??
-              []) as BrainPage[]);
+        // Cursor-paginated: a single /api/pages call is capped at 100 rows —
+        // a dedupe check over a truncated list would create a second request.
+        const existing = (await listEnginePages(ctx.headers, "document_request", 10_000, {
+          timeoutMs: 10_000,
+        })) as unknown as BrainPage[];
         const existingRequest = existing.find(
           (p) =>
             (p.frontmatter as Record<string, unknown> | undefined)?.case_slug === casePage.slug &&
@@ -178,18 +283,22 @@ export const POST = createHandler(
           documentRequestSlug = existingRequest.slug;
           // Retry mit Senden-Wunsch: vorhandenen Entwurf als gesendet markieren.
           if (body.send_document_request) {
-            await fetch(`${ENGINE_URL}/api/pages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...ctx.headers },
-              body: JSON.stringify({
-                slug: existingRequest.slug,
-                title: "Dokumentenanfrage Update",
-                type: "document_request",
-                merge: true,
-                frontmatter: { status: "sent", sent_at: now, updated_at: now },
-              }),
-              signal: AbortSignal.timeout(15_000),
-            });
+            requestSent = await engineWriteBestEffort(
+              `${ENGINE_URL}/api/pages`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...ctx.headers },
+                body: JSON.stringify({
+                  slug: existingRequest.slug,
+                  title: "Dokumentenanfrage Update",
+                  type: "document_request",
+                  merge: true,
+                  frontmatter: { status: "sent", sent_at: now, updated_at: now },
+                }),
+                signal: AbortSignal.timeout(15_000),
+              },
+              "Dokumentenanfrage (gesendet)"
+            );
           }
         } else {
           const { buildDocumentRequest } = await import("@/lib/document-requests");
@@ -217,10 +326,14 @@ export const POST = createHandler(
             }),
             signal: AbortSignal.timeout(15_000),
           });
-          if (reqRes.ok) documentRequestSlug = request.slug;
+          if (reqRes.ok) {
+            documentRequestSlug = request.slug;
+            requestSent = body.send_document_request === true;
+          }
         }
         // Same notification the PATCH route emits on status → sent.
-        if (body.send_document_request && documentRequestSlug) {
+        // Only a request actually stored as sent is announced.
+        if (requestSent && documentRequestSlug) {
           try {
             const { createDocumentRequestNotification } = await import("@/lib/comments");
             await createDocumentRequestNotification({
@@ -259,6 +372,7 @@ export const POST = createHandler(
       case: casePage,
       intake_slug: body.slug,
       document_request_slug: documentRequestSlug,
+      ...(body.send_document_request ? { document_request_sent: requestSent } : {}),
     });
   }
 );

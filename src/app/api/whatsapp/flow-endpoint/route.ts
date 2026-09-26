@@ -10,9 +10,10 @@
  *
  * Env vars:
  * - WHATSAPP_FLOW_PRIVATE_KEY_PEM: RSA private key in PEM format
+ * - WHATSAPP_APP_SECRET: app secret for the X-Hub-Signature-256 check
  */
 
-import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { createWebhookHandler, apiError } from "@/lib/api-handler";
 import {
   decryptFlowRequest,
   encryptFlowResponse,
@@ -20,6 +21,11 @@ import {
 } from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
+import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
+import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
+import { phoneHash, verifyWhatsAppSignature } from "@/lib/whatsapp/verify";
+import { verifyFlowToken } from "@/lib/whatsapp/flow-token";
+import { zonedDateString } from "@/lib/datetime";
 import { randomUUID } from "node:crypto";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
@@ -81,7 +87,10 @@ const ALL_SLOT_TIMES = [
  * TOCTOU race, not an enforced hold.
  */
 async function getBookedTimes(brainId: string, dateStr: string): Promise<Set<string>> {
-  const pages = await listEnginePages(engineHeadersForBrain(brainId), "appointment", 500);
+  // Complete and strict: a failed read must not look like "all free".
+  const pages = await listEnginePages(engineHeadersForBrain(brainId), "appointment", 10_000, {
+    strict: true,
+  });
   const booked = new Set<string>();
   for (const page of pages) {
     const fm = page.frontmatter ?? {};
@@ -91,6 +100,14 @@ async function getBookedTimes(brainId: string, dateStr: string): Promise<Set<str
     }
   }
   return booked;
+}
+
+/** True for a date/time the slot picker offers: YYYY-MM-DD, not in the past, a fixed slot. */
+function isOfferedSlot(dateStr: string, time: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  if (Number.isNaN(Date.parse(`${dateStr}T00:00:00Z`))) return false;
+  if (dateStr < zonedDateString(new Date())) return false;
+  return ALL_SLOT_TIMES.includes(time);
 }
 
 async function generateSlots(
@@ -146,64 +163,96 @@ async function handleCaseIntake(
       };
     }
     case "create_case": {
-      // Create the case in the brain
-      const caseNumber = String(
-        data.case_number || `2026-${randomUUID().slice(0, 8).toUpperCase()}`
-      );
-      const caseSlug = `legal/cases/${caseNumber}`;
+      // The slug and the Aktenzeichen are assigned here, never taken from the
+      // sender: a sender-chosen value could name an existing matter, and a
+      // plain create would replace it. What the sender typed as their own
+      // reference is kept as a note only.
+      const reference = `WA-${new Date().getUTCFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+      const senderReference = String(data.case_number || "").slice(0, 100);
       const clientName = String(data.client_name || "Unbekannt").slice(0, MAX_FIELD_LENGTH);
       const opponentName = String(data.opponent_name || "").slice(0, MAX_FIELD_LENGTH);
       const legalAreaId = String(data.legal_area || "civil").slice(0, 50);
       const description = String(data.description || "").slice(0, 5000);
+      const legalAreaLabel = LEGAL_AREA_MAP[legalAreaId] || legalAreaId;
 
-      const pagePayload = sanitizeObjectStrings({
-        slug: caseSlug,
+      const casePayload = sanitizeObjectStrings({
         title: `${clientName} vs. ${opponentName || "—"}`,
-        type: "legal_case",
-        content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${LEGAL_AREA_MAP[legalAreaId] || legalAreaId}`,
+        content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${legalAreaLabel}`,
         frontmatter: {
           type: "legal_case",
-          case_number: caseNumber,
+          case_number: reference,
+          ...(senderReference ? { client_reference: senderReference } : {}),
           client_name: clientName,
           opponent_name: opponentName,
           legal_area: legalAreaId,
-          legal_area_label: LEGAL_AREA_MAP[legalAreaId] || legalAreaId,
+          legal_area_label: legalAreaLabel,
           status: "intake",
           created_via: "whatsapp_flow",
           created_at: new Date().toISOString(),
         },
       });
 
-      try {
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...engineHeadersForBrain(brainId),
+      const headers = engineHeadersForBrain(brainId);
+      const outcome = await createCaseSafely(engineCaseCreateDeps(headers), {
+        ...casePayload,
+        slugHint: reference,
+      });
+
+      if (outcome.status === "conflict") {
+        // No matter for a conflicting request. The firm reviews it as an
+        // intake request; the sender is not told about the conflict.
+        const intake = buildIntakeRequest({
+          source: "whatsapp",
+          summary: description || `Anfrage von ${clientName}`,
+          clientName,
+          legalArea: legalAreaLabel,
+          status: "new",
+          conflictCheckStatus: "conflict",
+        });
+        await writeIntakeRequest(brainId, {
+          ...intake,
+          frontmatter: {
+            ...intake.frontmatter,
+            ...(opponentName ? { opponent: opponentName } : {}),
+            intake_reference: reference,
+          } as typeof intake.frontmatter,
+        });
+        void logAudit("whatsapp.flow_case_created", "intake_request", {
+          brainId,
+          entityId: intake.slug,
+          details: { brainId, reference, legalArea: legalAreaId, conflict: true },
+        });
+        return {
+          screen: "SUCCESS",
+          data: { case_slug: "", case_number: reference },
+          extension_message: {
+            flow_token: flowToken,
+            optional_params: { case_number: reference },
           },
-          body: JSON.stringify(pagePayload),
-          signal: AbortSignal.timeout(15_000),
-        });
-        void logAudit("whatsapp.flow_case_created", "legal_case", {
-          entityId: caseSlug,
-          details: { brainId, caseNumber, legalArea: legalAreaId },
-        });
-      } catch (err) {
-        log.error(
-          "[flow/case-intake] brain write failed:",
-          err instanceof Error ? err.message : String(err)
-        );
+        };
       }
+
+      if (outcome.status !== "created") {
+        // exists / error: nothing was written — never report SUCCESS.
+        log.error("[flow/case-intake] case not created:", outcome.status);
+        throw new Error(`case_create_failed:${outcome.status}`);
+      }
+
+      void logAudit("whatsapp.flow_case_created", "legal_case", {
+        brainId,
+        entityId: outcome.slug,
+        details: { brainId, reference, legalArea: legalAreaId },
+      });
 
       return {
         screen: "SUCCESS",
         data: {
-          case_slug: caseSlug,
-          case_number: caseNumber,
+          case_slug: outcome.slug,
+          case_number: reference,
         },
         extension_message: {
           flow_token: flowToken,
-          optional_params: { case_slug: caseSlug, case_number: caseNumber },
+          optional_params: { case_slug: outcome.slug, case_number: reference },
         },
       };
     }
@@ -250,6 +299,22 @@ async function handleAppointmentBooking(
       const appointmentDate = String(data.appointment_date || "").slice(0, 20);
       const appointmentTime = String(data.appointment_time || "").slice(0, 20);
       const topic = String(data.topic || "Allgemeine Beratung").slice(0, MAX_FIELD_LENGTH);
+      // Only a slot the picker actually offers: a valid, not-past date and
+      // one of the fixed slot times — never an arbitrary string.
+      if (!isOfferedSlot(appointmentDate, appointmentTime)) {
+        return {
+          screen: "DATE_SELECT",
+          data: {
+            selected_date: appointmentDate,
+            available_slots: /^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)
+              ? await generateSlots(appointmentDate, brainId)
+              : [],
+            error: "invalid_slot",
+          },
+        };
+      }
+      // Who booked: the number the Flow was sent to (server-signed token).
+      const contact = verifyFlowToken(flowToken);
       // Re-verify the slot is still free right before writing — the picker
       // shown to the user (get_slots) is a snapshot, not a hold, so two
       // people booking the same date concurrently could otherwise both
@@ -273,39 +338,48 @@ async function handleAppointmentBooking(
         slug: `legal/appointments/${appointmentId}`,
         title: `Termin: ${appointmentDate} ${appointmentTime} — ${topic}`,
         type: "appointment",
-        content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\n24h vor dem Termin wird eine Erinnerung gesendet.`,
+        content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Kontakt:** ${contact ? `WhatsApp ${contact.phone}` : "unbekannt (bitte über den WhatsApp-Verlauf zuordnen)"}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\nDie Kanzlei wird 24 h vor dem Termin erinnert.`,
         frontmatter: {
           type: "appointment",
           appointment_id: appointmentId,
+          title: `Termin (WhatsApp): ${topic}`,
           date: appointmentDate,
           time: appointmentTime,
           topic,
           status: "confirmed",
+          ...(contact
+            ? { contact_phone: contact.phone, contact_phone_hash: phoneHash(contact.phone) }
+            : { contact_unverified: true }),
           created_via: "whatsapp_flow",
           created_at: new Date().toISOString(),
         },
       });
 
-      try {
-        await fetch(`${ENGINE_URL}/api/pages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...engineHeadersForBrain(brainId),
-          },
-          body: JSON.stringify(apptPayload),
-          signal: AbortSignal.timeout(15_000),
-        });
-        void logAudit("whatsapp.flow_appointment_booked", "appointment", {
-          entityId: appointmentId,
-          details: { brainId, date: appointmentDate, time: appointmentTime },
-        });
-      } catch (err) {
-        log.error(
-          "[flow/appointment] brain write failed:",
-          err instanceof Error ? err.message : String(err)
-        );
+      // A failed write must never be confirmed to the person booking: the
+      // handler's error path answers with the error screen instead.
+      const writeRes = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...engineHeadersForBrain(brainId),
+        },
+        body: JSON.stringify({ ...apptPayload, if_absent: true }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!writeRes.ok) {
+        log.error("[flow/appointment] brain write failed:", writeRes.status);
+        throw new Error(`appointment_write_failed:${writeRes.status}`);
       }
+      void logAudit("whatsapp.flow_appointment_booked", "appointment", {
+        brainId,
+        entityId: appointmentId,
+        details: {
+          brainId,
+          date: appointmentDate,
+          time: appointmentTime,
+          contact_verified: Boolean(contact),
+        },
+      });
 
       return {
         screen: "SUCCESS",
@@ -330,15 +404,31 @@ async function handleAppointmentBooking(
 
 // ── Route Handler ──────────────────────────────────────────────────────────
 
-export const POST = createPublicHandler(
+export const POST = createWebhookHandler(
   {
-    body: flowRequestSchema,
     rateLimitKey: (req) => `whatsapp-flow:ip:${clientIp(req.headers)}`,
     rateLimitMax: 30,
     rateLimitWindowMs: 60_000,
   },
-  async (_req, body) => {
-    const { encrypted_aes_key, encrypted_flow_data, initial_vector } = body;
+  async (_body, req) => {
+    // Only Meta may call this endpoint: every request carries an HMAC of the
+    // raw body made with the app secret (X-Hub-Signature-256), checked like
+    // the webhook. No secret or a wrong signature → rejected (fail closed).
+    const rawBody = await req.text();
+    if (!verifyWhatsAppSignature(rawBody, req.headers.get("x-hub-signature-256"))) {
+      return apiError("invalid_signature", "Invalid request signature", 401);
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(rawBody);
+    } catch {
+      return apiError("invalid_json", "Request body is not valid JSON", 400);
+    }
+    const parsedBody = flowRequestSchema.safeParse(json);
+    if (!parsedBody.success) {
+      return apiError("validation_failed", "Request body validation failed", 400);
+    }
+    const { encrypted_aes_key, encrypted_flow_data, initial_vector } = parsedBody.data;
 
     const decrypted = decryptFlowRequest({
       encrypted_aes_key,

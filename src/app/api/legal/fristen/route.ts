@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { createHandler } from "@/lib/api-handler";
 import type { DeadlineStatus } from "@/lib/legal-deadlines";
-import { DEADLINE_SOURCES, loadFristenReadModel } from "@/lib/fristen-read-model";
+import {
+  DEADLINE_SOURCES,
+  loadFristenReadModel,
+  loadFristenReadModelCached,
+} from "@/lib/fristen-read-model";
+import { topbarDeadlineWarnings } from "@/lib/topbar-deadline-warnings";
+import { firmToday } from "@/lib/datetime";
 import { z } from "zod";
 
 export type { Frist } from "@/lib/fristen-read-model";
@@ -12,6 +18,8 @@ const querySchema = z.object({
   case: z.string().max(500).optional(),
   status: z.string().max(50).optional(),
   heute: z.string().max(10).optional(),
+  /** "warnings": only open deadlines due within TOPBAR_WARNING_DAYS (topbar). */
+  view: z.enum(["warnings"]).optional(),
 });
 
 /**
@@ -34,10 +42,25 @@ export const GET = createHandler(
   },
   async (ctx, _body, query) => {
     const statusFilter = query.status;
-    const { fristen, failedSources } = await loadFristenReadModel(ctx.headers, {
-      caseFilter: query.case,
-      heute: query.heute,
-    });
+    const load = () =>
+      loadFristenReadModel(ctx.headers, {
+        caseFilter: query.case,
+        heute: query.heute,
+      });
+    const model =
+      query.view === "warnings"
+        ? await loadFristenReadModelCached(ctx.headers, {
+            caseFilter: query.case,
+            heute: query.heute ?? firmToday(),
+          })
+        : await load();
+    const failedSources = model.failedSources;
+    const fristen =
+      query.view === "warnings"
+        ? model.fristen.filter(
+            (f) => topbarDeadlineWarnings([f], query.heute ?? firmToday()).length > 0
+          )
+        : model.fristen;
 
     const deadlineSources = DEADLINE_SOURCES;
     if (deadlineSources.every((src) => failedSources.includes(src))) {

@@ -28,7 +28,7 @@ const items = {
         kind: "case",
         deleted_at: "2026-01-01T10:00:00.000Z",
         deleted_by: "anwalt@example.com",
-        reason: "archived",
+        reason: "manual_delete",
         legal_hold: true,
       },
       {
@@ -37,7 +37,7 @@ const items = {
         type: "document",
         kind: "item",
         deleted_at: "2026-02-01T10:00:00.000Z",
-        reason: "case_archived",
+        reason: "case_deleted",
         case_slug: "legal/cases/old",
       },
     ],
@@ -64,6 +64,23 @@ function mockCsrfByUrl(restoreBody: unknown, restoreStatus = 200) {
 }
 
 describe("Papierkorb page", () => {
+  it("reports documents the matter restore could not bring back", async () => {
+    mockFetch.mockResolvedValueOnce(okJson(items));
+    mockCsrfByUrl({ data: { slug: "legal/cases/old", cascaded: 1, cascadeFailed: 2 } });
+    confirm.mockResolvedValue(true);
+    render(<PapierkorbPage />);
+    const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });
+    await userEvent.click(buttons[0]);
+    await waitFor(() =>
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "error",
+          title: "Akte wiederhergestellt — Dokumente unvollständig",
+        })
+      )
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     confirm.mockResolvedValue(true);
@@ -77,8 +94,8 @@ describe("Papierkorb page", () => {
     expect(screen.getByText("Schriftsatz")).toBeInTheDocument();
     expect(screen.getByText("Akte")).toBeInTheDocument();
     expect(screen.getByText("Dokument")).toBeInTheDocument();
-    expect(screen.getByText("Akte archiviert")).toBeInTheDocument();
-    expect(screen.getByText("Mit Akte archiviert")).toBeInTheDocument();
+    expect(screen.getByText("Manuell gelöscht")).toBeInTheDocument();
+    expect(screen.getByText("Mit Akte gelöscht")).toBeInTheDocument();
     expect(screen.getAllByText("Aufbewahrungssperre").length).toBeGreaterThan(0);
   });
 
@@ -174,7 +191,14 @@ describe("Papierkorb page", () => {
 
   it("rolls the item back when restore fails", async () => {
     mockFetch.mockResolvedValueOnce(okJson(items));
-    mockCsrfByUrl({ error: "parent_archived" }, 409);
+    // Real apiError shape: German text in `error`, machine code in `code`.
+    mockCsrfByUrl(
+      {
+        error: "Die zugehörige Akte ist archiviert. Stellen Sie zuerst die Akte wieder her.",
+        code: "parent_archived",
+      },
+      409
+    );
     render(<PapierkorbPage />);
 
     const buttons = await screen.findAllByRole("button", { name: /Wiederherstellen/ });

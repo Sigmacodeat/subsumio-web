@@ -4,6 +4,7 @@
 // errors never reached Sentry. No-op when NEXT_PUBLIC_SENTRY_DSN is unset
 // (baked in at build time — see Dockerfile.web).
 import * as Sentry from "@sentry/nextjs";
+import { sentryPrivacyOptions } from "@/lib/sentry-scrub";
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -15,7 +16,8 @@ if (dsn) {
     // Legal data on screen: no session replays.
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
-    sendDefaultPii: false,
+    // No PII, scrubbed messages/URLs/breadcrumbs (src/lib/sentry-scrub.ts).
+    ...sentryPrivacyOptions,
   });
 }
 

@@ -1,18 +1,24 @@
 import { createHandler, apiError } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { collectFullBackup } from "@/lib/full-backup";
+import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
 import { listBackups, createBackup, getBackupStats, type BackupMetadata } from "@/lib/backup";
 import { z } from "zod";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export const GET = createHandler(
   {
     action: "platform.operator",
     rateTier: "standard",
   },
-  async (_ctx) => {
-    const [backups, stats] = await Promise.all([listBackups(), getBackupStats()]);
-    return Response.json({ backups, stats });
+  async (ctx) => {
+    const [all, stats] = await Promise.all([listBackups(), getBackupStats()]);
+    // Inside a support session only that firm's backups are listed.
+    const backups = ctx.supportSession ? all.filter((b) => b.brainId === ctx.brainId) : all;
+    const tenant = ctx.supportSession
+      ? { brainId: ctx.brainId, orgName: ctx.supportSession.orgName }
+      : null;
+    return Response.json({ backups, stats, tenant });
   }
 );
 
@@ -28,39 +34,45 @@ export const POST = createHandler(
     audit: (ctx) => ({
       action: "admin.backup" as const,
       entityType: "backup",
-      details: { triggeredBy: ctx.user.email },
+      details: {
+        triggeredBy: ctx.user.email,
+        brainId: ctx.brainId,
+        orgName: ctx.supportSession?.orgName ?? null,
+      },
     }),
   },
   async (ctx, _body) => {
-    // Fetch all pages from the engine
-    const allPages: Array<Record<string, unknown>> = [];
-    let page = 0;
-    const perPage = 100;
-    let hasMore = true;
-
-    while (hasMore && page < 100) {
-      const res = await fetch(`${ENGINE_URL}/api/pages?limit=${perPage}&offset=${page * perPage}`, {
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!res.ok) {
-        return apiError("engine_error", "Failed to fetch pages from engine", 502);
-      }
-      const raw = await res.json();
-      const pages = Array.isArray(raw)
-        ? raw
-        : Array.isArray((raw as Record<string, unknown>)?.pages)
-          ? (raw as Record<string, unknown[]>).pages
-          : [];
-      if (pages.length === 0) {
-        hasMore = false;
-      } else {
-        allPages.push(...pages);
-        page++;
-      }
+    // A backup is always one firm's data. Without a support session the
+    // operator's context is their own empty workspace — refuse instead of
+    // storing an "empty full backup".
+    if (!ctx.supportSession) {
+      return apiError(
+        "support_session_required",
+        "Backups nur innerhalb einer Support-Sitzung für eine Kanzlei",
+        409
+      );
+    }
+    // Every entry with its text; the result says whether anything is missing.
+    const { pages: allPages, completeness } = await collectFullBackup(ctx.headers);
+    if (completeness.engine_error && allPages.length === 0) {
+      return apiError(
+        "engine_error",
+        "Engine nicht erreichbar, Backup konnte nicht erstellt werden",
+        502
+      );
     }
 
-    const metadata: BackupMetadata = await createBackup(allPages, ctx.user.email);
+    // Settings secrets (SMTP password) are not written into backup files.
+    const metadata: BackupMetadata = await createBackup(
+      redactPageSecrets(allPages),
+      ctx.user.email,
+      {
+        brainId: ctx.brainId,
+        orgId: ctx.supportSession.orgId,
+        orgName: ctx.supportSession.orgName,
+      },
+      completeness
+    );
     return Response.json({ ok: true, backup: metadata });
   }
 );

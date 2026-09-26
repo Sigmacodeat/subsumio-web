@@ -10,6 +10,7 @@ import {
   getDunningLabel,
   getOverdueItems,
   getOposSummary,
+  isPastDue,
   type BankTransaction,
   type OpenItem,
 } from "./fibu";
@@ -366,5 +367,38 @@ describe("getOverdueItems / getOposSummary", () => {
     expect(getDunningLabel(0)).toBe("");
     expect(getDunningLabel(2)).toBe("Mahnung 2");
     expect(getDunningLabel(99)).toBe("");
+  });
+});
+
+describe("Mahnstufen ohne negative Gebühr / Fälligkeit in Wiener Zeit (GELD-11, UIS-4-3)", () => {
+  const base = createOpenItem({
+    invoice_id: "legal/invoices/x",
+    invoice_number: "R-2026-0001",
+    client_name: "M",
+    amount: 100,
+    due_date: "2026-01-01",
+  });
+
+  test("zwei manuelle Mahnungen (Spesen 10, Stufe 0) → Mahnlauf addiert nie eine negative Gebühr", () => {
+    const item = { ...base, dunning_fee: 10, dunning_level: 0 as const };
+    const [r] = processDunningRun([item], new Date("2026-01-10T12:00:00Z"));
+    expect(r.new_level).toBe(1);
+    expect(r.fee_added).toBe(0);
+  });
+
+  test("am Fälligkeitstag ist ein Posten noch nicht überfällig", () => {
+    const item = { ...base, due_date: "2026-09-25" };
+    expect(isPastDue(item.due_date, new Date("2026-09-25T21:30:00Z"))).toBe(false);
+    // 00:30 Wiener Zeit am Folgetag (22:30 UTC) → überfällig
+    expect(isPastDue(item.due_date, new Date("2026-09-25T22:30:00Z"))).toBe(true);
+    expect(getOverdueItems([item], new Date("2026-09-25T10:00:00Z"))).toHaveLength(0);
+  });
+
+  test("ausgebuchte Posten zählen nicht zur offenen Summe", () => {
+    const s = getOposSummary([
+      { ...base, open_amount: 100 },
+      { ...base, id: "w", status: "written_off", open_amount: 500 },
+    ]);
+    expect(s.totalOpenAmount).toBe(100);
   });
 });

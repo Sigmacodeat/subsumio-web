@@ -29,7 +29,31 @@ export interface LiveStatuteVersion {
  * The API returns documents with metadata including Inkrafttretensdatum
  * (entry into force date) and Außerkrafttretensdatum (expiry date).
  */
-export async function fetchRisOgdStatuteVersion(
+/**
+ * RIS-OGD terms of use: no parallel requests and at most one request every
+ * two seconds. Every RIS request of this process goes through one queue that
+ * keeps that spacing, however many callers ask at the same time.
+ */
+export const RIS_MIN_INTERVAL_MS = 2_000;
+let risQueue: Promise<unknown> = Promise.resolve();
+let risLastRequestAt = 0;
+
+function risThrottled<T>(fn: () => Promise<T>): Promise<T> {
+  const run = risQueue.then(async () => {
+    const wait = risLastRequestAt + RIS_MIN_INTERVAL_MS - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    risLastRequestAt = Date.now();
+    return fn();
+  });
+  risQueue = run.catch(() => undefined);
+  return run;
+}
+
+export function fetchRisOgdStatuteVersion(statuteAbbr: string): Promise<LiveStatuteVersion | null> {
+  return risThrottled(() => fetchRisOgdStatuteVersionNow(statuteAbbr));
+}
+
+async function fetchRisOgdStatuteVersionNow(
   statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
   try {
@@ -367,14 +391,25 @@ export async function fetchLiveStatuteVersion(
  */
 export async function fetchLiveStatuteVersions(
   jurisdiction: "at" | "de" | "ch",
-  statuteAbbrs: string[]
+  statuteAbbrs: string[],
+  opts: { sleep?: (ms: number) => Promise<void> } = {}
 ): Promise<LiveStatuteVersion[]> {
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const results: LiveStatuteVersion[] = [];
-  for (const abbr of statuteAbbrs) {
+  for (const [i, abbr] of statuteAbbrs.entries()) {
+    if (i > 0) await sleep(livePauseMs(jurisdiction));
     const result = await fetchLiveStatuteVersion(jurisdiction, abbr);
     if (result) results.push(result);
-    // Small delay between requests
-    await new Promise((r) => setTimeout(r, 200));
   }
   return results;
+}
+
+/**
+ * Pause between two live lookups. Austrian lookups go to RIS, whose terms
+ * allow at most 0.5 requests per second — the same pace as the corpus
+ * scripts (server/scripts/ris-pace.ts). Other sources: a small courtesy gap.
+ */
+export const RIS_LIVE_PAUSE_MS = 2_000;
+export function livePauseMs(jurisdiction: "at" | "de" | "ch"): number {
+  return jurisdiction === "at" ? RIS_LIVE_PAUSE_MS : 200;
 }

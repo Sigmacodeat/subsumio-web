@@ -2,6 +2,7 @@ import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
 import { ENGINE_URL } from "@/lib/engine";
 import { resolvePortalAccess } from "@/lib/portal-access";
+import { toPortalQuestionnaire } from "@/lib/portal-view";
 import { createPublicHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
 import {
@@ -58,7 +59,9 @@ export const GET = createPublicHandler(
     if (access instanceof Response) return access;
     const page = await loadCase(access.headers, access.caseSlug);
     if (!page) return apiError("case_not_found", "Akte nicht gefunden", 404);
-    return apiSuccess({ questionnaires: readQuestionnaires(page.frontmatter) });
+    return apiSuccess({
+      questionnaires: readQuestionnaires(page.frontmatter).map(toPortalQuestionnaire),
+    });
   }
 );
 

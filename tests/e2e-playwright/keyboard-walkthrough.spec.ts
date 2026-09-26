@@ -55,8 +55,23 @@ test.describe("Keyboard-Only Walkthrough", () => {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, password, locale: "de", industry: "legal" }),
+          body: JSON.stringify({
+            acceptTerms: true,
+            acceptDpa: true,
+            email,
+            name,
+            password,
+            locale: "de",
+            industry: "legal",
+          }),
         });
+        // Signup does not sign in by itself; the E2E harness returns the
+        // confirmation link, and opening it creates the account + session.
+        const body = (await res.json().catch(() => ({}))) as { e2eVerifyUrl?: string };
+        if (body.e2eVerifyUrl) {
+          const link = new URL(body.e2eVerifyUrl);
+          await fetch(`${link.pathname}${link.search}`, { redirect: "manual" });
+        }
         return { status: res.status, ok: res.ok };
       },
       { email, name: TEST_USER.name, password: TEST_USER.password }

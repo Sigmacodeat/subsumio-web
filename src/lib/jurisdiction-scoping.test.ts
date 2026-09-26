@@ -1,14 +1,9 @@
 import { describe, test, expect } from "vitest";
 
-// Unit test for the jurisdiction-scoped readSourcesFor logic.
-// Tests the actual Case > User > Fail-Closed architecture from WP1.
-
-// Replicate the core logic from web-api.ts readSourcesFor()
-const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-  DE: ["law-de", "law-eu"],
-  AT: ["law-at", "law-at-judikatur", "law-eu"],
-  CH: ["law-ch", "law-eu"],
-};
+// Unit test for the jurisdiction-scoped read scope of the engine
+// (server/src/commands/web-api.ts readSourcesFor → scopedReadSources).
+// Case > User > Fail-Closed — the product function, not a copy.
+import { scopedReadSources } from "../../server/src/core/legal/jurisdiction";
 
 function readSourcesForImpl(
   sharedSources: string[],
@@ -16,17 +11,7 @@ function readSourcesForImpl(
   caseJurisdiction?: string,
   userJurisdiction?: string
 ): string[] | undefined {
-  if (sharedSources.length === 0) return undefined;
-  const caseJur = caseJurisdiction?.toUpperCase();
-  const userJur = userJurisdiction?.toUpperCase();
-  // Case > User > Fail-Closed
-  const jur = caseJur ?? userJur;
-  if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-    const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => sharedSources.includes(s));
-    return [...new Set([ownSource, ...scoped])];
-  }
-  // Fail-closed: no jurisdiction determined → only own source, NO law corpus
-  return [ownSource];
+  return scopedReadSources(sharedSources, ownSource, caseJurisdiction, userJurisdiction);
 }
 
 describe("readSourcesFor — jurisdiction-scoped law federation", () => {

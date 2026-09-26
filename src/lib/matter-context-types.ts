@@ -160,7 +160,8 @@ export interface MatterDocumentRequestSummary {
   created_at: string;
   updated_at: string;
   sent_at?: string;
-  portal_url?: string;
+  /** The request offers the client portal (the link is issued when sent). */
+  portal_link?: boolean;
   open_items: Array<{ key: string; label: string; required: boolean }>;
   fulfilled_items: Array<{ key: string; label: string; document_slug: string }>;
 }
@@ -259,6 +260,9 @@ export interface MatterCoverageStatus {
   overall_freshness: "fresh" | "stale" | "unknown";
   completeness_score: number; // 0..1 — weighted: connected + fresh + ocr
   warnings: string[];
+  /** A list (deadlines, documents, requests) failed to load or hit its read
+   *  budget — the bundle may be missing entries. */
+  partial?: boolean;
 }
 
 // ── Gap Detection ─────────────────────────────────────────────────────

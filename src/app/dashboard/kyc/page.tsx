@@ -19,7 +19,13 @@ import { csrfFetch } from "@/lib/csrf";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
-import { missingForVerification, type KYCIdentification, type KYCVerification } from "@/lib/kyc";
+import {
+  kycErrorText,
+  missingForVerification,
+  type KYCIdentification,
+  type KYCVerification,
+} from "@/lib/kyc";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const STATUS_LABEL: Record<KYCVerification["status"], string> = {
   pending: "Offen",
@@ -67,6 +73,7 @@ async function send(url: string, method: string, body: unknown) {
   const json = (await res.json().catch(() => null)) as {
     data?: { verification?: KYCVerification; missing?: string[] };
     error?: string;
+    code?: string;
     message?: string;
     details?: { missing?: string[] };
     missing?: string[];
@@ -74,7 +81,8 @@ async function send(url: string, method: string, body: unknown) {
   if (!res.ok) {
     // Server messages for this route are German domain texts; never show a bare status code.
     const err = new Error(
-      json?.message || "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut."
+      kycErrorText(json) ??
+        "Die Aktion konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut."
     ) as Error & {
       missing?: string[];
     };
@@ -104,6 +112,8 @@ export default function KYCPage() {
   });
   const [serverMissing, setServerMissing] = useState<string[]>([]);
   const [failReason, setFailReason] = useState("");
+  const [clearReason, setClearReason] = useState("");
+  const confirm = useConfirm();
   const [uploadingId, setUploadingId] = useState(false);
   const [create, setCreate] = useState({
     case_slug: searchParams.get("case_slug") ?? "",
@@ -115,8 +125,14 @@ export default function KYCPage() {
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/kyc", { cache: "no-store" });
+      // A failed read must not show up as "no checks yet".
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as { data?: { items?: KYCVerification[] } };
-      setItems((json.data?.items ?? []).sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
+      setItems(
+        (json.data?.items ?? []).sort((a, b) =>
+          (b.updated_at ?? "").localeCompare(a.updated_at ?? "")
+        )
+      );
     } catch {
       addToast({ type: "error", title: t("kyc.err_load") });
     } finally {
@@ -127,7 +143,7 @@ export default function KYCPage() {
   useEffect(() => {
     void load();
     api.brain
-      .listPages({ type: "legal_case", limit: 200 })
+      .listAllPages({ type: "legal_case" })
       .then(setCases)
       .catch(() => setCases([]));
   }, [load]);
@@ -144,6 +160,7 @@ export default function KYCPage() {
     setDraft(selected ? structuredClone(selected) : null);
     setServerMissing([]);
     setFailReason("");
+    setClearReason("");
     if (selected) {
       const f = selected.risk_factors ?? [];
       setRisk({
@@ -249,8 +266,23 @@ export default function KYCPage() {
     return true;
   }
 
-  async function act(kind: "save" | "verify" | "fail" | "mandate_end" | "sanctions_check") {
+  async function act(
+    kind: "save" | "verify" | "fail" | "mandate_end" | "sanctions_check" | "sanctions_clear"
+  ) {
     if (!draft) return;
+    // Both are final for the record (verified is locked; the mandate end
+    // starts the § 12 RAO retention period) — ask first.
+    if (kind === "verify" || kind === "mandate_end") {
+      const ok = await confirm({
+        title: kind === "verify" ? "Prüfung abschließen?" : "Mandatsende erfassen?",
+        message:
+          kind === "verify"
+            ? "Nach dem Abschluss kann die Identitätsprüfung nicht mehr geändert werden."
+            : "Mit dem Mandatsende beginnt die fünfjährige Aufbewahrungsfrist (§ 12 Abs. 3 RAO). Das Datum wird festgehalten.",
+        confirmLabel: kind === "verify" ? "Abschließen" : "Mandatsende erfassen",
+      });
+      if (!ok) return;
+    }
     setSaving(true);
     try {
       if (kind === "save") {
@@ -261,12 +293,21 @@ export default function KYCPage() {
         await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", { action: "verify" });
         addToast({ type: "success", title: "Identitätsprüfung abgeschlossen" });
         await load();
+      } else if (kind === "sanctions_clear") {
+        await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", {
+          action: "sanctions_clear",
+          reason: clearReason.trim(),
+        });
+        addToast({ type: "success", title: "Sanktionstreffer mit Begründung ausgeräumt" });
+        setClearReason("");
+        await load();
       } else if (kind === "sanctions_check") {
         if (!locked) await saveDraft();
-        const res = (await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", {
+        // send() already returns the `data` object of the response.
+        const res = await send(`/api/kyc/${encodeURIComponent(draft.id)}`, "PATCH", {
           action: "sanctions_check",
-        })) as { data?: { verification?: KYCVerification } };
-        const updated = res?.data?.verification;
+        });
+        const updated = res.verification;
         addToast(
           updated?.sanctions_hit
             ? {
@@ -779,6 +820,7 @@ export default function KYCPage() {
                     <input
                       type="checkbox"
                       checked={Boolean(draft.sanctions_checked)}
+                      disabled={Boolean(selected?.sanctions_checked_at)}
                       onChange={(e) => setDraft({ ...draft, sanctions_checked: e.target.checked })}
                     />
                     Sanktionslisten geprüft *
@@ -787,11 +829,36 @@ export default function KYCPage() {
                     <input
                       type="checkbox"
                       checked={Boolean(draft.sanctions_hit)}
+                      // A recorded hit is cleared only with a documented reason (below).
+                      disabled={selected?.sanctions_hit === true}
                       onChange={(e) => setDraft({ ...draft, sanctions_hit: e.target.checked })}
                     />
                     Treffer auf einer Sanktionsliste
                   </label>
                 </div>
+                {selected?.sanctions_hit === true && !locked && (
+                  <div className="space-y-2 rounded-lg border border-[color:var(--ds-danger-border)] p-3">
+                    <Label htmlFor="kyc-sanctions-clear" className="text-xs">
+                      Treffer ausräumen — Begründung (mind. 20 Zeichen, nur Anwalt/Admin)
+                    </Label>
+                    <Textarea
+                      id="kyc-sanctions-clear"
+                      rows={2}
+                      value={clearReason}
+                      onChange={(e) => setClearReason(e.target.value)}
+                      placeholder="z. B. Namensgleichheit, abweichendes Geburtsdatum laut Ausweis"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={saving || clearReason.trim().length < 20}
+                      onClick={() => void act("sanctions_clear")}
+                    >
+                      Treffer als ausgeräumt erfassen
+                    </Button>
+                  </div>
+                )}
                 <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-medium text-[color:var(--ds-text)]">
@@ -835,6 +902,7 @@ export default function KYCPage() {
                   <Input
                     id="kyc-sanctions-source"
                     value={draft.sanctions_source ?? ""}
+                    readOnly={Boolean(selected?.sanctions_checked_at)}
                     onChange={(e) => setDraft({ ...draft, sanctions_source: e.target.value })}
                     placeholder="wird vom Abgleich gefüllt"
                   />

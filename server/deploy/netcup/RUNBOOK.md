@@ -5,9 +5,8 @@ Produktion: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Debi
 
 > Der Umzug von Hetzner ist abgeschlossen und der alte Server abgeschaltet (2026-09).
 > Die Migrationsanleitung liegt in der Git-Historie (`migrate.sh`, Stand vor dem
-> Aufräumen). Docker-Volumes und das externe Netzwerk heißen weiterhin
-> `hetzner_*` / `hetzner_default` — das sind die realen Objekte auf der Box und
-> bleiben so benannt, weil ein Rename die Daten verwaist.
+> Aufräumen). Die Docker-Volumes heißen weiterhin `hetzner_*` — das sind die
+> realen Objekte auf der Box und bleiben so benannt, weil ein Rename die Daten verwaist.
 
 ## Ordner auf dem Server
 
@@ -20,16 +19,61 @@ Produktion: netcup RS 8000 G12 (16 dedizierte Kerne, 64 GB RAM, 2 TB NVMe), Debi
 | `/opt/caddy`                          | gemeinsamer Reverse Proxy für alle Projekte auf der Box                                                                                                                  |
 | Docker-Volumes `hetzner_*`            | Datenbank, Originaldateien, Sicherungen                                                                                                                                  |
 
-Alle Projekte auf der Box erwarten das Netzwerk `hetzner_default` (`external: true`).
-Der Dienst `caddy` in der Compose-Datei ist Altbestand und wird nie gestartet; der
-gemeinsame Proxy läuft aus `/opt/caddy`.
+### Reverse Proxy und Netze
+
+Der gemeinsame Proxy für alle Projekte der Box läuft aus `/opt/caddy`. Subsumio-`web` und
+`engine` hängen **nicht** im gemeinsamen Netz `hetzner_default`, sondern nur im eigenen Netz
+`subsumio-edge`, das sie ausschließlich mit dem Proxy teilen. `deploy-code.sh` legt das Netz bei
+Bedarf an und schließt den Proxy-Container (der Container, der Port 443 veröffentlicht; sonst
+`DEPLOY_PROXY_CONTAINER=<name>`) daran an.
+
+Die App verlässt sich darauf, dass der Proxy `X-Real-IP` mit der TCP-Gegenstelle überschreibt
+(IP-Allowlist, Rate-Limits, Audit-IP). `server/deploy/netcup/Caddyfile` ist die
+Referenzkonfiguration für die Subsumio-Hosts; der Block in `/opt/caddy/Caddyfile` muss ihr
+entsprechen (Hostnamen stehen dort als Klartext statt `{$APP_DOMAIN}` usw.). Der Deploy bricht
+vor dem Umschalten ab, wenn im laufenden Proxy `header_up X-Real-IP {remote_host}` fehlt
+(bewusste Ausnahme: `DEPLOY_ALLOW_PROXY_DRIFT=1`). Nach jeder Änderung an `/opt/caddy/Caddyfile`
+den Subsumio-Teil hier im Repo nachziehen.
+
+Prüfen, wer web/engine erreichen kann:
+
+```sh
+ssh subsumio-netcup 'docker network inspect subsumio-edge -f "{{range .Containers}}{{.Name}} {{end}}"'
+```
+
+Erwartet: nur `subsumio-engine-web-1`, `subsumio-engine-engine-1` und der Proxy.
+
+Der Dienst `caddy` in der Compose-Datei läuft nur mit `--profile standalone-proxy` (neue Box
+ohne `/opt/caddy`, Notfall) und wird im Normalbetrieb nie gestartet.
+
+### Engine ohne root, Ressourcengrenzen
+
+Die Engine verarbeitet hochgeladene Dokumente (LibreOffice, Ghostscript, qpdf, readpst) und läuft
+deshalb als Nutzer `engine` (uid 10001), ohne Linux-Capabilities und mit `no-new-privileges`. Sie
+darf `/data` (Volume), ihr Home und `/tmp` schreiben, nicht aber den Code unter `/app`.
+Konverter bekommen nur eine Minimal-Umgebung (keine Schlüssel/DB-Zugänge) und laufen unter
+`prlimit` (CPU-Zeit, Dateigröße) mit hartem Abbruch nach Zeitlimit. Ein eigenes Netz ohne
+Internetzugang für die Konvertierung ist erst mit einem separaten Konverter-Dienst möglich.
+
+`deploy-code.sh` übergibt vor dem Umschalten alle noch root-eigenen Dateien in `/data` an uid 10001
+und prüft, dass das neue Abbild `/data` schreiben und `/law-corpus` lesen kann; sonst wird nicht
+umgeschaltet. Der ADVOKAT-Spiegel (`ADVOKAT_IMPORT_HOST_PATH`) muss für uid 10001 lesbar sein.
+Der Rückweg auf eine ältere (root-)Version bleibt möglich.
+
+Die Korpus-Pipeline nutzt dasselbe Abbild, läuft aber ausdrücklich als root (`user: "0:0"`),
+weil sie in das root-eigene Korpusverzeichnis schreibt; sie verarbeitet nur den öffentlichen
+Rechtskorpus.
+
+Speicher/CPU/Prozesse sind pro Dienst begrenzt und in `.env` einstellbar (`ENGINE_MEM_LIMIT`,
+`ENGINE_CPUS`, `PIPELINE_MEM_LIMIT`, …; Standardwerte in `docker-compose.yml`). Nach dem ersten
+Deploy mit Grenzen `docker stats --no-stream` prüfen und die Werte bei Bedarf anpassen.
 
 ## Neuen Code ausrollen
 
 Vom Mac aus dem Repository — rollt den gepushten Stand (`origin/main`) aus:
 
 ```sh
-bash scripts/deploy.sh                                 # commit + push + deploy
+bash scripts/deploy.sh                                 # nur bei sauberem Baum und HEAD == origin/main; committet/pusht nie
 sh server/deploy/netcup/deploy-code.sh --build         # nur bauen, Dienste laufen weiter
 sh server/deploy/netcup/deploy-code.sh                 # bauen und umschalten
 sh server/deploy/netcup/deploy-code.sh --app           # Web + Engine, Korpus-Pipeline läuft weiter
@@ -72,24 +116,27 @@ Die Web-App schreibt Laufzeitdaten (Feature-Flags, SCIM-Status, WhatsApp-Medien,
 ## Cron-Überwachung
 
 Die Jobs stehen in `crontab` und laufen per supercronic im `cron`-Container (jeder Deploy erzeugt
-ihn neu, Änderungen an `crontab` greifen damit automatisch). Die Fristen-Jobs — Tagesübersicht
-`/api/cron/deadlines`, Erinnerungen `/api/cron/deadline-reminders`, Eskalation
-`/api/cron/deadline-alerts` — und `/api/cron/health` laufen **ohne** `|| true`:
+ihn neu, Änderungen an `crontab` greifen damit automatisch). **Jeder** Job läuft über den Wrapper
+`cronjob.sh` — kein Job wird mehr mit `|| true` stummgeschaltet:
 
-- Die Routen antworten mit **HTTP 500**, wenn ein Lauf Fehler hatte (Fristen einer Kanzlei nicht
-  lesbar, Kanzlei-Einstellungen nicht lesbar, E-Mail-Versand fehlgeschlagen). Der JSON-Körper
-  enthält trotzdem den vollständigen Bericht (`errors`, `failed`, `warnings`).
-- `curl -f` endet dann mit Exit-Code 22, `--max-time` mit 28 bei einem hängenden Lauf; supercronic
-  protokolliert den Job als fehlgeschlagen.
+- Die Routen antworten mit **HTTP 5xx**, wenn ein Lauf Fehler hatte (z. B. Fristen einer Kanzlei
+  nicht lesbar, E-Mail-Versand fehlgeschlagen; `/api/cron/health` mit 503, wenn eine Prüfung
+  scheitert). `curl -f` endet dann mit Exit-Code 22, das Zeitlimit (`--max-time`, sonst
+  `CRON_MAX_TIME`, Standard 3300 s) mit 28.
+- Der Wrapper protokolliert `[cron] FAILED <job>`, supercronic markiert den Job als fehlgeschlagen,
+  und `QUEUE_ALERT_EMAIL` bekommt eine Mail über Resend — höchstens einmal pro Job und Stunde
+  (`CRON_ALERT_INTERVAL_SECONDS`). Ohne `QUEUE_ALERT_EMAIL`/`RESEND_API_KEY` bleibt es beim Log;
+  `preflight.sh` warnt dann.
 
 Fehlgeschlagene Läufe finden:
 
 ```sh
-ssh subsumio-netcup 'docker logs --since 24h subsumio-engine-cron-1 2>&1 | grep -iE "deadline|health" | grep -iE "fail|error|exit"'
+ssh subsumio-netcup 'docker logs --since 24h subsumio-engine-cron-1 2>&1 | grep "\[cron\] FAILED"'
 ```
 
 **Totmannschalter (optional).** Ein Cron, der gar nicht mehr läuft, meldet keinen Fehler. Dafür
-pingt jeder Fristen-Job nach einem **erfolgreichen** Lauf eine URL, wenn sie gesetzt ist — z. B.
+pingt jeder Job nach einem **erfolgreichen** Lauf `CRON_HEARTBEAT_URL_<JOB>` (Jobname in
+Großbuchstaben, `-` wird `_`), wenn gesetzt und im `cron`-Dienst durchgereicht — z. B.
 eine Healthchecks.io- oder Uptime-Kuma-Push-URL, die alarmiert, wenn der Ping ausbleibt. In
 `/opt/subsumio/server/deploy/netcup/.env`:
 
@@ -98,6 +145,11 @@ CRON_HEARTBEAT_URL_DEADLINES=https://hc-ping.com/<uuid>            # täglich 06
 CRON_HEARTBEAT_URL_DEADLINE_REMINDERS=https://hc-ping.com/<uuid>   # täglich 07:00 UTC
 CRON_HEARTBEAT_URL_DEADLINE_ALERTS=https://hc-ping.com/<uuid>      # alle 30 Minuten
 CRON_HEARTBEAT_URL_HEALTH=https://hc-ping.com/<uuid>               # alle 10 Minuten
+CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS=https://hc-ping.com/<uuid> # stündlich
+CRON_HEARTBEAT_URL_IMAP_SYNC=https://hc-ping.com/<uuid>            # alle 5 Minuten
+CRON_HEARTBEAT_URL_DUNNING_RUN=https://hc-ping.com/<uuid>          # täglich 09:00 UTC
+CRON_HEARTBEAT_URL_MONTHLY_INVOICE=https://hc-ping.com/<uuid>      # monatlich am 1.
+CRON_HEARTBEAT_URL_SANCTIONS_SYNC=https://hc-ping.com/<uuid>       # montags 04:20 UTC
 ```
 
 Leer oder nicht gesetzt = kein Ping. Ein fehlgeschlagener Ping wird protokolliert, macht den Job
@@ -190,6 +242,46 @@ der Dienst gar nicht erst, statt still mit dem falschen Modell zu arbeiten.
 
 Zum Schluss `VACUUM (ANALYZE) content_chunks;` — der Lauf schreibt jede Zeile
 neu und lässt entsprechend alte Zeilenversionen zurück.
+
+## Altbestand der Originaldateien verschlüsseln
+
+`SUBSUMIO_STORAGE_ENCRYPTION_KEY` verschlüsselt nur, was **nach** dem Setzen
+geschrieben wird. Originale, die vorher hochgeladen wurden, liegen weiter im
+Klartext, bis dieser Lauf sie neu schreibt. Er braucht denselben Schlüssel
+wie die Engine, läuft also im Engine-Container:
+
+```bash
+# 1. Probelauf (Vorgabe): zählt Klartext-Dateien, schreibt nichts
+docker exec -w /app subsumio-engine-engine-1 gbrain storage reencrypt
+
+# 2. Verschlüsseln — abgekoppelt, Fortschritt im Log
+docker exec -d -w /app subsumio-engine-engine-1 sh -c \
+  'gbrain storage reencrypt --apply > /data/reencrypt.log 2>&1'
+
+# 3. Kontrolle: danach muss der Probelauf 0 Klartext-Dateien melden
+docker exec -w /app subsumio-engine-engine-1 gbrain storage reencrypt --json
+```
+
+- **Wiederaufnehmbar:** Ein abgebrochener Lauf macht beim nächsten Aufruf
+  hinter der zuletzt fertigen Datei weiter; `--restart` beginnt von vorn.
+  Bereits verschlüsselte Dateien werden übersprungen, doppelt verschlüsselt
+  wird nie.
+- **Sicher:** Jede Datei wird zuerst als Nebenkopie verschlüsselt geschrieben,
+  zurückgelesen und entschlüsselt; nur wenn das Ergebnis Byte für Byte dem
+  Original gleicht (SHA-256), wird das Original ersetzt und erneut geprüft.
+  Schlägt die zweite Prüfung fehl, wird der Klartext zurückgeschrieben. Ohne
+  erfolgreiche Prüfung wird nichts gelöscht. Fehlgeschlagene Dateien stehen
+  im Log, der Exit-Code ist dann 1.
+- **Stufenweise:** `--limit <n>` bricht nach n Dateien ab, `--source <id>`
+  beschränkt auf eine Kanzlei.
+- **Anzeige:** Der letzte vollständige Lauf (auch der Probelauf) wird
+  gespeichert; die Admin-Gesundheitsanzeige (`/admin/api/health-indicators`,
+  Feld `storage_plaintext`) zeigt daraus Anzahl und Anteil der
+  Klartext-Dateien.
+- **Sicherungen:** restic-Snapshots von vor dem Lauf enthalten die Originale
+  weiter im Klartext (restic selbst verschlüsselt). Sie laufen mit der
+  normalen Aufbewahrung aus. Bei einem Objektspeicher mit Object Lock bleiben
+  alte Objektversionen bis zum Ablauf der Sperrfrist erhalten.
 
 ## Grabsteine endgültig entfernen
 

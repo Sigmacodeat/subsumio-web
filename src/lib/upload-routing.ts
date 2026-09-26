@@ -26,6 +26,16 @@ export interface KnownCase {
   aktenzeichen?: string;
 }
 
+/** Matters that take new documents: everything except archived/deleted ones. */
+export function uploadTargetCases<T extends { frontmatter?: Record<string, unknown> }>(
+  cases: T[]
+): T[] {
+  return cases.filter((c) => {
+    const status = c.frontmatter?.status;
+    return status !== "archived" && status !== "tombstoned";
+  });
+}
+
 // German court Aktenzeichen: "<n> <Registerzeichen> <lfd>/<Jahr>",
 // e.g. "12 C 345/24", "4 O 1234/2023", "5 Ca 67/22". Filenames can't contain "/",
 // so the year separator may appear as "/", "-" or "_". Matched on the raw stem

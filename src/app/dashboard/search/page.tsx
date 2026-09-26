@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { SearchResultFeedback } from "@/components/dashboard/search-result-feedback";
 import { api } from "@/lib/api";
 import type { SearchResult as EngineSearchResult } from "@/lib/types";
+import { searchHitType } from "@/lib/search-hit-type";
 
 type ScopeFilter =
   | "all"
@@ -42,6 +43,7 @@ interface DisplayResult {
   snippet: string;
   score: number;
   source?: string;
+  caseSlug?: string;
 }
 
 const SCOPE_CONFIG: Array<{
@@ -97,25 +99,23 @@ function getScopeIcon(type: string): typeof FileText {
   return FileText;
 }
 
-function inferTypeFromSlug(slug: string): string {
-  if (slug.includes("legal/case") || slug.includes("cases/")) return "legal_case";
-  if (slug.includes("legal/document") || slug.includes("documents/")) return "legal_document";
-  if (slug.includes("legal/deadline") || slug.includes("deadlines/")) return "legal_deadline";
-  if (slug.includes("invoice")) return "invoice";
-  if (slug.includes("chat/whatsapp")) return "chat_inbox";
-  if (slug.includes("contact") || slug.includes("client")) return "contact";
-  if (slug.includes("note")) return "note";
-  return "page";
+/** Matter detail page for a case slug (same form as the matter tabs use). */
+function caseHref(slug: string): string {
+  return `/dashboard/cases/${encodeSlugPath(slug)}`;
 }
 
 function getHref(result: DisplayResult): string {
   const type = result.type;
   if (type === "legal_case" || type === "case") {
-    return `/dashboard/cases/${encodeSlugPath(result.slug)}`;
+    return caseHref(result.slug);
   }
   if (type === "legal_document" || type === "document") {
     // Same target as the command palette: the document register opens the file.
     return `/dashboard/vault?slug=${encodeURIComponent(result.slug)}`;
+  }
+  // A hit bound to a matter opens that matter.
+  if (result.caseSlug && type !== "legal_document" && type !== "document") {
+    return caseHref(result.caseSlug);
   }
   if (type === "legal_deadline" || type === "deadline") {
     return `/dashboard/deadlines`;
@@ -176,10 +176,12 @@ export default function GlobalSearchPage() {
       const mapped: DisplayResult[] = raw.map((r: EngineSearchResult) => ({
         slug: r.slug,
         title: r.title,
-        type: r.source ?? inferTypeFromSlug(r.slug),
+        // Page type from the engine; the source id is not a type.
+        type: searchHitType(r),
         snippet: r.snippet,
         score: r.score,
         source: r.source,
+        caseSlug: r.case_slug,
       }));
       setResults(mapped);
     } catch {

@@ -23,13 +23,41 @@ import {
   type OutboundDecision,
 } from "./outbound-gate";
 import { getWhatsAppWindowStore } from "./window-store";
-import { getWhatsAppConsentStore, hasActiveConsent } from "./consent-store";
+import { getWhatsAppConsentStore, hasActiveConsent, whatsAppTenantKeys } from "./consent-store";
+
+/**
+ * The sending firm's consent tenant keys: its brain id plus its organisation
+ * id. Callers that know the organisation pass it; otherwise the organisation
+ * owning `brainId` is looked up. A failed lookup leaves the brain id alone —
+ * fewer keys only ever match fewer consents (fail-closed).
+ */
+export async function consentTenantKeysForBrain(
+  brainId: string,
+  orgId?: string | null
+): Promise<string[]> {
+  if (orgId !== undefined) return whatsAppTenantKeys(brainId, orgId);
+  try {
+    const { getOrgStore } = await import("@/lib/auth/store");
+    const orgIds = (await getOrgStore().list())
+      .filter((o) => o.brainId === brainId)
+      .map((o) => o.id);
+    return [
+      ...new Set(
+        [whatsAppTenantKeys(brainId), ...orgIds.map((id) => whatsAppTenantKeys("", id))].flat()
+      ),
+    ];
+  } catch {
+    return whatsAppTenantKeys(brainId);
+  }
+}
 
 export interface ProactiveSendParams {
   /** Recipient phone (any format; normalized internally). */
   to: string;
-  /** Tenant key for the audit entry. */
+  /** Tenant key for the audit entry; consent is looked up for this firm. */
   brainId: string;
+  /** The sending firm's organisation id, when the caller knows it. */
+  orgId?: string | null;
   scope: OutboundScope;
   /** Free-form text — used only when the 24h window is open. */
   freeform?: string;
@@ -52,6 +80,7 @@ export interface ProactiveSendResult {
 interface GuardedSendParams {
   to: string;
   brainId: string;
+  orgId?: string | null;
   scope: OutboundScope;
   messageKind: "freeform" | "template";
   send: () => Promise<{ messageId: string }>;
@@ -70,9 +99,11 @@ export async function sendGuardedWhatsAppMessage(
   const normalized = normalizePhone(params.to);
   const hash = phoneHash(normalized);
   const now = params.now ?? new Date();
+  // Only the sending firm's own opt-ins count — never another firm's.
+  const tenantKeys = await consentTenantKeysForBrain(params.brainId, params.orgId);
   const [lastInboundAt, consented] = await Promise.all([
     getWhatsAppWindowStore().getLastInbound(hash),
-    hasActiveConsent(getWhatsAppConsentStore(), hash, params.scope),
+    hasActiveConsent(getWhatsAppConsentStore(), tenantKeys, hash, params.scope),
   ]);
   const decision = evaluateOutbound({
     now,
@@ -114,6 +145,7 @@ export async function sendProactiveMessage(
   return sendGuardedWhatsAppMessage({
     to: params.to,
     brainId: params.brainId,
+    orgId: params.orgId,
     scope: params.scope,
     messageKind,
     urgent: params.urgent,

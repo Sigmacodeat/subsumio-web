@@ -32,86 +32,86 @@ export interface TemporalRelation {
 }
 
 /**
+ * Add `value` to the frontmatter string array `field` of one page in one
+ * statement (no read-modify-write: a concurrent change of the same page is
+ * never overwritten). Existing entries are kept; duplicates are not added.
+ * Throws when the page does not exist.
+ */
+async function appendFrontmatterSlug(
+  engine: BrainEngine,
+  slug: string,
+  sourceId: string,
+  field: "supersedes" | "contradicts",
+  value: string
+): Promise<void> {
+  const rows = await engine.executeRaw<{ id: number }>(
+    `UPDATE pages
+        SET frontmatter = jsonb_set(
+              COALESCE(frontmatter, '{}'::jsonb),
+              ARRAY[$4::text],
+              CASE
+                WHEN jsonb_typeof(frontmatter -> $4::text) = 'array'
+                  THEN CASE
+                         WHEN (frontmatter -> $4::text) @> jsonb_build_array($3::text)
+                           THEN frontmatter -> $4::text
+                         ELSE (frontmatter -> $4::text) || jsonb_build_array($3::text)
+                       END
+                ELSE jsonb_build_array($3::text)
+              END
+            ),
+            updated_at = now()
+      WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL
+      RETURNING id`,
+    [slug, sourceId, value, field]
+  );
+  if (rows.length === 0) throw new Error(`Page not found: ${slug}`);
+}
+
+/**
  * Mark a page as superseded by a newer version. The old page gets a
  * `superseded_by` frontmatter field pointing to the new slug, and the
- * new page gets a `supersedes` field pointing back.
+ * new page gets a `supersedes` field pointing back. Each page is changed
+ * with one atomic statement; a missing page or a database error is thrown
+ * to the caller.
  */
 export async function markSuperseded(
   engine: BrainEngine,
   oldSlug: string,
   newSlug: string,
-  sourceId?: string
+  sourceId: string = "default"
 ): Promise<void> {
-  // Update old page: add superseded_by
-  try {
-    const oldPage = await engine.getPage(oldSlug, { sourceId });
-    if (oldPage) {
-      const fm = (oldPage.frontmatter ?? {}) as Record<string, unknown>;
-      fm.superseded_by = newSlug;
-      fm.superseded_at = new Date().toISOString();
-      await engine.putPage(
-        oldSlug,
-        {
-          ...oldPage,
-          frontmatter: fm,
-        },
-        { sourceId }
-      );
-    }
-  } catch {
-    // Non-fatal: best-effort temporal tracking
-  }
-
-  // Update new page: add supersedes
-  try {
-    const newPage = await engine.getPage(newSlug, { sourceId });
-    if (newPage) {
-      const fm = (newPage.frontmatter ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(fm.supersedes) ? (fm.supersedes as string[]) : [];
-      if (!existing.includes(oldSlug)) {
-        fm.supersedes = [...existing, oldSlug];
-      }
-      await engine.putPage(
-        newSlug,
-        {
-          ...newPage,
-          frontmatter: fm,
-        },
-        { sourceId }
-      );
-    }
-  } catch {
-    // Non-fatal
-  }
+  // Both pages or neither.
+  await engine.transaction(async (tx) => {
+    const rows = await tx.executeRaw<{ id: number }>(
+      `UPDATE pages
+          SET frontmatter = COALESCE(frontmatter, '{}'::jsonb)
+                || jsonb_build_object('superseded_by', $3::text, 'superseded_at', $4::text),
+              updated_at = now()
+        WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL
+        RETURNING id`,
+      [oldSlug, sourceId, newSlug, new Date().toISOString()]
+    );
+    if (rows.length === 0) throw new Error(`Page not found: ${oldSlug}`);
+    await appendFrontmatterSlug(tx, newSlug, sourceId, "supersedes", oldSlug);
+  });
 }
 
 /**
  * Mark a contradiction between two pages. Both pages get a `contradicts`
- * frontmatter field pointing to each other.
+ * frontmatter field pointing to each other (atomic per page; errors are
+ * thrown to the caller).
  */
 export async function markContradiction(
   engine: BrainEngine,
   slugA: string,
   slugB: string,
-  sourceId?: string
+  sourceId: string = "default"
 ): Promise<void> {
-  for (const [a, b] of [
-    [slugA, slugB],
-    [slugB, slugA],
-  ] as const) {
-    try {
-      const page = await engine.getPage(a, { sourceId });
-      if (!page) continue;
-      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(fm.contradicts) ? (fm.contradicts as string[]) : [];
-      if (!existing.includes(b)) {
-        fm.contradicts = [...existing, b];
-      }
-      await engine.putPage(a, { ...page, frontmatter: fm }, { sourceId });
-    } catch {
-      // Non-fatal
-    }
-  }
+  // Both pages or neither.
+  await engine.transaction(async (tx) => {
+    await appendFrontmatterSlug(tx, slugA, sourceId, "contradicts", slugB);
+    await appendFrontmatterSlug(tx, slugB, sourceId, "contradicts", slugA);
+  });
 }
 
 /**

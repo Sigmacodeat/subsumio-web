@@ -21,7 +21,7 @@ const _mockBrainPage = vi.fn((slug: string) => ({
     created_at: "2026-06-20T10:00:00.000Z",
     updated_at: "2026-06-20T10:00:00.000Z",
     acceptance: {
-      conflict_check: { status: "clear" },
+      conflict_check: SERVER_CLEAR,
       kyc: { required: true, status: "verified" },
       poa: { required: true, status: "signed" },
       engagement_letter: { status: "sent" },
@@ -82,8 +82,29 @@ vi.mock("@/lib/intake-conversion", () => ({
 
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
 vi.mock("@/lib/comments", () => ({ createDocumentRequestNotification: vi.fn() }));
+const mockCaseCreated = vi.fn();
+vi.mock("@/lib/webhook-dispatch", () => ({
+  emitCaseCreated: (...a: unknown[]) => mockCaseCreated(...a),
+}));
 
 import { POST } from "./route";
+
+/** A conflict check the server ran and recorded (real user id). */
+const SERVER_CLEAR = {
+  status: "clear",
+  performed_at: "2026-06-20T10:05:00.000Z",
+  performed_by: "anwalt@kanzlei.example",
+  performed_by_id: "user-1",
+  severity: "none",
+  matches: [],
+};
+
+function clearCheck() {
+  return new Response(
+    JSON.stringify({ name: "Max Muster", severity: "none", explanation: "", matches: [] }),
+    { status: 200 }
+  );
+}
 
 describe("POST /api/intake/convert", () => {
   beforeEach(() => {
@@ -151,7 +172,7 @@ describe("POST /api/intake/convert", () => {
               created_at: "2026-06-20T10:00:00.000Z",
               updated_at: "2026-06-20T10:00:00.000Z",
               acceptance: {
-                conflict_check: { status: "clear" },
+                conflict_check: SERVER_CLEAR,
                 kyc: {
                   required: true,
                   status: "verified",
@@ -169,6 +190,7 @@ describe("POST /api/intake/convert", () => {
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ frontmatter: { status: "verified" } }), { status: 200 })
       )
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
@@ -185,6 +207,9 @@ describe("POST /api/intake/convert", () => {
     expect(body.ok).toBe(true);
     expect(body.case).toBeDefined();
     expect(body.case.type).toBe("legal_case");
+    // A newly created matter fires case.created for the firm (R8-13).
+    expect(mockCaseCreated).toHaveBeenCalledTimes(1);
+    expect(mockCaseCreated.mock.calls[0][0]).toBe("test-brain");
   });
 
   test("retry after case-created-but-intake-failed completes idempotently (no duplicate case)", async () => {
@@ -203,7 +228,7 @@ describe("POST /api/intake/convert", () => {
         created_at: "2026-06-20T10:00:00.000Z",
         updated_at: "2026-06-20T10:00:00.000Z",
         acceptance: {
-          conflict_check: { status: "clear" },
+          conflict_check: SERVER_CLEAR,
           kyc: { required: false, status: "not_required" },
           poa: { required: false, status: "not_required" },
           engagement_letter: { status: "sent" },
@@ -212,6 +237,7 @@ describe("POST /api/intake/convert", () => {
     };
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       // case slug already exists — built from THIS intake
       .mockResolvedValueOnce(
         new Response(
@@ -253,7 +279,7 @@ describe("POST /api/intake/convert", () => {
         client_name: "Max Muster",
         missing_documents: [],
         acceptance: {
-          conflict_check: { status: "clear" },
+          conflict_check: SERVER_CLEAR,
           kyc: { required: false, status: "not_required" },
           poa: { required: false, status: "not_required" },
           engagement_letter: { status: "sent" },
@@ -262,6 +288,7 @@ describe("POST /api/intake/convert", () => {
     };
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -281,6 +308,51 @@ describe("POST /api/intake/convert", () => {
     expect(res.status).toBe(409);
   });
 
+  test("a matter created at the slug after the check is not replaced: create-only write, 409", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: [],
+        acceptance: {
+          conflict_check: SERVER_CLEAR,
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
+      .mockResolvedValueOnce(new Response("not found", { status: 404 })) // slug free
+      // …but taken by the time the case is written
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "page_exists" }), { status: 409 })
+      );
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("case_slug_exists");
+    const create = mockFetch.mock.calls.find(
+      ([url, init]) =>
+        String(url).endsWith("/api/pages") &&
+        (init as RequestInit | undefined)?.method === "POST" &&
+        String((init as RequestInit).body).includes('"legal_case"')
+    );
+    expect(JSON.parse(String((create![1] as RequestInit).body)).if_absent).toBe(true);
+    // The intake is not marked converted.
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+  });
+
   test("missing_documents become a document_request draft (once)", async () => {
     const intakePage = {
       slug: "legal/intake/2026-06-20/max",
@@ -291,7 +363,7 @@ describe("POST /api/intake/convert", () => {
         client_name: "Max Muster",
         missing_documents: ["Vollmacht", "Kündigungsschreiben"],
         acceptance: {
-          conflict_check: { status: "clear" },
+          conflict_check: SERVER_CLEAR,
           kyc: { required: false, status: "not_required" },
           poa: { required: false, status: "not_required" },
           engagement_letter: { status: "sent" },
@@ -300,6 +372,7 @@ describe("POST /api/intake/convert", () => {
     };
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       .mockResolvedValueOnce(new Response("not found", { status: 404 })) // case slug free
       .mockResolvedValueOnce(new Response("{}", { status: 200 })) // case create
       .mockResolvedValueOnce(new Response("{}", { status: 200 })) // intake update
@@ -335,7 +408,7 @@ describe("POST /api/intake/convert", () => {
         client_name: "Max Muster",
         missing_documents: ["Vollmacht"],
         acceptance: {
-          conflict_check: { status: "clear" },
+          conflict_check: SERVER_CLEAR,
           kyc: { required: false, status: "not_required" },
           poa: { required: false, status: "not_required" },
           engagement_letter: { status: "sent" },
@@ -344,6 +417,7 @@ describe("POST /api/intake/convert", () => {
     };
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
@@ -368,7 +442,7 @@ describe("POST /api/intake/convert", () => {
     expect(reqBody.frontmatter.sent_at).toBeTruthy();
   });
 
-  test("portal_enabled: true belegt die Anfrage mit einem Upload-Link", async () => {
+  test("an existing request whose 'sent' mark is refused is not announced as sent", async () => {
     const intakePage = {
       slug: "legal/intake/2026-06-20/max",
       type: "intake_request",
@@ -378,7 +452,59 @@ describe("POST /api/intake/convert", () => {
         client_name: "Max Muster",
         missing_documents: ["Vollmacht"],
         acceptance: {
-          conflict_check: { status: "clear" },
+          conflict_check: SERVER_CLEAR,
+          kyc: { required: false, status: "not_required" },
+          poa: { required: false, status: "not_required" },
+          engagement_letter: { status: "sent" },
+        },
+      },
+    };
+    const existingRequest = {
+      slug: "legal/document-requests/vorhanden",
+      type: "document_request",
+      frontmatter: {
+        case_slug: "legal/cases/2026-12345-max-muster",
+        source_event_slug: "legal/intake/2026-06-20/max",
+        status: "draft",
+      },
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([existingRequest]), { status: 200 }))
+      .mockResolvedValueOnce(new Response("engine down", { status: 500 }));
+
+    const res = await POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({
+          slug: "legal/intake/2026-06-20/max",
+          send_document_request: true,
+        }),
+      }) as unknown as NextRequest
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.document_request_slug).toBe("legal/document-requests/vorhanden");
+    expect(body.document_request_sent).toBe(false);
+    const { createDocumentRequestNotification } = await import("@/lib/comments");
+    expect(createDocumentRequestNotification).not.toHaveBeenCalled();
+  });
+
+  test("portal_enabled: true bietet das Portal an, ohne einen Link zu speichern", async () => {
+    const intakePage = {
+      slug: "legal/intake/2026-06-20/max",
+      type: "intake_request",
+      frontmatter: {
+        type: "intake_request",
+        status: "accepted",
+        client_name: "Max Muster",
+        missing_documents: ["Vollmacht"],
+        acceptance: {
+          conflict_check: SERVER_CLEAR,
           kyc: { required: false, status: "not_required" },
           poa: { required: false, status: "not_required" },
           engagement_letter: { status: "sent" },
@@ -387,6 +513,7 @@ describe("POST /api/intake/convert", () => {
     };
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(intakePage), { status: 200 }))
+      .mockResolvedValueOnce(clearCheck()) // server-side conflict re-check
       .mockResolvedValueOnce(new Response("not found", { status: 404 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
@@ -407,8 +534,10 @@ describe("POST /api/intake/convert", () => {
       String((init as RequestInit | undefined)?.body ?? "").includes('"document_request"')
     );
     const reqBody = JSON.parse(String((docReqCalls[0]?.[1] as RequestInit).body));
-    expect(reqBody.frontmatter.portal_url).toMatch(/^\/portal\//);
-    expect(reqBody.frontmatter.portal_token_id).toBeTruthy();
+    // The request offers the portal; no link (with its token) is stored.
+    expect(reqBody.frontmatter.portal_link).toBe(true);
+    expect(reqBody.frontmatter.portal_url).toBeUndefined();
+    expect(JSON.stringify(reqBody)).not.toContain("/portal/");
   });
 
   test.each([
@@ -416,7 +545,7 @@ describe("POST /api/intake/convert", () => {
     [
       "a verified status without a record",
       {
-        conflict_check: { status: "clear" },
+        conflict_check: SERVER_CLEAR,
         kyc: { required: true, status: "verified" },
         poa: { required: false, status: "not_required" },
         engagement_letter: { status: "sent" },
@@ -427,7 +556,7 @@ describe("POST /api/intake/convert", () => {
     [
       "a linked record that is still open",
       {
-        conflict_check: { status: "clear" },
+        conflict_check: SERVER_CLEAR,
         kyc: { required: true, status: "verified", verification_slug: "legal/kyc/k2" },
         poa: { required: false, status: "not_required" },
         engagement_letter: { status: "sent" },
@@ -466,5 +595,201 @@ describe("POST /api/intake/convert", () => {
     );
     expect(res.status).toBe(422);
     expect((await res.json()).details?.code).toBe(code);
+  });
+
+  // ── OPS-3: the conversion runs through the server-side conflict check ──
+
+  const acceptedIntake = (conflictCheck: Record<string, unknown>, extra = {}) => ({
+    slug: "legal/intake/2026-06-20/max",
+    title: "Intake: Max Muster",
+    type: "intake_request",
+    frontmatter: {
+      type: "intake_request",
+      status: "accepted",
+      client_name: "Max Muster",
+      missing_documents: [],
+      acceptance: {
+        conflict_check: conflictCheck,
+        kyc: { required: false, status: "not_required" },
+        poa: { required: false, status: "not_required" },
+        engagement_letter: { status: "sent" },
+      },
+      ...extra,
+    },
+  });
+
+  const criticalCheck = () =>
+    new Response(
+      JSON.stringify({
+        name: "Max Muster",
+        side: "client",
+        severity: "critical",
+        explanation: "Gegnerseite",
+        matches: [
+          {
+            slug: "legal/cases/alt",
+            title: "Alt-Akte",
+            role: "opponent",
+            quelle: "case",
+            matched_name: "Max Muster",
+            assessment: "critical",
+          },
+        ],
+      }),
+      { status: 200 }
+    );
+
+  const convert = () =>
+    POST(
+      new Request("http://localhost/api/intake/convert", {
+        method: "POST",
+        body: JSON.stringify({ slug: "legal/intake/2026-06-20/max" }),
+      }) as unknown as NextRequest
+    );
+
+  const caseCreates = () =>
+    mockFetch.mock.calls.filter(
+      ([url, init]) =>
+        String(url).endsWith("/api/pages") &&
+        String((init as RequestInit | undefined)?.body ?? "").includes('"legal_case"')
+    );
+
+  test("a client-claimed 'clear' without server record is refused (422)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify(acceptedIntake({ status: "clear", performed_by: "current-user" })),
+        { status: 200 }
+      )
+    );
+    const res = await convert();
+    expect(res.status).toBe(422);
+    expect((await res.json()).details?.code).toBe("conflict_check_not_server_verified");
+    expect(caseCreates()).toHaveLength(0);
+  });
+
+  test("a conflict found at conversion time blocks without waiver (409)", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(acceptedIntake(SERVER_CLEAR)), { status: 200 })
+      )
+      .mockResolvedValueOnce(criticalCheck());
+    const res = await convert();
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe("conflict_detected");
+    expect(body.conflictWarning.blocking[0].name).toBe("Max Muster");
+    expect(caseCreates()).toHaveLength(0);
+    // the conflict check was asked with the side of the new mandate
+    const checkCall = mockFetch.mock.calls.find(([url]) =>
+      String(url).endsWith("/api/legal/conflict-check")
+    );
+    expect(JSON.parse(String((checkCall?.[1] as RequestInit).body))).toMatchObject({
+      name: "Max Muster",
+      side: "client",
+    });
+  });
+
+  test("the opponent of the intake is checked on the opponent side", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(acceptedIntake(SERVER_CLEAR, { opponent: "Gegner GmbH" })), {
+          status: 200,
+        })
+      )
+      .mockResolvedValueOnce(clearCheck())
+      .mockResolvedValueOnce(criticalCheck());
+    const res = await convert();
+    expect(res.status).toBe(409);
+    const sides = mockFetch.mock.calls
+      .filter(([url]) => String(url).endsWith("/api/legal/conflict-check"))
+      .map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+    expect(sides).toEqual([
+      { name: "Max Muster", side: "client" },
+      { name: "Gegner GmbH", side: "opponent" },
+    ]);
+  });
+
+  test("a justified waiver covering the conflict lets the conversion through", async () => {
+    const waived = {
+      ...SERVER_CLEAR,
+      status: "conflict",
+      severity: "critical",
+      matches: ["legal/cases/alt"],
+      waived: true,
+      waived_by: "partner@kanzlei.example",
+      waived_by_id: "user-9",
+      waived_by_role: "lawyer",
+      waived_reason: "Beide Parteien haben schriftlich zugestimmt.",
+      waived_at: "2026-06-20T11:00:00.000Z",
+    };
+    mockFetch
+      .mockResolvedValueOnce(new Response(JSON.stringify(acceptedIntake(waived)), { status: 200 }))
+      .mockResolvedValueOnce(criticalCheck())
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await convert();
+    expect(res.status).toBe(200);
+    const created = JSON.parse(String((caseCreates()[0]?.[1] as RequestInit).body));
+    expect(created.frontmatter.conflict_status).toBe("conflict_waived");
+    expect(created.frontmatter.mandate_acceptance.conflict_check).toMatchObject({
+      status: "conflict",
+      waived: true,
+      waived_by_id: "user-9",
+      performed_by_id: "user-1",
+    });
+  });
+
+  test("a waiver does not cover a NEW conflict (409)", async () => {
+    const waivedOther = {
+      ...SERVER_CLEAR,
+      status: "conflict",
+      matches: ["legal/cases/eine-andere"],
+      waived: true,
+      waived_by: "partner@kanzlei.example",
+      waived_by_id: "user-9",
+      waived_by_role: "lawyer",
+      waived_reason: "Zustimmung liegt vor.",
+    };
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(acceptedIntake(waivedOther)), { status: 200 })
+      )
+      .mockResolvedValueOnce(criticalCheck());
+    const res = await convert();
+    expect(res.status).toBe(409);
+    expect(caseCreates()).toHaveLength(0);
+  });
+
+  test("the created matter carries the server's conversion-time check", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(acceptedIntake(SERVER_CLEAR)), { status: 200 })
+      )
+      .mockResolvedValueOnce(clearCheck())
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await convert();
+    expect(res.status).toBe(200);
+    const created = JSON.parse(String((caseCreates()[0]?.[1] as RequestInit).body));
+    expect(created.frontmatter.conflict_status).toBe("conflict_cleared");
+    expect(created.frontmatter.mandate_acceptance.conflict_check).toMatchObject({
+      status: "clear",
+      performed_by: "test@example.com",
+      performed_by_id: "user-1",
+      parties: [{ name: "Max Muster", side: "client", severity: "none" }],
+    });
+  });
+
+  test("an unreachable conflict check blocks the conversion (503)", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(acceptedIntake(SERVER_CLEAR)), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("down", { status: 502 }));
+    const res = await convert();
+    expect(res.status).toBe(503);
+    expect(caseCreates()).toHaveLength(0);
   });
 });

@@ -28,6 +28,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { assessIndexCompleteness, parseTotalHits, writeIndexAtomic } from "./ris-index-write";
 import { risMassPause, RIS_USER_AGENT } from "./ris-pace";
 
 const API = "https://data.bka.gv.at/ris/api/v2.6/Landesrecht";
@@ -37,6 +38,12 @@ const PAGE_SIZE = 100;
 
 const outArg = process.argv.indexOf("--out");
 const OUT = outArg > -1 ? process.argv[outArg + 1] : "/tmp/ris-inforce-landesrecht.jsonl";
+// Ein Lauf mit uebersprungenen Seiten landet hier statt am Zielpfad — das
+// Soll entscheidet ueber Soft-Deletes und darf nie Luecken haben. Der
+// Nachlade-Modus (--pages) fuellt diese Datei und tauscht sie erst bei
+// Vollstaendigkeit atomar nach OUT.
+const PARTIAL = `${OUT}.partial`;
+const SKIPPED_FILE = `${OUT}.skipped.json`;
 // --pages=1106,1107: Nachlade-Modus — laedt nur die genannten Seiten und
 // mergt sie in den bestehenden Index (dedup via nor). Fuellt die Luecken,
 // die der Voll-Crawl in OUT.skipped.json dokumentiert hat.
@@ -97,11 +104,10 @@ function pageUrl(seite: number): string {
  * einer leeren Seite (beobachtet 2026-09-23, LrKons ab Seite 1106 bei
  * 110.457 Hits) — ohne bekanntes Ende wuerde der Crawl genau dort sterben.
  */
-async function fetchTotalHits(): Promise<number> {
+async function fetchTotalHits(): Promise<number | null> {
   const res = await fetch(pageUrl(1), { headers: UA, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = (await res.json()) as any;
-  return parseInt(data?.OgdSearchResult?.OgdDocumentResults?.Hits?.["#text"] ?? "0", 10);
+  return parseTotalHits(await res.json());
 }
 
 async function fetchPage(seite: number, attempt = 0): Promise<Norm[] | null> {
@@ -188,12 +194,22 @@ function selfCheck(sample: Norm[]): void {
  * eine nor-Menge, kein Seiten-Snapshot.
  */
 async function refillSkippedPages(pages: number[]): Promise<void> {
-  if (!existsSync(OUT)) {
+  // Basis ist der Teil-Index des letzten Voll-Crawls; nur Altbestand ohne
+  // .partial (vor dieser Regel geschrieben) wird direkt in OUT gemergt.
+  const base = existsSync(PARTIAL) ? PARTIAL : OUT;
+  if (!existsSync(base)) {
     console.error(`Index fehlt: ${OUT} — erst Voll-Crawl, dann --pages.`);
     process.exit(1);
   }
+  let expectedTotal: number | null = null;
+  try {
+    const t = (JSON.parse(readFileSync(SKIPPED_FILE, "utf8")) as { total?: unknown }).total;
+    expectedTotal = typeof t === "number" && t > 0 ? t : null;
+  } catch {
+    // kein/kaputtes Sidecar — Gesamtzahl unbekannt
+  }
   const rows = new Map<string, string>();
-  for (const line of readFileSync(OUT, "utf8").split("\n")) {
+  for (const line of readFileSync(base, "utf8").split("\n")) {
     if (!line.trim()) continue;
     try {
       const n = JSON.parse(line) as Norm;
@@ -202,7 +218,7 @@ async function refillSkippedPages(pages: number[]): Promise<void> {
       // kaputte Zeile — Voll-Crawl schreibt sie neu
     }
   }
-  console.log(`Nachlade-Modus: ${pages.length} Seiten → ${OUT} (${rows.size} Zeilen)`);
+  console.log(`Nachlade-Modus: ${pages.length} Seiten → ${base} (${rows.size} Zeilen)`);
 
   const remaining: number[] = [];
   for (const page of pages) {
@@ -221,18 +237,37 @@ async function refillSkippedPages(pages: number[]): Promise<void> {
     await risMassPause("Landesrecht-Inventar-Nachladen");
   }
 
-  writeFileSync(OUT, [...rows.values()].join("\n") + "\n");
-  const skippedFile = `${OUT}.skipped.json`;
+  const lines = [...rows.values()];
   if (remaining.length > 0) {
+    writeIndexAtomic(base, lines);
     writeFileSync(
-      skippedFile,
-      JSON.stringify({ pages: remaining, at: new Date().toISOString() }) + "\n"
+      SKIPPED_FILE,
+      JSON.stringify({ pages: remaining, total: expectedTotal, at: new Date().toISOString() }) +
+        "\n"
     );
-    console.warn(`⚠️  weiterhin offen: ${remaining.join(", ")} → ${skippedFile}`);
-  } else {
-    rmSync(skippedFile, { force: true });
-    console.log(`✓ alle Nachlade-Seiten geholt — ${skippedFile} entfernt`);
+    console.warn(`⚠️  weiterhin offen: ${remaining.join(", ")} → ${SKIPPED_FILE}`);
+    console.log(`✓ Teil-Index aktualisiert: ${base} (${rows.size} Zeilen) — ${OUT} unverändert`);
+    return;
   }
+  if (base === PARTIAL) {
+    const verdict = assessIndexCompleteness({
+      total: expectedTotal,
+      written: rows.size,
+      failedPages: [],
+    });
+    if (!verdict.ok) {
+      writeIndexAtomic(PARTIAL, lines);
+      rmSync(SKIPPED_FILE, { force: true });
+      throw new Error(
+        `Teil-Index nach Nachladen unplausibel (${verdict.reason}) — ${OUT} bleibt unverändert, ` +
+          `nächster Voll-Crawl holt neu.`
+      );
+    }
+  }
+  writeIndexAtomic(OUT, lines);
+  rmSync(PARTIAL, { force: true });
+  rmSync(SKIPPED_FILE, { force: true });
+  console.log(`✓ alle Nachlade-Seiten geholt — ${SKIPPED_FILE} entfernt`);
   console.log(`✓ geschrieben: ${OUT} (${rows.size} Zeilen)`);
 }
 
@@ -252,9 +287,11 @@ async function main() {
     }
 
     const totalHits = await fetchTotalHits();
-    if (totalHits <= 0) {
-      console.error("Hits-Total 0 — Fassungsfilter oder Applikation prüfen.");
-      process.exit(1);
+    if (totalHits === null) {
+      // Keine Trefferzahl = unbrauchbare Antwort, nie "0 geltende Normen".
+      throw new Error(
+        "Keine Trefferzahl (Hits) — Fassungsfilter/Applikation prüfen; Index unverändert."
+      );
     }
     const totalPages = Math.ceil(totalHits / PAGE_SIZE);
     console.log(
@@ -300,16 +337,34 @@ async function main() {
 
     const nonGnr = all.filter((n) => !n.gnr).length;
     console.log(`\n${all.length} Dokumente, davon ${nonGnr} ohne Gesetzesnummer`);
-    if (skippedPages.length > 0) {
-      console.warn(`⚠️  ${skippedPages.length} Seiten uebersprungen: ${skippedPages.join(", ")}`);
-      writeFileSync(
-        OUT + ".skipped.json",
-        JSON.stringify({ pages: skippedPages, at: new Date().toISOString() }) + "\n"
-      );
-    }
     selfCheck(all.slice(0, SELF_CHECK_SAMPLE));
+    const lines = all.map((n) => JSON.stringify(n));
 
-    writeFileSync(OUT, all.map((n) => JSON.stringify(n)).join("\n") + "\n");
+    if (skippedPages.length > 0) {
+      // Lueckenhaft: nur als Teil-Index ablegen, OUT bleibt der letzte
+      // vollstaendige Stand. Die Pipeline laedt die Seiten per --pages nach.
+      console.warn(`⚠️  ${skippedPages.length} Seiten uebersprungen: ${skippedPages.join(", ")}`);
+      writeIndexAtomic(PARTIAL, lines);
+      writeFileSync(
+        SKIPPED_FILE,
+        JSON.stringify({ pages: skippedPages, total: totalHits, at: new Date().toISOString() }) +
+          "\n"
+      );
+      console.log(`Teil-Index: ${PARTIAL} — ${OUT} unverändert bis zum vollständigen Nachladen`);
+      return;
+    }
+
+    const verdict = assessIndexCompleteness({
+      total: totalHits,
+      written: all.length,
+      failedPages: [],
+    });
+    if (!verdict.ok) {
+      throw new Error(`Index NICHT geschrieben: ${verdict.reason} — ${OUT} bleibt unverändert`);
+    }
+    writeIndexAtomic(OUT, lines);
+    rmSync(PARTIAL, { force: true });
+    rmSync(SKIPPED_FILE, { force: true });
     console.log(`✓ geschrieben: ${OUT} (${statSync(OUT).size} Bytes)`);
   } finally {
     releaseRisLock();

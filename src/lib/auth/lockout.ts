@@ -37,10 +37,26 @@ const ensureLockoutSchema = createSchemaInit(`
   );
 `);
 
+/**
+ * Password lockout key: address AND client IP. Failed guesses from one
+ * network lock only that network out of the account — a stranger cannot lock
+ * a lawyer out of their own login from elsewhere. Counted the same way for
+ * unknown addresses, so the lockout reveals nothing about which accounts
+ * exist. (The per-IP request limit of the login route caps guessing overall.)
+ */
+function loginKey(email: string, ip?: string | null): string {
+  const base = `login:${email.toLowerCase()}`;
+  return ip ? `${base}|${ip}` : base;
+}
+
 export async function recordFailedLogin(
-  email: string
+  email: string,
+  ip?: string | null
 ): Promise<{ locked: boolean; retryAfterSeconds: number }> {
-  const key = `login:${email.toLowerCase()}`;
+  return recordFailure(loginKey(email, ip));
+}
+
+async function recordFailure(key: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const now = Date.now();
 
   let entry = cache.get(key);
@@ -64,9 +80,13 @@ export async function recordFailedLogin(
 }
 
 export async function isAccountLocked(
-  email: string
+  email: string,
+  ip?: string | null
 ): Promise<{ locked: boolean; retryAfterSeconds: number }> {
-  const key = `login:${email.toLowerCase()}`;
+  return lockStatus(loginKey(email, ip));
+}
+
+async function lockStatus(key: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const now = Date.now();
   let entry = cache.get(key);
 
@@ -91,8 +111,30 @@ export async function isAccountLocked(
   };
 }
 
-export async function clearLockout(email: string): Promise<void> {
-  const key = `login:${email.toLowerCase()}`;
+export async function clearLockout(email: string, ip?: string | null): Promise<void> {
+  const key = loginKey(email, ip);
+  cache.delete(key);
+  await removeLockout(key);
+}
+
+// ── Second factor ─────────────────────────────────────────────────────
+// Failed TOTP/backup-code attempts lock the second factor per USER — not per
+// challenge token — so fetching a fresh challenge does not reset the count.
+
+export async function recordFailedSecondFactor(
+  userId: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+  return recordFailure(`2fa:${userId}`);
+}
+
+export async function isSecondFactorLocked(
+  userId: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+  return lockStatus(`2fa:${userId}`);
+}
+
+export async function clearSecondFactorLockout(userId: string): Promise<void> {
+  const key = `2fa:${userId}`;
   cache.delete(key);
   await removeLockout(key);
 }

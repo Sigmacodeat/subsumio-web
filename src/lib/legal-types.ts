@@ -176,6 +176,8 @@ export interface StrategyInfo {
   recommendedApproach?: string;
   generatedAt?: string;
   risks?: StrategyRisk[];
+  /** Documents of the matter the strategy was based on. */
+  documentsConsidered?: number;
 }
 
 export interface CommunicationEntry {
@@ -278,6 +280,12 @@ export interface CaseFrontmatter {
   /** Streitwert in Euro — Grundlage für RATG/AHK-Honorarberechnung. Added in cases/new/page.tsx (Welle B, 21.09.2026); was missing from the type. */
   dispute_value?: number;
   tags?: string[];
+  /**
+   * Text the firm explicitly released to the client portal as the matter
+   * summary. The portal never shows the case body; without this field it
+   * shows no summary at all.
+   */
+  portal_summary?: string;
   deadlines?: DeadlineEntry[];
   /** P0-2: KI-extrahierte Fristenvorschläge aus Dokumentanalyse (await confirmation) */
   suggested_deadlines?: Array<{
@@ -458,6 +466,12 @@ export interface InvoiceExpenseEntry {
   description: string;
   date: string;
   amount: number;
+  /**
+   * Steuersatz der Auslage als Anteil (0 = durchlaufender Posten, z. B. im
+   * Namen des Mandanten entrichtete Gerichtsgebühr). Fehlt er, gilt der Satz
+   * der Rechnung.
+   */
+  vat_rate?: number;
 }
 
 export interface InvoiceFrontmatter {
@@ -492,8 +506,17 @@ export interface InvoiceFrontmatter {
   reminder_sent_at?: string[];
   reminder_fee?: number;
   // Erweiterte Rechnungslegung
-  invoice_type?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
+  invoice_type?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift" | "storno";
   parent_invoice_id?: string;
+  /** Storno-Note: Nummer und Datum der stornierten Rechnung. */
+  parent_invoice_number?: string;
+  parent_invoice_date?: string;
+  /** USt je Steuersatz (Anteil), serverseitig nachgerechnet. */
+  tax_breakdown?: Array<{ rate: number; net: number; tax: number }>;
+  /** Übergang der Steuerschuld (§ 19 Abs 1 UStG 1994) — keine USt, Pflichthinweis. */
+  reverse_charge?: boolean;
+  /** UID des Leistungsempfängers (Pflicht bei Reverse Charge). */
+  client_vat_id?: string;
   case_slugs?: string[];
   // E-Rechnung
   leitweg_id?: string;
@@ -515,6 +538,10 @@ export interface ContactFrontmatter {
   notes?: string;
   tags?: string[];
   leitwegId?: string;
+  /** UID-Nummer (Unternehmer-Mandant). */
+  vat_id?: string;
+  /** Unternehmer im EU-Ausland: Rechnungen mit Übergang der Steuerschuld. */
+  reverse_charge?: boolean;
 }
 
 export interface NormFrontmatter {

@@ -7,7 +7,6 @@ import { Search, BookOpen, ChevronRight, Loader2, AlertCircle, Upload } from "lu
 import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { BrainPage, SearchResult } from "@/lib/types";
@@ -16,6 +15,7 @@ import { PageSkeleton } from "@/components/dashboard/page-skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import {
   BRAIN_TYPE_PLURALS,
   brainEntryHref,
@@ -55,12 +55,17 @@ export default function BrainPage() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const list = await api.brain.listPages({ limit: 200 });
+        // Typ-lose Browsing-Liste: bewusst eine Engine-Seite (≤100, der
+        // effektive Cap). Bei Volltreffer zeigt CappedResultsNotice den
+        // Hinweis auf die Suche — komplette Typ-Scans laufen über
+        // api.brain.listAllPages.
+        const list = await api.brain.listPages({ limit: 100 });
         if (cancelled) return;
         setPages(list.filter((p) => !isInternalBrainType(p.type)).map(toItem));
       } catch (err) {
@@ -89,15 +94,19 @@ export default function BrainPage() {
       async () => {
         if (!trimmed) {
           setSearchResults(null);
+          setSearchFailed(false);
           return;
         }
         setSearching(true);
         try {
           const results = await api.brain.search(trimmed, 20);
           setSearchResults(results);
+          setSearchFailed(false);
         } catch (err) {
           console.error("[brain] search failed:", err instanceof Error ? err.message : String(err));
+          // A failed search is not "no hits".
           setSearchResults([]);
+          setSearchFailed(true);
         } finally {
           setSearching(false);
         }
@@ -219,6 +228,8 @@ export default function BrainPage() {
             )}
           </div>
 
+          {searchResults === null && pages.length >= 100 && <CappedResultsNotice limit={100} />}
+
           {searchResults === null && typeCounts.length > 1 && (
             <div
               className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
@@ -232,7 +243,10 @@ export default function BrainPage() {
                 className={chipClass(filter === "all")}
               >
                 {t("brain.filter_all")}
-                <span className="tabular-nums opacity-70">{pages.length}</span>
+                {/* Counts of a cut list would read as totals — only shown when complete. */}
+                {pages.length < 100 && (
+                  <span className="tabular-nums opacity-70">{pages.length}</span>
+                )}
               </button>
               {typeCounts.map(([type, count]) => (
                 <button
@@ -243,13 +257,21 @@ export default function BrainPage() {
                   className={chipClass(filter === type)}
                 >
                   {BRAIN_TYPE_PLURALS[type] ?? brainTypeLabel(type)}
-                  <span className="tabular-nums opacity-70">{count}</span>
+                  {pages.length < 100 && <span className="tabular-nums opacity-70">{count}</span>}
                 </button>
               ))}
             </div>
           )}
 
-          {displayed.length === 0 ? (
+          {searchFailed && searchResults !== null ? (
+            <div
+              role="alert"
+              className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-danger-border)] py-12 text-sm text-[color:var(--ds-danger-text)]"
+            >
+              <AlertCircle size={15} aria-hidden="true" />
+              Die Suche ist gerade nicht erreichbar — bitte versuchen Sie es erneut.
+            </div>
+          ) : displayed.length === 0 ? (
             <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] py-12 text-sm text-[color:var(--ds-text-muted)]">
               <AlertCircle size={15} aria-hidden="true" />
               {t("brain.no_results").replace("{{query}}", query)}

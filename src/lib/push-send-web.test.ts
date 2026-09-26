@@ -36,6 +36,17 @@ vi.mock("./push-token-store", () => ({
   unregisterPushToken: async (_u: string, token: string) => {
     calls.removed.push(token);
   },
+  deletePushTokensForUser: async () => {
+    calls.removed.push("*all*");
+    return 2;
+  },
+}));
+const account = vi.hoisted(() => ({ deactivatedAt: null as string | null, missing: false }));
+vi.mock("@/lib/auth/store", () => ({
+  getStore: () => ({
+    getById: async (id: string) =>
+      account.missing ? undefined : { id, deactivatedAt: account.deactivatedAt },
+  }),
 }));
 vi.mock("@/lib/web-push-core", async (orig) => ({
   ...(await orig<typeof import("@/lib/web-push-core")>()),
@@ -54,6 +65,23 @@ beforeEach(() => {
   calls.sent = [];
   calls.removed = [];
   calls.result = "sent";
+  account.deactivatedAt = null;
+  account.missing = false;
+});
+
+describe("sendPushToUser — deactivated accounts", () => {
+  it("never pushes to a deactivated user and removes the registrations", async () => {
+    account.deactivatedAt = "2026-09-20T00:00:00Z";
+    expect(await sendPushToUser("u1", { title: "Frist: Berufung", body: "Akte" })).toBe(0);
+    expect(calls.sent).toHaveLength(0);
+    expect(calls.removed).toEqual(["*all*"]);
+  });
+
+  it("never pushes to a deleted user", async () => {
+    account.missing = true;
+    expect(await sendPushToUser("u1", { title: "t", body: "b" })).toBe(0);
+    expect(calls.sent).toHaveLength(0);
+  });
 });
 
 describe("sendPushToUser — web", () => {

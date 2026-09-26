@@ -7,6 +7,7 @@ import {
   BOOKABLE_TRUST_TYPES,
   buildTrustBooking,
   computeBalance,
+  trustAccountDeleteBlock,
   validateTrustBooking,
   type TrustAccountStatus,
   type TrustTransaction,
@@ -93,35 +94,47 @@ export const DELETE = createHandler(
   {
     action: "brain.delete",
     rateTier: "standard",
-    audit: (ctx) => ({
-      action: "case.delete" as const,
-      entityType: "trust_account",
-      details: { by: ctx.user.email },
-    }),
   },
   async (ctx, _body, _query, req) => {
     const { slug } = await (req as unknown as { params: Promise<{ slug: string }> }).params;
     const decoded = decodeURIComponent(slug);
 
-    const existing = await getAccount(decoded, ctx.headers);
-    if (!existing) return Response.json({ success: true });
+    return withKeyedLock(`trust:${ctx.brainId}:${decoded}`, async () => {
+      const existing = await getAccount(decoded, ctx.headers);
+      if (!existing) return Response.json({ success: true });
 
-    const res = await enginePatchPage(
-      ctx.headers,
-      {
-        slug: decoded,
-        frontmatter: {
-          status: "tombstoned",
-          tombstoned_at: new Date().toISOString(),
-          tombstoned_by: ctx.user.email,
-          tombstone_reason: "manual_delete",
+      // Fremdgeld must not disappear from the books: an account is deleted
+      // only once its balance (recomputed from the journal) is zero.
+      const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+      const transactions = (fm.transactions as TrustTransaction[]) ?? [];
+      const balance = computeBalance((fm.opening_balance as number) ?? 0, transactions);
+      const block = trustAccountDeleteBlock(balance);
+      if (block) return apiError(block.code, block.message, 409, { balance });
+
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug: decoded,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstoned_by: ctx.user.email,
+            tombstone_reason: "manual_delete",
+          },
         },
-      },
-      { timeoutMs: 10_000 }
-    );
+        { timeoutMs: 10_000 }
+      );
 
-    if (!res.ok) return apiError("engine_error", "Delete failed", 502);
-    return Response.json({ success: true });
+      if (!res.ok) return apiError("engine_error", "Delete failed", 502);
+      void logAudit("trust.delete", "trust_account", {
+        entityId: decoded,
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        details: { status: fm.status, transactions: transactions.length },
+      });
+      return Response.json({ success: true });
+    });
   }
 );
 
@@ -147,6 +160,8 @@ export const POST = createHandler(
         status: ((fm.status as TrustAccountStatus) ?? "active") as TrustAccountStatus,
         currency: (fm.currency as string) ?? "EUR",
         transactions,
+        // The account's legal regime (RAO vs. BRAO) decides the booking hints.
+        jurisdiction: (fm.jurisdiction === "de" ? "de" : "at") as "de" | "at",
       };
       const check = validateTrustBooking(account, body);
       if (!check.ok) return apiError(check.code, check.message, 422);

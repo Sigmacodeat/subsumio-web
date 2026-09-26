@@ -33,7 +33,11 @@ vi.mock("@/lib/api-handler", () => ({
   apiError: (code: string, message: string, status: number, details?: unknown) =>
     Response.json({ error: message, code, ...(details ? { details } : {}) }, { status }),
 }));
-vi.mock("@/lib/auth/password", () => ({ verifyPassword: vi.fn(async () => true) }));
+const verifyPassword = vi.fn(async (_pw: string, _hash: string) => true);
+vi.mock("@/lib/auth/password", () => ({
+  verifyPassword: (pw: string, hash: string) => verifyPassword(pw, hash),
+  hashPassword: vi.fn(async () => "dummy-hash"),
+}));
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ getByEmail: async () => user }),
   toPublic: (u: TestUser) => ({ id: u.id, email: u.email }),
@@ -54,10 +58,11 @@ vi.mock("@/lib/auth/tokens", () => ({
 }));
 vi.mock("@/lib/auth/lockout", () => ({
   isAccountLocked: vi.fn(async () => ({ locked: false, retryAfterSeconds: 0 })),
-  recordFailedLogin: vi.fn(),
+  recordFailedLogin: vi.fn(async () => ({ locked: false, retryAfterSeconds: 0 })),
   clearLockout: vi.fn(async () => undefined),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(async () => undefined) }));
+vi.mock("@/lib/audit-user", () => ({ logUserAudit: vi.fn(async () => undefined) }));
 vi.mock("@/lib/auth/account-status", () => ({
   ACCOUNT_BLOCKED_CODE: "account_deactivated",
   ACCOUNT_BLOCKED_MESSAGE: "blocked",
@@ -146,5 +151,51 @@ describe("POST /api/auth/login — firm-wide 2FA", () => {
     expect((await res.json()).error).toBe("2fa_required");
     expect(twoFactorPolicyFor).not.toHaveBeenCalled();
     expect(createSession).not.toHaveBeenCalled();
+  });
+});
+
+describe("login — keine Konto-Aufzählung (SEC-19)", () => {
+  beforeEach(() => {
+    verifyPassword.mockReset();
+    verifyPassword.mockResolvedValue(false);
+  });
+
+  it("unknown address and SSO-only account answer identically, both after a password check", async () => {
+    user = null;
+    const unknown = await login();
+    const unknownBody = await unknown.json();
+
+    user = {
+      id: "u-sso",
+      email: "member@firm.at",
+      role: "lawyer",
+      brainId: "b1",
+      passwordHash: "",
+    };
+    const sso = await login();
+    const ssoBody = await sso.json();
+
+    expect(unknown.status).toBe(401);
+    expect(sso.status).toBe(401);
+    expect(ssoBody).toEqual(unknownBody);
+    expect(JSON.stringify(ssoBody)).not.toContain("sso");
+    // Both paths burned a real hash comparison (timing parity).
+    expect(verifyPassword).toHaveBeenCalledTimes(2);
+    expect(verifyPassword.mock.calls.every(([, hash]) => hash === "dummy-hash")).toBe(true);
+  });
+
+  it("a wrong password for a real account answers the same way", async () => {
+    const { recordFailedLogin } = await import("@/lib/auth/lockout");
+    vi.mocked(recordFailedLogin).mockResolvedValue({ locked: false, retryAfterSeconds: 0 });
+    user = {
+      id: "u1",
+      email: "member@firm.at",
+      role: "lawyer",
+      brainId: "b1",
+      passwordHash: "real-hash",
+    };
+    const res = await login();
+    expect(res.status).toBe(401);
+    expect((await res.json()).code).toBe("invalid_credentials");
   });
 });

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { unwrapApiBody } from "@/lib/api-body";
 import { csrfFetch } from "@/lib/csrf";
 import { formatDate } from "@/lib/utils";
@@ -39,9 +40,18 @@ interface RoomView {
 
 const STATUS_LABEL = { invited: "Eingeladen", active: "Aktiv", revoked: "Entzogen" } as const;
 
+/** Error text of an API body: `{ error: "<Text>", code }` (older bodies nest a message). */
+function errorText(body: unknown, fallback: string): string {
+  const e = (body as { error?: unknown } | null)?.error;
+  if (typeof e === "string" && e) return e;
+  const nested = (e as { message?: unknown } | undefined)?.message;
+  return typeof nested === "string" && nested ? nested : fallback;
+}
+
 export default function DataRoomPage() {
   const { id } = useParams<{ id: string }>();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const [room, setRoom] = useState<RoomView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -54,8 +64,9 @@ export default function DataRoomPage() {
   const load = useCallback(async () => {
     try {
       const res = await fetch(`/api/data-rooms/${encodeURIComponent(id)}`);
-      const body = unwrapApiBody<RoomView & { error?: { message?: string } }>(await res.json());
-      if (!res.ok) throw new Error(body.error?.message ?? "Datenraum nicht gefunden");
+      const raw = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(errorText(raw, "Datenraum nicht gefunden"));
+      const body = unwrapApiBody<RoomView>(raw);
       setRoom(body);
       setSelected(new Set(body.documents.map((d) => d.slug)));
     } catch (err) {
@@ -80,7 +91,7 @@ export default function DataRoomPage() {
         body: JSON.stringify(body),
       });
       const json = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(json?.error?.message ?? "Aktion fehlgeschlagen");
+      if (!res.ok) throw new Error(errorText(json, "Aktion fehlgeschlagen"));
       return unwrapApiBody<Record<string, unknown>>(json);
     } catch (err) {
       addToast({ type: "error", title: err instanceof Error ? err.message : String(err) });
@@ -115,7 +126,14 @@ export default function DataRoomPage() {
     await load();
   }
 
-  async function revoke(memberId: string) {
+  async function revoke(memberId: string, memberEmail: string) {
+    const confirmed = await confirm({
+      title: "Zugang entziehen?",
+      message: `${memberEmail} verliert sofort den Zugriff auf diesen Datenraum.`,
+      confirmLabel: "Entziehen",
+      variant: "danger",
+    });
+    if (!confirmed) return;
     const ok = await call("DELETE", `/api/data-rooms/${id}/members`, { member_id: memberId });
     if (ok) {
       addToast({ type: "success", title: "Zugang entzogen" });
@@ -291,7 +309,7 @@ export default function DataRoomPage() {
                         size="sm"
                         className="ml-auto"
                         disabled={busy}
-                        onClick={() => void revoke(m.id)}
+                        onClick={() => void revoke(m.id, m.email)}
                       >
                         <UserX size={12} className="mr-1.5" aria-hidden="true" />
                         Entziehen

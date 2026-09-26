@@ -8,6 +8,9 @@
 // Fail-closed:
 //   - PLATFORM_OPERATOR_EMAILS leer oder nicht gesetzt → niemand ist Betreiber.
 //   - Betreiber brauchen aktive 2FA.
+//   - Betreiber brauchen eine bestätigte E-Mail-Adresse — sonst könnte sich
+//     jemand mit einer gelisteten, aber noch nicht vergebenen Adresse
+//     registrieren und Betreiberrechte erhalten.
 //   - Deaktivierte Konten sind nie Betreiber.
 //   - Die Konsole und ihre APIs laufen nur auf OPS_HOSTS (Produktion:
 //     ops.subsum.io). Der Session-Cookie ist host-gebunden, eine Anmeldung in
@@ -22,6 +25,8 @@ export interface OperatorCandidate {
   email?: string | null;
   twoFactorEnabled?: boolean | null;
   deactivatedAt?: string | null;
+  /** ISO timestamp of the confirmed address (link clicked / IdP-verified). */
+  emailVerifiedAt?: string | null;
 }
 
 /** Hostname without port, lowercased ("OPS.subsum.io:443" → "ops.subsum.io"). */
@@ -59,5 +64,6 @@ export function isPlatformOperator(user: OperatorCandidate | null | undefined): 
   if (!user?.email) return false;
   if (user.deactivatedAt) return false;
   if (user.twoFactorEnabled !== true) return false;
+  if (!user.emailVerifiedAt) return false;
   return operatorEmails().has(user.email.trim().toLowerCase());
 }

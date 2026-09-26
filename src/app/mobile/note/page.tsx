@@ -6,7 +6,7 @@
  * Uses Web Speech API for voice (Capacitor plugin fallback).
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Mic,
   MicOff,
@@ -19,7 +19,10 @@ import {
   WifiOff,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { brainPageHref } from "@/lib/dashboard-hrefs";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
+import { buildMobileNotePage } from "@/lib/mobile-note";
+import { toMobileMatter, type MobileMatter } from "@/lib/mobile-cases";
 
 interface SavedNote {
   timestamp: string;
@@ -35,8 +38,30 @@ export default function MobileNotePage() {
   const [saved, setSaved] = useState<SavedNote | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tags, setTags] = useState("");
+  // Slug of the chosen matter — stored as case_slug so the note shows up in
+  // the matter's notes.
   const [matter, setMatter] = useState("");
+  const [matters, setMatters] = useState<MobileMatter[]>([]);
   const recognitionRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.brain
+      .listAllPages({ type: "legal_case", max: 10_000 })
+      .then((pages) => {
+        if (cancelled) return;
+        setMatters(
+          pages
+            .map(toMobileMatter)
+            .filter((m): m is MobileMatter => m !== null)
+            .sort((a, b) => a.title.localeCompare(b.title, "de"))
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Voice Recording ───────────────────────────────────────────────
 
@@ -141,19 +166,15 @@ export default function MobileNotePage() {
         .filter(Boolean);
       const title = text.slice(0, 60) + (text.length > 60 ? "…" : "");
       const now = new Date().toISOString();
-      const pagePayload = {
-        slug: `note-${Date.now()}`,
+      const pagePayload = buildMobileNotePage({
+        slug: matter ? `legal/notes/${Date.now().toString(36)}` : `note-${Date.now()}`,
         title: `Notiz ${new Date().toLocaleDateString("de-AT")} – ${title}`,
-        content: text,
-        type: "note",
-        frontmatter: {
-          type: "note",
-          created_at: now,
-          matter: matter || undefined,
-          tags: tagList,
-          source: "mobile_quick_note",
-        },
-      };
+        text,
+        caseSlug: matter,
+        tags: tagList,
+        source: "mobile_quick_note",
+        at: new Date(now),
+      });
       if (!isOnline()) {
         // Offline: in die Mutation-Queue legen — wird beim nächsten
         // Online-Event automatisch synchronisiert (useMutationQueue).
@@ -258,7 +279,7 @@ export default function MobileNotePage() {
             Neue Notiz
           </button>
           <a
-            href={`/dashboard/pages/${saved.slug}`}
+            href={brainPageHref(saved.slug)}
             style={{
               padding: "10px 20px",
               background: "var(--ds-border)",
@@ -386,10 +407,10 @@ export default function MobileNotePage() {
           >
             <FolderOpen size={12} /> Akte (optional)
           </label>
-          <input
+          <select
             value={matter}
             onChange={(e) => setMatter(e.target.value)}
-            placeholder="Akte-Slug oder Titel"
+            aria-label="Akte"
             style={
               {
                 width: "100%",
@@ -403,7 +424,14 @@ export default function MobileNotePage() {
                 boxSizing: "border-box",
               } as React.CSSProperties
             }
-          />
+          >
+            <option value="">Keine Akte</option>
+            {matters.map((m) => (
+              <option key={m.slug} value={m.slug}>
+                {m.caseNumber ? `${m.caseNumber} · ${m.title}` : m.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Tags */}

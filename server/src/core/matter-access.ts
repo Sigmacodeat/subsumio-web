@@ -275,12 +275,69 @@ export function jobOwnerStamp(ownerUserId?: string, caseSlug?: string): Record<s
 }
 
 /**
+ * The document-level ACL groups (see core/acl.ts) of the user who started a
+ * piece of agent work travel with the job in this key, like the matter stamp.
+ * `"all"` is only ever stamped for a firm admin.
+ */
+export const JOB_ACL_GROUPS_KEY = "_acl_groups";
+
+/**
+ * The job-data stamp for a caller's document ACL groups. Only an admin keeps
+ * "all"; every other caller (a user in no group, or a call without a user)
+ * is stamped with its group list — possibly empty, i.e. open pages only.
+ */
+export function jobAclStamp(
+  aclGroups: string[] | "all" | undefined,
+  isAdmin: boolean
+): Record<string, unknown> {
+  if (aclGroups === "all" && isAdmin) return { [JOB_ACL_GROUPS_KEY]: "all" };
+  return {
+    [JOB_ACL_GROUPS_KEY]: Array.isArray(aclGroups)
+      ? aclGroups.filter((g) => typeof g === "string" && g.length > 0)
+      : [],
+  };
+}
+
+/**
+ * Read a job's document ACL groups.
+ *
+ *   stamp present  "all" or the stamped group list; a malformed stamp is []
+ *   no stamp       [] (open pages only) when the job was started for a user
+ *                  or a firm (owner, matter stamp or a non-default source);
+ *                  undefined — no document filter — only for host jobs
+ *                  without any of these (CLI, host cron).
+ */
+export function readJobAclGroups(data: unknown): string[] | "all" | undefined {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  if (JOB_ACL_GROUPS_KEY in d) {
+    const raw = d[JOB_ACL_GROUPS_KEY];
+    if (raw === "all") return "all";
+    return isSlugList(raw) ? [...raw] : [];
+  }
+  const source = nonEmptyString(d._source_id) ?? nonEmptyString(d.source_id);
+  const userJob =
+    readJobOwner(d) !== undefined ||
+    JOB_MATTER_SCOPE_KEY in d ||
+    JOB_MATTER_READ_ONLY_KEY in d ||
+    (source !== undefined && source !== "default");
+  return userJob ? [] : undefined;
+}
+
+/** The ACL stamp a job passes on to the jobs it spawns (`{}` for host jobs). */
+export function inheritedJobAclStamp(data: unknown): Record<string, unknown> {
+  const groups = readJobAclGroups(data);
+  if (groups === undefined) return {};
+  return { [JOB_ACL_GROUPS_KEY]: groups === "all" ? "all" : [...groups] };
+}
+
+/**
  * Everything a spawned agent job inherits from its parent: the matter access
- * stamp, the owner and the bound matter.
+ * stamp, the document ACL groups, the owner and the bound matter.
  */
 export function inheritedAgentStamps(data: unknown): Record<string, unknown> {
   return {
     ...inheritedJobMatterStamp(data),
+    ...inheritedJobAclStamp(data),
     ...jobOwnerStamp(readJobOwner(data), readJobCase(data)),
   };
 }
@@ -391,6 +448,81 @@ export function privateChatDenies(owners: string[], userId: string): string[] {
  */
 export function privateAreaPrefix(userId: string): string {
   return `${PRIVATE_CHAT_PREFIX}${chatOwnerSegment(userId)}/`;
+}
+
+/**
+ * Firm-internal records a client account never reaches, not even for its own
+ * matter: the anti-money-laundering file (identity check, risk rating,
+ * screening) and the ID copies filed with it. The web app keeps the records
+ * under `legal/kyc/<id>`; ID copies are ordinary documents marked with
+ * `doc_type: ausweiskopie` (or tagged `kyc`) or linked from a record.
+ */
+export const KYC_RECORD_PREFIX = "legal/kyc";
+export const KYC_RECORD_TYPE = "kyc_verification";
+export const ID_COPY_DOC_TYPE = "ausweiskopie";
+export const KYC_TAG = "kyc";
+
+const FIRM_STAFF_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer", "assistant"]);
+
+/** True for firm staff. Unknown or missing roles are not staff (fail-closed). */
+export function isFirmStaffRole(role: string | undefined): boolean {
+  return typeof role === "string" && FIRM_STAFF_ROLES.has(role);
+}
+
+/**
+ * Deny entries (plain slugs/prefixes, for withDeniedMatters) keeping the
+ * firm-internal records from a caller who is not firm staff. `recordSlugs`
+ * are the individual KYC records and ID copies of the source; the prefix
+ * covers records created after the list was read.
+ */
+export function staffOnlyDenies(role: string | undefined, recordSlugs: string[]): string[] {
+  if (isFirmStaffRole(role)) return [];
+  return [KYC_RECORD_PREFIX, ...recordSlugs.filter(Boolean)];
+}
+
+/**
+ * Personal calendar mirrors: appointments pulled from one lawyer's own
+ * Outlook (`calendar/outlook/<mailbox>/<event>`, type calendar_event,
+ * frontmatter owner_user_id) belong to that lawyer alone. Everyone else's
+ * scope denies them; a mirror whose owner is not recorded is denied to all
+ * (fail-closed) until the next sync stamps the owner.
+ */
+export const PERSONAL_CALENDAR_PREFIX = "calendar/outlook/";
+
+export interface PersonalCalendarMirror {
+  slug: string;
+  /** owner_user_id, or null when the mirror does not record it. */
+  owner: string | null;
+}
+
+/** Deny entries (plain slugs/prefixes) for the mirrors `userId` does not own. */
+export function personalCalendarDenies(
+  mirrors: PersonalCalendarMirror[],
+  userId: string
+): string[] {
+  const groups = new Map<string, PersonalCalendarMirror[]>();
+  const loose: PersonalCalendarMirror[] = [];
+  for (const m of mirrors) {
+    if (m.slug.startsWith(PERSONAL_CALENDAR_PREFIX)) {
+      const mailbox = m.slug.slice(PERSONAL_CALENDAR_PREFIX.length).split("/")[0];
+      if (mailbox) {
+        const prefix = `${PERSONAL_CALENDAR_PREFIX}${mailbox}`;
+        const list = groups.get(prefix) ?? [];
+        list.push(m);
+        groups.set(prefix, list);
+        continue;
+      }
+    }
+    loose.push(m);
+  }
+  const denies: string[] = [];
+  for (const [prefix, list] of groups) {
+    // A whole mailbox of someone else: one prefix entry instead of one per event.
+    if (list.every((m) => m.owner !== null && m.owner !== userId)) denies.push(prefix);
+    else for (const m of list) if (m.owner !== userId) denies.push(m.slug);
+  }
+  for (const m of loose) if (m.owner !== userId) denies.push(m.slug);
+  return denies;
 }
 
 /**

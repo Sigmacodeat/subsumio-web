@@ -28,7 +28,7 @@ const ADDIN_DIRS = ["word-addin", "outlook-addin"];
 /** Client calls whose response is AI-generated legal text. */
 const AI_CALL_PATTERNS: RegExp[] = [
   /\bapi\.query\.think\(/,
-  /\bapi\.legal\.(translate|schriftsatz|deepAnalysis|tabularReview|caseStrategy|caseInvestigation|caseScan|opponentSimulation|extractObligations|contradictionsCheck|contractRedline|berufungsgruende|analyzeDocument)\(/,
+  /\bapi\.legal\.(translate|schriftsatz|deepAnalysis|tabularReview|caseStrategy|caseInvestigation|caseScan(?:Preview|Start|Status)?|opponentSimulation|extractObligations|contradictionsCheck|contractRedline|berufungsgruende|analyzeDocument)\(/,
   /\/draft-reply["'`]/,
   /["'`}]\/api\/legal\/(memo|summarize|risk-analysis|subsumption|contract-draft|contract-redline|schriftsatz|analyze|deep-analysis|case-strategy|litigation|chronology|perspektiven-room|opponent-simulation|process-strategy|berufungsgruende|contradiction-probe|commentaries|precedent-search|research|submission-review)["'`?/]/,
   /["'`}]\/api\/think["'`?]/,
@@ -43,6 +43,12 @@ const AI_CALL_PATTERNS: RegExp[] = [
   // The daily briefing is fetched through a shared lib helper — the URL never
   // appears in the component, so the call-site pattern catches the consumer.
   /\bloadBriefing\(/,
+  // Copilot tools return AI text (deadline extraction, client update, summary,
+  // translation) that the chat renders in its tool result card.
+  /\bexecuteConfirmedTool\(|["'`]\/api\/copilot\/tools["'`]/,
+  // Pages the legal pipeline writes with an LLM (legal-pipeline.ts) and a
+  // surface later reads back verbatim through the brain page API.
+  /["'`]\/?(procedural-strategy|forensic-reports|settlement-analysis|cost-benefit|burden-of-proof|admissibility-checks|fact-gaps|enforcement-analysis|appeal-risk|insurance-coverage|counterclaim-risk|evidence-quality|mediation-adr|limitation-scan|cost-award|witness-expert|legal-drafts)\//,
 ];
 
 function walk(dir: string): string[] {

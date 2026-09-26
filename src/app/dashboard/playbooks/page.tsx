@@ -276,7 +276,12 @@ export default function PlaybooksPage() {
         };
         setPlaybooks((p) => [newItem, ...p]);
       }
-      addToast({ type: "success", title: t("playbooks.success_created" as DashboardKey) });
+      addToast({
+        type: "success",
+        title: t(
+          (editingSlug ? "playbooks.success_updated" : "playbooks.success_created") as DashboardKey
+        ),
+      });
       cancelForm();
     } catch {
       setSaveError(t("playbooks.err_save_failed"));
@@ -397,7 +402,7 @@ export default function PlaybooksPage() {
             <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </div>
-      ) : !isFormOpen && filtered.length === 0 ? (
+      ) : !isFormOpen && !loadError && filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
           title={

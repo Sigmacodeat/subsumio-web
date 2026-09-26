@@ -38,13 +38,13 @@ H=server/deploy/netcup
 # The compose file also defines a legacy caddy service; the shared proxy lives
 # in /opt/caddy. Start only db, clamav and these.
 APP_SERVICES="engine web cron backup corpus-pipeline"
-BUILD="web engine corpus-pipeline"
+BUILD="web engine corpus-pipeline cron backup"
 # --web: rebuild and replace only the web app. The corpus pipeline keeps
 # running (a full deploy interrupts multi-day RIS fetches). cron and backup
 # bind-mount files from the code folder, so they are recreated too.
 if [ "${1:-}" = "--web" ]; then
   APP_SERVICES="web cron backup"
-  BUILD="web"
+  BUILD="web cron backup"
 fi
 # --app: like a full deploy, but the corpus pipeline is left alone. Use it
 # while a multi-day RIS fetch is running — the pipeline container keeps its
@@ -52,7 +52,7 @@ fi
 # full deploy picks up the new code for it.
 if [ "${1:-}" = "--app" ]; then
   APP_SERVICES="engine web cron backup"
-  BUILD="web engine"
+  BUILD="web engine cron backup"
 fi
 
 build_only=0
@@ -103,11 +103,14 @@ mkdir "$APP-new"
 tar -xzf "$TAR" -C "$APP-new"
 rm -f "$TAR"
 echo "$SHA" > "$APP-new/DEPLOYED_COMMIT"
+# compose needs .env to resolve variables at build time; server/.dockerignore
+# keeps it (and every nested .env) out of the image build context.
 cp -p "$APP/$H/.env" "$APP-new/$H/.env"
 chmod 600 "$APP-new/$H/.env"
-[ -d "$APP/$H/imports" ] && cp -a "$APP/$H/imports" "$APP-new/$H/imports"
+# The import mirror is copied only after the build (see below), so it is never
+# part of a build context.
 # The release must be complete before anything is switched.
-for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/.env" DEPLOYED_COMMIT; do
+for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/cronjob.sh" "$H/.env" DEPLOYED_COMMIT; do
   [ -s "$APP-new/$f" ] || { echo "[deploy] Unvollständige Version: $f fehlt." >&2; exit 1; }
 done
 # What the switch will expect to find; it refuses if this changed meanwhile.
@@ -117,10 +120,81 @@ REMOTE
 echo "[deploy] Abbilder bauen …"
 ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine build --build-arg GIT_SHA=$sha $BUILD"
 
+# No environment file or import data may end up in an engine image.
+check_images=""
+for svc in $BUILD; do
+  case "$svc" in engine | corpus-pipeline) check_images="$check_images subsumio-engine-$svc" ;; esac
+done
+if [ -n "$check_images" ]; then
+  echo "[deploy] Abbilder auf Geheimnisse prüfen …"
+  ssh "$HOST" "sh $APP-new/$H/check-image-secrets.sh$check_images" || {
+    echo "[deploy] Abbild enthält .env/Importdaten — nichts umgeschaltet." >&2
+    exit 1
+  }
+fi
+
+ssh "$HOST" "APP=$APP H=$H" 'sh -s' <<'REMOTE'
+set -eu
+if [ -d "$APP/$H/imports" ] && [ ! -e "$APP-new/$H/imports" ]; then
+  cp -a "$APP/$H/imports" "$APP-new/$H/imports"
+fi
+REMOTE
+
 if [ "$build_only" = 1 ]; then
   echo "[deploy] Gebaut, nicht umgeschaltet. Umschalten: ohne --build erneut ausführen."
   exit 0
 fi
+
+# ── Edge network + shared reverse proxy ─────────────────────────────────
+# web and engine sit on their own network `subsumio-edge`, shared only with the
+# proxy from /opt/caddy (the container publishing port 443; override with
+# DEPLOY_PROXY_CONTAINER). The proxy must overwrite X-Real-IP with the TCP
+# peer — the app's IP allowlist, rate limits and audit rows rely on it — so a
+# proxy configuration without that line stops the deploy before the switch.
+echo "[deploy] Edge-Netz und Proxy prüfen …"
+ssh "$HOST" "PROXY='${DEPLOY_PROXY_CONTAINER:-}' ALLOW_DRIFT='${DEPLOY_ALLOW_PROXY_DRIFT:-0}'" 'sh -s' <<'REMOTE'
+set -eu
+docker network inspect subsumio-edge >/dev/null 2>&1 || docker network create subsumio-edge >/dev/null
+if [ -z "$PROXY" ]; then
+  PROXY="$(docker ps --filter publish=443 --format '{{.Names}}' | grep -v '^subsumio-engine-' || true)"
+fi
+if [ -z "$PROXY" ] || [ "$(printf '%s\n' "$PROXY" | wc -l)" -ne 1 ]; then
+  echo "[deploy] Reverse Proxy nicht eindeutig gefunden (${PROXY:-keiner}) — nichts umgeschaltet." >&2
+  echo "         DEPLOY_PROXY_CONTAINER=<name> setzen." >&2
+  exit 1
+fi
+if ! docker inspect -f '{{json .NetworkSettings.Networks}}' "$PROXY" | grep -q '"subsumio-edge"'; then
+  docker network connect subsumio-edge "$PROXY"
+  echo "[deploy] Proxy $PROXY an subsumio-edge angeschlossen."
+fi
+if ! docker exec "$PROXY" grep -q 'X-Real-IP {remote_host}' /etc/caddy/Caddyfile 2>/dev/null; then
+  echo "[deploy] Proxy-Konfiguration von $PROXY überschreibt X-Real-IP nicht" >&2
+  echo "         (erwartet: header_up X-Real-IP {remote_host}, siehe server/deploy/netcup/Caddyfile)." >&2
+  if [ "$ALLOW_DRIFT" != 1 ]; then
+    echo "         Nichts umgeschaltet. Nach bewusster Prüfung: DEPLOY_ALLOW_PROXY_DRIFT=1." >&2
+    exit 1
+  fi
+fi
+REMOTE
+
+# ── Engine runs unprivileged ────────────────────────────────────────────
+# The engine image runs as uid 10001 (server/Dockerfile). Files on the data
+# volume written by earlier root-run releases are handed over (only those not
+# yet owned, so repeat deploys cost one scan), then the new image proves it
+# can write its volume and read the corpus before anything is switched.
+case " $BUILD " in
+  *" engine "*)
+    echo "[deploy] Engine-Datenvolume für den Engine-Nutzer vorbereiten …"
+    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --user 0:0 --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER --entrypoint sh engine -c 'find /data ( ! -user 10001 -o ! -group 10001 ) -exec chown -h 10001:10001 {} +'" || {
+      echo "[deploy] Übergabe des Datenvolumes fehlgeschlagen — nichts umgeschaltet." >&2
+      exit 1
+    }
+    ssh "$HOST" "cd $APP-new/$H && docker compose -p subsumio-engine run --rm --no-deps --entrypoint sh engine -c 'test \"\$(id -u)\" = 10001 && touch /data/.write-check && rm /data/.write-check && test -r /law-corpus'" || {
+      echo "[deploy] Engine kann als Nutzer 10001 /data nicht schreiben oder den Korpus nicht lesen — nichts umgeschaltet." >&2
+      exit 1
+    }
+    ;;
+esac
 
 echo "[deploy] umschalten …"
 ssh "$HOST" "APP=$APP H=$H APP_SERVICES='$APP_SERVICES'" 'sh -s' <<'REMOTE'

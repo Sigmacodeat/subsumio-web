@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { toCsv } from "@/lib/csv";
 import { renderMarkdown } from "@/lib/markdown";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import type { BrainPage, TabularReviewResponse } from "@/lib/types";
@@ -183,7 +184,8 @@ export default function ContractsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ type: "legal_contract", limit: 100 });
+      // Every contract of the firm, not the newest 100.
+      const pages = await api.brain.listAllPages({ type: "legal_contract", max: 10_000 });
       const nextContracts = pages.map(parseContract);
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
@@ -466,13 +468,13 @@ export default function ContractsPage() {
                 variant="secondary"
                 className="gap-2 whitespace-nowrap"
                 onClick={() => {
-                  const csv = [
-                    ["Vertrag", ...reviewResult.questions].join(";"),
-                    ...reviewResult.rows.map((r) =>
-                      [r.title, ...r.cells.map((cell) => cell.answer.replace(/"/g, '""'))].join(";")
-                    ),
-                  ].join("\n");
-                  const blob = new Blob([csv], { type: "text/csv" });
+                  // Every cell quoted — answers with ";" or line breaks no
+                  // longer shift the columns.
+                  const csv = toCsv([
+                    ["Vertrag", ...reviewResult.questions],
+                    ...reviewResult.rows.map((r) => [r.title, ...r.cells.map((c) => c.answer)]),
+                  ]);
+                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;

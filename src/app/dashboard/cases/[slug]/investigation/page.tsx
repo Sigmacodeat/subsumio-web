@@ -2,19 +2,33 @@
 
 // grounding-exempt: this page only starts the run and redirects; the run page ([runId]) renders the grounded result.
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { Scale, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLang } from "@/lib/use-lang";
-import { useMatterData } from "@/lib/matter-data-context";
 import { api } from "@/lib/api";
 
-export default function InvestigationLauncherPage() {
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+export default function InvestigationLauncherPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const router = useRouter();
   const { lang } = useLang();
-  const { caseSlug } = useMatterData();
+  // This route lives outside the matter layout (no MatterDataProvider), so the
+  // matter comes from the URL — reading the provider crashed the page.
+  const { slug } = use(params);
+  const caseSlug = safeDecode(slug);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -8,6 +8,10 @@ vi.mock("@/lib/portal-token", () => ({
   verifyPortalToken: vi.fn(async () => ({ case_slug: "cases/a", exp: 2_000_000_000 })),
   portalTokenHash: vi.fn((t: string) => `hash-${t}`),
 }));
+const removeSubs = vi.fn(async () => {});
+vi.mock("@/lib/portal-push", () => ({
+  removePortalSubscriptionsFor: (...a: unknown[]) => removeSubs(...(a as [])),
+}));
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (
@@ -74,6 +78,24 @@ describe("POST /api/portal/revoke", () => {
     vi.unstubAllGlobals();
   });
 
+  it("revoking ends the push notifications of the revoked links", async () => {
+    stubCase(registryFm);
+    expect((await POST(req({ case_slug: "cases/a", all: true }) as never)).status).toBe(200);
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", undefined);
+
+    removeSubs.mockClear();
+    stubCase(registryFm);
+    expect((await POST(req({ case_slug: "cases/a", token_hash: HASH_B }) as never)).status).toBe(
+      200
+    );
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", HASH_B);
+
+    removeSubs.mockClear();
+    stubCase(registryFm);
+    expect((await POST(req({ token: "tok.abc" }) as never)).status).toBe(200);
+    expect(removeSubs).toHaveBeenCalledWith("firm-a", "cases/a", "hash-tok.abc");
+  });
+
   it("revokes a raw token directly", async () => {
     stubCase(registryFm);
     const res = await POST(req({ token: "tok.abc" }) as never);
@@ -117,5 +139,32 @@ describe("POST /api/portal/revoke", () => {
     stubCase({ portal_links: [] });
     const res = await POST(req({ case_slug: "cases/a", token_hash: HASH_A }) as never);
     expect(res.status).toBe(404);
+  });
+
+  it("does not report success when the revocation list cannot be stored (token)", async () => {
+    stubCase(registryFm);
+    vi.mocked(revokePortalToken).mockRejectedValueOnce(new Error("db down"));
+    const res = await POST(req({ token: "tok.abc" }) as never);
+    expect(res.status).toBe(502);
+    expect(await res.json()).not.toHaveProperty("revoked");
+  });
+
+  it("does not report success when the revocation list cannot be stored (hash)", async () => {
+    stubCase(registryFm);
+    vi.mocked(revokePortalTokenHash).mockRejectedValueOnce(new Error("db down"));
+    const res = await POST(req({ case_slug: "cases/a", token_hash: HASH_A }) as never);
+    expect(res.status).toBe(502);
+  });
+
+  it("'revoke all' fails when the reset cutoff cannot be written", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "POST"
+        ? new Response("{}", { status: 500 })
+        : new Response(JSON.stringify({ frontmatter: registryFm }), { status: 200 })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await POST(req({ case_slug: "cases/a", all: true }) as never);
+    expect(res.status).toBe(502);
+    expect(await res.json()).not.toHaveProperty("revoked");
   });
 });

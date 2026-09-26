@@ -37,3 +37,8 @@ for (const key of [
 afterEach(() => {
   cleanup();
 });
+
+// DMS egress guard: unit tests never touch real DNS — every host resolves to
+// a public documentation address unless a test sets its own resolver.
+import { setDmsHostResolver } from "@/lib/dms/egress";
+setDmsHostResolver(async () => ["93.184.216.34"]);

@@ -55,7 +55,8 @@ const COPY = {
   name: "Name",
   namePlaceholder: "Dr. Anna Müller",
   errors: {
-    invalid_credentials: "E-Mail oder Passwort ist falsch.",
+    invalid_credentials:
+      "E-Mail oder Passwort ist falsch. Wenn Ihre Kanzlei die Microsoft- oder Google-Anmeldung nutzt, melden Sie sich bitte darüber an.",
     email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
     weak_password: "Das Passwort braucht mindestens 8 Zeichen.",
     invalid_email: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
@@ -70,7 +71,20 @@ const COPY = {
     account_locked: "Zu viele Fehlversuche. Bitte versuchen Sie es in 30 Minuten erneut.",
     two_factor_policy_unavailable:
       "Die Sicherheitseinstellungen Ihrer Kanzlei sind gerade nicht abrufbar. Bitte versuchen Sie es in einer Minute erneut.",
+    legal_required:
+      "Bitte bestätigen Sie die AGB und die Datenschutzerklärung und schließen Sie den AVV ab.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+  } as Record<string, string>,
+  // Same text for every registration — it never says whether an account exists.
+  confirm: {
+    title: "Bitte bestätigen Sie Ihre E-Mail-Adresse",
+    body: "Wir haben eine Nachricht an {email} geschickt. Öffnen Sie den Link darin, um fortzufahren — danach sind Sie angemeldet. Der Link ist 48 Stunden gültig.",
+    hint: "Keine Nachricht erhalten? Prüfen Sie den Spam-Ordner oder registrieren Sie sich in einigen Minuten erneut.",
+  },
+  verifyNotice: {
+    exists: "Ihr Konto ist bereits angelegt. Bitte melden Sie sich an.",
+    invalid:
+      "Der Bestätigungslink ist ungültig oder abgelaufen. Bitte registrieren Sie sich erneut oder melden Sie sich an.",
   } as Record<string, string>,
   twoFactor: {
     title: "Zwei-Faktor-Anmeldung",
@@ -79,7 +93,6 @@ const COPY = {
     cta: "Bestätigen",
     back: "Zurück",
   },
-  referralNote: "Sie wurden empfohlen — Ihr erster Monat auf einem Bezahlplan ist gratis.",
   jurisdiction: "Rechtsraum",
   jurisdictionHint: "Bestimmt Gesetzeskorpus, Fristenregeln und Gerichtsintegration.",
   biometric: "Mit Face ID / Touch ID anmelden",
@@ -111,6 +124,9 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Contract conclusion at signup — both boxes are required (server enforces).
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
   const industry = "legal";
@@ -119,6 +135,10 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
     const code = params.get("error");
     return code ? (t.errors[code] ?? null) : null;
   });
+  // After a registration: the address the confirmation went to.
+  const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
+  // ?verify=exists|invalid from the confirmation link.
+  const verifyNotice = t.verifyNotice[params.get("verify") ?? ""] ?? null;
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoConfigured, setSsoConfigured] = useState(false);
@@ -215,6 +235,10 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (mode === "signup" && (!acceptTerms || !acceptDpa)) {
+      setError(t.errors.legal_required);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/auth/${mode}`, {
@@ -222,7 +246,17 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mode === "signup"
-            ? { name, email, password, locale: "at", industry, jurisdiction }
+            ? {
+                name,
+                email,
+                password,
+                locale: "at",
+                industry,
+                jurisdiction,
+                acceptTerms,
+                acceptDpa,
+                next,
+              }
             : { email, password }
         ),
       });
@@ -239,12 +273,17 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
         setLoading(false);
         return;
       }
-      if (mode === "login") {
-        tracking.auth.loginSuccess("password");
-      } else {
+      if (mode === "signup") {
+        // No session yet: the account is created when the link in the
+        // confirmation mail is opened (the same answer for every address).
         tracking.auth.signupSuccess("password");
         if (fromDemo) tracking.demo?.signupCompleted();
+        setConfirmSentTo(email.trim());
+        setPassword("");
+        setLoading(false);
+        return;
       }
+      tracking.auth.loginSuccess("password");
       // Hard navigation — router.push + router.refresh races in Next.js 15
       // and leaves the browser stuck on /login. The session cookie is already
       // set by the Set-Cookie header in the API response, so a full page load
@@ -307,7 +346,27 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
             <p className="mb-7 text-sm text-pretty [color:var(--mk-text-muted)]">{m.sub}</p>
           </ClipReveal>
 
-          {challengeToken ? (
+          {verifyNotice && !confirmSentTo && (
+            <div
+              role="status"
+              className="mb-4 rounded-lg border [border-color:color-mix(in_srgb,var(--mk-control-border)_55%,transparent)] p-3 text-xs [color:var(--mk-text)]"
+            >
+              {verifyNotice}
+            </div>
+          )}
+
+          {confirmSentTo ? (
+            <div role="status" className="space-y-3" data-testid="signup-confirm-sent">
+              <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
+                <Mail size={16} className="text-[var(--brand-primary)]" aria-hidden />
+                {t.confirm.title}
+              </div>
+              <p className="text-sm [color:var(--mk-text-muted)]">
+                {t.confirm.body.replace("{email}", confirmSentTo)}
+              </p>
+              <p className="text-xs [color:var(--mk-text-muted)]">{t.confirm.hint}</p>
+            </div>
+          ) : challengeToken ? (
             <form method="post" onSubmit={verifyTwoFactor} className="space-y-4" noValidate>
               <div className="flex items-center gap-2 text-sm font-medium [color:var(--mk-text)]">
                 <ShieldCheck size={16} className="text-[var(--brand-primary)]" aria-hidden />
@@ -502,6 +561,60 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
                   <p className="mt-1 text-[11px] [color:var(--mk-text-subtle)]">
                     {t.jurisdictionHint}
                   </p>
+                </fieldset>
+              )}
+
+              {mode === "signup" && (
+                <fieldset className="space-y-2" data-testid="signup-legal">
+                  <legend className="sr-only">Vertragsbedingungen</legend>
+                  <label className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+                    />
+                    <span>
+                      Ich akzeptiere die{" "}
+                      <Link
+                        href={p("/terms")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        AGB
+                      </Link>{" "}
+                      und habe die{" "}
+                      <Link
+                        href={p("/privacy")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        Datenschutzerklärung
+                      </Link>{" "}
+                      gelesen.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={acceptDpa}
+                      onChange={(e) => setAcceptDpa(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+                    />
+                    <span>
+                      Ich schließe im Namen meiner Kanzlei den{" "}
+                      <Link
+                        href={p("/dpa")}
+                        target="_blank"
+                        className="text-[var(--brand-text)] underline"
+                      >
+                        Auftragsverarbeitungsvertrag (AVV)
+                      </Link>{" "}
+                      nach Art. 28 DSGVO elektronisch ab.
+                    </span>
+                  </label>
                 </fieldset>
               )}
 

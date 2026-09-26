@@ -23,7 +23,7 @@ import { Loader2, FileText, AlertTriangle } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
-import { isOnline, enqueueMutation, getCache, setCache, OFFLINE_KEYS } from "@/lib/offline-store";
+import { isOnline, getCache, setCache, OFFLINE_KEYS } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
 import {
   caseFrontmatter,
@@ -33,7 +33,6 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
-import { markInvoicedEntriesBilled } from "@/lib/invoice-mark-billed";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
 import { RatgTariffForm, type TariffInvoiceLine } from "@/components/legal/RatgTariffForm";
 import { AhkTariffForm } from "@/components/legal/AhkTariffForm";
@@ -43,6 +42,23 @@ import { GkgTariffForm } from "@/components/legal/GkgTariffForm";
 import { JvegTariffForm } from "@/components/legal/JvegTariffForm";
 import { RvgTariffForm } from "@/components/legal/RvgTariffForm";
 import { useMe } from "@/lib/queries/auth";
+import {
+  REVERSE_CHARGE_NOTE,
+  computeInvoiceTotals,
+  parseHourlyRate,
+  rateFraction,
+  roundEur,
+} from "@/lib/invoice-totals";
+import {
+  RATE_SOURCE_LABELS_DE,
+  activeBillingRules,
+  feeAgreementRate,
+  formatMinutesDe,
+  ruledTimeItems,
+  type FeeAgreementLike,
+  type RateSource,
+} from "@/lib/billing-rules";
+import { addDaysToIsoDate, firmToday, firmYear } from "@/lib/datetime";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;
@@ -57,6 +73,12 @@ interface InvoiceItem {
   hours: number;
   rate: number;
   amount: number;
+  /** Only with the firm's billing rules on (src/lib/billing-rules.ts). */
+  recorded_minutes?: number;
+  billed_minutes?: number;
+  rate_source?: RateSource;
+  /** The time entry this position bills — the server checks it against the record. */
+  time_entry_id?: string;
 }
 
 interface Invoice {
@@ -85,7 +107,7 @@ interface Invoice {
   reminderCount?: number;
   reminderSentAt?: string[];
   reminderFee?: number;
-  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift";
+  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift" | "storno";
   parentInvoiceId?: string;
   caseSlugs?: string[];
 }
@@ -96,6 +118,7 @@ interface InvoiceCase {
   caseNumber: string;
   clientName?: string;
   clientSlug?: string;
+  legalArea?: string;
   timeEntries?: TimeEntry[];
   expenses?: ExpenseEntry[];
 }
@@ -113,6 +136,8 @@ const INVOICE_TYPE_OPTIONS: Array<{ value: string; labelKey: DashboardKey }> = [
 ];
 
 const roundCents = (n: number) => Math.round(n * 100) / 100;
+/** Hours with four decimals — 20 min = 0,3333 h, so hours × rate adds up to the amount. */
+const roundHours = (n: number) => Math.round(n * 10_000) / 10_000;
 const money = (n: number) =>
   `${n.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
@@ -124,9 +149,10 @@ function timeItemsFor(entries: TimeEntry[], defaultRate: number): InvoiceItem[] 
     return {
       description: entry.description,
       date: entry.date.split("T")[0],
-      hours: roundCents(hours),
+      hours: roundHours(hours),
       rate,
-      amount: roundCents(hours * rate),
+      amount: roundEur(hours * rate),
+      time_entry_id: entry.id,
     };
   });
 }
@@ -142,8 +168,20 @@ function flatItemsFor(lines: TariffInvoiceLine[]): InvoiceItem[] {
   }));
 }
 
+/** Expense lines of the invoice with their own VAT rate (0 = durchlaufender Posten). */
+function expenseLinesFor(entries: ExpenseEntry[]): InvoiceExpenseEntry[] {
+  return entries.map((entry) => ({
+    description: entry.description,
+    date: entry.date.split("T")[0],
+    amount: roundEur(entry.amount),
+    ...(entry.vat_rate !== undefined && entry.vat_rate !== null
+      ? { vat_rate: rateFraction(entry.vat_rate, 0) }
+      : {}),
+  }));
+}
+
 function nextInvoiceNumber(invoices: Invoice[]): string {
-  const year = new Date().getFullYear();
+  const year = firmYear();
   const prefix = `R-${year}-`;
   const nums = invoices
     .filter((i) => i.number.startsWith(prefix))
@@ -184,6 +222,11 @@ export function InvoiceQuickCreateDialog({
     "none" | "ebinterface" | "xrechnung" | "zugferd"
   >("none");
   const [tariffLines, setTariffLines] = useState<TariffInvoiceLine[]>([]);
+  const [reverseCharge, setReverseCharge] = useState(false);
+  const [clientVatId, setClientVatId] = useState("");
+  // Fee agreements are read only when the firm's billing rules are on.
+  const [feeAgreements, setFeeAgreements] = useState<FeeAgreementLike[] | null>(null);
+  const [feeLoad, setFeeLoad] = useState<"idle" | "ready" | "failed">("idle");
 
   const resetForm = useCallback(() => {
     setSelectedCaseSlug(presetCaseSlug ?? "");
@@ -192,6 +235,8 @@ export function InvoiceQuickCreateDialog({
     setLeitwegId("");
     setEInvoiceFormat("none");
     setTariffLines([]);
+    setReverseCharge(false);
+    setClientVatId("");
   }, [presetCaseSlug]);
 
   useEffect(() => {
@@ -209,10 +254,11 @@ export function InvoiceQuickCreateDialog({
     setLoadingCases(true);
     (async () => {
       try {
-        const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
+        const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 200);
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
         if (cancelled) return;
-        const invoicePages = batch["invoice"] ?? [];
-        const casePages = batch["legal_case"] ?? [];
+        const invoicePages = batch.results["invoice"] ?? [];
+        const casePages = batch.results["legal_case"] ?? [];
         const loadedInvoices: Invoice[] = invoicePages.map((p) => {
           const fm = invoiceFrontmatter(p);
           return {
@@ -254,6 +300,7 @@ export function InvoiceQuickCreateDialog({
             caseNumber: fm.case_number || p.slug,
             clientName: fm.client_name,
             clientSlug: fm.client_slug,
+            legalArea: fm.legal_area,
             timeEntries: fm.time_entries || [],
             expenses: fm.expenses || [],
           };
@@ -278,6 +325,34 @@ export function InvoiceQuickCreateDialog({
     };
   }, [open]);
 
+  const rules = activeBillingRules(kanzlei);
+  const rulesOn = rules !== null;
+  useEffect(() => {
+    if (!open || !rulesOn) return;
+    let cancelled = false;
+    setFeeLoad("idle");
+    (async () => {
+      try {
+        const batch = await api.brain.batchListPagesDetailed(["fee_agreement"], 10_000);
+        if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+        if (cancelled) return;
+        setFeeAgreements(
+          (batch.results["fee_agreement"] ?? []).map(
+            (p) => p.frontmatter as unknown as FeeAgreementLike
+          )
+        );
+        setFeeLoad("ready");
+      } catch {
+        // Without the agreements a lower-priority rate could be billed —
+        // creation stays blocked until they can be read.
+        if (!cancelled) setFeeLoad("failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, rulesOn]);
+
   const selectedCase = cases.find((c) => c.slug === selectedCaseSlug);
   const openTime = (selectedCase?.timeEntries ?? []).filter(
     (entry) => entry.billable !== false && !entry.billed
@@ -287,8 +362,19 @@ export function InvoiceQuickCreateDialog({
   );
   const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
   const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
+  const ruledPreview =
+    rules && selectedCase
+      ? ruledTimeItems(openTime, rules, {
+          feeAgreementRate: feeAgreementRate(feeAgreements, selectedCase.slug),
+          legalArea: selectedCase.legalArea,
+          settings: kanzlei,
+        })
+      : null;
+  const rulesBlocked = rulesOn && feeLoad !== "ready";
   const previewItems = [
-    ...timeItemsFor(openTime, parseInt(kanzlei?.stundensatz || "200", 10)),
+    ...(ruledPreview
+      ? ruledPreview.items
+      : timeItemsFor(openTime, parseHourlyRate(kanzlei?.stundensatz) ?? 0)),
     ...flatItemsFor(tariffLines),
   ];
   const timeFee = roundCents(
@@ -296,28 +382,58 @@ export function InvoiceQuickCreateDialog({
   );
   const estimatedFee = roundCents(previewItems.reduce((s, i) => s + i.amount, 0));
   const hasBillable = openTime.length > 0 || openExpenses.length > 0 || tariffLines.length > 0;
-  const previewVatRate = vatRateFor(kanzlei);
+  const previewTotals = computeInvoiceTotals({
+    items: previewItems,
+    expenses: expenseLinesFor(openExpenses),
+    vatRate: vatRateFor(kanzlei),
+    advancePayment: Math.max(0, parseFloat(advancePayment) || 0),
+    reverseCharge,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const c = selectedCase;
     if (!c || !hasBillable) return;
+    // The server reserves the invoice number and the billed work together;
+    // offline neither can be kept unique, so no invoice is queued.
+    if (!isOnline()) {
+      addToast({ type: "error", title: t("inv.quick_create_online_only" as DashboardKey) });
+      return;
+    }
     setSubmitting(true);
 
     try {
       const settings = kanzlei ?? (await loadKanzleiSettings());
       let clientAddress: string | undefined;
       if (c.clientSlug) {
+        // Name and address of the recipient are mandatory on the invoice
+        // (§ 11 UStG 1994). An unreadable client record stops here instead of
+        // silently issuing an invoice without an address.
+        let page;
         try {
-          const page = await api.brain.getPage(c.clientSlug);
-          const fm = page.frontmatter as Record<string, unknown>;
-          const addr = String(fm.address ?? "");
-          const company = String(fm.company ?? "");
-          const name = String(fm.name ?? c.clientName ?? "");
-          clientAddress = [name, company, addr].filter(Boolean).join("\n");
-        } catch {}
+          page = await api.brain.getPage(c.clientSlug);
+        } catch {
+          addToast({
+            type: "error",
+            title: t("inv.client_address_load_failed" as DashboardKey),
+          });
+          setSubmitting(false);
+          return;
+        }
+        const fm = page.frontmatter as Record<string, unknown>;
+        const addr = String(fm.address ?? "");
+        const company = String(fm.company ?? "");
+        const name = String(fm.name ?? c.clientName ?? "");
+        clientAddress = [name, company, addr].filter(Boolean).join("\n");
       }
-      const defaultRate = parseInt(settings?.stundensatz || "200", 10);
+      const vatId = clientVatId.trim();
+      if (reverseCharge && !vatId) {
+        addToast({ type: "error", title: t("inv.reverse_charge_vat_id_required" as DashboardKey) });
+        setSubmitting(false);
+        return;
+      }
+      // "187,50" stays 187.50; without a configured rate nothing is invented.
+      const defaultRate = parseHourlyRate(settings?.stundensatz);
       const billableTime = (c.timeEntries ?? []).filter(
         (entry) => entry.billable !== false && !entry.billed
       );
@@ -329,43 +445,73 @@ export function InvoiceQuickCreateDialog({
         return;
       }
 
+      const activeRules = activeBillingRules(settings);
+      let timeItems: InvoiceItem[];
+      if (activeRules) {
+        // Billing rules on: increment rounding + rate by fee agreement /
+        // practice area / firm rate (src/lib/billing-rules.ts — the same
+        // functions the server checks the positions with).
+        if (billableTime.length > 0 && feeLoad !== "ready") {
+          throw new Error(
+            "Die Honorarvereinbarungen konnten nicht geladen werden. Bitte den Dialog neu öffnen."
+          );
+        }
+        const ruled = ruledTimeItems(billableTime, activeRules, {
+          feeAgreementRate: feeAgreementRate(feeAgreements, c.slug),
+          legalArea: c.legalArea,
+          settings,
+        });
+        if (ruled.missingRate > 0) {
+          throw new Error(
+            "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+          );
+        }
+        timeItems = ruled.items;
+      } else {
+        if (defaultRate === null && billableTime.some((entry) => !entry.rate)) {
+          throw new Error(
+            "Kein Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen."
+          );
+        }
+        timeItems = timeItemsFor(billableTime, defaultRate ?? 0);
+      }
+
       const billableTimeIds = billableTime.map((e) => e.id);
       const billableExpenseIds = billableExpenses.map((e) => e.id);
 
       // Hourly time entries plus tariff services calculated under the RATG.
-      const items: InvoiceItem[] = [
-        ...timeItemsFor(billableTime, defaultRate),
-        ...flatItemsFor(tariffLines),
-      ];
-      const expenses: InvoiceExpenseEntry[] = billableExpenses.map((entry) => ({
-        description: entry.description,
-        date: entry.date.split("T")[0],
-        amount: entry.amount,
-      }));
-      const subtotal = items.reduce((s, i) => s + i.amount, 0);
-      const expTotal = expenses.reduce((s, i) => s + i.amount, 0);
-      const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
+      const items: InvoiceItem[] = [...timeItems, ...flatItemsFor(tariffLines)];
+      const expenses = expenseLinesFor(billableExpenses);
       const vatRate = vatRateFor(settings);
-      const taxableBase = subtotal + expTotal;
-      const tax = Math.round(taxableBase * vatRate * 100) / 100;
-      const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
+      // One calculation, in cents, VAT per rate — the server checks the same
+      // sums (src/lib/invoice-totals.ts) and refuses a mismatch.
+      const totals = computeInvoiceTotals({
+        items,
+        expenses,
+        vatRate,
+        advancePayment: Math.max(0, parseFloat(advancePayment) || 0),
+        reverseCharge,
+      });
+      const subtotal = totals.subtotal;
+      const expTotal = totals.expense_total;
+      const parsedAdvance = totals.advance_payment;
+      const tax = totals.tax;
+      const total = totals.total;
       const paymentDays = Math.max(1, parseInt(settings?.zahlungszielTage || "14", 10) || 14);
 
-      // Online the server reserves the number (unique per firm and year);
-      // offline the invoice is queued with a provisional local number.
-      let invoiceNumber = nextInvoiceNumber(invoices);
-      if (isOnline()) {
-        const { csrfFetch } = await import("@/lib/csrf");
-        const res = await csrfFetch("/api/invoices/number", { method: "POST" });
-        const body = (await res.json().catch(() => null)) as {
-          data?: { number?: string };
-          number?: string;
-        } | null;
-        const reserved = body?.data?.number ?? body?.number;
-        if (!res.ok || !reserved) throw new Error(t("inv.quick_create_failed" as DashboardKey));
-        invoiceNumber = reserved;
+      // The server reserves the number (unique per firm and year).
+      const { csrfFetch } = await import("@/lib/csrf");
+      const numberRes = await csrfFetch("/api/invoices/number", { method: "POST" });
+      const numberBody = (await numberRes.json().catch(() => null)) as {
+        data?: { number?: string };
+        number?: string;
+      } | null;
+      const invoiceNumber = numberBody?.data?.number ?? numberBody?.number;
+      if (!numberRes.ok || !invoiceNumber) {
+        throw new Error(t("inv.quick_create_failed" as DashboardKey));
       }
 
+      const invoiceDate = firmToday();
       const invoice: Invoice = {
         id: `invoice/${Date.now()}`,
         number: invoiceNumber,
@@ -373,10 +519,9 @@ export function InvoiceQuickCreateDialog({
         clientSlug: c.clientSlug,
         clientAddress,
         caseNumber: c.caseNumber,
-        date: new Date().toISOString().split("T")[0],
-        dueDate: new Date(Date.now() + paymentDays * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        // Invoice date and due date are the firm's calendar days (Vienna).
+        date: invoiceDate,
+        dueDate: addDaysToIsoDate(invoiceDate, paymentDays),
         items,
         expenses,
         status: "draft",
@@ -388,7 +533,9 @@ export function InvoiceQuickCreateDialog({
         total,
         paymentTerms: `${paymentDays} ${t("inv.days_net" as DashboardKey)}`,
         bank: { name: settings?.bankName, iban: settings?.iban, bic: settings?.bic },
-        notes: `${t("inv.invoice_for_case" as DashboardKey)} ${c.caseNumber}`,
+        notes: `${t("inv.invoice_for_case" as DashboardKey)} ${c.caseNumber}${
+          reverseCharge ? `\n${REVERSE_CHARGE_NOTE}` : ""
+        }`,
       };
 
       const issuedAt = new Date();
@@ -424,18 +571,16 @@ export function InvoiceQuickCreateDialog({
           notes: invoice.notes,
           invoice_type: invoiceType,
           leitweg_id: leitwegId.trim() || undefined,
+          ...(reverseCharge ? { reverse_charge: true, client_vat_id: vatId } : {}),
           ...gobdFrontmatter(hash, issuedAt),
         },
       };
-      if (isOnline()) {
-        await api.brain.createPage(invoicePayload);
-      } else {
-        await enqueueMutation({ type: "createPage", payload: invoicePayload });
-      }
+      // One server step: the entries are reserved for this number first,
+      // then the invoice is written. If another invoice got some of them
+      // first, nothing is created (409) and the error below tells the lawyer
+      // to reload — there is no half-booked invoice to clean up.
+      await api.invoices.create(invoicePayload);
 
-      // The invoice exists from here on. Anything that fails below is a
-      // warning, never an error: an error invites a retry, and a retry would
-      // create a second invoice for the same entries.
       const billedTimeIds = new Set(billableTimeIds);
       const billedExpenseIds = new Set(billableExpenseIds);
       const markBilled = <T extends { id: string }>(list: T[] | undefined, ids: Set<string>) =>
@@ -444,13 +589,6 @@ export function InvoiceQuickCreateDialog({
         );
       const updatedTimeEntries = markBilled(c.timeEntries, billedTimeIds);
       const updatedExpenses = markBilled(c.expenses, billedExpenseIds);
-      const bookkeepingFailed = await markInvoicedEntriesBilled({
-        caseSlug: c.slug,
-        invoiceNumber: invoice.number,
-        timeEntryIds: billableTimeIds,
-        expenseIds: billableExpenseIds,
-        snapshot: { time_entries: updatedTimeEntries, expenses: updatedExpenses },
-      });
 
       const nextInvoices = [invoice, ...invoices];
       const nextCases = cases.map((ca) =>
@@ -466,12 +604,6 @@ export function InvoiceQuickCreateDialog({
       }).catch(() => {});
 
       addToast({ type: "success", title: t("inv.quick_created" as DashboardKey) });
-      if (bookkeepingFailed) {
-        addToast({
-          type: "warning",
-          title: t("inv.quick_mark_billed_failed" as DashboardKey),
-        });
-      }
 
       // Auto-generate e-invoice if format selected
       if (eInvoiceFormat !== "none") {
@@ -484,28 +616,8 @@ export function InvoiceQuickCreateDialog({
               // "zugferd" needs the PDF bytes of an existing invoice; the
               // dialog has none, so it asks the server to build the PDF.
               format: eInvoiceFormat === "zugferd" ? "zugferd_scratch" : eInvoiceFormat,
-              invoice: {
-                invoice_number: invoice.number,
-                client: invoice.client,
-                client_address: invoice.clientAddress,
-                case_number: invoice.caseNumber,
-                date: invoice.date,
-                due_date: invoice.dueDate,
-                items: invoice.items,
-                expenses: invoice.expenses,
-                subtotal: invoice.subtotal,
-                expense_total: invoice.expenseTotal,
-                advance_payment: invoice.advancePayment,
-                vat_rate: invoice.vatRate,
-                tax: invoice.tax,
-                total: invoice.total,
-                payment_terms: invoice.paymentTerms,
-                bank: invoice.bank,
-                notes: invoice.notes,
-                invoice_type: invoice.invoiceType,
-                leitweg_id: leitwegId.trim() || undefined,
-              },
-              settings,
+              // The server builds the file from the stored invoice.
+              invoiceSlug: invoice.id,
               options: {
                 leitwegId: leitwegId.trim() || undefined,
               },
@@ -549,7 +661,7 @@ export function InvoiceQuickCreateDialog({
     }
   }
 
-  const canSubmit = !!selectedCaseSlug && hasBillable;
+  const canSubmit = !!selectedCaseSlug && hasBillable && !(rulesBlocked && openTime.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -620,6 +732,14 @@ export function InvoiceQuickCreateDialog({
                         {money(timeFee)}
                       </span>
                     </div>
+                    {rulesOn && openTime.length > 0 && (
+                      <BillingRulesPositions
+                        increment={rules?.increment ?? null}
+                        loadState={feeLoad}
+                        items={ruledPreview?.items ?? []}
+                        missingRate={ruledPreview?.missingRate ?? 0}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-[color:var(--ds-warning-text)]">
@@ -718,6 +838,36 @@ export function InvoiceQuickCreateDialog({
               </div>
             </div>
 
+            <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] p-3">
+              <label className="flex items-start gap-2 text-sm text-[color:var(--ds-text)]">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={reverseCharge}
+                  onChange={(e) => setReverseCharge(e.target.checked)}
+                />
+                <span>
+                  {t("inv.reverse_charge_label" as DashboardKey)}
+                  <span className="block text-xs text-[color:var(--ds-text-muted)]">
+                    {t("inv.reverse_charge_hint" as DashboardKey)}
+                  </span>
+                </span>
+              </label>
+              {reverseCharge && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="quick-client-vat-id" className="text-xs">
+                    {t("inv.client_vat_id" as DashboardKey)} *
+                  </Label>
+                  <Input
+                    id="quick-client-vat-id"
+                    value={clientVatId}
+                    onChange={(e) => setClientVatId(e.target.value)}
+                    placeholder="DE123456789"
+                  />
+                </div>
+              )}
+            </div>
+
             <aside
               aria-label={t("inv.preview_title")}
               className="rounded-xl border border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface-2)] p-5"
@@ -756,28 +906,29 @@ export function InvoiceQuickCreateDialog({
                   <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_subtotal")}</dt>
                   <dd className="font-medium text-[color:var(--ds-text)]">{money(estimatedFee)}</dd>
                 </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt>
-                  <dd className="font-medium text-[color:var(--ds-text)]">
-                    {money(roundCents((estimatedFee + expenseTotal) * previewVatRate))}
-                  </dd>
-                </div>
+                {previewTotals.tax_breakdown.length > 1 ? (
+                  previewTotals.tax_breakdown.map((row) => (
+                    <div key={row.rate} className="flex justify-between gap-4">
+                      <dt className="text-[color:var(--ds-text-muted)]">
+                        {t("inv.preview_vat")} {Math.round(row.rate * 100)} % ({money(row.net)})
+                      </dt>
+                      <dd className="font-medium text-[color:var(--ds-text)]">{money(row.tax)}</dd>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-[color:var(--ds-text-muted)]">{t("inv.preview_vat")}</dt>
+                    <dd className="font-medium text-[color:var(--ds-text)]">
+                      {money(previewTotals.tax)}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between gap-4 border-t border-[color:var(--ds-border)] pt-3 text-base">
                   <dt className="font-semibold text-[color:var(--ds-text)]">
                     {t("inv.preview_total")}
                   </dt>
                   <dd className="font-bold text-[color:var(--ds-success-text)]">
-                    {money(
-                      Math.max(
-                        0,
-                        roundCents(
-                          estimatedFee +
-                            expenseTotal +
-                            roundCents((estimatedFee + expenseTotal) * previewVatRate) -
-                            (parseFloat(advancePayment) || 0)
-                        )
-                      )
-                    )}
+                    {money(previewTotals.total)}
                   </dd>
                 </div>
               </dl>
@@ -812,5 +963,73 @@ export function InvoiceQuickCreateDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Positions under the firm's billing rules: recorded → billed minutes and
+ * where each rate comes from.
+ */
+function BillingRulesPositions({
+  increment,
+  loadState,
+  items,
+  missingRate,
+}: {
+  increment: number | null;
+  loadState: "idle" | "ready" | "failed";
+  items: InvoiceItem[];
+  missingRate: number;
+}) {
+  return (
+    <div
+      className="space-y-1.5 border-t border-[color:var(--ds-border)] pt-2"
+      data-testid="billing-rules-positions"
+    >
+      <p className="text-xs text-[color:var(--ds-text-muted)]">
+        {increment
+          ? `Abrechnungsregeln aktiv: Zeiten werden auf den ${increment}-Minuten-Takt aufgerundet; die erfasste Zeit bleibt unverändert.`
+          : "Abrechnungsregeln aktiv: kein gültiger Abrechnungstakt hinterlegt — Zeiten werden nicht gerundet."}
+      </p>
+      {loadState === "failed" && (
+        <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
+          <AlertTriangle size={12} />
+          Die Honorarvereinbarungen konnten nicht geladen werden — die Rechnung kann erst danach
+          erstellt werden.
+        </p>
+      )}
+      {loadState === "idle" && (
+        <p className="text-xs text-[color:var(--ds-text-muted)]">
+          Honorarvereinbarungen werden geladen …
+        </p>
+      )}
+      {loadState === "ready" && missingRate > 0 && (
+        <p className="flex items-center gap-1.5 text-xs text-[color:var(--ds-warning-text)]">
+          <AlertTriangle size={12} />
+          Für {missingRate} {missingRate === 1 ? "Zeiteintrag" : "Zeiteinträge"} ist kein
+          Stundensatz hinterlegt. Bitte in den Kanzlei-Einstellungen einen Stundensatz eintragen.
+        </p>
+      )}
+      {loadState === "ready" && items.length > 0 && (
+        <ul className="space-y-1 text-xs">
+          {items.map((item, i) => (
+            <li key={i} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5">
+              <span className="min-w-0 truncate text-[color:var(--ds-text)]">
+                {item.description}
+              </span>
+              <span className="text-[color:var(--ds-text-muted)]">
+                {formatMinutesDe(item.recorded_minutes ?? 0)}
+                {item.billed_minutes !== item.recorded_minutes
+                  ? ` → ${formatMinutesDe(item.billed_minutes ?? 0)}`
+                  : ""}
+                {" · "}
+                {money(item.rate)}/h
+                {item.rate_source ? ` (${RATE_SOURCE_LABELS_DE[item.rate_source]})` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

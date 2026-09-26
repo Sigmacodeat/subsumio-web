@@ -1,7 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { contentFor, pBind, type Market } from "@/lib/market";
-import { PROOF } from "@/content/proof-points";
 import { TRIAL_DAYS } from "@/lib/billing/credit-constants";
 import { Button } from "@/components/ui/button";
 import { Section, SectionHeading, PageHero, CTASection, ContentCard, StatCard } from "./primitives";
@@ -41,13 +40,7 @@ const CONTENT = {
     },
   ],
   statsTitle: "In Zahlen",
-  stats: [
-    {
-      value: PROOF.recall8.value,
-      label: `richtige Textstelle unter den ersten 8 Treffern (Test mit ${PROOF.recall8.sampleSize} Fragen, Methodik offen)`,
-    },
-    { value: String(TRIAL_DAYS), label: "Tage kostenlos testen — ohne Kreditkarte" },
-  ],
+  stats: [{ value: String(TRIAL_DAYS), label: "Tage kostenlos testen — ohne Kreditkarte" }],
   ctaTitle: "Sprechen Sie mit uns",
   ctaSub: "Ob Einzelanwältin oder Kanzleipartner — wir freuen uns, von Ihnen zu hören.",
   ctaButton: "Kontakt aufnehmen",

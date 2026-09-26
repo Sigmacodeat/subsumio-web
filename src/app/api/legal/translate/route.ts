@@ -19,6 +19,8 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/translate",
   body: translateSchema,
   rateTier: "heavy",
+  // The engine runs an LLM call (up to 8 000 output tokens) per request.
+  credits: "document_analysis",
   citationGate: true,
   label: "translate",
   audit: (_ctx, b) => ({

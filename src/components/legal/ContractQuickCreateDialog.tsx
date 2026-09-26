@@ -95,7 +95,7 @@ export function ContractQuickCreateDialog({
   const [partyOne, setPartyOne] = useState("");
   const [partyTwo, setPartyTwo] = useState("");
   const { data: contacts } = useDialogFetch<BrainPage[]>(open, () =>
-    api.brain.listPages({ type: "legal_contact", limit: 500 })
+    api.brain.listAllPages({ type: "legal_contact", max: 500 })
   );
 
   const resetForm = useCallback(() => {

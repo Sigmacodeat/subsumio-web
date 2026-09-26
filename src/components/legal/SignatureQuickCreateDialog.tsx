@@ -29,6 +29,7 @@ import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
+import { CaseSelect } from "@/components/legal/case-select";
 import type { BrainPage } from "@/lib/types";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
 import { buildNdaTemplate } from "@/lib/nda-template";
@@ -53,6 +54,10 @@ export function SignatureQuickCreateDialog({
   const [saving, setSaving] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
   const [template, setTemplate] = useState<DocumentTemplate>("manual");
+  // A request can only be sent through the client portal of its matter —
+  // without a preset, the matter is chosen here.
+  const [pickedCaseSlug, setPickedCaseSlug] = useState("");
+  const caseSlug = presetCaseSlug || pickedCaseSlug;
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -67,6 +72,7 @@ export function SignatureQuickCreateDialog({
   const resetForm = useCallback(() => {
     sigForm.reset({ documentName: "", recipientName: "", recipientEmail: "", expiresDays: "14" });
     setTemplate("manual");
+    setPickedCaseSlug("");
   }, [sigForm]);
 
   useEffect(() => {
@@ -74,13 +80,17 @@ export function SignatureQuickCreateDialog({
   }, [open, resetForm]);
 
   const { data: drafts } = useDialogFetch<BrainPage[]>(open, async () => {
-    return await api.brain.listPages({ type: "legal_document", limit: 100 });
+    return await api.brain.listAllPages({ type: "legal_document", max: 100 });
   });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const isValid = await sigForm.trigger();
     if (!isValid) return;
+    if (!caseSlug) {
+      addToast({ type: "error", title: "Bitte eine Akte auswählen." });
+      return;
+    }
     const data = sigForm.getValues();
     setSaving(true);
     const now = new Date();
@@ -112,7 +122,7 @@ export function SignatureQuickCreateDialog({
           // tracks who needs to sign what; the actual document lives
           // elsewhere (paper, DocuSign, an emailed PDF).
           provider: template === "nda" ? "template" : "external",
-          case_slug: presetCaseSlug || undefined,
+          case_slug: caseSlug,
         },
       };
       if (isOnline()) await api.brain.createPage(payload);
@@ -136,6 +146,7 @@ export function SignatureQuickCreateDialog({
   }
 
   const canSubmit =
+    !!caseSlug &&
     !!sigForm.watch("documentName") &&
     !!sigForm.watch("recipientName") &&
     !!sigForm.watch("recipientEmail");
@@ -191,6 +202,24 @@ export function SignatureQuickCreateDialog({
                 </p>
               )}
             </div>
+
+            {/* Matter (only when not opened from a matter) */}
+            {!presetCaseSlug && (
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-sig-case" className="text-xs">
+                  Akte *
+                </Label>
+                <CaseSelect
+                  id="quick-sig-case"
+                  value={pickedCaseSlug}
+                  onChange={setPickedCaseSlug}
+                  placeholder="Akte wählen …"
+                />
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Ohne Akte kann die Anfrage nicht zum Unterschreiben versendet werden.
+                </p>
+              </div>
+            )}
 
             {/* Draft selector */}
             {(drafts ?? []).length > 0 && (

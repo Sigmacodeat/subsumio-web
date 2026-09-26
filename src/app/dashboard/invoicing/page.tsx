@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import {
   FileText,
   Send,
@@ -30,17 +29,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
+import { sendEInvoiceWithResendConfirm } from "@/lib/e-invoice/send-client";
 import { useMe } from "@/lib/queries/auth";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
-  caseFrontmatter,
-  invoiceFrontmatter,
-  type ExpenseEntry,
-  type InvoiceExpenseEntry,
-  type TimeEntry,
-} from "@/lib/legal-types";
+  invoiceCaseFromPage,
+  invoiceErrorText,
+  invoiceFromPage,
+  invoiceOverview,
+  sumOfTotals,
+  type Invoice,
+  type InvoiceCase,
+  type InvoicingCache,
+} from "@/lib/invoicing-view";
+import { invoicePrintHtml } from "@/lib/invoice-print-html";
 import { loadKanzleiSettings, type KanzleiSettings, vatRateFor } from "@/lib/kanzlei-settings";
-import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
+import { OFFLINE_KEYS, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
@@ -50,68 +54,7 @@ import { RowSkeleton, Skeleton } from "@/components/dashboard/skeleton";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
-
-interface InvoiceItem {
-  description: string;
-  date: string;
-  hours: number;
-  rate: number;
-  amount: number;
-}
-
-interface Invoice {
-  id: string;
-  number: string;
-  client: string;
-  clientSlug?: string;
-  clientAddress?: string;
-  caseNumber?: string;
-  date: string;
-  dueDate: string;
-  items: InvoiceItem[];
-  expenses: InvoiceExpenseEntry[];
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
-  subtotal: number;
-  expenseTotal: number;
-  advancePayment: number;
-  paidAmount?: number;
-  paidAt?: string;
-  vatRate: number;
-  tax: number;
-  total: number;
-  paymentTerms?: string;
-  bank?: {
-    name?: string;
-    iban?: string;
-    bic?: string;
-  };
-  notes?: string;
-  reminderCount?: number;
-  reminderSentAt?: string[];
-  reminderFee?: number;
-  invoiceType?: "standard" | "teilrechnung" | "sammelrechnung" | "gutschrift" | "storno";
-  parentInvoiceId?: string;
-  caseSlugs?: string[];
-  leitwegId?: string;
-  eInvoiceChannel?: "peppol" | "erechnung_gv_at";
-  eInvoiceReference?: string;
-  eInvoiceStatus?: "queued" | "delivered" | "failed";
-}
-
-interface InvoiceCase {
-  slug: string;
-  title: string;
-  caseNumber: string;
-  clientName?: string;
-  clientSlug?: string;
-  timeEntries?: TimeEntry[];
-  expenses?: ExpenseEntry[];
-}
-
-interface InvoicingCache {
-  invoices: Invoice[];
-  cases: InvoiceCase[];
-}
+import { HubMenuLink, IconAction, InvoiceStat } from "@/components/legal/invoicing-parts";
 
 const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: StatusColor }> = {
   draft: { labelKey: "inv.status_draft", color: "gray" },
@@ -121,42 +64,6 @@ const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; color: StatusColor
   cancelled: { labelKey: "inv.status_cancelled", color: "gray" },
 };
 
-/** Server error codes → plain German. Never show a raw code or provider message. */
-function invoiceErrorText(code: unknown, fallback: string): string {
-  switch (code) {
-    case "smtp_not_configured":
-      return "E-Mail-Versand ist nicht eingerichtet. Bitte hinterlegen Sie den Postausgang in den Einstellungen.";
-    case "validation_failed":
-      return "Die E-Rechnung ist unvollständig. Bitte prüfen Sie Mandantenadresse, Kanzleidaten und Positionen.";
-    case "xml_not_wellformed":
-      return "Die Datei ist keine gültige E-Rechnung (XML nicht lesbar).";
-    case "not_found":
-      return "Die Rechnung wurde nicht gefunden. Bitte laden Sie die Seite neu.";
-    case "no_recipient_email":
-      return "Für diesen Mandanten ist keine E-Mail-Adresse hinterlegt.";
-    case "invoice_not_overdue":
-      return "Eine Mahnung ist nur für versendete Rechnungen möglich.";
-    case "no_embedded_xml":
-      return "Das PDF enthält keine eingebettete E-Rechnung (ZUGFeRD/Factur-X).";
-    default:
-      return fallback;
-  }
-}
-
-/** Escape user input before injecting into HTML strings — prevents XSS. */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escapeHtmlLines(text: string): string {
-  return escapeHtml(text).replace(/\n/g, "<br>");
-}
-
 export default function InvoicingPage() {
   const confirm = useConfirm();
   const { t, lang } = useLang();
@@ -164,6 +71,8 @@ export default function InvoicingPage() {
   const [cases, setCases] = useState<InvoiceCase[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  /** The list could not be loaded and no offline copy exists — never shown as "no invoices". */
+  const [loadError, setLoadError] = useState(false);
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessageText] = useState<string | null>(null);
@@ -209,59 +118,16 @@ export default function InvoicingPage() {
 
   async function loadAll() {
     setLoading(true);
+    setLoadError(false);
     try {
-      const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
-      const invoicePages = batch["invoice"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
-      const loadedInvoices: Invoice[] = invoicePages.map((p) => {
-        const fm = invoiceFrontmatter(p);
-        return {
-          id: p.slug,
-          number: fm.invoice_number || p.slug,
-          client: fm.client || "",
-          clientSlug: fm.client_slug,
-          clientAddress: fm.client_address,
-          caseNumber: fm.case_number,
-          date: fm.date || p.created_at,
-          dueDate: fm.due_date || "",
-          items: fm.items || [],
-          expenses: fm.expenses || [],
-          status: (fm.status as Invoice["status"]) || "draft",
-          subtotal: fm.subtotal || 0,
-          expenseTotal: fm.expense_total || 0,
-          advancePayment: fm.advance_payment || 0,
-          paidAmount: fm.paid_amount,
-          paidAt: fm.paid_at,
-          vatRate: fm.vat_rate ?? 0.2,
-          tax: fm.tax || 0,
-          total: fm.total || 0,
-          paymentTerms: fm.payment_terms,
-          bank: fm.bank,
-          notes: fm.notes,
-          reminderCount: fm.reminder_count,
-          reminderSentAt: fm.reminder_sent_at,
-          reminderFee: fm.reminder_fee,
-          invoiceType: fm.invoice_type,
-          parentInvoiceId: fm.parent_invoice_id,
-          eInvoiceChannel: fm.e_invoice_channel,
-          eInvoiceReference: fm.e_invoice_reference,
-          eInvoiceStatus: fm.e_invoice_status,
-          caseSlugs: fm.case_slugs,
-          leitwegId: fm.leitweg_id,
-        };
-      });
-      const loadedCases: InvoiceCase[] = casePages.map((p) => {
-        const fm = caseFrontmatter(p);
-        return {
-          slug: p.slug,
-          title: p.title,
-          caseNumber: fm.case_number || p.slug,
-          clientName: fm.client_name,
-          clientSlug: fm.client_slug,
-          timeEntries: fm.time_entries || [],
-          expenses: fm.expenses || [],
-        };
-      });
+      // Every invoice and matter (read in batches of 100): a list cut at 200
+      // would hide invoices and their open amounts without a word.
+      const batch = await api.brain.batchListPagesDetailed(["invoice", "legal_case"], 10_000);
+      if (batch.errors.length) throw new Error(`batch list failed: ${batch.errors.join(",")}`);
+      const invoicePages = batch.results["invoice"] ?? [];
+      const casePages = batch.results["legal_case"] ?? [];
+      const loadedInvoices: Invoice[] = invoicePages.map(invoiceFromPage);
+      const loadedCases: InvoiceCase[] = casePages.map(invoiceCaseFromPage);
       setInvoices(loadedInvoices);
       setCases(loadedCases);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
@@ -281,35 +147,10 @@ export default function InvoicingPage() {
       } else {
         setInvoices([]);
         setCases([]);
+        setLoadError(true);
       }
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function _loadCases() {
-    try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
-      const loadedCases = pages.map((p) => {
-        const fm = caseFrontmatter(p);
-        return {
-          slug: p.slug,
-          title: p.title,
-          caseNumber: fm.case_number || p.slug,
-          clientName: fm.client_name,
-          clientSlug: fm.client_slug,
-          timeEntries: fm.time_entries || [],
-          expenses: fm.expenses || [],
-        };
-      });
-      setCases(loadedCases);
-    } catch (err) {
-      console.error(
-        "[invoicing] failed to load cases:",
-        err instanceof Error ? err.message : String(err)
-      );
-      const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
-      setCases(cached?.cases ?? []);
     }
   }
 
@@ -319,136 +160,7 @@ export default function InvoicingPage() {
 
     const settings = kanzlei ?? (await loadKanzleiSettings());
     const vatRate = inv.vatRate ?? vatRateFor(settings);
-    const num = (n: number) =>
-      new Intl.NumberFormat("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-        Number.isFinite(n) ? n : 0
-      );
-    const html = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Rechnung ${inv.number}</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 40px; color: hsl(222, 8%, 20%); font-size: 14px; }
-  .header { border-bottom: 2px solid hsl(213, 46%, 42%); padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { margin: 0; font-size: 28px; color: hsl(213, 46%, 42%); }
-  .header p { margin: 4px 0; color: hsl(222, 8%, 40%); }
-  .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
-  .meta-box { background: hsl(222, 8%, 97%); padding: 15px; border-radius: 8px; }
-  .meta-box strong { display: block; margin-bottom: 8px; color: hsl(222, 8%, 20%); }
-  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  th { background: hsl(222, 8%, 94%); padding: 12px; text-align: left; font-weight: 600; }
-  td { padding: 12px; border-bottom: 1px solid hsl(222, 8%, 90%); }
-  .right { text-align: right; }
-  .totals { margin-top: 20px; border-top: 2px solid hsl(222, 8%, 90%); padding-top: 20px; }
-  .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-  .total-row.grand { font-size: 18px; font-weight: bold; color: hsl(213, 46%, 42%); border-top: 2px solid hsl(213, 46%, 42%); margin-top: 10px; padding-top: 15px; }
-  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid hsl(222, 8%, 90%); font-size: 12px; color: hsl(222, 8%, 40%); }
-  .muted { color: hsl(222, 8%, 40%); }
-  @media print { body { margin: 20px; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <h1>Rechnung</h1>
-    <p><strong>${escapeHtml(settings?.kanzleiName || "Kanzlei")}</strong></p>
-    <p>${escapeHtml(settings?.anwaltName || "")}</p>
-    ${settings?.kanzleiAdresse ? `<p>${escapeHtmlLines(settings.kanzleiAdresse)}</p>` : ""}
-    ${settings?.kanzleiEmail || settings?.kanzleiTelefon ? `<p>${escapeHtml([settings?.kanzleiEmail, settings?.kanzleiTelefon].filter(Boolean).join(" · "))}</p>` : ""}
-    ${settings?.kammerNummer ? `<p>${escapeHtml(settings.kammerNummer)}</p>` : ""}
-    ${settings?.ustId ? `<p>USt-ID: ${escapeHtml(settings.ustId)}</p>` : ""}
-  </div>
-
-  <div class="meta">
-    <div class="meta-box">
-      <strong>Rechnung an:</strong>
-      ${escapeHtml(inv.client)}
-    </div>
-    <div class="meta-box">
-      <strong>Rechnungsdetails:</strong>
-      <p>Rechnungs-Nr.: ${escapeHtml(inv.number)}</p>
-      <p>Datum: ${escapeHtml(formatDate(inv.date))}</p>
-      ${inv.dueDate ? `<p>Fällig: ${escapeHtml(formatDate(inv.dueDate))}</p>` : ""}
-      ${inv.caseNumber ? `<p>Aktenzeichen: ${escapeHtml(inv.caseNumber)}</p>` : ""}
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Datum</th>
-        <th>Beschreibung</th>
-        <th class="right">Stunden</th>
-        <th class="right">Satz (€)</th>
-        <th class="right">Betrag (€)</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${inv.items
-        .map(
-          (item) => `
-        <tr>
-          <td>${escapeHtml(formatDate(item.date))}</td>
-          <td>${escapeHtml(item.description)}</td>
-          <td class="right">${item.hours > 0 ? num(item.hours) : "—"}</td>
-          <td class="right">${item.hours > 0 ? num(item.rate) : "—"}</td>
-          <td class="right">${num(item.amount)}</td>
-        </tr>
-      `
-        )
-        .join("")}
-    </tbody>
-  </table>
-
-  ${
-    inv.expenses.length > 0
-      ? `
-    <table>
-      <thead>
-        <tr>
-          <th>Datum</th>
-          <th>Auslage</th>
-          <th class="right">Betrag (€)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${inv.expenses
-          .map(
-            (item) => `
-          <tr>
-            <td>${escapeHtml(formatDate(item.date))}</td>
-            <td>${escapeHtml(item.description)}</td>
-            <td class="right">${num(item.amount)}</td>
-          </tr>
-        `
-          )
-          .join("")}
-      </tbody>
-    </table>
-  `
-      : ""
-  }
-
-  <div class="totals">
-    <div class="total-row"><span>Honorar netto</span><span>${formatEur(inv.subtotal, lang)}</span></div>
-    ${inv.expenseTotal > 0 ? `<div class="total-row"><span>Auslagen netto</span><span>${formatEur(inv.expenseTotal, lang)}</span></div>` : ""}
-    <div class="total-row"><span>Mehrwertsteuer (${(vatRate * 100).toFixed(0)}%)</span><span>${formatEur(inv.tax, lang)}</span></div>
-    ${inv.advancePayment > 0 ? `<div class="total-row"><span>Vorschuss / Anzahlung</span><span>− ${formatEur(inv.advancePayment, lang)}</span></div>` : ""}
-    <div class="total-row grand"><span>Gesamtbetrag</span><span>${formatEur(inv.total, lang)}</span></div>
-  </div>
-
-  ${inv.notes ? `<p style="margin-top: 30px; color: hsl(222, 8%, 40%);">${escapeHtml(inv.notes)}</p>` : ""}
-
-  <div class="footer">
-    <p>Zahlungsbedingungen: ${escapeHtml(inv.paymentTerms || "14 Tage netto")}</p>
-    ${inv.bank?.iban ? `<p>${escapeHtml([inv.bank.name, inv.bank.iban, inv.bank.bic].filter(Boolean).join(" · "))}</p>` : ""}
-    <p>${escapeHtml(settings?.rechnungFooter || "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.")}</p>
-  </div>
-
-  <script>window.onload = () => { setTimeout(() => window.print(), 300); };</script>
-</body>
-</html>`;
+    const html = invoicePrintHtml(inv, settings, vatRate, lang);
     printWindow.document.write(html);
     printWindow.document.close();
   }
@@ -477,6 +189,9 @@ export default function InvoicingPage() {
       vatRate: inv.vatRate,
       tax: inv.tax,
       total: inv.total,
+      taxBreakdown: inv.taxBreakdown,
+      reverseCharge: inv.reverseCharge,
+      clientVatId: inv.clientVatId,
       paymentTerms: inv.paymentTerms,
       bank: inv.bank,
       notes: inv.notes,
@@ -494,35 +209,13 @@ export default function InvoicingPage() {
 
   async function downloadXmlInvoice(inv: Invoice, format: "ebinterface" | "xrechnung") {
     const label = format === "ebinterface" ? "ebInterface" : "XRechnung";
-    const settings = kanzlei ?? (await loadKanzleiSettings());
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format,
-          invoice: {
-            invoice_number: inv.number,
-            client: inv.client,
-            client_address: inv.clientAddress,
-            case_number: inv.caseNumber,
-            date: inv.date,
-            due_date: inv.dueDate,
-            items: inv.items,
-            expenses: inv.expenses,
-            subtotal: inv.subtotal,
-            expense_total: inv.expenseTotal,
-            advance_payment: inv.advancePayment,
-            vat_rate: inv.vatRate,
-            tax: inv.tax,
-            total: inv.total,
-            payment_terms: inv.paymentTerms,
-            bank: inv.bank,
-            notes: inv.notes,
-            invoice_type: inv.invoiceType,
-            leitweg_id: inv.leitwegId,
-          },
-          settings,
+          invoiceSlug: inv.id,
           options: {
             leitwegId: inv.leitwegId,
           },
@@ -559,7 +252,6 @@ export default function InvoicingPage() {
   }
 
   async function downloadZugferdPdf(inv: Invoice) {
-    const settings = kanzlei ?? (await loadKanzleiSettings());
     setStatusMessage("ZUGFeRD-PDF wird erstellt …");
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
@@ -567,28 +259,7 @@ export default function InvoicingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format: "zugferd_scratch",
-          invoice: {
-            invoice_number: inv.number,
-            client: inv.client,
-            client_address: inv.clientAddress,
-            case_number: inv.caseNumber,
-            date: inv.date,
-            due_date: inv.dueDate,
-            items: inv.items,
-            expenses: inv.expenses,
-            subtotal: inv.subtotal,
-            expense_total: inv.expenseTotal,
-            advance_payment: inv.advancePayment,
-            vat_rate: inv.vatRate,
-            tax: inv.tax,
-            total: inv.total,
-            payment_terms: inv.paymentTerms,
-            bank: inv.bank,
-            notes: inv.notes,
-            invoice_type: inv.invoiceType,
-            leitweg_id: inv.leitwegId,
-          },
-          settings,
+          invoiceSlug: inv.id,
           options: {
             leitwegId: inv.leitwegId,
           },
@@ -631,41 +302,70 @@ export default function InvoicingPage() {
         : "Übertragung an e-Rechnung.gv.at läuft …"
     );
     try {
-      const res = await csrfFetch("/api/e-invoice/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Nur den Slug senden — Belegdaten und Kanzlei-Settings (inkl. IBAN)
-        // lädt die Route serverseitig, damit kein manipulierter Client
-        // Rechnungs-XML mit fremden Daten unter Kanzlei-Identität erzeugt.
-        body: JSON.stringify({
+      // Nur den Slug senden — Belegdaten und Kanzlei-Settings (inkl. IBAN)
+      // lädt die Route serverseitig, damit kein manipulierter Client
+      // Rechnungs-XML mit fremden Daten unter Kanzlei-Identität erzeugt.
+      // Bereits eingereicht (409) → erneut senden nur nach Bestätigung.
+      const outcome = await sendEInvoiceWithResendConfirm(
+        {
           channel,
           format: channel === "erechnung_gv_at" ? "ebinterface" : "xrechnung",
           receiver_id: inv.leitwegId,
           invoiceSlug: inv.id,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+        },
+        {
+          post: (body) =>
+            csrfFetch("/api/e-invoice/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+            }),
+          confirmResend: () =>
+            confirm({
+              title: "e-Rechnung erneut senden?",
+              message: `${inv.number} wurde bereits als e-Rechnung eingereicht${inv.eInvoiceReference ? ` (Referenz ${inv.eInvoiceReference})` : ""}. Erneut senden erzeugt eine zweite Einreichung beim Empfänger. Nur fortfahren, wenn die erste Einreichung nachweislich nicht angekommen ist.`,
+              confirmLabel: "Erneut senden",
+              variant: "danger",
+            }),
+        }
+      );
+      if (!outcome.ok) {
+        if (outcome.cancelled) {
+          setStatusMessage("Nicht erneut gesendet.", "info", 3000);
+          return;
+        }
         setStatusMessage(
-          invoiceErrorText(data.error, "e-Rechnung konnte nicht versendet werden."),
+          invoiceErrorText(
+            outcome.code,
+            outcome.error ?? "e-Rechnung konnte nicht versendet werden."
+          ),
           "error",
           6000
         );
         return;
       }
-      const payload = data.data ?? data;
+      const payload = outcome.data as {
+        message?: string;
+        status?: "queued" | "delivered" | "failed" | "not_configured";
+        issued?: boolean;
+        reference?: string;
+      };
       setStatusMessage(
-        payload.message,
+        payload.message ?? "e-Rechnung versendet.",
         payload.status === "not_configured" ? "error" : "success",
         8000
       );
+      // A delivered draft is issued by the server (status "sent" + open item).
+      if (payload.issued) void loadAll();
       // Transport-Referenz persistieren, damit der Zustellstatus später
       // gepollt werden kann (queued → delivered).
-      if (payload.reference && (payload.status === "queued" || payload.status === "delivered")) {
+      const reference = payload.reference;
+      const deliveryStatus = payload.status;
+      if (reference && (deliveryStatus === "queued" || deliveryStatus === "delivered")) {
         const refFrontmatter = {
           e_invoice_channel: channel,
-          e_invoice_reference: payload.reference,
-          e_invoice_status: payload.status,
+          e_invoice_reference: reference,
+          e_invoice_status: deliveryStatus,
         };
         try {
           await api.invoices.update(inv.id, refFrontmatter);
@@ -675,8 +375,8 @@ export default function InvoicingPage() {
                 ? {
                     ...i,
                     eInvoiceChannel: channel,
-                    eInvoiceReference: payload.reference,
-                    eInvoiceStatus: payload.status,
+                    eInvoiceReference: reference,
+                    eInvoiceStatus: deliveryStatus,
                   }
                 : i
             )
@@ -918,20 +618,14 @@ export default function InvoicingPage() {
           ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount }
           : {}),
       };
-      if (isOnline()) {
-        // Was api.brain.updatePage — the generic /api/pages route, which
-        // has no invoice-immutability check. api.invoices.update goes
-        // through /api/invoices/[slug] instead, which refuses this once
-        // the invoice is already sent/paid/overdue (see that route's PATCH
-        // handler) rather than silently letting a "finalized" invoice's
-        // status keep changing.
-        await api.invoices.update(inv.id, statusFrontmatter);
-      } else {
-        await enqueueMutation({
-          type: "updatePage",
-          payload: { slug: inv.id, frontmatter: statusFrontmatter },
-        });
+      // Only online: /api/invoices/[slug] checks sums and mandatory details
+      // before a draft is issued and keeps issued invoices frozen. A queued
+      // generic page write would bypass both (and is refused on replay).
+      if (!isOnline()) {
+        setStatusMessage(t("inv.online_only_action" as DashboardKey), "error");
+        return;
       }
+      await api.invoices.update(inv.id, statusFrontmatter);
       const nextInvoices = invoices.map((i) =>
         i.id === inv.id ? { ...i, status, ...paidPatch } : i
       );
@@ -954,15 +648,14 @@ export default function InvoicingPage() {
       variant: "danger",
     });
     if (!ok) return;
+    // Only online: /api/invoices/[slug] deletes drafts only and releases
+    // their billed work for a corrected invoice.
+    if (!isOnline()) {
+      setStatusMessage(t("inv.online_only_action" as DashboardKey), "error");
+      return;
+    }
     try {
-      if (isOnline()) {
-        // Was api.brain.deletePage — bypassed /api/invoices/[slug]'s own
-        // "only drafts can be deleted" check (protectedStatuses: sent,
-        // paid, overdue). api.invoices.delete goes through that route.
-        await api.invoices.delete(inv.id);
-      } else {
-        await enqueueMutation({ type: "deletePage", payload: { slug: inv.id } });
-      }
+      await api.invoices.delete(inv.id);
       const nextInvoices = invoices.filter((i) => i.id !== inv.id);
       setInvoices(nextInvoices);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
@@ -1018,11 +711,7 @@ export default function InvoicingPage() {
       inv.client.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const sumOf = (list: Invoice[]) => list.reduce((s, i) => s + (Number(i.total) || 0), 0);
-  const drafts = invoices.filter((i) => i.status === "draft");
-  const outstanding = invoices.filter((i) => i.status === "sent" || i.status === "overdue");
-  const overdueCount = invoices.filter((i) => i.status === "overdue").length;
-  const paid = invoices.filter((i) => i.status === "paid");
+  const { drafts, outstanding, overdueCount, paid } = invoiceOverview(invoices);
   const en = lang === "en";
   const countLabel = (n: number) =>
     en ? `${n} ${n === 1 ? "invoice" : "invoices"}` : `${n} ${n === 1 ? "Rechnung" : "Rechnungen"}`;
@@ -1106,12 +795,12 @@ export default function InvoicingPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <InvoiceStat
             label={en ? "Drafts" : "Entwürfe"}
-            value={formatEur(sumOf(drafts), lang)}
+            value={formatEur(sumOfTotals(drafts), lang)}
             sub={countLabel(drafts.length)}
           />
           <InvoiceStat
             label={t("inv.outstanding")}
-            value={formatEur(sumOf(outstanding), lang)}
+            value={formatEur(sumOfTotals(outstanding), lang)}
             sub={
               overdueCount > 0
                 ? `${countLabel(outstanding.length)} · ${overdueCount} ${t("inv.status_overdue").toLowerCase()}`
@@ -1121,7 +810,7 @@ export default function InvoicingPage() {
           />
           <InvoiceStat
             label={t("inv.paid")}
-            value={formatEur(sumOf(paid), lang)}
+            value={formatEur(sumOfTotals(paid), lang)}
             sub={countLabel(paid.length)}
           />
         </div>
@@ -1165,6 +854,18 @@ export default function InvoicingPage() {
         <div role="status" aria-label={t("inv.loading")}>
           <RowSkeleton count={4} />
         </div>
+      ) : loadError ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title={en ? "Invoices could not be loaded" : "Rechnungen konnten nicht geladen werden"}
+          description={
+            en
+              ? "The list is not empty — it could not be read. Please try again."
+              : "Die Liste ist nicht leer, sie konnte nur nicht gelesen werden. Bitte erneut versuchen."
+          }
+          actionLabel={en ? "Try again" : "Erneut laden"}
+          onAction={() => void loadAll()}
+        />
       ) : filtered.length === 0 ? (
         searchQuery ? (
           <EmptyState
@@ -1389,7 +1090,7 @@ export default function InvoicingPage() {
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => updateStatus(inv, "cancelled")}
+                            onClick={() => void deleteInvoice(inv)}
                             disabled={busy}
                             className="gap-2 text-xs text-[color:var(--ds-danger-text)] focus:text-[color:var(--ds-danger-text)]"
                           >
@@ -1438,85 +1139,5 @@ export default function InvoicingPage() {
         </ul>
       )}
     </div>
-  );
-}
-
-function InvoiceStat({
-  label,
-  value,
-  sub,
-  tone,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  tone?: "warning" | "danger";
-}) {
-  return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3">
-      <div className="text-xs text-[color:var(--ds-text-muted)]">{label}</div>
-      <div
-        className={cn(
-          "mt-1 text-xl font-semibold tabular-nums",
-          tone === "danger"
-            ? "text-[color:var(--ds-danger-text)]"
-            : tone === "warning"
-              ? "text-[color:var(--ds-warning-text)]"
-              : "text-[color:var(--ds-text)]"
-        )}
-      >
-        {value}
-      </div>
-      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)] tabular-nums">{sub}</div>
-    </div>
-  );
-}
-
-function IconAction({
-  label,
-  onClick,
-  disabled,
-  className,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-fast)] hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none disabled:opacity-40 motion-reduce:transition-none",
-        className
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function HubMenuLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  icon: typeof FileText;
-  label: string;
-}) {
-  return (
-    <DropdownMenuItem asChild className="gap-2 text-xs">
-      <Link href={href}>
-        <Icon size={13} aria-hidden="true" />
-        {label}
-      </Link>
-    </DropdownMenuItem>
   );
 }

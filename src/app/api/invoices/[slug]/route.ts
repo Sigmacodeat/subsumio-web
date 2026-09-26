@@ -10,8 +10,11 @@ import {
   rejectionResponse,
 } from "@/lib/page-write-guards";
 import { closeOpenItemForInvoice, createOpenItemForInvoice } from "@/lib/open-items";
+import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
+import { invoiceIssueProblem, isIssuingTransition } from "@/lib/invoice-issue";
 
 import { logger } from "@/lib/logger";
+import { emitInvoicePaid } from "@/lib/webhook-dispatch";
 const log = logger("api/invoices/[slug]");
 
 function validSlug(raw: string): string | null {
@@ -91,6 +94,28 @@ export const PATCH = createHandler(
     });
     if (rejection) return rejectionResponse(rejection);
 
+    // Issuing (draft → sent/paid/overdue) freezes the invoice: it must be
+    // complete and its sums must add up before that happens.
+    const prevStatus = String(currentRead.page.frontmatter?.status ?? "draft");
+    const nextStatus = (body as Record<string, unknown>).status;
+    const issuing = isIssuingTransition(prevStatus, nextStatus);
+    // A draft is deleted (its billed work is released), never "cancelled" —
+    // a cancelled draft would be frozen with its work still reserved.
+    if (issuing && nextStatus === "cancelled") {
+      return apiError(
+        "draft_cancel_use_delete",
+        "Ein Entwurf wird gelöscht, nicht storniert — die abgerechneten Leistungen werden dabei wieder freigegeben.",
+        409
+      );
+    }
+    if (issuing) {
+      const problem = invoiceIssueProblem({
+        ...((currentRead.page.frontmatter ?? {}) as Record<string, unknown>),
+        ...(body as Record<string, unknown>),
+      });
+      if (problem) return rejectionResponse(problem);
+    }
+
     try {
       const frontmatter = body as Record<string, unknown>;
       const res = await enginePatchPage(ctx.headers, { slug, frontmatter }, { timeoutMs: 15_000 });
@@ -102,6 +127,9 @@ export const PATCH = createHandler(
         });
       }
       void logAudit("invoice.update", "invoice", {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
         entityId: slug,
         details: { fields: Object.keys(body) },
       });
@@ -109,16 +137,27 @@ export const PATCH = createHandler(
       // OPOS-Lebenszyklus an Statusübergänge koppeln: "sent" legt den offenen
       // Posten an (idempotent), "paid" schließt ihn. Best-effort — der Patch
       // ist schon geschrieben; ein OP-Fehler wird geloggt, nicht verschluckt.
-      const nextStatus = (body as Record<string, unknown>).status;
-      const prevStatus = String(currentRead.page.frontmatter?.status ?? "");
       try {
-        if (nextStatus === "sent" && prevStatus === "draft") {
+        if (issuing && nextStatus !== "cancelled") {
           await createOpenItemForInvoice(
             ctx.headers,
             slug,
             (currentRead.page.frontmatter ?? {}) as Record<string, unknown>
           );
-        } else if (nextStatus === "paid" && prevStatus !== "paid") {
+        }
+        if (nextStatus === "paid" && prevStatus !== "paid") {
+          emitInvoicePaid(
+            ctx.brainId,
+            { slug, frontmatter: (currentRead.page.frontmatter ?? {}) as Record<string, unknown> },
+            {
+              paid_at: typeof frontmatter.paid_at === "string" ? frontmatter.paid_at : undefined,
+              paid_amount: frontmatter.paid_amount,
+              payment_method:
+                typeof frontmatter.payment_method === "string"
+                  ? frontmatter.payment_method
+                  : undefined,
+            }
+          );
           await closeOpenItemForInvoice(ctx.headers, slug, "paid");
         }
       } catch (err) {
@@ -181,8 +220,22 @@ export const DELETE = createHandler(
       );
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      void logAudit("invoice.delete", "invoice", { entityId: slug });
-      return Response.json({ ok: true });
+      void logAudit("invoice.delete", "invoice", {
+        brainId: ctx.brainId,
+        userId: ctx.user.id,
+        userEmail: ctx.user.email,
+        entityId: slug,
+      });
+
+      // The deleted draft no longer bills its work — put it back to open so
+      // a corrected invoice can take it.
+      const released = await releaseWorkOfInvoice(
+        ctx.headers,
+        slug,
+        (currentRead.page.frontmatter ?? {}) as Record<string, unknown>,
+        "draft_deleted"
+      );
+      return Response.json({ ok: true, released });
     } catch (err) {
       log.error("[invoices/slug] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);

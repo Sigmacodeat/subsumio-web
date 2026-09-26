@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { portalToken } from "@/lib/portal-session";
-import { portalVisibleDocumentSlugs } from "@/lib/portal-view";
+import { portalReleasedSummary } from "@/lib/portal-view";
+import {
+  buildPortalDocumentContext,
+  maskDataMarkers,
+  portalChatDocumentSlugs,
+  type PortalChatDocument,
+} from "@/lib/portal-chat-context";
 import type { DocumentEntry } from "@/lib/legal-types";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineComplete } from "@/lib/engine-llm";
@@ -12,6 +18,7 @@ import { emptyGroundingMetadata } from "@/lib/citation-gate-client";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
+import { engineWriteBestEffort } from "@/lib/engine-write";
 const log = logger("api/portal/chat");
 
 /** Model answers per matter and day in the client portal (≈ 1–3 € model cost at most). */
@@ -22,12 +29,7 @@ const chatSchema = z.object({
   message: z.string().min(1, "message_required").max(4_000, "message_too_long"),
 });
 
-interface CaseDocument {
-  slug: string;
-  title: string;
-  content: string;
-  type: string;
-}
+type CaseDocument = PortalChatDocument;
 
 const REFUSAL_RESPONSES = [
   "Ich kann ausschließlich Auskünfte zu Ihrer eigenen Akte geben. Fragen zu anderen Akten oder internen Notizen kann ich nicht beantworten.",
@@ -35,30 +37,28 @@ const REFUSAL_RESPONSES = [
   "Ich bin auf Ihre Akte beschränkt und kann keine Informationen zu anderen Mandanten oder internen Kanzlei-Prozessen geben.",
 ];
 
+/**
+ * Questions that ask for OTHER matters, clients or firm internals get a fixed
+ * answer without a model call. Kept narrow on purpose: everyday questions
+ * ("Welcher Mitarbeiter betreut meine Akte?", "Gilt die Geheimhaltung?") are
+ * answered normally — isolation itself lies in the data selection, which only
+ * ever contains this matter's released documents.
+ */
 function isAdversarialQuery(message: string): boolean {
   const lower = message.toLowerCase();
   const adversarialPatterns = [
-    /andere akte/,
-    /andere mandanten?/,
-    /andere falle/,
-    /intern(e|er|es) notiz/,
-    /kanzlei intern/,
-    /geheim/,
-    /andere klient/,
-    /other cases?/,
-    /other clients?/,
+    /andere(n|r)? akte/,
+    /andere(n|r)? mandant/,
+    /andere(n|r)? f(ä|a)lle/,
+    /andere(n|r)? klient/,
+    /fremde(n|r)? akte/,
+    /intern(e|er|es|en)? notiz/,
+    /kanzlei ?intern/,
+    /other (cases?|clients?)/,
     /internal notes?/,
-    /confidential/,
-    /alle akten/,
-    /alle mandanten/,
-    /alle klient/,
-    /andere rechtsanwalt/,
-    /other lawyers?/,
-    /personalakten?/,
-    /mitarbeiter/,
-    /staff/,
-    /gehalt/,
-    /salary/,
+    /alle (akten|mandanten|klienten)/,
+    /personalakte/,
+    /(gehalt|gehälter|salary|salaries)/,
     /finanzen der kanzlei/,
     /kanzlei.*finanzen/,
   ];
@@ -81,17 +81,20 @@ function buildGroundedPrompt(
   caseData: { title: string; caseNumber: string; facts: string; legalArea: string },
   documents: CaseDocument[]
 ): string {
-  const docContext = documents
-    .slice(0, 10)
-    .map((d) => `--- ${d.title} (${d.type}) ---\n${d.content.slice(0, 2000)}`)
-    .join("\n\n");
+  // Newest first, the question's matches ahead, within a character budget;
+  // document text can never close the data block.
+  const docContext = buildPortalDocumentContext(documents, message);
 
   return [
     "<daten>",
-    `Akte: ${caseData.title} (${caseData.caseNumber})`,
-    `Rechtsgebiet: ${caseData.legalArea}`,
+    maskDataMarkers(`Akte: ${caseData.title} (${caseData.caseNumber})`),
+    maskDataMarkers(`Rechtsgebiet: ${caseData.legalArea}`),
     ...(caseData.facts
-      ? [`Sachverhalt (für den Mandanten freigegeben): ${caseData.facts.slice(0, 3000)}`]
+      ? [
+          maskDataMarkers(
+            `Sachverhalt (für den Mandanten freigegeben): ${caseData.facts.slice(0, 3000)}`
+          ),
+        ]
       : []),
     "",
     "Freigegebene Dokumente:",
@@ -121,7 +124,7 @@ export const POST = createPublicHandler(
     const fm = access.frontmatter as unknown as Record<string, unknown>;
 
     if (isAdversarialQuery(body.message)) {
-      const refusal = REFUSAL_RESPONSES[Math.floor(Math.random() * REFUSAL_RESPONSES.length)]!;
+      const refusal = REFUSAL_RESPONSES[0]!;
       return Response.json({
         answer: refusal,
         grounded: false,
@@ -148,11 +151,9 @@ export const POST = createPublicHandler(
 
     // The assistant may only ground on documents released to the client. Read
     // them one by one: the engine's page list carries no content.
-    const released = [
-      ...portalVisibleDocumentSlugs((fm.documents as DocumentEntry[] | undefined) ?? undefined),
-    ]
-      .filter((slug) => !slug.startsWith("/") && !/^https?:/i.test(slug))
-      .slice(0, 10);
+    // Newest first — a freshly delivered judgment must not fall out behind
+    // older documents.
+    const released = portalChatDocumentSlugs(fm.documents as DocumentEntry[] | undefined);
     const documents: CaseDocument[] = (
       await Promise.all(
         released.map(async (slug) => {
@@ -184,7 +185,7 @@ export const POST = createPublicHandler(
         caseNumber: String(fm.case_number ?? ""),
         // Only a summary the firm explicitly released to the client. The case
         // page body holds internal notes and strategy — never send it here.
-        facts: typeof fm.portal_summary === "string" ? fm.portal_summary : "",
+        facts: portalReleasedSummary(fm),
         legalArea: String(fm.legal_area ?? ""),
       },
       documents
@@ -229,25 +230,29 @@ export const POST = createPublicHandler(
     const grounded = grounding.corpus_checked && !grounding.has_unverified;
 
     const slug = `portal-chat/${access.caseSlug}/${Date.now()}`;
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({
-        slug,
-        title: "Portal-Chat",
-        type: "portal_chat",
-        content: answer,
-        frontmatter: {
+    await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({
+          slug,
+          title: "Portal-Chat",
           type: "portal_chat",
-          case_slug: access.caseSlug,
-          question: body.message,
-          sender: "bot",
-          grounded,
-          created_at: new Date().toISOString(),
-        },
-      }),
-      signal: AbortSignal.timeout(10_000),
-    }).catch(() => {});
+          content: answer,
+          frontmatter: {
+            type: "portal_chat",
+            case_slug: access.caseSlug,
+            question: body.message,
+            sender: "bot",
+            grounded,
+            created_at: new Date().toISOString(),
+          },
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+      "Portal-Chat-Verlauf"
+    );
 
     return Response.json({
       answer,

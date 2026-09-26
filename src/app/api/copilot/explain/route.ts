@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { explainRetrieval } from "@/lib/matter-context";
+import { getEnginePage } from "@/lib/engine-page-io";
+import { hideForeignPersonalEventHits } from "@/lib/calendar/personal-events";
 import type { QueryMode } from "@/lib/matter-context-types";
 
 import { logger } from "@/lib/logger";
@@ -139,7 +141,12 @@ export const POST = createHandler(
 
     try {
       // Get retrieval explanations for the query
-      const results = await explainRetrieval(query, ENGINE_URL, ctx.headers, mode ?? "balanced");
+      // Colleagues' personal calendar mirrors are never named as sources.
+      const results = await hideForeignPersonalEventHits(
+        await explainRetrieval(query, ENGINE_URL, ctx.headers, mode ?? "balanced"),
+        ctx.user.id,
+        (slug) => getEnginePage(ctx.headers, slug, { timeoutMs: 5_000 })
+      );
 
       const sources: ExplanationResponse["sources"] = results.slice(0, 10).map((r) => ({
         slug: r.slug,

@@ -22,6 +22,7 @@ describe("hostedRoomsToSpaces", () => {
       {
         id: "dr_1",
         slug: "legal/cases/akte-1",
+        href: "/dashboard/shared-spaces/dr_1",
         name: "Datenraum Muster gegen Beispiel",
         description: "2 Beteiligte",
         status: "active",

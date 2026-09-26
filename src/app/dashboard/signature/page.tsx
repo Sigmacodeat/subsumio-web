@@ -17,7 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { PrimaryAction } from "@/components/dashboard/primary-action";
 import { useLang } from "@/lib/use-lang";
@@ -101,11 +102,16 @@ export default function SignaturePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const [listCapped, setListCapped] = useState(false);
   async function loadRequests() {
     setLoading(true);
     setLoadError(null);
     try {
-      const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
+      const { pages: sigPages, capped } = await api.brain.listAllPagesDetailed({
+        type: "signature_request",
+        max: CASE_PICKER_MAX,
+      });
+      setListCapped(capped);
       setRequests(
         sigPages.map((p) => {
           const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -166,6 +172,7 @@ export default function SignaturePage() {
           </div>
         }
       />
+      {listCapped && <CappedResultsNotice limit={CASE_PICKER_MAX} />}
 
       {/* Which signature for what */}
       <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-4">

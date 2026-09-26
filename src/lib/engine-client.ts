@@ -19,6 +19,8 @@ export interface EnginePageInput {
   content?: string;
   frontmatter?: Record<string, unknown>;
   merge?: boolean;
+  /** Create-only: the engine refuses (409 page_exists) instead of replacing a stored page. */
+  if_absent?: boolean;
 }
 
 export async function engineRequest<T>(
@@ -52,12 +54,46 @@ export async function engineRequest<T>(
   }
 }
 
+/**
+ * Up to `limit` pages of a type. Pages through the engine's keyset cursor
+ * (`x-next-cursor`) instead of trusting "short batch means done" — matter
+ * scope and tombstones shrink batches below the limit without meaning the
+ * list ended. `limit` bounds the total rows scanned (including filtered).
+ */
 export async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  const result = await engineRequest<BrainPage[]>(
-    brainId,
-    `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
-  );
-  return Array.isArray(result) ? result : [];
+  const headers = engineHeadersForBrain(brainId);
+  const out: BrainPage[] = [];
+  let fetched = 0;
+  let cursor: string | undefined;
+  let iterations = 0;
+  for (;;) {
+    if (++iterations > 1000) break;
+    const want = Math.min(100, limit - fetched);
+    if (want <= 0) break;
+    const pageParam = cursor ? `&cursor=${encodeURIComponent(cursor)}` : `&offset=${fetched}`;
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${want}${pageParam}`,
+      {
+        headers: { "Content-Type": "application/json", ...headers },
+        signal: AbortSignal.timeout(30_000),
+      }
+    );
+    if (!res.ok) {
+      const error = await res.text().catch(() => "");
+      throw new Error(error || `Engine HTTP ${res.status}`);
+    }
+    const result = (await res.json()) as unknown;
+    const batch = Array.isArray(result) ? (result as BrainPage[]) : [];
+    fetched += batch.length;
+    out.push(...batch);
+    const next = res.headers.get("x-next-cursor");
+    if (next && next !== cursor) {
+      cursor = next;
+      continue;
+    }
+    if (batch.length < want) break;
+  }
+  return out;
 }
 
 // mode differs deliberately per call site: the direct chat lane uses

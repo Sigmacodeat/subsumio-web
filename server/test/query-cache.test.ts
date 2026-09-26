@@ -260,3 +260,47 @@ describe("SemanticQueryCache \u2014 disabled", () => {
     expect(hit.hit).toBe(false);
   });
 });
+
+describe("purged pages leave the search cache", () => {
+  test("deleteCachedResultsForSlugs drops only result sets that contain a purged slug", async () => {
+    const { deleteCachedResultsForSlugs } = await import("../src/core/search/query-cache.ts");
+    const cache = new SemanticQueryCache(engine);
+    await cache.store(
+      "mit akte",
+      makeEmbedding(31),
+      [makeResult("docs/gone"), makeResult("x")],
+      META
+    );
+    await cache.store("ohne akte", makeEmbedding(32), [makeResult("docs/other")], META);
+    const removed = await deleteCachedResultsForSlugs(engine, ["docs/gone"]);
+    expect(removed).toBe(1);
+    const rows = await engine.executeRaw<{ query_text: string }>(
+      `SELECT query_text FROM query_cache`
+    );
+    expect(rows.map((r) => r.query_text)).toEqual(["ohne akte"]);
+  });
+
+  test("purgeDeletedPagesWithFiles removes cache rows of the purged page", async () => {
+    const { purgeDeletedPagesWithFiles } = await import("../src/core/file-store.ts");
+    await engine.putPage("docs/cached-purge", {
+      type: "note" as never,
+      title: "x",
+      compiled_truth: "x",
+      timeline: "",
+      frontmatter: {},
+    });
+    const cache = new SemanticQueryCache(engine);
+    await cache.store("cached", makeEmbedding(33), [makeResult("docs/cached-purge")], META);
+    await engine.softDeletePage("docs/cached-purge");
+    await engine.executeRaw(
+      `UPDATE pages SET deleted_at = now() - INTERVAL '73 hours' WHERE slug = 'docs/cached-purge'`
+    );
+    const result = await purgeDeletedPagesWithFiles(engine, 72);
+    expect(result.slugs).toContain("docs/cached-purge");
+    expect(result.cacheRowsDeleted).toBe(1);
+    const rows = await engine.executeRaw<{ n: number }>(
+      `SELECT COUNT(*)::int AS n FROM query_cache`
+    );
+    expect(rows[0].n).toBe(0);
+  });
+});

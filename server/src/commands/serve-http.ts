@@ -29,7 +29,11 @@ import { GBrainOAuthProvider, validateTokenEndpointAuthMethod } from "../core/oa
 import type { SqlQuery } from "../core/oauth-provider.ts";
 import { hasScope, ALLOWED_SCOPES_LIST, normalizeScopesInput } from "../core/scope.ts";
 import { summarizeMcpParams, dispatchToolCall } from "../mcp/dispatch.ts";
-import { MATTER_SCOPED_TOOLS } from "../core/minions/tools/brain-allowlist.ts";
+import {
+  MATTER_SCOPED_TOOLS,
+  TENANT_UNSAFE_TOOLS,
+  isTenantBoundClient,
+} from "../core/minions/tools/brain-allowlist.ts";
 import { makeWebUserStatusFetcher, resolveWebMcpToken } from "../core/web-mcp-token.ts";
 import { paramDefToSchema } from "../mcp/tool-defs.ts";
 import { getBrainHotMemoryMeta } from "../core/facts/meta-hook.ts";
@@ -1304,9 +1308,24 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         (total as any).count > 0
           ? (((errors as any).count / (total as any).count) * 100).toFixed(1)
           : "0";
+      const { storageEncryptionWarning } = await import("../core/file-encryption.ts");
+      // Plaintext originals as of the last full `gbrain storage reencrypt`
+      // pass (dry run or applied) — reading every object here would not be cheap.
+      const { readReencryptStatus } = await import("../core/storage-reencrypt.ts");
+      const scan = await readReencryptStatus(engine);
       res.json({
         expiring_soon: (expiring as any).count,
         error_rate: `${errorRate}%`,
+        // Admin-only: at-rest encryption of originals (never on the public /health).
+        storage_encryption: storageEncryptionWarning(process.env) ? "off" : "on",
+        storage_plaintext: scan
+          ? {
+              files: scan.plaintext,
+              total: scan.total,
+              share: scan.total > 0 ? Math.round((scan.plaintext / scan.total) * 1000) / 1000 : 0,
+              checked_at: scan.checked_at,
+            }
+          : null,
       });
     } catch {
       res.status(503).json({ error: "service_unavailable" });
@@ -2146,9 +2165,14 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               readOnly: authInfo.matterReadOnly ?? [],
             }
           : undefined;
+      // A client bound to a firm's source never sees tools that read across
+      // sources (see TENANT_UNSAFE_TOOLS).
+      const tenantClient = isTenantBoundClient(authInfo);
       const callableOperations = webMatterGuard
         ? mcpOperations.filter((op) => MATTER_SCOPED_TOOLS.has(op.name))
-        : mcpOperations;
+        : tenantClient
+          ? mcpOperations.filter((op) => !TENANT_UNSAFE_TOOLS.has(op.name))
+          : mcpOperations;
 
       // Create a fresh MCP server per request (stateless)
       const server = new Server(
@@ -2338,7 +2362,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
               sourceId: tokenSourceId,
               // Hot memory is firm-wide; a user-bound token does not get it.
               ...(webMatterGuard
-                ? { matterGuard: webMatterGuard }
+                ? {
+                    matterGuard: webMatterGuard,
+                    // The bound user's document ACL; absent groups fail closed.
+                    aclGroups: authInfo.aclGroups ?? [],
+                  }
                 : { metaHook: getBrainHotMemoryMeta }),
               // v0.31 follow-up fix: thread auth so the whoami op (and any
               // future scope-aware handlers) can introspect the caller. The

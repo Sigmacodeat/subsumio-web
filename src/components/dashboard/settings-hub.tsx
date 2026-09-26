@@ -19,6 +19,7 @@ import {
   Mail,
   Moon,
   Network,
+  PenLine,
   Plug,
   Radar,
   Rocket,
@@ -300,6 +301,18 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         href: "/dashboard/word-addin",
         allowed: STAFF,
         keywords: "microsoft office",
+      },
+      {
+        id: "docusign",
+        label: { de: "Elektronische Signatur (DocuSign)", en: "E-signature (DocuSign)" },
+        desc: {
+          de: "Ihr DocuSign-Konto verbinden oder trennen; Signaturanfragen gehen dann in Ihrem Namen.",
+          en: "Connect or disconnect your DocuSign account; signature requests are then sent in your name.",
+        },
+        icon: PenLine,
+        href: "/dashboard/settings?tab=signature",
+        allowed: STAFF,
+        keywords: "docusign signatur unterschrift e-signatur",
       },
       {
         id: "api-keys",

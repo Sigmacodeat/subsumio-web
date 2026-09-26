@@ -8,23 +8,23 @@
  * Returns per-provider status:
  *   { providers: { anthropic: { status, latencyMs, error? }, ... }, allOk: boolean }
  *
- * Public endpoint (no auth) — only reveals provider names + ok/not-ok,
- * NOT API keys or credit balances. Used by:
- *   - Admin UI health dashboard
- *   - Pipeline pre-flight check (server/src/core/ai/credits-preflight.ts)
- *   - Uptime monitoring
+ * Platform operators only: every uncached check is a paid provider call, and
+ * whether the service currently runs without AI credit is operational
+ * information, not public. Used by the operator console's credits card.
+ * The pipeline's own pre-flight check calls the shared module directly.
  *
  * The actual check logic lives in the shared module so the engine's
  * pre-flight check and this HTTP endpoint use the same code path.
  */
 
-import { createPublicHandler } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 import { getCreditsHealth } from "@/lib/credits-health-shared";
 
 export const dynamic = "force-dynamic";
 
-export const GET = createPublicHandler(
+export const GET = createHandler(
   {
+    action: "platform.operator",
     cacheMaxAge: 0, // getCreditsHealth does its own 60s in-memory caching
   },
   async () => {

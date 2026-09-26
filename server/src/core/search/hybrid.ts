@@ -44,6 +44,7 @@ import { expandLegalQuery } from "../think/legal-query-expand.ts";
 import { expandConceptQuery, extractSectionNumbers } from "../legal/concept-map.ts";
 import { chat as gatewayChat } from "../ai/gateway.ts";
 import { isAllowedUnderEuPolicy, isEuOnly } from "../ai/eu-policy.ts";
+import { withRequestEuPolicy } from "../ai/request-eu-policy.ts";
 
 export const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
@@ -2098,10 +2099,18 @@ export interface HybridSearchOpts extends SearchOpts {
   courtDecisionCourtBoost?: number;
 }
 
-/** Keep only the newest available version per statute section for as-of reads. */
+/**
+ * Keep only the version per statute section that applied on `asOfDate`.
+ * The canonical (current) page wins unless it only entered into force after
+ * the cutoff — then the newest archived version on or before the cutoff is
+ * the law as it stood. `validity` carries in_force_from per page_id (the
+ * same lookup the validity boost uses); a result's own in_force_from counts
+ * too. Without any in-force date the canonical page is kept.
+ */
 export function selectLegalVersionsAsOf(
   results: SearchResult[],
-  asOfDate?: string
+  asOfDate?: string,
+  validity?: Map<number, { in_force_from: string | null; in_force_to: string | null }>
 ): SearchResult[] {
   if (!asOfDate) return results;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(asOfDate)) {
@@ -2121,10 +2130,6 @@ export function selectLegalVersionsAsOf(
   const selected: SearchResult[] = [];
   for (const group of groups.values()) {
     const canonical = group.find((result) => !/--v-\d{4}-\d{2}-\d{2}$/.test(result.slug));
-    if (canonical) {
-      selected.push(canonical);
-      continue;
-    }
     const dated = group
       .map((result) => ({ result, match: /--v-(\d{4}-\d{2}-\d{2})$/.exec(result.slug) }))
       .filter((entry): entry is { result: SearchResult; match: RegExpExecArray } =>
@@ -2132,9 +2137,57 @@ export function selectLegalVersionsAsOf(
       )
       .filter((entry) => entry.match[1] <= asOfDate)
       .sort((a, b) => b.match[1].localeCompare(a.match[1]));
+    if (canonical) {
+      const from = (
+        validity?.get(canonical.page_id)?.in_force_from ??
+        canonical.in_force_from ??
+        null
+      )?.slice(0, 10);
+      const currentAtCutoff = !from || from <= asOfDate;
+      if (currentAtCutoff || !dated[0]) {
+        if (from) canonical.in_force_from = from;
+        selected.push(canonical);
+        continue;
+      }
+    }
     if (dated[0]) selected.push(dated[0].result);
   }
   return selected.sort(byScoreDescSlugAsc);
+}
+
+/**
+ * `selectLegalVersionsAsOf` with the in-force dates of the canonical statute
+ * pages loaded from the engine. Best-effort: without the lookup the canonical
+ * page is kept, as before.
+ */
+export async function selectLegalVersionsAsOfFromEngine(
+  engine: BrainEngine,
+  results: SearchResult[],
+  asOfDate?: string
+): Promise<SearchResult[]> {
+  if (!asOfDate) return results;
+  let validity:
+    | Map<number, { in_force_from: string | null; in_force_to: string | null }>
+    | undefined;
+  if (engine.getStatuteValidity) {
+    const ids = results
+      .filter(
+        (r) =>
+          r.slug.startsWith("legal/statutes/") &&
+          !/--v-\d{4}-\d{2}-\d{2}$/.test(r.slug) &&
+          typeof r.page_id === "number" &&
+          r.page_id > 0
+      )
+      .map((r) => r.page_id);
+    if (ids.length > 0) {
+      try {
+        validity = await engine.getStatuteValidity([...new Set(ids)]);
+      } catch {
+        validity = undefined;
+      }
+    }
+  }
+  return selectLegalVersionsAsOf(results, asOfDate, validity);
 }
 
 /**
@@ -2265,10 +2318,10 @@ export async function applyLLMReranker(
   // EU-only: skip non-EU rerankers up front (the gateway would refuse them
   // anyway); with none left the results keep their non-LLM (RRF) order.
   const modelsToTry = [model, ...LLM_RERANK_FALLBACK_CHAIN.filter((m) => m !== model)].filter((m) =>
-    isAllowedUnderEuPolicy(m, process.env)
+    isAllowedUnderEuPolicy(m, withRequestEuPolicy(process.env))
   );
   if (modelsToTry.length === 0) {
-    if (isEuOnly(process.env)) {
+    if (isEuOnly(withRequestEuPolicy(process.env))) {
       console.warn("[llm-rerank] EU-only: no EU reranker configured, keeping RRF order");
     }
     return results;
@@ -2747,7 +2800,7 @@ export async function hybridSearch(
     // the paths taken when no embedding provider is reachable.
     const noEmbedHopped = await applyAliasHop(
       engine,
-      selectLegalVersionsAsOf(dedupResults(noEmbedResults), opts?.asOfDate),
+      await selectLegalVersionsAsOfFromEngine(engine, dedupResults(noEmbedResults), opts?.asOfDate),
       query,
       {
         sourceId: opts?.sourceId,
@@ -3001,7 +3054,11 @@ export async function hybridSearch(
     }
     const kwHopped = await applyAliasHop(
       engine,
-      selectLegalVersionsAsOf(dedupResults(fallbackResults), opts?.asOfDate),
+      await selectLegalVersionsAsOfFromEngine(
+        engine,
+        dedupResults(fallbackResults),
+        opts?.asOfDate
+      ),
       query,
       {
         sourceId: opts?.sourceId,
@@ -3164,7 +3221,11 @@ export async function hybridSearch(
   // aliasing in the postFusionOpts resolver near line ~256.
 
   // Dedup
-  const deduped = selectLegalVersionsAsOf(dedupResults(fused, dedupOpts), opts?.asOfDate);
+  const deduped = await selectLegalVersionsAsOfFromEngine(
+    engine,
+    dedupResults(fused, dedupOpts),
+    opts?.asOfDate
+  );
 
   // Auto-escalate: if detail=low returned 0, retry with high. The inner
   // call's onMeta fires with the escalated detail_resolved; do NOT also

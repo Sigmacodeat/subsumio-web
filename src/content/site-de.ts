@@ -60,7 +60,7 @@ export const FOOTER_DE = deepMerge(FOOTER, {
 export const LANDING_DE = deepMerge(LANDING, {
   badge: "KI-Kanzleisoftware & Anwaltssoftware für Deutschland",
   heroBadges: [
-    "Jede Antwort mit geprüfter Fundstelle",
+    "Antworten mit Fundstelle, Unbelegtes gekennzeichnet",
     "Berufsgeheimnis nach § 43a Abs. 2 BRAO im Systemdesign",
     "EU-Cloud oder On-Premise — Ihre Wahl",
   ],

@@ -1,32 +1,35 @@
 # Subsumio cron jobs — triggered by supercronic inside the Docker stack.
-# Each job calls the Next.js /api/cron/* endpoint with CRON_SECRET auth.
-# Times are in UTC (server default). Adjust for CET/CEST if needed.
+# Each job calls a Next.js /api/cron/* (or /api/billing/*) endpoint with
+# CRON_SECRET auth through the wrapper cronjob.sh:
 #
-# Fristen-critical jobs (deadlines digest, deadline-reminders, deadline-alerts)
-# and the health monitor run WITHOUT `|| true`: `-f` makes curl exit non-zero
-# on an HTTP error (the routes answer 5xx when a run had errors), `--max-time`
-# bounds a hung request, and supercronic then logs the job as FAILED with the
-# exit code instead of a silent success. On success each can ping an optional
-# dead-man's-switch URL (CRON_HEARTBEAT_URL_<JOB>, e.g. a Healthchecks.io or
-# Uptime Kuma push URL) — unset = no ping. A failed ping is logged, never
-# turns a successful job into a failure. See RUNBOOK.md "Cron-Überwachung".
+#   sh /etc/cronjob.sh <name> <path> [extra curl options]
+#
+# The wrapper makes every failure visible — no job is silenced with `|| true`:
+# `-f` turns an HTTP error (the routes answer 5xx when a run had errors) into a
+# non-zero exit, every call has a time limit, supercronic logs the job as
+# FAILED, and QUEUE_ALERT_EMAIL gets a mail (Resend; at most once per job per
+# hour). On success the wrapper pings CRON_HEARTBEAT_URL_<NAME> when set
+# (dead-man's switch, e.g. Healthchecks.io / Uptime Kuma push URL; name in
+# upper case, "-" becomes "_"). A failed ping is logged only. See RUNBOOK.md
+# "Cron-Überwachung".
+# Times are in UTC (server default).
 
 # ── 02:45 UTC (04:45 CEST) — Statute currency check ──
 # Checks DB statute version_date against live sources (RIS-OGD, buzer.de, OpenCaseLaw).
 # If outdated laws are found, triggers /api/admin/law-sync to reimport updated corpus.
-45 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/statute-currency || true
+45 2 * * *     sh /etc/cronjob.sh statute-currency /api/cron/statute-currency
 
 # ── 02:30 UTC (04:30 CEST) — RIS Delta-Watcher ──
 # Inkrementeller Sync: holt neue/geänderte Gesetze & Entscheidungen von RIS OGD API.
 # Setzt pipeline_config Trigger → corpus-pipeline startet ris-delta-watcher.ts.
 # Läuft vor law-sync (03:00) damit neue Dokumente gleich importiert werden.
-30 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/ris-delta-watcher || true
+30 2 * * *     sh /etc/cronjob.sh ris-delta-watcher /api/cron/ris-delta-watcher
 
 # ── 03:00 UTC (05:00 CEST) — Law corpus sync ──
-0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/law-sync || true
+0 3 * * *      sh /etc/cronjob.sh law-sync /api/cron/law-sync
 
 # ── 03:30 UTC (05:30 CEST) — Judgements sync ──
-30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/judgements-sync || true
+30 3 * * *     sh /etc/cronjob.sh judgements-sync /api/cron/judgements-sync
 
 # ── 05:00 UTC (07:00 CEST) — Daily Rundown agent ──
 # Submits a supervisor job with the Rundown prompt, polls for completion,
@@ -34,87 +37,94 @@
 # so the dashboard RundownWidget picks it up automatically.
 # Budget cap: $0.30/brain. No force_specialists (prevents subagent spawning).
 # Opt-out: set DISABLE_RUNDOWN_CRON=true in env.
-0 5 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/rundown || true
+0 5 * * *      sh /etc/cronjob.sh rundown /api/cron/rundown
 
 # ── 06:00 UTC (08:00 CEST) — Daily deadlines digest ──
 # Fristen-Kette: syncs pipeline-extracted deadline_calendar pages → legal_deadline
 # pages (A1), then collects all deadlines (legal_case + legal_deadline) and sends
 # a digest email per brain. Includes Vorfrist section (B3) and pipeline_synced
 # count in the response JSON.
-0 6 * * *      curl -fsS --max-time 300 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines && { [ -z "${CRON_HEARTBEAT_URL_DEADLINES}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINES}" || echo "heartbeat ping failed: deadlines" >&2; }
+0 6 * * *      sh /etc/cronjob.sh deadlines /api/cron/deadlines --max-time 300
 
 # ── 06:30 UTC (08:30 CEST) — Daily briefing ──
-30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/daily-briefing || true
+30 6 * * *     sh /etc/cronjob.sh daily-briefing /api/cron/daily-briefing
 
 # ── 07:00 UTC (09:00 CEST) — Deadline reminders ──
 # Sends staged email/WhatsApp/push reminders for approaching deadlines.
 # Tracks reminder_sent_at + reminder_stages_sent per deadline in frontmatter.
 # Also sends Vorfrist-specific reminders (B3) when vorfrist_date is reached.
-0 7 * * *      curl -fsS --max-time 600 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders && { [ -z "${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINE_REMINDERS}" || echo "heartbeat ping failed: deadline-reminders" >&2; }
+0 7 * * *      sh /etc/cronjob.sh deadline-reminders /api/cron/deadline-reminders --max-time 600
 
 # Trial ending in 3 days — one mail per account, for trials with no plan chosen
-15 7 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/trial-reminder || true
+15 7 * * *     sh /etc/cronjob.sh trial-reminder /api/cron/trial-reminder
 
 # ── 06:30 UTC (08:30 CEST) — Case law monitoring ──
-30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-law || true
+30 6 * * *     sh /etc/cronjob.sh case-law /api/cron/case-law
 
 # ── 06:45 UTC (08:45 CEST) — Regulatory monitors ──
-45 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/regulatory-monitors || true
+45 6 * * *     sh /etc/cronjob.sh regulatory-monitors /api/cron/regulatory-monitors
 
-# ── 02:00 UTC (04:00 CEST) — Nightly case scanner ──
-0 2 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-scanner || true
+# Case scanner: no scheduled run. Scans start on demand only (lawyer/admin,
+# cost preview in credits); /api/cron/case-scanner answers "deactivated".
+
+# ── 02:00 UTC (04:00 CEST) — Judikatur-Wächter (RIS lookups, no model calls) ──
+0 2 * * *      sh /etc/cronjob.sh judikatur-watch /api/cron/judikatur-watch
 
 # ── 02:30 UTC (04:30 CEST) — Dream cycle (brain maintenance) ──
 # Runs extract_facts, consolidate, synthesize, embed — keeps the brain's
 # structured fact index fresh for contradiction detection and semantic search.
 # Has its own BudgetMeter; cost is bounded by phase config.
-30 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/dream-cycle || true
+30 2 * * *     sh /etc/cronjob.sh dream-cycle /api/cron/dream-cycle
 
 # ── 03:00 UTC (05:00 CEST) — Contradiction probe ──
-# Runs eval suspected-contradictions with Haiku judge (~$0.50/day budget cap).
-# Results stored in eval_contradictions_runs; find_contradictions tool reads them.
-# Runs AFTER dream-cycle so the brain's fact index is fresh.
-0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/contradiction-probe || true
+# Per firm (paying/trial only): documents changed in the last 24 h are checked
+# against the same firm's documents. Each run is bound to the firm's source and
+# capped by its daily probe budget (CONTRADICTION_PROBE_DAILY_BUDGET_USD on the
+# engine). Runs after the dream cycle.
+0 3 * * *      sh /etc/cronjob.sh contradiction-probe /api/cron/contradiction-probe --max-time 310
 
 # ── 08:00 UTC (10:00 CEST) — Retention policy check ──
-0 8 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/retention || true
+0 8 * * *      sh /etc/cronjob.sh retention /api/cron/retention
 
 # ── 04:45 UTC (06:45 CEST) — Papierkorb-Retention (endgültige Löschung) ──
 # Purgt tombstoned/archivierte Einträge, deren Aufbewahrungsfrist abgelaufen
 # ist (Kanzlei-Setting trashRetentionDays, Default 30 Tage). Setzt den
 # Engine-Soft-Delete; der Autopilot löscht 72h später physisch. Legal-Hold-
 # Einträge werden nie gelöscht. Jeder Purge wird auditiert (trash.purge).
-45 4 * * *     curl -fsS --max-time 280 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/trash-purge || true
+45 4 * * *     sh /etc/cronjob.sh trash-purge /api/cron/trash-purge --max-time 280
 
 # ── 08:30 UTC (10:30 CEST) — Document request reminders ──
 # Sends reminders for sent/partially_fulfilled document requests after 7 days.
 # Max 3 reminders, then escalates as in-app notification to the responsible lawyer.
-30 8 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/document-request-reminders || true
+30 8 * * *     sh /etc/cronjob.sh document-request-reminders /api/cron/document-request-reminders
 
 # ── 09:00 UTC (11:00 CEST) — Auto-playbook update ──
 # Scans all executed contracts (frontmatter.status=executed) and updates
 # playbooks with negotiated clause positions. Stages by default (auto_apply=false);
 # pass ?auto_apply=true to auto-apply without manual approval.
-0 9 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/auto-playbook || true
+0 9 * * *      sh /etc/cronjob.sh auto-playbook /api/cron/auto-playbook
 
 # ── Every hour — Automations (wenn-dann-Regeln, WP-4.17) ──
 # Evaluates automation_rule pages per brain: deadline_approaching,
 # invoice_overdue, case_created, document_uploaded, booking_created.
 # Idempotent per entity via fired_keys on the rule page.
-15 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/automations || true
+15 * * * *     sh /etc/cronjob.sh automations /api/cron/automations
 
 # ── Every hour — Appointment reminders ──
-0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true
+# Reminds every appointment (calendar, WhatsApp) 24 h ahead, hearings also
+# 7 days ahead. Termin-kritisch: runs without `|| true` (5xx = FAILED) and can
+# ping CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS on success.
+0 * * * *      sh /etc/cronjob.sh appointment-reminders /api/cron/appointment-reminders --max-time 300
 
 # ── Every hour — Analysis retry (Dead Letter Queue) ──
 # Retries failed document analyses with exponential backoff (1h → 4h → 16h).
 # Max 3 retries, then marks as permanently_failed.
-30 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/analysis-retry || true
+30 * * * *     sh /etc/cronjob.sh analysis-retry /api/cron/analysis-retry
 
 # ── Every 2 minutes — Post-upload task drain ──
 # Drains the persistent post_upload_task outbox: analysis, contradiction probe,
 # case reconciliation. Tasks survive container restarts; retried with backoff.
-*/2 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true
+*/2 * * * *    sh /etc/cronjob.sh post-upload-drain /api/cron/post-upload-drain --max-time 310
 
 # ── Every 10 minutes — Upload reconcile sweeper ──
 # Safety net for the upload chain: finds extraction-ready documents whose
@@ -122,18 +132,18 @@
 # timeout) or that are stuck on "pending" past the grace window, and re-injects
 # them into the outbox (idempotent). Closes the silent "uploaded but never
 # analyzed and never flagged" gap.
-*/10 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/upload-reconcile || true
+*/10 * * * *   sh /etc/cronjob.sh upload-reconcile /api/cron/upload-reconcile
 
 # ── Every 5 minutes — Pipeline queue-health watchdog ──
 # Pulls /api/jobs/health; emails QUEUE_ALERT_EMAIL on dead-letters, a wedged
 # queue, backlog spikes, or piled-up outbox failures. Thresholds are env-tunable.
-*/5 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/queue-alert || true
+*/5 * * * *    sh /etc/cronjob.sh queue-alert /api/cron/queue-alert
 
 # ── Every 10 minutes — Cron health monitor ──
 # Checks CRON_SECRET, database connectivity, deadline dedup table, and engine
 # reachability. External monitoring (Uptime Kuma / Better Stack) should also
 # poll /api/cron/health directly for HTTP 200 (all ok) vs 503 (degraded).
-*/10 * * * *   curl -fsS --max-time 120 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/health && { [ -z "${CRON_HEARTBEAT_URL_HEALTH}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_HEALTH}" || echo "heartbeat ping failed: health" >&2; }
+*/10 * * * *   sh /etc/cronjob.sh health /api/cron/health --max-time 120
 
 # ── 04:00 UTC (06:00 CEST) — Autopilot (autonomous case processing) ──
 # Runs BEFORE the rundown. Processes unmatched intake items per AutoPilotPolicy:
@@ -143,54 +153,64 @@
 # it per brain and no-ops when a firm hasn't turned it on.
 # The route only accepts POST (2026-09-25: curl defaulted to GET here since
 # the route was added, so this job 405'd on every run since 2026-09-16).
-0 4 * * *      curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autopilot || true
+0 4 * * *      sh /etc/cronjob.sh autopilot /api/cron/autopilot -X POST
 
 # ── 09:00 UTC (11:00 CEST) — Invoice dunning run (FiBu) ──
 # Processes sent invoices past zahlungszielTage: reminder → Mahnung 1 → Mahnung 2,
 # with Verzugszinsen per § 288 BGB. Escalates after max stages.
-0 9 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/dunning-run || true
+0 9 * * *      sh /etc/cronjob.sh dunning-run /api/cron/dunning-run
 
 # ── 19:00 UTC (21:00 CEST) — Time suggestions (passive time tracking) ──
 # Aggregates today's activity_event pages per user into draft time_suggestion pages.
-0 19 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-suggestions || true
+0 19 * * *     sh /etc/cronjob.sh time-suggestions /api/cron/time-suggestions
 
 # ── Every 5 minutes — connected firm mailboxes (IMAP) ──
 # Fetches new mail for every connected mailbox, assigns it to matters and triages it.
 # Read-only on the mail server. No-op when no mailbox is connected.
-*/5 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/imap-sync || true
+*/5 * * * *   sh /etc/cronjob.sh imap-sync /api/cron/imap-sync
 
 # ── Every 15 minutes — Microsoft 365 calendar sync ──
 # Calendar events via Microsoft Graph into the firm named by MS365_BRAIN_ID. No-op if not configured.
 # Mail is handled by imap-sync above.
-*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-sync || true
+*/15 * * * *   sh /etc/cronjob.sh outlook-sync /api/cron/outlook-sync
 
 # ── Every 15 minutes — per-user Outlook calendar sync (WP-4.19) ──
 # Two-way sync for every mailbox that opted into calendar_sync under
 # Einstellungen → E-Mail-Postfach. No-op when no account opted in.
-*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/outlook-user-sync || true
+*/15 * * * *   sh /etc/cronjob.sh outlook-user-sync /api/cron/outlook-user-sync
+
+# ── Every 5 minutes — outgoing webhook retries ──
+# Re-delivers queued webhook events that failed transiently (backoff 1 min …
+# 2 h, five attempts). No-op when nothing is queued.
+*/5 * * * *   sh /etc/cronjob.sh webhook-retry /api/cron/webhook-retry
 
 # ── Every hour — Demo session cleanup ──
 # Purges the isolated engine source of expired demo sessions and mails the
 # ops mailbox when the daily demo question budget or purge backlog spikes.
-30 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/demo-cleanup || true
+30 * * * *     sh /etc/cronjob.sh demo-cleanup /api/cron/demo-cleanup
 
 # ── Every 30 minutes — Deadline alerts (realtime escalation) ──
 # Broadcasts realtime alerts for deadlines crossing urgency thresholds.
-*/30 * * * *   curl -fsS --max-time 300 -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-alerts && { [ -z "${CRON_HEARTBEAT_URL_DEADLINE_ALERTS}" ] || curl -fsS --max-time 10 -o /dev/null "${CRON_HEARTBEAT_URL_DEADLINE_ALERTS}" || echo "heartbeat ping failed: deadline-alerts" >&2; }
+*/30 * * * *   sh /etc/cronjob.sh deadline-alerts /api/cron/deadline-alerts --max-time 300 -X POST
 
 # ── Every hour — Time tracking inactivity check ──
-0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/time-tracking/inactivity-check || true
+0 * * * *      sh /etc/cronjob.sh time-tracking-inactivity-check /api/cron/time-tracking/inactivity-check
 
 # ── Every hour — Multipart upload cleanup ──
 # Aborts stale S3/R2 multipart uploads older than 24h (tab close, crash, etc.)
 # Prevents storage cost leaks from abandoned uploads.
-15 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/upload-multipart-cleanup || true
+15 * * * *     sh /etc/cronjob.sh upload-multipart-cleanup /api/cron/upload-multipart-cleanup
+
+# ── Every 15 minutes — Full firm exports ──
+# Deletes export archives whose single-use download link expired (≤ 24 h) or
+# that were downloaded, and notifies the requesting admin once an export is ready.
+*/15 * * * *   sh /etc/cronjob.sh firm-export-cleanup /api/cron/firm-export-cleanup
 
 # ── 03:30 UTC (05:30 CEST) — Daily integrity re-verification (GoBD) ──
 # Re-hashes a batch of stored files and compares against the content_hash
 # anchored in the files table. Detects silent storage corruption/tampering.
 # Rolling: 50 files per run, oldest-first.
-30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/integrity-recheck || true
+30 3 * * *     sh /etc/cronjob.sh integrity-recheck /api/cron/integrity-recheck
 
 # ── Every minute — Autonomous engine (queue worker) ──
 # Executes queued autonomous tasks (deadline follow-ups, inbox triage, document
@@ -199,7 +219,7 @@
 # The route only accepts POST (2026-09-25: curl defaulted to GET here since
 # the route was added, so this job 405'd every minute since 2026-09-16 —
 # the drafting page's queued tasks never got processed).
-* * * * *      curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/autonomous-engine || true
+* * * * *      sh /etc/cronjob.sh autonomous-engine /api/cron/autonomous-engine -X POST
 
 # ─────────────────────────────────────────────────────────────────────────
 # Abrechnung / SaaS-Billing
@@ -210,36 +230,36 @@
 # ─────────────────────────────────────────────────────────────────────────
 
 # ── 03:00 UTC (05:00 CEST) — Billing-Cleanup ──
-0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/billing-cleanup || true
+0 3 * * *      sh /etc/cronjob.sh billing-cleanup /api/cron/billing-cleanup
 
 # ── Alle 15 Minuten — Settlement-Retry (Pipeline-Abrechnung) ──
-*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/settlement-retry || true
+*/15 * * * *   sh /etc/cronjob.sh settlement-retry /api/cron/settlement-retry
 
 # ── Alle 2 Stunden — Credit-Auto-Reload ──
-0 */2 * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/auto-reload-cron || true
+0 */2 * * *    sh /etc/cronjob.sh auto-reload-cron /api/billing/auto-reload-cron
 
 # ── Monatlich am 1. um 00:00 UTC — Monatsrechnung ──
-0 0 1 * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/monthly-invoice || true
+0 0 1 * *      sh /etc/cronjob.sh monthly-invoice /api/billing/monthly-invoice
 
 # ── 03:00 UTC (05:00 CEST) — Abgelaufene Credits verfallen lassen ──
-0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/billing/expire-credits || true
+0 3 * * *      sh /etc/cronjob.sh expire-credits /api/billing/expire-credits
 
 # ── 04:20 UTC montags — EU-Sanktionsliste aktualisieren (§ 8c RAO) ──
 # Lädt die konsolidierte EU-Finanzsanktionsliste und ersetzt die gespeicherte
 # Fassung. Jede Identitätsprüfung vermerkt, gegen welchen Stand geprüft wurde.
-20 4 * * 1     curl -fsS --max-time 280 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/sanctions-sync || true
+20 4 * * 1     sh /etc/cronjob.sh sanctions-sync /api/cron/sanctions-sync --max-time 280
 
 # Law corpus inventory for the operator dashboard (/ops/corpus). Every 10 min,
 # not hourly: since 2026-09-24 every DB number on that page comes from this
 # snapshot (the live pages×chunks join took 38 s and was polled every 5 s).
 # One run costs ~25 s of DB time.
-*/10 * * * *   curl -fsS --max-time 590 -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/corpus-inventory || true
+*/10 * * * *   sh /etc/cronjob.sh corpus-inventory /api/cron/corpus-inventory --max-time 590
 
 # ── 08:20 UTC (10:20 CEST) — NPS-Detraktor-Triage ──
 # Meldet neue Mandanten-Feedbacks mit Score ≤ 6 per Mail an die Kanzlei.
-20 8 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/feedback-triage || true
+20 8 * * *     sh /etc/cronjob.sh feedback-triage /api/cron/feedback-triage
 
 # ── Alle 15 Minuten — Agent-Tasks (assigneeType=agent, pending) ──
 # Bearbeitet agentische Aufgaben mit Aktenkontext; Ergebnis landet als
 # needs_review in der Akte. Budget-Deckel: max. 10 Tasks pro Lauf.
-*/15 * * * *   curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/agent-tasks || true
+*/15 * * * *   sh /etc/cronjob.sh agent-tasks /api/cron/agent-tasks

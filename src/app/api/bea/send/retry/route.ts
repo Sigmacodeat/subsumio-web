@@ -12,6 +12,8 @@ import {
 import { buildXJustizXml, type XJustizMetadata } from "@/lib/xjustiz";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { engineWriteBestEffort } from "@/lib/engine-write";
+import { enforceFileCourtPolicy, hasCourtName, resolveFilingSender } from "@/lib/bea-send-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +23,13 @@ const retrySchema = z.object({
   court: z.string().min(1).max(300),
   case_number: z.string().max(200).optional(),
   subject: z.string().min(1).max(500),
-  sender_name: z.string().min(1).max(300),
+  // Ignored: the sender always comes from the firm settings.
+  sender_name: z.string().max(300).optional(),
   sender_id: z.string().max(200).optional(),
   priority: z.enum(["normal", "urgent", "fristgebunden"]).default("normal"),
   deadline_date: z.string().optional(),
   deadline_id: z.string().max(200).optional(),
+  verification_override: z.object({ reason: z.string().trim().min(10).max(2000) }).optional(),
 });
 
 function getMiddlewareConfig() {
@@ -48,8 +52,20 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    if (!hasCourtName(body.court)) {
+      return apiError("court_missing", "Bitte das empfangende Gericht angeben", 422);
+    }
+    // Same file_court gate as the first send: the stored draft state decides.
+    const denied = await enforceFileCourtPolicy(
+      ctx,
+      body.draft_slug,
+      body.verification_override?.reason
+    );
+    if (denied) return denied;
+
     // 1. Fetch filing package
     let existingPkg: FilingPackage | null = null;
+    let filingDraftSlug: string | null = null;
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
         headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -59,6 +75,7 @@ export const POST = createHandler(
         const data = await res.json();
         const fm = (data.frontmatter ?? {}) as Record<string, unknown>;
         existingPkg = fm.package as FilingPackage;
+        filingDraftSlug = typeof fm.draft_slug === "string" ? fm.draft_slug : null;
       }
     } catch {
       // ignore
@@ -66,6 +83,14 @@ export const POST = createHandler(
 
     if (!existingPkg) {
       return apiError("filing_not_found", "Filing-Paket nicht gefunden", 404);
+    }
+
+    if (filingDraftSlug && filingDraftSlug !== body.draft_slug) {
+      return apiError(
+        "filing_draft_mismatch",
+        "Das Filing-Paket gehört zu einem anderen Entwurf",
+        409
+      );
     }
 
     // 2. Check retry eligibility
@@ -89,12 +114,15 @@ export const POST = createHandler(
       return apiError("middleware_not_configured", "Middleware nicht konfiguriert", 503);
     }
 
+    const sender = await resolveFilingSender(ctx.brainId, config.senderId);
+    if (sender instanceof Response) return sender;
+
     const metadata: XJustizMetadata = {
       court: body.court,
       caseNumber: body.case_number,
-      senderName: body.sender_name,
+      senderName: sender.name,
       senderRole: "lawyer",
-      senderId: body.sender_id ?? config.senderId,
+      senderId: sender.id,
       subject: body.subject,
       priority: body.priority,
       deadlineDate: body.deadline_date,
@@ -104,9 +132,11 @@ export const POST = createHandler(
     const sendingPkg = sendFiling(retryingPkg, `middleware-retry-${Date.now()}`);
 
     // Persist sending state
-    try {
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-        method: "PATCH",
+    const sendingPersisted = await engineWriteBestEffort(
+      `${ENGINE_URL}/api/pages`,
+      {
+        // No PATCH route for pages in the engine: merge write via POST.
+        method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({
           slug: body.filing_slug,
@@ -114,9 +144,17 @@ export const POST = createHandler(
           merge: true,
         }),
         signal: AbortSignal.timeout(10_000),
-      });
-    } catch {
-      // best-effort
+      },
+      "beA-Versandstatus"
+    );
+    // Without a stored "sending" state a retry would leave no trace if the
+    // request dies mid-way — do not send then.
+    if (!sendingPersisted) {
+      return apiError(
+        "engine_write_failed",
+        "Der Versandstatus konnte nicht gespeichert werden. Es wurde nichts versendet.",
+        502
+      );
     }
 
     try {
@@ -147,9 +185,11 @@ export const POST = createHandler(
           last_error: `Retry failed: HTTP ${middlewareRes.status}: ${errText.slice(0, 500)}`,
           updated_at: new Date().toISOString(),
         };
-        try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-            method: "PATCH",
+        await engineWriteBestEffort(
+          `${ENGINE_URL}/api/pages`,
+          {
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.filing_slug,
@@ -157,10 +197,9 @@ export const POST = createHandler(
               merge: true,
             }),
             signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
-        }
+          },
+          "beA-Fehlerstatus"
+        );
 
         return apiError(
           "middleware_retry_failed",
@@ -183,9 +222,11 @@ export const POST = createHandler(
 
       const finalPkg = confirmReceipt(sendingPkg, receipt);
 
-      try {
-        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-          method: "PATCH",
+      const packagePersisted = await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
+          // No PATCH route for pages in the engine: merge write via POST.
+          method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify({
             slug: body.filing_slug,
@@ -193,16 +234,18 @@ export const POST = createHandler(
             merge: true,
           }),
           signal: AbortSignal.timeout(10_000),
-        });
-      } catch {
-        // best-effort
-      }
+        },
+        "beA-Versandstatus"
+      );
 
-      // Update deadline if linked
+      // Update deadline if linked (best effort — reported as deadline_updated)
+      let deadlineUpdated: boolean | null = null;
       if (body.deadline_id && receipt.is_success) {
-        try {
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.deadline_id)}`, {
-            method: "PATCH",
+        deadlineUpdated = await engineWriteBestEffort(
+          `${ENGINE_URL}/api/pages`,
+          {
+            // No PATCH route for pages in the engine: merge write via POST.
+            method: "POST",
             headers: { "Content-Type": "application/json", ...ctx.headers },
             body: JSON.stringify({
               slug: body.deadline_id,
@@ -215,10 +258,9 @@ export const POST = createHandler(
               },
             }),
             signal: AbortSignal.timeout(10_000),
-          });
-        } catch {
-          // best-effort
-        }
+          },
+          "Frist-Erledigung nach beA-Versand"
+        );
       }
 
       broadcastSseEvent(ctx.brainId, "bea.send.completed", {
@@ -245,6 +287,8 @@ export const POST = createHandler(
         confirmation_code: receipt.confirmation_code,
         is_success: receipt.is_success,
         retry_count: sendingPkg.retry_count,
+        package_persisted: packagePersisted,
+        deadline_updated: deadlineUpdated,
       });
     } catch (err) {
       const failedPkg: FilingPackage = {
@@ -253,9 +297,11 @@ export const POST = createHandler(
         last_error: err instanceof Error ? err.message : "Network error on retry",
         updated_at: new Date().toISOString(),
       };
-      try {
-        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.filing_slug)}`, {
-          method: "PATCH",
+      await engineWriteBestEffort(
+        `${ENGINE_URL}/api/pages`,
+        {
+          // No PATCH route for pages in the engine: merge write via POST.
+          method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify({
             slug: body.filing_slug,
@@ -263,10 +309,9 @@ export const POST = createHandler(
             merge: true,
           }),
           signal: AbortSignal.timeout(10_000),
-        });
-      } catch {
-        // best-effort
-      }
+        },
+        "beA-Fehlerstatus"
+      );
 
       return apiError(
         "middleware_network_error",

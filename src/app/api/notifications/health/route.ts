@@ -14,7 +14,7 @@ export const GET = createHandler(
     const whatsappConfigured = !!(
       process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN
     );
-    const pushConfigured = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVER_KEY);
+    const pushConfigured = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVICE_ACCOUNT_PATH);
 
     const channels: Array<{
       channel: string;

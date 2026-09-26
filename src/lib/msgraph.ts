@@ -8,18 +8,89 @@
  *
  * Config via env:
  *   MS365_CLIENT_ID, MS365_CLIENT_SECRET, MS365_TENANT_ID
+ *   MS365_MAILBOX — the one service mailbox (UPN or object id) the app
+ *     credentials act on; application tokens have no "/me".
+ *   MS365_BRAIN_ID — the one firm this installation-wide access belongs to;
+ *     routes serve it only to that firm (isAppGraphFirm).
  *   MS365_OUTLOOK_FOLDER (optional, default: Inbox)
  *   MS365_CALENDAR_NAME (optional, default: calendar)
  */
 
+import { externalFetchTimeout } from "@/lib/retry";
+
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
+/** Graph data calls (delta pages can be large) — bounded, but not tight. */
+export const GRAPH_FETCH_TIMEOUT_MS = 30_000;
 
 const MS365_CLIENT_ID = process.env.MS365_CLIENT_ID || "";
 const MS365_CLIENT_SECRET = process.env.MS365_CLIENT_SECRET || "";
 const MS365_TENANT_ID = process.env.MS365_TENANT_ID || "";
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
+
+function appMailbox(): string {
+  return (process.env.MS365_MAILBOX || "").trim();
+}
+
+/** Graph path prefix of the service mailbox (`/users/<mailbox>`). */
+function mailboxPath(): string {
+  const mailbox = appMailbox();
+  if (!mailbox) throw new Error("MS365_MAILBOX ist nicht gesetzt");
+  return `/users/${encodeURIComponent(mailbox)}`;
+}
+
+/**
+ * The installation-wide app access belongs to exactly one firm
+ * (MS365_BRAIN_ID). Any other firm, or no binding at all, gets nothing.
+ */
+export function isAppGraphFirm(brainId: string | undefined | null): boolean {
+  const bound = (process.env.MS365_BRAIN_ID || "").trim();
+  return Boolean(bound && brainId && brainId === bound);
+}
+
+export class GraphLinkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GraphLinkError";
+  }
+}
+
+/**
+ * A paging/delta link as Graph returned it for the service mailbox's mail
+ * folders. Anything else — another host, another mailbox, another resource,
+ * dot segments — is refused. Returns the path relative to GRAPH_BASE.
+ */
+export function graphMailLinkPath(link: string): string {
+  let url: URL;
+  try {
+    url = new URL(link);
+  } catch {
+    throw new GraphLinkError("Ungültiger Sync-Link");
+  }
+  if (url.protocol !== "https:" || url.hostname !== "graph.microsoft.com" || url.port) {
+    throw new GraphLinkError("Sync-Link muss auf Microsoft Graph zeigen");
+  }
+  if (url.username || url.password) throw new GraphLinkError("Ungültiger Sync-Link");
+  const raw = url.pathname;
+  if (/%2e|%2f|%5c|\\/i.test(raw) || raw.split("/").some((seg) => seg === "." || seg === "..")) {
+    throw new GraphLinkError("Ungültiger Sync-Link");
+  }
+  const mailbox = appMailbox().toLowerCase();
+  if (!mailbox) throw new GraphLinkError("MS365_MAILBOX ist nicht gesetzt");
+  const lower = raw.toLowerCase();
+  const enc = encodeURIComponent(mailbox).toLowerCase();
+  const allowed = [
+    `/v1.0/users/${enc}/mailfolders/`,
+    `/v1.0/users/${mailbox}/mailfolders/`,
+    `/v1.0/users('${enc}')/mailfolders`,
+    `/v1.0/users('${mailbox}')/mailfolders`,
+  ];
+  if (!allowed.some((prefix) => lower.startsWith(prefix))) {
+    throw new GraphLinkError("Sync-Link gehört nicht zum Kanzlei-Postfach");
+  }
+  return `${raw.slice("/v1.0".length)}${url.search}`;
+}
 
 export async function getGraphToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
@@ -43,6 +114,8 @@ export async function getGraphToken(): Promise<string> {
         scope: GRAPH_SCOPE,
         grant_type: "client_credentials",
       }),
+      // A hanging sign-in call must not hold the sync run forever.
+      signal: externalFetchTimeout(),
     }
   );
 
@@ -63,6 +136,8 @@ async function graphFetch(path: string, options?: RequestInit): Promise<Response
   const token = await getGraphToken();
   return fetch(`${GRAPH_BASE}${path}`, {
     ...options,
+    // Bounded like every external call; a caller's own signal wins.
+    signal: options?.signal ?? externalFetchTimeout(GRAPH_FETCH_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -126,7 +201,7 @@ export async function syncCalendar(opts?: {
     params.set("$filter", `start/dateTime ge ${opts.since}`);
   }
 
-  const path = `/me/calendars/${encodeURIComponent(calendarName)}/events?${params}`;
+  const path = `${mailboxPath()}/calendars/${encodeURIComponent(calendarName)}/events?${params}`;
   const data = await graphGetJson<{
     value: OutlookEvent[];
     "@odata.deltaLink"?: string;
@@ -165,10 +240,13 @@ export async function createCalendarEvent(event: {
     categories: event.categories,
   };
 
-  const res = await graphFetch(`/me/calendars/${encodeURIComponent(calendarName)}/events`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  const res = await graphFetch(
+    `${mailboxPath()}/calendars/${encodeURIComponent(calendarName)}/events`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    }
+  );
 
   if (!res.ok) {
     const text = await res.text();
@@ -212,7 +290,7 @@ export async function syncMail(opts?: {
       value: OutlookMessage[];
       "@odata.deltaLink"?: string;
       "@odata.nextLink"?: string;
-    }>(opts.deltaLink.replace(GRAPH_BASE, ""));
+    }>(graphMailLinkPath(opts.deltaLink));
     return {
       messages: data.value ?? [],
       deltaLink: data["@odata.deltaLink"],
@@ -228,7 +306,7 @@ export async function syncMail(opts?: {
     $orderby: "receivedDateTime desc",
   });
 
-  const path = `/me/mailFolders/${encodeURIComponent(folder)}/messages?${params}`;
+  const path = `${mailboxPath()}/mailFolders/${encodeURIComponent(folder)}/messages?${params}`;
   const data = await graphGetJson<{
     value: OutlookMessage[];
     "@odata.deltaLink"?: string;
@@ -264,7 +342,9 @@ export async function syncContacts(opts?: { maxResults?: number }): Promise<{
     $select: "id,displayName,emailAddresses,phoneNumbers,companyName,jobTitle",
   });
 
-  const data = await graphGetJson<{ value: OutlookContact[] }>(`/me/contacts?${params}`);
+  const data = await graphGetJson<{ value: OutlookContact[] }>(
+    `${mailboxPath()}/contacts?${params}`
+  );
   return {
     contacts: data.value ?? [],
     syncedAt: new Date().toISOString(),
@@ -283,5 +363,5 @@ export async function checkGraphHealth(): Promise<{ ok: boolean; error?: string 
 }
 
 export function isMsGraphConfigured(): boolean {
-  return Boolean(MS365_CLIENT_ID && MS365_CLIENT_SECRET && MS365_TENANT_ID);
+  return Boolean(MS365_CLIENT_ID && MS365_CLIENT_SECRET && MS365_TENANT_ID && appMailbox());
 }

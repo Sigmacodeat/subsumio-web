@@ -11,6 +11,7 @@ import { withKeyedLock } from "./keyed-lock";
 import { portalTokenHash } from "./portal-token";
 
 import { logger } from "./logger";
+import { engineWriteOrThrow } from "@/lib/engine-write";
 const log = logger("lib/portal-links");
 
 export interface PortalLinkEntry {
@@ -83,30 +84,42 @@ export function portalLinkStatus(
  * other's registry entries. Best-effort: a failed write leaves the link
  * working but unlisted (revocable via raw token or by disabling the portal).
  */
+/**
+ * Lock key for a matter's link registry. Scoped by the firm (engine source
+ * header) so two firms with the same matter slug never wait on each other.
+ */
+export function portalLinksLockKey(headers: Record<string, string>, caseSlug: string): string {
+  return `portal-links:${headers["x-subsumio-source"] ?? ""}:${caseSlug}`;
+}
+
 export async function registerPortalLink(
   headers: Record<string, string>,
   caseSlug: string,
   entry: Omit<PortalLinkEntry, "token_hash"> & { token: string }
 ): Promise<void> {
   try {
-    await withKeyedLock(`portal-links:${caseSlug}`, async () => {
+    await withKeyedLock(portalLinksLockKey(headers, caseSlug), async () => {
       const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, {
         headers,
         signal: AbortSignal.timeout(10_000),
       });
-      if (!getRes.ok) return;
+      if (!getRes.ok) throw new Error(`case read failed: HTTP ${getRes.status}`);
       const page = (await getRes.json()) as { frontmatter?: Record<string, unknown> };
       const links = appendPortalLink(page.frontmatter, entry);
-      await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
-          slug: caseSlug,
-          merge: true,
-          frontmatter: { portal_links: links },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      });
+      await engineWriteOrThrow(
+        `${ENGINE_URL}/api/pages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({
+            slug: caseSlug,
+            merge: true,
+            frontmatter: { portal_links: links },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        },
+        "Portal-Link-Register"
+      );
     });
   } catch (err) {
     log.error(

@@ -1,9 +1,60 @@
 import { describe, expect, it } from "vitest";
 import {
+  confirmPipelinePlan,
   legalPipelineIdempotencyKey,
+  presignPipelineRouting,
   shouldAutoTriggerUploadPipeline,
   uploadPipelineCaseSlug,
 } from "../src/core/upload-pipeline-routing.ts";
+
+describe("direct upload (presign → confirm) honours defer and source", () => {
+  it("the signed token's defer flag reaches confirm: no pipeline, no post-upload tasks", () => {
+    const r = presignPipelineRouting({
+      payload: { source: "documents", defer_pipeline: true },
+      bodySource: "documents",
+    });
+    expect(r).toEqual({ source: "documents", deferPipeline: true });
+    expect(confirmPipelinePlan(r)).toEqual({
+      autoTriggerLegalPipeline: false,
+      persistPostUploadTasks: false,
+      pipelineDeferred: true,
+    });
+  });
+
+  it("a wiki / Kanzleiwissen upload never starts the legal pipeline", () => {
+    const r = presignPipelineRouting({ payload: { source: "wiki" } });
+    expect(confirmPipelinePlan(r).autoTriggerLegalPipeline).toBe(false);
+    // …but still gets its per-document tasks (same as the form upload).
+    expect(confirmPipelinePlan(r).persistPostUploadTasks).toBe(true);
+  });
+
+  it("the token's source wins over the body", () => {
+    expect(
+      presignPipelineRouting({ payload: { source: "wiki" }, bodySource: "documents" }).source
+    ).toBe("wiki");
+  });
+
+  it("a body flag can defer, but never re-enable what the token deferred", () => {
+    expect(
+      presignPipelineRouting({ payload: { source: "documents" }, bodyDefer: "true" }).deferPipeline
+    ).toBe(true);
+    expect(
+      presignPipelineRouting({
+        payload: { source: "documents", defer_pipeline: true },
+        bodyDefer: false,
+      }).deferPipeline
+    ).toBe(true);
+  });
+
+  it("a normal legal upload runs its pipeline and tasks", () => {
+    const r = presignPipelineRouting({ payload: null, bodySource: "documents" });
+    expect(confirmPipelinePlan(r)).toEqual({
+      autoTriggerLegalPipeline: true,
+      persistPostUploadTasks: true,
+      pipelineDeferred: false,
+    });
+  });
+});
 
 describe("canonical upload pipeline routing", () => {
   it("runs assigned documents against their legal case, never the document slug", () => {

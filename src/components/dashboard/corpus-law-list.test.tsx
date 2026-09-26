@@ -2,7 +2,7 @@
  * Gesetzesliste im Bestand: Zeilen als echte Links auf die Detailseite,
  * Filter in der URL, „Weitere anzeigen" statt Scrollbox, Nachladen mit CSRF.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type MockInstance } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/ui/toast";
@@ -97,8 +97,7 @@ function renderList() {
   );
 }
 
-const spyFetch = () => vi.spyOn(global, "fetch");
-let fetchSpy: ReturnType<typeof spyFetch>;
+let fetchSpy: MockInstance<typeof fetch>;
 beforeEach(() => {
   vi.restoreAllMocks();
   nav.params = new URLSearchParams();

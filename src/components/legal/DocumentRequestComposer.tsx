@@ -16,12 +16,15 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
+import { issuePortalLink } from "@/lib/portal-link-client";
 
 interface DocumentRequestComposerProps {
   slug: string;
   caseSlug: string;
   messageDraft?: string;
-  portalUrl?: string | null;
+  /** The request offers the client portal; a fresh link is issued on send. */
+  portalLink?: boolean;
   items: string[];
   recipientPhone?: string;
   recipientEmail?: string;
@@ -36,7 +39,7 @@ export function DocumentRequestComposer({
   slug,
   caseSlug,
   messageDraft,
-  portalUrl,
+  portalLink,
   items,
   recipientPhone,
   recipientEmail,
@@ -63,12 +66,12 @@ export function DocumentRequestComposer({
   }> = [
     { key: "whatsapp", label: "WhatsApp", icon: MessageSquareText, available: !!recipientPhone },
     { key: "email", label: "E-Mail", icon: Mail, available: !!recipientEmail },
-    { key: "portal", label: "Portal", icon: ExternalLink, available: !!portalUrl },
+    { key: "portal", label: "Portal", icon: ExternalLink, available: !!portalLink },
   ];
 
   const updateStatus = useCallback(
     async (status: "sent" | "fulfilled") => {
-      const res = await fetch("/api/document-requests", {
+      const res = await csrfFetch("/api/document-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,8 +97,10 @@ export function DocumentRequestComposer({
         await updateStatus("sent");
         addToast({ type: "success", title: "Dokumentenanfrage per WhatsApp versendet" });
       } else if (channel === "email" && recipientEmail) {
-        const res = await fetch("/api/cases/send-email", {
+        const res = await csrfFetch("/api/cases/send-email", {
           method: "POST",
+          // Long-running: csrfFetch would otherwise abort after 30s.
+          signal: AbortSignal.timeout(300_000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             to: recipientEmail,
@@ -107,8 +112,9 @@ export function DocumentRequestComposer({
         if (!res.ok) throw new Error("E-Mail-Versand fehlgeschlagen");
         await updateStatus("sent");
         addToast({ type: "success", title: "Dokumentenanfrage per E-Mail versendet" });
-      } else if (channel === "portal" && portalUrl) {
-        const url = `${window.location.origin}${portalUrl}`;
+      } else if (channel === "portal" && portalLink) {
+        // Not stored anywhere: issued (and hash-registered) for this send.
+        const url = await issuePortalLink(caseSlug);
         await navigator.clipboard.writeText(url);
         await updateStatus("sent");
         addToast({
@@ -133,7 +139,7 @@ export function DocumentRequestComposer({
     channel,
     recipientPhone,
     recipientEmail,
-    portalUrl,
+    portalLink,
     message,
     caseSlug,
     updateStatus,
@@ -252,9 +258,9 @@ export function DocumentRequestComposer({
           Empfänger: <span className="font-mono">{recipientEmail}</span>
         </p>
       )}
-      {channel === "portal" && portalUrl && (
+      {channel === "portal" && portalLink && (
         <p className="text-xs text-[color:var(--ds-text-muted)]">
-          Portal-Link wird kopiert: <span className="font-mono">{portalUrl}</span>
+          Beim Senden wird ein neuer Portal-Link erzeugt und kopiert.
         </p>
       )}
 

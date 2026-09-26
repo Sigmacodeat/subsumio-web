@@ -47,14 +47,21 @@ jobs:
         run: bun test test/e2e/mechanical.test.ts test/e2e/mcp.test.ts
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
+      # PGLite and Postgres must answer identically (CLAUDE.md: engine parity).
+      # Without a database the parity suite skips, so it runs here against the
+      # job's Postgres service.
+      - name: Engine parity (PGLite vs Postgres)
+        run: bun test test/e2e/engine-parity.test.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gbrain_test
 
   tier2:
     name: Tier 2 (LLM Skills)
     runs-on: ubuntu-latest
-    # Runs on every push/PR now (promoted from schedule-only in v0.19.0).
-    # Tier 1 must pass first; Tier 2 uses OPENAI_API_KEY + ANTHROPIC_API_KEY
-    # from repo/org secrets. Nightly + manual triggers still supported via
-    # the workflow-level `on:` list.
+    # Paid model calls (OPENAI_API_KEY + ANTHROPIC_API_KEY): runs only when
+    # started by hand or on a pull request labelled `ki-pruefung`, not on
+    # every push or the nightly schedule. Tier 1 must pass first.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'ki-pruefung')
     needs: tier1
     defaults:
       run:

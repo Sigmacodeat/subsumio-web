@@ -9,6 +9,7 @@ import { Pool, type PoolConfig } from "pg";
 import { AuthError } from "@/lib/errors";
 import type { OnboardingProgress } from "@/lib/types";
 import { trialEndsAtFrom } from "@/lib/billing/trial";
+import type { LegalAcceptance } from "@/lib/auth/legal-acceptance";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -50,16 +51,26 @@ export interface User {
   pendingTwoFactorExpiresAt?: string | null;
   /** Hashed 2FA backup/recovery codes (SHA-256 hex). Consumed on use. */
   twoFactorBackupCodes?: string[] | null;
+  /** Last accepted TOTP time step (unix/30) — a code is never accepted twice. */
+  twoFactorLastStep?: number | null;
   /** Docusign OAuth tokens (server-persisted, encrypt-at-rest in production). */
   docusignAccessToken?: string | null;
   docusignRefreshToken?: string | null;
   docusignTokenExpiresAt?: string | null;
+  /** E-Mail/Name des verbundenen DocuSign-Kontos (für die UI, nicht sensitiv). */
+  docusignUserEmail?: string | null;
+  docusignUserName?: string | null;
   /** Microsoft 365 delegated OAuth (per-user Kalender, WP-4.19). */
   ms365AccessToken?: string | null;
   ms365RefreshToken?: string | null;
   ms365TokenExpiresAt?: string | null;
   /** UPN/E-Mail des verbundenen M365-Accounts (für die UI, nicht sensitiv). */
   ms365UserEmail?: string | null;
+  /** "needs_reconnect" once Microsoft refused the refresh (revoked/expired). */
+  ms365SyncError?: string | null;
+  ms365SyncErrorAt?: string | null;
+  /** Last successful per-user calendar sync. */
+  ms365LastSyncAt?: string | null;
   /** SSO identity link (WorkOS). */
   workosUserId?: string | null;
   ssoProvider?: string | null;
@@ -67,6 +78,14 @@ export interface User {
   scimExternalId?: string | null;
   /** ISO timestamp when user was deactivated via SCIM (null = active). Not deleted for audit-trail. */
   deactivatedAt?: string | null;
+  /** Soft-delete (DSGVO): set by the self-service or operator deletion; the
+   *  row is hard-deleted after the grace period (src/lib/user-purge.ts). */
+  deletedAt?: string | null;
+  /** Self-deletion of a single-lawyer firm: the brain's data is purged with
+   *  the account after the grace period (holds and retention re-checked). */
+  purgeBrainOnDelete?: boolean;
+  /** Firm the account belonged to when it was deleted (legal-hold re-check). */
+  deletedFromOrgId?: string | null;
   /** API keys (server-persisted, encrypt-at-rest in production). */
   openaiKey?: string | null;
   anthropicKey?: string | null;
@@ -103,6 +122,11 @@ export interface User {
   davTokenCreatedAt?: string | null;
   /** Last time a DAV client used the token (ISO). */
   davTokenLastUsedAt?: string | null;
+  /** Current acceptance of AGB / Datenschutzerklärung / AVV (versions + time).
+   *  See src/lib/auth/legal-acceptance.ts. */
+  legalAcceptance?: LegalAcceptance | null;
+  /** Every acceptance ever recorded for this account (append-only). */
+  legalAcceptanceHistory?: LegalAcceptance[] | null;
   createdAt: string;
 }
 
@@ -139,6 +163,20 @@ export interface Org {
   /** Members the suspension deactivated — reactivation restores exactly these. */
   suspendedMemberIds?: string[] | null;
   /**
+   * Deletion of the firm's data after the contract ended (AVV § 9), set by
+   * the platform operator: the brain is purged by the trash-purge cron once
+   * this date has passed (legal holds, retention and open matters are checked
+   * again then). See src/lib/firm-deletion.ts.
+   */
+  deletionScheduledFor?: string | null;
+  deletionRequestedAt?: string | null;
+  deletionRequestedBy?: string | null;
+  deletionReason?: string | null;
+  /** Members the scheduling deactivated — a cancellation restores exactly these. */
+  deletionDeactivatedMemberIds?: string[] | null;
+  /** Set once the firm's data was purged; the record stays for the audit trail. */
+  dataDeletedAt?: string | null;
+  /**
    * The WorkOS organization (org_…) that is this firm's SSO tenant. When set,
    * a WorkOS login only signs into an existing member account if WorkOS
    * authenticated the user within THIS organization (see
@@ -148,6 +186,20 @@ export interface Org {
    * through, and are already bound to, that exact WorkOS identity.
    */
   workosOrganizationId?: string | null;
+  /**
+   * The WorkOS Directory Sync directory (directory_…) of THIS firm. Set by the
+   * platform operator when the firm's directory is connected. Without it the
+   * firm cannot pull a directory (see syncFromWorkOS in src/lib/scim.ts).
+   */
+  workosDirectoryId?: string | null;
+  /** Result of this firm's last manual directory sync (SCIM settings page). */
+  scimLastSync?: { at: string; result: unknown } | null;
+  /**
+   * Directory group → role, set by a firm admin in the SCIM settings. Key:
+   * the group's display name, trimmed and lower-cased. Never "admin" — a
+   * directory group cannot make anyone a firm admin (src/lib/scim-groups.ts).
+   */
+  scimGroupRoles?: Record<string, "lawyer" | "assistant" | "client_viewer"> | null;
   /**
    * Per-email cutoff for org invites: when a member is removed (or leaves),
    * invites minted before this timestamp must not be usable to (re-)join —
@@ -182,6 +234,8 @@ export function withInviteRevoked(
 
 export interface OrgStore {
   getById(id: string): Promise<Org | null>;
+  /** The firm whose shared brain this is, if any. */
+  getByBrainId(brainId: string): Promise<Org | null>;
   create(org: Org): Promise<Org>;
   update(id: string, patch: Partial<Org>): Promise<Org | null>;
   delete(id: string): Promise<void>;
@@ -356,6 +410,9 @@ class FileOrgStore implements OrgStore {
   async getById(id: string) {
     return (await this.load()).find((o) => o.id === id) ?? null;
   }
+  async getByBrainId(brainId: string) {
+    return (await this.load()).find((o) => o.brainId === brainId) ?? null;
+  }
   async create(org: Org) {
     const orgs = await this.load();
     orgs.push(org);
@@ -408,9 +465,12 @@ function authPool(): Pool {
     });
   }
   if (!globalThis.__subsumioAuthPool) {
+    // Serves every request's session/revocation check, logins, audit rows and
+    // rate limits. Keyed locks use a pool of their own (src/lib/keyed-lock.ts).
+    const max = parseInt(env("SUBSUMIO_AUTH_DB_POOL_MAX") ?? "", 10);
     const config: PoolConfig = {
       connectionString: AUTH_DB_URL,
-      max: 5,
+      max: Number.isFinite(max) && max > 0 ? max : 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
     };
@@ -640,6 +700,15 @@ class PostgresOrgStore implements OrgStore {
     return rows[0] ? rowToOrg(rows[0]) : null;
   }
 
+  async getByBrainId(brainId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: Org }>(
+      "SELECT data FROM subsumio_orgs WHERE data->>'brainId' = $1 ORDER BY created_at ASC LIMIT 1",
+      [brainId]
+    );
+    return rows[0] ? rowToOrg(rows[0]) : null;
+  }
+
   async create(org: Org) {
     const pool = await this.ready();
     await pool.query(
@@ -821,6 +890,7 @@ export type PublicUser = Omit<
   | "zeroEntropyKey"
   | "calendarFeedTokenHash"
   | "davTokenHash"
+  | "legalAcceptanceHistory"
 >;
 export function toPublic(user: User): PublicUser {
   const {
@@ -840,6 +910,8 @@ export function toPublic(user: User): PublicUser {
     // Feed/DAV credential hashes never leave the server.
     calendarFeedTokenHash: _cfh,
     davTokenHash: _dth,
+    // Acceptance history stays server-side; the current record is public.
+    legalAcceptanceHistory: _lah,
     ...pub
   } = user;
   void _ph;
@@ -857,6 +929,7 @@ export function toPublic(user: User): PublicUser {
   void _zek;
   void _cfh;
   void _dth;
+  void _lah;
   return pub;
 }
 

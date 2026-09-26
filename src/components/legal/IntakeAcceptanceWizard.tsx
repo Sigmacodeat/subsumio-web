@@ -31,11 +31,7 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { KYCVerification } from "@/lib/kyc";
 import { encodeSlugPath } from "@/lib/utils";
-import {
-  canAcceptMandate,
-  updateConflictCheck,
-  type IntakeAcceptanceWorkflow,
-} from "@/lib/intake-acceptance";
+import { canAcceptMandate, type IntakeAcceptanceWorkflow } from "@/lib/intake-acceptance";
 import type { ConflictCheckResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -99,6 +95,7 @@ export function IntakeAcceptanceWizard({
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState<ConflictCheckResponse | null>(null);
   const [waiverReason, setWaiverReason] = useState("");
+  const [waiving, setWaiving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -170,6 +167,9 @@ export function IntakeAcceptanceWizard({
     setDirty(true);
   }, []);
 
+  // The check runs on the server (client AND opponent, each with its side in
+  // the new mandate) and the server records it with the real user — the
+  // wizard only displays the result.
   async function performConflictCheck() {
     const name = item.frontmatter.client_name?.trim();
     if (!name) {
@@ -179,15 +179,37 @@ export function IntakeAcceptanceWizard({
     setChecking(true);
     setCheckResult(null);
     try {
-      const result = await api.legal.conflictCheck(name);
+      const { data } = await api.intake.conflictCheck(item.slug);
+      const outcome = data.outcome;
+      const result: ConflictCheckResponse = {
+        name: outcome.parties.map((p) => p.name).join(" / "),
+        severity: outcome.severity,
+        explanation: outcome.parties.map((p) => p.explanation).join(" "),
+        matches: (outcome.matches ?? []).map((m) => ({
+          slug: m.slug,
+          title: `${m.title} — ${m.party}`,
+          role: m.role,
+          status: "",
+          matched_name: m.name,
+          exact: m.exact ?? true,
+          assessment: m.assessment,
+        })),
+        checked_cases: 0,
+        disclaimer: "",
+      };
       setCheckResult(result);
-      const next = updateConflictCheck(workflow, result, "current-user");
-      setWorkflow(next);
-      setDirty(true);
+      setWorkflow((prev) => ({ ...prev, conflict_check: data.conflict_check }));
+      onUpdated?.();
       if (result.severity === "critical") {
         addToast({
           type: "warning",
           title: "Kritische Kollision erkannt",
+          description: result.explanation,
+        });
+      } else if (result.severity === "low") {
+        addToast({
+          type: "warning",
+          title: "Treffer prüfen",
           description: result.explanation,
         });
       } else {
@@ -200,6 +222,26 @@ export function IntakeAcceptanceWizard({
       });
     } finally {
       setChecking(false);
+    }
+  }
+
+  // Waiver is decided by the server: role (lawyer/admin), justification and
+  // the real user are checked and recorded there.
+  async function waiveConflict() {
+    setWaiving(true);
+    try {
+      const { data } = await api.intake.waiveConflict(item.slug, waiverReason.trim());
+      setWorkflow((prev) => ({ ...prev, conflict_check: data.conflict_check }));
+      onUpdated?.();
+      addToast({ type: "success", title: "Kollision begründet freigegeben" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: "Freigabe nicht möglich",
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setWaiving(false);
     }
   }
 
@@ -458,51 +500,38 @@ export function IntakeAcceptanceWizard({
                   </div>
                 )}
 
-                {workflow.conflict_check.status === "conflict" && (
-                  <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
-                    <div className="flex items-start gap-2">
-                      <ShieldAlert
-                        size={16}
-                        className="mt-0.5 text-[color:var(--ds-warning-text)]"
-                      />
-                      <p className="text-sm text-[color:var(--ds-warning-text)]">
-                        Konflikt erkannt. Nur Partner/Admin kann mit Begründung freigeben.
-                      </p>
+                {workflow.conflict_check.status === "conflict" &&
+                  !workflow.conflict_check.waived && (
+                    <div className="space-y-2 rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-4">
+                      <div className="flex items-start gap-2">
+                        <ShieldAlert
+                          size={16}
+                          className="mt-0.5 text-[color:var(--ds-warning-text)]"
+                        />
+                        <p className="text-sm text-[color:var(--ds-warning-text)]">
+                          Konflikt erkannt. Nur Anwalt/Admin kann mit Begründung freigeben.
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Freigabe-Begründung</Label>
+                        <Input
+                          value={waiverReason}
+                          onChange={(e) => setWaiverReason(e.target.value)}
+                          placeholder="z. B. beide Parteien haben Einverständnis erklärt"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void waiveConflict()}
+                        disabled={waiving || waiverReason.trim().length < 10}
+                        className="gap-2"
+                      >
+                        <CheckCircle2 size={14} />
+                        Mit Begründung freigeben
+                      </Button>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Freigabe-Begründung</Label>
-                      <Input
-                        value={waiverReason}
-                        onChange={(e) => setWaiverReason(e.target.value)}
-                        placeholder="z. B. beide Parteien haben Einverständnis erklärt"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const next = {
-                          ...workflow,
-                          conflict_check: {
-                            ...workflow.conflict_check,
-                            status: "clear" as const,
-                            waived: true,
-                            waived_by: "current-user",
-                            waived_reason: waiverReason,
-                            waived_at: new Date().toISOString(),
-                          },
-                        };
-                        setWorkflow(next);
-                        setDirty(true);
-                      }}
-                      disabled={!waiverReason.trim()}
-                      className="gap-2"
-                    >
-                      <CheckCircle2 size={14} />
-                      Mit Begründung freigeben
-                    </Button>
-                  </div>
-                )}
+                  )}
               </div>
             )}
 

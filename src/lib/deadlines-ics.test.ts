@@ -36,9 +36,16 @@ function engine(routes: Record<string, unknown>, failing: string[] = []) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-function uids(ics: string): string[] {
+/** RFC 5545 unfolding: CRLF followed by one space/tab continues the line. */
+function contentLines(ics: string): string[] {
   return ics
-    .split("\n")
+    .replace(/\r\n[ \t]/g, "")
+    .split("\r\n")
+    .filter(Boolean);
+}
+
+function uids(ics: string): string[] {
+  return contentLines(ics)
     .filter((l) => l.startsWith("UID:"))
     .map((l) => l.slice(4));
 }
@@ -216,5 +223,54 @@ describe("fristUid / fristenToIcsEntries", () => {
     );
     expect(ics).toContain("SUMMARY:[UNGEPRÜFT] NOTFRIST: Berufung");
     expect(ics).toContain("TRIGGER:-P2D");
+  });
+});
+
+describe("RFC 5545 form", () => {
+  const longTitle =
+    "Berufungsbeantwortung gegen das Urteil des Landesgerichts für Zivilrechtssachen — Äußerung zur Beweiswürdigung und Schätzung nach § 273 ZPO";
+  const ics = buildIcs(
+    fristenToIcsEntries([
+      {
+        id: "legal/deadlines/lang",
+        source: "legal_deadline",
+        source_slug: "legal/deadlines/lang",
+        title: longTitle,
+        case_title: "Müller gegen Österreichische Versicherungsgesellschaft AG — Schadenersatz",
+        due_date: "2026-10-01",
+        vorfrist_date: "2026-09-24",
+        status: "pending",
+        type: "deadline",
+        law: "§ 464 ZPO",
+      } as any,
+    ])
+  );
+  const octets = (s: string) => new TextEncoder().encode(s).length;
+
+  it("ends every line with CRLF and never a bare LF", () => {
+    expect(ics.endsWith("\r\n")).toBe(true);
+    expect(ics.replace(/\r\n/g, "")).not.toContain("\n");
+  });
+
+  it("folds every line to at most 75 octets without breaking UTF-8 characters", () => {
+    const physical = ics.split("\r\n").filter(Boolean);
+    for (const line of physical) expect(octets(line)).toBeLessThanOrEqual(75);
+    expect(physical.some((l) => l.startsWith(" "))).toBe(true);
+    // Unfolding restores the full summary, umlauts and dashes intact.
+    expect(contentLines(ics)).toContain(`SUMMARY:${longTitle}`);
+  });
+
+  it("parses as a well-formed calendar (balanced components, name:value lines)", () => {
+    const lines = contentLines(ics);
+    expect(lines[0]).toBe("BEGIN:VCALENDAR");
+    expect(lines[lines.length - 1]).toBe("END:VCALENDAR");
+    const stack: string[] = [];
+    for (const line of lines) {
+      expect(line).toMatch(/^[A-Z][A-Z0-9-]*(;[^:]*)?:/);
+      if (line.startsWith("BEGIN:")) stack.push(line.slice(6));
+      if (line.startsWith("END:")) expect(stack.pop()).toBe(line.slice(4));
+    }
+    expect(stack).toEqual([]);
+    expect(lines.filter((l) => l === "BEGIN:VEVENT")).toHaveLength(2);
   });
 });

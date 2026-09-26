@@ -15,7 +15,7 @@ import {
 import { Reply, X, ArrowDown, Quote, MessageSquare, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
+import { api, CASE_PICKER_MAX } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
@@ -1004,7 +1004,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 100 });
+        // Every matter up to the picker bound (was: the 100 most recently edited).
+        const pages = await api.brain.listAllPages({ type: "legal_case", max: CASE_PICKER_MAX });
         if (cancelled) return;
         setCases(
           pages
@@ -1312,7 +1313,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const historyForPrompt = messagesRef.current
         .slice(0, -2)
         .filter((m) => !m.error && m.content.trim().length > 0);
-      const { systemPrompt, userInput } = await buildPromptContext({
+      const { systemPrompt, userInput, conversationContext } = await buildPromptContext({
         jurisdiction,
         selectedCaseSlug,
         cases,
@@ -1351,6 +1352,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       try {
         const result = await api.query.think(prompt, {
           instructions: systemPrompt,
+          context: conversationContext,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
@@ -1485,6 +1487,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             try {
               const follow = await api.query.think(buildSafePrompt("", followUpQuery).trim(), {
                 instructions: systemPrompt,
+                context: conversationContext,
                 mode: queryModeToThinkMode(queryMode),
                 queryMode,
                 caseSlug: selectedCaseSlug || context.caseSlug || undefined,
@@ -2034,31 +2037,34 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const regenHistory = currentMsgs
         .slice(0, idx - 1 >= 0 ? idx - 1 : 0)
         .filter((m) => !m.error && m.content.trim().length > 0);
-      const { systemPrompt: regenSystemPrompt, userInput: regenUserInput } =
-        await buildPromptContext({
-          jurisdiction,
-          selectedCaseSlug,
-          cases,
-          contextType: context.type,
-          contextCaseSlug: context.caseSlug,
-          pageSlug: context.pageSlug,
-          pageLabel: context.pageLabel,
-          attachments: userMsg.attachments,
-          replyTo: null,
-          userText: userMsg.content,
-          attachmentFetcher: async (slug) => {
-            const page = await api.brain.getPage(slug);
-            return page.content || "";
-          },
-          userContext,
-          conversationHistory: regenHistory,
-          memoryContext: await buildFullMemoryContext({
-            sessionId: activeSessionId,
-            caseSlug: context.caseSlug,
-            query: userMsg.content,
-            userId: meQuery.data?.user?.id as string | undefined,
-          }).catch(() => ""),
-        });
+      const {
+        systemPrompt: regenSystemPrompt,
+        userInput: regenUserInput,
+        conversationContext: regenContext,
+      } = await buildPromptContext({
+        jurisdiction,
+        selectedCaseSlug,
+        cases,
+        contextType: context.type,
+        contextCaseSlug: context.caseSlug,
+        pageSlug: context.pageSlug,
+        pageLabel: context.pageLabel,
+        attachments: userMsg.attachments,
+        replyTo: null,
+        userText: userMsg.content,
+        attachmentFetcher: async (slug) => {
+          const page = await api.brain.getPage(slug);
+          return page.content || "";
+        },
+        userContext,
+        conversationHistory: regenHistory,
+        memoryContext: await buildFullMemoryContext({
+          sessionId: activeSessionId,
+          caseSlug: context.caseSlug,
+          query: userMsg.content,
+          userId: meQuery.data?.user?.id as string | undefined,
+        }).catch(() => ""),
+      });
       const prompt = buildSafePrompt("", regenUserInput).trim();
 
       const controller = new AbortController();
@@ -2069,6 +2075,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       try {
         const result = await api.query.think(prompt, {
           instructions: regenSystemPrompt,
+          context: regenContext,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
           caseSlug: selectedCaseSlug || context.caseSlug || undefined,
@@ -2308,7 +2315,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     const isYesterday = date.toDateString() === yesterday.toDateString();
     if (isToday) return t("chat.today");
     if (isYesterday) return t("chat.yesterday");
-    return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+    return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-AT", {
       weekday: "long",
       day: "numeric",
       month: "long",

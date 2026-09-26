@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { pageTypeOf } from "@/lib/types";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { signPortalToken } from "@/lib/portal-token";
 import type { BrainPage } from "@/lib/types";
 
 export type DocumentRequestStatus =
@@ -15,7 +14,11 @@ export interface DocumentRequestItem {
   key: string;
   label: string;
   required: boolean;
+  /** Set only by the firm after checking the file: the item counts as received. */
   received_document_slug?: string;
+  /** A client upload for this item, waiting for the firm's check. */
+  submitted_document_slug?: string;
+  submitted_at?: string;
 }
 
 export interface DocumentRequestFrontmatter {
@@ -25,8 +28,11 @@ export interface DocumentRequestFrontmatter {
   channel: "whatsapp" | "portal" | "email" | "manual";
   status: DocumentRequestStatus;
   items: DocumentRequestItem[];
-  portal_token_id?: string;
-  portal_url?: string;
+  /**
+   * The request offers the client portal for the upload. The link itself is
+   * never stored — it is issued fresh (hash-registered) whenever it is sent.
+   */
+  portal_link?: boolean;
   /** The client's WhatsApp number reminders go to (E.164); none → no WhatsApp reminder. */
   recipient_phone?: string;
   source_event_slug?: string;
@@ -75,6 +81,8 @@ function normalizeItem(item: string | Partial<DocumentRequestItem>): DocumentReq
     label,
     required: item.required ?? true,
     received_document_slug: item.received_document_slug,
+    submitted_document_slug: item.submitted_document_slug,
+    submitted_at: item.submitted_at,
   };
 }
 
@@ -108,15 +116,6 @@ export async function buildDocumentRequest(
   const stamp = at.getTime();
   const casePart = safeSlugPart(input.caseSlug.split("/").pop() || input.caseSlug || randomUUID());
   const slug = `legal/document-requests/${casePart}-${stamp}`;
-  let portalUrl: string | undefined;
-  let portalTokenId: string | undefined;
-
-  if (input.includePortalLink) {
-    const token = await signPortalToken(input.caseSlug, undefined, input.brainId);
-    portalTokenId = token.slice(-12);
-    portalUrl = `/portal/${token}`;
-  }
-
   const itemList = items
     .map((item) => `- ${item.label}${item.required ? " (erforderlich)" : ""}`)
     .join("\n");
@@ -134,8 +133,7 @@ export async function buildDocumentRequest(
       channel: input.channel ?? "whatsapp",
       status: input.status ?? "draft",
       items,
-      portal_token_id: portalTokenId,
-      portal_url: portalUrl,
+      ...(input.includePortalLink ? { portal_link: true } : {}),
       ...(input.recipientPhone ? { recipient_phone: input.recipientPhone } : {}),
       source_event_slug: input.sourceEventSlug,
       message_draft: messageDraft,
@@ -181,12 +179,19 @@ export function documentRequestFromPage(page: BrainPage): {
   frontmatter: DocumentRequestFrontmatter;
   content?: string;
 } | null {
-  const fm = page.frontmatter as Partial<DocumentRequestFrontmatter> | undefined;
   if (pageTypeOf(page) !== "document_request") return null;
+  // Older requests stored the portal link with its access token — it is
+  // never handed on; only the fact that the portal was offered remains.
+  const {
+    portal_url: legacyUrl,
+    portal_token_id: _legacyTokenId,
+    ...fm
+  } = (page.frontmatter ?? {}) as Record<string, unknown>;
+  if (typeof legacyUrl === "string" && legacyUrl) fm.portal_link = true;
   return {
     slug: page.slug,
     title: page.title,
     content: page.content,
-    frontmatter: fm as DocumentRequestFrontmatter,
+    frontmatter: fm as unknown as DocumentRequestFrontmatter,
   };
 }

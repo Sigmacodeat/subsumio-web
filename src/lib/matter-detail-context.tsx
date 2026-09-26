@@ -32,7 +32,8 @@ import {
   uploadFiles as presignedUploadFiles,
   type UploadProgress as PresignedProgress,
 } from "@/lib/presigned-upload";
-import { DEADLINE_RULES, computeDeadlineStatus, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { computeDeadlineStatus, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { zonedDateString } from "@/lib/datetime";
 import { STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
 import {
   deadlineFormSchema,
@@ -73,6 +74,12 @@ import {
 
 import { Clock, PauseCircle, CheckCircle2, XCircle, AlertTriangle, Archive } from "lucide-react";
 import type { StatusColor } from "@/lib/status-colors";
+import {
+  docProcessingStatus as docProcessingStatusOf,
+  REVIEW_STATUS_KEYS,
+  type DocStatusFields,
+  type DocStatusKey,
+} from "@/lib/doc-processing-status";
 
 export const STATUS_CONFIG: Record<
   string,
@@ -137,6 +144,9 @@ interface MatterDetailContextValue {
   // Deadlines
   deadlinesList: DeadlineEntry[];
   setDeadlinesList: React.Dispatch<React.SetStateAction<DeadlineEntry[]>>;
+  /** The matter's standalone deadline pages could not be loaded — the list
+   *  shows only the deadlines stored in the matter itself (incomplete). */
+  standaloneDeadlinesFailed: boolean;
   editingDeadlineIndex: number | null;
   setEditingDeadlineIndex: (v: number | null) => void;
   deadlineRuleKey: string;
@@ -265,13 +275,7 @@ interface MatterDetailContextValue {
   confirmSuggestedParty: (index: number, confirmed: boolean) => Promise<void>;
 
   // Utilities
-  docProcessingStatus: (doc: {
-    extraction_status?: string;
-    extraction_error_code?: string;
-    ocr_status?: string;
-    extraction_unverified?: boolean;
-    analysis_status?: string;
-  }) => { key: string; color: string };
+  docProcessingStatus: (doc: DocStatusFields) => { key: DocStatusKey; color: string };
   formatUploadBytes: (bytes: number) => string;
   formatUploadEta: (seconds?: number) => string;
   uploadStatusLabel: (
@@ -301,6 +305,31 @@ interface MatterDetailContextValue {
 }
 
 const MatterDetailContext = createContext<MatterDetailContextValue | null>(null);
+
+/** The server's conflict outcome (PATCH /api/pages/<matter>) as the matter view's warning. */
+function serverConflictResult(
+  warning: { matches?: Array<{ name?: string; slug?: string; role?: string; title?: string }> },
+  severity: "critical" | "low"
+): ConflictCheckResult {
+  const matches = warning?.matches ?? [];
+  const names = matches.map((m) => m.name ?? m.title ?? "").filter(Boolean);
+  return {
+    hasConflict: true,
+    severity,
+    hits: matches.map((m) => ({
+      contact: {
+        name: m.name ?? m.title ?? "",
+        ...(m.slug ? { slug: m.slug } : {}),
+        role: m.role === "client" || m.role === "opponent" ? m.role : "other",
+      },
+      reason: `Server-seitig erkannt: ${m.name ?? m.title ?? ""}${m.title && m.title !== m.name ? ` (${m.title})` : ""}`,
+      similarity: 1,
+      matchType: "exact" as const,
+    })),
+    checkedContacts: 0,
+    warning: `Interessenkollision erkannt (server-seitig): ${names.join(", ")}`,
+  };
+}
 
 export function useMatterDetail(): MatterDetailContextValue {
   const ctx = useContext(MatterDetailContext);
@@ -399,11 +428,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const [showEvidenceForm, setShowEvidenceForm] = useState(false);
 
   const [deadlinesList, setDeadlinesList] = useState<DeadlineEntry[]>([]);
+  const [standaloneDeadlinesFailed, setStandaloneDeadlinesFailed] = useState(false);
   const [editingDeadlineIndex, setEditingDeadlineIndex] = useState<number | null>(null);
-  const [deadlineRuleKey, setDeadlineRuleKey] = useState(DEADLINE_RULES[0].key);
-  const [deadlineStartDate, setDeadlineStartDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  // No preselected Fristart: the tab offers the Rechtsraum's own list (AT
+  // engine for Austrian matters) and the user must choose explicitly.
+  const [deadlineRuleKey, setDeadlineRuleKey] = useState("");
+  // "Heute" is the firm's calendar day (Europe/Vienna), not UTC.
+  const [deadlineStartDate, setDeadlineStartDate] = useState(() => zonedDateString(new Date()));
   const [aiDetectText, setAiDetectText] = useState("");
   const [aiDetecting, setAiDetecting] = useState(false);
   const [aiDetectedDeadlines, setAiDetectedDeadlines] = useState<
@@ -507,16 +538,26 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         const [page, batch] = await Promise.all([
           api.brain.getPage(slug),
           api.brain
-            .batchListPages(["legal_contact"], 300)
+            .batchListPagesDetailed(["legal_contact"], 300)
+            .then((r) => {
+              if (r.errors.length) console.warn("[matter-detail] batch list partial:", r.errors);
+              return r.results;
+            })
             .catch(() => ({}) as Record<string, BrainPage[]>),
         ]);
         const allContacts = batch["legal_contact"] ?? [];
         const detail = parseCaseDetail(page);
         // This matter's deadlines, complete (server-side filter over all pages).
+        let deadlinesFailed = false;
         const matterDeadlinePages = await api.brain
           .listPages(matterDeadlineQuery(detail))
-          .catch(() => [] as BrainPage[]);
+          .catch(() => {
+            // Shown in the deadlines tab — never passed off as "no deadlines".
+            deadlinesFailed = true;
+            return [] as BrainPage[];
+          });
         if (!cancelled) {
+          setStandaloneDeadlinesFailed(deadlinesFailed);
           const mergedDeadlines = mergeCaseDeadlines(detail, matterDeadlinePages);
           setCaseData(detail);
           setTasks(detail.tasks);
@@ -575,9 +616,12 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     try {
       const page = await api.brain.getPage(slug);
       const detail = parseCaseDetail(page);
-      const deadlinePages = await api.brain
-        .listPages(matterDeadlineQuery(detail))
-        .catch(() => [] as BrainPage[]);
+      let deadlinesFailed = false;
+      const deadlinePages = await api.brain.listPages(matterDeadlineQuery(detail)).catch(() => {
+        deadlinesFailed = true;
+        return [] as BrainPage[];
+      });
+      setStandaloneDeadlinesFailed(deadlinesFailed);
       setCaseData(detail);
       setTasks(detail.tasks);
       setTimeEntries(detail.timeEntries);
@@ -685,7 +729,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const onFocus = () => {
       api.brain
-        .listPages({ type: "legal_contact", limit: 200 })
+        .listAllPages({ type: "legal_contact", max: 200 })
         .then((pages) => {
           setContacts(
             pages.map((p) => {
@@ -949,6 +993,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           knowledge_reviews: updates.knowledgeReviews ?? caseData.knowledgeReviews,
           portal_enabled: updates.portalEnabled ?? caseData.portalEnabled,
           portal_note: updates.portalNote ?? caseData.portalNote,
+          portal_summary: updates.portalSummary ?? caseData.portalSummary,
           portal_workflows: updates.portalWorkflows ?? caseData.portalWorkflows,
           audit_log: newAudit,
         };
@@ -964,6 +1009,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           });
           if (res.status === 409) {
             const data = await res.json().catch(() => ({}));
+            if (data.error === "conflict_detected") {
+              // Parteiwechsel mit Interessenkollision: nothing was saved.
+              setContactConflict(serverConflictResult(data.conflictWarning, "critical"));
+              setSaveError(data.message || t("casesdetail.error_save"));
+              void refreshCaseData();
+              return;
+            }
             setConflictWarning(
               t("cases.detail_conflict_warning_v2") +
                 ` (${data.currentVersion ?? t("cases.detail_unknown")})`
@@ -971,7 +1023,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
             setSaveError(null);
             return;
           }
-          if (res.status === 403) {
+          if (res.status === 403 || res.status === 422 || res.status === 503) {
+            // Server-side refusal (archive, Notfrist protection, missing reason,
+            // conflict check unavailable):
+            // show its message and reload the stored state.
             const data = await res.json().catch(() => ({}));
             setSaveError(data.message || t("casesdetail.archived_msg"));
             void refreshCaseData();
@@ -983,25 +1038,14 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
           }
           const data = await res.json().catch(() => ({}));
           if (data.conflictWarning?.matches?.length > 0) {
-            const names = data.conflictWarning.matches
-              .map((m: { name: string }) => m.name)
-              .join(", ");
-            setContactConflict({
-              hasConflict: true,
-              severity: "critical",
-              hits: data.conflictWarning.matches.map(
-                (m: { name: string; slug: string; type: string }) => ({
-                  name: m.name,
-                  slug: m.slug,
-                  type: m.type,
-                  reason: "Server-seitig erkannt",
-                  similarity: 1,
-                  matchType: "exact" as const,
-                })
-              ),
-              checkedContacts: 0,
-              warning: `Interessenkollision erkannt (server-seitig): ${names}`,
-            });
+            // Saved: either a lawyer waived a blocking hit, or the hits only
+            // need a look (contacts, witnesses).
+            setContactConflict(
+              serverConflictResult(
+                data.conflictWarning,
+                data.conflictWarning.blocking?.length > 0 ? "critical" : "low"
+              )
+            );
           }
         } else {
           await enqueueMutation({
@@ -1367,7 +1411,18 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       } else {
         updated = [...deadlinesList, entry];
       }
-      setDeadlinesList(updated);
+      // The reason for moving a Notfrist is sent once with this save (the
+      // server consumes and logs it) — it must not linger in local state and
+      // silently justify a later change.
+      setDeadlinesList(
+        updated.map((dl) => {
+          if (!("change_reason" in dl)) return dl;
+          const { change_reason: _reason, ...rest } = dl as DeadlineEntry & {
+            change_reason?: string;
+          };
+          return rest as DeadlineEntry;
+        })
+      );
       deadlineForm.reset({
         title: "",
         due_date: "",
@@ -1497,8 +1552,13 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
         } else {
           addToast({ type: "error", title: t("billingtab.unbill_failed") });
         }
-      } catch {
-        addToast({ type: "error", title: t("billingtab.unbill_failed") });
+      } catch (err) {
+        // e.g. the invoice is already issued — the server says which one.
+        addToast({
+          type: "error",
+          title: t("billingtab.unbill_failed"),
+          description: err instanceof Error ? err.message : undefined,
+        });
       }
     },
     [caseData, queryClient, addToast, t]
@@ -1506,120 +1566,8 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
 
   // ── Utility functions ───────────────────────────────────────────────
 
-  function docProcessingStatus(doc: {
-    extraction_status?: string;
-    extraction_error_code?: string;
-    ocr_status?: string;
-    extraction_unverified?: boolean;
-    analysis_status?: string;
-  }) {
-    const as = doc.analysis_status;
-    if (as === "failed")
-      return {
-        key: "analysis_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (as === "retrying")
-      return {
-        key: "analysis_retrying",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (as === "permanently_failed")
-      return {
-        key: "analysis_permanently_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    const es = doc.extraction_status;
-    if (es === "failed" || es === "error") {
-      const code = doc.extraction_error_code;
-      if (code === "password_required" || code === "invalid_document_password")
-        return {
-          key: "extraction_password",
-          color:
-            "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
-        };
-      if (code === "unsupported_format")
-        return {
-          key: "extraction_unsupported",
-          color:
-            "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-        };
-      return {
-        key: "extraction_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    }
-    if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
-      return {
-        key: "confirmed",
-        color:
-          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-      };
-    if (es === "analyzed" || (es === "text_layer" && doc.extraction_unverified))
-      return {
-        key: "review_open",
-        color:
-          "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
-      };
-    if (es === "ocr_complete")
-      return {
-        key: "analyzed",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (es === "ocr_processing")
-      return {
-        key: "ocr_processing",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (es === "ocr_needed" || es === "ocr_failed")
-      return {
-        key: "ocr_needed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (es === "processing")
-      return {
-        key: "uploaded",
-        color:
-          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-      };
-    if (es === "uploaded")
-      return {
-        key: "uploaded",
-        color:
-          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-      };
-    const ocr = doc.ocr_status;
-    if (ocr === "ocr_complete")
-      return {
-        key: "analyzed",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (ocr === "ocr_needed" || ocr === "unknown")
-      return {
-        key: "ocr_needed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (ocr === "text_layer")
-      return {
-        key: "text_layer",
-        color:
-          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-      };
-    return {
-      key: "uploaded",
-      color:
-        "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-    };
-  }
+  // Engine and UI status vocabularies are mapped in one place.
+  const docProcessingStatus = docProcessingStatusOf;
 
   function formatUploadBytesLocal(bytes: number): string {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
@@ -1673,8 +1621,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const openTaskCount = tasks.filter((task) => !task.done).length;
   const documentReviewCount =
     caseData?.documents.filter((doc) => {
-      const status = docProcessingStatus(doc).key;
-      return status === "review_open" || status === "ocr_needed" || status === "ocr_processing";
+      return REVIEW_STATUS_KEYS.has(docProcessingStatus(doc).key);
     }).length ?? 0;
   const unbilledExpenses = expensesList
     .filter((entry) => entry.billable !== false && !entry.billed)
@@ -1740,6 +1687,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
     setEvidenceSourceMode,
     deadlinesList,
     setDeadlinesList,
+    standaloneDeadlinesFailed,
     editingDeadlineIndex,
     setEditingDeadlineIndex,
     deadlineRuleKey,

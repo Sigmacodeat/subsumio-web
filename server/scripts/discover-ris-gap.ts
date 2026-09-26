@@ -324,10 +324,8 @@ async function scanCourt(courtKey: string, court: CourtConfig): Promise<void> {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main() {
-  // Global RIS lock — ensures no other RIS script runs simultaneously
-  console.log("🔒 Acquiring RIS lock...");
+  // RIS lock — currently a no-op (see ris-lock.ts): no cross-process limit.
   await acquireRisLock();
-  console.log("✅ RIS lock acquired.");
 
   const courts = courtArg === "all" ? Object.keys(COURT_CONFIGS) : [courtArg];
 

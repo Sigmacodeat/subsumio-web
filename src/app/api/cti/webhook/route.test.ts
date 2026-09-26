@@ -15,11 +15,30 @@ vi.mock("@/lib/logger", () => ({
   logger: () => ({ warn: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 vi.mock("@/lib/api-response", () => ({ apiSuccess: (d: unknown) => Response.json({ data: d }) }));
+const handlerOpts = vi.hoisted(() => ({
+  current: null as null | { rateLimitKey?: (req: NextRequest) => string },
+}));
+const mockHit = vi.fn(async () => ({ ok: true, retryAfterSeconds: 0 }));
+vi.mock("@/lib/auth/rate-limit", () => ({
+  hit: (...a: unknown[]) => mockHit(...(a as [])),
+  clientIp: (h: Headers) => h.get("x-forwarded-for") ?? "unknown",
+}));
 vi.mock("@/lib/api-handler", () => ({
-  createPublicHandler:
-    (_opts: unknown, handler: (req: NextRequest, body: unknown) => Promise<Response>) =>
-    async (req: NextRequest) =>
-      handler(req, await req.json()),
+  createPublicHandler: (
+    opts: { rateLimitKey?: (req: NextRequest) => string },
+    handler: (req: NextRequest, body: unknown) => Promise<Response>
+  ) => {
+    handlerOpts.current = opts;
+    return async (req: NextRequest, ctx?: { params?: Promise<unknown> }) =>
+      (
+        handler as unknown as (
+          r: NextRequest,
+          b: unknown,
+          q: unknown,
+          e: unknown
+        ) => Promise<Response>
+      )(req, undefined, undefined, { params: ctx?.params });
+  },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: code, message }, { status }),
 }));
@@ -116,5 +135,95 @@ describe("POST /api/cti/webhook", () => {
       slug: "legal/phone-notes/cti-c1",
       frontmatter: { duration_s: 42, call_status: "ended" },
     });
+  });
+});
+
+describe("CTI webhook — rate limit per sender", () => {
+  it("anonymous requests from one IP do not share a bucket with the provider's IP", async () => {
+    const key = handlerOpts.current?.rateLimitKey;
+    expect(key).toBeTypeOf("function");
+    const a = key!(
+      new Request("http://x", { headers: { "x-forwarded-for": "198.51.100.1" } }) as never
+    );
+    const b = key!(
+      new Request("http://x", { headers: { "x-forwarded-for": "203.0.113.5" } }) as never
+    );
+    expect(a).not.toBe(b);
+  });
+
+  it("requests without a valid token never count against the shared budget", async () => {
+    for (let i = 0; i < 300; i++) {
+      await POST(
+        new Request("http://x/api/cti/webhook", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: "Bearer falsch" },
+          body: JSON.stringify({ event: "ringing" }),
+        }) as never
+      );
+    }
+    expect(mockHit).not.toHaveBeenCalled();
+  });
+});
+
+describe("CTI webhook — providers and follow-up events (R8-16)", () => {
+  const TOKEN = "p".repeat(40);
+
+  function pathWebhook(form: string, token = TOKEN) {
+    return import("./[token]/route").then(({ POST: PathPOST }) =>
+      (PathPOST as unknown as (r: NextRequest, c: unknown) => Promise<Response>)(
+        new Request(`http://localhost/api/cti/webhook/${token}`, {
+          method: "POST",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: form,
+        }) as unknown as NextRequest,
+        { params: Promise.resolve({ token }) }
+      )
+    );
+  }
+
+  it("accepts a form-encoded sipgate payload on the token path and creates the note", async () => {
+    process.env.CTI_WEBHOOK_PATH_TOKENS = `old-${"o".repeat(40)}, ${TOKEN}`;
+    const posts: Array<Record<string, unknown>> = [];
+    const base = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (init?.method === "POST") posts.push(JSON.parse(String(init.body)));
+      return base(url as string, init);
+    });
+    const res = await pathWebhook(
+      "event=newCall&from=4311000140&to=4315050&direction=in&callId=sg-1"
+    );
+    expect(res.status).toBe(200);
+    expect(posts[0]).toMatchObject({
+      if_absent: true,
+      slug: "legal/phone-notes/cti-sg-1",
+      frontmatter: { call_status: "ringing", caller: "Kontakt 140" },
+    });
+    expect((await pathWebhook("event=newCall&from=1&callId=x", "f".repeat(40))).status).toBe(401);
+    delete process.env.CTI_WEBHOOK_PATH_TOKENS;
+  });
+
+  it("the token path is off without configured tokens", async () => {
+    expect((await pathWebhook("event=newCall&from=1&callId=x")).status).toBe(503);
+  });
+
+  it("'answered' after notes were typed only updates the status (notes kept)", async () => {
+    const base = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (url, init) => {
+      if (init?.method === "POST") return Response.json({ error: "page_exists" }, { status: 409 });
+      return base(url as string, init);
+    });
+    const res = await webhook(
+      { event: "answered", call_id: "c1", caller: "+43 1 1000140" },
+      { auth: "Bearer s3cret-token" }
+    );
+    expect(res.status).toBe(200);
+    const patch = mockPatch.mock.calls[0][1] as {
+      slug: string;
+      frontmatter: Record<string, unknown>;
+    };
+    expect(patch.slug).toBe("legal/phone-notes/cti-c1");
+    expect(patch.frontmatter.call_status).toBe("answered");
+    expect(patch.frontmatter).not.toHaveProperty("notes");
+    expect(patch.frontmatter).not.toHaveProperty("subject");
   });
 });

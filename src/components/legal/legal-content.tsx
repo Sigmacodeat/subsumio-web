@@ -2,10 +2,14 @@ import Link from "next/link";
 import type { Lang } from "@/content/site";
 import { Section } from "@/components/marketing/primitives";
 import { H1_CLASS, H3_CLASS } from "@/components/marketing/typography";
+import { LEGAL_VERSIONS, formatLegalVersion } from "@/lib/auth/legal-acceptance";
+import { CREDIT_VALIDITY_MONTHS } from "@/lib/billing/credit-constants";
 
 // Legal content (de-AT) — used by /privacy, /terms, /imprint and /dpa.
-// `home` sets the back-link. Drafts: professionally complete, but have a
-// lawyer review before launch.
+// `home` sets the back-link. The version shown on AGB, Datenschutzerklärung
+// and AVV comes from LEGAL_VERSIONS (src/lib/auth/legal-acceptance.ts) — the
+// same value the signup/confirmation record stores. Bump it there when a
+// text changes materially.
 
 const T = {
   backLink: "← Subsumio",
@@ -14,16 +18,14 @@ const T = {
   terms: "AGB",
   imprint: "Impressum",
   dpa: "AVV",
-  draftNotice: "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen.",
   imprintTitle: "Impressum",
   imprintSubtitle: "Angaben gemäß § 5 ECG und Offenlegung gemäß § 25 MedienG",
   privacyTitle: "Datenschutzerklärung",
-  privacySubtitle: "Stand: September 2026",
+  privacySubtitle: `Fassung vom ${formatLegalVersion(LEGAL_VERSIONS.privacy)}`,
   termsTitle: "Allgemeine Geschäftsbedingungen",
-  termsSubtitle: "Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst",
+  termsSubtitle: `Fassung vom ${formatLegalVersion(LEGAL_VERSIONS.terms)} · gilt für den gehosteten Subsumio-Dienst`,
   dpaTitle: "Auftragsverarbeitungsvertrag (AVV)",
-  dpaSubtitle:
-    "Stand: September 2026 · Art. 28 DSGVO — Vorlage für Kunden der gehosteten Subsumio-Cloud",
+  dpaSubtitle: `Fassung vom ${formatLegalVersion(LEGAL_VERSIONS.dpa)} · Art. 28 DSGVO — für Kunden der gehosteten Subsumio-Cloud`,
 } as const;
 
 // Übermittlungsgrundlage für Empfänger außerhalb des EWR — bewusst generisch:
@@ -59,9 +61,17 @@ export const PROCESSORS: readonly Processor[] = [
   {
     name: "OpenRouter",
     purpose:
-      "Vermittlung an weitere KI-Modellanbieter: Aufbereitung von Texten für die Suche (über OpenAI); Ausweichweg für KI-Antworten und für das Sortieren von Suchergebnissen, wenn der Hauptanbieter nicht erreichbar ist (u. a. über Google und Anbieter des Modells Qwen)",
-    data: "Suchanfragen und Textausschnitte aus Dokumenten und Rechtsquellen",
+      "Vermittlung an weitere KI-Modellanbieter: Aufbereitung von Texten für die Suche (über OpenAI); Verschriftung von Diktaten und Sprachnachrichten außerhalb des EU-Datenmodus (über OpenAI Whisper); Ausweichweg für KI-Antworten und für das Sortieren von Suchergebnissen, wenn der Hauptanbieter nicht erreichbar ist (u. a. über Google und Anbieter des Modells Qwen)",
+    data: "Suchanfragen, Textausschnitte aus Dokumenten und Rechtsquellen, Sprachaufnahmen zur Verschriftung",
     location: `USA; die weitergeleiteten Modellanbieter können ihren Sitz ebenfalls außerhalb der EU haben — ${THIRD_COUNTRY}`,
+  },
+  {
+    name: "Mistral AI",
+    purpose:
+      "Verschriftung von Diktaten und Sprachnachrichten mit Verarbeitung in der EU (im EU-Datenmodus der einzige Weg dafür)",
+    data: "Sprachaufnahme; sie wird nur zur Verschriftung übermittelt und bei uns nicht gespeichert",
+    location: "Frankreich (EU)",
+    condition: "nur wenn der EU-Verschriftungsdienst eingerichtet ist",
   },
   {
     name: "Stripe",
@@ -289,8 +299,6 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
         Verein nach dem Vereinsgesetz 2002 — Zentralvereinsregister-Nummer: ZVR 1266935562.
         Vereinsbehörde: Landespolizeidirektion Wien.
       </p>
-      <H2>Umsatzsteuer-Identifikationsnummer</H2>
-      <p>UID-Nummer: wird nach Zuteilung ergänzt.</p>
       <H2>Zielgruppe</H2>
       <p>Unser Angebot richtet sich ausschließlich an Unternehmer im Sinne des § 1 KSchG.</p>
       <LegalLinks home={home} exclude="imprint" lang={lang} />
@@ -490,9 +498,10 @@ export function TermsContent({
 
       <H2>§ 2 Vertragsschluss</H2>
       <p>
-        Der Vertrag kommt mit Registrierung und Planauswahl zustande, bei kostenpflichtigen Plänen
-        mit Abschluss des Bestellvorgangs. Die Open-Source-Engine unterliegt separat ihrer
-        Open-Source-Lizenz; diese AGB regeln ausschließlich die gehostete Leistung.
+        Der Vertrag kommt mit der Registrierung zustande, bei der der Kunde diese AGB ausdrücklich
+        akzeptiert, bei kostenpflichtigen Plänen mit Abschluss des Bestellvorgangs. Die
+        Open-Source-Engine unterliegt separat ihrer Open-Source-Lizenz; diese AGB regeln
+        ausschließlich die gehostete Leistung.
       </p>
 
       <H2>§ 3 Leistungsbeschreibung</H2>
@@ -512,7 +521,9 @@ export function TermsContent({
         </Link>{" "}
         ausgewiesenen Preise zzgl. USt. (2) Abrechnung über den Zahlungsdienstleister im Voraus. (3)
         Der Vertrag verlängert sich um den Abrechnungszeitraum, sofern nicht zu dessen Ende
-        gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam.
+        gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam. (5)
+        Zugekauftes KI-Guthaben (Credits) ist {CREDIT_VALIDITY_MONTHS} Monate ab Kauf gültig; danach
+        verfällt nicht verbrauchtes Guthaben.
       </p>
 
       <H2>§ 5 Pflichten des Kunden</H2>
@@ -529,10 +540,11 @@ export function TermsContent({
 
       <H2>§ 6 Datenschutz und Verschwiegenheit</H2>
       <p>
-        (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV (Art.
-        28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Mit Rechtsanwältinnen und
-        Rechtsanwälten schließt der Anbieter auf Wunsch eine gesonderte
-        Verschwiegenheitsverpflichtung ({market === "de" ? "§ 43a Abs. 2 BRAO" : "§ 9 Abs. 2 RAO"}
+        (1) Für die Verarbeitung personenbezogener Daten Dritter schließen die Parteien bei der
+        Registrierung elektronisch einen AVV (Art. 28 DSGVO); er geht diesen AGB im Konfliktfall
+        vor. (2) Mit Rechtsanwältinnen und Rechtsanwälten schließt der Anbieter auf Wunsch eine
+        gesonderte Verschwiegenheitsverpflichtung (
+        {market === "de" ? "§ 43a Abs. 2 BRAO" : "§ 9 Abs. 2 RAO"}
         ). (3) Keine Nutzung von Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der Kunde
         seine Daten selbst exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
       </p>
@@ -576,9 +588,10 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
   return (
     <Shell home={home} lang={lang} title={t.dpaTitle} subtitle={t.dpaSubtitle}>
       <p className="text-xs [color:var(--mk-text-subtle)]">
-        {t.draftNotice} Diese Vorlage implementiert Art. 28 DSGVO. Bitte füllen Sie die Platzhalter
-        aus, unterzeichnen Sie die Vorlage und senden Sie sie an help@rciid.at, bevor Sie
-        personenbezogene Daten hochladen.
+        Dieser Vertrag wird elektronisch abgeschlossen (Art. 28 Abs. 9 DSGVO): bei der Registrierung
+        oder — bei bestehenden Konten — durch Bestätigung beim nächsten Anmelden. Fassung, Zeitpunkt
+        und bestätigendes Konto werden gespeichert. Eine unterzeichnete Papierfassung ist dafür
+        nicht erforderlich.
       </p>
 
       <H2>§ 1 Vertragsparteien</H2>
@@ -587,13 +600,9 @@ export function DpaContent({ home, lang = "de" }: { home: string; lang?: Lang })
         Subsumio zur Verarbeitung personenbezogener Daten nutzt):
       </p>
       <p className="mt-1">
-        [Name des Verantwortlichen]
-        <br />
-        [Anschrift]
-        <br />
-        [Vertretungsberechtigter]
-        <br />
-        [E-Mail]
+        Die Kanzlei bzw. das Unternehmen, für das das Subsumio-Konto registriert ist, mit den in den
+        Konto- und Kanzleieinstellungen hinterlegten Angaben (Name, Anschrift, E-Mail); vertreten
+        durch die Person, die den Vertrag bei der Registrierung bzw. Bestätigung abschließt.
       </p>
       <p className="mt-2">
         <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Anbieter des

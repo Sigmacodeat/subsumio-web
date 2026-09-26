@@ -29,18 +29,31 @@ export function isSmsConsentActive(c: SmsConsent): boolean {
   return !!c.optInAt && !c.optOutAt;
 }
 
+/**
+ * Consent is recorded per firm: several firms share one instance, and a
+ * firm may only rely on (or change) the opt-ins it recorded itself. A record
+ * belongs to the firm when its `orgId` is one of the firm's tenant keys —
+ * the firm's brain id, or its organisation id (records written by team
+ * members carry the organisation id).
+ */
+export function smsTenantKeys(brainId: string, orgId?: string | null): string[] {
+  return [...new Set([brainId, orgId ?? ""].map((k) => k.trim()).filter(Boolean))];
+}
+
 export interface SmsConsentStore {
-  getByPhoneHash(phoneHash: string): Promise<SmsConsent[]>;
+  /** Consents for `phoneHash` recorded by the firm identified by `tenantKeys`. */
+  getByPhoneHash(tenantKeys: string[], phoneHash: string): Promise<SmsConsent[]>;
   create(consent: SmsConsent): Promise<SmsConsent>;
   update(id: string, patch: Partial<SmsConsent>): Promise<SmsConsent | null>;
 }
 
 export async function hasActiveSmsConsent(
   store: SmsConsentStore,
+  tenantKeys: string[],
   phoneHash: string,
   scope: OutboundScope
 ): Promise<boolean> {
-  const rows = await store.getByPhoneHash(phoneHash);
+  const rows = await store.getByPhoneHash(tenantKeys, phoneHash);
   return rows.some((c) => isSmsConsentActive(c) && c.scopes.includes(scope));
 }
 
@@ -76,8 +89,11 @@ class FileSmsConsentStore implements SmsConsentStore {
     return this.writeQueue;
   }
 
-  async getByPhoneHash(phoneHash: string) {
-    return (await this.load()).filter((c) => c.phoneHash === phoneHash);
+  async getByPhoneHash(tenantKeys: string[], phoneHash: string) {
+    if (tenantKeys.length === 0) return [];
+    return (await this.load()).filter(
+      (c) => c.phoneHash === phoneHash && tenantKeys.includes(c.orgId)
+    );
   }
   async create(consent: SmsConsent) {
     (await this.load()).push(consent);
@@ -139,6 +155,8 @@ class PgSmsConsentStore implements SmsConsentStore {
           updated_at timestamptz NOT NULL DEFAULT now()
         );
         CREATE INDEX IF NOT EXISTS idx_sms_consent_phone ON subsumio_sms_consent (phone_hash);
+        CREATE INDEX IF NOT EXISTS idx_sms_consent_org_phone
+          ON subsumio_sms_consent (org_id, phone_hash);
       `
         )
         .then(() => undefined);
@@ -171,11 +189,12 @@ class PgSmsConsentStore implements SmsConsentStore {
     };
   }
 
-  async getByPhoneHash(phoneHash: string) {
+  async getByPhoneHash(tenantKeys: string[], phoneHash: string) {
+    if (tenantKeys.length === 0) return [];
     await this.ensureSchema();
     const res = await this.pool().query(
-      `SELECT * FROM subsumio_sms_consent WHERE phone_hash = $1`,
-      [phoneHash]
+      `SELECT * FROM subsumio_sms_consent WHERE org_id = ANY($1::text[]) AND phone_hash = $2`,
+      [tenantKeys, phoneHash]
     );
     return res.rows.map((r: Record<string, unknown>) => this.row(r));
   }

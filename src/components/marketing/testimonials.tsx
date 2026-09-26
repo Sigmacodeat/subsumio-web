@@ -1,5 +1,5 @@
 import { Star, Quote } from "lucide-react";
-import { contentFor, pBind, type Market } from "@/lib/market";
+import { contentFor, type Market } from "@/lib/market";
 import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 import { H2_CTA_CLASS } from "./typography";
 import { TESTIMONIALS } from "./testimonials-data";
