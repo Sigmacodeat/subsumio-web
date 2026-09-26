@@ -1654,7 +1654,16 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
 // connection, its own internal 2s pacing (ris-pace.ts) — no faster than any
 // other fetcher here.
 
-const KNOWN_BAD_REPAIR_JOBS = [{ sourceId: "law-at-landesrecht", generation: "2026-08-03" }];
+//
+// 2026-09-26: switched off. The job writes the fresh file to
+// `<land>/gnr-<land>-<nr>/` (docFilePath with the land-qualified statute_id)
+// while the fetcher's file sits at `<land>/gnr-<nr>/`; the normalizer keeps
+// ONE file per doc_id chosen by text quality, not recency, so the fresh copy
+// can lose and the page stays known_bad. It also marks failed fetches as
+// processed and never retries them. Replaced by the operator runbook
+// docs/guides/korpus-reparatur-0803.md (list-rejected-pages.ts →
+// fetch-at-landesrecht-xml.ts --ids, which overwrites the existing file).
+const KNOWN_BAD_REPAIR_JOBS: { sourceId: string; generation: string }[] = [];
 
 function knownBadRepairDone(sourceId: string, generation: string): boolean {
   const checkpointPath = join(CORPUS, "_state", `repair-${sourceId}-${generation}.json`);

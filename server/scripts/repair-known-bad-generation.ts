@@ -3,6 +3,14 @@
  * Repairs the 2026-08-03 Landesrecht fetch generation instead of leaving it
  * blanket-flagged forever.
  *
+ * ABGELÖST (2026-09-26) — no longer started by corpus-pipeline.ts. It writes
+ * the fresh file beside the old one (docFilePath uses the land-qualified
+ * statute_id, "gnr-tir-10000001" instead of "gnr-10000001"), and the
+ * normalizer's per-doc_id winner choice goes by text quality, not recency,
+ * so the repair can silently lose. Failed fetches are checkpointed as
+ * processed and never retried. Use docs/guides/korpus-reparatur-0803.md
+ * (fetch-at-landesrecht-xml.ts --ids) instead.
+ *
  * audit-plausibility-full.ts marks every page whose `frontmatter.retrieved_at
  * === "2026-08-03"` as `generation:known_bad` — a whole-generation flag, not
  * a per-page verdict. That flag was set because a 55-document sample of this
