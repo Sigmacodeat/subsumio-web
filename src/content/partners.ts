@@ -1,4 +1,6 @@
-// Partner program page — affiliate, in-product referral, vertical partners.
+// Partner program page — affiliate and vertical partners. The in-product
+// referral link attributes signups only; there is no customer reward (no
+// credit is booked in billing), so none is advertised.
 
 export interface PartnersContent {
   metaTitle: string;
@@ -37,7 +39,7 @@ export const PARTNERS: PartnersContent = {
   badge: "Partnerprogramm",
   h1a: "Empfehlen Sie Subsumio.",
   h1b: "Wir vergüten jede Vermittlung.",
-  sub: "Drei Wege der Zusammenarbeit — von der einfachen Empfehlung bis zur Einführung von Subsumio bei den Kanzleien, die Sie betreuen. Die Provision läuft, solange der Kunde bleibt (Details in den Partnerbedingungen).",
+  sub: "Zwei Wege der Zusammenarbeit — von der Empfehlung bis zur Einführung von Subsumio bei den Kanzleien, die Sie betreuen. Die Provision läuft, solange der Kunde bleibt (Details in den Partnerbedingungen).",
   tiers: [
     {
       id: "affiliate",
@@ -54,21 +56,6 @@ export const PARTNERS: PartnersContent = {
       cta: "Als Empfehlungspartner bewerben",
       href: "mailto:partners@subsum.io?subject=Affiliate-Bewerbung",
       highlight: true,
-    },
-    {
-      id: "referral",
-      icon: "Gift",
-      name: "Kunden-Empfehlungen",
-      headline: "Einen Monat schenken, einen bekommen",
-      desc: "Sie sind bereits Kunde? Ihren Empfehlungslink finden Sie in den Einstellungen.",
-      points: [
-        "Sie erhalten 1 Monat gratis für jede Empfehlung, die zahlender Kunde wird",
-        "Die empfohlene Kanzlei erhält ihren ersten Monat ebenfalls gratis",
-        "12 Empfehlungen ergeben ein Gratisjahr",
-        "Gilt für die Tarife Solo und Kanzlei",
-      ],
-      cta: "Link in den Einstellungen",
-      href: "/dashboard/settings",
     },
     {
       id: "vertical",

@@ -45,7 +45,10 @@ export default function PartnersPage({ market = "at" }: { market?: Market }) {
 
       {/* Tiers — staggered reveal + GlowCard */}
       <Section id="affiliate" tone="light" className="mx-auto max-w-6xl px-6 pb-24">
-        <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.1}>
+        <StaggerContainer
+          className={`grid gap-6 ${t.tiers.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}
+          stagger={0.1}
+        >
           {t.tiers.map((tier) => {
             const Icon = ICONS[tier.icon];
             return (

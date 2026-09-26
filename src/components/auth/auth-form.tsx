@@ -82,7 +82,6 @@ const COPY = {
     cta: "Bestätigen",
     back: "Zurück",
   },
-  referralNote: "Sie wurden empfohlen — Ihr erster Monat auf einem Bezahlplan ist gratis.",
   jurisdiction: "Rechtsraum",
   jurisdictionHint: "Bestimmt Gesetzeskorpus, Fristenregeln und Gerichtsintegration.",
   biometric: "Mit Face ID / Touch ID anmelden",

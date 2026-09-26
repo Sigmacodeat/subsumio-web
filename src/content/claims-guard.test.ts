@@ -54,7 +54,21 @@ const BANNED: Array<[RegExp, string]> = [
   [/versendet nichts von selbst/, "Erinnerungen gehen automatisch hinaus"],
   // Zahlen nur mit eingechecktem Messprotokoll (src/content/proof-points.ts).
   [/99,8\s?%|Recall@8/, "Kennzahl ohne Messprotokoll"],
+  // Kunden-Empfehlung: es wird keine Gutschrift gebucht (Billing-Webhook).
+  [/Monat gratis|Gratisjahr|ersten Monat ebenfalls gratis/i, "keine Empfehlungsgutschrift"],
 ];
+
+describe("In-App-Texte — keine Empfehlungsgutschrift versprechen", () => {
+  it("dashboard.ts and the signup form promise no free month", () => {
+    for (const file of ["src/content/dashboard.ts", "src/components/auth/auth-form.tsx"]) {
+      const src = readFileSync(join(ROOT, file), "utf8");
+      expect(
+        /Monat gratis|Gratisjahr|month free|free year|erster Monat[^"]*gratis/i.test(src),
+        file
+      ).toBe(false);
+    }
+  });
+});
 
 describe("Website-Aussagen — keine unhaltbaren Versprechen", () => {
   it.each(SOURCES)("%s", (file) => {
