@@ -33,6 +33,17 @@ export interface SuggestedParty {
   review_status?: "pending" | "approved" | "rejected";
 }
 
+/** KI-Vorschlag für Gericht, Geschäftszahl oder Streitwert (suggested_case_fields). */
+export interface SuggestedCaseField {
+  field: "court_name" | "case_number" | "dispute_value";
+  value: string | number;
+  current?: string | number;
+  quote?: string;
+  source?: string;
+  confirmed?: boolean;
+  review_status?: "pending" | "approved" | "rejected";
+}
+
 export interface KnowledgeReview {
   fact_id: string;
   status: "approved" | "party_assertion" | "corrected" | "rejected";
@@ -95,6 +106,7 @@ export interface CaseDetail {
   deadlines: DeadlineEntry[];
   suggestedDeadlines?: SuggestedDeadline[];
   suggestedParties?: SuggestedParty[];
+  suggestedCaseFields?: SuggestedCaseField[];
   contradictions?: ContradictionFinding[];
   knowledgeReviews: KnowledgeReview[];
   portalEnabled: boolean;
@@ -206,6 +218,9 @@ export function parseCaseDetail(page: BrainPage): CaseDetail {
     deadlines: (fm.deadlines as DeadlineEntry[]) || [],
     suggestedDeadlines: (fm.suggested_deadlines as SuggestedDeadline[]) || [],
     suggestedParties: (fm.suggested_parties as SuggestedParty[]) || [],
+    suggestedCaseFields: Array.isArray(fm.suggested_case_fields)
+      ? (fm.suggested_case_fields as SuggestedCaseField[])
+      : [],
     contradictions: Array.isArray(fm.contradictions)
       ? (fm.contradictions as ContradictionFinding[])
       : [],
