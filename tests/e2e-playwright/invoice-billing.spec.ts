@@ -151,7 +151,7 @@ test.describe("Invoice Billing Flow (echte Rechnungsrouten)", () => {
       data: inflated,
     });
     expect(res.status()).toBe(422);
-    expect((await res.json()).error).toBe("invoice_billing_mismatch");
+    expect((await res.json()).code).toBe("invoice_billing_mismatch");
   });
 
   test("Entwurf wird gelöscht, nicht storniert", async () => {
@@ -161,7 +161,7 @@ test.describe("Invoice Billing Flow (echte Rechnungsrouten)", () => {
       data: { status: "cancelled" },
     });
     expect(res.status()).toBe(409);
-    expect((await res.json()).error).toBe("draft_cancel_use_delete");
+    expect((await res.json()).code).toBe("draft_cancel_use_delete");
   });
 
   test("Negativtest: Rechnung über POST /api/pages → 409", async () => {

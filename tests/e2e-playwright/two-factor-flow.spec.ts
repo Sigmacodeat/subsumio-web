@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { submitSignupFormAndConfirm } from "./helpers";
 
 test.describe("2FA Flow (E2E)", () => {
   test("1. 2FA Setup → verify → backup codes", async ({ page }) => {
@@ -8,12 +9,7 @@ test.describe("2FA Flow (E2E)", () => {
     await page.locator('input[name="name"]').fill("2FA Setup Test");
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill("2FATest1234!");
-    for (const box of await page
-      .locator('[data-testid="signup-legal"] input[type="checkbox"]')
-      .all()) {
-      await box.check();
-    }
-    await page.locator('form button[type="submit"]').click();
+    await submitSignupFormAndConfirm(page);
     await page.waitForFunction(() => window.location.pathname === "/dashboard", {
       timeout: 45_000,
     });

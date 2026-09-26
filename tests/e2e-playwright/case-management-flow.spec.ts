@@ -274,13 +274,15 @@ test.describe("Case Management: Soft-Delete + Tombstone Cascade", () => {
     expect(restoreTimeline).toBeTruthy();
     expect(restoreTimeline.some((e) => e.title === "Akte wiederhergestellt")).toBe(true);
 
-    // 6. Verify document is un-tombstoned (status = "active")
+    // 6. Verify document is un-tombstoned: it gets its status from before the
+    //    archive back (none here), never stays "tombstoned".
     const docRestored = await page
       .context()
       .request.get(`/api/pages/${encodeURIComponent(docSlug)}`);
     expect(docRestored.status()).toBe(200);
     const docRestoredBody = await docRestored.json();
-    expect(docRestoredBody.frontmatter.status).toBe("active");
+    expect(docRestoredBody.frontmatter.status ?? null).not.toBe("tombstoned");
+    expect(docRestoredBody.frontmatter.tombstoned_at ?? null).toBeNull();
   });
 
   test("non-restore PATCH on archived case returns 403", async ({ page }) => {
