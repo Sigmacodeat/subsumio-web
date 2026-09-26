@@ -33,6 +33,8 @@ import {
   groundQuotes,
   resolveDocumentText,
   type LegalLLM,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 import { canonicalLookup } from "../model-pricing.ts";
 
@@ -106,7 +108,7 @@ function numberedQuestions(questions: string[]): string {
 }
 
 function buildUserPrompt(title: string, clippedContent: string, questions: string[]): string {
-  return `DOKUMENT "${title}":\n\n${clippedContent}\n\nFRAGEN:\n${numberedQuestions(questions)}`;
+  return `${wrapUntrusted("dokument", clippedContent, { titel: title })}\n\nFRAGEN:\n${numberedQuestions(questions)}`;
 }
 
 /** Parse the sync shape (JSON array of strings), tolerating prose around it. */
@@ -169,7 +171,7 @@ export async function reviewTabularDocumentSync(
     };
   }
   const raw = await llm({
-    system: SYNC_SYSTEM_PROMPT,
+    system: withUntrustedRule(SYNC_SYSTEM_PROMPT, "dokument"),
     user: buildUserPrompt(input.title, clipped, input.questions),
     maxTokens: TABULAR_REVIEW_SYNC_MAX_TOKENS,
   });
@@ -202,7 +204,7 @@ export async function reviewTabularDocumentQuotes(
     };
   }
   const raw = await llm({
-    system: QUOTE_SYSTEM_PROMPT,
+    system: withUntrustedRule(QUOTE_SYSTEM_PROMPT, "dokument"),
     user: buildUserPrompt(input.title, clipped, input.questions),
     maxTokens: tabularReviewMaxTokens(input.questions.length),
   });

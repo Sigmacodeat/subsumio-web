@@ -20,6 +20,8 @@ import {
   jurisdictionLabel,
   normalizeForMatch,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface DeepAnalysisCitation {
@@ -207,8 +209,11 @@ export async function deepAnalysis(
   const { clipped, warning } = clipText(docContext, 48000);
   if (warning) warnings.push(warning);
 
-  const system = buildSystem(opts.prompt ?? "", jurisdiction, docs.length);
-  const user = `<dokumente>\n${clipped}\n</dokumente>`;
+  const system = withUntrustedRule(
+    buildSystem(opts.prompt ?? "", jurisdiction, docs.length),
+    "dokumente"
+  );
+  const user = wrapUntrusted("dokumente", clipped);
 
   let raw: string;
   try {

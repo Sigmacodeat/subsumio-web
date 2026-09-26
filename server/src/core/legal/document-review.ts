@@ -19,6 +19,8 @@ import {
   normalizeForMatch,
   resolveDocumentText,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface ReviewFinding {
@@ -143,11 +145,15 @@ export async function reviewDocument(
   ];
   const effectiveQuestions = questions.length > 0 ? questions : defaultQuestions;
 
-  const user = `Prüffragen:\n${effectiveQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\n<dokument>\n${clipped}\n</dokument>`;
+  const user = `Prüffragen:\n${effectiveQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\n${wrapUntrusted("dokument", clipped)}`;
 
   let raw: string;
   try {
-    raw = await llm({ system: buildSystem(focus, jurisdiction), user, maxTokens: 4000 });
+    raw = await llm({
+      system: withUntrustedRule(buildSystem(focus, jurisdiction), "dokument"),
+      user,
+      maxTokens: 4000,
+    });
   } catch (e) {
     warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;

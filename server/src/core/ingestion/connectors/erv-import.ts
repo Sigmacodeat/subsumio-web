@@ -1,7 +1,7 @@
 /**
  * ErvImportConnector — import ERV-Rückverkehr (Austria) from export files (Gap G).
  *
- * The österreichische elektronische Rechtsverkehr (ERV, § 89a ff GOG) has no
+ * The österreichische elektronische Rechtsverkehr (ERV, §§ 89a ff GOG) has no
  * public REST API — Kanzleien receive Rückverkehr (gerichtliche Erledigungen,
  * Zustellungen, Ladungen) through their Übermittlungsstelle (webERV client,
  * ADVOKAT, etc.), which can export the messages as XML files. This connector
@@ -9,11 +9,17 @@
  * parses each XML tolerantly, and turns it into a brain page.
  *
  * The winning move over a plain document import: the connector computes the
- * ZUSTELLFIKTION deterministically. § 89a Abs 2 GOG — an ERV delivery counts
- * as zugestellt on the Werktag following its arrival in the elektronischer
- * Verfügungsbereich (Saturday is not a Werktag). That Zustelldatum is THE
- * fristauslösende Ereignis; the page carries both dates so the Frist-Engine
- * and the deadline pipeline start from the legally correct day.
+ * ZUSTELLFIKTION deterministically. § 89d Abs 2 GOG (for deliveries under
+ * § 89a Abs 2 GOG) — "Als Zustellungszeitpunkt … gilt jeweils der auf das
+ * Einlangen in den elektronischen Verfügungsbereich des Empfängers folgende
+ * Werktag, wobei Samstage nicht als Werktage gelten." (RIS, Fassung ab
+ * 1.5.2012). That Zustelldatum is THE fristauslösende Ereignis; the page
+ * carries both dates so the Frist-Engine and the deadline pipeline start
+ * from the legally correct day.
+ *
+ * When the export carries no readable Einlangen date the Zustelldatum is
+ * UNKNOWN — it is never derived from the import day. The page says so and
+ * asks for the date to be entered by hand; deadlines are suggestions only.
  *
  * Setup:
  *   gbrain connector add erv-import --filters '{"watch_dir":"/imports/erv"}'
@@ -42,10 +48,10 @@ interface ErvMessageItem extends ConnectorItem {
   gericht: string;
   geschaeftszahl: string;
   erledigungsart: string;
-  /** ISO date the message arrived in the elektronischer Verfügungsbereich. */
-  einlangenDatum: string;
-  /** ISO date of the Zustellfiktion (§ 89a Abs 2 GOG). */
-  zustellDatum: string;
+  /** ISO date the message arrived in the elektronischer Verfügungsbereich; null when the export has none. */
+  einlangenDatum: string | null;
+  /** ISO date of the Zustellfiktion (§ 89d Abs 2 GOG); null when the Einlangen date is unknown. */
+  zustellDatum: string | null;
   betreff: string;
   body: string;
   gzGueltig: boolean;
@@ -128,6 +134,24 @@ export class ErvImportConnector extends BaseConnector {
   }
 
   /**
+   * True when the XML carries tags only Austrian ERV-Rückverkehr uses
+   * (Geschäftszahl, Erledigungsart, Einlangen). German beA exports name the
+   * file number "Aktenzeichen" — the upload path uses this to route an ERV
+   * export to this parser instead of the beA one.
+   */
+  isErvXml(xml: string): boolean {
+    let doc: Record<string, unknown>;
+    try {
+      doc = this.parser.parse(xml) as Record<string, unknown>;
+    } catch {
+      return false;
+    }
+    const index = new Map<string, unknown>();
+    indexTree(doc, index);
+    return ERV_MARKER_TAGS.some((t) => index.has(t));
+  }
+
+  /**
    * Parse an ERV-Rückverkehr XML from an in-memory string. Public so the
    * web-api upload path can route a tenant-uploaded export through the same
    * parser. Returns null when the XML does not look like an ERV message.
@@ -161,20 +185,15 @@ export class ErvImportConnector extends BaseConnector {
     const body = pick("inhalt", "text", "anmerkung", "body");
 
     // Einlangen in den elektronischen Verfügungsbereich → Zustellfiktion.
-    const rawEinlangen = pick(
-      "einlangen",
-      "eingangsdatum",
-      "uebermittlungsdatum",
-      "datum",
-      "sendedatum"
+    // Only tags that name the arrival; a generic "Datum" is usually the date
+    // of the decision and must not start the Zustellfiktion.
+    const einlangenDatum = parseEinlangenDatum(
+      pick("einlangen", "einlangedatum", "eingangsdatum", "uebermittlungsdatum", "sendedatum")
     );
-    let einlangenDatum: string;
-    const parsedDate = rawEinlangen ? new Date(rawEinlangen) : new Date();
-    einlangenDatum = isNaN(parsedDate.getTime())
-      ? new Date().toISOString().slice(0, 10)
-      : parsedDate.toISOString().slice(0, 10);
-    // § 89a Abs 2 GOG: zugestellt am folgenden Werktag (Samstag zählt nicht).
-    const zustellDatum = zustellungERV(einlangenDatum);
+    // § 89d Abs 2 GOG: zugestellt am folgenden Werktag (Samstag, Sonntag und
+    // gesetzliche Feiertage sind keine Werktage). Unknown arrival → unknown
+    // Zustelldatum, never "today".
+    const zustellDatum = einlangenDatum ? zustellungERV(einlangenDatum) : null;
 
     // GZ structural validation (Gap I) — surface OCR/typo artifacts.
     let gzGueltig = true;
@@ -204,7 +223,7 @@ export class ErvImportConnector extends BaseConnector {
     return {
       id: messageId,
       title: `ERV: ${betreff}`,
-      modified_at: `${einlangenDatum}T00:00:00.000Z`,
+      modified_at: einlangenDatum ? `${einlangenDatum}T00:00:00.000Z` : new Date().toISOString(),
       content: body,
       content_type: "text/markdown",
       filePath,
@@ -236,7 +255,8 @@ export class ErvImportConnector extends BaseConnector {
         erledigungsart: msg.erledigungsart,
         einlangen_datum: msg.einlangenDatum,
         zustell_datum: msg.zustellDatum,
-        zustellfiktion: "§ 89a Abs 2 GOG",
+        zustellfiktion: "§ 89d Abs 2 GOG",
+        ...(msg.zustellDatum ? {} : { zustelldatum_unbekannt: true, frist_nur_vorschlag: true }),
         gz_gueltig: msg.gzGueltig,
         gz_befunde: msg.gzBefunde,
         attachments: msg.attachments.map((a) => a.name),
@@ -255,9 +275,9 @@ ${frontmatter}
 **Gericht:** ${msg.gericht}
 **Geschäftszahl:** ${msg.geschaeftszahl || "—"}
 **Erledigungsart:** ${msg.erledigungsart}
-**Einlangen (elektr. Verfügungsbereich):** ${msg.einlangenDatum}
-**Zustelldatum (§ 89a Abs 2 GOG):** ${msg.zustellDatum} ← fristauslösendes Ereignis
-
+**Einlangen (elektr. Verfügungsbereich):** ${msg.einlangenDatum ?? "unbekannt"}
+**Zustelldatum (§ 89d Abs 2 GOG):** ${msg.zustellDatum ? `${msg.zustellDatum} ← fristauslösendes Ereignis` : "unbekannt"}
+${msg.zustellDatum ? "" : "\n> ⚠ Der Export enthält kein lesbares Einlangedatum. Das Zustelldatum muss manuell eingetragen werden; daraus berechnete Fristen sind nur Vorschläge.\n"}
 ${msg.gzBefunde.length > 0 ? `> ⚠ GZ-Prüfung: ${msg.gzBefunde.join("; ")}\n` : ""}
 ## Inhalt
 
@@ -266,7 +286,7 @@ ${msg.body || "_(kein Textinhalt — siehe Anhänge)_"}
 ${msg.attachments.length > 0 ? `## Anhänge (${msg.attachments.length})\n${msg.attachments.map((a) => `- ${a.name} (${Math.round(a.size / 1024)} KB)`).join("\n")}` : ""}
 `;
 
-    const dateStr = msg.einlangenDatum;
+    const dateStr = msg.einlangenDatum ?? "undatiert";
     return {
       source_id: this.id,
       source_kind: "connector",
@@ -281,6 +301,43 @@ ${msg.attachments.length > 0 ? `## Anhänge (${msg.attachments.length})\n${msg.a
       },
     };
   }
+}
+
+/** Tags that only ERV-Rückverkehr carries (lower-case, as indexed). */
+const ERV_MARKER_TAGS = ["geschaeftszahl", "erledigungsart", "einlangen", "einlangedatum"];
+
+/**
+ * The calendar day (Vienna) of the Einlangen value, or null when it is
+ * missing or unreadable. Accepts ISO dates/timestamps and "TT.MM.JJJJ".
+ */
+export function parseEinlangenDatum(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  let iso: string | null = null;
+  const de = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s|$)/);
+  const isoDate = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (de) {
+    iso = `${de[3]}-${de[2]!.padStart(2, "0")}-${de[1]!.padStart(2, "0")}`;
+  } else if (isoDate) {
+    iso = s;
+  } else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
+    const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(s);
+    if (!hasZone) {
+      iso = s.slice(0, 10); // local wall-clock time as exported
+    } else {
+      const t = new Date(s);
+      if (isNaN(t.getTime())) return null;
+      iso = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Vienna",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(t);
+    }
+  }
+  if (!iso) return null;
+  const check = new Date(`${iso}T00:00:00Z`);
+  return !isNaN(check.getTime()) && check.toISOString().slice(0, 10) === iso ? iso : null;
 }
 
 /** Walk the parsed XML tree, recording the FIRST value seen per tag name. */

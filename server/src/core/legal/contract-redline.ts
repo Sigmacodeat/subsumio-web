@@ -14,6 +14,8 @@ import {
   jurisdictionLabel,
   normalizeForMatch,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 import {
   type WorkProductReceipt,
@@ -238,22 +240,25 @@ export async function redlineContract(
     return empty;
   }
 
-  const parts = [`<originaltext>\n${original}\n</originaltext>`];
+  const parts = [wrapUntrusted("originaltext", original)];
   if (opts.counterparty_text && opts.counterparty_text.trim()) {
     const { clipped: cp } = clipText(opts.counterparty_text, opts.maxChars ?? 30000);
-    parts.push(`<gegenpartei_version>\n${cp}\n</gegenpartei_version>`);
+    parts.push(wrapUntrusted("gegenpartei_version", cp));
   }
   if (playbook) parts.push(`<playbook>\n${clipText(playbook, 12000).clipped}\n</playbook>`);
 
-  const systemPrompt = buildSystem(
-    contractType,
-    jurisdiction,
-    perspective,
-    language,
-    Boolean(opts.counterparty_text?.trim()),
-    Boolean(playbook),
-    playbookRules,
-    opts.instruction
+  const systemPrompt = withUntrustedRule(
+    buildSystem(
+      contractType,
+      jurisdiction,
+      perspective,
+      language,
+      Boolean(opts.counterparty_text?.trim()),
+      Boolean(playbook),
+      playbookRules,
+      opts.instruction
+    ),
+    ["originaltext", "gegenpartei_version"]
   );
   const userPrompt = parts.join("\n\n");
 

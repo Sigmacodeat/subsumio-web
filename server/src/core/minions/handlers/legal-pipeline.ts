@@ -69,7 +69,12 @@ import { getLayerDeclaration } from "../pipeline-registry.ts";
 import { assertProviderCredits } from "../../ai/credits-preflight.ts";
 import { parseMarkdown } from "../../markdown.ts";
 import { withCaseSlugStamp } from "../../matter-binding.ts";
-import { groundQuotes, normalizeForMatch, tryParseJSON } from "../../legal/llm-util.ts";
+import {
+  groundQuotes,
+  normalizeForMatch,
+  tryParseJSON,
+  wrapUntrusted,
+} from "../../legal/llm-util.ts";
 import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
 import { inheritBudgetOwner } from "../budget-tracker.ts";
 import { recordUsage as recordSaaSUsage } from "../../billing.ts";
@@ -3206,6 +3211,7 @@ async function runMapReduceLayer(opts: {
         subagent_def: specialistName,
         max_turns: def.maxTurns ?? MAX_TURNS_DEFAULT,
         allowed_tools: [],
+        untrusted_data_tag: MAP_DATA_TAG,
       };
       // v0.42.38.0+ — Pass contextJson as cached_context (appended to system
       // prompt, which has cache_control: ephemeral). Shared across all batches.
@@ -9697,7 +9703,10 @@ function batchTexts(
 
 // ── Prompt Builders ─────────────────────────────────────────
 
-function buildMapPrompt(
+/** Data tag for case text in map prompts (see `untrusted_data_tag`). */
+export const MAP_DATA_TAG = "akten-text";
+
+export function buildMapPrompt(
   text: string,
   contextJson: string,
   batchNum: number,
@@ -9711,7 +9720,9 @@ function buildMapPrompt(
     lines.push("");
   }
   lines.push(`## AKTEN-TEXT (Teil ${batchNum}/${totalBatches})`);
-  lines.push(text);
+  // Third-party document text: escaped data block; the matching system rule
+  // comes from `untrusted_data_tag` on the child job.
+  lines.push(wrapUntrusted(MAP_DATA_TAG, text));
   lines.push("");
   lines.push(
     `Analysiere diesen Teil und gib JSON zurück. Berücksichtige den Kontext aus vorherigen Layern.`

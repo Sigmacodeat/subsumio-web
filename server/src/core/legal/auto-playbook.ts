@@ -20,6 +20,8 @@ import {
   defaultLegalLLM,
   groundQuotes,
   tryParseJSON,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface PlaybookClauseUpdate {
@@ -221,8 +223,8 @@ export async function autoPlaybookUpdate(
   const contractType = String(
     contractPage.frontmatter.contract_type ?? contractPage.frontmatter.document_type ?? "general"
   );
-  const system = buildExtractionSystem(contractType);
-  const user = `<vertrag>\n${clipped}\n</vertrag>`;
+  const system = withUntrustedRule(buildExtractionSystem(contractType), "vertrag");
+  const user = wrapUntrusted("vertrag", clipped);
 
   let raw: string;
   try {

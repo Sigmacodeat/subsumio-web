@@ -533,6 +533,13 @@ export interface SubagentHandlerData {
    */
   cached_context?: string;
   /**
+   * Name of the data tag the prompt uses to embed third-party document text
+   * (e.g. "akten-text"). The handler appends the matching "data, not
+   * instructions" rule to the system prompt — after the specialist overlay,
+   * which replaces `system`.
+   */
+  untrusted_data_tag?: string;
+  /**
    * v0.41 E6 — opt OUT of classifier-gated auto-resubmit on terminal
    * failures. Default behavior (omitted or false) runs the
    * `RECOVERABLE_CLUSTERS` self-fix path when the failure classifies as

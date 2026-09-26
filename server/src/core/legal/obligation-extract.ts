@@ -12,6 +12,8 @@ import {
   resolveDocumentText,
   tryParseJSON,
   asStringArray,
+  withUntrustedRule,
+  wrapUntrusted,
 } from "./llm-util.ts";
 
 export interface ObligationEntry {
@@ -141,8 +143,8 @@ export async function extractObligations(
   if (warning) warnings.push(warning);
 
   const jurisdiction = opts.jurisdiction ?? "all";
-  const system = buildSystem(jurisdiction);
-  const userPrompt = `Extract all obligations from the following document:\n\n${clipped}`;
+  const system = withUntrustedRule(buildSystem(jurisdiction), "dokument");
+  const userPrompt = `Extract all obligations from the following document:\n\n${wrapUntrusted("dokument", clipped)}`;
 
   const raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
   const parsed = tryParseJSON(raw);
