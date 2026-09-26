@@ -1,6 +1,7 @@
 import { extname } from "node:path";
 import { connect } from "node:net";
-import { open } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { open, stat } from "node:fs/promises";
 
 export type UploadSecurityResult = { ok: true } | { ok: false; code: string; message: string };
 
@@ -102,7 +103,76 @@ function matchesSpecialContainer(ext: string, data: Buffer): boolean | undefined
   return undefined;
 }
 
-async function scanClamAv(data: Buffer, target: string): Promise<UploadSecurityResult> {
+/** clamd's INSTREAM ceiling (`StreamMaxLength`); 25 MB is clamd's own default. */
+const DEFAULT_CLAMAV_STREAM_MAX_BYTES = 25 * 1024 * 1024;
+const INSTREAM_CHUNK_BYTES = 64 * 1024;
+
+/**
+ * Largest file the scanner accepts via INSTREAM. Set CLAMAV_STREAM_MAX_BYTES to
+ * the clamd `StreamMaxLength` of the deployment (the netcup compose raises it
+ * to 500 MB); anything larger is refused BEFORE the upload is accepted —
+ * never waved through unscanned.
+ */
+export function clamAvStreamMaxBytes(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env.CLAMAV_STREAM_MAX_BYTES);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : DEFAULT_CLAMAV_STREAM_MAX_BYTES;
+}
+
+/** Path-based `SCAN` only works when clamd sees the engine's upload directory. */
+function sharedPathScanEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return /^(1|true|yes|on)$/i.test((env.CLAMAV_SHARED_PATH_SCAN ?? "").trim());
+}
+
+function tooLargeForScan(sizeBytes: number, limitBytes: number): UploadSecurityResult {
+  const mb = (n: number) => Math.max(1, Math.round(n / (1024 * 1024)));
+  return {
+    ok: false,
+    code: "file_too_large_for_scan",
+    message: `Die Datei (${mb(sizeBytes)} MB) überschreitet die Prüfgrenze des Virenscanners (${mb(limitBytes)} MB) und wurde abgelehnt.`,
+  };
+}
+
+const SCANNER_UNAVAILABLE: UploadSecurityResult = {
+  ok: false,
+  code: "scanner_unavailable",
+  message: "Virenscanner nicht erreichbar.",
+};
+
+/** Map clamd's reply line to a result. Anything unrecognised fails closed. */
+function interpretClamResponse(response: string): UploadSecurityResult {
+  if (/size limit exceeded/i.test(response)) {
+    return {
+      ok: false,
+      code: "file_too_large_for_scan",
+      message:
+        "Die Datei überschreitet die Prüfgrenze des Virenscanners (StreamMaxLength) und wurde abgelehnt.",
+    };
+  }
+  if (response.includes("FOUND")) {
+    return {
+      ok: false,
+      code: "malware_detected",
+      message: "Schadsoftware erkannt — Upload abgelehnt.",
+    };
+  }
+  if (response.includes("OK")) return { ok: true };
+  return {
+    ok: false,
+    code: "scanner_unavailable",
+    message: "Virenscanner lieferte keine gültige Antwort.",
+  };
+}
+
+/**
+ * Stream content to clamd with INSTREAM. The scanner never needs to see the
+ * file on its own filesystem, so this works across container boundaries
+ * (clamd runs as its own compose service without a shared upload volume).
+ */
+async function scanClamAvInstream(
+  chunks: AsyncIterable<Buffer | Uint8Array> | Iterable<Buffer | Uint8Array>,
+  target: string,
+  timeoutMs: number
+): Promise<UploadSecurityResult> {
   const [hostname, portText] = target.split(":");
   const port = Number(portText || "3310");
   return new Promise((resolve) => {
@@ -116,42 +186,39 @@ async function scanClamAv(data: Buffer, target: string): Promise<UploadSecurityR
       socket.destroy();
       resolve(result);
     };
-    const timer = setTimeout(
-      () =>
-        finish({
-          ok: false,
-          code: "scanner_unavailable",
-          message: "Virenscanner nicht erreichbar.",
-        }),
-      15_000
-    );
+    const timer = setTimeout(() => finish(SCANNER_UNAVAILABLE), timeoutMs);
+    // Respect backpressure: a large file must not be buffered into the socket.
+    const write = (buf: Buffer) =>
+      new Promise<void>((done) => {
+        if (socket.destroyed) return done();
+        if (socket.write(buf)) done();
+        else socket.once("drain", () => done());
+      });
     socket.on("connect", () => {
-      socket.write("zINSTREAM\0");
-      for (let offset = 0; offset < data.length; offset += 64 * 1024) {
-        const chunk = data.subarray(offset, Math.min(offset + 64 * 1024, data.length));
-        const length = Buffer.alloc(4);
-        length.writeUInt32BE(chunk.length);
-        socket.write(length);
-        socket.write(chunk);
-      }
-      socket.write(Buffer.alloc(4));
+      void (async () => {
+        try {
+          await write(Buffer.from("zINSTREAM\0"));
+          for await (const raw of chunks) {
+            const chunk = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+            for (let offset = 0; offset < chunk.length; offset += INSTREAM_CHUNK_BYTES) {
+              const slice = chunk.subarray(
+                offset,
+                Math.min(offset + INSTREAM_CHUNK_BYTES, chunk.length)
+              );
+              const length = Buffer.alloc(4);
+              length.writeUInt32BE(slice.length);
+              await write(length);
+              await write(slice);
+            }
+          }
+          await write(Buffer.alloc(4));
+        } catch {
+          finish(SCANNER_UNAVAILABLE);
+        }
+      })();
     });
     socket.on("data", (chunk) => (response += chunk.toString("utf8")));
-    socket.on("end", () => {
-      if (response.includes("FOUND"))
-        finish({
-          ok: false,
-          code: "malware_detected",
-          message: "Schadsoftware erkannt — Upload abgelehnt.",
-        });
-      else if (response.includes("OK")) finish({ ok: true });
-      else
-        finish({
-          ok: false,
-          code: "scanner_unavailable",
-          message: "Virenscanner lieferte keine gültige Antwort.",
-        });
-    });
+    socket.on("end", () => finish(interpretClamResponse(response)));
     socket.on("error", () =>
       finish({ ok: false, code: "scanner_unavailable", message: "Virenscanner nicht erreichbar." })
     );
@@ -191,12 +258,15 @@ export async function inspectUploadBytes(
     };
   }
   const clamAv = process.env.CLAMAV_HOST?.trim();
-  return clamAv ? scanClamAv(data, clamAv) : { ok: true };
+  if (!clamAv) return { ok: true };
+  const limit = clamAvStreamMaxBytes();
+  if (data.length > limit) return tooLargeForScan(data.length, limit);
+  return scanClamAvInstream([data], clamAv, 15_000);
 }
 
 /**
- * Scan a file by path using clamd SCAN command — no buffer needed.
- * The file stays on disk, ClamAV reads it directly.
+ * Scan a file by path using clamd's SCAN command — no buffer needed, but clamd
+ * must see the same filesystem path (CLAMAV_SHARED_PATH_SCAN=1 attests that).
  */
 async function scanClamAvByPath(filePath: string, target: string): Promise<UploadSecurityResult> {
   const [hostname, portText] = target.split(":");
@@ -225,21 +295,7 @@ async function scanClamAvByPath(filePath: string, target: string): Promise<Uploa
       socket.write(`SCAN ${filePath}\0`);
     });
     socket.on("data", (chunk) => (response += chunk.toString("utf8")));
-    socket.on("end", () => {
-      if (response.includes("FOUND"))
-        finish({
-          ok: false,
-          code: "malware_detected",
-          message: "Schadsoftware erkannt — Upload abgelehnt.",
-        });
-      else if (response.includes("OK")) finish({ ok: true });
-      else
-        finish({
-          ok: false,
-          code: "scanner_unavailable",
-          message: "Virenscanner lieferte keine gültige Antwort.",
-        });
-    });
+    socket.on("end", () => finish(interpretClamResponse(response)));
     socket.on("error", () =>
       finish({ ok: false, code: "scanner_unavailable", message: "Virenscanner nicht erreichbar." })
     );
@@ -248,7 +304,9 @@ async function scanClamAvByPath(filePath: string, target: string): Promise<Uploa
 
 /**
  * Inspect an uploaded file by path — checks magic bytes (reads only first 64 bytes)
- * and scans with ClamAV by path. Does NOT buffer the entire file into memory.
+ * and streams the file to ClamAV (INSTREAM, 64 KiB chunks with backpressure).
+ * Does NOT buffer the entire file into memory. Files above the scanner's
+ * stream limit are refused with `file_too_large_for_scan`.
  */
 export async function inspectUploadFile(
   filename: string,
@@ -294,5 +352,17 @@ export async function inspectUploadFile(
   }
 
   const clamAv = process.env.CLAMAV_HOST?.trim();
-  return clamAv ? scanClamAvByPath(filePath, clamAv) : { ok: true };
+  if (!clamAv) return { ok: true };
+  // Path-based SCAN only when the operator attests a shared upload volume;
+  // otherwise clamd cannot see the path and every check would end as
+  // "scanner unavailable" without a single real scan.
+  if (sharedPathScanEnabled()) return scanClamAvByPath(filePath, clamAv);
+  const { size } = await stat(filePath);
+  const limit = clamAvStreamMaxBytes();
+  if (size > limit) return tooLargeForScan(size, limit);
+  return scanClamAvInstream(
+    createReadStream(filePath, { highWaterMark: INSTREAM_CHUNK_BYTES }),
+    clamAv,
+    60_000
+  );
 }
