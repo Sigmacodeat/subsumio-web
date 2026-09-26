@@ -7,7 +7,8 @@ const sendMail = vi.fn(async (_msg: Record<string, unknown>) => ({}));
 vi.mock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail }) } }));
 const createDeadlineNotification = vi.fn(async (_n: Record<string, unknown>) => undefined);
 vi.mock("@/lib/comments", () => ({
-  createDeadlineNotification: (...a: unknown[]) => createDeadlineNotification(...(a as [Record<string, unknown>])),
+  createDeadlineNotification: (...a: unknown[]) =>
+    createDeadlineNotification(...(a as [Record<string, unknown>])),
 }));
 let smtp = true;
 vi.mock("@/lib/kanzlei-settings-server", () => ({

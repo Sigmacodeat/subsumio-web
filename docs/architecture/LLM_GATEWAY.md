@@ -7,12 +7,12 @@ Stand 2026-09-23. Gilt für Web-App (`src/`) und Engine (`server/`).
 **Die Web-App ruft niemals einen KI-Anbieter direkt auf.** Es gibt keine Provider-Keys im
 Web-Container. Jeder Modellaufruf geht an die Engine:
 
-| Zweck                                                                | Endpunkt                   | Wann                                                                                                |
-| -------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
-| Juristische Antwort mit Retrieval, Zitaten, Guardrails, Cross-Verify | `POST /api/think`          | Assistent, Strategie, Briefing-Text, Drafting, Recherche                                            |
-| Kleine strukturierte Aufgabe ohne Retrieval                          | `POST /api/llm/complete`   | Copilot-Gedächtnis, WhatsApp-Intent, LLM-Fristen-Fallback, Empfehlungs-Politur im WhatsApp-Briefing |
+| Zweck                                                                | Endpunkt                   | Wann                                                                                                               |
+| -------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Juristische Antwort mit Retrieval, Zitaten, Guardrails, Cross-Verify | `POST /api/think`          | Assistent, Strategie, Briefing-Text, Drafting, Recherche                                                           |
+| Kleine strukturierte Aufgabe ohne Retrieval                          | `POST /api/llm/complete`   | Copilot-Gedächtnis, WhatsApp-Intent, LLM-Fristen-Fallback, Empfehlungs-Politur im WhatsApp-Briefing                |
 | Sprache → Text                                                       | `POST /api/llm/transcribe` | Diktat, WhatsApp-Sprachnachrichten (`audio-transcription.ts`: EU-only → Mistral Voxtral, sonst OpenRouter Whisper) |
-| Embeddings                                                           | `POST /api/embed`          | Suche, Grounding                                                                                    |
+| Embeddings                                                           | `POST /api/embed`          | Suche, Grounding                                                                                                   |
 
 Web-seitiger Client: `src/lib/engine-llm.ts` (`engineComplete`, `engineTranscribe`,
 `parseJsonObject`, `isEngineLLMAvailable`). Engine-seitige Logik:
@@ -113,15 +113,15 @@ auch nach UK bzw. CH.
 Was mit dem Schalter passiert — immer **Ablehnung vor dem Request**, nie stilles Umleiten
 (`EuResidencyError`, Unterklasse von `AIConfigError`):
 
-| Aufruf                                                        | Verhalten bei Nicht-EU-Ziel                                                |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `chat`, `chatStream`, `toolLoop`, Utility-Completion, `think` | Fehler an den Aufrufer                                                     |
-| Anbieter-Failover (Anthropic → OpenRouter)                    | findet nicht statt; der Originalfehler bleibt                              |
-| Query-Expansion, Bild-OCR                                     | Expansion fällt auf die Originalanfrage zurück, OCR liefert keinen Text    |
-| Reranker (`gateway.rerank`, LLM-Reranker-Kette)               | Nicht-EU-Modelle werden übersprungen; Ergebnis bleibt in RRF-Reihenfolge   |
+| Aufruf                                                          | Verhalten bei Nicht-EU-Ziel                                                                   |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `chat`, `chatStream`, `toolLoop`, Utility-Completion, `think`   | Fehler an den Aufrufer                                                                        |
+| Anbieter-Failover (Anthropic → OpenRouter)                      | findet nicht statt; der Originalfehler bleibt                                                 |
+| Query-Expansion, Bild-OCR                                       | Expansion fällt auf die Originalanfrage zurück, OCR liefert keinen Text                       |
+| Reranker (`gateway.rerank`, LLM-Reranker-Kette)                 | Nicht-EU-Modelle werden übersprungen; Ergebnis bleibt in RRF-Reihenfolge                      |
 | Transkription (`/api/llm/transcribe`, `audio-transcription.ts`) | läuft über Mistral Voxtral (EU, `MISTRAL_API_KEY`); ohne Schlüssel HTTP 403 `eu_only_refused` |
-| Subagent-Tier (`models.tier.subagent`)                        | Auflösung schlägt fehl (der Direktweg umgeht sonst das Gateway)            |
-| Embeddings                                                    | siehe unten                                                                |
+| Subagent-Tier (`models.tier.subagent`)                          | Auflösung schlägt fehl (der Direktweg umgeht sonst das Gateway)                               |
+| Embeddings                                                      | siehe unten                                                                                   |
 
 ### Embeddings unter EU-only
 

@@ -20,9 +20,7 @@ export function turnsOnTwoFactorRequirement(
 }
 
 /** Signs out every member of the actor's firm (or the actor alone) without 2FA. */
-export async function enforceFirmTwoFactorNow(
-  actor: Pick<User, "id" | "orgId">
-): Promise<number> {
+export async function enforceFirmTwoFactorNow(actor: Pick<User, "id" | "orgId">): Promise<number> {
   const store = getStore();
   const members = actor.orgId
     ? await store.listByOrg(actor.orgId)

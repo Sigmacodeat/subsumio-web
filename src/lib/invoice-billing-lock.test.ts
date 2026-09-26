@@ -234,7 +234,9 @@ describe("findUnbillBlockers (GELD-5)", () => {
       }
       return Response.json(
         all.filter((p) =>
-          n !== null ? p.frontmatter?.invoice_number === n : p.frontmatter?.parent_invoice_id === parent
+          n !== null
+            ? p.frontmatter?.invoice_number === n
+            : p.frontmatter?.parent_invoice_id === parent
         )
       );
     });

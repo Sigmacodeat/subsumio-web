@@ -1,11 +1,7 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
 import { loadApprovalSummary, type ApprovalCategoryKey } from "@/lib/approval-summary";
 import { listEnginePagesDetailed } from "@/lib/engine-pages";
-import {
-  fetchPageStatusCounts,
-  sumCounts,
-  type PageStatusCounts,
-} from "@/lib/engine-page-counts";
+import { fetchPageStatusCounts, sumCounts, type PageStatusCounts } from "@/lib/engine-page-counts";
 import { addDaysToIsoDate, firmToday } from "@/lib/datetime";
 import { createTtlCache, headersCacheKey } from "@/lib/server-ttl-cache";
 
@@ -246,4 +242,3 @@ export const GET = createHandler(
     return apiSuccess(badges);
   }
 );
-

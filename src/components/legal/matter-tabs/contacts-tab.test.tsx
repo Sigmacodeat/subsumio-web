@@ -117,7 +117,11 @@ describe("ContactsTab", () => {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const [contacts, setContactsList] = useState(preloaded);
       return {
-        caseData: { slug: "legal/cases/alt", clientSlug: "legal/contacts/mandantin", status: "open" },
+        caseData: {
+          slug: "legal/cases/alt",
+          clientSlug: "legal/contacts/mandantin",
+          status: "open",
+        },
         contacts,
         setContactsList,
         contactsLoading: false,

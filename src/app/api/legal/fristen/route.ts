@@ -22,8 +22,6 @@ const querySchema = z.object({
   view: z.enum(["warnings"]).optional(),
 });
 
-
-
 /**
  * GET /api/legal/fristen — the unified Fristen read model
  * (src/lib/fristen-read-model.ts), filtered, sorted and summarised.
@@ -59,8 +57,8 @@ export const GET = createHandler(
     const failedSources = model.failedSources;
     const fristen =
       query.view === "warnings"
-        ? model.fristen.filter((f) =>
-            topbarDeadlineWarnings([f], query.heute ?? firmToday()).length > 0
+        ? model.fristen.filter(
+            (f) => topbarDeadlineWarnings([f], query.heute ?? firmToday()).length > 0
           )
         : model.fristen;
 

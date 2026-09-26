@@ -49,9 +49,12 @@ vi.mock("@/lib/auth/account-status", () => ({
   ACCOUNT_BLOCKED_MESSAGE: "blocked",
   isAccountBlocked: async () => false,
 }));
-vi.mock("@/lib/kanzlei-settings-server", () => ({ twoFactorPolicyFor: async () => "not_required" }));
+vi.mock("@/lib/kanzlei-settings-server", () => ({
+  twoFactorPolicyFor: async () => "not_required",
+}));
 vi.mock("@/lib/env", () => ({
-  env: (k: string) => (k === "SUBSUMIO_DATA_DIR" ? `/tmp/subsumio-lockout-test-${process.pid}` : undefined),
+  env: (k: string) =>
+    k === "SUBSUMIO_DATA_DIR" ? `/tmp/subsumio-lockout-test-${process.pid}` : undefined,
 }));
 
 import { POST } from "./route";

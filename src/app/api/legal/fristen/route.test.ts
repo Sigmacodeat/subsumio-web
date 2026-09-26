@@ -307,8 +307,7 @@ describe("GET /api/legal/fristen", () => {
         return Response.json([]);
       })
     );
-    const req = () =>
-      GET(new NextRequest("http://localhost:3000/api/legal/fristen?view=warnings"));
+    const req = () => GET(new NextRequest("http://localhost:3000/api/legal/fristen?view=warnings"));
     const [a, b] = await Promise.all([req(), req()]);
     const body = (await a.json()) as { fristen: Array<{ title: string }> };
     await b.json();

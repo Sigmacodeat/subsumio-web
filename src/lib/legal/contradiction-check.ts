@@ -54,10 +54,7 @@ const MATTER_DOCUMENTS_MAX = 10_000;
  * document uploaded in between. A batch upload of 300 documents runs the
  * check a handful of times, not 300 times in parallel.
  */
-const running = new Map<
-  string,
-  { rerun: boolean; promise: Promise<ContradictionCheckResult> }
->();
+const running = new Map<string, { rerun: boolean; promise: Promise<ContradictionCheckResult> }>();
 
 /**
  * Run the check for one matter with the given engine headers (they decide
@@ -76,7 +73,10 @@ export function checkCaseContradictions(
     current.rerun = true;
     return current.promise;
   }
-  const state = { rerun: false, promise: undefined as unknown as Promise<ContradictionCheckResult> };
+  const state = {
+    rerun: false,
+    promise: undefined as unknown as Promise<ContradictionCheckResult>,
+  };
   state.promise = (async () => {
     try {
       let result: ContradictionCheckResult;

@@ -14,7 +14,10 @@ let caller = "a@b.test";
 vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (_opts: unknown, handler: (ctx: unknown, ...rest: unknown[]) => Promise<Response>) => () =>
-      handler({ headers: { "x-subsumio-source": "b", "x-caller": caller }, user: { email: caller } }),
+      handler({
+        headers: { "x-subsumio-source": "b", "x-caller": caller },
+        user: { email: caller },
+      }),
   apiSuccess: (data: unknown) => Response.json({ data }),
 }));
 
@@ -33,7 +36,10 @@ let countsComplete = true;
 function engineCounts(u: URL) {
   const types = (u.searchParams.get("types") ?? "").split(",");
   const before = u.searchParams.get("date_before");
-  const groups = new Map<string, { type: string; status: string; count: number; before_count: number }>();
+  const groups = new Map<
+    string,
+    { type: string; status: string; count: number; before_count: number }
+  >();
   for (const type of types) {
     for (const row of byType[type] ?? []) {
       const status = String(row.frontmatter.status ?? "").toLowerCase();
@@ -49,7 +55,9 @@ function engineCounts(u: URL) {
   return { counts: [...groups.values()], complete: countsComplete };
 }
 
-function call(): Promise<{ data: Record<string, { count: number; variant: string; degraded?: boolean }> }> {
+function call(): Promise<{
+  data: Record<string, { count: number; variant: string; degraded?: boolean }>;
+}> {
   return (GET as unknown as () => Promise<Response>)().then((r) => r.json());
 }
 

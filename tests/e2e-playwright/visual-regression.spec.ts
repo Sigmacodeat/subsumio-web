@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { submitSignupFormAndConfirm } from "./helpers";
 
 /**
  * Visual Regression — Both Themes
@@ -34,7 +35,7 @@ test.describe("Visual Regression — Both Themes", () => {
     await page.locator('input[name="name"]').fill(TEST_USER.name);
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(TEST_USER.password);
-    await page.locator('form button[type="submit"]').click();
+    await submitSignupFormAndConfirm(page);
     await page.waitForFunction(() => window.location.pathname === "/dashboard", {
       timeout: 45_000,
     });

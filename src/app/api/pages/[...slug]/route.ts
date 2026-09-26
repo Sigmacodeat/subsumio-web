@@ -14,7 +14,10 @@ import {
 } from "@/lib/case-retention";
 import { removeFromCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import { enforceFirmTwoFactorNow, turnsOnTwoFactorRequirement } from "@/lib/auth/two-factor-enforce";
+import {
+  enforceFirmTwoFactorNow,
+  turnsOnTwoFactorRequirement,
+} from "@/lib/auth/two-factor-enforce";
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,

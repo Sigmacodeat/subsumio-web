@@ -37,6 +37,9 @@ function setup(psqlFails: boolean) {
   const dir = mkdtempSync(join(root, "case-"));
   const bin = join(dir, "bin");
   mkdirSync(bin);
+  // run.sh starts dump-firm-data.sh with `sh`; route that to bash as well
+  // (see RUN_SHELL) so the nested script's `set -o pipefail` works on CI.
+  stub(bin, "sh", `exec bash "$@"`);
   // pg_dump: write the -f target.
   stub(
     bin,

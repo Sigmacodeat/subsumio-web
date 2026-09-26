@@ -14,9 +14,7 @@ export const GET = createHandler(
   async (ctx, _body, _query, _req) => {
     try {
       // Only this firm's records — never load (and decrypt) the whole installation.
-      const orgUsers = ctx.user.orgId
-        ? await getStore().listByOrg(ctx.user.orgId)
-        : [ctx.user];
+      const orgUsers = ctx.user.orgId ? await getStore().listByOrg(ctx.user.orgId) : [ctx.user];
       // Client accounts never see other accounts; only admins see client accounts.
       const members = visibleOrgMembers(ctx.user, orgUsers).map((u) => ({
         id: u.id,

@@ -501,7 +501,11 @@ describe("GET /api/pages?case_slug= — one matter's pages, complete", () => {
                 title: "Frist",
                 frontmatter: { case_slug: want },
               }))
-            : Array.from({ length: 100 }, (_, i) => ({ slug: `x/${i}`, title: "x", frontmatter: {} }))
+            : Array.from({ length: 100 }, (_, i) => ({
+                slug: `x/${i}`,
+                title: "x",
+                frontmatter: {},
+              }))
         );
       })
     );

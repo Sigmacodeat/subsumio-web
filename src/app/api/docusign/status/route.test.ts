@@ -8,9 +8,8 @@ vi.mock("@/lib/docusign", () => ({
   docusignEnvironment: () => "production",
 }));
 vi.mock("@/lib/api-handler", () => ({
-  createHandler:
-    (_o: unknown, handler: (ctx: unknown) => Promise<Response>) => async () =>
-      handler({ user: { id: "u1" } }),
+  createHandler: (_o: unknown, handler: (ctx: unknown) => Promise<Response>) => async () =>
+    handler({ user: { id: "u1" } }),
 }));
 
 import { GET } from "./route";

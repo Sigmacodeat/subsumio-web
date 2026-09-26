@@ -284,7 +284,11 @@ export async function retryDueWebhookDeliveries(
       if (state === "exhausted") {
         const disabled = await noteWebhookFinalFailure(item.brainId, webhook, result.error);
         // Switched off: the other hooks of this firm stay cached, this one is gone.
-        if (disabled) hooksByBrain.set(item.brainId, hooks.filter((w) => w.id !== webhook.id));
+        if (disabled)
+          hooksByBrain.set(
+            item.brainId,
+            hooks.filter((w) => w.id !== webhook.id)
+          );
       }
       stats.failed++;
     }

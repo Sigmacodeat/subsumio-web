@@ -95,7 +95,10 @@ describe("team page", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Einladen" }));
     await waitFor(() =>
-      expect(inviteMutateAsync).toHaveBeenCalledWith({ email: "m@example.at", role: "client_viewer" })
+      expect(inviteMutateAsync).toHaveBeenCalledWith({
+        email: "m@example.at",
+        role: "client_viewer",
+      })
     );
   });
 });

@@ -64,12 +64,17 @@ async function renderAktenblatt(headers: Record<string, string>, slug: string): 
     // Deadlines are usually standalone pages linked by case_slug — the engine
     // selects this matter's rows in SQL. Strict + complete: a partial list
     // would drop deadlines from the Aktenblatt, so skip the refresh instead.
-    const matterDeadlines = (await listEnginePages(headers, "legal_deadline", MATTER_DEADLINES_MAX, {
-      timeoutMs: 10_000,
-      strict: true,
-      failOnTruncate: true,
-      frontmatter: { case_slug: slug },
-    })) as unknown as Array<Record<string, unknown>>;
+    const matterDeadlines = (await listEnginePages(
+      headers,
+      "legal_deadline",
+      MATTER_DEADLINES_MAX,
+      {
+        timeoutMs: 10_000,
+        strict: true,
+        failOnTruncate: true,
+        frontmatter: { case_slug: slug },
+      }
+    )) as unknown as Array<Record<string, unknown>>;
     const linkedDeadlines = matterDeadlines.filter(
       (d) => ((d.frontmatter ?? {}) as Record<string, unknown>).case_slug === slug
     );

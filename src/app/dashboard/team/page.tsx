@@ -20,7 +20,12 @@ import { Skeleton, RowSkeleton } from "@/components/dashboard/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { teamErrorText } from "./team-errors";
-import { DEFAULT_INVITE_ROLE, INVITE_ROLES, isInviteRole, type InviteRole } from "@/lib/invite-roles";
+import {
+  DEFAULT_INVITE_ROLE,
+  INVITE_ROLES,
+  isInviteRole,
+  type InviteRole,
+} from "@/lib/invite-roles";
 
 interface Member {
   id: string;
@@ -245,9 +250,7 @@ export default function TeamPage() {
                       </p>
                       <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
                         {m.email}
-                        {m.role && ROLE_LABEL_KEYS[m.role] && (
-                          <> · {t(ROLE_LABEL_KEYS[m.role])}</>
-                        )}
+                        {m.role && ROLE_LABEL_KEYS[m.role] && <> · {t(ROLE_LABEL_KEYS[m.role])}</>}
                       </p>
                     </div>
                     {state.isOwner && !m.isOwner && (
@@ -295,8 +298,8 @@ export default function TeamPage() {
                   </h3>
                 </div>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Die eingeladene Person erhält per E-Mail einen Link, mit dem sie dem Team
-                  mit der gewählten Rolle beitritt. Der Link ist 7 Tage gültig.
+                  Die eingeladene Person erhält per E-Mail einen Link, mit dem sie dem Team mit der
+                  gewählten Rolle beitritt. Der Link ist 7 Tage gültig.
                 </p>
                 <form
                   className="flex flex-col gap-3 sm:flex-row"

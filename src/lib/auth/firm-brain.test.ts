@@ -45,11 +45,7 @@ vi.mock("@/lib/api-key-store", () => ({
   }),
 }));
 
-import {
-  _resetFirmBrainCache,
-  detachFromFirm,
-  isPersonalBrainOfOtherFirm,
-} from "./firm-brain";
+import { _resetFirmBrainCache, detachFromFirm, isPersonalBrainOfOtherFirm } from "./firm-brain";
 import { engineContext, firmBrainIdFor } from "@/lib/engine";
 import { verifyApiKey } from "./api-key-auth";
 

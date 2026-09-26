@@ -79,8 +79,16 @@ describe("loadFristenReadModel", () => {
 
   test("with a matter filter the engine selects only that matter's deadlines", async () => {
     deadlineRows = [
-      { slug: "legal/deadlines/a", title: "A", frontmatter: { due_date: tomorrow(), case_slug: "legal/cases/x" } },
-      { slug: "legal/deadlines/b", title: "B", frontmatter: { due_date: tomorrow(), case_slug: "legal/cases/y" } },
+      {
+        slug: "legal/deadlines/a",
+        title: "A",
+        frontmatter: { due_date: tomorrow(), case_slug: "legal/cases/x" },
+      },
+      {
+        slug: "legal/deadlines/b",
+        title: "B",
+        frontmatter: { due_date: tomorrow(), case_slug: "legal/cases/y" },
+      },
     ];
     const model = await loadFristenReadModel({}, { caseFilter: "legal/cases/x" });
     expect(model.fristen.map((f) => f.source_slug)).toEqual(["legal/deadlines/a"]);

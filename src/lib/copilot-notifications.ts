@@ -407,9 +407,7 @@ export async function generateCopilotNotifications(
   const notifications = generateNotificationsFromScan(scan, isEn);
   // Critical deadlines of EVERY matter — also older ones outside the recent
   // scan and standalone deadline pages — from the deadline read model.
-  notifications.push(
-    ...(await criticalDeadlineNotifications(headers, notifications, isEn))
-  );
+  notifications.push(...(await criticalDeadlineNotifications(headers, notifications, isEn)));
 
   // Persist as in-app notifications
   for (const notif of notifications) {

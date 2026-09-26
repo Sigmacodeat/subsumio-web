@@ -9,11 +9,7 @@ vi.mock("@/lib/api-handler", () => ({
   createHandler:
     (_o: unknown, handler: (ctx: unknown, b: unknown, q: unknown) => Promise<Response>) =>
     (q: unknown) =>
-      handler(
-        { headers: { "x-subsumio-source": "b" }, brainId: "b", user: { id: "u-me" } },
-        {},
-        q
-      ),
+      handler({ headers: { "x-subsumio-source": "b" }, brainId: "b", user: { id: "u-me" } }, {}, q),
 }));
 
 import { GET } from "./route";

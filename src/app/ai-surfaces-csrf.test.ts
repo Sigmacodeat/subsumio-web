@@ -18,7 +18,8 @@ const FILES = [
 ];
 
 /** A plain fetch( (not csrfFetch) whose options set a write method. */
-const RAW_WRITE = /(?<![A-Za-z])fetch\(\s*[^)]*?,\s*\{[^}]*?method:\s*["'`](POST|PUT|PATCH|DELETE)["'`]/s;
+const RAW_WRITE =
+  /(?<![A-Za-z])fetch\(\s*[^)]*?,\s*\{[^}]*?method:\s*["'`](POST|PUT|PATCH|DELETE)["'`]/s;
 
 describe("AI surfaces use csrfFetch for writes", () => {
   test.each(FILES)("%s", (file) => {

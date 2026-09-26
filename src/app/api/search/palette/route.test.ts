@@ -5,15 +5,14 @@ const handlerOpts = vi.hoisted(() => ({ value: undefined as Record<string, unkno
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
 vi.mock("@/lib/usage", () => ({ recordQuery: vi.fn() }));
 vi.mock("@/lib/api-handler", () => ({
-  createHandler:
-    (opts: Record<string, unknown>, handler: (ctx: unknown, b: unknown, q: unknown) => Promise<Response>) => {
-      handlerOpts.value = opts;
-      return (q: unknown) => handler(
-          { headers: { "x-subsumio-source": "b" }, brainId: "b", user: { id: "u-me" } },
-          {},
-          q
-        );
-    },
+  createHandler: (
+    opts: Record<string, unknown>,
+    handler: (ctx: unknown, b: unknown, q: unknown) => Promise<Response>
+  ) => {
+    handlerOpts.value = opts;
+    return (q: unknown) =>
+      handler({ headers: { "x-subsumio-source": "b" }, brainId: "b", user: { id: "u-me" } }, {}, q);
+  },
 }));
 
 import { GET } from "./route";
@@ -48,7 +47,11 @@ describe("GET /api/search/palette", () => {
         if (u.pathname.startsWith("/api/pages/")) {
           const slug = decodeURIComponent(u.pathname.slice("/api/pages/".length));
           const owner = slug.includes("kollegin") ? "u-other" : "u-me";
-          return Response.json({ slug, type: "calendar_event", frontmatter: { owner_user_id: owner } });
+          return Response.json({
+            slug,
+            type: "calendar_event",
+            frontmatter: { owner_user_id: owner },
+          });
         }
         return Response.json([
           { slug: "calendar/outlook/kollegin@k.at/E1", type: "calendar_event", title: "Arzt" },

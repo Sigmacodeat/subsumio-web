@@ -30,7 +30,10 @@ beforeEach(() => {
 describe("GET /api/legal/fristenbuch fallback", () => {
   test("reads every matter, complete or an error", async () => {
     list.mockResolvedValue([
-      { slug: "legal/cases/alt", frontmatter: { deadlines: [{ title: "Berufung", due_date: "2030-01-01" }] } },
+      {
+        slug: "legal/cases/alt",
+        frontmatter: { deadlines: [{ title: "Berufung", due_date: "2030-01-01" }] },
+      },
     ]);
     const body = (await call()) as { eintraege: unknown[] };
     expect(body.eintraege).toHaveLength(1);

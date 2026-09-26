@@ -52,6 +52,31 @@ export async function signupAndConfirm(
   return res;
 }
 
+/**
+ * Submits the filled signup form on `page` (ticking the terms/AVV boxes) and
+ * opens the confirmation link. Signup no longer signs in by itself: the
+ * account is created when the link is opened, which the E2E harness
+ * (SUBSUMIO_E2E=1) returns in the response. Afterwards the page is in the app.
+ */
+export async function submitSignupFormAndConfirm(page: Page): Promise<void> {
+  for (const box of await page
+    .locator('[data-testid="signup-legal"] input[type="checkbox"]')
+    .all()) {
+    await box.check();
+  }
+  const [res] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes("/api/auth/signup") && r.request().method() === "POST"
+    ),
+    page.locator('form button[type="submit"]').click(),
+  ]);
+  expect(res.status(), "signup accepted").toBe(201);
+  const body = (await res.json().catch(() => ({}))) as { e2eVerifyUrl?: string };
+  expect(body.e2eVerifyUrl, "E2E harness returns the confirmation link").toBeTruthy();
+  const link = new URL(body.e2eVerifyUrl!);
+  await page.goto(`${link.pathname}${link.search}`, { waitUntil: "domcontentloaded" });
+}
+
 /** Signs up a fresh user (legal industry), finishes onboarding, returns the CSRF token. */
 export async function signUpLegalUser(
   page: Page,

@@ -6,7 +6,10 @@ import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
 import { emitCaseCreated } from "@/lib/webhook-dispatch";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
-import { enforceFirmTwoFactorNow, turnsOnTwoFactorRequirement } from "@/lib/auth/two-factor-enforce";
+import {
+  enforceFirmTwoFactorNow,
+  turnsOnTwoFactorRequirement,
+} from "@/lib/auth/two-factor-enforce";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
@@ -41,27 +44,28 @@ import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing
 import { logger } from "@/lib/logger";
 const log = logger("api/pages");
 
-const pagesQuerySchema = z.object({
-  limit: z.string().optional(),
-  offset: z.string().optional(),
-  source: z.string().optional(),
-  type: z.string().optional(),
-  tag: z.string().optional(),
-  q: z.string().optional(),
-  cursor: z.string().optional(),
-  /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
-  include_tombstoned: z.string().optional(),
-  /**
-   * Pages of `type` that belong to one matter — linked by frontmatter
-   * case_slug, case_title or case_number (any of them). The engine filters
-   * by these frontmatter fields in SQL (indexed for case_slug), so only the
-   * matter's own rows are read; the server pages through them and the
-   * result is complete, not the newest N of the firm.
-   */
-  case_slug: z.string().max(500).optional(),
-  case_title: z.string().max(500).optional(),
-  case_number: z.string().max(200).optional(),
-})
+const pagesQuerySchema = z
+  .object({
+    limit: z.string().optional(),
+    offset: z.string().optional(),
+    source: z.string().optional(),
+    type: z.string().optional(),
+    tag: z.string().optional(),
+    q: z.string().optional(),
+    cursor: z.string().optional(),
+    /** "1": also return deleted (tombstoned) pages, for callers that page by offset. */
+    include_tombstoned: z.string().optional(),
+    /**
+     * Pages of `type` that belong to one matter — linked by frontmatter
+     * case_slug, case_title or case_number (any of them). The engine filters
+     * by these frontmatter fields in SQL (indexed for case_slug), so only the
+     * matter's own rows are read; the server pages through them and the
+     * result is complete, not the newest N of the firm.
+     */
+    case_slug: z.string().max(500).optional(),
+    case_title: z.string().max(500).optional(),
+    case_number: z.string().max(200).optional(),
+  })
   // `fm.<key>=<value>`: engine-side frontmatter equality filter, relayed
   // as is (keys validated below).
   .passthrough();

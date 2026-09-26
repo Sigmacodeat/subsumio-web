@@ -96,9 +96,7 @@ export function ContactsTab() {
   // (name, e-mail) — not the firm-wide list the matter view preloads, which
   // holds only the most recently edited contacts.
   const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<ReturnType<typeof toContact>[] | null>(
-    null
-  );
+  const [searchResults, setSearchResults] = useState<ReturnType<typeof toContact>[] | null>(null);
   const [searchState, setSearchState] = useState<"idle" | "loading" | "failed">("idle");
   const searchTerm = search.trim();
   useEffect(() => {

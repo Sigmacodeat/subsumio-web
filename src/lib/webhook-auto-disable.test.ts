@@ -112,7 +112,10 @@ describe("webhook auto-disable", () => {
       "HTTP 503"
     );
     expect(disabled).toBe(true);
-    const [, patch] = m.patch.mock.calls[0] as [unknown, { slug: string; frontmatter: Record<string, unknown> }];
+    const [, patch] = m.patch.mock.calls[0] as [
+      unknown,
+      { slug: string; frontmatter: Record<string, unknown> },
+    ];
     expect(patch.slug).toBe("settings/webhooks/wh-1");
     expect(patch.frontmatter).toMatchObject({
       status: "disabled",
@@ -149,7 +152,14 @@ describe("webhook auto-disable", () => {
 
   it("an exhausted retry counts as final failure", async () => {
     m.claim.mockResolvedValueOnce([
-      { id: "d1", brainId: "firm-a", webhookId: "wh-1", event: "intake.new", body: "{}", attempts: 4 },
+      {
+        id: "d1",
+        brainId: "firm-a",
+        webhookId: "wh-1",
+        event: "intake.new",
+        body: "{}",
+        attempts: 4,
+      },
     ]);
     m.fail.mockResolvedValueOnce("exhausted");
     vi.stubGlobal(
@@ -162,7 +172,14 @@ describe("webhook auto-disable", () => {
 
   it("a retry that is still pending does not count yet", async () => {
     m.claim.mockResolvedValueOnce([
-      { id: "d1", brainId: "firm-a", webhookId: "wh-1", event: "intake.new", body: "{}", attempts: 1 },
+      {
+        id: "d1",
+        brainId: "firm-a",
+        webhookId: "wh-1",
+        event: "intake.new",
+        body: "{}",
+        attempts: 1,
+      },
     ]);
     m.fail.mockResolvedValueOnce("pending");
     vi.stubGlobal(

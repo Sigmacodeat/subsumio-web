@@ -617,12 +617,10 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
       const page = await api.brain.getPage(slug);
       const detail = parseCaseDetail(page);
       let deadlinesFailed = false;
-      const deadlinePages = await api.brain
-        .listPages(matterDeadlineQuery(detail))
-        .catch(() => {
-          deadlinesFailed = true;
-          return [] as BrainPage[];
-        });
+      const deadlinePages = await api.brain.listPages(matterDeadlineQuery(detail)).catch(() => {
+        deadlinesFailed = true;
+        return [] as BrainPage[];
+      });
       setStandaloneDeadlinesFailed(deadlinesFailed);
       setCaseData(detail);
       setTasks(detail.tasks);

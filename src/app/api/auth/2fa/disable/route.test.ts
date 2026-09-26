@@ -48,20 +48,38 @@ beforeEach(() => update.mockClear());
 
 describe("POST /api/auth/2fa/disable", () => {
   it("an SSO account switches 2FA off with its current code", async () => {
-    user = { id: "u", email: "u@k.example", role: "lawyer", passwordHash: "", twoFactorEnabled: true };
+    user = {
+      id: "u",
+      email: "u@k.example",
+      role: "lawyer",
+      passwordHash: "",
+      twoFactorEnabled: true,
+    };
     const res = await disable({ code: "123456" });
     expect(res.status).toBe(200);
     expect(update).toHaveBeenCalled();
   });
 
   it("an SSO account still needs a valid code", async () => {
-    user = { id: "u", email: "u@k.example", role: "lawyer", passwordHash: "", twoFactorEnabled: true };
+    user = {
+      id: "u",
+      email: "u@k.example",
+      role: "lawyer",
+      passwordHash: "",
+      twoFactorEnabled: true,
+    };
     expect((await disable({ code: "000000" })).status).toBe(403);
     expect(update).not.toHaveBeenCalled();
   });
 
   it("an account with a password still needs the password", async () => {
-    user = { id: "u", email: "u@k.example", role: "lawyer", passwordHash: "h", twoFactorEnabled: true };
+    user = {
+      id: "u",
+      email: "u@k.example",
+      role: "lawyer",
+      passwordHash: "h",
+      twoFactorEnabled: true,
+    };
     expect((await disable({ code: "123456" })).status).toBe(403);
     expect((await disable({ code: "123456", password: "richtig" })).status).toBe(200);
   });

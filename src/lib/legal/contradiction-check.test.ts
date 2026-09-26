@@ -72,10 +72,7 @@ describe("checkCaseContradictions", () => {
   });
 
   it("reads only the matter's documents via the engine filter, complete or error (R11-5)", async () => {
-    m.list.mockResolvedValue([
-      doc("d1", "legal/cases/m1", {}),
-      doc("d2", "legal/cases/m1", {}),
-    ]);
+    m.list.mockResolvedValue([doc("d1", "legal/cases/m1", {}), doc("d2", "legal/cases/m1", {})]);
     await checkCaseContradictions({}, "legal/cases/m1");
     expect(m.list.mock.calls[0][3]).toMatchObject({
       strict: true,

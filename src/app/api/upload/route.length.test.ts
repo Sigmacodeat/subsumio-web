@@ -42,6 +42,8 @@ describe("POST /api/upload without Content-Length", () => {
     const res = await (POST as unknown as (r: Request) => Promise<Response>)(req);
     expect(res.status).toBe(411);
     expect(acquireUploadSlot).not.toHaveBeenCalled();
-    expect((req as unknown as { formData: ReturnType<typeof vi.fn> }).formData).not.toHaveBeenCalled();
+    expect(
+      (req as unknown as { formData: ReturnType<typeof vi.fn> }).formData
+    ).not.toHaveBeenCalled();
   });
 });
