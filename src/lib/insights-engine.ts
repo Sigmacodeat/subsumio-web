@@ -10,6 +10,9 @@
  * No AI calls — pure rule-based matching for zero-cost, real-time insights.
  */
 
+import { isClosedDeadline, isDiscardedDeadline } from "@/lib/deadline-reminders";
+import { zonedDateString } from "@/lib/datetime";
+
 export type InsightType =
   | "judgement_match"
   | "playbook_hint"
@@ -31,7 +34,25 @@ export interface Insight {
   dismissed?: boolean;
 }
 
+/** One deadline from the Fristen read model (src/lib/fristen-read-model.ts). */
+export interface InsightDeadline {
+  case_slug?: string;
+  title?: string;
+  due_date: string;
+  status?: string;
+  review_status?: string;
+  is_notfrist?: boolean;
+  /** Read-model source; timeline events are not deadlines here. */
+  source?: string;
+}
+
 export interface InsightInput {
+  /**
+   * Deadlines from the Fristen read model (Fristenbuch, deadline pages,
+   * deadlines in matters). When given, it is the only deadline source — the
+   * matters' own `deadlines[]` are already part of it.
+   */
+  deadlines?: InsightDeadline[];
   cases: Array<{
     slug: string;
     title?: string;
@@ -44,6 +65,7 @@ export interface InsightInput {
         due_date?: string;
         date?: string;
         status?: string;
+        review_status?: string;
         is_notfrist?: boolean;
         title?: string;
       }>;
@@ -93,12 +115,35 @@ function isOpenCase(status?: string): boolean {
   );
 }
 
+/** Whole calendar days from the firm's today (Europe/Vienna) to `dateStr`. */
 function daysUntil(dateStr: string): number {
-  const now = new Date();
-  now.setUTCHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setUTCHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - now.getTime()) / 86_400_000);
+  const today = Date.parse(`${zonedDateString(new Date())}T00:00:00Z`);
+  const target = /^\d{4}-\d{2}-\d{2}/.test(dateStr)
+    ? Date.parse(`${dateStr.slice(0, 10)}T00:00:00Z`)
+    : new Date(dateStr).setUTCHours(0, 0, 0, 0);
+  return Math.round((target - today) / 86_400_000);
+}
+
+type CaseDeadline = {
+  due_date?: string;
+  date?: string;
+  status?: string;
+  review_status?: string;
+  is_notfrist?: boolean;
+  title?: string;
+};
+
+/**
+ * Every deadline of a matter: from the read model when the caller loaded it
+ * (standalone deadline pages and the Fristenbuch count too), else the
+ * matter's embedded `deadlines[]`. Discarded entries (cancelled, deleted,
+ * rejected AI suggestions) are gone either way.
+ */
+function caseDeadlines(input: InsightInput, caseSlug: string, embedded?: CaseDeadline[]) {
+  const list: CaseDeadline[] = input.deadlines
+    ? input.deadlines.filter((d) => d.case_slug === caseSlug && d.source !== "timeline")
+    : (embedded ?? []);
+  return list.filter((d) => !isDiscardedDeadline(d));
 }
 
 /**
@@ -160,7 +205,7 @@ function generatePlaybookHints(input: InsightInput): Insight[] {
     if (!isOpenCase(caseItem.frontmatter?.status)) continue;
     const fm = caseItem.frontmatter ?? {};
     const procedure = String(fm.procedure ?? "").toLowerCase();
-    const deadlines = fm.deadlines ?? [];
+    const deadlines = caseDeadlines(input, caseItem.slug, fm.deadlines);
     const timeline = fm.timeline ?? [];
 
     // Check if case has no deadlines set but is open
@@ -183,7 +228,7 @@ function generatePlaybookHints(input: InsightInput): Insight[] {
     // Check for Notfristen approaching
     for (const dl of deadlines) {
       const dueStr = dl.due_date ?? dl.date;
-      if (!dueStr || dl.status === "done") continue;
+      if (!dueStr || isClosedDeadline(dl)) continue;
       const days = daysUntil(dueStr);
       if (dl.is_notfrist && days >= 0 && days <= 7) {
         insights.push({
@@ -301,10 +346,11 @@ function generateDeadlineRisks(input: InsightInput): Insight[] {
 
   for (const caseItem of input.cases) {
     if (!isOpenCase(caseItem.frontmatter?.status)) continue;
-    const deadlines = caseItem.frontmatter?.deadlines ?? [];
+    const deadlines = caseDeadlines(input, caseItem.slug, caseItem.frontmatter?.deadlines);
     for (const dl of deadlines) {
       const dueStr = dl.due_date ?? dl.date;
-      if (!dueStr || dl.status === "done") continue;
+      // Central closed set: erledigt, storniert, verworfen, … never "versäumt".
+      if (!dueStr || isClosedDeadline(dl)) continue;
       const days = daysUntil(dueStr);
       if (days < 0) {
         insights.push({
@@ -332,6 +378,7 @@ function generateDeadlineRisks(input: InsightInput): Insight[] {
  */
 export function generateInsights(input: InsightInput): Insight[] {
   const safeInput: InsightInput = {
+    deadlines: input.deadlines,
     cases: input.cases ?? [],
     judgements: input.judgements ?? [],
     recentDocuments: input.recentDocuments ?? [],
