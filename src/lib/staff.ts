@@ -103,7 +103,7 @@ function workdayDates(startIso: string, endIso: string): string[] {
       set = vacationHolidays(year);
       holidays.set(year, set);
     }
-    const iso = d.toISOString().slice(0, 10);
+    const iso = d.toISOString().slice(0, 10); // utc-date-ok: d walks calendar days at UTC midnight
     if (!set.has(iso)) out.push(iso);
   }
   return out;

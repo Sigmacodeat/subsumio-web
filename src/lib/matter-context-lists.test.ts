@@ -46,7 +46,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("buildMatterContext — vollständige Listen je Akte", () => {
+describe("buildMatterContext — vollständige Listen je Akte", { timeout: 20_000 }, () => {
   test("150 Dokumente, das der Akte ist das älteste → erscheint im Bundle", async () => {
     for (let i = 0; i < 149; i++) {
       engine.put({

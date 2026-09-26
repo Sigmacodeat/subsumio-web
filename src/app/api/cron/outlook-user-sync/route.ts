@@ -20,6 +20,7 @@ import {
 } from "@/lib/calendar/graph-user-sync";
 import { listCalendarSyncAccounts, recordCalendarSyncError } from "@/lib/email/imap-accounts";
 import type { ListedPage } from "@/lib/engine-pages";
+import { firmToday } from "@/lib/datetime";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -175,7 +176,7 @@ async function syncMailboxCalendars(errors: string[]): Promise<number> {
 
 async function notifyReconnect(userId: string, brainId: string): Promise<void> {
   await persistNotificationUpsert({
-    id: `notif_ms365_reconnect_${userId}_${new Date().toISOString().slice(0, 10)}`,
+    id: `notif_ms365_reconnect_${userId}_${firmToday()}`,
     userId,
     brainId,
     type: "system",

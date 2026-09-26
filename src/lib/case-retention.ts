@@ -12,6 +12,8 @@
  * Papierkorb und der Purge-Cron fragen alle hier.
  */
 
+import { zonedDateString } from "@/lib/datetime";
+
 export const CASE_RETENTION_YEARS = 7;
 
 /** Status, mit denen das Mandat beendet ist — ab dann läuft die Frist. */
@@ -63,7 +65,7 @@ function untilMs(value: unknown): number | null {
 }
 
 function asDateString(value: unknown): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) return zonedDateString(value);
   return String(value).trim().slice(0, 10);
 }
 
