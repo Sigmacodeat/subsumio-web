@@ -109,6 +109,13 @@ export async function batchFetchPages(
   return Object.fromEntries(entries);
 }
 
+/** brainId → firm id for every firm's shared brain. */
+async function firmBrainOwners(): Promise<Map<string, string>> {
+  const owners = new Map<string, string>();
+  for (const org of await getOrgStore().list()) owners.set(org.brainId, org.id);
+  return owners;
+}
+
 /**
  * Build a brainId → User[] mapping from the user store.
  * Org members share the org's brain. Used by all cron routes.
@@ -117,9 +124,11 @@ export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
   const users = await getStore().list();
   const orgStore = getOrgStore();
   const orgCache = new Map<string, string>();
+  const firmBrains = await firmBrainOwners();
   const recipientsByBrain = new Map<string, User[]>();
   for (const user of users) {
     let brainId = user.brainId;
+    let viaFirm = false;
     if (user.orgId) {
       let cachedBrainId = orgCache.get(user.orgId);
       if (!cachedBrainId) {
@@ -127,8 +136,13 @@ export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
         cachedBrainId = org?.brainId;
         if (cachedBrainId) orgCache.set(user.orgId, cachedBrainId);
       }
-      if (cachedBrainId) brainId = cachedBrainId;
+      if (cachedBrainId) {
+        brainId = cachedBrainId;
+        viaFirm = true;
+      }
     }
+    // Someone who left a firm is not a recipient of its brain (auth/firm-brain.ts).
+    if (!viaFirm && firmBrains.has(brainId)) continue;
     const list = recipientsByBrain.get(brainId) ?? [];
     list.push(user);
     recipientsByBrain.set(brainId, list);
@@ -150,6 +164,8 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
   const result = new Map<string, User[]>();
   const brainPaid = new Map<string, boolean>();
 
+  const firmBrains = await firmBrainOwners();
+
   for (const user of users) {
     let brainId = user.brainId;
     let payer: User | undefined = user;
@@ -159,6 +175,9 @@ export async function billableRecipientsByBrain(): Promise<Map<string, User[]>> 
       brainId = org.brainId;
       const payerId = billingUserOf(org);
       payer = byId.get(payerId) ?? (await store.getById(payerId)) ?? undefined;
+    } else if (firmBrains.has(brainId)) {
+      // Left a firm whose brain was their own — not a member of it any more.
+      continue;
     }
     let paid = brainPaid.get(brainId);
     if (paid === undefined) {

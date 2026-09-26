@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStore, getOrgStore, buildNewOrg, toPublic, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { detachFromFirm } from "@/lib/auth/firm-brain";
 import { visibleOrgMembers } from "@/lib/team-visibility";
 
 const orgPostSchema = z.object({
@@ -129,7 +130,8 @@ export const DELETE = createHandler(
     // failed leave then leaves a dead invite (recoverable), not a live one.
     const inviteRevokedAt = withInviteRevoked(org.inviteRevokedAt, ctx.user.email);
     await orgs.update(org.id, { inviteRevokedAt });
-    await getStore().update(ctx.user.id, { orgId: null });
+    // A founder who hands over the firm and leaves does not take its brain.
+    await detachFromFirm(ctx.user, org);
     return Response.json({ ok: true });
   }
 );

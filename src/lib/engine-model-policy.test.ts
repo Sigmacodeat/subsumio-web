@@ -27,7 +27,11 @@ const orgs: Record<string, Record<string, unknown>> = {
 };
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({ getById: async (id: string) => users[id] ?? null, update: vi.fn() }),
-  getOrgStore: () => ({ getById: async (id: string) => orgs[id] ?? null }),
+  getOrgStore: () => ({
+    getById: async (id: string) => orgs[id] ?? null,
+    getByBrainId: async (b: string) =>
+      Object.values(orgs).find((o) => (o as { brainId?: string }).brainId === b) ?? null,
+  }),
 }));
 
 import { engineContext } from "./engine";

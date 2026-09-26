@@ -190,6 +190,8 @@ export function withInviteRevoked(
 
 export interface OrgStore {
   getById(id: string): Promise<Org | null>;
+  /** The firm whose shared brain this is, if any. */
+  getByBrainId(brainId: string): Promise<Org | null>;
   create(org: Org): Promise<Org>;
   update(id: string, patch: Partial<Org>): Promise<Org | null>;
   delete(id: string): Promise<void>;
@@ -363,6 +365,9 @@ class FileOrgStore implements OrgStore {
 
   async getById(id: string) {
     return (await this.load()).find((o) => o.id === id) ?? null;
+  }
+  async getByBrainId(brainId: string) {
+    return (await this.load()).find((o) => o.brainId === brainId) ?? null;
   }
   async create(org: Org) {
     const orgs = await this.load();
@@ -647,6 +652,15 @@ class PostgresOrgStore implements OrgStore {
     const { rows } = await pool.query<{ data: Org }>(
       "SELECT data FROM subsumio_orgs WHERE id = $1",
       [id]
+    );
+    return rows[0] ? rowToOrg(rows[0]) : null;
+  }
+
+  async getByBrainId(brainId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: Org }>(
+      "SELECT data FROM subsumio_orgs WHERE data->>'brainId' = $1 ORDER BY created_at ASC LIMIT 1",
+      [brainId]
     );
     return rows[0] ? rowToOrg(rows[0]) : null;
   }

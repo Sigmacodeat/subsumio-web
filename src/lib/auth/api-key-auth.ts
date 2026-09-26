@@ -17,6 +17,7 @@ import { hashApiKey } from "@/lib/api-keys";
 import { getApiKeyStore, type StoredApiKey } from "@/lib/api-key-store";
 import { getStore, getOrgStore, type Plan } from "@/lib/auth/store";
 import { isAccountBlocked } from "@/lib/auth/account-status";
+import { isPersonalBrainOfOtherFirm } from "@/lib/auth/firm-brain";
 import { env } from "@/lib/env";
 import { addCallerIdentity, type EngineContext } from "@/lib/engine";
 import { isAddinToken, isStoredKeyUsable } from "@/lib/addin-token";
@@ -64,16 +65,21 @@ export async function verifyApiKey(
   let brainId = user.brainId;
   let plan: Plan = effectivePlan(user);
   let billing = billingAccountFor(user, null);
+  let viaFirm = false;
   if (user.orgId) {
     const org = await getOrgStore().getById(user.orgId);
     if (org?.suspendedAt) return null;
     if (org) {
       brainId = org.brainId;
+      viaFirm = true;
       billing = billingAccountFor(user, org);
       const payer = await getStore().getById(billing.ownerId);
       if (payer) plan = effectivePlan(payer);
     }
   }
+  // Same rule as engineContext: a key of someone who left a firm never opens
+  // that firm's brain through their own brainId.
+  if (!viaFirm && (await isPersonalBrainOfOtherFirm({ brainId, orgId: null }))) return null;
 
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");

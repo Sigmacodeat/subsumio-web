@@ -47,6 +47,7 @@ vi.mock("@/lib/auth/store", () => ({
       return user;
     },
   }),
+  getOrgStore: () => ({ getById: async () => null, getByBrainId: async () => null }),
 }));
 
 const sendMail = vi.fn(async (_input: { to: string; text?: string }) => ({ sent: true }));
@@ -114,13 +115,13 @@ describe("POST /api/auth/email/confirm-change", () => {
     expect(res.status).toBe(200);
     expect(updated).toEqual({ id: "u1", patch: { email: "neu@kanzlei.at" } });
     expect(revokeAllSessions).toHaveBeenCalledWith("u1");
+    // Flush the voided audit and mail promises before asserting.
+    await new Promise((r) => setTimeout(r, 0));
     expect(logAudit).toHaveBeenCalledWith(
       "user.email_changed",
       "user",
       expect.objectContaining({ entityId: "u1" })
     );
-    // Flush the voided mail promise before asserting.
-    await new Promise((r) => setTimeout(r, 0));
     const recipients = sendMail.mock.calls.map((c) => c[0].to);
     expect(recipients).toContain("alt@kanzlei.at");
   });

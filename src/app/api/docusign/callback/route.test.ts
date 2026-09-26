@@ -57,6 +57,7 @@ vi.mock("@/lib/auth/store", () => ({
     }),
     update: async () => {},
   }),
+  getOrgStore: () => ({ getById: async () => null, getByBrainId: async () => null }),
 }));
 
 vi.mock("@/lib/env", () => ({

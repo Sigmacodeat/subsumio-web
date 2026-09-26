@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStore, getOrgStore, withInviteRevoked } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { detachFromFirm } from "@/lib/auth/firm-brain";
 
 const memberSchema = z.object({
   userId: z.string().min(1, "missing_user"),
@@ -47,7 +48,8 @@ export const DELETE = createHandler(
     // (recoverable via re-invite), not a live invite for a non-member.
     const inviteRevokedAt = withInviteRevoked(org.inviteRevokedAt, target.email);
     await getOrgStore().update(org.id, { inviteRevokedAt });
-    await store.update(target.id, { orgId: null });
+    // A founder's own brain is the firm brain — they get a fresh one.
+    await detachFromFirm(target, org);
     return Response.json({ ok: true });
   }
 );

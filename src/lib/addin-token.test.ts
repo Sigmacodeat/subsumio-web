@@ -36,7 +36,7 @@ vi.mock("@/lib/auth/store", () => ({
         ? { id, email: "a@firm.example", brainId: "brain-1", orgId: null, role: "lawyer" }
         : null,
   }),
-  getOrgStore: () => ({ getById: async () => null }),
+  getOrgStore: () => ({ getById: async () => null, getByBrainId: async () => null }),
 }));
 vi.mock("@/lib/env", () => ({ env: () => null }));
 
