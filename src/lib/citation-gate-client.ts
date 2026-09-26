@@ -489,6 +489,28 @@ export interface GroundingMetadata {
   support_checked?: boolean;
   /** Verified sources that do NOT carry the statement they are cited for. */
   citations_misgrounded?: number;
+  /** The check itself failed (network, timeout, rejected) — nothing was verified. */
+  check_failed?: boolean;
+}
+
+export const CHECK_FAILED_WARNING =
+  "Zitatprüfung fehlgeschlagen — die Zitate dieses Textes sind nicht geprüft. Anwaltlich prüfen.";
+
+/**
+ * What the citation panel shows when the check could not run: "not checked"
+ * and a warning, never a silent absence that reads like "nothing to flag".
+ */
+export function failedGroundingMetadata(): GroundingMetadata {
+  return {
+    citations_verified: 0,
+    citations_unverified: 0,
+    corpus_checked: false,
+    grounded_citations: [],
+    analyzed_at: new Date().toISOString(),
+    has_unverified: true,
+    warning: CHECK_FAILED_WARNING,
+    check_failed: true,
+  };
 }
 
 export interface CitationSupportResult {

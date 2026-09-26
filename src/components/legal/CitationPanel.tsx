@@ -234,8 +234,20 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
         </div>
       )}
 
+      {/* The check itself failed: say so, loudly. */}
+      {data.grounding?.check_failed && (
+        <div
+          role="alert"
+          data-testid="citation-check-failed"
+          className="mx-4 mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2 text-xs text-[color:var(--ds-danger-text)]"
+        >
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{data.grounding.warning}</span>
+        </div>
+      )}
+
       {/* Unverified citation warning */}
-      {data.grounding?.has_unverified && data.grounding.warning && (
+      {data.grounding?.has_unverified && data.grounding.warning && !data.grounding.check_failed && (
         <div className="mt-2 flex items-start gap-2 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-xs text-[color:var(--ds-warning-text)]">
           <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>{data.grounding.warning}</span>
