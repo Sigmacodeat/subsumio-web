@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api, ApiRequestError } from "@/lib/api";
+import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, daysUntil, encodeSlugPath, formatDate, formatDaysUntil } from "@/lib/utils";
 import { toLocalIsoDate } from "@/lib/calendar-conflicts";
@@ -364,9 +365,7 @@ export default function DeadlinesPage() {
   // intake "Frist prüfen" CTA) — the HITL review must be reachable by URL.
   const [showAiSuggestions, setShowAiSuggestions] = useState(() => searchParams.get("ai") === "1");
   const [aiText, setAiText] = useState("");
-  const [aiResults, setAiResults] = useState<
-    Array<{ type: string; description: string; date?: string; confidence: string }>
-  >([]);
+  const [aiResults, setAiResults] = useState<DetectedDeadline[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [savingDetected, setSavingDetected] = useState<number | null>(null);
@@ -582,10 +581,7 @@ export default function DeadlinesPage() {
     }
   }
 
-  async function saveDetectedDeadline(
-    result: { type: string; description: string; date?: string; confidence: string },
-    index: number
-  ) {
+  async function saveDetectedDeadline(result: DetectedDeadline, index: number) {
     if (!result.date) return;
     setSavingDetected(index);
     try {
@@ -612,6 +608,24 @@ export default function DeadlinesPage() {
           source: "ai_deadline_detection",
           confidence: result.confidence,
           created_at: now.toISOString(),
+          // How the engine computed it — shown in the Fristenbuch and used by
+          // the Vier-Augen check for Notfristen.
+          ...(result.berechnung
+            ? {
+                zustellungsdatum: result.berechnung.zustellungsdatum,
+                vorfrist_date: result.berechnung.vorfrist,
+                ...(result.berechnung.fristArt ? { frist_art: result.berechnung.fristArt } : {}),
+                ...(result.berechnung.rechtsgrundlage
+                  ? { law: result.berechnung.rechtsgrundlage }
+                  : {}),
+                ...(result.berechnung.notfrist
+                  ? { is_notfrist: true, second_check_required: true }
+                  : {}),
+                calculation_note: [...result.berechnung.hinweise, result.rueckfrage ?? ""]
+                  .filter(Boolean)
+                  .join(" · "),
+              }
+            : {}),
         },
       });
       addToast({ type: "success", title: t("deadlines.detect_saved") });
@@ -1392,6 +1406,25 @@ export default function DeadlinesPage() {
                     {r.date && (
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
                         {formatDate(r.date)} · {formatDaysUntil(daysUntil(r.date))}
+                        {r.berechnung
+                          ? ` · Zustellung ${formatDate(r.berechnung.zustellungsdatum)}${
+                              r.berechnung.rechtsgrundlage
+                                ? ` · ${r.berechnung.rechtsgrundlage}`
+                                : ""
+                            }`
+                          : ""}
+                      </div>
+                    )}
+                    {r.berechnung?.hinweise
+                      .filter((h) => /Ferialsache|weicht|Dokumenttyp/.test(h))
+                      .map((h, hi) => (
+                        <div key={hi} className="text-xs text-[color:var(--ds-warning-text)]">
+                          {h}
+                        </div>
+                      ))}
+                    {r.rueckfrage && (
+                      <div className="text-xs text-[color:var(--ds-warning-text)]">
+                        {r.rueckfrage}
                       </div>
                     )}
                   </div>

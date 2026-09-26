@@ -246,7 +246,11 @@ export async function hybridDeadlineDetection(
   headers?: Record<string, string>,
   opts?: EnrichOpts & { meta?: LlmCallMeta }
 ): Promise<DetectedDeadline[]> {
-  const highConfidenceCount = regexDetected.filter((d) => d.confidence === "high").length;
+  // A deadline the engine already computed counts as found, even when its
+  // confidence is capped (e.g. the Ferialsache question is open).
+  const highConfidenceCount = regexDetected.filter(
+    (d) => d.confidence === "high" || d.berechnung
+  ).length;
   const shouldCallLLM = highConfidenceCount === 0 || (text.length > 500 && highConfidenceCount < 3);
 
   if (!shouldCallLLM || !isLLMDeadlineExtractionAvailable()) {

@@ -6,10 +6,11 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 vi.mock("@/lib/engine", () => ({
   ENGINE_URL: "http://engine-test:3001",
   recordQuota: vi.fn(async () => undefined),
+  resolveCaseJurisdiction: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/ai-deadline-detect", () => ({
-  detectDeadlines: vi.fn(() => [
+  recognizeDeadlines: vi.fn(() => [
     {
       description: "Berufungsfrist",
       date: "2026-12-01",
@@ -31,8 +32,6 @@ vi.mock("@/lib/ai-deadline-detect", () => ({
       zustellungsdatum: undefined,
     },
   ]),
-  enrichAllDeadlines: vi.fn((detected) => detected),
-  resolveRelativeDeadline: vi.fn((days: number) => `2026-${String(days).padStart(2, "0")}-01`),
 }));
 
 const billing = vi.hoisted(() => ({
@@ -87,8 +86,8 @@ vi.mock("@/lib/api-handler", () => ({
 global.fetch = vi.fn() as unknown as typeof fetch;
 
 import { POST } from "./route";
-import { detectDeadlines } from "@/lib/ai-deadline-detect";
-import { recordQuota } from "@/lib/engine";
+import { recognizeDeadlines } from "@/lib/ai-deadline-detect";
+import { resolveCaseJurisdiction } from "@/lib/engine";
 import { groundAnswerCitations } from "@/lib/citation-gate";
 import { hybridDeadlineDetection } from "@/lib/llm-deadline-extract";
 
@@ -133,11 +132,7 @@ describe("POST /api/legal/ai-deadlines — credits for the LLM fallback", () => 
 describe("POST /api/legal/ai-deadlines", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  test("detects deadlines and creates high-confidence pages", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response("{}", { status: 201 })
-    );
-
+  test("returns suggestions only — never writes deadline pages (W1-5)", async () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
       body: JSON.stringify({
@@ -153,35 +148,35 @@ describe("POST /api/legal/ai-deadlines", () => {
     expect(body.detected).toHaveLength(2);
     expect(body.llm_fallback_used).toBe(false);
     expect(body.llm_available).toBe(false);
-    // Only high-confidence deadline with date should be created
-    expect(body.created).toHaveLength(1);
-
-    // Verify engine POST for deadline creation
-    const createCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+    expect(body.created).toBeUndefined();
+    const writes = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
       (c) => c[1]?.method === "POST"
     );
-    expect(createCall).toBeDefined();
-    const createBody = JSON.parse(createCall![1]?.body as string);
-    expect(createBody.type).toBe("deadline");
-    expect(createBody.frontmatter.case_slug).toBe("legal/cases/test");
-    expect(createBody.frontmatter.status).toBe("pending");
-    expect(createBody.frontmatter.review_status).toBe("unreviewed");
-    expect(createBody.frontmatter.ai_confidence).toBe("high");
+    expect(writes).toHaveLength(0);
   });
 
-  test("does not create pages without caseSlug", async () => {
+  test("computes with the matter's Rechtsraum (W1-17)", async () => {
+    vi.mocked(resolveCaseJurisdiction).mockResolvedValueOnce("de");
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
-      body: JSON.stringify({
-        text: "Berufung binnen 4 Wochen",
-      }),
+      body: JSON.stringify({ text: "Berufungsfrist", caseSlug: "legal/cases/de-akte" }),
+    }) as unknown as NextRequest;
+    const res = await POST(req);
+    expect((await res.json()).rechtsraum).toBe("DE");
+    expect(vi.mocked(recognizeDeadlines).mock.calls[0]![1]).toEqual({ rechtsraum: "DE" });
+  });
+
+  test("without a matter the Austrian rules apply", async () => {
+    const req = new Request("http://localhost/api/legal/ai-deadlines", {
+      method: "POST",
+      body: JSON.stringify({ text: "Berufung binnen 4 Wochen" }),
     }) as unknown as NextRequest;
 
     const res = await POST(req);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.created).toBeUndefined();
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(body.rechtsraum).toBe("AT");
+    expect(resolveCaseJurisdiction).not.toHaveBeenCalled();
   });
 
   test("calls groundAnswerCitations for grounding", async () => {
@@ -208,23 +203,6 @@ describe("POST /api/legal/ai-deadlines", () => {
     expect(body._grounding.grounded).toBe(false);
   });
 
-  test("records quota when pages are created", async () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response("{}", { status: 201 })
-    );
-
-    const req = new Request("http://localhost/api/legal/ai-deadlines", {
-      method: "POST",
-      body: JSON.stringify({
-        text: "Berufung binnen 4 Wochen",
-        caseSlug: "legal/cases/test",
-      }),
-    }) as unknown as NextRequest;
-
-    await POST(req);
-    expect(recordQuota).toHaveBeenCalled();
-  });
-
   test("rejects empty text", async () => {
     const req = new Request("http://localhost/api/legal/ai-deadlines", {
       method: "POST",
@@ -243,51 +221,5 @@ describe("POST /api/legal/ai-deadlines", () => {
 
     const res = await POST(req);
     expect(res.status).toBe(400);
-  });
-
-  test("skips deadline when engine returns error (res.ok check)", async () => {
-    // Bug fix: Route now checks res.ok — failed creates are NOT pushed
-    vi.mocked(detectDeadlines).mockReturnValueOnce([
-      {
-        type: "frist",
-        description: "Frist 1",
-        date: "2026-12-01",
-        confidence: "high",
-        matchedRule: "regex",
-        sourceSnippet: "s1",
-        daysFromNow: undefined,
-        fristResult: undefined,
-        zustellungsdatum: undefined,
-      },
-      {
-        type: "frist",
-        description: "Frist 2",
-        date: "2027-01-01",
-        confidence: "high",
-        matchedRule: "regex",
-        sourceSnippet: "s2",
-        daysFromNow: undefined,
-        fristResult: undefined,
-        zustellungsdatum: undefined,
-      },
-    ]);
-
-    (global.fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(new Response("Error", { status: 500 })) // Frist 1 fails
-      .mockResolvedValueOnce(new Response("{}", { status: 201 })); // Frist 2 succeeds
-
-    const req = new Request("http://localhost/api/legal/ai-deadlines", {
-      method: "POST",
-      body: JSON.stringify({
-        text: "Frist 1 und Frist 2",
-        caseSlug: "legal/cases/test",
-      }),
-    }) as unknown as NextRequest;
-
-    const res = await POST(req);
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    // Only successful deadline is pushed
-    expect(body.created).toHaveLength(1);
   });
 });

@@ -24,6 +24,7 @@ import { useMutationQueue } from "@/lib/use-mutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiRequestError } from "@/lib/api";
 import { decideDeadlineSuggestion } from "@/lib/legal/deadline-decision-client";
+import type { DetectedDeadline } from "@/lib/ai-deadline-detect";
 import { csrfFetch } from "@/lib/csrf";
 import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
@@ -159,10 +160,8 @@ interface MatterDetailContextValue {
   setAiDetectText: (v: string) => void;
   aiDetecting: boolean;
   setAiDetecting: (v: boolean) => void;
-  aiDetectedDeadlines: Array<{ title: string; date: string; type: string; confidence: number }>;
-  setAiDetectedDeadlines: React.Dispatch<
-    React.SetStateAction<Array<{ title: string; date: string; type: string; confidence: number }>>
-  >;
+  aiDetectedDeadlines: DetectedDeadline[];
+  setAiDetectedDeadlines: React.Dispatch<React.SetStateAction<DetectedDeadline[]>>;
 
   // AI evidence
   aiEvidenceCards: AiEvidenceCard[];
@@ -437,9 +436,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const [deadlineStartDate, setDeadlineStartDate] = useState(() => zonedDateString(new Date()));
   const [aiDetectText, setAiDetectText] = useState("");
   const [aiDetecting, setAiDetecting] = useState(false);
-  const [aiDetectedDeadlines, setAiDetectedDeadlines] = useState<
-    Array<{ title: string; date: string; type: string; confidence: number }>
-  >([]);
+  const [aiDetectedDeadlines, setAiDetectedDeadlines] = useState<DetectedDeadline[]>([]);
 
   const [aiEvidenceCards, setAiEvidenceCards] = useState<AiEvidenceCard[]>([]);
   const [aiEvidenceLoading, setAiEvidenceLoading] = useState(false);
