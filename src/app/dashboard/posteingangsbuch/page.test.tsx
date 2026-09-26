@@ -9,6 +9,19 @@ const csrfFetchMock = vi.fn();
 
 vi.mock("@/components/ui/toast", () => ({ useToast: () => ({ addToast }) }));
 vi.mock("@/lib/csrf", () => ({ csrfFetch: (...a: unknown[]) => csrfFetchMock(...a) }));
+vi.mock("@/lib/api", () => ({
+  api: {
+    brain: {
+      listAllPages: vi.fn(async () => [
+        {
+          slug: "legal/cases/a",
+          title: "Muster ./. X",
+          frontmatter: { case_number: "MK-26-0001" },
+        },
+      ]),
+    },
+  },
+}));
 
 function entry(id: string, subject: string, extra: Record<string, unknown> = {}) {
   return {
@@ -129,5 +142,37 @@ describe("Posteingangsbuch page", () => {
     render(<PosteingangsbuchPage />);
     expect(await screen.findByRole("alert")).toHaveTextContent(/nicht geladen/);
     expect(screen.queryByText("Noch keine Einträge")).not.toBeInTheDocument();
+  });
+
+  it("links the matter, confirms a suggestion and offers a deadline (W4-06/W4-12)", async () => {
+    fetchMock.mockImplementation(() =>
+      listResponse({
+        items: [
+          entry("e1", "Ladung", {
+            case_slug: "legal/cases/a",
+            case_suggested: true,
+            case_suggest_reason: "Aktenzeichen",
+          }),
+        ],
+      })
+    );
+    csrfFetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+    const events: unknown[] = [];
+    const listener = (e: Event) => events.push((e as CustomEvent).detail);
+    window.addEventListener("subsumio:create-deadline", listener);
+    render(<PosteingangsbuchPage />);
+    const link = await screen.findByRole("link", { name: /MK-26-0001/ });
+    expect(link).toHaveAttribute("href", "/dashboard/cases/legal/cases/a");
+    await userEvent.click(
+      screen.getByRole("button", { name: /Zuordnung von „Ladung“ bestätigen/ })
+    );
+    await waitFor(() => expect(csrfFetchMock).toHaveBeenCalled());
+    const [url, init] = csrfFetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/inbound-register");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(String(init.body))).toEqual({ id: "e1", action: "confirm" });
+    await userEvent.click(screen.getByRole("button", { name: /Frist aus „Ladung“ anlegen/ }));
+    window.removeEventListener("subsumio:create-deadline", listener);
+    expect(events[0]).toMatchObject({ caseSlug: "legal/cases/a" });
   });
 });
