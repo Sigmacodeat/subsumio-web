@@ -11,7 +11,7 @@ import { engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { resolveEmailImport, type EmailHeaders } from "@/lib/email-threading";
 import { triageMessage } from "@/lib/triage";
-import { detectDeadlines } from "@/lib/ai-deadline-detect";
+import { recognizeDeadlines } from "@/lib/ai-deadline-detect";
 import {
   extractDeadlinesWithLLM,
   isLLMDeadlineExtractionAvailable,
@@ -246,7 +246,9 @@ async function triageFor(
     date: email.receivedAt,
     suggestedCaseSlug: caseSlug ?? undefined,
   });
-  let deadlines = detectDeadlines(`${email.subject}\n${body}`).slice(0, 5);
+  // Fristart + Zustellung from the mail text run through the Frist-Engine —
+  // never a bare "+N days" and never a date without a Zustelldatum.
+  let deadlines = recognizeDeadlines(`${email.subject}\n${body}`).slice(0, 5);
   // Mail that talks about a deadline without a parseable date ("binnen vier
   // Wochen ab Zustellung") goes to the model once. Suggestions only — a lawyer
   // confirms every deadline before it enters the Fristenbuch.

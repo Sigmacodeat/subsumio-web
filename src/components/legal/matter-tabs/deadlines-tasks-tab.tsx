@@ -825,7 +825,32 @@ export function DeadlinesTasksTab() {
                   <div className="min-w-0">
                     <div className="text-sm text-[color:var(--ds-text)]">{sd.title}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      {sd.due_date ? (
+                        <span className="tabular-nums">{formatDate(sd.due_date)}</span>
+                      ) : (
+                        <span>Datum offen</span>
+                      )}
+                      {sd.zustellungsdatum && (
+                        <span className="mt-0.5 block">
+                          Berechnet ab Zustellung{" "}
+                          <span className="tabular-nums">{formatDate(sd.zustellungsdatum)}</span>
+                          {sd.rechtsgrundlage ? ` · ${sd.rechtsgrundlage}` : ""}
+                          {sd.notfrist ? " · Notfrist" : ""}
+                        </span>
+                      )}
+                      {sd.rueckfrage && (
+                        <span className="mt-0.5 block text-[color:var(--ds-warning-text)]">
+                          {sd.rueckfrage}
+                        </span>
+                      )}
+                      {sd.calculation_note && /Ferialsache/.test(sd.calculation_note) && (
+                        <span className="mt-0.5 block text-[color:var(--ds-warning-text)]">
+                          {sd.calculation_note
+                            .split(" · ")
+                            .filter((h) => /Ferialsache/.test(h))
+                            .join(" ")}
+                        </span>
+                      )}
                       {sd.urgency ? ` · ${urgencyLabel(sd.urgency, lang)}` : ""}
                       {sd.source_quote && sd.source_quote !== sd.title && (
                         <span className="mt-0.5 block italic">&bdquo;{sd.source_quote}&ldquo;</span>

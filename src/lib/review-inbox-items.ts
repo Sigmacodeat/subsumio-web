@@ -252,6 +252,9 @@ export async function loadReviewInboxItems(
           source_quote?: string;
           confirmed: boolean;
           review_status?: string;
+          zustellungsdatum?: string;
+          rechtsgrundlage?: string;
+          rueckfrage?: string;
         }>)
       : [];
     for (let i = 0; i < sds.length; i++) {
@@ -274,8 +277,8 @@ export async function loadReviewInboxItems(
         type: "suggested_deadline",
         title: sd.title || "Fristvorschlag",
         description: dueDate
-          ? `${dueDate}${daysUntil !== null ? ` (${daysUntil < 0 ? `${Math.abs(daysUntil)} Tage überfällig` : `${daysUntil} Tage`})` : ""}${sd.source_quote ? ` · "${sd.source_quote.slice(0, 90)}"` : ""}`
-          : sd.title || "",
+          ? `${dueDate}${daysUntil !== null ? ` (${daysUntil < 0 ? `${Math.abs(daysUntil)} Tage überfällig` : `${daysUntil} Tage`})` : ""}${sd.zustellungsdatum ? ` · berechnet ab Zustellung ${sd.zustellungsdatum}` : ""}${sd.source_quote ? ` · "${sd.source_quote.slice(0, 90)}"` : ""}`
+          : sd.rueckfrage || sd.title || "",
         caseSlug: page.slug,
         caseTitle: page.title || null,
         priority,
@@ -292,7 +295,7 @@ export async function loadReviewInboxItems(
         messageDraft: null,
         dueDate: dueDate || null,
         urgency: urgency || null,
-        law: null,
+        law: typeof sd.rechtsgrundlage === "string" ? sd.rechtsgrundlage : null,
         confidence: null,
         sourceQuote: sd.source_quote || null,
         partyName: null,

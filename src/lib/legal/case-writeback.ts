@@ -109,6 +109,7 @@ function deduplicateDeadlines(
       source: `KI-Analyse: ${documentSlug}`,
       source_quote: String(d.source ?? ""),
       confirmed: false,
+      ...engineFacts(d),
     }))
     .filter((sd) => {
       const key = `${sd.title}|${sd.due_date}`;
@@ -116,6 +117,33 @@ function deduplicateDeadlines(
       existingKeys.add(key);
       return true;
     });
+}
+
+/** Facts of the deterministic calculation (analysis-deadlines.ts) travel with
+ *  the suggestion, so the reviewer sees Zustellung/Rechtsgrundlage and the
+ *  approval can re-check the date against the engine. */
+const ENGINE_FACT_KEYS = [
+  "engine_computed",
+  "rechtsraum",
+  "zustellungsdatum",
+  "eingangsdatum",
+  "frist_art",
+  "rechtsgrundlage",
+  "vorfrist_date",
+  "notfrist",
+  "ferialsache",
+  "calculation_note",
+  "rueckfrage",
+  "confidence",
+] as const;
+
+function engineFacts(d: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of ENGINE_FACT_KEYS) {
+    const v = d[k];
+    if (typeof v === "string" || typeof v === "boolean") out[k] = v;
+  }
+  return out;
 }
 
 function deduplicateParties(
@@ -193,12 +221,25 @@ async function autoCreateDeadlinePages(
           frontmatter: {
             type: "legal_deadline",
             case_slug: caseSlug,
+            title,
+            description: title,
             due_date: dueDate,
             status: "pending",
             review_status: "unreviewed",
             source: "ai_document_analysis",
             urgency,
             ai_confidence: "unverified",
+            ...(typeof sd.rechtsgrundlage === "string" ? { law: sd.rechtsgrundlage } : {}),
+            ...(typeof sd.vorfrist_date === "string" ? { vorfrist_date: sd.vorfrist_date } : {}),
+            ...(typeof sd.zustellungsdatum === "string"
+              ? { zustellungsdatum: sd.zustellungsdatum }
+              : {}),
+            ...(typeof sd.frist_art === "string" ? { frist_art: sd.frist_art } : {}),
+            ...(typeof sd.calculation_note === "string"
+              ? { calculation_note: sd.calculation_note }
+              : {}),
+            // Notfristen get the existing Vier-Augen check.
+            ...(sd.notfrist === true ? { is_notfrist: true, second_check_required: true } : {}),
           },
         }),
         signal: AbortSignal.timeout(DEADLINE_CREATE_TIMEOUT),
