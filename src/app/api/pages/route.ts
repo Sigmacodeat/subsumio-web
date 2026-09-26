@@ -4,6 +4,7 @@ import { isTombstoned } from "@/lib/tombstone";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
+import { enforceFirmTwoFactorNow, turnsOnTwoFactorRequirement } from "@/lib/auth/two-factor-enforce";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { markOnboardingProgress } from "@/lib/auth/store";
 import { ensureCaseContacts } from "@/lib/case-contacts";
@@ -539,6 +540,13 @@ export const POST = createHandler(
       } else if (body.type === "legal_deadline" || isDeadlineSlug(body.slug)) {
         // A deadline was created or changed: its matter's Aktenblatt lists it.
         void refreshAktenblattForDeadline(ctx.headers, body.slug, body.frontmatter);
+      }
+
+      if (
+        isKanzleiSettingsTarget(body.slug, current, body.type, body.frontmatter) &&
+        turnsOnTwoFactorRequirement(body.frontmatter, current?.frontmatter)
+      ) {
+        await enforceFirmTwoFactorNow(ctx.user);
       }
 
       if (!isMerge && body.type === "legal_case") {

@@ -5,6 +5,7 @@ import { getAuditExtra, setAuditExtra, slugFromRoutePath } from "@/lib/audit-con
 import { archiveCaseDocuments, restoreCaseDocuments } from "@/lib/case-cascade";
 import { removeFromCaseDocuments } from "@/lib/case-documents";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
+import { enforceFirmTwoFactorNow, turnsOnTwoFactorRequirement } from "@/lib/auth/two-factor-enforce";
 import {
   GUARD_READ_FAILED,
   checkInvoiceWrite,
@@ -441,6 +442,12 @@ export const PATCH = createHandler(
           by: ctx.user.email,
           at: new Date().toISOString(),
         });
+      }
+      if (
+        isKanzleiSettingsTarget(rawSlug, currentPage, body.type, bodyFrontmatter) &&
+        turnsOnTwoFactorRequirement(bodyFrontmatter, curFm)
+      ) {
+        await enforceFirmTwoFactorNow(ctx.user);
       }
       const partialFailure = restoreCascade.attempted && restoreCascade.failed.length > 0;
       return Response.json(
