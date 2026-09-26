@@ -32,6 +32,11 @@ import type { DashboardKey } from "@/content/dashboard";
 import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import type { Questionnaire } from "@/lib/questionnaires";
 import { buildEscalationMessage, portalErrorText } from "@/lib/portal-chat-ui";
+import {
+  PORTAL_AI_MODE_DEFAULT,
+  resolvePortalAiMode,
+  type PortalAiMode,
+} from "@/lib/portal-ai-mode";
 
 interface PortalCase {
   slug: string;
@@ -61,6 +66,8 @@ interface PortalMessage {
   text: string;
   sender: "client" | "lawyer";
   createdAt: string;
+  /** Released by the firm from an AI draft. */
+  aiAssisted?: boolean;
 }
 
 interface PortalDocumentRequest {
@@ -212,8 +219,17 @@ export default function PortalPage() {
   const [qnSubmitting, setQnSubmitting] = useState<string | null>(null);
   const [qnError, setQnError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<
-    Array<{ role: "user" | "bot"; text: string; grounding?: GroundingMetadata; error?: boolean }>
+    Array<{
+      role: "user" | "bot";
+      text: string;
+      grounding?: GroundingMetadata;
+      error?: boolean;
+      /** A direct AI answer, not reviewed by the firm (AI Act Art. 50 label). */
+      aiGenerated?: boolean;
+    }>
   >([]);
+  // The firm's setting "KI im Mandantenportal"; the chat route enforces it.
+  const [aiMode, setAiMode] = useState<PortalAiMode>(PORTAL_AI_MODE_DEFAULT);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [escalating, setEscalating] = useState(false);
@@ -507,6 +523,7 @@ export default function PortalPage() {
         return;
       }
       const page = data.page;
+      setAiMode(resolvePortalAiMode(data.ai_mode));
       const fm = caseFrontmatter(page);
       if (!fm.portal_enabled) {
         setError(t("portal.case_not_enabled"));
@@ -631,12 +648,20 @@ export default function PortalPage() {
         ]);
         return;
       }
+      if (data?.status === "received") {
+        // Draft mode: the question went to the firm; its reply arrives in the
+        // messages section once a lawyer has released it.
+        setChatMessages((prev) => [...prev, { role: "bot", text: t("portal.chat_received") }]);
+        if (caseData) void loadMessages(caseData.slug);
+        return;
+      }
       setChatMessages((prev) => [
         ...prev,
         {
           role: "bot",
           text: data?.answer || t("portal.chat_no_answer"),
           grounding: data?.grounding as GroundingMetadata | undefined,
+          aiGenerated: data?.ai_generated === true,
         },
       ]);
     } catch {
@@ -782,23 +807,25 @@ export default function PortalPage() {
             <FileText size={14} />
             {t("portal.tab_info")}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "chat"}
-            tabIndex={activeTab === "chat" ? 0 : -1}
-            onKeyDown={onTabKeyDown}
-            data-portal-tab="chat"
-            onClick={() => setActiveTab("chat")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
-              activeTab === "chat"
-                ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
-                : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
-            }`}
-          >
-            <Bot size={14} />
-            {t("portal.tab_chat")}
-          </button>
+          {aiMode !== "aus" && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "chat"}
+              tabIndex={activeTab === "chat" ? 0 : -1}
+              onKeyDown={onTabKeyDown}
+              data-portal-tab="chat"
+              onClick={() => setActiveTab("chat")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,border-color,color] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-text)] focus-visible:outline-none motion-reduce:transition-none ${
+                activeTab === "chat"
+                  ? "bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]"
+                  : "[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)]"
+              }`}
+            >
+              <Bot size={14} />
+              {t("portal.tab_chat")}
+            </button>
+          )}
           {signableDocs.length > 0 && (
             <button
               type="button"
@@ -1255,6 +1282,11 @@ export default function PortalPage() {
                         className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-[color:var(--brand-glow)] bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                       >
                         <p>{msg.text}</p>
+                        {msg.sender === "lawyer" && msg.aiAssisted && (
+                          <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
+                            {t("portal.msg_ai_reviewed")}
+                          </p>
+                        )}
                         <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
                           {new Date(msg.createdAt).toLocaleDateString(
                             lang === "en" ? "en-GB" : "de-DE"
@@ -1432,13 +1464,19 @@ export default function PortalPage() {
           </div>
         )}
 
-        {activeTab === "chat" && (
+        {activeTab === "chat" && aiMode !== "aus" && (
           <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
             <div className="flex items-center gap-2">
               <Bot size={16} className="text-[color:var(--brand-text)]" />
               <h3 className="text-sm font-semibold">{t("portal.tab_chat")}</h3>
             </div>
-            <p className="text-xs [color:var(--mk-text-subtle)]">{t("portal.chat_disclaimer")}</p>
+            <p className="text-xs [color:var(--mk-text-subtle)]">
+              {t(
+                aiMode === "direkt"
+                  ? "portal.chat_disclaimer_direct"
+                  : "portal.chat_disclaimer_draft"
+              )}
+            </p>
             {chatMessages.length > 0 && (
               <div className="max-h-96 space-y-3 overflow-y-auto" aria-live="polite">
                 {chatMessages.map((msg, i) => (
@@ -1450,6 +1488,11 @@ export default function PortalPage() {
                       className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.role === "user" ? "border border-[color:var(--brand-glow)] bg-[color:var(--brand-glow)] text-[color:var(--brand-text)]" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
                     >
                       <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.role === "bot" && msg.aiGenerated && (
+                        <p className="mt-2 text-xs font-medium text-[color:var(--ds-warning-text)]">
+                          {t("portal.chat_ai_label_direct")}
+                        </p>
+                      )}
                       {msg.role === "bot" && msg.grounding && (
                         <CitationPanel
                           data={{ grounding: msg.grounding, citations: [], isStreaming: false }}
@@ -1494,7 +1537,7 @@ export default function PortalPage() {
                 {chatLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
             </div>
-            {chatMessages.length > 0 && (
+            {aiMode === "direkt" && chatMessages.length > 0 && (
               <button
                 onClick={() => void escalateToLawyer()}
                 disabled={escalating}

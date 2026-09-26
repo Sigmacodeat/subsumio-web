@@ -49,6 +49,9 @@ import { cn, formatDate, formatRelativeTime } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage } from "@/lib/types";
+import { pendingPortalAiDraft } from "@/lib/portal-ai-mode";
+import { CitationPanel } from "@/components/legal/CitationPanel";
+import type { GroundingMetadata } from "@/lib/citation-gate-client";
 import {
   Select,
   SelectContent,
@@ -78,6 +81,8 @@ interface UnifiedMessage {
   read?: boolean;
   /** A client's portal message the firm can answer in the portal. */
   portalReplyable?: boolean;
+  /** Pending AI answer draft (KI im Mandantenportal, Modus "entwurf"). */
+  aiDraft?: { text: string; grounded: boolean; grounding?: GroundingMetadata };
 }
 
 const CHANNEL_ICON: Record<UnifiedMessage["channel"], React.ElementType> = {
@@ -148,6 +153,7 @@ function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessa
 
   for (const page of pagesByType.portal_message ?? []) {
     const fm = page.frontmatter as Record<string, unknown>;
+    const draft = fm.sender !== "lawyer" ? pendingPortalAiDraft(fm) : null;
     messages.push({
       slug: page.slug,
       title: page.title,
@@ -160,6 +166,9 @@ function extractMessages(pagesByType: Record<string, BrainPage[]>): UnifiedMessa
             ? "Mandant"
             : String(fm.sender),
       portalReplyable: fm.sender !== "lawyer" && typeof fm.case_slug === "string",
+      ...(draft
+        ? { aiDraft: { text: draft.text, grounded: draft.grounded, grounding: draft.grounding } }
+        : {}),
       caseSlug: fm.case_slug as string | undefined,
       createdAt: (fm.created_at as string) || "",
       read: fm.read as boolean | undefined,
@@ -275,6 +284,9 @@ export default function CommunicationsPage() {
   const [assignBusy, setAssignBusy] = useState(false);
   const [replyTarget, setReplyTarget] = useState<UnifiedMessage | null>(null);
   const [replyText, setReplyText] = useState("");
+  // The reply text started from the message's AI draft (released as "mit KI
+  // erstellt, von der Kanzlei geprüft").
+  const [replyUsesDraft, setReplyUsesDraft] = useState(false);
   const [replyBusy, setReplyBusy] = useState(false);
   const [replyBill, setReplyBill] = useState(false);
   const [replyBillMinutes, setReplyBillMinutes] = useState("6");
@@ -433,6 +445,8 @@ export default function CommunicationsPage() {
         body: JSON.stringify({
           case_slug: replyTarget.caseSlug,
           message: text,
+          in_reply_to: replyTarget.slug,
+          ai_draft_used: replyUsesDraft && !!replyTarget.aiDraft,
           ...(billMinutes > 0 ? { bill_minutes: billMinutes } : {}),
         }),
       });
@@ -454,6 +468,7 @@ export default function CommunicationsPage() {
       });
       setReplyTarget(null);
       setReplyText("");
+      setReplyUsesDraft(false);
       setReplyBill(false);
       setReplyBillMinutes("6");
       await batchQuery.refetch();
@@ -987,17 +1002,29 @@ export default function CommunicationsPage() {
                             <ArrowUpRight size={11} />
                           </Link>
                         )}
+                        {msg.channel === "portal" && msg.aiDraft && (
+                          <span className="rounded-full border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2 py-0.5 font-medium text-[color:var(--ds-warning-text)]">
+                            {lang === "en" ? "AI draft awaiting review" : "KI-Entwurf zur Prüfung"}
+                          </span>
+                        )}
                         {msg.channel === "portal" && msg.portalReplyable && (
                           <button
                             type="button"
                             onClick={() => {
                               setReplyTarget(msg);
-                              setReplyText("");
+                              setReplyText(msg.aiDraft?.text ?? "");
+                              setReplyUsesDraft(!!msg.aiDraft);
                             }}
                             className="inline-flex items-center gap-1 text-[color:var(--brand-primary)] hover:underline"
                           >
                             <Reply size={11} aria-hidden="true" />
-                            {lang === "en" ? "Reply in portal" : "Im Portal antworten"}
+                            {msg.aiDraft
+                              ? lang === "en"
+                                ? "Review draft"
+                                : "Entwurf prüfen"
+                              : lang === "en"
+                                ? "Reply in portal"
+                                : "Im Portal antworten"}
                           </button>
                         )}
                       </div>
@@ -1133,6 +1160,44 @@ export default function CommunicationsPage() {
                 {replyTarget.body}
               </blockquote>
             )}
+            {replyTarget?.aiDraft && replyUsesDraft && (
+              <div className="space-y-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] p-3 text-xs text-[color:var(--ds-warning-text)]">
+                <p>
+                  {lang === "en"
+                    ? "AI-generated draft from the documents released to the client. Check facts, deadlines and wording before sending — it only reaches the client with your release and is labelled “created with AI, reviewed by the firm”."
+                    : "KI-Entwurf aus den für den Mandanten freigegebenen Unterlagen. Prüfen Sie Inhalt, Fristen und Formulierung vor dem Senden — er geht erst mit Ihrer Freigabe hinaus und wird als „mit KI erstellt, von der Kanzlei geprüft“ gekennzeichnet."}
+                </p>
+                {replyTarget.aiDraft.grounding && (
+                  <CitationPanel
+                    data={{
+                      grounding: replyTarget.aiDraft.grounding,
+                      citations: [],
+                      isStreaming: false,
+                    }}
+                    compact
+                  />
+                )}
+                {!replyTarget.aiDraft.grounded && (
+                  <p className="font-medium">
+                    {lang === "en"
+                      ? "Not all citations in the draft could be verified."
+                      : "Nicht alle Fundstellen im Entwurf konnten verifiziert werden."}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyUsesDraft(false);
+                    setReplyText("");
+                  }}
+                  className="font-medium underline"
+                >
+                  {lang === "en"
+                    ? "Discard draft, write my own reply"
+                    : "Entwurf verwerfen, selbst antworten"}
+                </button>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="portal-reply">{lang === "en" ? "Your reply" : "Ihre Antwort"}</Label>
               <Textarea
@@ -1190,7 +1255,13 @@ export default function CommunicationsPage() {
               disabled={replyBusy || !replyText.trim()}
             >
               {replyBusy ? <Loader2 size={14} className="mr-2 animate-spin" /> : null}
-              {lang === "en" ? "Send" : "Senden"}
+              {replyUsesDraft && replyTarget?.aiDraft
+                ? lang === "en"
+                  ? "Release and send"
+                  : "Freigeben und senden"
+                : lang === "en"
+                  ? "Send"
+                  : "Senden"}
             </Button>
           </DialogFooter>
         </DialogContent>

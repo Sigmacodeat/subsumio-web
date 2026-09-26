@@ -15,6 +15,8 @@ export interface PortalMessage {
   text: string;
   sender: "client" | "lawyer";
   createdAt: string;
+  /** A firm reply released from an AI draft ("mit KI erstellt, von der Kanzlei geprüft"). */
+  aiAssisted?: boolean;
 }
 
 export function portalMessageSlugPrefix(caseSlug: string): string {
@@ -52,6 +54,9 @@ export async function listPortalMessages(
         text,
         sender: fm.sender === "lawyer" ? "lawyer" : "client",
         createdAt: String(fm.created_at ?? p.created_at ?? ""),
+        // Only this flag leaves the page — a pending AI draft on a client
+        // message (ai_draft) is firm-internal and never part of the result.
+        ...(fm.sender === "lawyer" && fm.ai_assisted === true ? { aiAssisted: true } : {}),
       };
     })
   );

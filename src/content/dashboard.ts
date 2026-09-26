@@ -9578,9 +9578,25 @@ export const D = {
   },
   "portal.files_shared_by_firm": { de: "Von Kanzlei geteilt", en: "Shared by firm" },
   "portal.files_uploaded_by_you": { de: "Von Ihnen hochgeladen", en: "Uploaded by you" },
-  "portal.chat_disclaimer": {
-    de: "Der Chatbot beantwortet Fragen ausschließlich zu Ihrer Akte. Fragen zu anderen Akten oder internen Notizen werden nicht beantwortet.",
-    en: "The chatbot answers questions about your case only. Questions about other cases or internal notes will not be answered.",
+  "portal.chat_disclaimer_draft": {
+    de: "Ihre Frage geht an Ihre Kanzlei. Ein KI-Assistent bereitet eine Antwort vor, die Ihre Anwältin oder Ihr Anwalt prüft, bevor Sie sie im Nachrichten-Bereich erhalten.",
+    en: "Your question goes to your law firm. An AI assistant prepares a reply that your lawyer reviews before you receive it in the messages section.",
+  },
+  "portal.chat_disclaimer_direct": {
+    de: "Sie sprechen mit einem KI-Assistenten, nicht mit Ihrer Kanzlei. Er antwortet nur zu Ihrer Akte, kann Fehler machen und gibt keine Rechtsberatung. Im Zweifel fragen Sie Ihre Kanzlei.",
+    en: "You are talking to an AI assistant, not to your law firm. It only answers about your case, can make mistakes and gives no legal advice. If in doubt, ask your firm.",
+  },
+  "portal.chat_ai_label_direct": {
+    de: "KI-generierte Auskunft, nicht von der Kanzlei geprüft, keine Rechtsberatung.",
+    en: "AI-generated information, not reviewed by the firm, not legal advice.",
+  },
+  "portal.chat_received": {
+    de: "Ihre Nachricht ist bei der Kanzlei eingegangen. Sie erhalten die Antwort im Nachrichten-Bereich.",
+    en: "Your message has reached the firm. You will receive the reply in the messages section.",
+  },
+  "portal.msg_ai_reviewed": {
+    de: "Mit KI erstellt, von der Kanzlei geprüft",
+    en: "Created with AI, reviewed by the firm",
   },
   "portal.chat_empty": {
     de: "Stellen Sie eine Frage zu Ihrer Akte…",

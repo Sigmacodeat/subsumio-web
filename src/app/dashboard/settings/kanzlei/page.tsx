@@ -15,6 +15,7 @@ import { useMe } from "@/lib/queries/auth";
 import { csrfFetch } from "@/lib/csrf";
 import { BrainLearningCard } from "@/components/dashboard/brain-learning-card";
 import { BUNDESLAENDER } from "@/lib/legal/frist-engine-de";
+import { resolvePortalAiMode } from "@/lib/portal-ai-mode";
 
 export default function KanzleiSettingsPage() {
   const { t, lang } = useLang();
@@ -421,6 +422,94 @@ export default function KanzleiSettingsPage() {
             </p>
           </div>
         </label>
+      </Section>
+
+      <Section
+        title={L("KI im Mandantenportal", "AI in the client portal")}
+        description={L(
+          "Legt fest, wie der Portal-Assistent auf Fragen Ihrer Mandanten reagiert. Er stützt sich nur auf die für den Mandanten freigegebenen Unterlagen.",
+          "Sets how the portal assistant handles your clients' questions. It only uses the documents released to the client."
+        )}
+      >
+        <fieldset className="space-y-3">
+          <legend className="sr-only">
+            {L("KI im Mandantenportal", "AI in the client portal")}
+          </legend>
+          {(
+            [
+              {
+                value: "entwurf",
+                title: L("Entwurf zur Freigabe (empfohlen)", "Draft for approval (recommended)"),
+                desc: L(
+                  "Die KI erstellt einen Antwortentwurf. Der Mandant sieht nur „Ihre Nachricht ist bei der Kanzlei eingegangen“. Sie prüfen, bearbeiten und geben den Entwurf in der Kommunikation frei — erst dann geht er hinaus.",
+                  "The AI drafts a reply. The client only sees “your message has reached the firm”. You review, edit and release the draft under Communications — only then is it sent."
+                ),
+              },
+              {
+                value: "aus",
+                title: L("Aus", "Off"),
+                desc: L(
+                  "Kein Assistent im Portal. Mandanten schreiben Ihnen weiterhin über den Nachrichten-Bereich.",
+                  "No assistant in the portal. Clients can still write to you in the messages section."
+                ),
+              },
+              {
+                value: "direkt",
+                title: L("Direkte KI-Antwort", "Direct AI answer"),
+                desc: L(
+                  "Die KI antwortet dem Mandanten sofort und ohne Prüfung durch die Kanzlei. Jede Antwort wird als KI-generierte, ungeprüfte Auskunft ohne Rechtsberatung gekennzeichnet.",
+                  "The AI answers the client immediately, without review by the firm. Every answer is labelled as AI-generated, unreviewed information and not legal advice."
+                ),
+              },
+            ] as const
+          ).map((opt) => (
+            <label
+              key={opt.value}
+              htmlFor={`portal-ai-${opt.value}`}
+              className="flex cursor-pointer items-start gap-3"
+            >
+              <input
+                id={`portal-ai-${opt.value}`}
+                type="radio"
+                name="portal-ai-mode"
+                value={opt.value}
+                checked={resolvePortalAiMode(settings.portalAiMode) === opt.value}
+                onChange={() => {
+                  // Direct answers go out without any review — only on a
+                  // deliberate choice.
+                  if (
+                    opt.value === "direkt" &&
+                    !window.confirm(
+                      L(
+                        "Direkte KI-Antworten gehen ohne anwaltliche Prüfung an Ihre Mandanten. Die Kanzlei trägt das Risiko fehlerhafter Auskünfte. Trotzdem aktivieren?",
+                        "Direct AI answers reach your clients without review by a lawyer. The firm bears the risk of wrong information. Enable anyway?"
+                      )
+                    )
+                  ) {
+                    return;
+                  }
+                  update("portalAiMode", opt.value);
+                }}
+                className="mt-0.5 h-4 w-4 border-[color:var(--ds-border-strong)] accent-[var(--brand-primary)]"
+              />
+              <div>
+                <p className="text-sm font-medium text-[color:var(--ds-text)]">{opt.title}</p>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{opt.desc}</p>
+              </div>
+            </label>
+          ))}
+        </fieldset>
+        {resolvePortalAiMode(settings.portalAiMode) === "direkt" && (
+          <p
+            role="alert"
+            className="rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] p-3 text-xs text-[color:var(--ds-danger-text)]"
+          >
+            {L(
+              "Achtung: Antworten gehen ungeprüft im Namen Ihrer Kanzlei an Mandanten. Die KI kann Fehler machen; die Anweisung, keine Rechtsauskunft zu geben, wird nicht nachgeprüft. Empfohlen ist „Entwurf zur Freigabe“.",
+              "Warning: answers reach clients unreviewed in your firm's name. The AI can make mistakes; the instruction not to give legal advice is not verified. “Draft for approval” is recommended."
+            )}
+          </p>
+        )}
       </Section>
 
       <Section
