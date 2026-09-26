@@ -73,3 +73,22 @@ describe("POST /api/docusign/send — documents", () => {
     expect(req.documents[0].fileExtension).toBe("pdf");
   });
 });
+
+describe("POST /api/docusign/send — service account fallback (R8-11)", () => {
+  it("falls back only when the user has no DocuSign connection", async () => {
+    const { DocusignError } = await import("@/lib/errors");
+    m.asUser.mockRejectedValueOnce(
+      new DocusignError("docusign_not_connected", { code: "DOCUSIGN_NOT_CONNECTED" })
+    );
+    m.service.mockResolvedValueOnce({ envelopeId: "e2", status: "sent" });
+    expect((await send(b64("%PDF-1.7 x"))).status).toBe(200);
+    expect(m.service).toHaveBeenCalledTimes(1);
+  });
+
+  it("a rejected envelope on the user path is reported, not re-sent via the service account", async () => {
+    m.asUser.mockRejectedValueOnce(new Error("INVALID_EMAIL_ADDRESS_FOR_RECIPIENT"));
+    const res = await send(b64("%PDF-1.7 x"));
+    expect(res.status).toBe(502);
+    expect(m.service).not.toHaveBeenCalled();
+  });
+});

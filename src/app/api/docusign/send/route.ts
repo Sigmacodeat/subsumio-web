@@ -7,6 +7,7 @@ import {
   type EnvelopeRequest,
 } from "@/lib/docusign";
 import { buildEnvelopeCustomFields } from "@/lib/docusign-connect";
+import { DocusignError } from "@/lib/errors";
 import { checkSignableDocument } from "@/lib/docusign-documents";
 import { ENGINE_URL } from "@/lib/engine";
 import {
@@ -152,11 +153,15 @@ export const POST = createHandler(
     };
 
     try {
-      // Try per-user token first, fall back to service account
+      // The user's own DocuSign connection first; the firm's service account
+      // only when the user has none. Any other failure of the user path
+      // (rejected envelope, expired connection) is reported, never re-sent
+      // under the service account's sender identity.
       let result;
       try {
         result = await createEnvelopeAsUser(ctx.user.id, req);
-      } catch {
+      } catch (err) {
+        if (!(err instanceof DocusignError && err.code === "DOCUSIGN_NOT_CONNECTED")) throw err;
         result = await createEnvelope(req);
       }
 
