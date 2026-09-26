@@ -424,53 +424,64 @@ test.describe("Case Management: Conflict-Check on PATCH", () => {
     await dismissTour(page);
   });
 
-  test("PATCH with client_name returns conflict warning for duplicate names", async ({ page }) => {
-    const case1Slug = `test-e2e-conflict-1-${Date.now()}`;
-    const case2Slug = `test-e2e-conflict-2-${Date.now()}`;
-    const sharedName = `E2E Conflict Party ${Date.now()}`;
+  test("Kollision: Anlage und Parteiwechsel werden blockiert, Anwalt kann begründet freigeben", async ({
+    page,
+  }) => {
+    const stamp = Date.now();
+    const opponent = `E2E Gegnerin ${stamp} GmbH`;
 
-    // 1. Create first case with the shared client_name
-    await createCaseViaApi(page, {
-      slug: case1Slug,
-      title: "E2E Conflict Case 1",
-      clientName: sharedName,
+    // 1. Existing matter: `opponent` is the other side.
+    const existing = await createCaseViaApi(page, {
+      slug: `legal/cases/e2e-conflict-bestand-${stamp}`,
+      title: "E2E Bestandsakte",
+      clientName: `E2E Bestandsmandant ${stamp} AG`,
+      opponentName: opponent,
     });
+    expect(existing.status()).toBe(200);
 
-    // 2. Create second case with a different client_name
-    await createCaseViaApi(page, {
-      slug: case2Slug,
-      title: "E2E Conflict Case 2",
-      clientName: "Different Client Name",
+    // 2. A new matter FOR that opponent is refused at creation.
+    const blocked = await createCaseViaApi(page, {
+      slug: `legal/cases/e2e-conflict-neu-${stamp}`,
+      title: "E2E Neue Akte",
+      clientName: opponent,
     });
+    expect(blocked.status()).toBe(409);
+    expect((await blocked.json()).error).toBe("conflict_detected");
 
-    // 3. PATCH the second case to change client_name to the shared name
+    // 3. A harmless matter is created; switching its client to the opponent
+    //    is refused BEFORE anything is written.
+    const caseSlug = `legal/cases/e2e-conflict-wechsel-${stamp}`;
+    const created = await createCaseViaApi(page, {
+      slug: caseSlug,
+      title: "E2E Wechselakte",
+      clientName: `E2E Neutral ${stamp} OG`,
+    });
+    expect(created.status()).toBe(200);
+
     const csrf = await getCsrfToken(page);
-    const patchRes = await page
-      .context()
-      .request.patch(`/api/pages/${encodeURIComponent(case2Slug)}`, {
-        data: {
-          title: "E2E Conflict Case 2",
-          content: "Updated content",
-          frontmatter: {
-            client_name: sharedName,
-            version: 2,
-          },
-        },
+    const patch = (frontmatter: Record<string, unknown>) =>
+      page.context().request.patch(`/api/pages/${caseSlug}`, {
+        data: { frontmatter },
         headers: csrf ? { "x-csrf-token": csrf } : {},
       });
 
-    // The PATCH should succeed (200) — conflict check is a warning, not a block
-    expect(patchRes.status()).toBe(200);
-    const patchBody = await patchRes.json();
+    const refused = await patch({ client_name: opponent });
+    expect(refused.status()).toBe(409);
+    const refusedBody = await refused.json();
+    expect(refusedBody.error).toBe("conflict_detected");
+    expect(refusedBody.conflictWarning.blocking.length).toBeGreaterThan(0);
+    const unchanged = await (await page.context().request.get(`/api/pages/${caseSlug}`)).json();
+    expect(unchanged.frontmatter.client_name).toBe(`E2E Neutral ${stamp} OG`);
 
-    // The response may include a conflictWarning field — verify if present
-    if (patchBody.conflictWarning) {
-      expect(patchBody.conflictWarning.checked).toBe(true);
-      // The mock engine may or may not return matches depending on implementation
-      if (patchBody.conflictWarning.matches) {
-        expect(Array.isArray(patchBody.conflictWarning.matches)).toBe(true);
-      }
-    }
+    // 4. The (admin) user waives it with a reason → saved, stamped as waived.
+    const waived = await patch({
+      client_name: opponent,
+      conflict_waiver_reason: "Schriftliche Zustimmung beider Mandanten liegt vor",
+    });
+    expect(waived.status()).toBe(200);
+    const after = await (await page.context().request.get(`/api/pages/${caseSlug}`)).json();
+    expect(after.frontmatter.client_name).toBe(opponent);
+    expect(after.frontmatter.conflict_status).toBe("conflict_waived");
   });
 
   test("PATCH without client_name does not trigger conflict check", async ({ page }) => {

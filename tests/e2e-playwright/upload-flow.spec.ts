@@ -47,20 +47,68 @@ test.describe("Upload Flow", () => {
 
   test("shows validation for unsupported file type", async ({ page }) => {
     await page.goto("/dashboard/upload");
-
-    // Simulate file drop with unsupported type via JS
-    await page.evaluate(() => {
-      const dropZone = document.querySelector('[role="presentation"]') || document.body;
-      const event = new DragEvent("drop", {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer: new DataTransfer(),
+    // A real file through the file input — the dropzone must refuse it and say why.
+    await page
+      .locator('input[type="file"]')
+      .first()
+      .setInputFiles({
+        name: "programm.exe",
+        mimeType: "application/x-msdownload",
+        buffer: Buffer.from("MZ\x90\x00 not a document"),
       });
-      dropZone.dispatchEvent(event);
-    });
+    await expect(page.getByText("Dateityp wird nicht unterstützt.").first()).toBeVisible();
+  });
 
-    // UI should show dropzone area
-    await expect(page.locator("text=Dateien hierher ziehen")).toBeVisible();
+  test("server refuses an executable and files a PDF into the matter", async ({ page }) => {
+    const api = page.context().request;
+    const csrf = (await page.context().cookies()).find((c) => c.name === "sb_csrf")?.value ?? "";
+    const caseSlug = `legal/cases/e2e-upload-${Date.now()}`;
+    const caseRes = await api.post("/api/pages", {
+      headers: { "x-csrf-token": csrf },
+      data: {
+        slug: caseSlug,
+        title: "E2E Upload-Akte",
+        type: "legal_case",
+        content: "",
+        frontmatter: { type: "legal_case", case_number: `E2E-UP-${Date.now()}`, status: "open" },
+      },
+    });
+    expect(caseRes.status()).toBe(200);
+
+    const exe = await api.post("/api/upload", {
+      headers: { "x-csrf-token": csrf },
+      multipart: {
+        case_slug: caseSlug,
+        file: {
+          name: "programm.exe",
+          mimeType: "application/x-msdownload",
+          buffer: Buffer.from("MZ\x90\x00 executable"),
+        },
+      },
+    });
+    expect(exe.status()).toBeGreaterThanOrEqual(400);
+    expect(exe.status()).toBeLessThan(500);
+
+    const pdf = await api.post("/api/upload", {
+      headers: { "x-csrf-token": csrf },
+      multipart: {
+        case_slug: caseSlug,
+        file: {
+          name: "schriftsatz.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "latin1"),
+        },
+      },
+    });
+    expect(pdf.status()).toBeLessThan(300);
+    const uploaded = await pdf.json();
+    const docSlug = uploaded.slug ?? uploaded.data?.slug;
+    expect(typeof docSlug).toBe("string");
+
+    // The document is filed in the matter.
+    const matter = await (await api.get(`/api/pages/${caseSlug}`)).json();
+    const docs = (matter.frontmatter?.documents ?? []) as Array<{ slug?: string }>;
+    expect(docs.some((d) => d.slug === docSlug)).toBe(true);
   });
 
   test("upload page has offline indicator", async ({ page }) => {
