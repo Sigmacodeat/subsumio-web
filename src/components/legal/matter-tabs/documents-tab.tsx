@@ -36,6 +36,11 @@ import { buildFolderTree, folderMatches } from "@/lib/folder-tree";
 import { FolderTree, FOLDER_DND_MIME } from "@/components/legal/folder-tree";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import {
+  partialLabel,
+  statusFieldsFromFrontmatter,
+  type DocStatusFields,
+} from "@/lib/doc-processing-status";
 
 interface DocJurisdiction {
   jurisdiction: string;
@@ -112,6 +117,7 @@ export function DocumentsTab() {
   const [docJurisdictions, setDocJurisdictions] = useState<Record<string, DocJurisdiction>>({});
   const [docLocks, setDocLocks] = useState<Record<string, DocumentLock>>({});
   const [docFolders, setDocFolders] = useState<Record<string, string>>({});
+  const [docStatuses, setDocStatuses] = useState<Record<string, DocStatusFields>>({});
   const [folderFilter, setFolderFilter] = useState("all");
   const [folderEditSlug, setFolderEditSlug] = useState<string | null>(null);
   const [folderEditValue, setFolderEditValue] = useState("");
@@ -180,14 +186,21 @@ export function DocumentsTab() {
     let cancelled = false;
     (async () => {
       try {
-        const slugs = docSlugsKey.split(",").slice(0, 50);
-        const pagesMap = await api.brain.getPages(slugs);
-        if (cancelled) return;
+        // Every document of the matter, in batches — the processing status
+        // lives on the document page, not in the matter's document list.
+        const slugs = docSlugsKey.split(",");
+        const pagesMap: Awaited<ReturnType<typeof api.brain.getPages>> = {};
+        for (let i = 0; i < slugs.length; i += 50) {
+          Object.assign(pagesMap, await api.brain.getPages(slugs.slice(i, i + 50)));
+          if (cancelled) return;
+        }
         const next: Record<string, DocJurisdiction> = {};
         const locks: Record<string, DocumentLock> = {};
         const folders: Record<string, string> = {};
+        const statuses: Record<string, DocStatusFields> = {};
         for (const [pageSlug, page] of Object.entries(pagesMap)) {
           const fm = (page?.frontmatter ?? {}) as Record<string, unknown>;
+          statuses[pageSlug] = statusFieldsFromFrontmatter(fm);
           if (isDocumentLock(fm.checked_out_by)) locks[pageSlug] = fm.checked_out_by;
           if (typeof fm.folder === "string" && fm.folder.trim()) {
             folders[pageSlug] = fm.folder.trim();
@@ -206,6 +219,7 @@ export function DocumentsTab() {
         setDocJurisdictions(next);
         setDocLocks(locks);
         setDocFolders(folders);
+        setDocStatuses(statuses);
       } catch {
         // Best-effort enrichment — the tab stays fully usable without it
       }
@@ -1220,7 +1234,12 @@ export function DocumentsTab() {
                       );
                     })()}
                     {(() => {
-                      const ps = ctx.docProcessingStatus(doc);
+                      // The page's own status wins over the list entry.
+                      const fields = {
+                        ...doc,
+                        ...(doc.slug ? docStatuses[doc.slug] : undefined),
+                      };
+                      const ps = ctx.docProcessingStatus(fields);
                       const labelMap: Record<string, string> = {
                         confirmed: t("cases.detail_doc_status_confirmed"),
                         review_open: t("cases.detail_doc_status_review_open"),
@@ -1235,6 +1254,8 @@ export function DocumentsTab() {
                         extraction_failed: t("docstab.extraction_failed"),
                         extraction_password: t("docstab.extraction_password"),
                         extraction_unsupported: t("docstab.extraction_unsupported"),
+                        extraction_partial: partialLabel(fields),
+                        processing: "Wird verarbeitet",
                       };
                       return (
                         <span

@@ -74,6 +74,12 @@ import {
 
 import { Clock, PauseCircle, CheckCircle2, XCircle, AlertTriangle, Archive } from "lucide-react";
 import type { StatusColor } from "@/lib/status-colors";
+import {
+  docProcessingStatus as docProcessingStatusOf,
+  REVIEW_STATUS_KEYS,
+  type DocStatusFields,
+  type DocStatusKey,
+} from "@/lib/doc-processing-status";
 
 export const STATUS_CONFIG: Record<
   string,
@@ -266,13 +272,7 @@ interface MatterDetailContextValue {
   confirmSuggestedParty: (index: number, confirmed: boolean) => Promise<void>;
 
   // Utilities
-  docProcessingStatus: (doc: {
-    extraction_status?: string;
-    extraction_error_code?: string;
-    ocr_status?: string;
-    extraction_unverified?: boolean;
-    analysis_status?: string;
-  }) => { key: string; color: string };
+  docProcessingStatus: (doc: DocStatusFields) => { key: DocStatusKey; color: string };
   formatUploadBytes: (bytes: number) => string;
   formatUploadEta: (seconds?: number) => string;
   uploadStatusLabel: (
@@ -1530,120 +1530,8 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
 
   // ── Utility functions ───────────────────────────────────────────────
 
-  function docProcessingStatus(doc: {
-    extraction_status?: string;
-    extraction_error_code?: string;
-    ocr_status?: string;
-    extraction_unverified?: boolean;
-    analysis_status?: string;
-  }) {
-    const as = doc.analysis_status;
-    if (as === "failed")
-      return {
-        key: "analysis_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (as === "retrying")
-      return {
-        key: "analysis_retrying",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (as === "permanently_failed")
-      return {
-        key: "analysis_permanently_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    const es = doc.extraction_status;
-    if (es === "failed" || es === "error") {
-      const code = doc.extraction_error_code;
-      if (code === "password_required" || code === "invalid_document_password")
-        return {
-          key: "extraction_password",
-          color:
-            "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
-        };
-      if (code === "unsupported_format")
-        return {
-          key: "extraction_unsupported",
-          color:
-            "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-        };
-      return {
-        key: "extraction_failed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    }
-    if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
-      return {
-        key: "confirmed",
-        color:
-          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-      };
-    if (es === "analyzed" || (es === "text_layer" && doc.extraction_unverified))
-      return {
-        key: "review_open",
-        color:
-          "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
-      };
-    if (es === "ocr_complete")
-      return {
-        key: "analyzed",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (es === "ocr_processing")
-      return {
-        key: "ocr_processing",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (es === "ocr_needed" || es === "ocr_failed")
-      return {
-        key: "ocr_needed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (es === "processing")
-      return {
-        key: "uploaded",
-        color:
-          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-      };
-    if (es === "uploaded")
-      return {
-        key: "uploaded",
-        color:
-          "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-      };
-    const ocr = doc.ocr_status;
-    if (ocr === "ocr_complete")
-      return {
-        key: "analyzed",
-        color:
-          "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
-      };
-    if (ocr === "ocr_needed" || ocr === "unknown")
-      return {
-        key: "ocr_needed",
-        color:
-          "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
-      };
-    if (ocr === "text_layer")
-      return {
-        key: "text_layer",
-        color:
-          "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
-      };
-    return {
-      key: "uploaded",
-      color:
-        "bg-[color:var(--ds-neutral-bg)] border-[color:var(--ds-neutral-border)] text-[color:var(--ds-neutral-text)]",
-    };
-  }
+  // Engine and UI status vocabularies are mapped in one place.
+  const docProcessingStatus = docProcessingStatusOf;
 
   function formatUploadBytesLocal(bytes: number): string {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
@@ -1697,8 +1585,7 @@ export function MatterDetailProvider({ children }: { children: React.ReactNode }
   const openTaskCount = tasks.filter((task) => !task.done).length;
   const documentReviewCount =
     caseData?.documents.filter((doc) => {
-      const status = docProcessingStatus(doc).key;
-      return status === "review_open" || status === "ocr_needed" || status === "ocr_processing";
+      return REVIEW_STATUS_KEYS.has(docProcessingStatus(doc).key);
     }).length ?? 0;
   const unbilledExpenses = expensesList
     .filter((entry) => entry.billable !== false && !entry.billed)

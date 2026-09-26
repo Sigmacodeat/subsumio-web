@@ -194,8 +194,15 @@ export function useKanzleiCockpitData() {
       es === "uploaded" ||
       es === "processing" ||
       es === "ocr_processing" ||
+      // Engine vocabulary: only partly read, failed, OCR still owed.
+      es === "partial" ||
+      es === "failed" ||
+      fm.ocr_status === "needs_backfill" ||
+      // The engine writes the flag as the string "true".
       fm.extraction_unverified === true ||
+      fm.extraction_unverified === "true" ||
       as === "failed" ||
+      as === "permanently_failed" ||
       as === "pending"
     );
   });
