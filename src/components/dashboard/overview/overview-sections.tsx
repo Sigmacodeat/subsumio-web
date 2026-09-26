@@ -24,6 +24,7 @@ import {
   FileText,
   Gavel,
   Inbox,
+  ListChecks,
   Landmark,
   Mail,
   Receipt,
@@ -326,6 +327,7 @@ export const ATTENTION_ICONS = {
   invoice: Receipt,
   trust: Landmark,
   request: FileText,
+  task: ListChecks,
 } satisfies Record<string, LucideIcon>;
 
 export function AttentionList({ items, loading }: { items: AttentionItem[]; loading?: boolean }) {

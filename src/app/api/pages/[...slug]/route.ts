@@ -48,6 +48,7 @@ import {
   type DeadlineChangeEvent,
 } from "@/lib/deadline-write-policy";
 import { logDeadlineEvents } from "@/lib/deadline-audit";
+import { notifyTaskAssignments } from "@/lib/task-assignment-notify";
 
 import { logger } from "@/lib/logger";
 const log = logger("api/pages/[...slug]");
@@ -467,6 +468,20 @@ export const PATCH = createHandler(
         turnsOnTwoFactorRequirement(bodyFrontmatter, curFm)
       ) {
         await enforceFirmTwoFactorNow(ctx.user);
+      }
+      // A task assigned to a colleague reaches them as a notification.
+      if (
+        Array.isArray(patchedFm.tasks) &&
+        (currentPage.type === "legal_case" || curFm.type === "legal_case")
+      ) {
+        void notifyTaskAssignments({
+          brainId: ctx.brainId,
+          actor: { id: ctx.user.id, name: ctx.user.name, email: ctx.user.email },
+          caseSlug: currentPage.slug ?? rawSlug,
+          caseTitle: currentPage.title,
+          storedTasks: curFm.tasks,
+          incomingTasks: patchedFm.tasks,
+        });
       }
       const partialFailure = restoreCascade.attempted && restoreCascade.failed.length > 0;
       return Response.json(

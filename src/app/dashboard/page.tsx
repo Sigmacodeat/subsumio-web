@@ -179,7 +179,19 @@ function MyDay({ role }: { role?: string }) {
     },
   ];
 
+  const myTasks = badges.data?.["/dashboard/tasks"];
   const attention: AttentionItem[] = [
+    {
+      // Tasks colleagues assigned to me (same number as the sidebar badge).
+      key: "tasks",
+      label: "Meine Aufgaben",
+      hint: "Mir zugewiesen, offen",
+      count: myTasks?.count ?? 0,
+      capped: myTasks?.degraded === true,
+      href: "/dashboard/tasks?filter=mine",
+      icon: ATTENTION_ICONS.task,
+      tone: "warning",
+    },
     {
       key: "inbox",
       label: "Eingänge zuordnen",
