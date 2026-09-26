@@ -75,7 +75,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: orgPostSchema,
     audit: (_ctx, body) => ({
-      action: "team.invite" as const,
+      action: "org.create" as const,
       entityType: "org",
       details: { name: body.name },
     }),

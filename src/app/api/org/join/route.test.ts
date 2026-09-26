@@ -27,7 +27,12 @@ const update = vi.fn(async (id: string, patch: Record<string, unknown>) => ({
   ...patch,
 }));
 // Mutable so tests can attach inviteRevokedAt cutoffs.
-const orgA: Record<string, any> = { id: "org_a", name: "Kanzlei A", ownerId: "owner" };
+const orgA: Record<string, any> = {
+  id: "org_a",
+  name: "Kanzlei A",
+  ownerId: "owner",
+  brainId: "brain_firm",
+};
 vi.mock("@/lib/auth/store", () => ({
   getStore: () => ({
     getById: async (id: string) => users[id] ?? null,
@@ -42,6 +47,7 @@ vi.mock("@/lib/auth/store", () => ({
 import { POST } from "./route";
 import { requireEngineContext } from "@/lib/engine";
 import { bindFragment, verifyActionToken } from "@/lib/auth/tokens";
+import { logAudit } from "@/lib/audit";
 
 function join(userId: string) {
   vi.mocked(requireEngineContext).mockResolvedValue({
@@ -71,6 +77,16 @@ describe("POST /api/org/join", () => {
     const res = await join("invitee");
     expect(res.status).toBe(200);
     expect(update).toHaveBeenCalledWith("invitee", { orgId: "org_a", role: "assistant" });
+  });
+
+  it("records the join in the protocol of the firm joined", async () => {
+    vi.mocked(logAudit).mockClear();
+    await join("invitee");
+    expect(logAudit).toHaveBeenCalledWith(
+      "org.join",
+      "org",
+      expect.objectContaining({ brainId: "brain_firm", entityId: "org_a", userId: "invitee" })
+    );
   });
 
   it("the owner keeps the admin role when joining their own firm", async () => {

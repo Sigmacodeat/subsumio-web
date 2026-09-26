@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, revokeAllSessions } from "@/lib/auth/session";
 import { revokeSession } from "@/lib/auth/session-registry";
-import { logAudit } from "@/lib/audit";
 import { createHandler } from "@/lib/api-handler";
 import { unregisterPushEndpoint } from "@/lib/push-token-store";
 import { z } from "zod";
@@ -43,13 +42,7 @@ export const POST = createHandler(
       // Revoke-all also removes every push registration (revocation-store).
       await revokeAllSessions(ctx.user.id);
     }
-    void logAudit("user.logout", "user", {
-      entityId: ctx.user.id,
-      brainId: ctx.brainId,
-      userId: ctx.user.id,
-      userEmail: ctx.user.email,
-      details: { allDevices: !ctx.sessionId },
-    });
+    // Audited once, by the handler's `audit` option (firm brain, user, IP).
 
     const res = NextResponse.json({ ok: true });
     res.cookies.delete(SESSION_COOKIE);

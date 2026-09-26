@@ -15,6 +15,9 @@ vi.mock("@/lib/engine", async () => ({
 }));
 vi.mock("@/lib/auth/revoke-access", () => ({ revokeUserAccess: vi.fn(async () => undefined) }));
 vi.mock("@/lib/auth/session", () => ({ revokeAllSessions: vi.fn(async () => undefined) }));
+vi.mock("@/lib/audit-user", () => ({
+  auditBrainForUser: async (u: any) => (u.orgId === "org_a" ? "b" : u.brainId),
+}));
 
 const users: Record<string, any> = {};
 const update = vi.fn(async (id: string, patch: Record<string, unknown>) => {
@@ -36,6 +39,7 @@ vi.mock("@/lib/auth/store", () => ({
 import { DELETE, PATCH } from "./route";
 import { requireEngineContext } from "@/lib/engine";
 import { revokeUserAccess } from "@/lib/auth/revoke-access";
+import { logAudit } from "@/lib/audit";
 
 function call(method: "DELETE" | "PATCH", id: string, body?: unknown) {
   vi.mocked(requireEngineContext).mockResolvedValue({
@@ -96,5 +100,13 @@ describe("operator deactivation", () => {
     expect(res.status).toBe(200);
     expect(users.lawyer.deactivatedAt).toBeTruthy();
     expect(revokeUserAccess).toHaveBeenCalledWith("lawyer");
+  });
+
+  it("records the change with its target in the operator's and the firm's protocol", async () => {
+    vi.mocked(logAudit).mockClear();
+    await call("DELETE", "lawyer");
+    const calls = vi.mocked(logAudit).mock.calls.filter((c) => c[0] === "admin.user_deactivate");
+    expect(calls.map((c) => (c[2] as any).brainId).sort()).toEqual(["b", "ops"]);
+    for (const c of calls) expect((c[2] as any).entityId).toBe("lawyer");
   });
 });

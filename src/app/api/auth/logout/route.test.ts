@@ -28,6 +28,7 @@ vi.mock("@/lib/push-token-store", () => ({
 
 import { POST } from "./route";
 import { requireEngineContext } from "@/lib/engine";
+import { logAudit } from "@/lib/audit";
 
 const USER = { id: "u_1", email: "anwalt@kanzlei.example", role: "lawyer", orgId: "org_1" };
 
@@ -52,6 +53,13 @@ beforeEach(() => {
 });
 
 describe("POST /api/auth/logout", () => {
+  it("records the sign-out exactly once, in the firm's protocol", async () => {
+    await logout();
+    const entries = vi.mocked(logAudit).mock.calls.filter((c) => c[0] === "user.logout");
+    expect(entries).toHaveLength(1);
+    expect(entries[0][2]).toEqual(expect.objectContaining({ brainId: "org_firm", userId: "u_1" }));
+  });
+
   it("ends this device's push registration together with the session", async () => {
     const res = await logout({ pushEndpoint: "https://push.example/device-1" });
     expect(res.status).toBe(200);

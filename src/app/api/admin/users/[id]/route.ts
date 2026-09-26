@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiError, clientIpOf } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
+import { auditBrainForUser } from "@/lib/audit-user";
 import { getStore, type Plan, type KanzleiRole, type User } from "@/lib/auth/store";
 import { revokeUserAccess } from "@/lib/auth/revoke-access";
 import { isValidIndustry } from "@/lib/industry-pack";
@@ -10,6 +12,38 @@ import {
   setMemberRole,
   tenantAdminMessage,
 } from "@/lib/tenant-admin";
+
+function pick(user: User, keys: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) out[k] = (user as unknown as Record<string, unknown>)[k] ?? null;
+  return out;
+}
+
+/**
+ * An operator change to an account is recorded twice: in the operator's own
+ * protocol and in the protocol of the firm the account belongs to — the firm
+ * must be able to show who changed access to its data, and when.
+ */
+async function auditOperatorChange(
+  ctx: { brainId: string; user: { id: string; email: string } },
+  req: Request,
+  action: "admin.user_update" | "admin.user_deactivate",
+  target: User,
+  details: { before: Record<string, unknown>; after: Record<string, unknown> }
+): Promise<void> {
+  const entry = {
+    entityId: target.id,
+    userId: ctx.user.id,
+    userEmail: ctx.user.email,
+    ip: clientIpOf(req),
+    details: { ...details, target: target.email, byOperator: true },
+  };
+  void logAudit(action, "user", { ...entry, brainId: ctx.brainId });
+  const firmBrain = await auditBrainForUser(target);
+  if (firmBrain && firmBrain !== ctx.brainId) {
+    void logAudit(action, "user", { ...entry, brainId: firmBrain });
+  }
+}
 
 /**
  * Same invariant as every tenant action: a firm keeps an active owner and an
@@ -42,11 +76,7 @@ export const PATCH = createHandler(
     action: "platform.operator",
     rateTier: "standard",
     body: updateSchema,
-    audit: (ctx, body) => ({
-      action: "admin.user_update" as const,
-      entityType: "user",
-      details: body,
-    }),
+    // Audited in the handler (needs the target id and the values before).
   },
   async (ctx, body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
@@ -104,6 +134,11 @@ export const PATCH = createHandler(
       await revokeUserAccess(id);
     }
 
+    await auditOperatorChange(ctx, req, "admin.user_update", target, {
+      before: pick(target, Object.keys(body)),
+      after: body,
+    });
+
     const {
       passwordHash,
       twoFactorSecret,
@@ -124,10 +159,7 @@ export const DELETE = createHandler(
   {
     action: "platform.operator",
     rateTier: "standard",
-    audit: () => ({
-      action: "admin.user_deactivate" as const,
-      entityType: "user",
-    }),
+    // Audited in the handler (needs the target id).
   },
   async (ctx, _body, _query, req) => {
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
@@ -152,6 +184,11 @@ export const DELETE = createHandler(
     }
 
     await revokeUserAccess(id);
+
+    await auditOperatorChange(ctx, req, "admin.user_deactivate", target, {
+      before: { deactivatedAt: target.deactivatedAt ?? null },
+      after: { deactivatedAt: updated.deactivatedAt },
+    });
 
     return Response.json({ ok: true, deactivatedAt: updated.deactivatedAt });
   }

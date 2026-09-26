@@ -4,6 +4,7 @@ import { effectivePlan } from "@/lib/billing/trial";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { limitsFor } from "@/lib/plans";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { logAudit } from "@/lib/audit";
 import {
   DEFAULT_INVITE_ROLE,
   INVITE_ROLES,
@@ -24,12 +25,8 @@ export const POST = createHandler(
     action: "brain.read",
     rateTier: "standard",
     body: joinSchema,
-    audit: (ctx, body) => ({
-      action: "org.join" as const,
-      entityType: "org",
-      entityId: body.org,
-      details: { user: ctx.user.email },
-    }),
+    // Audited in the handler: the entry belongs in the protocol of the firm
+    // joined, not in the personal brain the request started from.
   },
   async (ctx, body, _query, _req) => {
     const orgId = body.org.trim();
@@ -96,6 +93,13 @@ export const POST = createHandler(
     await store.update(ctx.user.id, {
       orgId: org.id,
       ...(org.ownerId === ctx.user.id ? {} : { role }),
+    });
+    void logAudit("org.join", "org", {
+      entityId: org.id,
+      brainId: org.brainId,
+      userId: ctx.user.id,
+      userEmail: ctx.user.email,
+      details: { user: ctx.user.email, role: org.ownerId === ctx.user.id ? ctx.user.role : role },
     });
     return Response.json({ ok: true, org: { name: org.name } });
   }

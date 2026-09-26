@@ -265,6 +265,7 @@ export type AuditAction =
   | "workflow.advance"
   | "legal.pipeline_trigger"
   | "org.join"
+  | "org.create"
   | "gdpr.data_deletion"
   | "absence.create"
   | "absence.update"
@@ -591,6 +592,7 @@ const ACTION_LABELS: Record<string, string> = {
   "workflow.advance": "Workflow-Schritt fortgeführt",
   "legal.pipeline_trigger": "Automatische Fallaufarbeitung gestartet",
   "org.join": "Organisation beigetreten",
+  "org.create": "Kanzlei gegründet",
   "gdpr.data_deletion": "DSGVO-Accountlöschung",
   "absence.create": "Abwesenheit angelegt",
   "absence.update": "Abwesenheit geändert",
