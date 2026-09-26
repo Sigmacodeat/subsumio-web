@@ -110,7 +110,7 @@ chmod 600 "$APP-new/$H/.env"
 # The import mirror is copied only after the build (see below), so it is never
 # part of a build context.
 # The release must be complete before anything is switched.
-for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/.env" DEPLOYED_COMMIT; do
+for f in package.json "$H/docker-compose.yml" "$H/crontab" "$H/cronjob.sh" "$H/.env" DEPLOYED_COMMIT; do
   [ -s "$APP-new/$f" ] || { echo "[deploy] Unvollständige Version: $f fehlt." >&2; exit 1; }
 done
 # What the switch will expect to find; it refuses if this changed meanwhile.

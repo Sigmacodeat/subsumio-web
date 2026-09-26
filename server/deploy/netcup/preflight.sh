@@ -170,6 +170,12 @@ done
 for key in WEB_PUSH_PUBLIC_KEY WEB_PUSH_PRIVATE_KEY; do
   warn_value "$key" "keine Web-Push-Benachrichtigungen."
 done
+# Cron monitoring: failed jobs mail QUEUE_ALERT_EMAIL; a scheduler that stops
+# entirely is only noticed through an external dead-man's switch.
+warn_value QUEUE_ALERT_EMAIL "fehlgeschlagene Cron-Jobs und Backups melden sich nur im Container-Log."
+if [ -z "$(value CRON_HEARTBEAT_URL_DEADLINES)$(value CRON_HEARTBEAT_URL_DEADLINE_REMINDERS)$(value CRON_HEARTBEAT_URL_HEALTH)" ]; then
+  echo "[preflight] WARN     keine CRON_HEARTBEAT_URL_* für Fristen/Health gesetzt — ein stehengebliebener Cron fällt niemandem auf."
+fi
 if [ -n "$(value DOCUSIGN_INTEGRATION_KEY)" ]; then
   docusign_base="$(value DOCUSIGN_BASE_URL)"
   case "$docusign_base" in

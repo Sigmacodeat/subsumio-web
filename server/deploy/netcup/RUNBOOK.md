@@ -116,24 +116,27 @@ Die Web-App schreibt Laufzeitdaten (Feature-Flags, SCIM-Status, WhatsApp-Medien,
 ## Cron-Überwachung
 
 Die Jobs stehen in `crontab` und laufen per supercronic im `cron`-Container (jeder Deploy erzeugt
-ihn neu, Änderungen an `crontab` greifen damit automatisch). Die Fristen-Jobs — Tagesübersicht
-`/api/cron/deadlines`, Erinnerungen `/api/cron/deadline-reminders`, Eskalation
-`/api/cron/deadline-alerts` — und `/api/cron/health` laufen **ohne** `|| true`:
+ihn neu, Änderungen an `crontab` greifen damit automatisch). **Jeder** Job läuft über den Wrapper
+`cronjob.sh` — kein Job wird mehr mit `|| true` stummgeschaltet:
 
-- Die Routen antworten mit **HTTP 500**, wenn ein Lauf Fehler hatte (Fristen einer Kanzlei nicht
-  lesbar, Kanzlei-Einstellungen nicht lesbar, E-Mail-Versand fehlgeschlagen). Der JSON-Körper
-  enthält trotzdem den vollständigen Bericht (`errors`, `failed`, `warnings`).
-- `curl -f` endet dann mit Exit-Code 22, `--max-time` mit 28 bei einem hängenden Lauf; supercronic
-  protokolliert den Job als fehlgeschlagen.
+- Die Routen antworten mit **HTTP 5xx**, wenn ein Lauf Fehler hatte (z. B. Fristen einer Kanzlei
+  nicht lesbar, E-Mail-Versand fehlgeschlagen; `/api/cron/health` mit 503, wenn eine Prüfung
+  scheitert). `curl -f` endet dann mit Exit-Code 22, das Zeitlimit (`--max-time`, sonst
+  `CRON_MAX_TIME`, Standard 3300 s) mit 28.
+- Der Wrapper protokolliert `[cron] FAILED <job>`, supercronic markiert den Job als fehlgeschlagen,
+  und `QUEUE_ALERT_EMAIL` bekommt eine Mail über Resend — höchstens einmal pro Job und Stunde
+  (`CRON_ALERT_INTERVAL_SECONDS`). Ohne `QUEUE_ALERT_EMAIL`/`RESEND_API_KEY` bleibt es beim Log;
+  `preflight.sh` warnt dann.
 
 Fehlgeschlagene Läufe finden:
 
 ```sh
-ssh subsumio-netcup 'docker logs --since 24h subsumio-engine-cron-1 2>&1 | grep -iE "deadline|health" | grep -iE "fail|error|exit"'
+ssh subsumio-netcup 'docker logs --since 24h subsumio-engine-cron-1 2>&1 | grep "\[cron\] FAILED"'
 ```
 
 **Totmannschalter (optional).** Ein Cron, der gar nicht mehr läuft, meldet keinen Fehler. Dafür
-pingt jeder Fristen-Job nach einem **erfolgreichen** Lauf eine URL, wenn sie gesetzt ist — z. B.
+pingt jeder Job nach einem **erfolgreichen** Lauf `CRON_HEARTBEAT_URL_<JOB>` (Jobname in
+Großbuchstaben, `-` wird `_`), wenn gesetzt und im `cron`-Dienst durchgereicht — z. B.
 eine Healthchecks.io- oder Uptime-Kuma-Push-URL, die alarmiert, wenn der Ping ausbleibt. In
 `/opt/subsumio/server/deploy/netcup/.env`:
 
@@ -143,6 +146,10 @@ CRON_HEARTBEAT_URL_DEADLINE_REMINDERS=https://hc-ping.com/<uuid>   # täglich 07
 CRON_HEARTBEAT_URL_DEADLINE_ALERTS=https://hc-ping.com/<uuid>      # alle 30 Minuten
 CRON_HEARTBEAT_URL_HEALTH=https://hc-ping.com/<uuid>               # alle 10 Minuten
 CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS=https://hc-ping.com/<uuid> # stündlich
+CRON_HEARTBEAT_URL_IMAP_SYNC=https://hc-ping.com/<uuid>            # alle 5 Minuten
+CRON_HEARTBEAT_URL_DUNNING_RUN=https://hc-ping.com/<uuid>          # täglich 09:00 UTC
+CRON_HEARTBEAT_URL_MONTHLY_INVOICE=https://hc-ping.com/<uuid>      # monatlich am 1.
+CRON_HEARTBEAT_URL_SANCTIONS_SYNC=https://hc-ping.com/<uuid>       # montags 04:20 UTC
 ```
 
 Leer oder nicht gesetzt = kein Ping. Ein fehlgeschlagener Ping wird protokolliert, macht den Job
