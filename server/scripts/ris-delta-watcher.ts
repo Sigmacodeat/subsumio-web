@@ -18,7 +18,7 @@
  *
  * RIS OGD Compliance:
  *   - acquireRisLock für single-connection mode
- *   - 1.5s Pause zwischen Requests (via ris-proxy.ts)
+ *   - 2 s Pause zwischen Requests (RIS_PAUSE_MS, ris-pace.ts)
  *   - User-Agent gesetzt
  *   - Massendownload außerhalb Bürozeiten (Cron: 04:00 UTC = 06:00 CEST)
  *

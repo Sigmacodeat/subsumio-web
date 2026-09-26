@@ -18,14 +18,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause, massDownloadAllowed, waitForRisWindow, RIS_PAUSE_MS } from "./ris-pace";
-import {
-  hasProxies,
-  proxyFetchOptions,
-  getUserAgent,
-  PROXY_DELAY_MS,
-  logProxyConfig,
-  reportProxyFailure,
-} from "./ris-proxy";
+import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import {
   stripHtmlComplete,
   risXmlToText,
@@ -59,11 +52,10 @@ const isRIS =
   TARGET_DIR.includes("judikatur") || TARGET_DIR.startsWith("at-") || TARGET_DIR.includes("/at-");
 // RIS erlaubt max. 0,5 req/s pro Prozess (RIS-IT-Mail 2026-09-22) — eine
 // zweite Verbindung läuft über einen eigenen Prozess mit eigenem Slot
-// (ris-lock.ts), nicht über In-Prozess-Concurrency. Proxys ändern daran
-// nichts: das Limit gilt pro Prozess, nicht pro IP.
+// (ris-lock.ts), nicht über In-Prozess-Concurrency.
 const CONCURRENCY = isRIS ? 1 : concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : 5;
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
-const RATE_LIMIT_MS = isRIS ? Math.max(PROXY_DELAY_MS, RIS_PAUSE_MS) : 500; // RIS: ≥2s, EU: 500ms
+const RATE_LIMIT_MS = isRIS ? RIS_PAUSE_MS : 500; // RIS: 2s, EU: 500ms
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const _corpusRoot = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -91,7 +83,6 @@ async function fetchWithRetry(
       }
       return res;
     } catch {
-      if (hasProxies()) reportProxyFailure();
       if (attempt < MAX_RETRIES) {
         await new Promise((r) => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
       }

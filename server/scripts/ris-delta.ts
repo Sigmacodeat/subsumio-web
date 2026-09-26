@@ -20,7 +20,7 @@
  *   6. Caller entscheidet: fetch XML → write disk → markiereZumImport
  *
  * RIS OGD Compliance:
- *   - 1.5s Pause zwischen Requests (ris-proxy.ts)
+ *   - 2 s Pause zwischen Requests (risPause, ris-pace.ts)
  *   - acquireRisLock für single-connection mode
  *   - User-Agent gesetzt
  *

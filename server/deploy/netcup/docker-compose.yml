@@ -414,11 +414,6 @@ services:
       # start, with this message.
       SUBSUMIO_EMBEDDING_MODEL: ${SUBSUMIO_EMBEDDING_MODEL:?in server/deploy/netcup/.env setzen — muss zum Vektorraum der Spalte content_chunks.embedding passen}
       SUBSUMIO_EMBEDDING_DIMENSIONS: ${SUBSUMIO_EMBEDDING_DIMENSIONS:?in server/deploy/netcup/.env setzen — Breite der Spalte content_chunks.embedding}
-      # RIS Proxy — disabled: all 10 proxies were dead (timeout on every HTTPS request).
-      # Re-enable by setting RIS_PROXY_URLS in .env with working proxy URLs.
-      RIS_PROXY_URLS: ""
-      RIS_PROXY_DELAY: ${RIS_PROXY_DELAY:-1500}
-      RIS_PROXY_CONCURRENCY: ${RIS_PROXY_CONCURRENCY:-0}
       # Pipeline pause flag — when "true", orchestrator reports but starts no jobs.
       # Default false: pipeline runs automatically after deploy.
       PIPELINE_PAUSED: ${PIPELINE_PAUSED:-false}
