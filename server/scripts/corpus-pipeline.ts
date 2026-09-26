@@ -1711,62 +1711,74 @@ function runInforceIndexRefresh(state: CycleState): void {
 // gewartet. Die frischen Dateien landen in at-normen/ und gehen über den
 // normalen normen-at-Import in die DB.
 
+/**
+ * Takes the head of law_fetch_queue in ONE transaction (row lock, then
+ * `value - 0`) and deletes the key only while the list is empty. The Ops
+ * route appends with an atomic upsert; reading the whole list and writing
+ * the remainder back used to drop entries queued in between. psql prints
+ * only the SELECT row (-q -t -A): the popped entry, or nothing.
+ * Exported for tests.
+ */
+export const LAW_FETCH_QUEUE_POP_SQL = `BEGIN;
+SELECT value->0 FROM pipeline_config WHERE key = 'law_fetch_queue' FOR UPDATE;
+UPDATE pipeline_config SET value = value - 0, updated_at = now()
+ WHERE key = 'law_fetch_queue' AND jsonb_typeof(value) = 'array';
+DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'
+   AND CASE WHEN jsonb_typeof(value) = 'array' THEN jsonb_array_length(value) = 0 ELSE true END;
+COMMIT;`;
+
+/** Queue length without modifying it (0 when missing or not a list). */
+export const LAW_FETCH_QUEUE_LEN_SQL = `SELECT CASE WHEN jsonb_typeof(value) = 'array'
+  THEN jsonb_array_length(value) ELSE 0 END FROM pipeline_config WHERE key = 'law_fetch_queue'`;
+
 function runLawFetchQueue(state: CycleState): void {
   const key = "law-fetch";
   ensureSourceRow(key);
 
-  const raw = psqlQuery(
-    "SELECT value::text FROM pipeline_config WHERE key = 'law_fetch_queue'"
-  ).trim();
-  if (!raw) return;
-
-  let queue: Array<{ source?: string; gnr?: string }>;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    queue = Array.isArray(parsed) ? parsed : [];
-  } catch {
-    queue = [];
-  }
-  if (queue.length === 0) {
-    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
+  const len = parseInt(psqlQuery(LAW_FETCH_QUEUE_LEN_SQL).trim() || "0", 10) || 0;
+  if (len === 0) {
+    // Leere/kaputte Liste nur löschen, solange sie leer ist — ein inzwischen
+    // angehängter Eintrag bleibt stehen.
+    psqlQuery(`DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'
+       AND CASE WHEN jsonb_typeof(value) = 'array' THEN jsonb_array_length(value) = 0 ELSE true END`);
     return;
   }
 
   if (checkSourceProcess(key, state).running) {
-    console.log(`  [law-fetch] Läuft bereits — ${queue.length} in Queue`);
+    console.log(`  [law-fetch] Läuft bereits — ${len} in Queue`);
     return;
   }
 
-  const [next, ...rest] = queue;
+  const raw = psqlQuery(LAW_FETCH_QUEUE_POP_SQL).trim();
+  if (!raw) return;
+  let next: { source?: string; gnr?: string } | null = null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    next =
+      parsed && typeof parsed === "object" ? (parsed as { source?: string; gnr?: string }) : null;
+  } catch {
+    next = null;
+  }
   // Ungültige/nicht unterstützte Einträge still verwerfen — die Route
   // validiert bereits, dies ist nur der Defensiv-Pfad.
   if (next?.source !== "law-at-normen" || !next.gnr || !/^\d{4,12}$/.test(next.gnr)) {
-    console.log(`  [law-fetch] Ungültiger Eintrag verworfen: ${JSON.stringify(next)}`);
-  } else {
-    startProcess(
-      `law-fetch-${next.gnr}`,
-      [
-        "scripts/ris-xml-fetch-normen.ts",
-        "--ris",
-        `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
-        "--gnr",
-        next.gnr,
-      ],
-      key,
-      4 * 3600
-    );
-    updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
-    appendHistory(key, "fetch", `gnr ${next.gnr} (${rest.length} weitere in Queue)`);
+    console.log(`  [law-fetch] Ungültiger Eintrag verworfen: ${raw}`);
+    return;
   }
-
-  if (rest.length === 0) {
-    psqlQuery("DELETE FROM pipeline_config WHERE key = 'law_fetch_queue'");
-  } else {
-    psqlQuery(
-      `UPDATE pipeline_config SET value = ${sqlLiteral(JSON.stringify(rest))}::jsonb,
-       updated_at = now() WHERE key = 'law_fetch_queue'`
-    );
-  }
+  startProcess(
+    `law-fetch-${next.gnr}`,
+    [
+      "scripts/ris-xml-fetch-normen.ts",
+      "--ris",
+      `${INFORCE_INDEX_DIR}/ris-inforce.jsonl`,
+      "--gnr",
+      next.gnr,
+    ],
+    key,
+    4 * 3600
+  );
+  updateSourceState(key, { stage: "running", last_cycle_at: new Date().toISOString() });
+  appendHistory(key, "fetch", `gnr ${next.gnr} (${len - 1} weitere in Queue)`);
 }
 
 // ── Import-Queue Drain ─────────────────────────────────────────────────
