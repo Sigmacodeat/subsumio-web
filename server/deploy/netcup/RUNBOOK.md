@@ -243,6 +243,46 @@ der Dienst gar nicht erst, statt still mit dem falschen Modell zu arbeiten.
 Zum Schluss `VACUUM (ANALYZE) content_chunks;` — der Lauf schreibt jede Zeile
 neu und lässt entsprechend alte Zeilenversionen zurück.
 
+## Altbestand der Originaldateien verschlüsseln
+
+`SUBSUMIO_STORAGE_ENCRYPTION_KEY` verschlüsselt nur, was **nach** dem Setzen
+geschrieben wird. Originale, die vorher hochgeladen wurden, liegen weiter im
+Klartext, bis dieser Lauf sie neu schreibt. Er braucht denselben Schlüssel
+wie die Engine, läuft also im Engine-Container:
+
+```bash
+# 1. Probelauf (Vorgabe): zählt Klartext-Dateien, schreibt nichts
+docker exec -w /app subsumio-engine-engine-1 gbrain storage reencrypt
+
+# 2. Verschlüsseln — abgekoppelt, Fortschritt im Log
+docker exec -d -w /app subsumio-engine-engine-1 sh -c \
+  'gbrain storage reencrypt --apply > /data/reencrypt.log 2>&1'
+
+# 3. Kontrolle: danach muss der Probelauf 0 Klartext-Dateien melden
+docker exec -w /app subsumio-engine-engine-1 gbrain storage reencrypt --json
+```
+
+- **Wiederaufnehmbar:** Ein abgebrochener Lauf macht beim nächsten Aufruf
+  hinter der zuletzt fertigen Datei weiter; `--restart` beginnt von vorn.
+  Bereits verschlüsselte Dateien werden übersprungen, doppelt verschlüsselt
+  wird nie.
+- **Sicher:** Jede Datei wird zuerst als Nebenkopie verschlüsselt geschrieben,
+  zurückgelesen und entschlüsselt; nur wenn das Ergebnis Byte für Byte dem
+  Original gleicht (SHA-256), wird das Original ersetzt und erneut geprüft.
+  Schlägt die zweite Prüfung fehl, wird der Klartext zurückgeschrieben. Ohne
+  erfolgreiche Prüfung wird nichts gelöscht. Fehlgeschlagene Dateien stehen
+  im Log, der Exit-Code ist dann 1.
+- **Stufenweise:** `--limit <n>` bricht nach n Dateien ab, `--source <id>`
+  beschränkt auf eine Kanzlei.
+- **Anzeige:** Der letzte vollständige Lauf (auch der Probelauf) wird
+  gespeichert; die Admin-Gesundheitsanzeige (`/admin/api/health-indicators`,
+  Feld `storage_plaintext`) zeigt daraus Anzahl und Anteil der
+  Klartext-Dateien.
+- **Sicherungen:** restic-Snapshots von vor dem Lauf enthalten die Originale
+  weiter im Klartext (restic selbst verschlüsselt). Sie laufen mit der
+  normalen Aufbewahrung aus. Bei einem Objektspeicher mit Object Lock bleiben
+  alte Objektversionen bis zum Ablauf der Sperrfrist erhalten.
+
 ## Grabsteine endgültig entfernen
 
 Eine soft-gelöschte Seite ist für Suche und Embedding unsichtbar, belegt aber

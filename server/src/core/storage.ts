@@ -142,7 +142,12 @@ export async function createStorage(config: StorageConfig): Promise<StorageBacke
   return backend;
 }
 
-async function createRawStorage(config: StorageConfig): Promise<StorageBackend> {
+/**
+ * The backend WITHOUT the at-rest encryption decorator — for operator tools
+ * that must see the stored bytes as they are (re-encryption of plaintext
+ * originals). Everything else uses createStorage.
+ */
+export async function createRawStorage(config: StorageConfig): Promise<StorageBackend> {
   switch (config.backend) {
     case "s3": {
       const { S3Storage } = await import("./storage/s3.ts");

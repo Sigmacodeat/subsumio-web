@@ -236,7 +236,7 @@ export async function findStoredUploadForPage(
  * back to LocalStorage rooted under the gbrain home dir (the production /data
  * volume), so bytes are always persisted somewhere durable.
  */
-function resolveStorageConfig(storageConfig?: unknown): StorageConfig {
+export function resolveStorageConfig(storageConfig?: unknown): StorageConfig {
   if (storageConfig && typeof storageConfig === "object") {
     return storageConfig as StorageConfig;
   }
