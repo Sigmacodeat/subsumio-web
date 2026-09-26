@@ -29,6 +29,8 @@ const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const sourceIdx = args.indexOf("--source");
 const FILTER_SOURCE = sourceIdx >= 0 ? args[sourceIdx + 1] : "";
+const fromPageIdx = args.indexOf("--from-page");
+const FROM_PAGE = fromPageIdx >= 0 ? Number(args[fromPageIdx + 1]) || 1 : 1;
 
 const _scriptDir = dirname(fileURLToPath(import.meta.url));
 const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", "law-corpus");
@@ -614,7 +616,8 @@ async function fetchSource(source: SourceConfig): Promise<void> {
   let skipped = 0;
   let notDigitalized = 0;
 
-  for (let pageNo = 1; pageNo <= MAX_PAGES; pageNo++) {
+  let consecutivePageFailures = 0;
+  for (let pageNo = FROM_PAGE; pageNo <= MAX_PAGES; pageNo++) {
     // Build URL with correct parameters
     const params: string[] = [];
     if (source.applikation) params.push(`Applikation=${source.applikation}`);
@@ -629,9 +632,16 @@ async function fetchSource(source: SourceConfig): Promise<void> {
     try {
       const res = await fetchWithRetry(url);
       if (!res) {
-        console.log(`  Page ${pageNo}: fetch failed, stopping`);
-        break;
+        // Einzelne kaputte RIS-Seite (z. B. persistenter 500 auf Seite 23 bei
+        // Dok) darf den Rest des Bestands nicht blockieren. Erst nach drei
+        // aufeinanderfolgenden Seitenfehlern wird abgebrochen — das ist dann
+        // ein Ausfall, keine Ausreißer-Seite.
+        consecutivePageFailures++;
+        console.log(`  Page ${pageNo}: fetch failed (${consecutivePageFailures}x in Folge)`);
+        if (consecutivePageFailures >= 3) break;
+        continue;
       }
+      consecutivePageFailures = 0;
       const data = (await res.json()) as Record<string, unknown>;
       const result = (data.OgdSearchResult as Record<string, unknown>)
         ?.OgdDocumentResults as Record<string, unknown>;
