@@ -70,6 +70,33 @@ describe("createOpenItemForInvoice", () => {
     expect(payload.frontmatter.status).toBe("open");
   });
 
+  test("looks up the invoice's OP by engine filter, not in the list of all OPs (R11-3)", async () => {
+    // An old OP with payments outside any newest-N window: the targeted
+    // lookup still finds it, so it is not overwritten with a fresh one.
+    mockListEnginePages.mockResolvedValueOnce([
+      pageOf({ ...existingItem, paid_amount: 300, open_amount: 480, dunning_level: 2 }),
+    ]);
+    const res = await createOpenItemForInvoice(headers, invoiceSlug, invoiceFm);
+    expect(res.created).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockListEnginePages).toHaveBeenCalledWith(
+      headers,
+      "open_item",
+      expect.any(Number),
+      expect.objectContaining({
+        strict: true,
+        failOnTruncate: true,
+        frontmatter: { invoice_id: invoiceSlug },
+      })
+    );
+  });
+
+  test("an incomplete lookup throws instead of writing a fresh OP", async () => {
+    mockListEnginePages.mockRejectedValueOnce(new Error("list open_item truncated at 1000"));
+    await expect(createOpenItemForInvoice(headers, invoiceSlug, invoiceFm)).rejects.toThrow();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   test("is idempotent — existing open item is not duplicated", async () => {
     mockListEnginePages.mockResolvedValueOnce([
       pageOf(existingItem as unknown as Record<string, unknown>),

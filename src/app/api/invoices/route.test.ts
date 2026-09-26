@@ -84,8 +84,12 @@ beforeEach(() => {
       }
       if (u.pathname === "/api/pages" && u.searchParams.get("type") === "invoice") {
         if (listFails) return new Response("{}", { status: 500 });
+        // Engine-side frontmatter filter (fm.<key>), as the real engine applies it.
+        const byNumber = u.searchParams.get("fm.invoice_number");
         return Response.json(
-          [...invoicePages].map(([slug, frontmatter]) => ({ slug, title: slug, frontmatter }))
+          [...invoicePages]
+            .filter(([, fm]) => byNumber === null || String(fm.invoice_number) === byNumber)
+            .map(([slug, frontmatter]) => ({ slug, title: slug, frontmatter }))
         );
       }
       const slug = decodeURIComponent(u.pathname.replace(/^\/api\/pages\//, ""));
@@ -174,6 +178,28 @@ describe("POST /api/invoices (GELD-4)", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("invoice_number_taken");
     expect(entries().every((e) => e.billed === false)).toBe(true);
+  });
+
+  it("refuses the number of an old invoice far outside the newest 5,000 (R11-3)", async () => {
+    for (let i = 0; i < 6000; i++) {
+      invoicePages.set(`invoice/newer-${i}`, { invoice_number: `N-${i}`, status: "sent" });
+    }
+    invoicePages.set("invoice/oldest", { invoice_number: "2026-001", status: "sent" });
+    const listCalls: string[] = [];
+    const inner = globalThis.fetch;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (new URL(url).searchParams.get("type") === "invoice") listCalls.push(url);
+        return inner(url, init);
+      })
+    );
+    const res = await call(payload("2026-001"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("invoice_number_taken");
+    // One targeted lookup, not a scan of the firm's invoices.
+    expect(listCalls).toHaveLength(1);
+    expect(new URL(listCalls[0]).searchParams.get("fm.invoice_number")).toBe("2026-001");
   });
 
   it("writes the invoice page create-only", async () => {

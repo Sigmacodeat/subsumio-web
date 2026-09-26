@@ -13,11 +13,16 @@ global.fetch = mockFetch as unknown as typeof fetch;
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine-test:3001" }));
 vi.mock("@/lib/engine-pages", () => ({
-  listEnginePages: (...args: unknown[]) => mockListEnginePages(...args),
+  listEnginePages: async (...args: unknown[]) => (await mockListEnginePages(...args)) ?? [],
 }));
 vi.mock("@/lib/invoice-numbering", () => ({
   allocateInvoiceNumber: (...args: unknown[]) => mockAllocateInvoiceNumber(...args),
   highestInvoiceNumber: (...args: unknown[]) => mockHighestInvoiceNumber(...args),
+  reserveInvoiceNumber: async (
+    brainId: string,
+    year: number,
+    load: () => Promise<Array<string | null | undefined>>
+  ) => mockAllocateInvoiceNumber(brainId, year, mockHighestInvoiceNumber(await load(), year)),
 }));
 vi.mock("@/lib/gobd", () => ({
   sha256Hex: vi.fn(async () => "hash"),
@@ -174,6 +179,15 @@ describe("POST /api/invoices/[slug]/storno", () => {
     expect(mockAllocateInvoiceNumber).not.toHaveBeenCalled();
   });
 
+  test("the storno lookup cannot be completed: 503, nothing is created", async () => {
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }));
+    mockListEnginePages.mockRejectedValueOnce(new Error("list invoice truncated at 1000"));
+    const res = await post();
+    expect(res.status).toBe(503);
+    expect(mockAllocateInvoiceNumber).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
   test("an invoice already stored at the storno slug is not replaced: 409", async () => {
     mockFetch
       .mockResolvedValueOnce(new Response(JSON.stringify(originalInvoice), { status: 200 }))
@@ -199,11 +213,17 @@ describe("POST /api/invoices/[slug]/storno", () => {
     const body = await res.json();
     expect(body.data.invoice_number).toBe("R-2026-0002");
 
+    // Existing Storno-Notes are looked up by parent over every invoice of
+    // the firm (engine-side filter), strict and complete.
     expect(mockListEnginePages).toHaveBeenCalledWith(
       { "x-subsumio-source": "brain-at" },
       "invoice",
-      5000,
-      { strict: true }
+      expect.any(Number),
+      expect.objectContaining({
+        strict: true,
+        failOnTruncate: true,
+        frontmatter: { parent_invoice_id: originalInvoice.slug },
+      })
     );
     expect(mockAllocateInvoiceNumber).toHaveBeenCalledWith("brain-at", 2026, 1);
 
