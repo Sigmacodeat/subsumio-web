@@ -1,5 +1,6 @@
 import { applyCheckResult, runSanctionsCheck } from "@/lib/sanctions/check";
 import { z } from "zod";
+import { isStaffRole } from "@/lib/team-visibility";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
@@ -103,6 +104,9 @@ async function load(slug: string, headers: Record<string, string>) {
 export const GET = createHandler(
   { action: "brain.read", rateTier: "standard" },
   async (ctx, _b, _q, req) => {
+    if (!isStaffRole(ctx.user.role)) {
+      return apiError("forbidden", "Identitätsprüfungen sind nur für die Kanzlei einsehbar.", 403);
+    }
     const { id } = await (req as unknown as { params: Promise<{ id: string }> }).params;
     const page = await load(`legal/kyc/${id}`, ctx.headers);
     if (!page?.frontmatter) return apiError("not_found", "Prüfung nicht gefunden", 404);

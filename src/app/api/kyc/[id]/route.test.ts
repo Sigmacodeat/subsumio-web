@@ -37,7 +37,7 @@ vi.mock("@/lib/api-handler", () => ({
   apiSuccess: (data: unknown) => Response.json({ data }),
 }));
 
-import { PATCH } from "./route";
+import { GET, PATCH } from "./route";
 
 let stored: Record<string, unknown>;
 
@@ -147,5 +147,19 @@ describe("OPS-8 sanctions hit", () => {
       "kyc_verification",
       expect.objectContaining({ details: expect.objectContaining({ reason }) })
     );
+  });
+});
+
+describe("GET /api/kyc/<id> — firm-internal", () => {
+  it("a client account gets 403 for the AML record of its own matter", async () => {
+    user.role = "client_viewer";
+    const fetchMock = vi.fn(async () => Response.json({ frontmatter: stored }));
+    vi.stubGlobal("fetch", fetchMock);
+    const req = Object.assign(new Request("http://x/api/kyc/k1"), {
+      params: Promise.resolve({ id: "k1" }),
+    });
+    const res = await (GET as unknown as (r: Request) => Promise<Response>)(req);
+    expect(res.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,8 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 
 import { applyUploadedFileHeaders } from "@/lib/file-response-headers";
+import { mayReceiveRecord } from "@/lib/staff-only-records";
+import { isStaffRole } from "@/lib/team-visibility";
 import { logger } from "@/lib/logger";
 const log = logger("api/files/[...slug]");
 
@@ -45,6 +47,18 @@ export const GET = createHandler(
     (ctx as unknown as { __slug?: string }).__slug = decodeURIComponent(path);
 
     try {
+      // ID copies filed with the AML check are firm-internal: a client
+      // account gets "not found", like for any page outside its scope.
+      if (!isStaffRole(ctx.user.role)) {
+        const pageRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+          headers: ctx.headers,
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!pageRes.ok) return apiNotFound("not_found");
+        if (!mayReceiveRecord(ctx.user.role, await pageRes.json())) {
+          return apiNotFound("not_found");
+        }
+      }
       const res = await fetch(`${ENGINE_URL}/api/files/${path}`, {
         headers: ctx.headers,
         signal: AbortSignal.timeout(30_000),

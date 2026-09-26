@@ -35,6 +35,7 @@ import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
 import { can } from "@/lib/permissions";
+import { mayReceiveRecord } from "@/lib/staff-only-records";
 import {
   applyDeadlineWritePolicy,
   checkDeadlinePageDelete,
@@ -79,7 +80,10 @@ export const GET = createHandler(
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return Response.json(redactPageSecrets(await res.json()));
+      const page = (await res.json()) as Record<string, unknown>;
+      // Firm-internal AML records answer like a missing page for clients.
+      if (!mayReceiveRecord(ctx.user.role, page)) return apiNotFound("not_found");
+      return Response.json(redactPageSecrets(page));
     } catch (err) {
       log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));
       return apiNotFound("not_found");

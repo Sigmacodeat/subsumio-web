@@ -5,12 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/engine", () => ({ ENGINE_URL: "http://engine.test" }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+const role = vi.hoisted(() => ({ value: "lawyer" }));
 vi.mock("@/lib/api-handler", () => ({
   createHandler: (
     _opts: unknown,
     handler: (ctx: unknown, body: unknown, q: unknown) => Promise<Response>
   ) => {
-    return async () => handler({ headers: {}, brainId: "b1", user: { role: "lawyer" } }, {}, {});
+    return async () => handler({ headers: {}, brainId: "b1", user: { role: role.value } }, {}, {});
   },
   apiError: (code: string, message: string, status: number) =>
     Response.json({ error: message, code }, { status }),
@@ -27,6 +28,7 @@ function page(i: number, status = "in_progress") {
 }
 
 beforeEach(() => {
+  role.value = "lawyer";
   const all = Array.from({ length: 250 }, (_, i) => page(i));
   // One deleted record — must not come back.
   all[3] = { ...page(3), frontmatter: { ...page(3).frontmatter, status: "tombstoned" } };
@@ -56,5 +58,14 @@ describe("GET /api/kyc", () => {
     );
     const res = await (GET as unknown as () => Promise<Response>)();
     expect(res.status).toBe(502);
+  });
+});
+
+describe("GET /api/kyc — firm-internal", () => {
+  it("a client account with access to the matter gets 403, no engine read", async () => {
+    role.value = "client_viewer";
+    const res = await (GET as unknown as () => Promise<Response>)();
+    expect(res.status).toBe(403);
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

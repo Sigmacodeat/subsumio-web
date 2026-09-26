@@ -1,3 +1,4 @@
+import { withoutStaffOnlyRecords } from "@/lib/staff-only-records";
 import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
@@ -116,7 +117,12 @@ export const GET = createHandler(
           timeoutMs: 15_000,
         });
         return Response.json(
-          redactPageSecrets(all.filter((p) => belongsToMatter(p.frontmatter, query)))
+          redactPageSecrets(
+            withoutStaffOnlyRecords(
+              ctx.user.role,
+              all.filter((p) => belongsToMatter(p.frontmatter, query))
+            )
+          )
         );
       } catch (err) {
         log.error("[pages] matter list failed:", err instanceof Error ? err.message : String(err));
@@ -136,10 +142,11 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = (await res.json()) as unknown;
       // Deleted records are tombstoned, not removed; lists must not bring them back.
+      const visible = Array.isArray(raw) ? withoutStaffOnlyRecords(ctx.user.role, raw) : raw;
       const data = redactPageSecrets(
-        Array.isArray(raw) && query.include_tombstoned !== "1"
-          ? raw.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
-          : raw
+        Array.isArray(visible) && query.include_tombstoned !== "1"
+          ? visible.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
+          : visible
       );
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");
