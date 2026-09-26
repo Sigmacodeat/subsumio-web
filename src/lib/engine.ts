@@ -316,7 +316,8 @@ export async function engineContext(): Promise<EngineContext | null> {
 export function addCallerIdentity(
   headers: Record<string, string>,
   brainId: string,
-  user: Pick<User, "id" | "role" | "orgId">
+  // role is a string: support sessions sign "support"/"lawyer" for the engine.
+  user: Pick<User, "id" | "orgId"> & { role: string }
 ): Record<string, string> {
   const token = createSignedIdentityToken(brainId, "all", {
     userId: user.id,
