@@ -10874,12 +10874,31 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         ...(q.severity ? { severity: q.severity } : {}),
         limit,
       })) as {
-        contradictions?: unknown[];
+        contradictions?: Array<{ a?: { slug?: string }; b?: { slug?: string } }>;
         run_id?: string;
         ran_at?: string;
       };
+      // A finding is shown only when the caller may see BOTH documents:
+      // matter scope (walls, restricted matters, grants) and document ACL.
+      const all = result.contradictions ?? [];
+      const slugs = [...new Set(all.flatMap((f) => [f.a?.slug ?? "", f.b?.slug ?? ""]))].filter(
+        (x) => x.length > 0
+      );
+      const visible = new Set(
+        (
+          await filterByMatterScope(
+            engine,
+            req,
+            slugs.map((slug) => ({ slug })),
+            req.matterScope ?? "all"
+          )
+        ).map((r) => r.slug)
+      );
+      const findings = all.filter(
+        (f) => visible.has(f.a?.slug ?? "") && visible.has(f.b?.slug ?? "")
+      );
       res.json({
-        findings: result.contradictions ?? [],
+        findings,
         last_run: result.run_id ? { run_id: result.run_id, ran_at: result.ran_at ?? null } : null,
       });
     } catch (e) {
