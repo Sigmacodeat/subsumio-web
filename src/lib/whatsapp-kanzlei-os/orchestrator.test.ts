@@ -93,6 +93,32 @@ describe("orchestrateWhatsAppMessage", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  // KI4-04: deciding a Freigabe needs the person behind the number.
+  it("never decides approvals for a staff number without a bound member", async () => {
+    const listPendingApprovals = vi.fn(async () => [
+      { action_slug: "legal/actions/a-1", action_type: "send_message" as const },
+    ]);
+    const updateApprovalStatus = vi.fn(async () => true);
+    const handleText = vi.fn(async () => "Bindungshinweis");
+    const message: WhatsAppTextMessage = {
+      id: "wamid.APPROVE",
+      from: "+491701234567",
+      type: "text",
+      text: "ja a-1",
+    };
+
+    const result = await orchestrateWhatsAppMessage(message, identity("lawyer"), {
+      fetchImpl: okFetch() as unknown as typeof fetch,
+      handleText,
+      listPendingApprovals,
+      updateApprovalStatus,
+    });
+
+    expect(listPendingApprovals).not.toHaveBeenCalled();
+    expect(updateApprovalStatus).not.toHaveBeenCalled();
+    expect(result.reply).toBe("Bindungshinweis");
+  });
+
   it("does not route client free text into the legal-chat tool", async () => {
     const fetchImpl = okFetch();
     const handleText = vi.fn(async () => "should not happen");

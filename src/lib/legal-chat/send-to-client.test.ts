@@ -26,6 +26,9 @@ function identity(): WhatsAppIdentity {
     phone: LAWYER_PHONE,
     brainId: "org-a",
     role: "lawyer",
+    // Staff numbers act for their bound member (KI4-04).
+    memberUserId: "u-lawyer",
+    member: { userId: "u-lawyer", role: "lawyer", orgId: "org-a" },
   };
 }
 

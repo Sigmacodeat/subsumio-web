@@ -15,9 +15,13 @@
  * fields (`orgId`, `matterScope`, `status`, `verifiedAt`).
  */
 
-import { normalizePhone, type WhatsAppIdentity } from "./types";
+import { normalizePhone, type WhatsAppIdentity, type WhatsAppMember } from "./types";
 import { phoneHash, loadAllowedSenders } from "./verify";
 import { getWhatsAppIdentityStore } from "./identity-store";
+import { getStore } from "@/lib/auth/store";
+import { isAccountBlocked } from "@/lib/auth/account-status";
+import { engineHeadersForBrainWithMatterScope, firmBrainIdFor } from "@/lib/engine";
+import type { EngineSenderScope } from "@/lib/engine-client";
 
 function isProd(): boolean {
   return process.env.NODE_ENV === "production";
@@ -37,7 +41,7 @@ export async function resolveSenderIdentity(phone: string): Promise<WhatsAppIden
   if (stored) {
     if (stored.status !== "active") return null;
     // Carry the normalized phone so handlers can reply; storage never holds it.
-    return { ...stored, phone: normalized };
+    return withMember({ ...stored, phone: normalized }, stored.memberUserId);
   }
 
   // Not in the store: production denies; dev falls back to the legacy env binding.
@@ -47,18 +51,93 @@ export async function resolveSenderIdentity(phone: string): Promise<WhatsAppIden
   if (!legacy) return null;
 
   const now = new Date().toISOString();
+  // The env binding names its user explicitly per number (dev only).
+  return withMember(
+    {
+      ...legacy,
+      phone: normalized,
+      id: `env:${hash.slice(0, 12)}`,
+      orgId: legacy.brainId,
+      phoneHash: hash,
+      matterScope: "all",
+      status: "active",
+      verifiedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+    legacy.userId
+  );
+}
+
+/** Roles that are firm staff on WhatsApp (everyone else is a client/intake contact). */
+export function isStaffWhatsAppRole(role: WhatsAppIdentity["role"] | undefined): boolean {
+  return role !== "client" && role !== "external" && role !== "intake";
+}
+
+const FIRM_STAFF_ROLES = new Set(["admin", "lawyer", "assistant"]);
+
+/**
+ * The firm member a staff number belongs to, checked now: the account exists,
+ * is active, works in this number's brain and holds a staff role. Anything else
+ * — or a lookup error — yields no member (fail-closed).
+ */
+async function resolveMember(
+  identity: WhatsAppIdentity,
+  memberUserId: string | undefined
+): Promise<WhatsAppMember | null> {
+  if (!memberUserId || !isStaffWhatsAppRole(identity.role)) return null;
+  try {
+    const user = await getStore().getById(memberUserId);
+    if (!user || user.deletedAt || (await isAccountBlocked(user))) return null;
+    // The member must work in the brain this number is bound to (firm brain
+    // for a team member; null when the firm is suspended).
+    if ((await firmBrainIdFor(user)) !== identity.brainId) return null;
+    if (!FIRM_STAFF_ROLES.has(user.role)) return null;
+    return { userId: user.id, role: user.role, orgId: user.orgId ?? null };
+  } catch {
+    return null;
+  }
+}
+
+async function withMember(
+  identity: WhatsAppIdentity,
+  memberUserId: string | undefined
+): Promise<WhatsAppIdentity> {
+  const copy: WhatsAppIdentity = { ...identity };
+  delete copy.member;
+  const member = await resolveMember(copy, memberUserId);
+  return member ? { ...copy, member } : copy;
+}
+
+/** Reply for a staff number that is not bound to a firm member (KI4-04). */
+export const UNBOUND_STAFF_REPLY =
+  "Diese WhatsApp-Nummer ist noch keinem Kanzleimitglied zugeordnet. Akten- und " +
+  "Wissensabfragen sind deshalb gesperrt. Bitte lassen Sie die Nummer in Subsumio " +
+  "unter „WhatsApp“ Ihrem Benutzerkonto zuordnen.";
+
+/**
+ * Engine scope for a staff sender: the number's matter scope, signed for the
+ * member who owns it. Throws when there is no member — callers must gate on
+ * `sender.member` first; this is the backstop, not the gate.
+ */
+export function whatsAppEngineScope(sender: WhatsAppIdentity): EngineSenderScope {
+  if (!sender.member) {
+    throw new Error("whatsapp_sender_without_member");
+  }
   return {
-    ...legacy,
-    phone: normalized,
-    id: `env:${hash.slice(0, 12)}`,
-    orgId: legacy.brainId,
-    phoneHash: hash,
-    matterScope: "all",
-    status: "active",
-    verifiedAt: null,
-    createdAt: now,
-    updatedAt: now,
+    matterScope: sender.matterScope,
+    caller: {
+      userId: sender.member.userId,
+      role: sender.member.role,
+      orgId: sender.member.orgId,
+    },
   };
+}
+
+/** Engine headers for a staff sender (see {@link whatsAppEngineScope}). */
+export function whatsAppEngineHeaders(sender: WhatsAppIdentity): Record<string, string> {
+  const scope = whatsAppEngineScope(sender);
+  return engineHeadersForBrainWithMatterScope(sender.brainId, scope.matterScope, scope.caller);
 }
 
 /**

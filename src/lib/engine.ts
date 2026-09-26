@@ -509,25 +509,36 @@ export function engineHeadersForBrain(brainId: string): Record<string, string> {
   return headers;
 }
 
+/** The firm member an engine call is made for — the engine applies that
+ *  person's walls, restricted matters and document ACL. */
+export interface EngineCaller {
+  userId: string;
+  role: string;
+  orgId?: string | null;
+}
+
 /**
- * P0-SECR-002: Engine headers for a KNOWN brainId + verified matter scope.
+ * P0-SECR-002: Engine headers for a KNOWN brainId + verified matter scope,
+ * on behalf of a known firm member.
  *
- * Used by the WhatsApp path (legal-chat/actions.ts) after the caller's
- * identity has been verified via resolveSenderIdentity(). The matter scope
- * is encoded in a signed identity token (HMAC-SHA256) and sent as
- * x-subsumio-identity-token — the engine verifies the signature before
- * trusting the scope claim.
+ * Used by the WhatsApp path (legal-chat/actions.ts) after the sender has been
+ * resolved via resolveSenderIdentity() AND bound to the firm member who owns
+ * the number. Matter scope and member are encoded in a signed identity token
+ * (HMAC-SHA256, x-subsumio-identity-token); the engine verifies the signature,
+ * narrows the scope by the member's walls and applies their document ACL.
  *
- * This is the ONLY function that should be called for WhatsApp callers.
- * engineHeadersForBrain (without matter scope) is for trusted server-side
- * jobs (cron, webhooks) that don't need per-matter filtering.
+ * `caller` is required: a token without a person would let the engine apply
+ * no personal walls, so the engine refuses such tokens. Trusted server-side
+ * jobs (cron, webhooks) that act for the firm, not a person, use
+ * engineHeadersForBrain instead.
  */
 export function engineHeadersForBrainWithMatterScope(
   brainId: string,
-  matterScope: string[] | "all"
+  matterScope: string[] | "all",
+  caller: EngineCaller
 ): Record<string, string> {
   const headers = engineHeadersForBrain(brainId);
-  const token = createSignedIdentityToken(brainId, matterScope);
+  const token = createSignedIdentityToken(brainId, matterScope, caller);
   if (token) headers["x-subsumio-identity-token"] = token;
   return headers;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { consumeSSEStream, collectSSEChunks, handleDataLine } from "./sse-stream";
+import { consumeSSEStream, collectSSEAnswer, collectSSEChunks, handleDataLine } from "./sse-stream";
 
 function makeSSEStream(events: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -183,6 +183,54 @@ describe("collectSSEChunks", () => {
   it("propagates errors from failed stream", async () => {
     const stream = makeFailingStream();
     await expect(collectSSEChunks(stream)).rejects.toThrow("stream broke");
+  });
+});
+
+// KI5-02: the engine streams its first draft, then sends the verified text as
+// `final_answer` (server/src/core/think/final-answer.ts). Server-side callers
+// (WhatsApp, treatment classification) must deliver that text, not the draft.
+describe("collectSSEAnswer — final_answer replaces the streamed draft", () => {
+  const FINAL_EVENT = {
+    citations: [],
+    warnings: ["GUARDRAIL_FLAGGED: 1 flags (non_existent_law)", "GUARDRAIL_REGENERATION_PASSED"],
+    final_answer: "Verifizierte Fassung nach § 46 AußStrG.",
+    answer_revised: true,
+    revision_reason: "citation_guardrail",
+  };
+
+  it("returns the verified final_answer instead of the flagged draft", async () => {
+    const stream = makeSSEStream([
+      'data: {"chunk":"Erfundener "}\n\n',
+      'data: {"chunk":"Erstentwurf"}\n\n',
+      `data: ${JSON.stringify(FINAL_EVENT)}\n\n`,
+      "data: [DONE]\n\n",
+    ]);
+    const result = await collectSSEAnswer(stream);
+    expect(result.answer).toBe("Verifizierte Fassung nach § 46 AußStrG.");
+    expect(result.revised).toBe(true);
+    expect(result.revisionReason).toBe("citation_guardrail");
+    expect(result.warnings).toContain("GUARDRAIL_REGENERATION_PASSED");
+  });
+
+  it("collectSSEChunks also delivers the final_answer text", async () => {
+    const stream = makeSSEStream([
+      'data: {"chunk":"Entwurf"}\n\n',
+      `data: ${JSON.stringify({ ...FINAL_EVENT, final_answer: "Endfassung" })}\n\n`,
+      "data: [DONE]\n\n",
+    ]);
+    expect(await collectSSEChunks(stream)).toBe("Endfassung");
+  });
+
+  it("keeps the streamed text and reports warnings when no final_answer comes", async () => {
+    const stream = makeSSEStream([
+      'data: {"chunk":"Antwort"}\n\n',
+      'data: {"citations":[],"warnings":["RETRIEVAL_FAILED: page search unavailable"]}\n\n',
+      "data: [DONE]\n\n",
+    ]);
+    const result = await collectSSEAnswer(stream);
+    expect(result.answer).toBe("Antwort");
+    expect(result.revised).toBe(false);
+    expect(result.warnings).toEqual(["RETRIEVAL_FAILED: page search unavailable"]);
   });
 });
 

@@ -23,6 +23,13 @@ export interface WhatsAppIdentityStore {
   delete(id: string): Promise<void>;
 }
 
+/** `member` is resolved per request (identity.ts) — never store it. */
+function storable<T extends Partial<WhatsAppIdentity>>(identity: T): T {
+  const copy = { ...identity };
+  delete copy.member;
+  return copy;
+}
+
 // ── File adapter (dev / self-hosted) ─────────────────────────────────────────
 
 /** Resolved lazily per store instance so SUBSUMIO_DATA_DIR can vary at runtime/tests. */
@@ -72,7 +79,7 @@ class FileWhatsAppIdentityStore implements WhatsAppIdentityStore {
 
   async create(identity: WhatsAppIdentity) {
     const identities = await this.load();
-    identities.push(identity);
+    identities.push(storable(identity));
     await this.persist();
     return identity;
   }
@@ -83,7 +90,7 @@ class FileWhatsAppIdentityStore implements WhatsAppIdentityStore {
     if (idx === -1) return null;
     identities[idx] = {
       ...identities[idx],
-      ...patch,
+      ...storable(patch),
       id: identities[idx].id,
       updatedAt: new Date().toISOString(),
     };
@@ -148,6 +155,13 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
         )
       `
         )
+        // Owner of a staff number (KI4-04). Rows from before this column have
+        // none and stay without matter access until the firm assigns one.
+        .then(() =>
+          this.pool().query(
+            `ALTER TABLE subsumio_whatsapp_identities ADD COLUMN IF NOT EXISTS member_user_id text`
+          )
+        )
         .then(() => undefined);
     }
     return this.ready;
@@ -174,6 +188,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       verifiedAt: r.verified_at ? String(r.verified_at) : null,
       createdAt: String(r.created_at),
       updatedAt: String(r.updated_at),
+      ...(r.member_user_id ? { memberUserId: String(r.member_user_id) } : {}),
     };
   }
 
@@ -208,8 +223,8 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     await this.ensureSchema();
     await this.pool().query(
       `INSERT INTO subsumio_whatsapp_identities
-         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at, member_user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         identity.id,
         identity.orgId,
@@ -223,6 +238,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
         identity.verifiedAt,
         identity.createdAt,
         identity.updatedAt,
+        identity.memberUserId ?? null,
       ]
     );
     return identity;
@@ -248,6 +264,10 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     if (patch.status !== undefined) {
       sets.push(`status = $${i++}`);
       vals.push(patch.status);
+    }
+    if (patch.memberUserId !== undefined) {
+      sets.push(`member_user_id = $${i++}`);
+      vals.push(patch.memberUserId || null);
     }
     if (patch.verifiedAt !== undefined) {
       sets.push(`verified_at = $${i++}`);

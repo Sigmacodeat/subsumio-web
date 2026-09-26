@@ -87,27 +87,72 @@ export function handleDataLine(raw: string, onEvent: SSEEventCallback): void {
   onEvent(raw, parsed);
 }
 
+/** What a think stream finally says, after the engine's own verification. */
+export interface SSEAnswer {
+  /** The answer to show: the verified `final_answer` when the engine sent one,
+   *  otherwise the concatenated streamed chunks. */
+  answer: string;
+  /** True when `final_answer` replaced the streamed draft. */
+  revised: boolean;
+  /** Why the engine replaced the draft (citation_guardrail, retrieval_failed, …). */
+  revisionReason?: string;
+  /** Engine warning codes from the final event (GUARDRAIL_*, RETRIEVAL_FAILED, …). */
+  warnings: string[];
+}
+
 /**
- * Consume an SSE stream and collect all chunk strings into a single answer.
+ * Consume a think SSE stream into the answer the engine stands behind.
  *
- * Convenience wrapper for callers that only need the concatenated `chunk`
- * field (the most common pattern across 3 of 4 consumers).
+ * The engine streams its FIRST draft as `chunk` events, then runs the
+ * citation guardrail / cross-verify and — when the verified text differs —
+ * sends `final_answer` in the final event (see
+ * server/src/core/think/final-answer.ts). That text replaces the draft,
+ * exactly as the browser path in api.ts does; it also carries the engine's
+ * own notes ("Suche nicht erreichbar", "Zitate nicht belegt").
+ *
+ * @param body The ReadableStream from `res.body`.
+ * @param onChunk Optional callback for each streamed draft chunk.
+ */
+export async function collectSSEAnswer(
+  body: ReadableStream<Uint8Array>,
+  onChunk?: (chunk: string) => void
+): Promise<SSEAnswer> {
+  let streamed = "";
+  let finalAnswer: string | undefined;
+  let revisionReason: string | undefined;
+  const warnings: string[] = [];
+  await consumeSSEStream(body, (data, parsed) => {
+    if (data === "[DONE]" || !parsed) return;
+    if (typeof parsed.chunk === "string") {
+      streamed += parsed.chunk;
+      onChunk?.(parsed.chunk);
+    }
+    if (typeof parsed.final_answer === "string" && parsed.final_answer) {
+      finalAnswer = parsed.final_answer;
+      if (typeof parsed.revision_reason === "string") revisionReason = parsed.revision_reason;
+    }
+    if (Array.isArray(parsed.warnings)) {
+      for (const w of parsed.warnings) if (typeof w === "string") warnings.push(w);
+    }
+  });
+  return finalAnswer !== undefined
+    ? { answer: finalAnswer, revised: true, revisionReason, warnings }
+    : { answer: streamed, revised: false, warnings };
+}
+
+/**
+ * Consume an SSE stream and return the final answer text.
+ *
+ * Convenience wrapper over {@link collectSSEAnswer} for callers that only
+ * need the text. A `final_answer` event replaces the streamed chunks.
  *
  * @param body The ReadableStream from `res.body`.
  * @param onChunk Optional callback for each chunk as it arrives.
- * @returns The concatenated answer string.
+ * @returns The answer string.
  */
 export async function collectSSEChunks(
   body: ReadableStream<Uint8Array>,
   onChunk?: (chunk: string) => void
 ): Promise<string> {
-  let answer = "";
-  await consumeSSEStream(body, (data, parsed) => {
-    if (data === "[DONE]") return;
-    if (parsed && typeof parsed.chunk === "string") {
-      answer += parsed.chunk;
-      onChunk?.(parsed.chunk);
-    }
-  });
-  return answer;
+  return (await collectSSEAnswer(body, onChunk)).answer;
 }

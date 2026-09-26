@@ -171,6 +171,9 @@ async function tryApprovalReturnChannel(
   if (!deps.listPendingApprovals || !deps.updateApprovalStatus) return null;
   if (sender.role !== "admin" && sender.role !== "lawyer" && sender.role !== "assistant")
     return null;
+  // Deciding a Freigabe needs a person: a number without a bound firm member
+  // falls through to the staff handler, which answers with the binding notice.
+  if (!sender.member) return null;
 
   const parsed = parseApprovalResponse(normalizedText);
   if (parsed.response === "unknown") return null;

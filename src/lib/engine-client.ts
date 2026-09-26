@@ -3,14 +3,45 @@
 // byte-identical copy of engineRequest + listPages. One source of truth here
 // keeps the two chat entry points from drifting (e.g. differing timeouts or
 // matter-scope header handling).
+import { AsyncLocalStorage } from "node:async_hooks";
 import { lawyerFacingAnswer } from "./engine-degraded";
 import {
   ENGINE_URL,
   engineHeadersForBrain,
   engineHeadersForBrainWithMatterScope,
+  type EngineCaller,
 } from "@/lib/engine";
-import { collectSSEChunks } from "@/lib/sse-stream";
+import { collectSSEAnswer } from "@/lib/sse-stream";
 import type { BrainPage } from "@/lib/types";
+
+/**
+ * Who a chat-lane engine call is made for: the firm member bound to the
+ * WhatsApp number plus the number's matter scope. The engine applies that
+ * member's walls and document ACL (KI4-04).
+ */
+export interface EngineSenderScope {
+  matterScope: string[] | "all";
+  caller: EngineCaller;
+}
+
+const senderScope = new AsyncLocalStorage<EngineSenderScope>();
+
+/**
+ * Run `fn` with every engine-client call (engineRequest, listPages, think)
+ * made on behalf of `scope`. The WhatsApp staff handlers run inside this, so
+ * no helper deep in the handler can fall back to firm-wide headers.
+ */
+export function withEngineSender<T>(scope: EngineSenderScope, fn: () => Promise<T>): Promise<T> {
+  return senderScope.run(scope, fn);
+}
+
+/** Headers for a chat-lane call: the explicit scope, else the ambient sender, else firm-wide. */
+function chatEngineHeaders(brainId: string, scope?: EngineSenderScope): Record<string, string> {
+  const effective = scope ?? senderScope.getStore();
+  return effective
+    ? engineHeadersForBrainWithMatterScope(brainId, effective.matterScope, effective.caller)
+    : engineHeadersForBrain(brainId);
+}
 
 export interface EnginePageInput {
   slug: string;
@@ -27,11 +58,9 @@ export async function engineRequest<T>(
   brainId: string,
   path: string,
   init?: RequestInit,
-  matterScope?: string[] | "all"
+  scope?: EngineSenderScope
 ): Promise<T> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
+  const headers = chatEngineHeaders(brainId, scope);
   const res = await fetch(`${ENGINE_URL}${path}`, {
     ...init,
     headers: {
@@ -61,7 +90,7 @@ export async function engineRequest<T>(
  * list ended. `limit` bounds the total rows scanned (including filtered).
  */
 export async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  const headers = engineHeadersForBrain(brainId);
+  const headers = chatEngineHeaders(brainId);
   const out: BrainPage[] = [];
   let fetched = 0;
   let cursor: string | undefined;
@@ -96,18 +125,26 @@ export async function listPages(brainId: string, type: string, limit = 200): Pro
   return out;
 }
 
+/** A brain answer as the engine finally stands behind it. */
+export interface ThinkAnswer {
+  /** Lawyer-facing answer text (the verified `final_answer` when the engine revised the draft). */
+  answer: string;
+  /** Engine warning codes (GUARDRAIL_*, RETRIEVAL_FAILED, …). */
+  warnings: string[];
+}
+
+const NO_ANSWER = "Keine Antwort erhalten.";
+
 // mode differs deliberately per call site: the direct chat lane uses
 // "conservative" (tighter token budget), the WhatsApp lane uses "balanced"
 // (relational retrieval) — see CLAUDE.md's Search Mode table.
 export async function think(
   brainId: string,
   query: string,
-  matterScope?: string[] | "all",
+  scope: EngineSenderScope,
   mode: "conservative" | "balanced" | "tokenmax" = "conservative"
-): Promise<string> {
-  const headers = matterScope
-    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
-    : engineHeadersForBrain(brainId);
+): Promise<ThinkAnswer> {
+  const headers = chatEngineHeaders(brainId, scope);
   const res = await fetch(`${ENGINE_URL}/api/think`, {
     method: "POST",
     headers: {
@@ -120,10 +157,17 @@ export async function think(
   if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
   const contentType = res.headers.get("Content-Type") || "";
   if (!contentType.includes("text/event-stream")) {
-    const data = (await res.json().catch(() => ({}))) as { answer?: string };
-    return data.answer ? lawyerFacingAnswer(data.answer) : "Keine Antwort erhalten.";
+    const data = (await res.json().catch(() => ({}))) as {
+      answer?: string;
+      warnings?: unknown;
+    };
+    const warnings = Array.isArray(data.warnings)
+      ? data.warnings.filter((w): w is string => typeof w === "string")
+      : [];
+    return { answer: data.answer ? lawyerFacingAnswer(data.answer) : NO_ANSWER, warnings };
   }
-  if (!res.body) return "Keine Antwort erhalten.";
-  const answer = await collectSSEChunks(res.body);
-  return answer.trim() ? lawyerFacingAnswer(answer.trim()) : "Keine Antwort erhalten.";
+  if (!res.body) return { answer: NO_ANSWER, warnings: [] };
+  // The final event's `final_answer` replaces the streamed first draft (KI5-02).
+  const { answer, warnings } = await collectSSEAnswer(res.body);
+  return { answer: answer.trim() ? lawyerFacingAnswer(answer.trim()) : NO_ANSWER, warnings };
 }

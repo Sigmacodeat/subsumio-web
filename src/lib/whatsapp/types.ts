@@ -29,6 +29,26 @@ export interface WhatsAppIdentity extends WhatsAppSenderBinding {
   verifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Firm member who owns this number (staff numbers only). Engine calls from
+   * this number run with this person's walls and document ACL. `userId` is
+   * who created the entry, NOT the owner — never sign engine calls with it.
+   */
+  memberUserId?: string;
+  /**
+   * The owning member as resolved at request time (account active, still in
+   * this firm, current role). Set by resolveSenderIdentity, never persisted.
+   * Missing on a staff number = no matter or brain access from WhatsApp.
+   */
+  member?: WhatsAppMember;
+}
+
+/** A firm member an inbound staff WhatsApp message is handled for. */
+export interface WhatsAppMember {
+  userId: string;
+  /** The member's current firm role (admin | lawyer | assistant). */
+  role: string;
+  orgId: string | null;
 }
 
 export interface WhatsAppTextMessage {

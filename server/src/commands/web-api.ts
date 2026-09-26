@@ -2073,9 +2073,14 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       }
       const { verifyIdentityToken } = await import("../core/identity-token.ts");
       const payload = verifyIdentityToken(token, apiKey);
+      // A token speaks for a person. Without one the caller's walls and
+      // document ACL are unknown, so it is refused instead of read as "all".
+      // Firm-level jobs send no token at all (handled above).
       if (!payload || !payload.userId) {
-        req.aclGroups = "all";
-        next();
+        res.status(403).json({
+          error: "identity_token_no_user",
+          message: "Identity token names no user.",
+        });
         return;
       }
       const sourceId = requestSourceId(req);
