@@ -57,6 +57,9 @@ export interface User {
   docusignAccessToken?: string | null;
   docusignRefreshToken?: string | null;
   docusignTokenExpiresAt?: string | null;
+  /** E-Mail/Name des verbundenen DocuSign-Kontos (für die UI, nicht sensitiv). */
+  docusignUserEmail?: string | null;
+  docusignUserName?: string | null;
   /** Microsoft 365 delegated OAuth (per-user Kalender, WP-4.19). */
   ms365AccessToken?: string | null;
   ms365RefreshToken?: string | null;

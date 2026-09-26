@@ -54,6 +54,7 @@ import { limitsFor } from "@/lib/plans-limits";
 import type { Plan } from "@/lib/auth/store";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
+import { DocusignConnectionCard } from "@/components/dashboard/docusign-connection-card";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
@@ -124,6 +125,14 @@ const TAB_META: Record<
       en: "Who may see which matters and documents, including conflict-of-interest walls.",
     },
     allowed: ["admin"],
+  },
+  signature: {
+    title: { de: "Elektronische Signatur (DocuSign)", en: "E-signature (DocuSign)" },
+    desc: {
+      de: "Ihr persönliches DocuSign-Konto verbinden, damit Signaturanfragen in Ihrem Namen versendet werden.",
+      en: "Connect your personal DocuSign account so signature requests are sent in your name.",
+    },
+    allowed: ["admin", "lawyer", "assistant"],
   },
   scim: {
     title: { de: "Benutzerabgleich (SCIM)", en: "User sync (SCIM)" },
@@ -1322,6 +1331,9 @@ function SettingsPageInner() {
               </div>
             </Card>
           )}
+
+          {/* Persönliche DocuSign-Verbindung */}
+          {activeTab === "signature" && <DocusignConnectionCard />}
 
           {/* ACLs — Document-Level Access Control */}
           {activeTab === "acls" && <AclSettings />}

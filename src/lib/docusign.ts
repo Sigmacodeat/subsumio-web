@@ -271,7 +271,33 @@ export async function disconnectUser(userId: string): Promise<void> {
     docusignAccessToken: null,
     docusignRefreshToken: null,
     docusignTokenExpiresAt: null,
+    docusignUserEmail: null,
+    docusignUserName: null,
   });
+}
+
+/**
+ * Who the fresh token belongs to (GET /oauth/userinfo on the OAuth host):
+ * shown as "verbunden als …" in the settings. Best effort — null on any
+ * failure, the connection itself is not affected.
+ */
+export async function fetchDocusignUserInfo(
+  accessToken: string
+): Promise<{ email: string | null; name: string | null } | null> {
+  try {
+    const res = await fetch(`https://${DOCUSIGN_OAUTH_HOST}/oauth/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: externalFetchTimeout(),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => ({}))) as { email?: unknown; name?: unknown };
+    return {
+      email: typeof data.email === "string" ? data.email.slice(0, 320) : null,
+      name: typeof data.name === "string" ? data.name.slice(0, 200) : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------

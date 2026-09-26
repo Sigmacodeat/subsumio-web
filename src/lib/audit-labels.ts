@@ -290,6 +290,7 @@ export type AuditAction =
   | "corpus_command_center.trigger_delta"
   | "corpus.law_refetch"
   | "acl.group_create"
+  | "docusign.connect"
   | "docusign.disconnect"
   | "copilot.explain"
   | "copilot.memory_create"
@@ -620,6 +621,7 @@ const ACTION_LABELS: Record<string, string> = {
   "corpus_command_center.trigger_delta": "Corpus-Delta getriggert",
   "corpus.law_refetch": "Gesetz zum Nachladen vorgemerkt",
   "acl.group_create": "ACL-Gruppe erstellt",
+  "docusign.connect": "DocuSign verbunden",
   "docusign.disconnect": "DocuSign getrennt",
   "copilot.explain": "Assistent: Begründung abgerufen",
   "copilot.memory_create": "Assistent: Erinnerung erstellt",
