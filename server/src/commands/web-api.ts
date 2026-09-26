@@ -97,6 +97,7 @@ import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
+import { claimPendingUpload, releasePendingUpload } from "../core/upload-confirm-claim.ts";
 import {
   confirmPipelinePlan,
   legalPipelineIdempotencyKey,
@@ -6415,6 +6416,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     uploadSource: string;
     /** Bulk matter import: no per-document pipeline or post-upload tasks. */
     deferPipeline: boolean;
+    /** A confirm is running for this token (see upload-confirm-claim.ts). */
+    confirming?: boolean;
     createdAt: number;
     expiresAt: number;
   }
@@ -7006,6 +7009,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       // Temp file cleanup helper — declared before try so catch can use it
       let _cleanupTemp: (() => void) | null = null;
+      // The upload this request claimed; released unless the confirm finished.
+      let claimed: PendingUpload | null = null;
 
       try {
         const body = req.body as Record<string, unknown>;
@@ -7040,6 +7045,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 403, "token_tenant_mismatch");
           return;
         }
+
+        // One confirm per token at a time — a parallel or repeated confirm
+        // would store and process the same file twice.
+        if (!claimPendingUpload(pending)) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "confirm_in_progress",
+              message: "Diese Datei wird bereits verarbeitet.",
+            });
+            res.end();
+            return;
+          }
+          apiError(res, 409, "confirm_in_progress");
+          return;
+        }
+        claimed = pending;
 
         const billingOwnerId = String(req.headers["x-subsumio-owner-id"] ?? "").trim();
         const billingOwnerTypeHeader = String(req.headers["x-subsumio-owner-type"] ?? "");
@@ -7567,6 +7588,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           sseSend("error", { error: "confirm_failed", message: msg });
           res.end();
         } else res.status(500).json({ error: "confirm_failed", message: msg });
+      } finally {
+        // A finished confirm deleted the token; an unfinished one gives it
+        // back so the user can retry.
+        if (claimed) releasePendingUpload(claimed);
       }
     }
   );
