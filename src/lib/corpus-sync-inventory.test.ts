@@ -27,7 +27,7 @@ function src(over: Partial<SyncInventorySource>): SyncInventorySource {
     dbDocs: 0,
     dbPagesWithoutDocId: 0,
     missingOnDisk: 0,
-    missingByReason: { open: 0, no_text: 0, not_found: 0, failed: 0 },
+    missingByReason: { open: 0, no_text: 0, not_found: 0, failed: 0, superseded: 0 },
     diskNotInDb: 0,
     dbNotOnDisk: 0,
     dbHistorical: 0,
@@ -50,7 +50,7 @@ describe("toSyncRow", () => {
         diskDocs: 67_744,
         dbDocs: 67_744,
         missingOnDisk: 70_742,
-        missingByReason: { open: 70_742, no_text: 0, not_found: 0, failed: 0 },
+        missingByReason: { open: 70_742, no_text: 0, not_found: 0, failed: 0, superseded: 0 },
       }),
       "OGH und Justiz",
       { chunks: 1000, embedded: 1 }
@@ -72,7 +72,7 @@ describe("toSyncRow", () => {
         risSoll: 102_104,
         risSollKind: "index",
         missingOnDisk: 12_536,
-        missingByReason: { open: 12_000, no_text: 400, not_found: 36, failed: 100 },
+        missingByReason: { open: 12_000, no_text: 400, not_found: 36, failed: 100, superseded: 0 },
         notInRisSoll: 52_941,
       }),
       "Landesrecht",
@@ -84,6 +84,24 @@ describe("toSyncRow", () => {
     expect(row.status).toBe("fetch_open");
   });
 
+  it("zählt alte Fassungs-Nummern (superseded) weder als offen noch als unerreichbar", () => {
+    const row = toSyncRow(
+      src({
+        corpus: "at-landesrecht",
+        sourceId: "law-at-landesrecht",
+        risSoll: 102_104,
+        risSollKind: "index",
+        missingOnDisk: 4_544,
+        missingByReason: { open: 0, no_text: 4_191, not_found: 0, failed: 0, superseded: 353 },
+      }),
+      "Landesrecht",
+      undefined
+    );
+    expect(row.missingUnreachable).toBe(4_191);
+    expect(row.missingOpen).toBe(0);
+    expect(row.status).toBe("complete");
+  });
+
   it("ist vollständig, wenn nur noch unerreichbare Dokumente fehlen und Server = DB", () => {
     const row = toSyncRow(
       src({
@@ -92,7 +110,7 @@ describe("toSyncRow", () => {
         diskDocs: 147_774,
         dbDocs: 147_774,
         missingOnDisk: 383,
-        missingByReason: { open: 0, no_text: 314, not_found: 69, failed: 0 },
+        missingByReason: { open: 0, no_text: 314, not_found: 69, failed: 0, superseded: 0 },
       }),
       "Bundesrecht",
       undefined
@@ -139,7 +157,7 @@ describe("syncTotals", () => {
         src({
           risSoll: 100,
           missingOnDisk: 10,
-          missingByReason: { open: 10, no_text: 0, not_found: 0, failed: 0 },
+          missingByReason: { open: 10, no_text: 0, not_found: 0, failed: 0, superseded: 0 },
         }),
         "a",
         { chunks: 10, embedded: 5 }
@@ -172,7 +190,7 @@ describe("parseSyncInventory", () => {
       sourceId: "law-at-avn",
       diskDocs: 0,
       risSoll: null,
-      missingByReason: { open: 0, no_text: 0, not_found: 0, failed: 0 },
+      missingByReason: { open: 0, no_text: 0, not_found: 0, failed: 0, superseded: 0 },
     });
   });
 });

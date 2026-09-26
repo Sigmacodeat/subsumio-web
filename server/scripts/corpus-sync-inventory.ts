@@ -347,6 +347,7 @@ export async function measure(
       no_text: 0,
       not_found: 0,
       failed: 0,
+      superseded: 0,
     };
 
     const indexFile = INDEX_OF[corpus];

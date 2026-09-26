@@ -20,7 +20,7 @@ import { existsSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { lawCorpusDir } from "@/lib/corpus-paths";
 
-export type FetchOutcome = "no_text" | "not_found" | "failed";
+export type FetchOutcome = "no_text" | "not_found" | "failed" | "superseded";
 
 export interface SyncInventorySource {
   corpus: string;
@@ -168,6 +168,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
           no_text: num(s.missingByReason?.no_text),
           not_found: num(s.missingByReason?.not_found),
           failed: num(s.missingByReason?.failed),
+          superseded: num(s.missingByReason?.superseded),
         },
         diskNotInDb: num(s.diskNotInDb),
         dbNotOnDisk: num(s.dbNotOnDisk),
@@ -207,8 +208,14 @@ export function toSyncRow(
 ): CorpusSyncRow {
   // „failed" (Netz/Drosselung) bleibt offene Arbeit — nur eine echte
   // RIS-Antwort (kein Text, 404) macht ein Dokument unerreichbar.
+  // „superseded" ist weder Arbeit noch unerreichbar: der Index-Eintrag
+  // zeigt auf eine alte Fassung, deren Paragraph-Position die Folgefassung
+  // bereits auf der Platte abdeckt.
   const missingUnreachable = s.missingByReason.no_text + s.missingByReason.not_found;
-  const missingOpen = Math.max(0, s.missingOnDisk - missingUnreachable);
+  const missingOpen = Math.max(
+    0,
+    s.missingOnDisk - missingUnreachable - (s.missingByReason.superseded ?? 0)
+  );
   const dbChunks = embed?.chunks ?? 0;
   const embeddedChunks = embed?.embedded ?? 0;
   const coveragePct = dbChunks > 0 ? Math.round((embeddedChunks / dbChunks) * 1000) / 10 : 0;
