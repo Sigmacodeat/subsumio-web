@@ -1589,7 +1589,7 @@ export class PostgresEngine implements BrainEngine {
     const cursor = parsePageCursor(filters?.cursor);
     const cursorCondition =
       sortKey === "updated_desc" && cursor
-        ? sql`AND (${sql.unsafe(UPDATED_DESC_KEYSET_KEY)}, p.id) < (${cursor.updatedAt}::timestamptz, ${cursor.id})`
+        ? sql`AND (${sql.unsafe(UPDATED_DESC_KEYSET_KEY)}, p.id) < ((${cursor.updatedAt}::timestamptz AT TIME ZONE 'UTC'), ${cursor.id})`
         : sql``;
     // p.id tiebreak makes updated_desc a total order (required for keyset).
     const orderBy = sql.unsafe(

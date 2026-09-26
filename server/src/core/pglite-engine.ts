@@ -118,6 +118,7 @@ import {
   parsePageCursor,
   UPDATED_DESC_KEYSET_KEY,
   UPDATED_DESC_KEYSET_ORDER,
+  updatedDescKeysetCursor,
 } from "./types.ts";
 import { computeAnomaliesFromBuckets } from "./cycle/anomaly.ts";
 import { resolveBoostMap, resolveHardExcludes } from "./search/source-boost.ts";
@@ -1485,7 +1486,7 @@ export class PGLiteEngine implements BrainEngine {
     if (sortKey === "updated_desc" && cursor) {
       params.push(cursor.updatedAt, cursor.id);
       where.push(
-        `(${UPDATED_DESC_KEYSET_KEY}, p.id) < ($${params.length - 1}::timestamptz, $${params.length})`
+        `(${UPDATED_DESC_KEYSET_KEY}, p.id) < (${updatedDescKeysetCursor(`$${params.length - 1}`)}, $${params.length})`
       );
     }
 

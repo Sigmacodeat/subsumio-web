@@ -6706,6 +6706,48 @@ export const MIGRATIONS: Migration[] = [
       $mig$;
     `,
   },
+  {
+    version: 150,
+    name: "pages_list_updated_keyset_idx",
+    // The web lists (matters, deadlines, documents, …) page through one
+    // firm's pages of one type, newest first, by the keyset
+    // (date_trunc('milliseconds', updated_at AT TIME ZONE 'UTC'), id) — see
+    // UPDATED_DESC_KEYSET_KEY. Without an index on that expression every
+    // list page sorted the firm's whole type. The UTC form is immutable,
+    // so it can be indexed. Postgres builds it CONCURRENTLY (no write lock
+    // on pages) after dropping an invalid remnant of an earlier failed run;
+    // PGLite has no concurrent writers and uses a plain CREATE.
+    sql: "",
+    handler: async (engine) => {
+      const cols = `(source_id, type, (date_trunc('milliseconds', updated_at AT TIME ZONE 'UTC')) DESC, id DESC)`;
+      const where = `WHERE deleted_at IS NULL`;
+      if (engine.kind === "postgres") {
+        await engine.runMigration(
+          150,
+          `DO $$ BEGIN
+             IF EXISTS (
+               SELECT 1 FROM pg_index i
+               JOIN pg_class c ON c.oid = i.indexrelid
+               WHERE c.relname = 'pages_list_updated_keyset_idx' AND NOT i.indisvalid
+             ) THEN
+               EXECUTE 'DROP INDEX CONCURRENTLY IF EXISTS pages_list_updated_keyset_idx';
+             END IF;
+           END $$;`
+        );
+        await engine.runMigration(
+          150,
+          `CREATE INDEX CONCURRENTLY IF NOT EXISTS pages_list_updated_keyset_idx
+             ON pages ${cols} ${where};`
+        );
+      } else {
+        await engine.runMigration(
+          150,
+          `CREATE INDEX IF NOT EXISTS pages_list_updated_keyset_idx ON pages ${cols} ${where};`
+        );
+      }
+    },
+    transaction: false,
+  },
 ];
 
 export const LATEST_VERSION =
