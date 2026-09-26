@@ -525,6 +525,9 @@ export interface SalienceOpts {
    * Default preserves v0.29.0 ranking; 'on' is opt-in.
    */
   recency_bias?: "flat" | "on";
+  /** Only pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 export interface SalienceResult {
@@ -616,6 +619,9 @@ export interface AnomaliesOpts {
   lookback_days?: number;
   /** Sigma threshold. Default 3.0. */
   sigma?: number;
+  /** Only pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 export interface AnomalyResult {

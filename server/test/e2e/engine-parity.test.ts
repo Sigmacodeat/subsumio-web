@@ -862,4 +862,68 @@ describeBoth("Engine parity — page array ops", () => {
     ]);
     expect(pl).toEqual(pg);
   });
+
+  test("takes / scorecard / calibration / salience / anomalies honour the source scope on both engines", async () => {
+    const seed = async (eng: BrainEngine) => {
+      for (const src of ["parity-scope-a", "parity-scope-b"]) {
+        await eng.executeRaw(
+          "INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING",
+          [src]
+        );
+        for (const n of [1, 2]) {
+          await eng.putPage(
+            `parity-scope/${src}-${n}`,
+            { type: "note", title: `${src} ${n}`, compiled_truth: "scope", timeline: "" },
+            { sourceId: src }
+          );
+        }
+        const page = await eng.getPage(`parity-scope/${src}-1`, { sourceId: src });
+        await eng.addTakesBatch([
+          {
+            page_id: page!.id,
+            row_num: 1,
+            claim: `parity scope ${src}`,
+            kind: "bet",
+            holder: "parity-scope-holder",
+            weight: 0.8,
+          },
+        ]);
+      }
+      await eng.executeRaw(
+        `UPDATE takes SET resolved_quality = 'correct', resolved_at = now()
+          WHERE holder = 'parity-scope-holder'`
+      );
+    };
+    const read = async (eng: BrainEngine) => {
+      const scope = { sourceId: "parity-scope-a" };
+      const today = new Date().toISOString().slice(0, 10);
+      const takes = await eng.listTakes({ holder: "parity-scope-holder", ...scope });
+      const card = await eng.getScorecard({ holder: "parity-scope-holder", ...scope }, undefined);
+      const curve = await eng.getCalibrationCurve(
+        { holder: "parity-scope-holder", ...scope },
+        undefined
+      );
+      const salience = await eng.getRecentSalience({ days: 1, slugPrefix: "parity-scope", ...scope });
+      const anomalies = await eng.findAnomalies({ since: today, sigma: 0, ...scope });
+      return {
+        takes: takes.map((t) => t.claim),
+        bets: card.total_bets,
+        curveN: curve.reduce((n, b) => n + b.n, 0),
+        salience: salience.map((r) => r.source_id).sort(),
+        anomalySlugs: anomalies
+          .flatMap((a) => a.page_slugs)
+          .filter((x) => x.startsWith("parity-scope/"))
+          .sort(),
+      };
+    };
+    await seed(pgEngine);
+    await seed(pgliteEngine);
+    const pg = await read(pgEngine);
+    expect(pg.takes).toEqual(["parity scope parity-scope-a"]);
+    expect(pg.bets).toBe(1);
+    expect(pg.curveN).toBe(1);
+    expect(new Set(pg.salience)).toEqual(new Set(["parity-scope-a"]));
+    expect(pg.anomalySlugs.every((x) => x.includes("parity-scope-a"))).toBe(true);
+    expect(await read(pgliteEngine)).toEqual(pg);
+  });
 });

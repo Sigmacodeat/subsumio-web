@@ -42,7 +42,7 @@ import {
   logBatchExhausted as auditLogBatchExhausted,
 } from "./audit/batch-retry-audit.ts";
 import type { DomainBankSampleOpts, CorpusSampleOpts, DomainBankRow } from "./types.ts";
-import { MAX_SEARCH_LIMIT, clampSearchLimit } from "./engine.ts";
+import { MAX_SEARCH_LIMIT, clampSearchLimit, sourceScopeList } from "./engine.ts";
 import { deriveResolutionTuple, finalizeScorecard } from "./takes-resolution.ts";
 import { normalizeWeightForStorage } from "./takes-fence.ts";
 import { executeRawJsonb } from "./sql-query.ts";
@@ -5497,6 +5497,10 @@ export class PostgresEngine implements BrainEngine {
           ${opts.takesHoldersAllowList ?? null}::text[] IS NULL
           OR t.holder = ANY(${opts.takesHoldersAllowList ?? null}::text[])
         )
+        AND (
+          ${sourceScopeList(opts)}::text[] IS NULL
+          OR p.source_id = ANY(${sourceScopeList(opts)}::text[])
+        )
       ORDER BY
         CASE WHEN ${opts.sortBy ?? "created_at"} = 'weight'      THEN t.weight     END DESC NULLS LAST,
         CASE WHEN ${opts.sortBy ?? "created_at"} = 'since_date'  THEN t.since_date END DESC NULLS LAST,
@@ -5720,6 +5724,10 @@ export class PostgresEngine implements BrainEngine {
       : sql``;
     const sinceClause = opts.since ? sql`AND since_date >= ${opts.since}` : sql``;
     const untilClause = opts.until ? sql`AND since_date <= ${opts.until}` : sql``;
+    const scorecardSources = sourceScopeList(opts);
+    const sourceClause = scorecardSources
+      ? sql`AND EXISTS (SELECT 1 FROM pages sp WHERE sp.id = takes.page_id AND sp.source_id = ANY(${scorecardSources}::text[]))`
+      : sql``;
     // v0.36.1.1 T1c: `resolved` deliberately filters to the 3-state subset
     // (correct|incorrect|partial) — NOT `resolved_quality IS NOT NULL` — so
     // historical comparisons against pre-v74 scorecards stay valid.
@@ -5738,7 +5746,7 @@ export class PostgresEngine implements BrainEngine {
           END
         )::float                                                                               AS brier
       FROM takes
-      WHERE 1=1 ${holderClause} ${domainClause} ${sinceClause} ${untilClause} ${allowed}
+      WHERE 1=1 ${holderClause} ${domainClause} ${sinceClause} ${untilClause} ${allowed} ${sourceClause}
     `;
     const r = rows[0] as {
       total_bets: number;
@@ -5772,6 +5780,10 @@ export class PostgresEngine implements BrainEngine {
     const maxIdx = Math.floor(1 / bucketSize) - 1;
     const allowed = allowList ? sql`AND holder = ANY(${allowList}::text[])` : sql``;
     const holderClause = opts.holder ? sql`AND holder = ${opts.holder}` : sql``;
+    const curveSources = sourceScopeList(opts);
+    const sourceClause = curveSources
+      ? sql`AND EXISTS (SELECT 1 FROM pages sp WHERE sp.id = takes.page_id AND sp.source_id = ANY(${curveSources}::text[]))`
+      : sql``;
     // Bucketing uses NUMERIC for exact decimal arithmetic. Going through
     // FLOAT introduces IEEE 754 rounding (e.g. 0.7/0.1 = 6.9999..., FLOOR=6
     // instead of the expected 7), which makes Postgres and PGLite diverge
@@ -5785,7 +5797,7 @@ export class PostgresEngine implements BrainEngine {
           (resolved_quality = 'correct')::int AS hit
         FROM takes
         WHERE resolved_quality IN ('correct','incorrect')
-          ${holderClause} ${allowed}
+          ${holderClause} ${allowed} ${sourceClause}
       )
       SELECT
         (bucket_idx::numeric * ${bucketSize}::numeric)::float       AS bucket_lo,
@@ -6741,6 +6753,10 @@ export class PostgresEngine implements BrainEngine {
     // v0.29.1: third score term via buildRecencyComponentSql. Default
     // 'flat' = v0.29.0 behavior (1 / (1 + days_old)). 'on' opts into the
     // per-prefix decay map (concepts/ evergreen, daily/ aggressive, etc.).
+    const salienceSources = sourceScopeList(opts);
+    const salienceSourceCondition = salienceSources
+      ? sql`AND p.source_id = ANY(${salienceSources}::text[])`
+      : sql``;
     const recencyBias = opts.recency_bias ?? "flat";
     let recencySql: string;
     if (recencyBias === "on") {
@@ -6772,6 +6788,7 @@ export class PostgresEngine implements BrainEngine {
         LEFT JOIN takes t ON t.page_id = p.id AND t.active = TRUE
        WHERE GREATEST(p.updated_at, COALESCE(p.salience_touched_at, p.updated_at)) >= ${boundaryIso}::timestamptz
          ${prefixCondition}
+         ${salienceSourceCondition}
        GROUP BY p.id
        ORDER BY score DESC
        LIMIT ${limit}
@@ -6861,6 +6878,11 @@ export class PostgresEngine implements BrainEngine {
     const sinceDate = new Date(sinceIso + "T00:00:00Z");
     const sinceEnd = new Date(sinceDate.getTime() + 86400000);
     const baselineStart = new Date(sinceDate.getTime() - lookbackDays * 86400000);
+    // Only pages of the caller's sources (none given = no source filter).
+    const anomalySources = sourceScopeList(opts);
+    const srcCond = anomalySources
+      ? sql`AND p.source_id = ANY(${anomalySources}::text[])`
+      : sql``;
 
     // Tag cohort baseline with day densification + zero-fill (codex C4#6).
     const tagBaseline = await sql`
@@ -6875,6 +6897,7 @@ export class PostgresEngine implements BrainEngine {
         SELECT DISTINCT t.tag FROM tags t JOIN pages p ON p.id = t.page_id
          WHERE p.updated_at >= ${baselineStart.toISOString()}::timestamptz
            AND p.updated_at <  ${sinceDate.toISOString()}::timestamptz
+           ${srcCond}
       ),
       touched AS (
         SELECT t.tag,
@@ -6883,6 +6906,7 @@ export class PostgresEngine implements BrainEngine {
           FROM tags t JOIN pages p ON p.id = t.page_id
          WHERE p.updated_at >= ${baselineStart.toISOString()}::timestamptz
            AND p.updated_at <  ${sinceDate.toISOString()}::timestamptz
+           ${srcCond}
          GROUP BY 1, 2
       )
       SELECT cd.tag AS cohort_value, d.day::text AS day, COALESCE(t.cnt, 0)::int AS count
@@ -6902,6 +6926,7 @@ export class PostgresEngine implements BrainEngine {
         SELECT DISTINCT p.type FROM pages p
          WHERE p.updated_at >= ${baselineStart.toISOString()}::timestamptz
            AND p.updated_at <  ${sinceDate.toISOString()}::timestamptz
+           ${srcCond}
       ),
       touched AS (
         SELECT p.type,
@@ -6910,6 +6935,7 @@ export class PostgresEngine implements BrainEngine {
           FROM pages p
          WHERE p.updated_at >= ${baselineStart.toISOString()}::timestamptz
            AND p.updated_at <  ${sinceDate.toISOString()}::timestamptz
+           ${srcCond}
          GROUP BY 1, 2
       )
       SELECT cd.type AS cohort_value, d.day::text AS day, COALESCE(t.cnt, 0)::int AS count
@@ -6925,6 +6951,7 @@ export class PostgresEngine implements BrainEngine {
         FROM tags t JOIN pages p ON p.id = t.page_id
        WHERE p.updated_at >= ${sinceIso}::timestamptz
          AND p.updated_at <  ${sinceEnd.toISOString()}::timestamptz
+         ${srcCond}
        GROUP BY 1
     `;
     const typeToday = await sql`
@@ -6934,6 +6961,7 @@ export class PostgresEngine implements BrainEngine {
         FROM pages p
        WHERE p.updated_at >= ${sinceIso}::timestamptz
          AND p.updated_at <  ${sinceEnd.toISOString()}::timestamptz
+         ${srcCond}
        GROUP BY 1
     `;
 

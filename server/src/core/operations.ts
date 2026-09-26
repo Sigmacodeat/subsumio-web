@@ -2977,6 +2977,8 @@ const takes_list: Operation = {
       // Per-token allow-list — server-side filter for MCP-bound calls.
       // Local CLI callers leave takesHoldersAllowList unset and see all holders.
       takesHoldersAllowList: ctx.takesHoldersAllowList,
+      // Only takes on pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "takes-list" },
@@ -3030,6 +3032,7 @@ const takes_scorecard: Operation = {
         domainPrefix: p.domain_prefix as string | undefined,
         since: p.since as string | undefined,
         until: p.until as string | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -3055,6 +3058,7 @@ const takes_calibration: Operation = {
       {
         holder: p.holder as string | undefined,
         bucketSize: p.bucket_size as number | undefined,
+        ...sourceScopeOpts(ctx),
       },
       ctx.takesHoldersAllowList
     );
@@ -4662,6 +4666,8 @@ const get_recent_salience: Operation = {
       limit: typeof p.limit === "number" ? p.limit : undefined,
       slugPrefix: typeof p.slugPrefix === "string" ? p.slugPrefix : undefined,
       recency_bias: recencyBias,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "salience" },
@@ -4690,6 +4696,8 @@ const find_anomalies: Operation = {
       since: typeof p.since === "string" ? p.since : undefined,
       lookback_days: typeof p.lookback_days === "number" ? p.lookback_days : undefined,
       sigma: typeof p.sigma === "number" ? p.sigma : undefined,
+      // Only pages of the caller's own sources.
+      ...sourceScopeOpts(ctx),
     });
   },
   cliHints: { name: "anomalies" },

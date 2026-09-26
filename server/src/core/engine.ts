@@ -343,6 +343,9 @@ export interface TakesListOpts {
   sortBy?: "weight" | "since_date" | "created_at";
   limit?: number;
   offset?: number;
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 /** Search result row from searchTakes / searchTakesVector. */
@@ -441,6 +444,9 @@ export interface TakesScorecardOpts {
   domainPrefix?: string; // e.g. 'companies/' to scope the scorecard
   since?: string; // ISO date 'YYYY-MM-DD'
   until?: string; // ISO date 'YYYY-MM-DD'
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
 }
 
 /** v0.30.0: calibration curve bucket. */
@@ -460,6 +466,22 @@ export interface CalibrationBucket {
 export interface CalibrationCurveOpts {
   holder?: string;
   bucketSize?: number; // default 0.1
+  /** Only takes on pages of these sources (array wins over scalar). */
+  sourceId?: string;
+  sourceIds?: string[];
+}
+
+/**
+ * The source list a read is limited to: the federated array when non-empty,
+ * else the scalar source, else null (no source filter — trusted callers).
+ */
+export function sourceScopeList(opts: {
+  sourceId?: string;
+  sourceIds?: string[];
+}): string[] | null {
+  if (opts.sourceIds && opts.sourceIds.length > 0) return [...opts.sourceIds];
+  if (opts.sourceId) return [opts.sourceId];
+  return null;
 }
 
 /** Synthesis evidence row input (provenance from think synthesis pages). */
