@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Upload, Link, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseEml, type ParsedEmail } from "@/lib/email-parser";
@@ -12,9 +12,16 @@ import { formatDateTime } from "@/lib/utils";
 interface ImportResult {
   success: boolean;
   duplicate?: boolean;
+  error?: string;
   matchedCase?: { slug: string; caseNumber?: string; title: string };
-  suggestions?: Array<{ slug: string; caseNumber?: string; title: string }>;
+  candidates?: Array<{ slug: string; caseNumber?: string; title: string }>;
   message?: string;
+}
+
+interface CaseOption {
+  slug: string;
+  title: string;
+  caseNumber?: string;
 }
 
 export default function EmailImportPage() {
@@ -25,6 +32,10 @@ export default function EmailImportPage() {
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<Record<number, ImportResult>>({});
   const [importError, setImportError] = useState<string | null>(null);
+  // Matters for the manual assignment of unmatched/ambiguous mails (loaded once).
+  const [caseOptions, setCaseOptions] = useState<CaseOption[] | null>(null);
+  const [chosen, setChosen] = useState<Record<number, string>>({});
+  const [assigning, setAssigning] = useState<number | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const results: ParsedEmail[] = [];
@@ -62,6 +73,64 @@ export default function EmailImportPage() {
     }
     setResults(next);
     setImporting(false);
+  }
+
+  const needsChoice = Object.values(results).some((r) => !r.success);
+  useEffect(() => {
+    if (!needsChoice || caseOptions !== null) return;
+    let cancelled = false;
+    api.brain
+      .listAllPages({ type: "legal_case" })
+      .then((pages) => {
+        if (cancelled) return;
+        setCaseOptions(
+          pages
+            .filter((p) => {
+              const st = (p.frontmatter as Record<string, unknown> | undefined)?.status;
+              return st !== "archived" && st !== "tombstoned";
+            })
+            .map((p) => {
+              const cn = (p.frontmatter as Record<string, unknown> | undefined)?.case_number;
+              return {
+                slug: p.slug,
+                title: p.title ?? p.slug,
+                caseNumber: typeof cn === "string" ? cn : undefined,
+              };
+            })
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCaseOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsChoice, caseOptions]);
+
+  // Explicit choice by the user: the server files the mail into exactly this
+  // matter (force_case_slug), no automatic matching.
+  async function assignTo(i: number, caseSlug: string) {
+    const email = parsed[i];
+    if (!email || !caseSlug) return;
+    setAssigning(i);
+    try {
+      const res = await api.email.import({
+        subject: email.subject,
+        from: email.from,
+        body: email.body,
+        date: email.date,
+        raw_eml: raws[i],
+        force_case_slug: caseSlug,
+      });
+      setResults((prev) => ({ ...prev, [i]: res }));
+    } catch {
+      setResults((prev) => ({
+        ...prev,
+        [i]: { ...prev[i], success: false, message: t("email_import.error_failed") },
+      }));
+    } finally {
+      setAssigning(null);
+    }
   }
 
   const matchedCount = Object.values(results).filter((r) => r.success && !r.duplicate).length;
@@ -189,10 +258,10 @@ export default function EmailImportPage() {
                     </div>
                   )}
 
-                  {!result && email.suggestedCaseSlug && (
+                  {!result && email.aktenzeichen && (
                     <div className="flex items-center gap-1 text-xs text-[color:var(--ds-info-text)]">
                       <Link size={12} />
-                      {t("email_import.suggested")} {email.suggestedCaseSlug}
+                      Erkannte Geschäftszahl: {email.aktenzeichen}
                     </div>
                   )}
 
@@ -213,14 +282,49 @@ export default function EmailImportPage() {
                         <AlertTriangle size={12} />
                         {result.message ?? t("email_import.no_match")}
                       </div>
-                      {result.suggestions && result.suggestions.length > 0 && (
-                        <div className="text-[color:var(--ds-text-muted)]">
-                          {t("email_import.possible")}{" "}
-                          {result.suggestions
-                            .map((s) => `${s.caseNumber ?? s.slug} (${s.title})`)
-                            .join(", ")}
+                      {result.candidates && result.candidates.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 text-[color:var(--ds-text-muted)]">
+                          <span>{t("email_import.possible")}</span>
+                          {result.candidates.map((c) => (
+                            <Button
+                              key={c.slug}
+                              size="sm"
+                              variant="outline"
+                              disabled={assigning === i}
+                              onClick={() => void assignTo(i, c.slug)}
+                            >
+                              {c.caseNumber ? `${c.caseNumber} — ${c.title}` : c.title}
+                            </Button>
+                          ))}
                         </div>
                       )}
+                      <div className="flex flex-wrap items-center gap-2 text-[color:var(--ds-text-muted)]">
+                        <select
+                          aria-label={`Akte für „${email.subject}“ wählen`}
+                          value={chosen[i] ?? ""}
+                          onChange={(e) => setChosen((prev) => ({ ...prev, [i]: e.target.value }))}
+                          className="max-w-full rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
+                        >
+                          <option value="">
+                            {caseOptions === null
+                              ? "Akten werden geladen …"
+                              : "Andere Akte wählen …"}
+                          </option>
+                          {(caseOptions ?? []).map((c) => (
+                            <option key={c.slug} value={c.slug}>
+                              {c.caseNumber ? `${c.caseNumber} — ${c.title}` : c.title}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          size="sm"
+                          disabled={!chosen[i] || assigning === i}
+                          loading={assigning === i}
+                          onClick={() => void assignTo(i, chosen[i] ?? "")}
+                        >
+                          Zuordnen
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

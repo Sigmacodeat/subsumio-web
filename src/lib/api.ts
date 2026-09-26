@@ -2296,6 +2296,14 @@ export const api = {
       message?: string;
       matchedCase?: { slug: string; caseNumber?: string; title: string };
       suggestions?: Array<{ slug: string; caseNumber?: string; title: string }>;
+      /** Present when several matters fit equally (error "ambiguous_match"). */
+      candidates?: Array<{
+        slug: string;
+        title: string;
+        caseNumber?: string;
+        clientName?: string;
+        matchReason?: string;
+      }>;
     }> {
       return request("/api/email-import", {
         method: "POST",
