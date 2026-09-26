@@ -34,12 +34,21 @@ vi.mock("@/lib/auth/store", () => ({
 import { POST } from "./route";
 import { requireEngineContext } from "@/lib/engine";
 
-function invite(body: Record<string, unknown>) {
+function invite(
+  body: Record<string, unknown>,
+  user: Record<string, unknown> = {
+    id: "owner",
+    email: "owner@kanzlei.at",
+    name: "Owner",
+    orgId: "org_a",
+    role: "admin",
+  }
+) {
   vi.mocked(requireEngineContext).mockResolvedValue({
     headers: {},
     brainId: "b",
     plan: "team",
-    user: { id: "owner", email: "owner@kanzlei.at", name: "Owner", orgId: "org_a", role: "admin" },
+    user,
   } as any);
   return POST(
     new NextRequest("http://localhost:3000/api/org/invite", {
@@ -72,5 +81,18 @@ describe("POST /api/org/invite — role", () => {
     const res = await invite({ email: "neu@kanzlei.at", role: "admin" });
     expect(res.status).toBe(400);
     expect(signActionToken).not.toHaveBeenCalled();
+  });
+
+  it("a second administrator may invite; a lawyer may not", async () => {
+    const admin2 = {
+      id: "admin2",
+      email: "a2@kanzlei.at",
+      name: "A2",
+      orgId: "org_a",
+      role: "admin",
+    };
+    expect((await invite({ email: "neu2@kanzlei.at" }, admin2)).status).toBe(200);
+    const lawyer = { id: "l1", email: "l1@kanzlei.at", name: "L1", orgId: "org_a", role: "lawyer" };
+    expect((await invite({ email: "neu3@kanzlei.at" }, lawyer)).status).toBe(403);
   });
 });
