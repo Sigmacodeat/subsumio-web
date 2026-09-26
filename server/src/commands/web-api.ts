@@ -92,7 +92,11 @@ import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
-import { claimPendingUpload, releasePendingUpload } from "../core/upload-confirm-claim.ts";
+import {
+  claimPendingUpload,
+  newUploadToken,
+  releasePendingUpload,
+} from "../core/upload-confirm-claim.ts";
 import { withOcrOwner } from "../core/ocr-budget.ts";
 import {
   confirmPipelinePlan,
@@ -6701,9 +6705,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // Check if backend supports presigned URLs
         if (!storage.createPresignedUpload) {
           // Fallback: return a streaming upload URL for local storage
-          const token = createHash("sha256")
-            .update(`${storagePath}:${Date.now()}:${Math.random()}`)
-            .digest("hex");
+          const token = newUploadToken();
           pendingUploads.set(token, {
             token,
             storagePath,
@@ -6744,9 +6746,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
-        const token = createHash("sha256")
-          .update(`${storagePath}:${Date.now()}:${Math.random()}`)
-          .digest("hex");
+        const token = newUploadToken();
         pendingUploads.set(token, {
           token,
           storagePath: presigned.storagePath,
@@ -7022,6 +7022,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res
             .status(410)
             .json({ error: "upload_token_expired", message: "Upload-Token abgelaufen." });
+          return;
+        }
+
+        // The token is a capability of the firm that asked for it; bytes for
+        // one firm never land under another firm's upload.
+        if (pending.sourceId !== (ctx(req).sourceId ?? "default")) {
+          apiError(res, 403, "token_tenant_mismatch");
           return;
         }
 
@@ -7851,9 +7858,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           const slug = slugFromUpload(String(body.source ?? "documents"), filename, title);
           const storagePath = `unscanned/${tenantKey}/${slug}/${randomUUID()}/${filename}`;
 
-          const token = createHash("sha256")
-            .update(`${storagePath}:${Date.now()}:${Math.random()}`)
-            .digest("hex");
+          const token = newUploadToken();
 
           const tagList = Array.isArray(fileMeta.tags)
             ? (fileMeta.tags as string[]).map(String)

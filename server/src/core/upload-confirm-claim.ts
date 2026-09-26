@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 /**
  * One confirm per upload token at a time. Confirm downloads, scans, extracts
  * and imports — minutes for a large file. A second confirm with the same
@@ -19,4 +21,12 @@ export function claimPendingUpload(pending: ClaimableUpload): boolean {
 /** Give the upload back after a confirm that did not finish (so it can be retried). */
 export function releasePendingUpload(pending: ClaimableUpload): void {
   pending.confirming = false;
+}
+
+/**
+ * Upload tokens are bearer capabilities for presign/stream/confirm, so they
+ * come from the CSPRNG (256 bit), never from Date.now()/Math.random().
+ */
+export function newUploadToken(): string {
+  return randomBytes(32).toString("hex");
 }
