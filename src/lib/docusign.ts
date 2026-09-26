@@ -23,7 +23,8 @@ import { docusignOAuthHost, type EnvelopeCustomFields } from "@/lib/docusign-con
 import { logger } from "@/lib/logger";
 const log = logger("lib/docusign");
 
-const BASE = env("DOCUSIGN_BASE_URL") || "https://demo.docusign.net/restapi/v2.1";
+const RAW_BASE = env("DOCUSIGN_BASE_URL") || "";
+const BASE = RAW_BASE || "https://demo.docusign.net/restapi/v2.1";
 const IK = env("DOCUSIGN_INTEGRATION_KEY") || "";
 const SECRET = env("DOCUSIGN_SECRET_KEY") || "";
 const ACCOUNT = env("DOCUSIGN_ACCOUNT_ID") || "";
@@ -451,8 +452,35 @@ export function verifyDocusignConnectSignature(
 // Configuration
 // ---------------------------------------------------------------------------
 
+/** "demo" for DocuSign's developer environment (watermarked, not legally binding). */
+export function docusignEnvironment(): "demo" | "production" {
+  let host = "";
+  try {
+    host = new URL(BASE).hostname;
+  } catch {
+    return "demo";
+  }
+  return host === "demo.docusign.net" || host.endsWith(".demo.docusign.net")
+    ? "demo"
+    : "production";
+}
+
+/**
+ * Why DocuSign must not be used, or null. In production the REST address is
+ * mandatory and the demo environment is refused: envelopes sent there carry
+ * no legal effect while the firm would see "sent"/"signed".
+ */
+export function docusignConfigProblem(): string | null {
+  if (!(IK && SECRET && ACCOUNT)) return "not_configured";
+  if (process.env.NODE_ENV === "production") {
+    if (!RAW_BASE) return "base_url_missing";
+    if (docusignEnvironment() === "demo") return "demo_environment_in_production";
+  }
+  return null;
+}
+
 export function isConfigured(): boolean {
-  return Boolean(IK && SECRET && ACCOUNT);
+  return docusignConfigProblem() === null;
 }
 
 export function getAuthUrl(redirectUri: string, state?: string): string {

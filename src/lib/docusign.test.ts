@@ -87,6 +87,48 @@ describe("isConfigured", () => {
   });
 });
 
+describe("isConfigured in production (demo fallback)", () => {
+  const origEnv = { ...process.env };
+  afterEach(() => {
+    process.env = { ...origEnv };
+  });
+  const setKeys = () => {
+    process.env.DOCUSIGN_INTEGRATION_KEY = "test-ik";
+    process.env.DOCUSIGN_SECRET_KEY = "test-secret";
+    process.env.DOCUSIGN_ACCOUNT_ID = "test-account";
+  };
+
+  test("production without DOCUSIGN_BASE_URL → not configured", async () => {
+    setKeys();
+    delete process.env.DOCUSIGN_BASE_URL;
+    (process.env as Record<string, string>).NODE_ENV = "production";
+    vi.resetModules();
+    const m = await import("./docusign");
+    expect(m.isConfigured()).toBe(false);
+    expect(m.docusignConfigProblem()).toBe("base_url_missing");
+  });
+
+  test("production with the demo URL → not configured", async () => {
+    setKeys();
+    process.env.DOCUSIGN_BASE_URL = "https://demo.docusign.net/restapi/v2.1";
+    (process.env as Record<string, string>).NODE_ENV = "production";
+    vi.resetModules();
+    const m = await import("./docusign");
+    expect(m.isConfigured()).toBe(false);
+    expect(m.docusignConfigProblem()).toBe("demo_environment_in_production");
+  });
+
+  test("production with a production URL → configured", async () => {
+    setKeys();
+    process.env.DOCUSIGN_BASE_URL = "https://eu.docusign.net/restapi/v2.1";
+    (process.env as Record<string, string>).NODE_ENV = "production";
+    vi.resetModules();
+    const m = await import("./docusign");
+    expect(m.isConfigured()).toBe(true);
+    expect(m.docusignEnvironment()).toBe("production");
+  });
+});
+
 describe("getAuthUrl", () => {
   const origEnv = { ...process.env };
 

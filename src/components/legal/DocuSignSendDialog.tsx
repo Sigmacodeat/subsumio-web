@@ -47,15 +47,24 @@ export function DocuSignSendDialog({
   const [sending, setSending] = useState(false);
   // null while checking; false when DocuSign is not set up for this installation.
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [environment, setEnvironment] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     fetch("/api/docusign/status", { cache: "no-store" })
       .then((r) => r.json())
-      .then((b: { configured?: boolean; data?: { configured?: boolean } }) => {
-        if (!cancelled) setAvailable(Boolean(b.configured ?? b.data?.configured));
-      })
+      .then(
+        (b: {
+          configured?: boolean;
+          environment?: string;
+          data?: { configured?: boolean; environment?: string };
+        }) => {
+          if (cancelled) return;
+          setAvailable(Boolean(b.configured ?? b.data?.configured));
+          setEnvironment(b.environment ?? b.data?.environment ?? null);
+        }
+      )
       .catch(() => !cancelled && setAvailable(false));
     return () => {
       cancelled = true;
@@ -169,6 +178,14 @@ export function DocuSignSendDialog({
           >
             DocuSign ist für diese Installation noch nicht eingerichtet. Solange können Sie
             Dokumente über den Portal-Link unterschreiben lassen (einfache elektronische Signatur).
+          </p>
+        )}
+        {available && environment === "demo" && (
+          <p
+            role="status"
+            className="rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2 text-sm text-[color:var(--ds-warning-text)]"
+          >
+            DocuSign-Testumgebung: Unterschriften hier sind nicht rechtsverbindlich.
           </p>
         )}
 

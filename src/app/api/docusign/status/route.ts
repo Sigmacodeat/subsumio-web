@@ -1,5 +1,5 @@
 import { getStore } from "@/lib/auth/store";
-import { isConfigured } from "@/lib/docusign";
+import { docusignConfigProblem, docusignEnvironment } from "@/lib/docusign";
 import { createHandler } from "@/lib/api-handler";
 
 export const GET = createHandler(
@@ -9,9 +9,9 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async (ctx, _body, _query, _req) => {
-    const configured = isConfigured();
-    if (!configured) {
-      return Response.json({ configured: false, connected: false, reason: "not_configured" });
+    const problem = docusignConfigProblem();
+    if (problem) {
+      return Response.json({ configured: false, connected: false, reason: problem });
     }
 
     const user = await getStore().getById(ctx.user.id);
@@ -23,6 +23,7 @@ export const GET = createHandler(
 
     return Response.json({
       configured: true,
+      environment: docusignEnvironment(),
       connected,
       expired,
       expiresAt: user?.docusignTokenExpiresAt ?? null,
