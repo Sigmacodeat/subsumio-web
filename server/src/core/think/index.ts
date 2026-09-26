@@ -76,7 +76,9 @@ import {
   probeChatModel,
   type ChatResult,
   type ChatMessage,
+  type ChatToolDef,
 } from "../ai/gateway.ts";
+import { resolveToolMode, toThinkToolCall, type ThinkToolCall } from "./client-tools.ts";
 import { AIConfigError } from "../ai/errors.ts";
 import { normalizeModelId } from "../model-id.ts";
 import { hasAnthropicKey } from "../ai/anthropic-key.ts";
@@ -246,6 +248,22 @@ export interface RunThinkOpts {
    * on unseen, and no non-streaming fallback call is made.
    */
   abortSignal?: AbortSignal;
+  /**
+   * Native tool use: caller tool definitions (already validated by
+   * `sanitizeClientTools`). Handed to the model on the streamed path when the
+   * provider supports tools; the engine never executes them — each call is
+   * reported through `onToolCall` and in `ThinkResult.toolCalls`.
+   */
+  tools?: ChatToolDef[];
+  /**
+   * Instructions appended to the system prompt instead of `tools` when the
+   * answering model has no tool use (the caller's `[TOOL:…]` marker syntax).
+   */
+  toolFallbackInstructions?: string;
+  /** Fires once before the model call: whether `tools` went to the model natively. */
+  onToolsResolved?: (supported: boolean) => void;
+  /** A structured tool call arrived in the stream. */
+  onToolCall?: (call: ThinkToolCall) => void;
 }
 
 /** Structured response from the LLM (matches the schema declared in prompt.ts). */
@@ -265,6 +283,10 @@ export interface ThinkResult {
   graphHits: number;
   modelUsed: string;
   rounds: number;
+  /** Native tool use: whether the caller's tool definitions went to the model (undefined: none sent). */
+  toolsSupported?: boolean;
+  /** Structured tool calls the model made, in order — reported, never executed here. */
+  toolCalls?: ThinkToolCall[];
   warnings: string[];
   /**
    * v0.41.x (#1698) — true only when an actual synthesis produced a NON-EMPTY
@@ -497,6 +519,24 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // Dynamic max_tokens based on query complexity (legal mode only).
   // Complex questions get more room; simple ones save tokens.
   const dynamicMaxTokens = computeMaxTokens(opts.question, opts.legalMode, opts.taxMode);
+
+  // ── Native tool use (caller tool definitions) ──
+  // Decided once the answering model is known: tools go to the model on the
+  // streamed path when its provider takes them; otherwise the caller's marker
+  // fallback is appended to the system prompt. The caller learns which of the
+  // two happened before the first token, so it knows how to read the answer.
+  const callerTools = opts.tools ?? [];
+  const toolMode = resolveToolMode({
+    tools: callerTools,
+    modelStr: normalizeModelId(modelUsed),
+    streaming: !!opts.onStreamChunk && !opts.stubResponse,
+    ...(opts.toolFallbackInstructions
+      ? { fallbackInstructions: opts.toolFallbackInstructions }
+      : {}),
+  });
+  const toolsSupported = callerTools.length > 0 ? toolMode.native : undefined;
+  if (toolsSupported !== undefined) opts.onToolsResolved?.(toolsSupported);
+  const toolCalls: ThinkToolCall[] = [];
 
   // ── Adversarial Injection Scan (Gap 6) ──
   // Scan user question for prompt injection / jailbreak patterns before processing.
@@ -808,7 +848,9 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
       ...(taxMode && opts.jurisdiction ? { jurisdiction: opts.jurisdiction } : {}),
     }) +
     (adversarialScan.flags.length > 0 ? ANTI_INJECTION_PROMPT : "") +
-    (opts.instructions?.trim() ? `\n\n## CALLER INSTRUCTIONS\n${opts.instructions.trim()}` : "");
+    (opts.instructions?.trim() ? `\n\n## CALLER INSTRUCTIONS\n${opts.instructions.trim()}` : "") +
+    // Marker fallback for models without tool use (empty in native mode).
+    (toolMode.extraInstructions ? `\n\n${toolMode.extraInstructions}` : "");
   const callerContextBlock = conversationContextBlock(opts.callerContext);
   const userMessage =
     buildThinkUserMessage({
@@ -900,12 +942,24 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
           system: streamSystemPrompt,
           messages: streamMessages,
           maxTokens: dynamicMaxTokens,
+          ...(toolMode.native ? { tools: toolMode.tools } : {}),
           ...(opts.abortSignal ? { abortSignal: opts.abortSignal } : {}),
         })) {
           if (chunk.type === "text" && chunk.text) {
             accumulated += chunk.text;
             opts.onStreamChunk(chunk.text);
+          } else if (chunk.type === "tool-call" && toolMode.native) {
+            // Reported to the caller, never executed here: the web app runs
+            // tools with its own session, CSRF and confirmation checks.
+            const call = toThinkToolCall(chunk);
+            toolCalls.push(call);
+            opts.onToolCall?.(call);
           }
+        }
+        if (toolCalls.length > 0 && !accumulated.trim()) {
+          // The model answered with tool calls only — a legitimate answer for
+          // an action request, not a failed synthesis.
+          warnings.push(`TOOL_CALLS_ONLY: ${toolCalls.length} call(s), no text`);
         }
         // Parse the streamed text for citations using the regex fallback path
         const streamResolved = resolveCitations([], accumulated);
@@ -1354,6 +1408,8 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
     modelUsed,
     rounds: 1,
     warnings,
+    ...(toolsSupported !== undefined ? { toolsSupported } : {}),
+    ...(toolCalls.length > 0 ? { toolCalls } : {}),
     // #1698: persistable only when a real synthesis produced a non-empty answer.
     // ANDs the not-JSON/sentinel flag with a content check (catches valid-but-empty JSON).
     synthesisOk: synthesisOk && response.answer.trim().length > 0,

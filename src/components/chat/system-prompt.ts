@@ -23,7 +23,14 @@ export interface UserContext {
   preferredLanguage?: "de" | "en" | "at" | "ch";
 }
 
-const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutzer eine Aktion wünscht, kannst du Tool-Marker in deine Antwort einbetten (unsichtbar für den Nutzer, aber vom System erkannt):
+/**
+ * Marker syntax for providers WITHOUT native tool use. The chat sends this
+ * block apart from the system prompt (`tool_fallback_instructions`); the
+ * engine appends it only when the answering model cannot take tools, and
+ * reports `tools_supported: false` so the chat parses `[TOOL:…]` markers.
+ */
+export const TOOL_MARKER_INSTRUCTIONS = `## WERKZEUGE OHNE TOOL-USE (FALLBACK)
+Dieses Modell hat keine nativen Werkzeugaufrufe. Wenn der Nutzer eine Aktion wünscht, bette stattdessen Tool-Marker in deine Antwort ein (unsichtbar für den Nutzer, vom System erkannt):
 - Navigation: [TOOL:navigate route="/dashboard/cases"]
 - Akten suchen: [TOOL:search_cases query="Muster GmbH"]
 - Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="critical"]
@@ -57,7 +64,12 @@ const TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutz
 - Automatisierungsregel: [TOOL:create_automation_rule name="Mahnung bei Überfälligkeit" event="invoice.overdue" action_type="send_mail" action_recipient="buchhaltung@kanzlei.at"] (erstellt eine „wenn X dann Y"-Regel — erkläre dem Nutzer vorher kurz, was die Regel tut; sie läuft mit seinen Aktenrechten und reagiert nur auf Ereignisse ab jetzt. event: document.uploaded, deadline.created, deadline.due_soon (Vorlauf mit within_days="7"), case.created, case.status_changed, message.received, booking.created, invoice.overdue. action_type: create_task (action_title, action_due_in_days), notify (action_title, action_message), send_mail (action_recipient, action_title, action_message), start_workflow (action_workflow_template_id), set_status (action_status: open, pending, settled, won, lost, appealed, dormant))
 - Dokumente einordnen: [TOOL:organize_documents case_slug="cases/123"] (ordnet die Dokumente einer Akte anhand von Typ/Name in Ordner — fragt vorher, ob nur unsortierte oder alle)
 
-## PROAKTIVE FRISTEN-WARNUNGEN (Hybrid)
+Du kannst MEHRERE Tool-Marker in einer einzigen Antwort verwenden, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Setze jeden Marker in eine eigene Zeile. Schreibe Marker nie in Zitate oder Beispiele — nur, wenn die Aktion tatsächlich laufen soll.
+
+WICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry, document_request_create, deadline_mark_done), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
+
+/** How the Copilot uses its tools — the same in native and marker mode. */
+const TOOL_POLICY = `## PROAKTIVE FRISTEN-WARNUNGEN (Hybrid)
 Wenn du im Kontext einer Akte antwortest und aus den Akten-Vitals oder der Konversation erkennst, dass Fristen kritisch oder überfällig sind (< 7 Tage), erwähne PROAKTIV am Anfang deiner Antwort:
 "⚠️ Wichtige Frist: [Fristname] läuft in X Tagen ab."
 Verwende dazu auch das search_deadlines Tool mit status="critical", um aktuelle Fristen zu zeigen.
@@ -72,17 +84,37 @@ Beispiele:
 - "Möchten Sie die zugehörigen Dokumente sehen?"
 - "Soll ich eine Frist als erledigt markieren?"
 
-Verwende Tools nur wenn der Nutzer explizit eine Aktion wünscht oder wenn du proaktiv kritische Fristen prüfst. Antworte sonst normal. Wenn eine gewünschte Aktion kein eigenes Tool hat, navigiere zum passenden Dashboard-Modul und erkläre knapp, was dort zu tun ist.
+Verwende Tools nur wenn der Nutzer explizit eine Aktion wünscht oder wenn du proaktiv kritische Fristen prüfst. Antworte sonst normal. Wenn eine gewünschte Aktion kein eigenes Tool hat, navigiere zum passenden Dashboard-Modul und erkläre knapp, was dort zu tun ist.`;
 
-Du kannst MEHRERE Tool-Marker in einer einzigen Antwort verwenden, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Setze jeden Marker in eine eigene Zeile.
+/**
+ * Native tool use: the tool list travels as structured definitions with the
+ * request (lib/copilot-tool-schemas.ts); the prompt only carries the policy.
+ */
+const NATIVE_TOOL_INSTRUCTIONS = `Du hast Zugriff auf Kanzlei-Funktionen als Werkzeuge (Tool-Use). Die verfügbaren Werkzeuge und ihre Parameter sind dir als Tool-Definitionen bereitgestellt — rufe sie direkt auf, schreibe keine Marker oder Pseudo-Aufrufe in den Antworttext. Du kannst mehrere Werkzeuge in einer Antwort aufrufen, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Aktionen, die Daten anlegen oder verändern, zeigt das System dem Nutzer zur Bestätigung — rufe sie trotzdem normal auf. Wenn eine aktive Akte bekannt ist, darfst du case_slug weglassen; das System ergänzt sie.
 
-WICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry, document_request_create, deadline_mark_done), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
+${TOOL_POLICY}`;
+
+/** Marker mode (legacy / providers without tool use): syntax + policy. */
+const TOOL_INSTRUCTIONS = `${TOOL_MARKER_INSTRUCTIONS}
+
+${TOOL_POLICY}`;
+
+export interface SystemPromptOptions {
+  /**
+   * True when the request carries structured tool definitions: the prompt
+   * then teaches only the policy, not the `[TOOL:…]` marker syntax. The
+   * marker block travels separately as the engine's fallback for providers
+   * without tool use (`TOOL_MARKER_INSTRUCTIONS`).
+   */
+  nativeTools?: boolean;
+}
 
 export function buildSystemPrompt(
   jurisdiction: Jurisdiction,
   userContext?: UserContext,
   conversationHistory?: ChatMessage[],
-  memoryContext?: string
+  memoryContext?: string,
+  options?: SystemPromptOptions
 ): string {
   const jurisdictionLabel = JURISDICTION_LABELS[jurisdiction];
   const now = new Date();
@@ -186,7 +218,9 @@ Wenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte.
   void conversationHistory;
 
   // ── Tool Instructions ──
-  personaParts.push(`\n## KANZLEI-FUNKTIONEN\n${TOOL_INSTRUCTIONS}`);
+  personaParts.push(
+    `\n## KANZLEI-FUNKTIONEN\n${options?.nativeTools ? NATIVE_TOOL_INSTRUCTIONS : TOOL_INSTRUCTIONS}`
+  );
 
   return personaParts.join("\n\n");
 }
@@ -224,6 +258,8 @@ interface PromptContextParams {
   conversationHistory?: ChatMessage[];
   matterVitals?: MatterVitalsSummary;
   memoryContext?: string;
+  /** Structured tool definitions accompany the request (see SystemPromptOptions). */
+  nativeTools?: boolean;
 }
 
 /**
@@ -249,9 +285,17 @@ export function buildConversationContext(
   return parts.join("\n\n");
 }
 
-export async function buildPromptContext(
-  params: PromptContextParams
-): Promise<{ systemPrompt: string; userInput: string; conversationContext: string }> {
+export async function buildPromptContext(params: PromptContextParams): Promise<{
+  systemPrompt: string;
+  userInput: string;
+  conversationContext: string;
+  /**
+   * Marker syntax for the engine to append when the answering model has no
+   * tool use — only set in native-tools mode, where the system prompt itself
+   * no longer carries it.
+   */
+  toolFallbackInstructions?: string;
+}> {
   const {
     jurisdiction,
     selectedCaseSlug,
@@ -269,6 +313,7 @@ export async function buildPromptContext(
     conversationHistory,
     matterVitals,
     memoryContext,
+    nativeTools,
   } = params;
 
   const contextParts: string[] = [];
@@ -362,12 +407,18 @@ export async function buildPromptContext(
     jurisdiction,
     userContext,
     conversationHistory,
-    memoryContext
+    memoryContext,
+    nativeTools ? { nativeTools: true } : undefined
   );
   const userInput = `${contextParts.join("\n")}\nNUTZERFRAGE:\n${userText}`;
   const conversationContext = buildConversationContext(conversationHistory, memoryContext);
 
-  return { systemPrompt, userInput, conversationContext };
+  return {
+    systemPrompt,
+    userInput,
+    conversationContext,
+    ...(nativeTools ? { toolFallbackInstructions: TOOL_MARKER_INSTRUCTIONS } : {}),
+  };
 }
 
 export function processStreamingChunk(

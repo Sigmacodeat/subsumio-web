@@ -58,7 +58,13 @@ import {
 } from "@/components/chat/system-prompt";
 import { buildFullMemoryContext, trackMessageInSession } from "@/lib/session-memory";
 import { type QueryMode } from "@/lib/matter-context-types";
-import type { BrainPage } from "@/lib/types";
+import type { BrainPage, QueryToolCall } from "@/lib/types";
+import {
+  copilotToolDefinitions,
+  copilotToolSchema,
+  toolArgsToAttrs,
+} from "@/lib/copilot-tool-schemas";
+import type { ToolConditionContext } from "@/lib/agent-conditionals";
 import { caseFrontmatter } from "@/lib/legal-types";
 import {
   DEFAULT_FEATURES,
@@ -523,30 +529,54 @@ function parseToolMarkerAttrs(raw: string): Record<string, string> {
   return attrs;
 }
 
+type ToolDetectionContext = { type: ChatContextType; caseSlug?: string; pageSlug?: string };
+
+// Tools that benefit from automatic matter-scoping
+const MATTER_SCOPED_TOOLS = new Set([
+  "email_draft",
+  "send_email",
+  "client_update",
+  "time_entry",
+  "case_summary",
+  "search_deadlines",
+  "client_lookup",
+  "create_task",
+  "create_deadline",
+  "request_signature",
+  "render_template",
+  "invoice_draft",
+  "organize_documents",
+]);
+
+/**
+ * One ToolCall from normalised params — shared by the marker parser and the
+ * native path. Only free, read-only lookups run without a click; paid runs,
+ * drafts and anything that changes data wait for confirmation
+ * (prompt-injection guard).
+ */
+function toolCallFromParams(
+  spec: ToolSpec,
+  params: Record<string, unknown>,
+  matterSlug: string | undefined,
+  id?: string
+): ToolCall {
+  if (matterSlug && MATTER_SCOPED_TOOLS.has(spec.tool) && !params.case_slug) {
+    params.case_slug = matterSlug;
+  }
+  const needsClick = DESTRUCTIVE_TOOLS.has(spec.tool) || !AUTO_EXECUTE_TOOLS.has(spec.tool);
+  return {
+    id: id || `${spec.tool}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type: spec.tool,
+    label: spec.label,
+    params,
+    status: needsClick ? "pending" : "executing",
+    requiresConfirmation: needsClick,
+  };
+}
+
 // Detect all tool markers in AI response — supports multiple tools per response (G16)
-export function detectToolCalls(
-  answer: string,
-  context: { type: ChatContextType; caseSlug?: string; pageSlug?: string }
-): ToolCall[] {
+export function detectToolCalls(answer: string, context: ToolDetectionContext): ToolCall[] {
   const matterSlug = context.caseSlug;
-
-  // Tools that benefit from automatic matter-scoping
-  const MATTER_SCOPED_TOOLS = new Set([
-    "email_draft",
-    "send_email",
-    "client_update",
-    "time_entry",
-    "case_summary",
-    "search_deadlines",
-    "client_lookup",
-    "create_task",
-    "create_deadline",
-    "request_signature",
-    "render_template",
-    "invoice_draft",
-    "organize_documents",
-  ]);
-
   const calls: ToolCall[] = [];
   const re = new RegExp(TOOL_MARKER_PATTERN.source, "gi");
   let match: RegExpExecArray | null;
@@ -560,24 +590,59 @@ export function detectToolCalls(
     const params = spec.transform(parseToolMarkerAttrs(match[2] ?? ""));
     if (!params) continue; // a required attribute was missing
 
-    if (matterSlug && MATTER_SCOPED_TOOLS.has(spec.tool) && !params.case_slug) {
-      params.case_slug = matterSlug;
-    }
-
-    // Only free, read-only lookups run without a click; paid runs, drafts and
-    // anything that changes data wait for confirmation (prompt-injection guard).
-    const needsClick = DESTRUCTIVE_TOOLS.has(spec.tool) || !AUTO_EXECUTE_TOOLS.has(spec.tool);
-    calls.push({
-      id: `${spec.tool}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      type: spec.tool,
-      label: spec.label,
-      params,
-      status: needsClick ? "pending" : "executing",
-      requiresConfirmation: needsClick,
-    });
+    calls.push(toolCallFromParams(spec, params, matterSlug));
   }
 
   return calls;
+}
+
+/**
+ * Native tool use: the model's structured calls (engine `tool_call` events)
+ * become the same ToolCall shape the marker parser yields. Each call is
+ * validated against the registry schema (lib/copilot-tool-schemas) — wrong
+ * types or unknown names are dropped, exactly like a malformed marker — and
+ * then normalised by the tool's transform so both paths agree on params.
+ */
+export function detectNativeToolCalls(
+  calls: readonly QueryToolCall[],
+  context: ToolDetectionContext
+): ToolCall[] {
+  const matterSlug = context.caseSlug;
+  const out: ToolCall[] = [];
+  for (const call of calls) {
+    const name = typeof call.name === "string" ? call.name.toLowerCase() : "";
+    const spec = TOOL_SPEC_BY_NAME.get(name);
+    const schema = copilotToolSchema(name);
+    if (!spec || !schema) continue;
+    const args: Record<string, unknown> = { ...(call.args ?? {}) };
+    // The model may rely on the open matter (as the prompt allows); fill it
+    // in before validation so a required case_slug does not fail the call.
+    if (matterSlug && MATTER_SCOPED_TOOLS.has(spec.tool) && !args.case_slug) {
+      args.case_slug = matterSlug;
+    }
+    const parsed = schema.safeParse(args);
+    if (!parsed.success) continue;
+    const params = spec.transform(toolArgsToAttrs(parsed.data as Record<string, unknown>));
+    if (!params) continue;
+    out.push(toolCallFromParams(spec, params, matterSlug, call.id));
+  }
+  return out;
+}
+
+/**
+ * Which detection applies to an answer: structured calls when the engine
+ * confirmed native tool use (any `[TOOL:…]` text in the answer is then just
+ * prose or a quote, never an action), else the marker regex — also for an
+ * older engine that says nothing.
+ */
+export function resolveToolCalls(
+  result: { answer: string; tools_supported?: boolean; tool_calls?: QueryToolCall[] },
+  context: ToolDetectionContext
+): ToolCall[] {
+  if (result.tools_supported === true) {
+    return detectNativeToolCalls(result.tool_calls ?? [], context);
+  }
+  return detectToolCalls(result.answer, context);
 }
 
 // Execute a single tool call (used for both immediate and confirmed execution)
@@ -630,12 +695,13 @@ async function executeToolCall(
   }
 }
 
-// Detect tools and run the auto-execute allowlist immediately; everything else stays pending
+// Detect tools (native calls or markers) and run the auto-execute allowlist
+// immediately; everything else stays pending
 async function detectAndExecuteTools(
-  answer: string,
-  context: { type: ChatContextType; caseSlug?: string; pageSlug?: string }
+  result: { answer: string; tools_supported?: boolean; tool_calls?: QueryToolCall[] },
+  context: ToolDetectionContext
 ): Promise<ToolCall[]> {
-  const allCalls = detectToolCalls(answer, context);
+  const allCalls = resolveToolCalls(result, context);
 
   // Execute allowlisted read-only tools immediately, leave the rest pending
   const results = await Promise.all(
@@ -930,6 +996,24 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       preferredLanguage: (user.locale as "de" | "en" | undefined) ?? (lang === "en" ? "en" : "de"),
     };
   }, [meQuery.data?.user, lang]);
+
+  // Native tool use: the tool definitions for this person and context, gated
+  // the same way the tools route gates execution (role, open matter). Sent
+  // with the request so the model calls tools structurally instead of writing
+  // markers; the engine falls back to the marker prompt for models without
+  // tool use and says so in the stream.
+  const copilotToolsFor = useCallback(
+    (caseSlug: string | undefined) => {
+      const role = (meQuery.data?.user?.role as string | undefined) ?? "";
+      const condCtx: ToolConditionContext = {
+        role,
+        hasCaseContext: !!caseSlug,
+        features: { deepAnalysis: true, caseInvestigation: true, precedentSearch: true },
+      };
+      return copilotToolDefinitions(condCtx);
+    },
+    [meQuery.data?.user?.role]
+  );
 
   // State
   const [messages, setMessagesState] = useState<ChatMessage[]>([]);
@@ -1313,32 +1397,36 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const historyForPrompt = messagesRef.current
         .slice(0, -2)
         .filter((m) => !m.error && m.content.trim().length > 0);
-      const { systemPrompt, userInput, conversationContext } = await buildPromptContext({
-        jurisdiction,
-        selectedCaseSlug,
-        cases,
-        contextType: context.type,
-        contextCaseSlug: context.caseSlug,
-        pageSlug: context.pageSlug,
-        pageLabel: context.pageLabel,
-        attachments,
-        replyTo,
-        selection,
-        userText: text,
-        attachmentFetcher: async (slug) => {
-          const page = await api.brain.getPage(slug);
-          return page.content || "";
-        },
-        userContext,
-        conversationHistory: historyForPrompt,
-        matterVitals,
-        memoryContext: await buildFullMemoryContext({
-          sessionId: activeSessionId,
-          caseSlug: context.caseSlug,
-          query: text,
-          userId: meQuery.data?.user?.id as string | undefined,
-        }).catch(() => ""),
-      });
+      const activeCaseSlug = selectedCaseSlug || context.caseSlug || undefined;
+      const copilotTools = copilotToolsFor(activeCaseSlug);
+      const { systemPrompt, userInput, conversationContext, toolFallbackInstructions } =
+        await buildPromptContext({
+          jurisdiction,
+          selectedCaseSlug,
+          cases,
+          contextType: context.type,
+          contextCaseSlug: context.caseSlug,
+          pageSlug: context.pageSlug,
+          pageLabel: context.pageLabel,
+          attachments,
+          replyTo,
+          selection,
+          userText: text,
+          attachmentFetcher: async (slug) => {
+            const page = await api.brain.getPage(slug);
+            return page.content || "";
+          },
+          userContext,
+          conversationHistory: historyForPrompt,
+          matterVitals,
+          memoryContext: await buildFullMemoryContext({
+            sessionId: activeSessionId,
+            caseSlug: context.caseSlug,
+            query: text,
+            userId: meQuery.data?.user?.id as string | undefined,
+          }).catch(() => ""),
+          nativeTools: copilotTools.length > 0,
+        });
       // Persona/tool docs travel as system-prompt instructions; only the
       // (delimited) user input is the query the engine retrieves and routes on.
       const prompt = buildSafePrompt("", userInput).trim();
@@ -1355,8 +1443,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           context: conversationContext,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
-          caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+          caseSlug: activeCaseSlug,
           ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
+          ...(copilotTools.length > 0 ? { tools: copilotTools, toolFallbackInstructions } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -1368,7 +1457,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
           lang === "en" ? "en" : "de"
         );
-        if (!cleanAnswer) {
+        // A model may answer an action request with tool calls alone — that
+        // is an answer, the tool cards carry it.
+        const hasNativeCalls = result.tools_supported === true && !!result.tool_calls?.length;
+        if (!cleanAnswer && !hasNativeCalls) {
           // Empty response from engine — show fallback message
           const emptyMsg: ChatMessage = {
             ...assistantMsg,
@@ -1443,8 +1535,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           });
 
         // ── Copilot Tool Detection ──
-        // Detect tool-use intent from the AI response and execute tools
-        const toolCalls = await detectAndExecuteTools(result.answer, {
+        // Structured calls from native tool use, or markers in the answer
+        // text for models without it — same execution and confirmation path.
+        const toolCalls = await detectAndExecuteTools(result, {
           type: context.type,
           caseSlug: selectedCaseSlug || context.caseSlug,
           pageSlug: context.pageSlug,
@@ -1599,6 +1692,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       groundAnswer,
       lang,
       meQuery.data?.demo,
+      copilotToolsFor,
     ]
   );
 
@@ -2037,10 +2131,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       const regenHistory = currentMsgs
         .slice(0, idx - 1 >= 0 ? idx - 1 : 0)
         .filter((m) => !m.error && m.content.trim().length > 0);
+      const regenCaseSlug = selectedCaseSlug || context.caseSlug || undefined;
+      const regenTools = copilotToolsFor(regenCaseSlug);
       const {
         systemPrompt: regenSystemPrompt,
         userInput: regenUserInput,
         conversationContext: regenContext,
+        toolFallbackInstructions: regenToolFallback,
       } = await buildPromptContext({
         jurisdiction,
         selectedCaseSlug,
@@ -2064,6 +2161,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           query: userMsg.content,
           userId: meQuery.data?.user?.id as string | undefined,
         }).catch(() => ""),
+        nativeTools: regenTools.length > 0,
       });
       const prompt = buildSafePrompt("", regenUserInput).trim();
 
@@ -2078,8 +2176,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           context: regenContext,
           mode: queryModeToThinkMode(queryMode),
           queryMode,
-          caseSlug: selectedCaseSlug || context.caseSlug || undefined,
+          caseSlug: regenCaseSlug,
           ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
+          ...(regenTools.length > 0
+            ? { tools: regenTools, toolFallbackInstructions: regenToolFallback }
+            : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
             toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
@@ -2090,7 +2191,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           result.answer.replace(/\[TOOL:[^\]]+\]/gi, "").trim(),
           lang === "en" ? "en" : "de"
         );
-        if (!cleanRegenAnswer) {
+        const hasNativeRegenCalls = result.tools_supported === true && !!result.tool_calls?.length;
+        if (!cleanRegenAnswer && !hasNativeRegenCalls) {
           const emptyMsg: ChatMessage = {
             ...assistantMsg,
             content: "[Keine Antwort erhalten — bitte erneut versuchen]",
@@ -2162,7 +2264,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           });
 
         // ── Copilot Tool Detection (regenerate path) ──
-        const toolCalls = await detectAndExecuteTools(result.answer, {
+        const toolCalls = await detectAndExecuteTools(result, {
           type: context.type,
           caseSlug: selectedCaseSlug || context.caseSlug,
           pageSlug: context.pageSlug,
@@ -2231,6 +2333,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       userContext,
       groundAnswer,
       lang,
+      copilotToolsFor,
     ]
   );
 

@@ -14,6 +14,11 @@ import { interceptGuardrailStream } from "@/lib/guardrail-stream-interceptor";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 import { resolveModelChoice } from "@/lib/model-choice";
+import {
+  COPILOT_TOOL_NAME_PATTERN,
+  MAX_TOOLS_PER_REQUEST,
+  MAX_TOOL_DESCRIPTION_CHARS,
+} from "@/lib/copilot-tool-schemas";
 import { euOnlyRefusalResponse, isEuOnlyRefusal, ModelPolicyError } from "@/lib/eu-policy-refusal";
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -38,6 +43,24 @@ const thinkSchema = z.object({
   case_slug: z.string().optional(),
   /** The user's model pick from the chat (catalogue id); clamped by the firm's chat floor. */
   model: z.string().max(100).optional(),
+  /**
+   * Native tool use: the Copilot's tool definitions (lib/copilot-tool-schemas).
+   * The engine hands them to the model and streams structured `tool_call`
+   * events back; execution stays here in the web app (session, CSRF,
+   * confirmation). Names and description lengths mirror the engine's guard.
+   */
+  tools: z
+    .array(
+      z.object({
+        name: z.string().regex(COPILOT_TOOL_NAME_PATTERN),
+        description: z.string().max(MAX_TOOL_DESCRIPTION_CHARS),
+        inputSchema: z.record(z.unknown()),
+      })
+    )
+    .max(MAX_TOOLS_PER_REQUEST)
+    .optional(),
+  /** `[TOOL:…]` marker syntax for models without tool use (engine appends it, else drops it). */
+  tool_fallback_instructions: z.string().max(20_000).optional(),
 });
 
 /**
@@ -158,6 +181,12 @@ export const POST = createHandler(
         case_slug: safeBody.case_slug,
         query_mode: body.query_mode,
         ...(model ? { model } : {}),
+        // Tool definitions are data for the model; the engine re-validates
+        // names/lengths and never runs a tool itself.
+        ...(safeBody.tools && safeBody.tools.length > 0 ? { tools: safeBody.tools } : {}),
+        ...(safeBody.tool_fallback_instructions
+          ? { tool_fallback_instructions: safeBody.tool_fallback_instructions }
+          : {}),
       };
 
       const caseScopedHeaders = await engineHeadersWithCaseJurisdiction(
