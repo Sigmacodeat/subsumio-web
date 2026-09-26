@@ -232,7 +232,17 @@ export function NormReaderPanel() {
       {/* Status strip */}
       {norm && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-[color:var(--ds-border)] px-5 py-2.5 text-[11px]">
-          {norm.text ? (
+          {norm.repealed ? (
+            <span
+              data-testid="norm-repealed"
+              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-0.5 font-medium text-[color:var(--ds-danger-text)]"
+            >
+              Nicht mehr in Kraft
+              {formatDate(norm.repealed_since ?? null)
+                ? ` (seit ${formatDate(norm.repealed_since ?? null)})`
+                : ""}
+            </span>
+          ) : norm.text ? (
             <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-2 py-0.5 font-medium text-[color:var(--ds-success-text)]">
               <ShieldCheck size={11} aria-hidden="true" />
               Im Rechtskorpus verifiziert

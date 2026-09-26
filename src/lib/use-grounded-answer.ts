@@ -2,7 +2,11 @@
 
 import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
-import { mergeSupport, type GroundingMetadata } from "@/lib/citation-gate-client";
+import {
+  failedGroundingMetadata,
+  mergeSupport,
+  type GroundingMetadata,
+} from "@/lib/citation-gate-client";
 
 interface UseGroundedAnswerState {
   grounding: GroundingMetadata | null;
@@ -72,7 +76,14 @@ export function useGroundedAnswer(): UseGroundedAnswerResult {
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Grounding failed";
         if (mine === seq.current) {
-          setState((s) => ({ ...s, isGrounding: false, groundingError: msg }));
+          // Every screen passes `grounding` to the CitationPanel: a failed
+          // check shows there as "not checked" with a warning.
+          setState((s) => ({
+            ...s,
+            grounding: failedGroundingMetadata(),
+            isGrounding: false,
+            groundingError: msg,
+          }));
         }
         return null;
       }

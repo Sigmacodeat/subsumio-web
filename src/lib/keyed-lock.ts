@@ -117,3 +117,44 @@ export async function withKeyedLock<T>(key: string, fn: () => Promise<T>): Promi
     if (localQueues.get(key) === run) localQueues.delete(key);
   }
 }
+
+const localBusy = new Set<string>();
+
+/**
+ * Run `fn` only if nobody else holds `key` right now — never waits. For
+ * periodic jobs: an overlapping run skips instead of doing the same work
+ * twice. `{ ran: false }` means another run holds the lock. Uses the same
+ * dedicated lock pool as `withKeyedLock`, so it cannot exhaust the app pool.
+ */
+export async function tryWithKeyedLock<T>(
+  key: string,
+  fn: () => Promise<T>
+): Promise<{ ran: true; value: T } | { ran: false }> {
+  const shared = getSharedPgPool();
+  if (shared) {
+    const client = await lockPool(shared).connect();
+    try {
+      const { rows } = await client.query<{ locked: boolean }>(
+        "SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked",
+        [key]
+      );
+      if (!rows[0]?.locked) return { ran: false };
+      try {
+        return { ran: true, value: await fn() };
+      } finally {
+        await client
+          .query("SELECT pg_advisory_unlock(hashtextextended($1, 0))", [key])
+          .catch(() => {});
+      }
+    } finally {
+      client.release();
+    }
+  }
+  if (localBusy.has(key) || localQueues.has(key)) return { ran: false };
+  localBusy.add(key);
+  try {
+    return { ran: true, value: await fn() };
+  } finally {
+    localBusy.delete(key);
+  }
+}

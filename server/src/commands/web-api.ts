@@ -92,8 +92,12 @@ import { FILE_MIME_TYPES } from "../core/file-store.ts";
 import { uploadConcurrencyGuard } from "../core/upload-guard.ts";
 import { sharedReadSourcesFromEnv } from "../core/shared-read-sources.ts";
 import { pipeline } from "stream/promises";
+import { claimPendingUpload, releasePendingUpload } from "../core/upload-confirm-claim.ts";
+import { withOcrOwner } from "../core/ocr-budget.ts";
 import {
+  confirmPipelinePlan,
   legalPipelineIdempotencyKey,
+  presignPipelineRouting,
   shouldAutoTriggerUploadPipeline,
   uploadPipelineCaseSlug,
 } from "../core/upload-pipeline-routing.ts";
@@ -1088,11 +1092,14 @@ export async function runExtractionAndImport(
     userId,
   } = params;
 
-  const markdown = await buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
-    depth: 0,
-    budget: { entries: 0, expandedBytes: 0 },
-    password,
-  });
+  // OCR pages count against the firm's daily budget (ocr-budget.ts).
+  const markdown = await withOcrOwner(tenantSource, () =>
+    buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
+      depth: 0,
+      budget: { entries: 0, expandedBytes: 0 },
+      password,
+    })
+  );
 
   const { partSlugs } = await splitAndImportLargeDocument(
     engine,
@@ -6550,6 +6557,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     title?: string;
     tags?: string[];
     password?: string;
+    /** Upload source (documents, wiki …) — only legal sources start the legal pipeline. */
+    uploadSource: string;
+    /** Bulk matter import: no per-document pipeline or post-upload tasks. */
+    deferPipeline: boolean;
+    /** A confirm is running for this token (see upload-confirm-claim.ts). */
+    confirming?: boolean;
     createdAt: number;
     expiresAt: number;
   }
@@ -6618,10 +6631,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // With a signed upload token the matter is the token's (checked by
         // the web app when it issued the token); otherwise the body's.
         const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const tokenPayload = rawUploadToken ? verifyUploadToken(rawUploadToken) : null;
         const caseBinding = bindPresignCaseSlug({
           tokenPresent: rawUploadToken.length > 0,
-          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          payload: tokenPayload,
           bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        const { source: uploadSource, deferPipeline } = presignPipelineRouting({
+          payload: tokenPayload,
+          bodySource: body.source,
+          bodyDefer: body.defer_pipeline,
         });
         if (!caseBinding.ok) {
           apiError(res, caseBinding.status, caseBinding.error);
@@ -6697,6 +6716,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             title,
             tags: tagList,
             password,
+            uploadSource,
+            deferPipeline,
             createdAt: Date.now(),
             expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
           });
@@ -6738,6 +6759,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           title,
           tags: tagList,
           password,
+          uploadSource,
+          deferPipeline,
           createdAt: Date.now(),
           expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
         });
@@ -7131,6 +7154,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
       // Temp file cleanup helper — declared before try so catch can use it
       let _cleanupTemp: (() => void) | null = null;
+      // The upload this request claimed; released unless the confirm finished.
+      let claimed: PendingUpload | null = null;
 
       try {
         const body = req.body as Record<string, unknown>;
@@ -7152,6 +7177,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         const opCtx = ctx(req);
+        const confirmPlan = confirmPipelinePlan({
+          source: pending.uploadSource,
+          deferPipeline: pending.deferPipeline,
+        });
         if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
           if (wantsSse) {
             sseSend("error", { error: "token_tenant_mismatch" });
@@ -7161,6 +7190,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           apiError(res, 403, "token_tenant_mismatch");
           return;
         }
+
+        // One confirm per token at a time — a parallel or repeated confirm
+        // would store and process the same file twice.
+        if (!claimPendingUpload(pending)) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "confirm_in_progress",
+              message: "Diese Datei wird bereits verarbeitet.",
+            });
+            res.end();
+            return;
+          }
+          apiError(res, 409, "confirm_in_progress");
+          return;
+        }
+        claimed = pending;
 
         const billingOwnerId = String(req.headers["x-subsumio-owner-id"] ?? "").trim();
         const billingOwnerTypeHeader = String(req.headers["x-subsumio-owner-type"] ?? "");
@@ -7538,6 +7583,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               no_embed: noEmbed,
               password: pending.password,
               upload_frontmatter: uploadFrontmatter,
+              auto_trigger_legal_pipeline: confirmPlan.autoTriggerLegalPipeline,
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
               ...(billingOwnerId && billingOwnerType
@@ -7575,6 +7621,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ownerId: billingOwnerId || undefined,
             ownerType: billingOwnerType,
             userId: billingUserId || undefined,
+            autoTriggerLegalPipeline: confirmPlan.autoTriggerLegalPipeline,
           });
           partSlugs = result.partSlugs;
           if (result.stamp_failures) stampFailures = result.stamp_failures;
@@ -7593,15 +7640,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // confirm proxy can fire its own side effects. Pre-fix, the web app
         // was the sole responsible party — a dropped stream meant no
         // analysis_status stamp and no post-upload tasks.
+        // A deferred upload (bulk matter import) gets no per-document tasks:
+        // the import's single case-level pipeline analyses it.
         try {
-          await persistEnginePostUploadTasks(engine, pending.sourceId, {
-            doc_slug: versionedSlug,
-            case_slug: pending.caseSlug,
-            brain_id: pending.sourceId,
-            doc_title: page?.title ?? pending.title ?? pending.filename,
-            doc_size: pending.expectedSize,
-            uploaded_at: new Date().toISOString(),
-          });
+          if (confirmPlan.persistPostUploadTasks) {
+            await persistEnginePostUploadTasks(engine, pending.sourceId, {
+              doc_slug: versionedSlug,
+              case_slug: pending.caseSlug,
+              brain_id: pending.sourceId,
+              doc_title: page?.title ?? pending.title ?? pending.filename,
+              doc_size: pending.expectedSize,
+              uploaded_at: new Date().toISOString(),
+            });
+          }
         } catch (postUploadErr) {
           console.error(
             `[upload-confirm] engine-side post-upload task persist failed for ${versionedSlug}: ` +
@@ -7615,6 +7666,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           // The matter bound at presign time — the web proxy files the
           // document there instead of trusting the confirm body.
           ...(pending.caseSlug ? { case_slug: pending.caseSlug } : {}),
+          // Tells the web proxy not to queue per-document analysis.
+          ...(confirmPlan.pipelineDeferred ? { pipeline_deferred: true } : {}),
           original_persisted: true,
           async: asyncExtract,
           extraction_status: page?.frontmatter?.extraction_status,
@@ -7678,6 +7731,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           sseSend("error", { error: "confirm_failed", message: msg });
           res.end();
         } else res.status(500).json({ error: "confirm_failed", message: msg });
+      } finally {
+        // A finished confirm deleted the token; an unfinished one gives it
+        // back so the user can retry.
+        if (claimed) releasePendingUpload(claimed);
       }
     }
   );
@@ -7717,10 +7774,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // With a signed upload token the matter is the token's (checked by
         // the web app when it issued the token); otherwise the body's.
         const rawUploadToken = String(req.headers["x-upload-token"] ?? "");
+        const tokenPayload = rawUploadToken ? verifyUploadToken(rawUploadToken) : null;
         const caseBinding = bindPresignCaseSlug({
           tokenPresent: rawUploadToken.length > 0,
-          payload: rawUploadToken ? verifyUploadToken(rawUploadToken) : null,
+          payload: tokenPayload,
           bodyCaseSlug: body.case_slug ? String(body.case_slug) : undefined,
+        });
+        const { source: uploadSource, deferPipeline } = presignPipelineRouting({
+          payload: tokenPayload,
+          bodySource: body.source,
+          bodyDefer: body.defer_pipeline,
         });
         if (!caseBinding.ok) {
           apiError(res, caseBinding.status, caseBinding.error);
@@ -7808,6 +7871,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             title,
             tags: tagList,
             password,
+            uploadSource,
+            deferPipeline,
             createdAt: Date.now(),
             expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
           });
@@ -10161,7 +10226,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             ...agentMatterStamp(req),
             ...jobOwnerStamp(req.userId),
           } as Record<string, unknown>,
-          { timeout_ms: 300_000, max_attempts: 1 }
+          // RIS lookups run at the RIS pace (2 s apart): a firm with many
+          // open matters needs longer than the former 5 minutes.
+          { timeout_ms: 30 * 60_000, max_attempts: 1 }
         );
         res.json({ success: true, job_id: job.id, status: "queued" });
       } catch (e) {

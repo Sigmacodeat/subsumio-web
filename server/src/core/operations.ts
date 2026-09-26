@@ -770,6 +770,54 @@ export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolea
  * Returns the input array unchanged when aclGroups is undefined/"all"; an
  * empty group list keeps open pages only.
  */
+/**
+ * How many hits to rank before the matter-scope and ACL filters. Those filters
+ * run after ranking: for a restricted user (matter access, ethical wall,
+ * document ACL) the firm-wide top-N could hold none of their own documents
+ * even though matching ones exist. Over-fetch, filter, then cut to `limit`.
+ * Unrestricted callers fetch exactly `limit`.
+ */
+export const POST_FILTER_OVERFETCH = 5;
+export const POST_FILTER_FETCH_CAP = 250;
+
+export function postFilterFetchLimit(
+  ctx: Pick<OperationContext, "matterScope" | "aclGroups">,
+  limit: number
+): number {
+  const scoped = Array.isArray(ctx.matterScope);
+  const acl = Array.isArray(ctx.aclGroups) && ctx.aclGroups.length > 0;
+  if (!scoped && !acl) return limit;
+  return Math.max(limit, Math.min(limit * POST_FILTER_OVERFETCH, POST_FILTER_FETCH_CAP));
+}
+
+/**
+ * Rank, filter, and — for a restricted caller whose filtered page came out
+ * short — rank deeper (×4 up to the cap) until `limit` hits survive or the
+ * ranking is exhausted. Returns the last raw ranking and the kept hits.
+ */
+export async function fetchUntilFilled<T>(
+  ctx: Pick<OperationContext, "matterScope" | "aclGroups">,
+  limit: number,
+  fetchRanked: (n: number) => Promise<T[]>,
+  filter: (rows: T[]) => Promise<T[]>
+): Promise<{ raw: T[]; kept: T[] }> {
+  let n = postFilterFetchLimit(ctx, limit);
+  const restricted = n !== limit;
+  // Ranked lists shrink through dedup, so "fewer than n" does not mean the
+  // ranking is exhausted — only "no more hits than last time" does.
+  let previous = -1;
+  for (;;) {
+    const raw = await fetchRanked(n);
+    const kept = await filter(raw);
+    const exhausted = raw.length === 0 || raw.length <= previous;
+    if (!restricted || kept.length >= limit || exhausted || n >= POST_FILTER_FETCH_CAP) {
+      return { raw, kept: kept.slice(0, limit) };
+    }
+    previous = raw.length;
+    n = Math.min(n * 4, POST_FILTER_FETCH_CAP);
+  }
+}
+
 export async function aclFilter<T extends { page_id?: number }>(
   results: T[],
   ctx: OperationContext
@@ -2409,29 +2457,35 @@ const search: Operation = {
       // The keyword-only escape hatch bypasses hybridSearch (which folds
       // jurisdiction into the exclude set), so fold it in explicitly here or
       // this path would leak foreign statutes.
-      const raw = await ctx.engine.searchKeyword(queryText, {
+      const { raw, kept: finalResults } = await fetchUntilFilled(
+        ctx,
         limit,
-        offset,
-        ...scope,
-        exclude_slug_prefixes: foreignStatutePrefixes(jurisdiction || undefined),
-      });
+        (n) =>
+          ctx.engine.searchKeyword(queryText, {
+            limit: n,
+            offset,
+            ...scope,
+            exclude_slug_prefixes: foreignStatutePrefixes(jurisdiction || undefined),
+          }),
+        // Subsumio WP4 hard source filter → P0-SECR-002 matter scope → R3
+        // ACLs, then dedup: diversity caps applied before the filters dropped
+        // a restricted user's own documents behind other matters' hits.
+        async (rows) =>
+          dedupResults(
+            await aclFilter(await matterScopeFilterResolved(hardSourceFilter(rows, ctx), ctx), ctx)
+          )
+      );
       const results = dedupResults(raw);
-      stampEvidenceSafe(results);
+      stampEvidenceSafe(finalResults);
       // #1699: the keyword-only opt-out must STILL surface the content_flag
       // agent-warning channel (hybridSearch stamps it; this branch bypasses
       // hybridSearch, so stamp explicitly). Fail-open inside the helper.
-      await stampContentFlags(ctx.engine, results);
+      await stampContentFlags(ctx.engine, finalResults);
       bumpLastRetrievedAt(
         ctx.engine,
         results.map((r) => r.page_id)
       );
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
-      // Subsumio WP4: Defense-in-depth hard source filter
-      const sourceFiltered = hardSourceFilter(results, ctx);
-      // Subsumio P0-SECR-002: Filter by verified matter scope
-      const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
-      // Subsumio R3: Filter by document-level ACLs
-      const finalResults = await aclFilter(scoped, ctx);
       if (wantRefine) {
         return {
           results: finalResults,
@@ -2449,32 +2503,34 @@ const search: Operation = {
     // Cheap-hybrid (D4/D15): full vector+keyword+RRF+pool+title+alias, but
     // expansion OFF (no per-call LLM cost). `query` op is the full-control variant.
     let capturedMeta: HybridSearchMeta | null = null;
-    const results = await hybridSearchCached(ctx.engine, queryText, {
+    const { raw: results, kept: finalResults } = await fetchUntilFilled(
+      ctx,
       limit,
-      offset,
-      expansion: false,
-      ...scope,
-      ...(perCallMode ? { mode: perCallMode } : {}),
-      // Hard jurisdiction isolation: foreign-jurisdiction statutes are
-      // hard-excluded when a jurisdiction is resolved (param or config default).
-      jurisdiction: jurisdiction || undefined,
-      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
-      onMeta: (m) => {
-        capturedMeta = m;
-      },
-    });
+      (n) =>
+        hybridSearchCached(ctx.engine, queryText, {
+          limit: n,
+          offset,
+          expansion: false,
+          ...scope,
+          ...(perCallMode ? { mode: perCallMode } : {}),
+          // Hard jurisdiction isolation: foreign-jurisdiction statutes are
+          // hard-excluded when a jurisdiction is resolved (param or config default).
+          jurisdiction: jurisdiction || undefined,
+          asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
+          onMeta: (m) => {
+            capturedMeta = m;
+          },
+        }),
+      // Subsumio WP4 hard source filter → P0-SECR-002 matter scope → R3 ACLs.
+      async (rows) =>
+        aclFilter(await matterScopeFilterResolved(hardSourceFilter(rows, ctx), ctx), ctx)
+    );
     const latency_ms = Date.now() - startedAt;
     bumpLastRetrievedAt(
       ctx.engine,
       results.map((r) => r.page_id)
     );
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
-    // Subsumio WP4: Defense-in-depth hard source filter
-    const sourceFiltered = hardSourceFilter(results, ctx);
-    // Subsumio P0-SECR-002: Filter by verified matter scope
-    const scoped = await matterScopeFilterResolved(sourceFiltered, ctx);
-    // Subsumio R3: Filter by document-level ACLs
-    const finalResults = await aclFilter(scoped, ctx);
     if (wantRefine) {
       return {
         results: finalResults,
@@ -2717,77 +2773,89 @@ const query: Operation = {
     // v0.32.x search-lite: route the query op through hybridSearchCached so
     // semantic cache + token budget + intent weighting fire automatically.
     // Plain hybridSearch remains the bare API for callers that opt out.
-    const results = await hybridSearchCached(ctx.engine, queryText, {
-      limit: (p.limit as number) || 20,
-      offset: (p.offset as number) || 0,
-      expansion: expand,
-      jurisdiction: jurisdiction || undefined,
-      asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
-      expandFn: expand ? expandQuery : undefined,
-      // T4/D5 — per-call mode (local/trusted only; remote ignored).
-      ...((): { mode?: string } => {
-        const m = resolvePerCallMode(ctx, p.mode);
-        return m ? { mode: m } : {};
-      })(),
-      detail,
-      language: (p.lang as string) || undefined,
-      symbolKind: (p.symbol_kind as string) || undefined,
-      nearSymbol: (p.near_symbol as string) || undefined,
-      walkDepth: typeof p.walk_depth === "number" ? (p.walk_depth as number) : undefined,
-      ...querySourceScope,
-      // v0.29.1 — agent-explicit recency + salience. Omitted = heuristic defaults.
-      salience: p.salience as "off" | "on" | "strong" | undefined,
-      recency: p.recency as "off" | "on" | "strong" | undefined,
-      since: typeof p.since === "string" ? p.since : undefined,
-      until: typeof p.until === "string" ? p.until : undefined,
-      // v0.32.x search-lite: token budget + cache opt-outs.
-      tokenBudget: typeof p.token_budget === "number" ? (p.token_budget as number) : undefined,
-      useCache: typeof p.use_cache === "boolean" ? (p.use_cache as boolean) : undefined,
-      intentWeighting:
-        typeof p.intent_weighting === "boolean" ? (p.intent_weighting as boolean) : undefined,
-      // v0.36 cross-modal routing param.
-      crossModal: p.cross_modal as "text" | "image" | "both" | "auto" | undefined,
-      onMeta: (m) => {
-        capturedMeta = m;
-      },
-      // v0.36 (D15): per-call embedding column override. Resolver rejects
-      // unknown names at hybrid entry with EmbeddingColumnNotRegisteredError;
-      // the error surfaces back to the agent as the op error envelope.
-      // Source scope is already threaded via ...querySourceScope above
-      // (master's #1182 cleanup of the duplicate sourceScopeOpts spread).
-      embeddingColumn: embeddingColumnParam,
-      // v0.41.33 — agent-explicit adaptive return-sizing. Omitted = off
-      // (config default applies). hybridSearchCached skips the cache when on.
-      adaptiveReturn:
-        typeof p.adaptive_return === "boolean" ? (p.adaptive_return as boolean) : undefined,
-      // v0.42.3.0 — autocut ceiling override. Omitted = smart default (ON in
-      // reranked modes). `false` forces the full top-K.
-      autocut: typeof p.autocut === "boolean" ? (p.autocut as boolean) : undefined,
-      // v0.43 — relational recall override. Omitted = smart default (mode bundle).
-      relationalRetrieval:
-        typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
-      // v0.46 — LLM re-ranker for paragraph-level precision. When enabled,
-      // sends query + chunk snippets to an LLM (default: DeepSeek via
-      // OpenRouter) and re-orders by LLM-judged relevance. Eval showed
-      // para Hit@1 from 29% → 79% for natural questions.
-      // Fail-open: any error returns pre-LLM-rerank order.
-      llmRerank:
-        typeof p.llm_rerank === "boolean"
-          ? {
-              enabled: p.llm_rerank as boolean,
-              model:
-                typeof p.llm_rerank_model === "string" ? (p.llm_rerank_model as string) : undefined,
-              topNIn:
-                typeof p.llm_rerank_top_n_in === "number"
-                  ? (p.llm_rerank_top_n_in as number)
-                  : undefined,
-              timeoutMs:
-                typeof p.llm_rerank_timeout_ms === "number"
-                  ? (p.llm_rerank_timeout_ms as number)
-                  : undefined,
-            }
-          : undefined,
-    });
+    const queryLimit = (p.limit as number) || 20;
+    const { raw: results, kept: queryKept } = await fetchUntilFilled(
+      ctx,
+      queryLimit,
+      (n) =>
+        hybridSearchCached(ctx.engine, queryText, {
+          limit: n,
+          offset: (p.offset as number) || 0,
+          expansion: expand,
+          jurisdiction: jurisdiction || undefined,
+          asOfDate: typeof p.as_of === "string" ? p.as_of : undefined,
+          expandFn: expand ? expandQuery : undefined,
+          // T4/D5 — per-call mode (local/trusted only; remote ignored).
+          ...((): { mode?: string } => {
+            const m = resolvePerCallMode(ctx, p.mode);
+            return m ? { mode: m } : {};
+          })(),
+          detail,
+          language: (p.lang as string) || undefined,
+          symbolKind: (p.symbol_kind as string) || undefined,
+          nearSymbol: (p.near_symbol as string) || undefined,
+          walkDepth: typeof p.walk_depth === "number" ? (p.walk_depth as number) : undefined,
+          ...querySourceScope,
+          // v0.29.1 — agent-explicit recency + salience. Omitted = heuristic defaults.
+          salience: p.salience as "off" | "on" | "strong" | undefined,
+          recency: p.recency as "off" | "on" | "strong" | undefined,
+          since: typeof p.since === "string" ? p.since : undefined,
+          until: typeof p.until === "string" ? p.until : undefined,
+          // v0.32.x search-lite: token budget + cache opt-outs.
+          tokenBudget: typeof p.token_budget === "number" ? (p.token_budget as number) : undefined,
+          useCache: typeof p.use_cache === "boolean" ? (p.use_cache as boolean) : undefined,
+          intentWeighting:
+            typeof p.intent_weighting === "boolean" ? (p.intent_weighting as boolean) : undefined,
+          // v0.36 cross-modal routing param.
+          crossModal: p.cross_modal as "text" | "image" | "both" | "auto" | undefined,
+          onMeta: (m) => {
+            capturedMeta = m;
+          },
+          // v0.36 (D15): per-call embedding column override. Resolver rejects
+          // unknown names at hybrid entry with EmbeddingColumnNotRegisteredError;
+          // the error surfaces back to the agent as the op error envelope.
+          // Source scope is already threaded via ...querySourceScope above
+          // (master's #1182 cleanup of the duplicate sourceScopeOpts spread).
+          embeddingColumn: embeddingColumnParam,
+          // v0.41.33 — agent-explicit adaptive return-sizing. Omitted = off
+          // (config default applies). hybridSearchCached skips the cache when on.
+          adaptiveReturn:
+            typeof p.adaptive_return === "boolean" ? (p.adaptive_return as boolean) : undefined,
+          // v0.42.3.0 — autocut ceiling override. Omitted = smart default (ON in
+          // reranked modes). `false` forces the full top-K.
+          autocut: typeof p.autocut === "boolean" ? (p.autocut as boolean) : undefined,
+          // v0.43 — relational recall override. Omitted = smart default (mode bundle).
+          relationalRetrieval:
+            typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
+          // v0.46 — LLM re-ranker for paragraph-level precision. When enabled,
+          // sends query + chunk snippets to an LLM (default: DeepSeek via
+          // OpenRouter) and re-orders by LLM-judged relevance. Eval showed
+          // para Hit@1 from 29% → 79% for natural questions.
+          // Fail-open: any error returns pre-LLM-rerank order.
+          llmRerank:
+            typeof p.llm_rerank === "boolean"
+              ? {
+                  enabled: p.llm_rerank as boolean,
+                  model:
+                    typeof p.llm_rerank_model === "string"
+                      ? (p.llm_rerank_model as string)
+                      : undefined,
+                  topNIn:
+                    typeof p.llm_rerank_top_n_in === "number"
+                      ? (p.llm_rerank_top_n_in as number)
+                      : undefined,
+                  timeoutMs:
+                    typeof p.llm_rerank_timeout_ms === "number"
+                      ? (p.llm_rerank_timeout_ms as number)
+                      : undefined,
+                }
+              : undefined,
+        }),
+      // Subsumio WP4 hard source filter (with the scope the search actually
+      // ran with — a per-call source_id may differ from ctx.sourceId) →
+      // P0-SECR-002 matter scope.
+      async (rows) => matterScopeFilterResolved(hardSourceFilter(rows, ctx, querySourceScope), ctx)
+    );
     const latency_ms = Date.now() - startedAt;
 
     // v0.37.0 (D11): op-layer last_retrieved_at write-back. Same shape as the
@@ -2825,12 +2893,8 @@ const query: Operation = {
       );
     }
 
-    // Subsumio WP4: Defense-in-depth hard source filter. Pass the scope the
-    // search actually ran with (querySourceScope) — it can legitimately
-    // differ from ctx.sourceId when the caller passed a per-call source_id.
-    const sourceFiltered = hardSourceFilter(results, ctx, querySourceScope);
-    // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilterResolved(sourceFiltered, ctx);
+    // Source + matter-scope filtered above (fetchUntilFilled).
+    return queryKept;
   },
   scope: "read",
   cliHints: { name: "query", positional: ["query"] },

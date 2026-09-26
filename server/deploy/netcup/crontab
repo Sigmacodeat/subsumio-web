@@ -123,7 +123,7 @@
 # ── Every 2 minutes — Post-upload task drain ──
 # Drains the persistent post_upload_task outbox: analysis, contradiction probe,
 # case reconciliation. Tasks survive container restarts; retried with backoff.
-*/2 * * * *    sh /etc/cronjob.sh post-upload-drain /api/cron/post-upload-drain
+*/2 * * * *    sh /etc/cronjob.sh post-upload-drain /api/cron/post-upload-drain --max-time 310
 
 # ── Every 10 minutes — Upload reconcile sweeper ──
 # Safety net for the upload chain: finds extraction-ready documents whose

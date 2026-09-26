@@ -18,6 +18,7 @@ import {
 async function wipeOfflineDataOfOtherUser(userId: string | undefined): Promise<void> {
   if (userId && offlineOwnerDiffersFromUser(userId)) await clearOfflineData();
 }
+import { clearAllUploadSessions } from "@/lib/upload-session-store";
 
 export interface LoginInput {
   email: string;
@@ -118,6 +119,8 @@ export function useLogout() {
       await clearOfflineData();
       tracking.auth.logout();
       resetUser();
+      // Resumable-upload state of this user must not outlive the session.
+      void clearAllUploadSessions();
       qc.removeQueries({ queryKey: ["auth", "me"] });
       qc.clear();
       router.push("/at/login");

@@ -24,6 +24,19 @@ export const dynamic = "force-dynamic";
 
 const MAX_RETRIES = 3;
 const BACKOFF_HOURS = [1, 4, 16];
+/**
+ * "retrying" is a lease, not a final state: a run that died mid-retry
+ * (deploy, timeout) left the document "retrying" for ever. After this long
+ * it counts as failed again.
+ */
+const RETRY_LEASE_MS = 30 * 60_000;
+
+/** A document whose retry run died: "retrying" older than the lease. */
+function isStaleRetry(fm: Record<string, unknown>, now = Date.now()): boolean {
+  if (fm.analysis_status !== "retrying") return false;
+  const at = typeof fm.analysis_retry_at === "string" ? Date.parse(fm.analysis_retry_at) : NaN;
+  return Number.isNaN(at) || now - at >= RETRY_LEASE_MS;
+}
 
 interface FailedDoc {
   slug: string;
@@ -38,7 +51,10 @@ async function listFailedDocuments(brainId: string): Promise<FailedDoc[]> {
     })) as unknown as FailedDoc[];
     return data.filter((p) => {
       const fm = p.frontmatter ?? {};
-      return fm.analysis_status === "failed";
+      // A failure the upload outbox is still retrying is not retried here as
+      // well — two retry loops ran the same paid analysis twice.
+      if (fm.analysis_retry_owner === "outbox") return false;
+      return fm.analysis_status === "failed" || isStaleRetry(fm);
     });
   } catch {
     return [];
@@ -127,7 +143,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       // Update retry count before firing the analysis to prevent concurrent
       // cron runs from double-triggering.
       try {
-        await enginePatchPage(
+        const lock = await enginePatchPage(
           engineHeadersForBrain(brainId),
           {
             slug: doc.slug,
@@ -139,6 +155,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           },
           { timeoutMs: 15_000 }
         );
+        // Without the "retrying" mark there is no protection against a
+        // second run — do not start the paid analysis.
+        if (!lock.ok) {
+          errors.push(`Failed to update retry state for ${doc.slug}: HTTP ${lock.status}`);
+          continue;
+        }
       } catch (err) {
         errors.push(
           `Failed to update retry state for ${doc.slug}: ${err instanceof Error ? err.message : String(err)}`
@@ -158,6 +180,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           body: JSON.stringify({
             document_slug: doc.slug,
             brain_id: brainId,
+            retry_owner: "cron",
           }),
           signal: AbortSignal.timeout(300_000),
         });

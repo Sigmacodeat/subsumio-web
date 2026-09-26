@@ -79,8 +79,11 @@ export async function groundAnswerCitations(
 /** The warning names citations skipped by the check limit separately. */
 function unverifiedWarning(grounded: GroundedCitation[], unverified: number): string {
   const notChecked = grounded.filter((c) => c.unverifiable_reason === NOT_CHECKED_REASON).length;
-  const base = `${unverified} Zitat(e) konnten nicht im Gesetzescorpus verifiziert werden — bitte manuell prüfen.`;
-  return notChecked > 0 ? `${base} Davon ${notChecked} wegen des Prüflimits nicht geprüft.` : base;
+  const repealed = grounded.filter((c) => c.in_force === false).length;
+  let msg = `${unverified} Zitat(e) konnten nicht im Gesetzescorpus verifiziert werden — bitte manuell prüfen.`;
+  if (repealed > 0) msg += ` Davon ${repealed} nicht mehr in Kraft.`;
+  if (notChecked > 0) msg += ` Davon ${notChecked} wegen des Prüflimits nicht geprüft.`;
+  return msg;
 }
 
 /** Jurisdiction hint for the gate wrappers: the user's profile, used when the text is not decisive. */

@@ -28,6 +28,45 @@ export function shouldAutoTriggerUploadPipeline(deferPipeline: unknown, source?:
   return LEGAL_PIPELINE_SOURCES.has(src);
 }
 
+/**
+ * Source and defer flag of a direct (presign → confirm) upload, fixed at
+ * presign time. The signed upload token wins over the request body — it is
+ * what the web app authorised; a body `defer_pipeline` may only defer (it
+ * never re-enables work a token deferred).
+ */
+export function presignPipelineRouting(input: {
+  payload: { source?: string; defer_pipeline?: boolean } | null;
+  bodySource?: unknown;
+  bodyDefer?: unknown;
+}): { source: string; deferPipeline: boolean } {
+  const source =
+    input.payload?.source ||
+    (typeof input.bodySource === "string" && input.bodySource) ||
+    "documents";
+  const bodyDefer =
+    typeof input.bodyDefer === "string" ? input.bodyDefer === "true" : input.bodyDefer === true;
+  return { source, deferPipeline: input.payload?.defer_pipeline === true || bodyDefer };
+}
+
+/**
+ * What a confirmed direct upload triggers. A deferred upload (bulk matter
+ * import) starts neither its own legal pipeline nor per-document post-upload
+ * tasks — the import's single case-level pipeline covers it. Non-legal
+ * sources never start the legal pipeline.
+ */
+export function confirmPipelinePlan(pending: { source?: string; deferPipeline?: boolean }): {
+  autoTriggerLegalPipeline: boolean;
+  persistPostUploadTasks: boolean;
+  pipelineDeferred: boolean;
+} {
+  const deferred = pending.deferPipeline === true;
+  return {
+    autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(deferred, pending.source),
+    persistPostUploadTasks: !deferred,
+    pipelineDeferred: deferred,
+  };
+}
+
 export function legalPipelineIdempotencyKey(
   sourceId: string,
   caseSlug: string,

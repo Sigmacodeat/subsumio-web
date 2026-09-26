@@ -304,7 +304,22 @@ export async function groundLiteratureCitations(
     }
 
     const category = ref.kind === "materialien" ? "materialien" : "literatur";
-    const file = path.join(CORPUS_DIR, ref.corpusDir!, `${ref.corpusFile}.md`);
+    // Not in our corpus (Austrian Materialien): counted, never assumed.
+    if (!ref.corpusDir || !ref.corpusFile) {
+      results.push({
+        code: ref.work,
+        paragraph: ref.ref,
+        context: ref.raw,
+        verified: false,
+        category,
+        jurisdiction: ref.jurisdiction,
+        ...(ref.checkUrl ? { search_url: ref.checkUrl } : {}),
+        unverifiable_reason:
+          "Gesetzesmaterialien nicht im Korpus — Fundstelle im Parlament prüfen (Link).",
+      });
+      continue;
+    }
+    const file = path.join(CORPUS_DIR, ref.corpusDir, `${ref.corpusFile}.md`);
     let body: string | null = null;
     try {
       const content = await fs.readFile(file, "utf8");
@@ -376,11 +391,60 @@ function isoDate(raw: string | undefined): string {
 export interface AtNormLookup {
   text: string | null;
   frontmatter: Record<string, string>;
+  /**
+   * The norm is no longer in force (Außerkrafttreten reached or the corpus
+   * marks it deprecated). `repealedSince` is the ISO date when known.
+   */
+  repealed: boolean;
+  repealedSince: string | null;
+}
+
+/** Today in Vienna (the RIS dates are Austrian calendar days), "YYYY-MM-DD". */
+export function viennaToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Vienna",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+interface NormVersion {
+  content: string;
+  from: string;
+  to: string;
+  repealed: boolean;
+}
+
+function normVersion(content: string, today: string): NormVersion {
+  const fm = parseFrontmatter(content);
+  const from = isoDate(fm.inkrafttretensdatum);
+  const to = isoDate(fm.ausserkrafttretensdatum);
+  // Außerkrafttretensdatum is the first day the version no longer applies.
+  const repealed = fm.deprecated === "true" || (to !== "" && to <= today);
+  return { content, from, to, repealed };
+}
+
+/**
+ * The version in force today: newest Inkrafttreten among those not yet
+ * außer Kraft. With none in force, the most recently repealed one — so the
+ * check can say "nicht mehr in Kraft (seit …)" instead of "not found".
+ * Versions that only enter into force later are never chosen.
+ */
+function pickNormVersion(versions: NormVersion[], today: string): NormVersion | null {
+  const started = versions.filter((v) => !v.from || v.from <= today);
+  const inForce = started.filter((v) => !v.repealed);
+  if (inForce.length > 0) {
+    return inForce.reduce((best, v) => (v.from > best.from ? v : best));
+  }
+  if (started.length === 0) return null;
+  return started.reduce((best, v) => ((v.to || v.from) > (best.to || best.from) ? v : best));
 }
 
 export async function lookupAtNormFile(
   meta: CorpusMetaEntry,
-  paragraph: string
+  paragraph: string,
+  today: string = viennaToday()
 ): Promise<AtNormLookup | null> {
   if (meta.jurisdiction !== "at") return null;
   if (!/^at-(normen|landesrecht)\//.test(meta.file)) return null;
@@ -390,35 +454,51 @@ export async function lookupAtNormFile(
   const dir = path.join(CORPUS_DIR, path.dirname(meta.file));
   const stem = `${ref.kind === "art" ? "art" : "p"}-${ref.num}`;
 
-  let content: string | null = null;
+  const versions: NormVersion[] = [];
+  let single: NormVersion | null = null;
   try {
-    content = await fs.readFile(path.join(dir, `${stem}.md`), "utf8");
+    single = normVersion(await fs.readFile(path.join(dir, `${stem}.md`), "utf8"), today);
+    versions.push(single);
   } catch {
-    // Several versions of this norm: take the newest one already in force.
+    // no single file — look for NOR-suffixed versions below
+  }
+  // Several versions of this norm (p-2-nor40218044.md): also consulted when
+  // the single file is no longer in force.
+  if (!single || single.repealed) {
     try {
       const versionRe = new RegExp(`^${stem}-nor\\d+\\.md$`, "i");
       const names = (await fs.readdir(dir)).filter((n) => versionRe.test(n));
-      const today = new Date().toISOString().slice(0, 10);
-      let best: { date: string; content: string } | null = null;
       for (const name of names) {
-        const c = await fs.readFile(path.join(dir, name), "utf8");
-        const date = isoDate(parseFrontmatter(c).inkrafttretensdatum);
-        if (date && date > today) continue;
-        if (!best || date > best.date) best = { date, content: c };
+        versions.push(normVersion(await fs.readFile(path.join(dir, name), "utf8"), today));
       }
-      content = best?.content ?? null;
     } catch {
-      content = null;
+      // unreadable directory: decide on what we have
     }
   }
-  if (typeof content !== "string") return null;
+  // A lone single file is used even when its Inkrafttreten lies ahead.
+  const chosen = pickNormVersion(versions, today) ?? (versions.length === 1 ? single : null);
+  if (!chosen) return null;
 
-  const body = stripFrontmatterAndTitle(content);
+  const body = stripFrontmatterAndTitle(chosen.content);
   return {
     // A bare heading without norm text is not a verification.
     text: body.length > ref.num.length + 10 ? body : null,
-    frontmatter: parseFrontmatter(content),
+    frontmatter: parseFrontmatter(chosen.content),
+    repealed: chosen.repealed,
+    repealedSince: chosen.repealed ? chosen.to || null : null,
   };
+}
+
+/** "2024-01-01" → "01.01.2024" for user-facing reasons. */
+function deDate(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso;
+}
+
+export function repealedReason(since: string | null): string {
+  return since
+    ? `Nicht mehr in Kraft (seit ${deDate(since)}) — geltende Fassung prüfen`
+    : "Nicht mehr in Kraft — geltende Fassung prüfen";
 }
 
 // ── Answer jurisdiction ──────────────────────────────────────────────
@@ -452,10 +532,20 @@ export function inferAnswerJurisdiction(
   return fallback ?? defaultGroundingJurisdiction();
 }
 
+/** "§ 6 Abs 1 Z 5" → "§ 6", "Art. 6 Abs. 1 lit. b" → "Art. 6"; unparsable → as given. */
+export function baseNormParagraph(paragraph: string): string {
+  const ref = parseNormRef(paragraph);
+  if (!ref) return paragraph;
+  return `${ref.kind === "art" ? "Art." : "§"} ${ref.num}`;
+}
+
 interface ResolvedNorm {
   text: string | null;
   sourceUrl: string | null;
   frontmatter: Record<string, string>;
+  /** No longer in force (AT per-norm files); the text is then the last version. */
+  repealed: boolean;
+  repealedSince: string | null;
 }
 
 /**
@@ -474,8 +564,11 @@ async function resolveNormText(
   // source of the official RIS link.
   const atNorm = await lookupAtNormFile(meta, paragraph);
   let text = atNorm?.text ?? null;
-  if (!text) text = await lookupSplitParagraph(code, paragraph, codeKey);
-  if (!text) text = await lookupCorpusParagraph(codeKey, paragraph);
+  // Subdivisions ("Abs 1 Z 5", "lit a", "Satz 2") are part of the norm's
+  // text, not of its file or heading — look the norm itself up.
+  const base = baseNormParagraph(paragraph);
+  if (!text) text = await lookupSplitParagraph(code, base, codeKey);
+  if (!text) text = await lookupCorpusParagraph(codeKey, base);
 
   let frontmatter = atNorm?.frontmatter ?? {};
   let sourceUrl: string | null = null;
@@ -497,7 +590,13 @@ async function resolveNormText(
     }
     sourceUrl = buildEurLexUrl(frontmatter.source_url);
   }
-  return { text, sourceUrl, frontmatter };
+  return {
+    text,
+    sourceUrl,
+    frontmatter,
+    repealed: atNorm?.repealed ?? false,
+    repealedSince: atNorm?.repealedSince ?? null,
+  };
 }
 
 export interface NormReading {
@@ -513,6 +612,10 @@ export interface NormReading {
   in_force_since: string | null;
   /** Corpus retrieval date (ISO) — how fresh our copy is. */
   retrieved_at: string | null;
+  /** The norm is no longer in force; the text shown is its last version. */
+  repealed: boolean;
+  /** Außerkrafttreten (ISO date), when known. */
+  repealed_since: string | null;
 }
 
 /** Full text of one cited norm for the reader panel; null if the law is unknown. */
@@ -524,7 +627,11 @@ export async function readNorm(
   const codeKey = findCodeKey(code, jurisdiction);
   if (!codeKey) return null;
   const meta = CORPUS_META[codeKey];
-  const { text, sourceUrl, frontmatter } = await resolveNormText(code, paragraph, codeKey);
+  const { text, sourceUrl, frontmatter, repealed, repealedSince } = await resolveNormText(
+    code,
+    paragraph,
+    codeKey
+  );
   return {
     code,
     paragraph,
@@ -535,6 +642,8 @@ export async function readNorm(
     source_url: sourceUrl,
     in_force_since: isoDate(frontmatter.inkrafttretensdatum) || null,
     retrieved_at: isoDate(frontmatter.retrieved_at) || null,
+    repealed,
+    repealed_since: repealedSince,
   };
 }
 
@@ -591,20 +700,32 @@ export async function groundCitations(
       continue;
     }
 
-    const { text: sourceText, sourceUrl } = await resolveNormText(code, paragraph, codeKey!);
+    const {
+      text: sourceText,
+      sourceUrl,
+      repealed,
+      repealedSince,
+    } = await resolveNormText(code, paragraph, codeKey!);
 
     const result: GroundedCitation = {
       code,
       paragraph,
       context,
-      verified: sourceText !== null,
+      // A norm no longer in force is never "verified" — it is shown with
+      // its last text and the date it ceased to apply.
+      verified: sourceText !== null && !repealed,
+      ...(repealed
+        ? { in_force: false, ...(repealedSince ? { repealed_since: repealedSince } : {}) }
+        : {}),
       ...(sourceText ? { source_text: sourceText.slice(0, 600) } : {}),
       ...(sourceUrl ? { source_url: sourceUrl } : {}),
       category: meta.type ?? "statute",
       jurisdiction: meta.jurisdiction,
     };
 
-    if (!sourceText) {
+    if (repealed) {
+      result.unverifiable_reason = repealedReason(repealedSince);
+    } else if (!sourceText) {
       result.unverifiable_reason =
         detectUnverifiableCitation(code, context) || "Paragraph not found";
     }

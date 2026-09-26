@@ -40,6 +40,7 @@ import {
   fetchDelta,
   DELTA_APPLIKATIONS,
   formatDeltaSummary,
+  nextCursorAfterBatch,
   type DeltaApplikation,
   type DeltaDocument,
   type DeltaResult,
@@ -56,6 +57,7 @@ import {
 import { landOfDocId } from "./normalize/normalize-corpus";
 import { buildTextMarkdown, textRefsOf } from "./fetch-entscheidungstexte";
 import { RIS_PAUSE_MS } from "./ris-pace";
+import { normKey, resolveBundesnormDir, resolveNormFileName, slugify } from "./ris-norm-paths";
 import {
   fetchWithRetry,
   risXmlToText,
@@ -88,7 +90,9 @@ const GAP_ALERT_THRESHOLD = 50;
 function sh(cmd: string): string {
   try {
     return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
-  } catch {
+  } catch (err) {
+    // Never silent: a failed state write (cursor, alert) must show in the log.
+    console.error(`  ❌ Befehl fehlgeschlagen: ${(err as Error).message.split("\n")[0]}`);
     return "";
   }
 }
@@ -155,9 +159,11 @@ function getCursor(stateKey: string): string | null {
 }
 
 function updateCursor(stateKey: string, cursor: string): void {
-  psqlQuery(
-    `UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}'`
+  const out = psqlQuery(
+    `UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}' RETURNING source_key`
   );
+  // The run must not report success when the cursor was not stored.
+  if (!out.includes(stateKey)) throw new Error(`Cursor für ${stateKey} nicht gespeichert`);
 }
 
 function resetCursor(stateKey: string): void {
@@ -236,33 +242,8 @@ async function fetchXml(url: string): Promise<string | null> {
   return res.text();
 }
 
-export function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
-}
-
-export function normKey(apa: string | null): string | null {
-  if (!apa) return null;
-  const s = apa.trim();
-  if (/^§+\s*0\s*$/.test(s)) return null;
-  const teile: string[] = [];
-  const rx = /(§+|Art\.?|Anl\.?)\s*([0-9]+[a-zA-Z]*)/gi;
-  let m: RegExpExecArray | null;
-  while ((m = rx.exec(s)) !== null) {
-    const art = m[1].toLowerCase();
-    const praefix = art.startsWith("§") ? "p" : art.startsWith("art") ? "art" : "anl";
-    teile.push(`${praefix}-${m[2].toLowerCase()}`);
-  }
-  if (teile.length === 0) return null;
-  return teile.join("-");
-}
+// Same naming as the full fetch (ris-xml-fetch-normen.ts) — one module for both.
+export { slugify, normKey };
 
 function esc(s: string): string {
   return s.replace(/"/g, '\\"');
@@ -388,12 +369,17 @@ export function buildLandesrechtMarkdown(doc: DeltaDocument, xmlText: string): s
 
 /**
  * Bestimmt den Dateipfad für ein Delta-Dokument.
- * Für Bundesrecht: <corpusDir>/<slug-or-gnr>/<key>.md
- * Für Judikatur: <corpusDir>/<changedAt>-<slug>.md
- * Für Landesrecht: <corpusDir>/<slug-or-gnr>/<key>.md
+ * Für Bundesrecht: derselbe Pfad wie beim Vollabruf (ris-norm-paths.ts):
+ *   <corpusDir>/<abk-slug>[-<gnr>]/<key>[-nor<id>].md, ohne Abkürzung gnr-<gnr>/
+ * Für Judikatur: <corpusDir>/<dokumentnummer>.md
+ * Für Landesrecht: <corpusDir>/<land>/gnr-<gnr>/<key>.md
  */
-export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
-  const corpusDir = join(CORPUS_ROOT, app.corpusDir);
+export function docFilePath(
+  app: DeltaApplikation,
+  doc: DeltaDocument,
+  corpusRoot: string = CORPUS_ROOT
+): string {
+  const corpusDir = join(corpusRoot, app.corpusDir);
 
   if (app.endpoint === "Judikatur") {
     // Named by the RIS document number: several Rechtssätze share one
@@ -404,9 +390,17 @@ export function docFilePath(app: DeltaApplikation, doc: DeltaDocument): string {
     return join(corpusDir, decisionFileName(doc.id));
   }
 
-  // Bundesrecht / Landesrecht
   const apa = doc.artikelParagraphAnlage;
   const key = normKey(apa) || doc.id.toLowerCase();
+
+  // Bundesrecht: the folder and file the full fetch uses, so an amendment
+  // replaces the norm the citation check and the norm reader read.
+  if (app.endpoint === "Bundesrecht" && doc.gesetzesnummer) {
+    const dir = resolveBundesnormDir(corpusDir, doc.abkuerzung, doc.gesetzesnummer);
+    return join(corpusDir, dir, resolveNormFileName(join(corpusDir, dir), key, doc.id));
+  }
+
+  // Landesrecht (and Bundesrecht without Gesetzesnummer)
   const gnrDir = doc.gesetzesnummer
     ? `gnr-${doc.gesetzesnummer}`
     : slugify(doc.kurztitel || doc.id);
@@ -534,6 +528,16 @@ async function syncApplikation(
     console.log(`  ${formatDeltaSummary(result)}`);
 
     if (result.documents.length === 0) {
+      if (!result.complete) {
+        raiseAlert(
+          app.stateKey,
+          "delta_sync_failed",
+          "error",
+          "RIS-Abfrage unvollständig — Cursor bleibt stehen"
+        );
+        appendHistory(app.stateKey, "delta", "incomplete fetch, cursor kept");
+        return { ...result, written: 0, failed: 0, skipped: 0 };
+      }
       // Keine Änderungen — Cursor trotzdem updaten
       updateCursor(app.stateKey, result.newCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
@@ -556,6 +560,7 @@ async function syncApplikation(
     let failed = 0;
     let skipped = 0;
     const seenIds = new Set<string>();
+    const failedChangedAt: string[] = [];
 
     for (const doc of result.documents) {
       // Dedup: RIS kann bei Paginierung-Overlap dasselbe Dokument mehrfach liefern
@@ -578,7 +583,10 @@ async function syncApplikation(
 
       const ok = await processDocument(app, doc);
       if (ok) written++;
-      else failed++;
+      else {
+        failed++;
+        failedChangedAt.push(doc.changedAt);
+      }
 
       if (written % 50 === 0 && written > 0) {
         process.stderr.write(
@@ -592,20 +600,29 @@ async function syncApplikation(
         `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`
       );
 
-    // Cursor updaten nur bei erfolgreicher Verarbeitung
-    if (failed === 0) {
-      updateCursor(app.stateKey, result.newCursor);
+    // The cursor only moves past what was fully written: on partial failure
+    // it stops at the earliest failed change, so those come again next run.
+    const nextCursor = nextCursorAfterBatch({
+      newCursor: result.newCursor,
+      complete: result.complete,
+      failedChangedAt,
+    });
+    if (failed === 0 && nextCursor) {
+      updateCursor(app.stateKey, nextCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
       clearAlerts(app.stateKey, "delta_gap");
       appendHistory(app.stateKey, "delta", `${written} docs synced`);
-    } else if (written > 0) {
-      // Teilweise erfolgreich — Cursor updaten, aber Alert
-      updateCursor(app.stateKey, result.newCursor);
+    } else if (written > 0 || (failed === 0 && !nextCursor)) {
+      // Teilweise erfolgreich oder unvollständig abgerufen — Cursor nur bis
+      // zur ersten Lücke, Alert
+      if (nextCursor) updateCursor(app.stateKey, nextCursor);
       raiseAlert(
         app.stateKey,
         "delta_sync_partial",
         "warning",
-        `${written} synced, ${failed} failed`
+        result.complete
+          ? `${written} synced, ${failed} failed — werden beim nächsten Lauf erneut geholt`
+          : `${written} synced, RIS-Abfrage unvollständig — Cursor bleibt stehen`
       );
       appendHistory(app.stateKey, "delta", `${written} synced, ${failed} failed`);
     } else {
@@ -620,7 +637,7 @@ async function syncApplikation(
     }
 
     console.log(`  ✅ ${written} geschrieben, ${failed} fehlgeschlagen, ${skipped} übersprungen`);
-    console.log(`  📌 Neuer Cursor: ${result.newCursor}`);
+    console.log(`  📌 Cursor: ${nextCursor ?? `${cursor ?? "(keiner)"} (unverändert)`}`);
 
     return { ...result, written, failed, skipped };
   } catch (err) {

@@ -179,6 +179,17 @@ export const CACHE_GATE_WHERE_CLAUSE = `
         WHERE p.id IS NULL                              -- page deleted → invalidate
            OR p.generation <> ((g.stored_gen)::text)::bigint  -- bumped → invalidate
       )
+      -- A page CREATED in the same source after the row was stored may be a
+      -- new hit the cached list cannot contain (a freshly uploaded document):
+      -- invalidate. Range scan on idx_pages_updated_at_desc — a new page's
+      -- updated_at is at least its created_at.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pages pn
+        WHERE pn.updated_at > qc.created_at
+          AND pn.created_at > qc.created_at
+          AND pn.source_id = qc.source_id
+      )
     )
   )
 `;
@@ -200,6 +211,8 @@ export function validateCacheRowAgainstPages(
   current: {
     max_generation: number;
     page_generations: Record<string, number | undefined>;
+    /** Pages created in the row's source after it was stored (SQL: NOT EXISTS). */
+    new_pages_in_source?: number;
   }
 ): boolean {
   // Layer 1: bookmark. `current.max_generation` is the global clock value
@@ -221,5 +234,7 @@ export function validateCacheRowAgainstPages(
     if (currentGen === undefined) return false; // Page deleted.
     if (currentGen !== storedGen) return false; // Page bumped.
   }
+  // A new page in the same source may be a missing hit.
+  if ((current.new_pages_in_source ?? 0) > 0) return false;
   return true;
 }

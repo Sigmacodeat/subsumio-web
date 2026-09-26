@@ -25,6 +25,34 @@ import {
   type PageGenerationsSnapshot,
 } from "../src/core/search/query-cache-gate.ts";
 
+describe("validateCacheRowAgainstPages — new pages in the source", () => {
+  test("a page created in the same source after the store invalidates", () => {
+    const snapshot: PageGenerationsSnapshot = {
+      page_generations: { "1": 3 },
+      max_generation_at_store: 10,
+    };
+    expect(
+      validateCacheRowAgainstPages(snapshot, {
+        max_generation: 11,
+        page_generations: { "1": 3 },
+        new_pages_in_source: 1,
+      })
+    ).toBe(false);
+    expect(
+      validateCacheRowAgainstPages(snapshot, {
+        max_generation: 11,
+        page_generations: { "1": 3 },
+        new_pages_in_source: 0,
+      })
+    ).toBe(true);
+  });
+
+  test("the SQL gate carries the same rule", () => {
+    expect(CACHE_GATE_WHERE_CLAUSE).toContain("pn.created_at > qc.created_at");
+    expect(CACHE_GATE_WHERE_CLAUSE).toContain("pn.source_id = qc.source_id");
+  });
+});
+
 describe("validateCacheRowAgainstPages (pure validator)", () => {
   test("v0.41.19.0 D20/CDX-6 inversion: empty snapshot invalidates when bookmark fires", () => {
     const snapshot: PageGenerationsSnapshot = {

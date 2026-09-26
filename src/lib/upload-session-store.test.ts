@@ -7,6 +7,7 @@ import {
   deleteUploadSession,
   updateSessionParts,
   cleanupExpiredSessions,
+  clearAllUploadSessions,
   type UploadSession,
 } from "./upload-session-store";
 
@@ -97,6 +98,23 @@ describe("upload-session-store", () => {
     // getUploadSession should auto-delete expired
     const result = await getUploadSession("old.pdf", 1000, "token");
     expect(result).toBeNull();
+  });
+
+  it("never stores a document password", async () => {
+    const session = makeSession({
+      options: { case_slug: "legal/cases/1", password: "geheim" } as UploadSession["options"],
+    });
+    await saveUploadSession(session);
+    const stored = await getUploadSession("test.pdf", 1000, "token");
+    expect(stored?.options?.case_slug).toBe("legal/cases/1");
+    expect(JSON.stringify(stored)).not.toContain("geheim");
+    expect(stored?.options).not.toHaveProperty("password");
+  });
+
+  it("logout clears every stored session", async () => {
+    await saveUploadSession(makeSession());
+    await clearAllUploadSessions();
+    expect(await getUploadSession("test.pdf", 1000, "token")).toBeNull();
   });
 
   it("handles different files with same token independently", async () => {

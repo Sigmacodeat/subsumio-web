@@ -75,12 +75,24 @@ vi.mock("@/lib/post-upload-outbox", () => ({
   enqueueAllPostUploadTasks: vi.fn(async () => ({ enqueued: 3 })),
 }));
 
+vi.mock("@/lib/case-documents", () => ({
+  reconcileCaseDocuments: vi.fn(async () => {}),
+}));
+
+vi.mock("@/lib/inbound-register-stamp", () => ({
+  stampInboundEntryBestEffort: vi.fn(async () => {}),
+}));
+
 import { POST } from "./route";
 import { enginePatchPage } from "@/lib/engine";
 import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
 const mockEnginePatch = vi.mocked(enginePatchPage);
 const mockEnqueue = vi.mocked(enqueueAllPostUploadTasks);
+import { reconcileCaseDocuments } from "@/lib/case-documents";
+import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
+const mockReconcile = vi.mocked(reconcileCaseDocuments);
+const mockInbound = vi.mocked(stampInboundEntryBestEffort);
 
 /** Matter read by the archive check (GET /api/pages/<case>). */
 let casePage: Record<string, unknown> = { type: "legal_case", frontmatter: { status: "active" } };
@@ -223,6 +235,61 @@ describe("POST /api/upload/confirm", () => {
     const res = await POST(makeRequest({ upload_token: "upl-6", case_slug: "legal/cases/1" }));
     expect(res.status).toBe(200);
     expect(recordQuota).not.toHaveBeenCalled();
+  });
+
+  it("a deferred upload (bulk import) is stamped 'deferred' and queues no per-document analysis", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).includes("/api/pages/")
+          ? Response.json(casePage)
+          : Response.json({
+              slug: "documents/case-1/teil-7.pdf",
+              title: "Teil 7",
+              case_slug: "legal/cases/1",
+              pipeline_deferred: true,
+            })
+      )
+    );
+    const res = await POST(makeRequest({ upload_token: "upl-7", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).not.toHaveBeenCalled();
+    expect(mockEnginePatch).toHaveBeenCalledTimes(1);
+    expect(mockEnginePatch.mock.calls[0][1]).toMatchObject({
+      slug: "documents/case-1/teil-7.pdf",
+      frontmatter: { analysis_status: "deferred", pipeline_deferred: true },
+    });
+  });
+
+  it("a deferral claimed only by the browser body does not skip the analysis", async () => {
+    const res = await POST(
+      makeRequest({ upload_token: "upl-8", case_slug: "legal/cases/1", pipeline_deferred: true })
+    );
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists the document on the matter at once and records it as inbound mail", async () => {
+    mockReconcile.mockClear();
+    mockInbound.mockClear();
+    const res = await POST(makeRequest({ upload_token: "upl-9", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(200);
+    expect(mockReconcile).toHaveBeenCalledTimes(1);
+    expect(mockReconcile.mock.calls[0][1]).toBe("legal/cases/1");
+    expect(mockReconcile.mock.calls[0][2]).toMatchObject({ slug: "documents/case-1/eingabe.pdf" });
+    expect(mockInbound).toHaveBeenCalledTimes(1);
+    expect(mockInbound.mock.calls[0][1]).toMatchObject({
+      channel: "upload",
+      caseSlug: "legal/cases/1",
+      documentSlug: "documents/case-1/eingabe.pdf",
+    });
+  });
+
+  it("a failed matter listing does not fail the upload (the outbox retries it)", async () => {
+    mockReconcile.mockRejectedValueOnce(new Error("case_fetch_failed_503"));
+    const res = await POST(makeRequest({ upload_token: "upl-10", case_slug: "legal/cases/1" }));
+    expect(res.status).toBe(200);
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a body without upload token", async () => {

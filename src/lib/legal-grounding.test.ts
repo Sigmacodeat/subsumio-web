@@ -11,6 +11,7 @@ import {
   CORPUS_META,
   MAX_CHECKED_CITATIONS,
   NOT_CHECKED_REASON,
+  baseNormParagraph,
 } from "@/lib/legal-grounding";
 import type { RawCitation } from "@/lib/types";
 import { promises as fs } from "node:fs";
@@ -183,6 +184,21 @@ describe("groundCitations", () => {
     const notChecked = result.filter((c) => c.unverifiable_reason === NOT_CHECKED_REASON);
     expect(notChecked).toHaveLength(5);
     expect(notChecked.every((c) => c.verified === false)).toBe(true);
+  });
+
+  it("looks up the norm itself for a citation with subdivisions (Abs/Z/lit)", async () => {
+    vi.mocked(fs.readFile).mockResolvedValueOnce("Der Verkäufer einer Sache wird verpflichtet …");
+    const result = await groundCitations([{ code: "BGB", paragraph: "§ 433 Abs. 1 Satz 2" }]);
+    expect(result[0].verified).toBe(true);
+    expect(result[0].paragraph).toBe("§ 433 Abs. 1 Satz 2");
+    expect(String(vi.mocked(fs.readFile).mock.calls[0][0])).toMatch(/-par-433\.md$/);
+  });
+
+  it("baseNormParagraph strips subdivisions", () => {
+    expect(baseNormParagraph("§ 6 Abs 1 Z 5")).toBe("§ 6");
+    expect(baseNormParagraph("Art. 6 Abs. 1 UAbs. 1 lit. b")).toBe("Art. 6");
+    expect(baseNormParagraph("§ 879a")).toBe("§ 879a");
+    expect(baseNormParagraph("Präambel")).toBe("Präambel");
   });
 
   it("truncates source_text to 600 chars", async () => {

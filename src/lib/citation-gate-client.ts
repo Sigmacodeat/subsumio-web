@@ -10,25 +10,111 @@ import type { RawCitation, GroundedCitation } from "@/lib/types";
 // ── Statute extraction ────────────────────────────────────────────────
 
 /**
- * Regex to extract statute references from legal text.
- * Matches patterns like:
- *   § 433 BGB
- *   § 922 ABGB
- *   § 12 Abs. 3 ZPO
- *   §§ 433, 434 BGB
- *   § 1 StGB
- *   § 5 Abs 1 StGB          (Austrian style, no dot after "Abs")
- *   § 1 AußStrG, § 1 B-VG   (ß, umlauts, hyphen in the abbreviation)
- *   § 16 EStG 1988          (year in the title)
- *   Art. 7 B-VG, Art 8 EMRK (articles)
+ * Statute references in legal text. One grammar for German, Austrian and
+ * Swiss citation styles:
+ *
+ *   § 433 BGB · § 922 ABGB · § 12 Abs. 3 ZPO · § 5 Abs 1 StGB
+ *   § 6 Abs 1 Z 5 KSchG · § 6 Abs. 1 Z. 5 KSchG · § 7 lit a MRG
+ *   § 1 Abs 1 Satz 2 BGB · Art. 6 Abs. 1 UAbs. 1 lit. b DSGVO
+ *   §§ 433, 434 BGB · §§ 1295, 1299 ABGB · §§ 1293 ff ABGB · §§ 1293 bis 1295 ABGB
+ *   § 879 Abs 3 iVm § 864a ABGB (the trailing abbreviation covers the list)
+ *   § 1 AußStrG, § 1 B-VG (ß, umlauts, hyphen) · § 16 EStG 1988 (year in the title)
+ *   Art 7 B-VG, Art. 8 EMRK (articles)
+ *
+ * Each number in a list yields its own citation; "ff"/"f" keeps only the
+ * first norm (the range is open), "bis" checks both ends. Subdivisions
+ * (Abs, Z, lit, Satz, UAbs …) stay in the paragraph text but are never
+ * taken for the statute abbreviation.
+ *
+ * Known limit: a subdivision list swallows a following short number
+ * ("§ 6 Abs 1, 7 KSchG" reads as "Abs 1, 7"); the norm itself (§ 6) is still
+ * checked.
  */
-const PARA_PART = String.raw`(\d+[a-z]?(?:\s*(?:Abs\.?|Absatz)\s*\d+)?)`;
-const CODE_PART = String.raw`([A-ZÄÖÜ](?:[A-Za-zÄÖÜäöüß]{1,12}(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})?|-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})(?:\s(?:18|19|20)\d{2}(?!\d))?)`;
-const STATUTE_RX = new RegExp(String.raw`§+\s*${PARA_PART}\s+${CODE_PART}`, "g");
-const ARTICLE_RX = new RegExp(
-  String.raw`(?<![A-Za-zÄÖÜäöüß])(?:Art\.?|Artikel)\s*${PARA_PART}\s+${CODE_PART}`,
+const L = "A-Za-zÄÖÜäöüß";
+const NUM = String.raw`\d+(?:[a-z](?![${L}]))?`;
+const SUB_NUM_KEY = String.raw`(?:UAbs\.?|Unterabs\.?|Abs\.?|Absatz|Ziff\.?|Ziffer|Z\.?|Satz|S\.|Nr\.?|Pkt\.?|Punkt|Halbsatz|Hs\.?)`;
+const SUB_LIST_SEP = String.raw`\s*(?:,|und|bis|–|-)\s*`;
+/** Values continuing a subdivision list ("Abs 1 und 2", "lit a, b") are short. */
+const SUB_NUM = String.raw`${SUB_NUM_KEY}\s*\d+[a-z]?(?![${L}\d])(?:${SUB_LIST_SEP}\d{1,2}[a-z]?(?![${L}\d]))*`;
+const SUB_LIT = String.raw`lit\.?\s*[a-z](?![${L}])(?:${SUB_LIST_SEP}[a-z](?![${L}]))*`;
+const FF = String.raw`\s*f{1,2}\.?(?![${L}])`;
+const ITEM = String.raw`${NUM}(?:\s*(?:${SUB_NUM}|${SUB_LIT}))*(?:${FF})?`;
+const LIST_SEP_WORD = String.raw`(?:,|;|und|sowie|oder|bzw\.?|bis|–|-|[iI]\.?\s?[vV]\.?\s?[mM]\.?)`;
+const PARA_PREFIX = String.raw`§+`;
+const ART_PREFIX = String.raw`(?:Art\.?|Artikel)`;
+const listSep = (prefix: string) => String.raw`\s*${LIST_SEP_WORD}\s*(?:${prefix}\s*)?`;
+const numberList = (prefix: string) => String.raw`${ITEM}(?:${listSep(prefix)}${ITEM}){0,20}`;
+/** Subdivision words are never a statute abbreviation. */
+const NOT_A_CODE = String.raw`(?!(?:Abs|Absatz|UAbs|Unterabs|Satz|Nr|Ziff|Ziffer|Pkt|Punkt|Halbsatz|Hs|Lit|Fall)(?![${L}]))`;
+const CODE_PART = String.raw`${NOT_A_CODE}([A-ZÄÖÜ](?:[A-Za-zÄÖÜäöüß]{1,12}(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})?|-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{0,8})(?:\s(?:18|19|20)\d{2}(?!\d))?)`;
+const STATUTE_RX = new RegExp(
+  String.raw`${PARA_PREFIX}\s*(${numberList(PARA_PREFIX)})\s+${CODE_PART}`,
   "g"
 );
+const ARTICLE_RX = new RegExp(
+  String.raw`(?<![${L}])${ART_PREFIX}\s*(${numberList(ART_PREFIX)})\s+${CODE_PART}`,
+  "g"
+);
+
+const ITEM_STICKY = new RegExp(`(${ITEM})`, "y");
+const FF_TAIL = new RegExp(`${FF}$`);
+const SEP_STICKY = {
+  "§": new RegExp(listSep(PARA_PREFIX), "y"),
+  "Art.": new RegExp(listSep(ART_PREFIX), "y"),
+} as const;
+
+/**
+ * Split the number list of one match ("1295, 1299", "1293 ff",
+ * "6 Abs 1 Z 5") into paragraph strings ("§ 1295", "§ 6 Abs 1 Z 5").
+ */
+function paragraphsOfList(listText: string, prefix: "§" | "Art."): string[] {
+  const sepRx = SEP_STICKY[prefix];
+  const out: string[] = [];
+  let pos = 0;
+  while (pos < listText.length) {
+    ITEM_STICKY.lastIndex = pos;
+    const item = ITEM_STICKY.exec(listText);
+    if (!item) break;
+    const body = item[1].replace(FF_TAIL, "").replace(/\s+/g, " ").trim();
+    out.push(`${prefix} ${body}`);
+    pos = ITEM_STICKY.lastIndex;
+    sepRx.lastIndex = pos;
+    if (!sepRx.exec(listText)) break;
+    pos = sepRx.lastIndex;
+  }
+  return out;
+}
+
+export interface StatuteCitationMatch {
+  /** Offset of the whole citation in the scanned text. */
+  index: number;
+  /** The whole citation as written ("§§ 1295, 1299 ABGB"). */
+  text: string;
+  code: string;
+  /** One entry per cited norm, e.g. ["§ 1295", "§ 1299"]. */
+  paragraphs: string[];
+}
+
+/** Every statute citation in `text`, § citations first, then articles. */
+export function scanStatuteCitations(text: string): StatuteCitationMatch[] {
+  const out: StatuteCitationMatch[] = [];
+  for (const [rx, prefix] of [
+    [STATUTE_RX, "§"],
+    [ARTICLE_RX, "Art."],
+  ] as const) {
+    rx.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = rx.exec(text)) !== null) {
+      out.push({
+        index: match.index,
+        text: match[0],
+        code: match[2].trim(),
+        paragraphs: paragraphsOfList(match[1], prefix),
+      });
+    }
+  }
+  return out;
+}
 
 /**
  * Extract statute citations from free-text answer.
@@ -37,24 +123,15 @@ const ARTICLE_RX = new RegExp(
 export function extractStatuteCitations(text: string): RawCitation[] {
   const citations: RawCitation[] = [];
   const seen = new Set<string>();
-  for (const [rx, prefix] of [
-    [STATUTE_RX, "§"],
-    [ARTICLE_RX, "Art."],
-  ] as const) {
-    rx.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = rx.exec(text)) !== null) {
-      const paragraph = `${prefix} ${match[1].trim()}`;
-      const code = match[2].trim();
-      const key = `${code}#${paragraph}`;
+  for (const m of scanStatuteCitations(text)) {
+    const start = Math.max(0, m.index - 60);
+    const end = Math.min(text.length, m.index + m.text.length + 60);
+    const context = text.slice(start, end).replace(/\s+/g, " ").trim();
+    for (const paragraph of m.paragraphs) {
+      const key = `${m.code}#${paragraph}`;
       if (seen.has(key)) continue;
       seen.add(key);
-
-      const start = Math.max(0, match.index - 60);
-      const end = Math.min(text.length, match.index + match[0].length + 60);
-      const context = text.slice(start, end).replace(/\s+/g, " ").trim();
-
-      citations.push({ code, paragraph, context });
+      citations.push({ code: m.code, paragraph, context });
     }
   }
 
@@ -155,11 +232,11 @@ export function linkCitationsInHtml(html: string, grounded: GroundedCitation[]):
   let out = html;
   if (statutes.size > 0) {
     const statuteRx = new RegExp(`${STATUTE_RX.source}|${ARTICLE_RX.source}`, "g");
-    out = replaceInText(out, statuteRx, (m, sPara, sCode, aPara, aCode) => {
-      const key = sPara
-        ? `${sCode!.trim()}#§ ${sPara.trim()}`
-        : `${aCode!.trim()}#Art. ${aPara!.trim()}`;
-      const gc = statutes.get(key);
+    out = replaceInText(out, statuteRx, (m, sList, sCode, aList, aCode) => {
+      const code = (sList ? sCode : aCode)!.trim();
+      const paragraphs = sList ? paragraphsOfList(sList, "§") : paragraphsOfList(aList!, "Art.");
+      // A list ("§§ 1295, 1299 ABGB") links to its first verified norm.
+      const gc = paragraphs.map((p) => statutes.get(`${code}#${p}`)).find(Boolean);
       if (!gc) return m;
       // data-* lets the norm reader open in place on a plain click; the
       // href stays the RIS page for cmd/middle click and no-JS.
@@ -200,7 +277,9 @@ export interface RawLiteratureCitation {
   /** Corpus directory under law-corpus/, when resolvable. */
   corpusDir: "de-materialien" | "ch-literatur" | null;
   pinpoint?: string;
-  jurisdiction: "de" | "ch";
+  jurisdiction: "de" | "ch" | "at";
+  /** Official page to check the citation by hand (AT Materialien: Parlament). */
+  checkUrl?: string;
 }
 
 const DRUCKSACHE_RX =
@@ -211,6 +290,66 @@ const OK_LONG_RX =
   /\bOnlinekommentar\s+zu\s+Art\.?\s*(\d+[a-z]?)\s+([A-ZÄÖÜ][A-Za-z]{1,8})(?:\s+(?:Rn\.?|N)\s*(\d{1,4}))?/g;
 const LICENSED_RX =
   /\b([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:\/[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)?),?\s+([A-ZÄÖÜ][A-Za-z]{1,8})\s*§\s*(\d+[a-z]?)\s+Rn\.?\s*(\d{1,4})/g;
+
+// Austrian commentary: "Reischauer in Rummel, ABGB³ § 1295 Rz 1",
+// "Kodek in Kletečka/Schauer, ABGB-ON1.05 § 879 Rz 3", "Schwimann/Kodek, ABGB § 1 Rz 2"
+// (Rz or Rn, optional emphasis stars and edition digits after the code).
+const AT_LICENSED_RX =
+  /\*?([A-ZÄÖÜ][\p{L}]+(?:\/[A-ZÄÖÜ][\p{L}]+)?)\*?,?\s+([A-ZÄÖÜ][A-Za-z]{1,8}(?:-ON)?)[\u00B2\u00B3\u00B9\u2070-\u2079\d.]*\s*§\s*(\d+[a-z]?)\s+(?:Rz|Rn)\.?\s*(\d{1,4})/gu;
+// Austrian Gesetzesmaterialien: "ErläutRV 1234 BlgNR 24. GP", "AB 567 BlgNR XXVII. GP".
+const AT_MATERIALIEN_RX =
+  /\b(ErläutRV|ErlRV|RV|AB|IA)\s+(\d{1,5})\s+(?:der\s+)?Blg\.?\s*NR\.?\s*(\d{1,2}|[IVXLC]{1,7})\.?\s*GP\b/g;
+
+/** Publisher works for Austrian law we recognise but hold no licence for. */
+const AT_LICENSED_WORKS = new Set([
+  "rummel",
+  "rummel/lukas",
+  "schwimann",
+  "schwimann/kodek",
+  "schwimann/neumayr",
+  "klang",
+  "kletečka/schauer",
+  "kletecka/schauer",
+  "koziol/welser",
+  "koziol/bydlinski/bollenberger",
+  "kbb",
+  "fasching",
+  "fasching/konecny",
+  "rechberger",
+  "rechberger/klicka",
+  "straube",
+  "straube/ratka/rauter",
+  "höpfel/ratz",
+  "wiener kommentar",
+  "fenyves/kerschner/vonkilch",
+]);
+
+const ROMAN = [
+  [1000, "M"],
+  [900, "CM"],
+  [500, "D"],
+  [400, "CD"],
+  [100, "C"],
+  [90, "XC"],
+  [50, "L"],
+  [40, "XL"],
+  [10, "X"],
+  [9, "IX"],
+  [5, "V"],
+  [4, "IV"],
+  [1, "I"],
+] as const;
+
+function toRoman(n: number): string {
+  let out = "";
+  for (const [v, r] of ROMAN) {
+    while (n >= v) {
+      out += r;
+      n -= v;
+    }
+  }
+  return out;
+}
 
 /** CH codes covered by Onlinekommentar.ch (site slug = abbr + article number). */
 const OK_CH_CODES = new Set(["ZGB", "OR", "BV", "BPR", "STGB", "DSG", "BGÖ", "BGOE"]);
@@ -280,6 +419,42 @@ export function extractLiteratureCitations(text: string): RawLiteratureCitation[
   for (const m of text.matchAll(OK_SHORT_RX)) pushOk(m[0], m[1], m[2], m[3]);
   for (const m of text.matchAll(OK_LONG_RX)) pushOk(m[0], m[2], m[1], m[3]);
 
+  for (const m of text.matchAll(AT_MATERIALIEN_RX)) {
+    const [raw, kind, nr, gpRaw] = m;
+    const gp = /^\d+$/.test(gpRaw) ? toRoman(Number(gpRaw)) : gpRaw.toUpperCase();
+    const key = `at-mat:${nr}:${gp}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      kind: "materialien",
+      raw,
+      work: kind === "ErlRV" ? "ErläutRV" : kind,
+      ref: `${nr} BlgNR ${gp}. GP`,
+      corpusFile: null,
+      corpusDir: null,
+      jurisdiction: "at",
+      checkUrl: `https://www.parlament.gv.at/gegenstand/${gp}/I/${nr}`,
+    });
+  }
+
+  for (const m of text.matchAll(AT_LICENSED_RX)) {
+    const [raw, work, code, para, rz] = m;
+    if (!AT_LICENSED_WORKS.has(work.toLowerCase())) continue;
+    const key = `licensed:${work.toLowerCase()}:${code}:${para}:${rz}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      kind: "licensed_work",
+      raw,
+      work,
+      ref: `${code} § ${para}`,
+      corpusFile: null,
+      corpusDir: null,
+      pinpoint: `Rz ${rz}`,
+      jurisdiction: "at",
+    });
+  }
+
   for (const m of text.matchAll(LICENSED_RX)) {
     const [raw, work, code, para] = m;
     if (!LICENSED_WORKS.has(work.toLowerCase())) continue;
@@ -314,6 +489,28 @@ export interface GroundingMetadata {
   support_checked?: boolean;
   /** Verified sources that do NOT carry the statement they are cited for. */
   citations_misgrounded?: number;
+  /** The check itself failed (network, timeout, rejected) — nothing was verified. */
+  check_failed?: boolean;
+}
+
+export const CHECK_FAILED_WARNING =
+  "Zitatprüfung fehlgeschlagen — die Zitate dieses Textes sind nicht geprüft. Anwaltlich prüfen.";
+
+/**
+ * What the citation panel shows when the check could not run: "not checked"
+ * and a warning, never a silent absence that reads like "nothing to flag".
+ */
+export function failedGroundingMetadata(): GroundingMetadata {
+  return {
+    citations_verified: 0,
+    citations_unverified: 0,
+    corpus_checked: false,
+    grounded_citations: [],
+    analyzed_at: new Date().toISOString(),
+    has_unverified: true,
+    warning: CHECK_FAILED_WARNING,
+    check_failed: true,
+  };
 }
 
 export interface CitationSupportResult {

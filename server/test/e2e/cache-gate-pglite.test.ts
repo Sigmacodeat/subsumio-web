@@ -123,7 +123,7 @@ describe("cache gate end-to-end (PGLite)", () => {
     expect(hit.hit).toBe(false);
   });
 
-  test("INSERT new page → lookup HIT (bookmark fires but snapshot intact — codex #4 case)", async () => {
+  test("INSERT new page in the same source → lookup MISS (it may be a new hit)", async () => {
     const p1 = await seedPage("test/p1", "alpha");
     const results: SearchResult[] = [
       {
@@ -136,14 +136,38 @@ describe("cache gate end-to-end (PGLite)", () => {
     ];
     const emb = fakeEmbedding(3);
     await cache.store("alpha", emb, results, fakeMeta(), { sourceId: "default" });
+    // created_at resolution: make sure the new page is strictly later.
+    await new Promise((r) => setTimeout(r, 5));
 
-    // Create an UNRELATED new page (different topic, not in result set).
-    await seedPage("test/p2", "beta gamma");
+    // A freshly uploaded document in the same source: the cached list could
+    // not contain it, so the same search must run again.
+    await seedPage("test/p2", "alpha — new document");
 
-    // The bookmark fires (new page bumped MAX(generation)) but Layer 2
-    // (per-page snapshot) sees p1's generation unchanged → row serves.
-    // This is the SUBTLE correctness property: cache stays useful in
-    // brains that are actively being written to.
+    const hit = await cache.lookup(emb, { sourceId: "default" });
+    expect(hit.hit).toBe(false);
+  });
+
+  test("an UPDATE of a page outside the result set → lookup HIT (snapshot intact)", async () => {
+    const p1 = await seedPage("test/p1", "alpha");
+    await seedPage("test/p3", "unrelated");
+    const results: SearchResult[] = [
+      {
+        page_id: p1,
+        slug: "test/p1",
+        title: "test/p1",
+        snippet: "a",
+        score: 1.0,
+      } as unknown as SearchResult,
+    ];
+    const emb = fakeEmbedding(7);
+    await cache.store("alpha", emb, results, fakeMeta(), { sourceId: "default" });
+    await new Promise((r) => setTimeout(r, 5));
+
+    // The bookmark fires but no page was created and p1 is unchanged →
+    // the row still serves: the cache stays useful in busy brains.
+    await engine.executeRaw(
+      `UPDATE pages SET compiled_truth = 'unrelated v2' WHERE slug = 'test/p3' AND source_id = 'default'`
+    );
     const hit = await cache.lookup(emb, { sourceId: "default" });
     expect(hit.hit).toBe(true);
   });
