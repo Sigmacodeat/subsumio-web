@@ -14,6 +14,14 @@
 // named in both audit trails. The firm-visible start entry is written before
 // the session is handed out; if it cannot be stored, the session is ended
 // again (see the start route).
+//
+// Inside a session the engine sees the role "support" (read) or "lawyer"
+// (write), never "admin": matters the firm set to restricted/confidential,
+// ethical walls and document ACL groups stay closed unless the firm adds the
+// operator explicitly (supportEngineRole in support-session-policy.ts). Every
+// accessed path is written to the firm's audit trail before it is served;
+// if that entry cannot be stored the request is refused (requireEngineContext).
+// A firm approval step before entry does not exist yet (open product decision).
 import { randomUUID } from "node:crypto";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";

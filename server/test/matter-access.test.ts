@@ -151,6 +151,33 @@ describe("aclGroupsMiddleware matter access", () => {
     });
   });
 
+  test("a support-session token gets neither restricted matters nor the ACL bypass", async () => {
+    const supportEngine = {
+      executeRaw: async (sql: string) =>
+        sql.includes("legal_case")
+          ? [{ slug: "cases/restricted", permissions: { visibility: "restricted" } }]
+          : [],
+    } as unknown as BrainEngine;
+    await withEnv({ SUBSUMIO_WEB_API_KEY: SECRET }, async () => {
+      invalidateMatterAccess("firm-s");
+      const token = createIdentityToken(
+        { sourceId: "firm-s", matterScope: "all", userId: "u-operator", role: "support" },
+        SECRET
+      );
+      const req = {
+        headers: { "x-subsumio-identity-token": token, "x-subsumio-source": "firm-s" },
+        matterScope: "all",
+      } as unknown as Request & { aclGroups?: unknown };
+      let next = false;
+      await aclGroupsMiddleware(supportEngine)(req, makeRes() as Response, () => {
+        next = true;
+      });
+      expect(next).toBe(true);
+      expect(req.matterScope).toEqual(["*", "!cases/restricted"]);
+      expect(req.aclGroups).not.toBe("all");
+    });
+  });
+
   test("refuses a token issued for another firm", async () => {
     await withEnv({ SUBSUMIO_WEB_API_KEY: SECRET }, async () => {
       const token = createIdentityToken(

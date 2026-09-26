@@ -14,7 +14,10 @@ export const maxDuration = 300;
  *
  * Re-hashes a batch of stored files (default 50) and compares against the
  * content_hash anchored in the files table. Detects silent storage corruption
- * or tampering (GoBD compliance). On mismatch, logs an alert.
+ * or tampering (GoBD compliance). On mismatch the engine raises a critical
+ * alert (/api/internal/alert → ops mail) and this route answers 500, so
+ * cronjob.sh records the run as failed and alarms instead of pinging the
+ * heartbeat.
  *
  * Rolling: checks oldest-first, batch_size per run. With 1000 files and
  * batch_size=50, a full cycle takes 20 days — sufficient for GoBD.
@@ -61,6 +64,13 @@ export const GET = createCronHandler(async (req: NextRequest) => {
         `[cron:integrity-recheck] CORRUPTION DETECTED: ${m.filename} at ${m.storage_path} — expected ${m.expected}, got ${m.actual}`
       );
     }
+  }
+
+  if (result.mismatches > 0) {
+    return Response.json(
+      { ...result, error: "integrity_mismatch", code: "integrity_mismatch" },
+      { status: 500 }
+    );
   }
 
   return Response.json(result);

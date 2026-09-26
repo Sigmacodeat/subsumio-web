@@ -15,6 +15,7 @@
 
 import { writeFileSync, renameSync, unlinkSync } from "fs";
 import { createHash } from "crypto";
+import { RIS_PAUSE_MS } from "./ris-pace";
 
 // ── HTML Stripping ─────────────────────────────────────────────────────
 
@@ -602,7 +603,7 @@ export interface FetchOptions {
 }
 
 /**
- * Fetch with exponential backoff + jitter.
+ * Retry delay for fetchWithRetry: exponential backoff + jitter.
  *
  * Retries on:
  * - HTTP 429 (rate limited)
@@ -610,7 +611,34 @@ export interface FetchOptions {
  * - Network errors (timeout, DNS, connection refused)
  *
  * The jitter prevents thundering herd when multiple workers retry simultaneously.
+ *
+ * After HTTP 429 the next attempt never comes sooner than the RIS pause
+ * (RIS_PAUSE_MS) or the server's Retry-After, whichever is longer — a
+ * rate-limit answer must not be followed by a faster request.
  */
+export function retryDelayMs(
+  status: number | null,
+  attempt: number,
+  retryBaseMs: number,
+  retryAfter: string | null = null,
+  jitterRatio = Math.random()
+): number {
+  const baseDelay = retryBaseMs * Math.pow(2, attempt);
+  const backoff = baseDelay + Math.floor(jitterRatio * baseDelay * 0.25);
+  if (status !== 429) return backoff;
+  let serverWaitMs = 0;
+  if (retryAfter) {
+    const secs = Number(retryAfter);
+    if (Number.isFinite(secs)) serverWaitMs = secs * 1000;
+    else {
+      const at = Date.parse(retryAfter);
+      if (Number.isFinite(at)) serverWaitMs = at - Date.now();
+    }
+  }
+  return Math.max(backoff, RIS_PAUSE_MS, Math.min(serverWaitMs, 10 * 60_000));
+}
+
+/** Fetch with retry — see the rules above; delays come from retryDelayMs. */
 export async function fetchWithRetry(
   url: string,
   opts: FetchOptions = {}
@@ -629,10 +657,15 @@ export async function fetchWithRetry(
 
       if (res.status === 429 || res.status >= 500) {
         if (attempt < maxRetries) {
-          // Exponential backoff + jitter (0-25% of delay)
-          const baseDelay = retryBaseMs * Math.pow(2, attempt);
-          const jitter = Math.floor(Math.random() * baseDelay * 0.25);
-          await new Promise((r) => setTimeout(r, baseDelay + jitter));
+          // Exponential backoff + jitter (0-25% of delay); after 429 at
+          // least the RIS pause / Retry-After (retryDelayMs).
+          const delay = retryDelayMs(
+            res.status,
+            attempt,
+            retryBaseMs,
+            res.headers.get("retry-after")
+          );
+          await new Promise((r) => setTimeout(r, delay));
           continue;
         }
       }

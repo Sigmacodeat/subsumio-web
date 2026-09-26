@@ -16,7 +16,14 @@ export const maxDuration = 300;
  * fetch_triggered: pipeline_config Key → JSON Value → Pipeline liest,
  * führt aus, löscht den Trigger.
  *
- * RIS OGD Compliance: 04:00 UTC (06:00 CEST) — außerhalb Bürozeiten.
+ * Zeitplan: server/deploy/netcup/crontab (02:30 UTC). Die Pipeline startet
+ * den Lauf im nächsten Zyklus; Pacing/Lock liegen in den RIS-Skripten.
+ *
+ * Alarmierung: Ist der letzte Delta-Lauf gescheitert (Alarm
+ * `delta_sync_failed` auf `ris-delta`, gesetzt und nach Erfolg wieder
+ * gelöscht von corpus-pipeline.ts), antwortet die Route nach dem Setzen des
+ * Triggers mit 500 — cronjob.sh meldet den Job dann als fehlgeschlagen und
+ * mailt QUEUE_ALERT_EMAIL, statt den Heartbeat zu pingen.
  */
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const pool = getSharedPgPool();
@@ -29,6 +36,24 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     `INSERT INTO pipeline_config (key, value) VALUES ('delta_sync_triggered', '{"applikation": "all"}'::jsonb)
      ON CONFLICT (key) DO UPDATE SET value = '{"applikation": "all"}'::jsonb`
   );
+
+  const failed = await pool.query<{ message: string | null }>(
+    `SELECT elem->>'message' AS message
+       FROM pipeline_state, jsonb_array_elements(COALESCE(alert_flags, '[]'::jsonb)) AS elem
+      WHERE source_key = 'ris-delta' AND elem->>'type' = 'delta_sync_failed'
+      LIMIT 1`
+  );
+  if (failed.rows.length > 0) {
+    return Response.json(
+      {
+        triggered: true,
+        error: "Letzter RIS Delta-Sync fehlgeschlagen",
+        code: "delta_sync_failed",
+        message: failed.rows[0]!.message,
+      },
+      { status: 500 }
+    );
+  }
 
   return Response.json({
     triggered: true,

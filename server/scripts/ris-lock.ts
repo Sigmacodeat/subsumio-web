@@ -2,7 +2,15 @@
  * RIS Lock — cross-process, cross-container semaphore for RIS
  * (Rechtsinformationssystem) mass downloads, backed by Postgres rows.
  *
- * RIS-IT confirmed by mail (2026-09-22): at most TWO parallel download
+ * CURRENT STATE (operator decision 2026-09-23, agreed with RIS-IT): the
+ * slot semaphore (acquireRisLock) and the time window (waitForRisWindow)
+ * are switched off — there is NO cross-process limit on parallel RIS
+ * downloads and no window. What stays active is the per-process pause
+ * (risPause/risMassPause, 2 s, ris-pace.ts).
+ * `acquireRisLock()` returns immediately; the semaphore below is kept so it
+ * can be switched back on by removing that early return.
+ *
+ * Original design — RIS-IT mail (2026-09-22): at most TWO parallel download
  * processes are allowed, each pacing at ≤ 0.5 requests/s — i.e. ~1 req/s
  * combined, inside the mass-download window only (20:00–05:00, weekends,
  * Austrian holidays; see ris-pace.ts). The lock therefore manages two
@@ -151,17 +159,18 @@ async function currentHolderDescription(): Promise<string> {
 }
 
 /**
- * Block until the RIS lock is acquired by this process. Polls indefinitely
+ * CURRENTLY A NO-OP (see the file header): returns at once, nothing is
+ * coordinated. When re-enabled: block until the RIS lock is acquired by this process. Polls indefinitely
  * (no timeout) — RIS backfills are expected to queue behind each other
  * rather than fail. A lock whose holder has stopped heartbeating is stolen
  * automatically; a lock held by a live job is waited out, however long it
  * takes.
  */
 export async function acquireRisLock(): Promise<void> {
-  // Semaphore deaktiviert (Operator-Entscheid 2026-09-23): Downloads laufen
-  // ohne Slot-Koordination parallel. Die RIS-IT-Zusage vom 22.9. (max. 2
-  // Prozesse à ≤0,5 req/s, nur im Massen-Fenster) wird damit bewusst
-  // überschritten — Pacing und Fenster (ris-pace.ts) bleiben aktiv.
+  // Semaphore deaktiviert (Operator-Entscheid 2026-09-23, mit RIS-IT
+  // abgestimmt): Downloads laufen ohne Slot-Koordination parallel, es gibt
+  // keine prozessübergreifende Begrenzung. Aktiv bleibt nur die Pause je
+  // Prozess (ris-pace.ts); das Zeitfenster ist ebenfalls abgeschaltet.
   // Reaktivieren: diesen early return entfernen.
   return;
 }

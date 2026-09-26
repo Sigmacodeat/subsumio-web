@@ -17,10 +17,11 @@
  *   8. Alert bei Gap > Threshold oder Fehler
  *
  * RIS OGD Compliance:
- *   - acquireRisLock für single-connection mode
- *   - 1.5s Pause zwischen Requests (via ris-proxy.ts)
+ *   - acquireRisLock (derzeit No-op, siehe ris-lock.ts)
+ *   - 2 s Pause zwischen Requests (RIS_PAUSE_MS, ris-pace.ts)
  *   - User-Agent gesetzt
- *   - Massendownload außerhalb Bürozeiten (Cron: 04:00 UTC = 06:00 CEST)
+ *   - Start: Cron-Trigger 02:30 UTC (server/deploy/netcup/crontab), die
+ *     Pipeline startet den Lauf im nächsten Zyklus
  *
  * Usage:
  *   bun scripts/ris-delta-watcher.ts --once              # ein Zyklus, alle Applikationen
@@ -33,7 +34,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
 import { dump as yamlDump } from "js-yaml";
 
 import {
@@ -46,6 +46,16 @@ import {
   type DeltaResult,
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { forwardAlert } from "./pipeline-alert";
+import { runPsqlFile } from "./psql-env";
+import {
+  clearFailure,
+  isQuarantined,
+  loadQuarantine,
+  recordFailure,
+  saveQuarantine,
+  type DocFailure,
+} from "./ris-delta-quarantine";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import { mapRisReference } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import {
@@ -74,6 +84,7 @@ const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", 
 const SERVER_DIR = join(_scriptDir, "..");
 
 const args = process.argv.slice(2);
+// --once is accepted for CLI compatibility; every run is a single cycle.
 const ONCE = args.includes("--once");
 const DRY_RUN = args.includes("--dry-run");
 const REPORT_ONLY = args.includes("--report-only");
@@ -83,19 +94,10 @@ const resetIdx = args.indexOf("--reset-cursor");
 const RESET_CURSOR = resetIdx >= 0 ? args[resetIdx + 1] : null;
 
 const RIS_UA = { "User-Agent": getUserAgent() };
+const QUARANTINE_FILE = join(CORPUS_ROOT, "_state", "ris-delta-quarantine.json");
 const GAP_ALERT_THRESHOLD = 50;
 
 // ── DB Helpers (gleicher Pattern wie corpus-pipeline.ts) ───────────────
-
-function sh(cmd: string): string {
-  try {
-    return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
-  } catch (err) {
-    // Never silent: a failed state write (cursor, alert) must show in the log.
-    console.error(`  ❌ Befehl fehlgeschlagen: ${(err as Error).message.split("\n")[0]}`);
-    return "";
-  }
-}
 
 function dbUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -113,7 +115,10 @@ function psqlQuery(query: string): string {
   const tmpFile = `/tmp/psql_delta_${process.pid}_${Date.now()}.sql`;
   writeFileSync(tmpFile, query, "utf-8");
   try {
-    return sh(`psql ${JSON.stringify(dbUrl())} -q -t -A -f ${JSON.stringify(tmpFile)}`);
+    // Credentials via env (never argv/logs); failures are logged masked.
+    const r = runPsqlFile(tmpFile, dbUrl());
+    if (!r.ok) console.error(`  ❌ psql fehlgeschlagen: ${r.error}`);
+    return r.out;
   } finally {
     try {
       unlinkSync(tmpFile);
@@ -181,6 +186,28 @@ function raiseAlert(stateKey: string, type: string, severity: string, message: s
      WHERE source_key = '${stateKey}'`
   );
   console.log(`  ⚠️ ALERT [${severity}] ${stateKey}: ${type} — ${message}`);
+  // Webhook + ops mail (error/critical); awaited before the process exits.
+  pendingAlerts.push(forwardAlert({ source: stateKey, ...alert }));
+}
+
+const pendingAlerts: Promise<unknown>[] = [];
+
+/**
+ * Exit code of a watcher run. Any application error, incomplete RIS fetch
+ * or batch in which every document failed is a failure — also with --once,
+ * which is how the pipeline starts it and how it learns about the outcome.
+ * Exported for tests.
+ */
+export function deltaExitCode(input: {
+  errors: string[];
+  results: Array<{ complete: boolean; documents: unknown[]; written: number; failed: number }>;
+}): number {
+  if (input.errors.length > 0) return 1;
+  for (const r of input.results) {
+    if (!r.complete) return 1;
+    if (r.documents.length > 0 && r.written === 0 && r.failed > 0) return 1;
+  }
+  return 0;
 }
 
 function clearAlerts(stateKey: string, type: string): void {
@@ -418,18 +445,23 @@ export function docFilePath(
  *   4. Auf Disk schreiben (atomic)
  *   5. markiereZumImport
  *
- * Returns true bei Erfolg, false bei Fehler.
+ * Returns true bei Erfolg, sonst den Fehler — `permanent` heißt: ein
+ * weiterer Versuch mit derselben RIS-Fassung kann nicht gelingen
+ * (→ sofort Quarantäne, siehe ris-delta-quarantine.ts).
  */
-async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promise<boolean> {
+async function processDocument(
+  app: DeltaApplikation,
+  doc: DeltaDocument
+): Promise<true | DocFailure> {
   if (!doc.xmlUrl) {
     console.warn(`  ⚠️ Keine XML-URL für ${doc.id} (${app.applikation}) — überspringe`);
-    return false;
+    return { permanent: true, reason: "keine XML-URL" };
   }
 
   const xml = await fetchXml(doc.xmlUrl);
   if (!xml || xml.length < 100) {
     console.warn(`  ⚠️ XML leer/fehlerhaft für ${doc.id} — überspringe`);
-    return false;
+    return { permanent: false, reason: "XML nicht abrufbar oder leer" };
   }
 
   // Markdown bauen je nach Endpoint
@@ -448,7 +480,7 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
     const validation = validateFetchedText(text);
     if (!validation.valid) {
       console.warn(`  ⚠️ Text invalid für ${doc.id}: ${validation.reason} — überspringe`);
-      return false;
+      return { permanent: true, reason: `Text ungültig: ${validation.reason}` };
     }
   }
 
@@ -460,7 +492,7 @@ async function processDocument(app: DeltaApplikation, doc: DeltaDocument): Promi
       console.warn(
         `  ⚠️ Content-Identity-Check fehlgeschlagen für ${doc.id} (GZ ${doc.geschaeftszahl} nicht im Text) — überspringe`
       );
-      return false;
+      return { permanent: true, reason: "Geschäftszahl nicht im Text" };
     }
   }
 
@@ -519,9 +551,9 @@ async function syncApplikation(
     return { ...result, written: 0, failed: 0, skipped: 0 };
   }
 
-  // RIS Lock holen (serialisiert mit anderen RIS-Scripts)
+  // acquireRisLock ist derzeit ein No-op (siehe ris-lock.ts) — keine
+  // Serialisierung mit anderen RIS-Scripts.
   await acquireRisLock();
-  console.log(`  ✅ RIS-Lock erhalten`);
 
   try {
     const result = await fetchDelta(app, cursor);
@@ -561,6 +593,9 @@ async function syncApplikation(
     let skipped = 0;
     const seenIds = new Set<string>();
     const failedChangedAt: string[] = [];
+    const quarantine = loadQuarantine(QUARANTINE_FILE);
+    const newlyQuarantined: string[] = [];
+    let quarantineChanged = false;
 
     for (const doc of result.documents) {
       // Dedup: RIS kann bei Paginierung-Overlap dasselbe Dokument mehrfach liefern
@@ -569,6 +604,12 @@ async function syncApplikation(
         continue;
       }
       seenIds.add(doc.id);
+
+      // Bereits in Quarantäne (gleiche RIS-Fassung) — nicht erneut abrufen.
+      if (isQuarantined(quarantine, doc)) {
+        skipped++;
+        continue;
+      }
 
       // In-Kraft-Filter: Normen mit Ausserkrafttretensdatum in der Vergangenheit
       // werden mit deprecated: true geschrieben (nicht gelöscht — historische Anfragen)
@@ -581,11 +622,19 @@ async function syncApplikation(
         }
       }
 
-      const ok = await processDocument(app, doc);
-      if (ok) written++;
-      else {
+      const outcome = await processDocument(app, doc);
+      if (outcome === true) {
+        written++;
+        if (quarantine[doc.id]) {
+          clearFailure(quarantine, doc.id);
+          quarantineChanged = true;
+        }
+      } else {
         failed++;
-        failedChangedAt.push(doc.changedAt);
+        quarantineChanged = true;
+        // Quarantänierte Dokumente halten den Cursor nicht mehr fest.
+        if (recordFailure(quarantine, doc, outcome)) newlyQuarantined.push(doc.id);
+        else failedChangedAt.push(doc.changedAt);
       }
 
       if (written % 50 === 0 && written > 0) {
@@ -600,6 +649,18 @@ async function syncApplikation(
         `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`
       );
 
+    if (quarantineChanged && !DRY_RUN) saveQuarantine(QUARANTINE_FILE, quarantine);
+    if (newlyQuarantined.length > 0) {
+      raiseAlert(
+        app.stateKey,
+        "delta_quarantine",
+        "error",
+        `${newlyQuarantined.length} Dokument(e) dauerhaft fehlgeschlagen und in Quarantäne ` +
+          `(${newlyQuarantined.slice(0, 10).join(", ")}${newlyQuarantined.length > 10 ? ", …" : ""}) — ` +
+          `siehe _state/ris-delta-quarantine.json`
+      );
+    }
+
     // The cursor only moves past what was fully written: on partial failure
     // it stops at the earliest failed change, so those come again next run.
     const nextCursor = nextCursorAfterBatch({
@@ -607,12 +668,15 @@ async function syncApplikation(
       complete: result.complete,
       failedChangedAt,
     });
-    if (failed === 0 && nextCursor) {
+    // Quarantined failures do not count against the batch — they are
+    // alerted separately and no longer block the cursor.
+    const openFailures = failed - newlyQuarantined.length;
+    if (openFailures === 0 && nextCursor) {
       updateCursor(app.stateKey, nextCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
       clearAlerts(app.stateKey, "delta_gap");
       appendHistory(app.stateKey, "delta", `${written} docs synced`);
-    } else if (written > 0 || (failed === 0 && !nextCursor)) {
+    } else if (written > 0 || (openFailures === 0 && !nextCursor)) {
       // Teilweise erfolgreich oder unvollständig abgerufen — Cursor nur bis
       // zur ersten Lücke, Alert
       if (nextCursor) updateCursor(app.stateKey, nextCursor);
@@ -621,7 +685,7 @@ async function syncApplikation(
         "delta_sync_partial",
         "warning",
         result.complete
-          ? `${written} synced, ${failed} failed — werden beim nächsten Lauf erneut geholt`
+          ? `${written} synced, ${openFailures} failed — werden beim nächsten Lauf erneut geholt`
           : `${written} synced, RIS-Abfrage unvollständig — Cursor bleibt stehen`
       );
       appendHistory(app.stateKey, "delta", `${written} synced, ${failed} failed`);
@@ -639,7 +703,7 @@ async function syncApplikation(
     console.log(`  ✅ ${written} geschrieben, ${failed} fehlgeschlagen, ${skipped} übersprungen`);
     console.log(`  📌 Cursor: ${nextCursor ?? `${cursor ?? "(keiner)"} (unverändert)`}`);
 
-    return { ...result, written, failed, skipped };
+    return { ...result, written, failed: openFailures, skipped };
   } catch (err) {
     raiseAlert(app.stateKey, "delta_sync_failed", "error", `Sync error: ${(err as Error).message}`);
     appendHistory(app.stateKey, "delta", `error: ${(err as Error).message}`);
@@ -647,7 +711,6 @@ async function syncApplikation(
     throw err;
   } finally {
     releaseRisLock();
-    console.log(`  🔓 RIS-Lock freigegeben`);
   }
 }
 
@@ -743,9 +806,14 @@ async function main() {
     psqlQuery("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
   }
 
-  console.log(`\n✅ Fertig: ${new Date().toISOString()}`);
-
-  if (errors.length > 0 && !ONCE) process.exit(1);
+  const exitCode = deltaExitCode({ errors, results: results.map((r) => r.result) });
+  await Promise.allSettled(pendingAlerts);
+  console.log(
+    exitCode === 0
+      ? `\n✅ Fertig: ${new Date().toISOString()}`
+      : `\n❌ Fertig mit Fehlern: ${new Date().toISOString()}`
+  );
+  if (exitCode !== 0) process.exit(exitCode);
 }
 
 if (import.meta.main) {

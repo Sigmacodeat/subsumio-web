@@ -16,24 +16,38 @@
  *
  * Soft-delete only (deleted_at = now()): invisible to search at once,
  * reversible, and the hard purge stays purge-tombstoned-pages.ts's separate
- * decision. Writes an inventory before touching anything. Updates run in
+ * decision. Writes an inventory before touching anything (one file per run,
+ * `<inventory-out>-<run id>.jsonl`, appended + fsynced before each source's
+ * updates). Updates run in
  * small id batches — one large UPDATE with cascading work held locks for
  * hours on 2026-09-24 and stalled every import.
  *
  * Refuses to run when the disk scan looks broken (fewer documents on disk
- * than half the DB's), so an unmounted corpus can never empty the DB.
+ * than half the DB's), so an unmounted corpus can never empty the DB. The
+ * RIS Soll is checked just as strictly (`checkSollPlausible`): no run while
+ * the crawler's `.skipped.json` sidecar exists, none with an empty Soll or
+ * one that shrank below 95 % of the last accepted Soll, and none that would
+ * tombstone more than 2 % of the live pages — `--allow-mass` overrides only
+ * the last two, deliberately.
  *
  * Usage:
  *   bun run scripts/tombstone-db-orphans.ts                       # dry run, both sources
  *   bun run scripts/tombstone-db-orphans.ts --source law-at-landesrecht --yes
+ *   (--dry-run is accepted and is the default; --allow-mass see above)
  */
 
 import { parseArgs } from "util";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
 import { INDEX_OF, loadIndexIds, scanNormalized } from "./corpus-sync-inventory.ts";
+import {
+  InventoryWriter,
+  inventoryPathFor,
+  makeRunId,
+  tombstoneWithInventory,
+} from "./tombstone-inventory.ts";
 
 interface Engine {
   executeRaw(sql: string, params?: unknown[]): Promise<unknown[]>;
@@ -78,17 +92,77 @@ export function selectOrphans(
   return plan;
 }
 
-async function main() {
+/** Minimum share of the last accepted Soll a new Soll must reach. */
+export const SOLL_MIN_SHARE_OF_PREVIOUS = 0.95;
+/** Maximum share of live pages one run may tombstone without --allow-mass. */
+export const MAX_ORPHAN_SHARE = 0.02;
+
+/**
+ * Plausibility of the RIS Soll + the resulting plan. Throws with the reason;
+ * a shrunken or gap-ridden index must never turn into mass soft-deletes.
+ */
+export function checkSollPlausible(input: {
+  source: string;
+  sollSize: number;
+  previousSollSize: number | null;
+  skippedSidecar: boolean;
+  orphanCount: number;
+  livePages: number;
+  allowMass: boolean;
+}): void {
+  const { source, sollSize, previousSollSize, skippedSidecar, orphanCount, livePages } = input;
+  if (skippedSidecar) {
+    throw new Error(
+      `${source}: RIS-Index hat übersprungene Seiten (.skipped.json) — erst nachladen. Abbruch.`
+    );
+  }
+  if (sollSize === 0) throw new Error(`${source}: RIS-Soll ist leer — Abbruch.`);
+  if (input.allowMass) return;
+  if (previousSollSize !== null && sollSize < previousSollSize * SOLL_MIN_SHARE_OF_PREVIOUS) {
+    throw new Error(
+      `${source}: RIS-Soll ${sollSize} < ${Math.round(SOLL_MIN_SHARE_OF_PREVIOUS * 100)} % des letzten ` +
+        `akzeptierten (${previousSollSize}) — Index unvollständig? Abbruch (--allow-mass übersteuert).`
+    );
+  }
+  if (livePages > 0 && orphanCount > livePages * MAX_ORPHAN_SHARE) {
+    throw new Error(
+      `${source}: ${orphanCount} von ${livePages} Seiten wären verwaist (> ${MAX_ORPHAN_SHARE * 100} %) — ` +
+        `Abbruch (--allow-mass übersteuert).`
+    );
+  }
+}
+
+type SollBaseline = Record<string, number>;
+
+function readBaseline(path: string): SollBaseline {
+  try {
+    const v = JSON.parse(readFileSync(path, "utf8")) as unknown;
+    return v && typeof v === "object" ? (v as SollBaseline) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** CLI parsing, exported so tests can pin the accepted flags. */
+export function parseCliArgs(argv: string[]) {
   const { values } = parseArgs({
-    args: Bun.argv.slice(2),
+    args: argv,
     options: {
       source: { type: "string" },
       yes: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
+      "allow-mass": { type: "boolean", default: false },
       root: { type: "string", default: process.env.LAW_CORPUS_ROOT ?? "/law-corpus" },
       "inventory-out": { type: "string", default: "/law-corpus/_state/tombstone-db-orphans.jsonl" },
     },
     allowPositionals: false,
   });
+  if (values.yes && values["dry-run"]) throw new Error("--yes und --dry-run schließen sich aus.");
+  return values;
+}
+
+async function main() {
+  const values = parseCliArgs(Bun.argv.slice(2));
   const APPLY = values.yes as boolean;
   const root = values.root as string;
   const sources = values.source ? [values.source as string] : Object.keys(SOURCES);
@@ -103,13 +177,16 @@ async function main() {
   const engine = (await createEngine(cfg)) as unknown as Engine;
   await engine.connect(cfg);
 
-  const inventory: string[] = [];
+  const runId = makeRunId(`${values.source ?? "all"}${APPLY ? "" : "-dryrun"}`);
+  const inventory = new InventoryWriter(inventoryPathFor(values["inventory-out"] as string, runId));
   try {
     for (const source of sources) {
       const corpus = SOURCES[source]!;
       const indexPath = join(root, "_state", INDEX_OF[corpus]!);
       if (!existsSync(indexPath)) throw new Error(`RIS-Index fehlt: ${indexPath}`);
       const soll = loadIndexIds(indexPath);
+      const baselinePath = join(root, "_state", "tombstone-db-orphans.soll-baseline.json");
+      const baseline = readBaseline(baselinePath);
       const { ids: onDisk } = scanNormalized(join(root, "_normalized", corpus));
 
       const rows: Array<{ id: number; slug: string; doc_id: string | null; dated: boolean }> = [];
@@ -142,28 +219,39 @@ async function main() {
           ` · ${f(plan.awaitingFetch)} warten auf Nachabruf (bleiben)` +
           ` · ${f(plan.dated)} datierte ältere Fassungen (bleiben) · ${f(plan.withoutDocId)} ohne doc_id (bleiben)`
       );
-      for (const o of plan.orphans) inventory.push(JSON.stringify({ source_id: source, ...o }));
+      checkSollPlausible({
+        source,
+        sollSize: soll.size,
+        previousSollSize: typeof baseline[source] === "number" ? baseline[source]! : null,
+        skippedSidecar: existsSync(`${indexPath}.skipped.json`),
+        orphanCount: plan.orphans.length,
+        livePages: plan.livePages,
+        allowMass: values["allow-mass"] as boolean,
+      });
+      // Nur ein akzeptiertes Soll wird zur neuen Vergleichsbasis.
+      writeFileSync(baselinePath, JSON.stringify({ ...baseline, [source]: soll.size }) + "\n");
+      const entries = plan.orphans.map((o) => ({
+        id: o.id,
+        line: JSON.stringify({ run_id: runId, source_id: source, ...o }),
+      }));
 
       if (APPLY) {
-        const ids = plan.orphans.map((o) => o.id);
-        for (let i = 0; i < ids.length; i += 500) {
-          await engine.executeRaw(
-            `UPDATE pages SET deleted_at = now() WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL`,
-            [ids.slice(i, i + 500)]
-          );
-          if ((i / 500) % 10 === 0)
-            process.stderr.write(`  ${f(Math.min(i + 500, ids.length))}/${f(ids.length)}\r`);
-        }
+        await tombstoneWithInventory(engine, entries, inventory, 500, (done, total) => {
+          if (done % 5000 === 0 || done === total)
+            process.stderr.write(`  ${f(done)}/${f(total)}\r`);
+        });
         process.stderr.write("\n");
+      } else {
+        inventory.append(entries.map((e) => e.line));
       }
     }
   } finally {
+    inventory.close();
     await engine.disconnect();
   }
 
-  if (inventory.length > 0) {
-    writeFileSync(values["inventory-out"] as string, inventory.join("\n") + "\n");
-    console.log(`Inventar: ${values["inventory-out"]} (${inventory.length} Zeilen)`);
+  if (inventory.lines > 0) {
+    console.log(`Inventar: ${inventory.path} (${inventory.lines} Zeilen, Lauf ${runId})`);
   }
   console.log(APPLY ? "Angewendet (Soft-Delete)." : "TROCKENLAUF — mit --yes anwenden.");
 }

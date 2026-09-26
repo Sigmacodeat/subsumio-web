@@ -16,7 +16,8 @@
  *   bun scripts/fetch-entscheidungstexte.ts --court ogh
  *   bun scripts/fetch-entscheidungstexte.ts --court vfgh,vwgh --from 1990
  *
- * RIS OGD rules: one connection, 1–2 s between requests, shared ris-lock.
+ * RIS OGD: one connection, 2 s between requests (ris-pace.ts); the shared
+ * ris-lock is currently switched off (see ris-lock.ts).
  * Resumable: finished years are recorded; fetched texts are skipped.
  */
 

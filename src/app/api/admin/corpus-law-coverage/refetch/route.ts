@@ -12,8 +12,10 @@ export const dynamic = "force-dynamic";
  *
  * Stellt ein Gesetz (gnr) in die `law_fetch_queue` (pipeline_config). Der
  * Corpus-Pipeline-Loop auf dem Server holt sich den Eintrag und startet
- * `ris-xml-fetch-normen.ts --gnr …` — RIS-Lock, Pacing und das erlaubte
- * Massen-Download-Fenster greifen wie bei jedem anderen Fetch.
+ * `ris-xml-fetch-normen.ts --gnr …` mit derselben Pause je Anfrage wie jeder
+ * andere Fetch (ris-pace.ts). RIS-Lock und Zeitfenster sind derzeit per
+ * Operator-Entscheid (mit RIS-IT abgestimmt) abgeschaltet — der Abruf startet
+ * im nächsten Pipeline-Zyklus, sobald kein anderer Nachlade-Abruf läuft.
  *
  * Derzeit nur law-at-normen (Bundesrecht) — der Landesrecht-Fetcher hat
  * keinen gnr-Filter.
@@ -63,7 +65,7 @@ export const POST = createHandler(
         queued: true,
         gnr: body!.gnr,
         queue_len: row?.queue_len ?? null,
-        note: "Die Pipeline holt das Gesetz im nächsten RIS-Fenster; der Import läuft danach automatisch.",
+        note: "Die Pipeline holt das Gesetz im nächsten Zyklus (sobald kein anderer Nachlade-Abruf läuft); der Import läuft danach automatisch.",
       });
     } catch (err) {
       log.error("[refetch] failed:", (err as Error).message);

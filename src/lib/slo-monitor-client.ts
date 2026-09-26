@@ -5,7 +5,14 @@
  * metrics store. This client mirrors the SLO definitions and evaluation logic
  * for the Next.js API route. In production with a shared metrics DB, both sides
  * would query the same store.
+ *
+ * NOT CONNECTED: no metrics source feeds this module (the engine's store is
+ * in-memory and nothing records into it either), so every SLO reports
+ * "no_data" and no alert can ever fire. `SLO_METRICS_CONNECTED` says so to
+ * the API and the /ops/slo page, which must not suggest monitoring that does
+ * not happen. Flip it only together with a real metrics source.
  */
+export const SLO_METRICS_CONNECTED = false;
 
 export type WorkflowMetric =
   | "success_rate"

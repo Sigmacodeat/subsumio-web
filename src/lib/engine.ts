@@ -31,7 +31,11 @@ import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { isPlatformOperator } from "@/lib/auth/platform-operator";
 import { getActiveSupportSession, type SupportSession } from "@/lib/support-session";
-import { supportSessionBlocksRequest } from "@/lib/support-session-policy";
+import {
+  supportAccessLogKey,
+  supportEngineRole,
+  supportSessionBlocksRequest,
+} from "@/lib/support-session-policy";
 import { getTenant } from "@/lib/tenants";
 import { billingAccountFor, type BillingAccount } from "@/lib/billing/billing-account";
 
@@ -282,7 +286,15 @@ export async function engineContext(): Promise<EngineContext | null> {
   // Always stated (eu_only | any): the engine remembers it per source so the
   // firm's server-side work without a session stays under the same policy.
   headers[MODEL_POLICY_HEADER] = modelPolicyHeaderValue(modelPolicy);
-  addCallerIdentity(headers, brainId, effectiveUser);
+  // Inside a support session the engine sees a non-admin role, so restricted
+  // matters and document ACLs of the firm stay closed (support-session-policy).
+  addCallerIdentity(
+    headers,
+    brainId,
+    supportSession
+      ? { ...effectiveUser, role: supportEngineRole(supportSession.mode) }
+      : effectiveUser
+  );
   return {
     headers,
     brainId,
@@ -304,7 +316,8 @@ export async function engineContext(): Promise<EngineContext | null> {
 export function addCallerIdentity(
   headers: Record<string, string>,
   brainId: string,
-  user: Pick<User, "id" | "role" | "orgId">
+  // role is a string: support sessions sign "support"/"lawyer" for the engine.
+  user: Pick<User, "id" | "orgId"> & { role: string }
 ): Record<string, string> {
   const token = createSignedIdentityToken(brainId, "all", {
     userId: user.id,
@@ -601,9 +614,53 @@ export async function requireEngineContext(
     );
   }
 
+  // 1c. Every access inside a support session is recorded in the firm's own
+  //     audit trail before it is served; if the entry cannot be stored, the
+  //     request is refused (fail-closed).
+  if (ctx.supportSession) {
+    const refused = await recordSupportAccess(ctx, req, action);
+    if (refused) return refused;
+  }
+
   const guard = await applyUsageGuards(ctx, rateTier, quotaField, creditOp);
   if (guard) return guard;
   return ctx;
+}
+
+const SUPPORT_ACCESS_LOGGED = new Set<string>();
+
+async function recordSupportAccess(
+  ctx: EngineContext,
+  req: Request,
+  action: string
+): Promise<Response | null> {
+  let pathname = "";
+  try {
+    pathname = new URL(req.url).pathname;
+  } catch {
+    pathname = "(unbekannt)";
+  }
+  const key = supportAccessLogKey(ctx.supportSession, req.method, pathname, action);
+  if (!key || SUPPORT_ACCESS_LOGGED.has(key)) return null;
+  // Dynamic import: support-session-audit imports this module.
+  const { writeSupportAccessAuditEntry } = await import("@/lib/support-session-audit");
+  const stored = await writeSupportAccessAuditEntry(ctx.brainId, ctx.supportSession!, {
+    method: req.method.toUpperCase(),
+    path: pathname,
+    action,
+  });
+  if (!stored) {
+    return Response.json(
+      {
+        error: "Support-Zugriff konnte nicht protokolliert werden",
+        code: "support_audit_unavailable",
+      },
+      { status: 503 }
+    );
+  }
+  if (SUPPORT_ACCESS_LOGGED.size > 10_000) SUPPORT_ACCESS_LOGGED.clear();
+  SUPPORT_ACCESS_LOGGED.add(key);
+  return null;
 }
 
 /**

@@ -18,7 +18,7 @@ bun run server/scripts/batch-import-from-disk.ts \
   --batch-size 200 --sleep-ms 10 --no-embed --max-file-size 409600 \
   > /tmp/import-law-at.log 2>&1
 
-# smaller remaining sources can run in parallel (2 slots)
+# smaller remaining sources can run in parallel
 REMAINING=(
   "law-at-landesrecht:at-landesrecht"
   "law-at-staatsvertraege:at-staatsvertraege"
