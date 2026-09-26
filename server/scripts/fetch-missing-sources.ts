@@ -10,12 +10,13 @@
  *   bun run server/scripts/fetch-missing-sources.ts --source Avsv
  *   bun run server/scripts/fetch-missing-sources.ts --source Gemeinden
  */
-import { mkdirSync, existsSync, readdirSync } from "fs";
+import { mkdirSync, readdirSync, openSync, readSync, closeSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { spawnSync } from "child_process";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
 import { risMassPause } from "./ris-pace";
-import { atomicWrite, contentHash, stripHtmlComplete, decodeEntities } from "./backfill-utils";
+import { atomicWrite, contentHash, stripHtmlComplete, decodeEntities, risXmlToText } from "./backfill-utils";
 
 const RIS_BASE = "https://data.bka.gv.at/ris/api/v2.6";
 const UA = { "User-Agent": "subsumio-law-corpus/1.0 (corpus build; contact: hello@subsum.io)" };
@@ -34,7 +35,7 @@ const RETRIEVED_AT = new Date().toISOString().slice(0, 10);
 
 // ─── Source Definitions ───────────────────────────────────────────────────
 
-interface SourceConfig {
+export interface SourceConfig {
   endpoint: "Bundesrecht" | "Landesrecht" | "Judikatur" | "Sonstige" | "Bezirke" | "Gemeinden";
   applikation: string; // empty = no Applikation param
   outDir: string;
@@ -51,7 +52,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Erlaesse",
     outDir: "at-bmerl",
     label: "Erlaesse",
-    docType: "erlass",
+    docType: "law",
     metadataKey: "Sonstige",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -60,7 +61,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Avsv",
     outDir: "at-avsv",
     label: "AVSV",
-    docType: "amtliche_verlautbarung",
+    docType: "law",
     metadataKey: "Sonstige",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -69,7 +70,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Avn",
     outDir: "at-avn",
     label: "AVN",
-    docType: "amtliche_verlautbarung",
+    docType: "law",
     metadataKey: "Sonstige",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -78,7 +79,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Spg",
     outDir: "at-spg",
     label: "SPG",
-    docType: "strukturplan",
+    docType: "law",
     metadataKey: "Sonstige",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -87,7 +88,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "KmGer",
     outDir: "at-kmger",
     label: "KmGer",
-    docType: "kundmachung",
+    docType: "law",
     metadataKey: "Sonstige",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -97,7 +98,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "",
     outDir: "at-bezirke",
     label: "Bezirke",
-    docType: "kundmachung",
+    docType: "law",
     metadataKey: "Bezirke",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -107,7 +108,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "",
     outDir: "at-gemeinden",
     label: "Gemeinden",
-    docType: "gemeinderecht",
+    docType: "law",
     metadataKey: "Gemeinden",
     titleFields: ["Kurztitel", "Titel"],
   },
@@ -117,7 +118,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Umse",
     outDir: "at-judikatur-umse",
     label: "Umse",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -126,7 +127,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Gbk",
     outDir: "at-judikatur-gbk",
     label: "GBK",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -135,7 +136,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Pvak",
     outDir: "at-judikatur-pvak",
     label: "PVAK",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -144,7 +145,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Dsk",
     outDir: "at-judikatur-dsk",
     label: "DSK",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -153,7 +154,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Dok",
     outDir: "at-judikatur-dok",
     label: "DOK",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -162,7 +163,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Ubas",
     outDir: "at-judikatur-ubas",
     label: "UBAS",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -171,7 +172,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Vfgh",
     outDir: "at-judikatur-vfgh",
     label: "VfGH",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -180,7 +181,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Uvs",
     outDir: "at-judikatur-uvs",
     label: "UVS",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -190,7 +191,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Lvwg",
     outDir: "at-judikatur-lvwg",
     label: "LVwG",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -199,7 +200,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Justiz",
     outDir: "at-judikatur",
     label: "OGH",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -208,7 +209,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "AsylGH",
     outDir: "at-judikatur-asylgh",
     label: "AsylGH",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -217,7 +218,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Bvwg",
     outDir: "at-judikatur-bvwg",
     label: "BVwG",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -226,7 +227,7 @@ const SOURCES: SourceConfig[] = [
     applikation: "Vwgh",
     outDir: "at-judikatur-vwgh",
     label: "VwGH",
-    docType: "judikatur",
+    docType: "court_decision",
     metadataKey: "Judikatur",
     titleFields: ["Dokumenttyp"],
   },
@@ -283,50 +284,73 @@ async function fetchWithRetry(url: string): Promise<Response | null> {
  * Extract content URLs from Dokumentliste.ContentReference.Urls.ContentUrl[]
  * Returns { xmlUrl, htmlUrl } or null.
  */
-function extractContentUrls(dokumentliste: unknown): { xmlUrl: string; htmlUrl: string } | null {
+export function extractContentUrls(
+  dokumentliste: unknown
+): { xmlUrl: string; htmlUrl: string; pdfUrl: string } | null {
   try {
     const dl = dokumentliste as Record<string, unknown>;
-    const cr = dl?.ContentReference as Record<string, unknown>;
-    const urls = cr?.Urls as Record<string, unknown>;
-    const contentUrls = urls?.ContentUrl as Array<Record<string, unknown>>;
-    if (!Array.isArray(contentUrls)) return null;
+    let crs = dl?.ContentReference as Record<string, unknown> | Array<Record<string, unknown>>;
+    if (crs && !Array.isArray(crs)) crs = [crs];
+    if (!Array.isArray(crs)) return null;
 
     let xmlUrl = "";
     let htmlUrl = "";
-    for (const cu of contentUrls) {
-      const dataType = cu.DataType as string;
-      const url = cu.Url as string;
-      if (dataType === "Xml") xmlUrl = url;
-      if (dataType === "Html") htmlUrl = url;
+    let pdfUrl = "";
+    for (const cr of crs) {
+      if (cr.ContentType && cr.ContentType !== "MainDocument") continue;
+      const urls = cr?.Urls as Record<string, unknown> | undefined;
+      let contentUrls = urls?.ContentUrl as
+        | Array<Record<string, unknown>>
+        | Record<string, unknown>
+        | undefined;
+      if (contentUrls && !Array.isArray(contentUrls)) contentUrls = [contentUrls];
+      if (!Array.isArray(contentUrls)) continue;
+      for (const cu of contentUrls) {
+        const dataType = (cu.DataType as string)?.toLowerCase();
+        const url = cu.Url as string;
+        if (dataType === "xml") xmlUrl = url;
+        else if (dataType === "html") htmlUrl = url;
+        else if (dataType === "pdf" || dataType === "authentisch") pdfUrl = url;
+      }
     }
-    if (xmlUrl || htmlUrl) return { xmlUrl, htmlUrl };
+    if (xmlUrl || htmlUrl || pdfUrl) return { xmlUrl, htmlUrl, pdfUrl };
     return null;
   } catch {
     return null;
   }
 }
 
+export function pdfToText(buf: Buffer): string {
+  const r = spawnSync("pdftotext", ["-nopgbrk", "-enc", "UTF-8", "-", "-"], {
+    input: buf,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (r.error || r.status !== 0 || !r.stdout) return "";
+  return r.stdout.toString("utf8").trim();
+}
+
 /**
  * Fetch document content. Strategy:
  * 1. Try XML content URL (richest structured format)
  * 2. Fallback to HTML content URL
- * 3. Fallback to DokumentUrl (RIS page)
+ * 3. Fallback to authentic PDF (text layer via pdftotext)
+ * 4. Fallback to DokumentUrl (RIS page)
  */
 async function fetchDocContent(dokumentliste: unknown, dokumentUrl: string): Promise<string> {
   const contentUrls = extractContentUrls(dokumentliste);
 
-  // Strategy 1: XML content URL
   if (contentUrls?.xmlUrl) {
     const res = await fetchWithRetry(contentUrls.xmlUrl);
     if (res) {
       const xml = await res.text();
-      const text = cleanText(xml);
+      const text = risXmlToText(xml).trim();
       if (text.length > 100) return text;
+      const stripped = cleanText(xml);
+      if (stripped.length > 100) return stripped;
     }
     await risMassPause("Missing-Sources");
   }
 
-  // Strategy 2: HTML content URL
   if (contentUrls?.htmlUrl) {
     const res = await fetchWithRetry(contentUrls.htmlUrl);
     if (res) {
@@ -337,7 +361,16 @@ async function fetchDocContent(dokumentliste: unknown, dokumentUrl: string): Pro
     await risMassPause("Missing-Sources");
   }
 
-  // Strategy 3: DokumentUrl (RIS page — less structured)
+  if (contentUrls?.pdfUrl) {
+    const res = await fetchWithRetry(contentUrls.pdfUrl);
+    if (res) {
+      const buf = Buffer.from(await res.arrayBuffer());
+      const text = pdfToText(buf);
+      if (text.length > 100) return text;
+    }
+    await risMassPause("Missing-Sources");
+  }
+
   if (dokumentUrl) {
     const res = await fetchWithRetry(dokumentUrl);
     if (res) {
@@ -378,7 +411,7 @@ function extractTitle(meta: Record<string, unknown>, source: SourceConfig, docId
   return docId;
 }
 
-function extractMetadata(
+export function extractMetadata(
   meta: Record<string, unknown>,
   source: SourceConfig
 ): Record<string, string> {
@@ -435,7 +468,8 @@ function extractMetadata(
       const court = metaSrc[ck] as Record<string, unknown> | undefined;
       if (!court) continue;
       if (court.Entscheidungsart) result.entscheidungsart = court.Entscheidungsart as string;
-      if (court.Gericht) result.gericht = court.Gericht as string;
+      const gericht = (court.Gericht ?? court.EntscheidendeBehoerde) as string | undefined;
+      if (gericht) result.gericht = gericht;
       if (court.Rechtssatznummer) result.rechtssatznummer = court.Rechtssatznummer as string;
       // Indizes
       const indizes = court.Indizes;
@@ -477,7 +511,50 @@ function extractMetadata(
   return result;
 }
 
-// ─── File Naming ──────────────────────────────────────────────────────────
+// ─── File Naming & Doc-ID-Dedup ───────────────────────────────────────────
+
+/**
+ * RIS-Dokumentnummer einer vorhandenen Rohdatei — aus `document_id:` oder
+ * dem `Dokumentnummer=`-Parameter der source_url im Frontmatter. Nur die
+ * ersten 16 KB gelesen, das Frontmatter steht am Dateianfang.
+ */
+export function docIdOfRawFile(path: string): string | null {
+  let fd: number;
+  try {
+    fd = openSync(path, "r");
+  } catch {
+    return null;
+  }
+  try {
+    const buf = Buffer.alloc(16384);
+    const n = readSync(fd, buf, 0, buf.length, 0);
+    const head = buf.toString("utf8", 0, n);
+    const m =
+      head.match(/^document_id:\s*"?([^"\r\n]+?)"?\s*$/m) ??
+      head.match(/^source_url:.*Dokumentnummer=([^&\s"']+)/m);
+    if (!m) return null;
+    try {
+      return decodeURIComponent(m[1].trim());
+    } catch {
+      return m[1].trim();
+    }
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/** Alle RIS-IDs, die im Zielverzeichnis schon eine Datei haben. */
+export function scanExistingDocIds(outDir: string): Set<string> {
+  const ids = new Set<string>();
+  try {
+    for (const f of readdirSync(outDir)) {
+      if (!f.endsWith(".md")) continue;
+      const id = docIdOfRawFile(join(outDir, f));
+      if (id) ids.add(id);
+    }
+  } catch {}
+  return ids;
+}
 
 function buildFilename(
   docId: string,
@@ -492,7 +569,6 @@ function buildFilename(
   let filename = `${base}.md`;
   let counter = 2;
   while (existingFiles.has(filename)) {
-    // Check if it's the same doc (by docId in frontmatter) — if so, skip
     filename = `${base}-${counter}.md`;
     counter++;
   }
@@ -506,7 +582,7 @@ async function fetchSource(source: SourceConfig): Promise<void> {
   const outDir = join(CORPUS_ROOT, source.outDir);
   mkdirSync(outDir, { recursive: true });
 
-  // Load existing files for dedup
+  const existingDocIds = scanExistingDocIds(outDir);
   const existingFiles = new Set<string>();
   try {
     for (const f of readdirSync(outDir)) {
@@ -516,7 +592,9 @@ async function fetchSource(source: SourceConfig): Promise<void> {
 
   console.log(`\n═══════════════════════════════════════════════════════════`);
   console.log(`  ${source.label} — ${source.endpoint}/${source.applikation || "(none)"}`);
-  console.log(`  Output: ${outDir} (${existingFiles.size} existing files)`);
+  console.log(
+    `  Output: ${outDir} (${existingFiles.size} existing files, ${existingDocIds.size} doc-ids)`
+  );
   console.log(`═══════════════════════════════════════════════════════════`);
 
   let total = 0;
@@ -569,17 +647,16 @@ async function fetchSource(source: SourceConfig): Promise<void> {
         const docId = (technisch?.ID as string) ?? `doc-${total}`;
         const dokumentliste = dataObj?.Dokumentliste;
 
-        // Extract title
-        const title = extractTitle(meta, source, docId);
-
-        // Build filename
-        const filename = buildFilename(docId, title, outDir, existingFiles);
-        const filepath = join(outDir, filename);
-
-        if (existsSync(filepath)) {
+        if (existingDocIds.has(docId)) {
           skipped++;
           continue;
         }
+
+        // Extract title
+        const title = extractTitle(meta, source, docId);
+
+        const filename = buildFilename(docId, title, outDir, existingFiles);
+        const filepath = join(outDir, filename);
 
         if (DRY) {
           console.log(`  [DRY] ${filename} — ${title.slice(0, 60)}`);
@@ -630,6 +707,7 @@ async function fetchSource(source: SourceConfig): Promise<void> {
 
         try {
           atomicWrite(filepath, `${fmLines.join("\n")}\n${text}\n`);
+          existingDocIds.add(docId);
           saved++;
           newDocs++;
         } catch (e) {
@@ -696,7 +774,9 @@ async function main() {
   console.log("\n✅ All sources done!");
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error("Fatal:", err);
+    process.exit(1);
+  });
+}

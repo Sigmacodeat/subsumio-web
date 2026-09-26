@@ -185,11 +185,25 @@ const pick = (fm: Record<string, string>, ...keys: string[]): string | null => {
   return null;
 };
 
-function docClassOf(fm: Record<string, string>): DocClass {
+const STATUTE_TYPES = new Set([
+  "law",
+  "statute",
+  "erlass",
+  "kundmachung",
+  "amtliche_verlautbarung",
+  "strukturplan",
+  "gemeinderecht",
+  "staatsvertrag",
+  "state_legislation",
+  "verordnung",
+  "gesetz",
+]);
+
+export function docClassOf(fm: Record<string, string>): DocClass {
   const t = (clean(fm.type) ?? "").toLowerCase();
-  if (t === "law" || t === "statute") return "statute";
   if (t === "court_decision" || t === "judikatur" || t === "decision") return "decision";
   if (t === "literatur" || t === "literature" || t === "article") return "literature";
+  if (STATUTE_TYPES.has(t)) return "statute";
   // Fallback über vorhandene Felder statt Raten
   if (fm.court || fm.gericht || fm.case_number || fm.geschaeftszahl) return "decision";
   return "statute";
