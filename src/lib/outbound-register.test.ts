@@ -105,3 +105,17 @@ describe("outbound-register", () => {
     expect(Object.keys(DELIVERY_STATUS_LABELS).length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("outboundChannelsFor (W4-05)", () => {
+  test("Austrian firms record court filings as webERV, not beA", async () => {
+    const { outboundChannelsFor } = await import("./outbound-register");
+    expect(outboundChannelsFor("AT")).toContain("erv");
+    expect(outboundChannelsFor("AT")).not.toContain("bea");
+    expect(outboundChannelsFor(undefined)).not.toContain("bea");
+  });
+  test("German firms keep beA", async () => {
+    const { outboundChannelsFor } = await import("./outbound-register");
+    expect(outboundChannelsFor("DE")).toContain("bea");
+    expect(outboundChannelsFor("DE")).not.toContain("erv");
+  });
+});

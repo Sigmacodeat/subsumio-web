@@ -14,7 +14,12 @@ import { api, CASE_PICKER_MAX } from "@/lib/api";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { csrfFetch } from "@/lib/csrf";
 import type { OutboundEntry } from "@/lib/outbound-register";
-import { CHANNEL_LABELS, DELIVERY_STATUS_LABELS } from "@/lib/outbound-register";
+import {
+  CHANNEL_LABELS,
+  DELIVERY_STATUS_LABELS,
+  outboundChannelsFor,
+} from "@/lib/outbound-register";
+import { useMe } from "@/lib/queries/auth";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { encodeSlugPath, formatDateTime } from "@/lib/utils";
@@ -23,6 +28,7 @@ import Link from "next/link";
 export default function OutboundRegisterPage() {
   const { addToast } = useToast();
   const { t } = useLang();
+  const me = useMe();
   const [entries, setEntries] = useState<OutboundEntry[]>([]);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -156,9 +162,9 @@ export default function OutboundRegisterPage() {
                 }
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm"
               >
-                {Object.entries(CHANNEL_LABELS).map(([key, label]) => (
+                {outboundChannelsFor(me.data?.user?.jurisdiction).map((key) => (
                   <option key={key} value={key}>
-                    {label.de}
+                    {CHANNEL_LABELS[key].de}
                   </option>
                 ))}
               </select>

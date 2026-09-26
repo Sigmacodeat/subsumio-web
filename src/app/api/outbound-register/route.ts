@@ -12,7 +12,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const createSchema = z.object({
-  channel: z.enum(["email", "bea", "post", "fax", "whatsapp", "portal"]),
+  channel: z.enum(["email", "erv", "bea", "post", "fax", "whatsapp", "portal"]),
   recipient_name: z.string().min(1).max(300),
   recipient_address: z.string().min(1).max(500),
   case_slug: z.string().max(300).optional(),
