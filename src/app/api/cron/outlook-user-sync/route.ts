@@ -16,7 +16,9 @@ import {
   pullOutlookEvents,
   pushAppointmentsToOutlook,
   pushedEventIds,
+  syncAccountCalendar,
 } from "@/lib/calendar/graph-user-sync";
+import { listCalendarSyncAccounts, recordCalendarSyncError } from "@/lib/email/imap-accounts";
 import type { ListedPage } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 
@@ -35,7 +37,21 @@ const log = logger("cron/outlook-user-sync");
  * calendar_event-Pages (Slug je Postfach), Push als Upsert — neue Termine
  * anlegen, geänderte aktualisieren, abgesagte/gelöschte in Outlook entfernen.
  */
+// A run still in progress (slow Graph, many accounts) is not started twice
+// in the same process; the crontab runs every 15 minutes.
+let running = false;
+
 async function handler() {
+  if (running) return NextResponse.json({ ok: true, skipped: "already_running" });
+  running = true;
+  try {
+    return await runSync();
+  } finally {
+    running = false;
+  }
+}
+
+async function runSync() {
   const recipientsByBrain = await getRecipientsByBrain();
   const window = calendarSyncWindow();
 
@@ -109,8 +125,52 @@ async function handler() {
     );
   }
 
-  log.info("outlook user sync done", { usersSynced, eventsSynced, errors: errors.length });
-  return NextResponse.json({ ok: errors.length === 0, usersSynced, eventsSynced, errors });
+  // Firm mailboxes (Einstellungen → E-Mail-Postfach) that opted into the
+  // two-way calendar sync — the same sync as "Jetzt synchronisieren".
+  const mailboxes = await syncMailboxCalendars(errors);
+
+  log.info("outlook user sync done", {
+    usersSynced,
+    eventsSynced,
+    mailboxesSynced: mailboxes,
+    errors: errors.length,
+  });
+  return NextResponse.json({
+    ok: errors.length === 0,
+    usersSynced,
+    eventsSynced,
+    mailboxesSynced: mailboxes,
+    errors,
+  });
+}
+
+async function syncMailboxCalendars(errors: string[]): Promise<number> {
+  let accounts;
+  try {
+    accounts = await listCalendarSyncAccounts();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg !== "mail_accounts_database_not_configured") errors.push(`mailboxes: ${msg}`);
+    return 0;
+  }
+  let synced = 0;
+  await mapWithConcurrency(
+    accounts,
+    async (account) => {
+      try {
+        // Records calendar_synced_at and per-event errors on the account.
+        const result = await syncAccountCalendar(account);
+        synced++;
+        errors.push(...result.errors.map((e) => `mailbox ${account.id}: ${e}`));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`mailbox ${account.id}: ${msg}`);
+        await recordCalendarSyncError(account.id, msg).catch(() => undefined);
+      }
+    },
+    2
+  );
+  return synced;
 }
 
 async function notifyReconnect(userId: string, brainId: string): Promise<void> {

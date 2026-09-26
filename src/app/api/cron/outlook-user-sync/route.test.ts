@@ -31,7 +31,17 @@ vi.mock("@/lib/msgraph-user", async (orig) => {
     recordMs365SyncSuccess: (...a: unknown[]) => m.success(...a),
   };
 });
+const mb = vi.hoisted(() => ({
+  accounts: [] as Array<{ id: string; calendarSync: boolean }>,
+  sync: vi.fn(async (a: { id: string }) => ({ accountId: a.id, pulled: 1, pushed: 0, errors: [] })),
+  recordError: vi.fn(async (..._a: unknown[]) => undefined),
+}));
+vi.mock("@/lib/email/imap-accounts", () => ({
+  listCalendarSyncAccounts: async () => mb.accounts.filter((a) => a.calendarSync),
+  recordCalendarSyncError: (...a: unknown[]) => mb.recordError(...a),
+}));
 vi.mock("@/lib/calendar/graph-user-sync", () => ({
+  syncAccountCalendar: (a: { id: string }) => mb.sync(a),
   calendarSyncWindow: () => ({ start: new Date(), end: new Date() }),
   listAppointmentsForSync: async () => [],
   pushedEventIds: () => new Set(),
@@ -54,6 +64,7 @@ const run = async () =>
 beforeEach(() => {
   vi.clearAllMocks();
   m.tokenError = null;
+  mb.accounts = [];
 });
 
 describe("cron/outlook-user-sync error classification", () => {
@@ -79,5 +90,24 @@ describe("cron/outlook-user-sync error classification", () => {
     const out = await run();
     expect(out.usersSynced).toBe(1);
     expect(m.success).toHaveBeenCalledWith("u1");
+  });
+
+  it("syncs mailboxes that opted into the calendar sync, not the others", async () => {
+    mb.accounts = [
+      { id: "acc-on", calendarSync: true },
+      { id: "acc-off", calendarSync: false },
+    ];
+    const out = (await run()) as unknown as { mailboxesSynced: number };
+    expect(out.mailboxesSynced).toBe(1);
+    expect(mb.sync).toHaveBeenCalledTimes(1);
+    expect(mb.sync.mock.calls[0][0]).toMatchObject({ id: "acc-on" });
+  });
+
+  it("a mailbox whose sync fails keeps the error on the account", async () => {
+    mb.accounts = [{ id: "acc-on", calendarSync: true }];
+    mb.sync.mockRejectedValueOnce(new Error("calendar_sync_no_oauth_token"));
+    const out = await run();
+    expect(out.errors.some((e) => e.includes("acc-on"))).toBe(true);
+    expect(mb.recordError).toHaveBeenCalledWith("acc-on", "calendar_sync_no_oauth_token");
   });
 });
