@@ -62,6 +62,43 @@ describe("edge network: web and engine are reachable only via the proxy", () => 
   });
 });
 
+describe("stack hygiene: logs, limits, no install at start", () => {
+  test("every service has rotated logs", () => {
+    for (const [name, svc] of Object.entries(compose.services)) {
+      expect({ name, logging: Boolean(svc.logging) }).toEqual({ name, logging: true });
+    }
+  });
+
+  test("cron and backup use prebuilt images and install nothing at start", () => {
+    const raw = readFileSync(join(NETCUP, "docker-compose.yml"), "utf8");
+    expect(raw).not.toMatch(/apk add/);
+    for (const name of ["cron", "backup"]) {
+      const svc = compose.services[name];
+      expect(svc.build).toBeTruthy();
+      expect(svc.entrypoint).toBeUndefined();
+      const df = readFileSync(join(NETCUP, "images", name, "Dockerfile"), "utf8");
+      expect(df).toMatch(/^FROM alpine:[\d.]+@sha256:[0-9a-f]{64}$/m);
+      expect(df).toContain("supercronic");
+    }
+    // deploy builds them in every mode, so --no-build never meets a missing image
+    for (const m of deployScript.matchAll(/BUILD="([^"]*)"/g)) {
+      expect(m[1].split(" ")).toEqual(expect.arrayContaining(["cron", "backup"]));
+    }
+  });
+
+  test("application services forbid privilege gain and have memory ceilings", () => {
+    for (const name of ["engine", "web", "cron", "backup", "clamav", "corpus-pipeline"]) {
+      expect({ name, opt: compose.services[name].security_opt }).toEqual({
+        name,
+        opt: expect.arrayContaining(["no-new-privileges:true"]),
+      });
+    }
+    for (const name of ["engine", "web", "cron", "clamav", "corpus-pipeline"]) {
+      expect({ name, mem: Boolean(compose.services[name].mem_limit) }).toEqual({ name, mem: true });
+    }
+  });
+});
+
 const dockerfile = readFileSync(join(SERVER, "Dockerfile"), "utf8");
 const webDockerfile = readFileSync(join(SERVER, "..", "Dockerfile.web"), "utf8");
 

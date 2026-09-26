@@ -38,6 +38,10 @@ services:
     logging: *default-logging
     image: clamav/clamav:stable
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Signature reloads briefly hold two databases in memory.
+    mem_limit: ${CLAMAV_MEM_LIMIT:-4g}
     environment:
       # Keep ClamAV's INSTREAM ceiling aligned with the application's 500 MB
       # document limit. The image default is only 100 MB and otherwise causes
@@ -62,6 +66,11 @@ services:
       dockerfile: Dockerfile.db
     image: subsumio-engine-db:latest
     restart: unless-stopped
+    # No memory limit on purpose: the database keeps its vector and text
+    # indexes in memory; the other services are capped so they cannot push
+    # it into the OOM killer. (Hardening options such as no-new-privileges
+    # belong here too, but any change to this service recreates the database
+    # on the next deploy — add them in a planned maintenance window.)
     # Memory settings come from .env so one compose file fits both boxes. The
     # defaults suit 16 GB; on the 64 GB server the 14 GB vector index and the
     # text indexes must stay in memory (see server/deploy/netcup/RUNBOOK.md).
@@ -171,6 +180,13 @@ services:
         NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
         NEXT_PUBLIC_SENTRY_DSN: "${NEXT_PUBLIC_SENTRY_DSN:-}"
     restart: unless-stopped
+    # Runs as the image's `bun` user; needs no capabilities.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${WEB_MEM_LIMIT:-6g}
+    cpus: ${WEB_CPUS:-4}
     env_file: .env
     environment:
       NODE_ENV: production
@@ -254,7 +270,14 @@ services:
 
   cron:
     logging: *default-logging
-    image: alpine:3.20
+    # Tools baked in at build time (images/cron) — no package mirror at start.
+    build:
+      context: ./images/cron
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
     restart: unless-stopped
     depends_on:
       web:
@@ -271,12 +294,6 @@ services:
       CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS: ${CRON_HEARTBEAT_URL_APPOINTMENT_REMINDERS:-}
     volumes:
       - ./crontab:/etc/crontab:ro
-    entrypoint: >
-      sh -c "
-        apk add --no-cache curl supercronic &&
-        export CRON_SECRET &&
-        supercronic /etc/crontab
-      "
 
   # Encrypted offsite backup + restore-verification (restic → Hetzner Object
   # Storage / Storage Box). Daily pg_dump + original files; weekly restore drill.
@@ -284,7 +301,11 @@ services:
   # them (the service just logs that the repo isn't configured and idles).
   backup:
     logging: *default-logging
-    image: alpine:3.20
+    # Tools baked in at build time (images/backup) — no package mirror at start.
+    build:
+      context: ./images/backup
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     depends_on:
       db:
@@ -323,11 +344,6 @@ services:
       - ./backup:/backup:ro
       - backup-local:/backups
       - backup-status:/backup-status
-    entrypoint: >
-      sh -c "
-        apk add --no-cache restic postgresql16-client curl supercronic ca-certificates openssl tar &&
-        supercronic /backup/crontab
-      "
 
   # Corpus Pipeline Orchestrator — supervises the legal-corpus ingest chain
   # (backfill → import → embed → reconcile). State is DB-backed via

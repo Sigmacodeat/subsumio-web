@@ -38,13 +38,13 @@ H=server/deploy/netcup
 # The compose file also defines a legacy caddy service; the shared proxy lives
 # in /opt/caddy. Start only db, clamav and these.
 APP_SERVICES="engine web cron backup corpus-pipeline"
-BUILD="web engine corpus-pipeline"
+BUILD="web engine corpus-pipeline cron backup"
 # --web: rebuild and replace only the web app. The corpus pipeline keeps
 # running (a full deploy interrupts multi-day RIS fetches). cron and backup
 # bind-mount files from the code folder, so they are recreated too.
 if [ "${1:-}" = "--web" ]; then
   APP_SERVICES="web cron backup"
-  BUILD="web"
+  BUILD="web cron backup"
 fi
 # --app: like a full deploy, but the corpus pipeline is left alone. Use it
 # while a multi-day RIS fetch is running — the pipeline container keeps its
@@ -52,7 +52,7 @@ fi
 # full deploy picks up the new code for it.
 if [ "${1:-}" = "--app" ]; then
   APP_SERVICES="engine web cron backup"
-  BUILD="web engine"
+  BUILD="web engine cron backup"
 fi
 
 build_only=0
