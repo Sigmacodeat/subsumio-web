@@ -8,7 +8,13 @@
  *  - parseRef Identity-Extraktion (Judikatur Geschäftszahl)
  */
 import { describe, it, expect } from "vitest";
-import { parseRef, chooseImRisSeit, DELTA_APPLIKATIONS } from "./ris-delta";
+import {
+  parseRef,
+  chooseImRisSeit,
+  DELTA_APPLIKATIONS,
+  isBeforeCursor,
+  nextCursorAfterBatch,
+} from "./ris-delta";
 
 // ── Fixtures: realistische RIS OGD DocumentReferences ───────────────────
 
@@ -281,6 +287,49 @@ describe("ris-delta: chooseImRisSeit Cursor-Logik", () => {
   it("wählt 'EinemJahr' bei sehr altem Cursor (> 365 Tage)", () => {
     const old = new Date(Date.now() - 500 * 24 * 60 * 60 * 1000).toISOString();
     expect(chooseImRisSeit(old)).toBe("EinemJahr");
+  });
+});
+
+describe("ris-delta: Cursor rückt nur über vollständig Geschriebenes vor", () => {
+  it("ein Dokument mit Änderungsdatum = Cursor-Tag wird verarbeitet (Timestamp-Cursor aus der DB)", () => {
+    expect(isBeforeCursor("2026-09-25", "2026-09-25T00:00:00+00:00")).toBe(false);
+    expect(isBeforeCursor("2026-09-25T14:00:00", "2026-09-25T00:00:00+00:00")).toBe(false);
+    expect(isBeforeCursor("2026-09-24", "2026-09-25T00:00:00+00:00")).toBe(true);
+    expect(isBeforeCursor("2026-09-24", null)).toBe(false);
+  });
+
+  it("10 Dokumente, 1 Fehlschlag → Cursor bleibt am Tag des Fehlschlags", () => {
+    expect(
+      nextCursorAfterBatch({
+        newCursor: "2026-09-25",
+        complete: true,
+        failedChangedAt: ["2026-09-23T10:00:00"],
+      })
+    ).toBe("2026-09-23");
+    // …and the failed document (changed 2026-09-23) comes through next run.
+    expect(isBeforeCursor("2026-09-23T10:00:00", "2026-09-23")).toBe(false);
+  });
+
+  it("mehrere Fehlschläge → der früheste zählt", () => {
+    expect(
+      nextCursorAfterBatch({
+        newCursor: "2026-09-25",
+        complete: true,
+        failedChangedAt: ["2026-09-24", "2026-09-22", "2026-09-25"],
+      })
+    ).toBe("2026-09-22");
+  });
+
+  it("unvollständig abgerufen → Cursor bleibt stehen", () => {
+    expect(
+      nextCursorAfterBatch({ newCursor: "2026-09-25", complete: false, failedChangedAt: [] })
+    ).toBeNull();
+  });
+
+  it("alles geschrieben → neuer Cursor", () => {
+    expect(
+      nextCursorAfterBatch({ newCursor: "2026-09-25", complete: true, failedChangedAt: [] })
+    ).toBe("2026-09-25");
   });
 });
 

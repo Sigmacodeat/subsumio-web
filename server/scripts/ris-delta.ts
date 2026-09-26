@@ -95,6 +95,11 @@ export interface DeltaResult {
   pagesFetched: number;
   cursor: string | null;
   newCursor: string;
+  /**
+   * Every result page was read. False when a page failed after all retries
+   * or the page limit was hit — the cursor must not move past what was not seen.
+   */
+  complete: boolean;
 }
 
 // ── Applikation-Registry ───────────────────────────────────────────────
@@ -454,6 +459,7 @@ export async function fetchDelta(
   const documents: DeltaDocument[] = [];
   let totalHits = 0;
   let pagesFetched = 0;
+  let complete = false;
 
   for (let page = 1; page <= maxPages; page++) {
     // RIS OGD: at most 0.5 requests/s (was 200 ms).
@@ -468,13 +474,17 @@ export async function fetchDelta(
         pagesFetched,
         cursor,
         newCursor: cursor || new Date().toISOString(),
+        complete: false,
       };
     }
 
     totalHits = result.totalHits;
     pagesFetched = page;
 
-    if (result.refs.length === 0) break;
+    if (result.refs.length === 0) {
+      complete = true;
+      break;
+    }
 
     let allAfterCursor = true;
     for (const ref of result.refs as Record<string, unknown>[]) {
@@ -482,7 +492,7 @@ export async function fetchDelta(
       if (!parsed) continue;
 
       // Client-side Filter: nur Dokumente nach dem Cursor
-      if (cursor && parsed.changedAt <= cursor) {
+      if (isBeforeCursor(parsed.changedAt, cursor)) {
         allAfterCursor = false;
         continue;
       }
@@ -512,10 +522,16 @@ export async function fetchDelta(
     // Wenn alle Dokumente auf dieser Seite vor dem Cursor liegen, können wir
     // abbrechen — weitere Seiten werden noch älter sein (RIS sortiert nach
     // Änderungsdatum absteigend).
-    if (cursor && !allAfterCursor && documents.length === 0) break;
+    if (cursor && !allAfterCursor && documents.length === 0) {
+      complete = true;
+      break;
+    }
 
     // Letzte Seite erreicht
-    if (result.refs.length < 100) break;
+    if (result.refs.length < 100) {
+      complete = true;
+      break;
+    }
   }
 
   // Neuer Cursor: jetzt (oder neuestes changedAt, falls vorhanden)
@@ -534,7 +550,39 @@ export async function fetchDelta(
     pagesFetched,
     cursor,
     newCursor,
+    complete,
   };
+}
+
+/**
+ * Was this change before the last completed sync? Compared by calendar day
+ * and strictly: RIS reports the change DATE, the cursor is a timestamp — a
+ * document changed later on the cursor's own day must still come through.
+ * The same-day overlap is harmless (a norm is written to the same file).
+ */
+export function isBeforeCursor(changedAt: string, cursor: string | null): boolean {
+  const cursorDate = cursorToDate(cursor);
+  if (!cursorDate) return false;
+  return changedAt.slice(0, 10) < cursorDate;
+}
+
+/**
+ * Where the cursor may move after a batch. `null` = keep the old cursor.
+ *  - pages missing (incomplete fetch)   → keep
+ *  - some documents failed             → the day of the earliest failure, so
+ *                                         the next run fetches them again
+ *  - everything written                → the batch's new cursor
+ */
+export function nextCursorAfterBatch(input: {
+  newCursor: string;
+  complete: boolean;
+  failedChangedAt: string[];
+}): string | null {
+  if (!input.complete) return null;
+  if (input.failedChangedAt.length > 0) {
+    return input.failedChangedAt.map((d) => d.slice(0, 10)).sort()[0]!;
+  }
+  return input.newCursor;
 }
 
 // ── Hilfsfunktionen ────────────────────────────────────────────────────

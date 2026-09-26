@@ -40,6 +40,7 @@ import {
   fetchDelta,
   DELTA_APPLIKATIONS,
   formatDeltaSummary,
+  nextCursorAfterBatch,
   type DeltaApplikation,
   type DeltaDocument,
   type DeltaResult,
@@ -89,7 +90,9 @@ const GAP_ALERT_THRESHOLD = 50;
 function sh(cmd: string): string {
   try {
     return execSync(cmd, { encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }).trim();
-  } catch {
+  } catch (err) {
+    // Never silent: a failed state write (cursor, alert) must show in the log.
+    console.error(`  ❌ Befehl fehlgeschlagen: ${(err as Error).message.split("\n")[0]}`);
     return "";
   }
 }
@@ -156,9 +159,11 @@ function getCursor(stateKey: string): string | null {
 }
 
 function updateCursor(stateKey: string, cursor: string): void {
-  psqlQuery(
-    `UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}'`
+  const out = psqlQuery(
+    `UPDATE pipeline_state SET last_cycle_at = '${cursor}', updated_at = NOW() WHERE source_key = '${stateKey}' RETURNING source_key`
   );
+  // The run must not report success when the cursor was not stored.
+  if (!out.includes(stateKey)) throw new Error(`Cursor für ${stateKey} nicht gespeichert`);
 }
 
 function resetCursor(stateKey: string): void {
@@ -523,6 +528,16 @@ async function syncApplikation(
     console.log(`  ${formatDeltaSummary(result)}`);
 
     if (result.documents.length === 0) {
+      if (!result.complete) {
+        raiseAlert(
+          app.stateKey,
+          "delta_sync_failed",
+          "error",
+          "RIS-Abfrage unvollständig — Cursor bleibt stehen"
+        );
+        appendHistory(app.stateKey, "delta", "incomplete fetch, cursor kept");
+        return { ...result, written: 0, failed: 0, skipped: 0 };
+      }
       // Keine Änderungen — Cursor trotzdem updaten
       updateCursor(app.stateKey, result.newCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
@@ -545,6 +560,7 @@ async function syncApplikation(
     let failed = 0;
     let skipped = 0;
     const seenIds = new Set<string>();
+    const failedChangedAt: string[] = [];
 
     for (const doc of result.documents) {
       // Dedup: RIS kann bei Paginierung-Overlap dasselbe Dokument mehrfach liefern
@@ -567,7 +583,10 @@ async function syncApplikation(
 
       const ok = await processDocument(app, doc);
       if (ok) written++;
-      else failed++;
+      else {
+        failed++;
+        failedChangedAt.push(doc.changedAt);
+      }
 
       if (written % 50 === 0 && written > 0) {
         process.stderr.write(
@@ -581,20 +600,29 @@ async function syncApplikation(
         `\r  ${written}/${result.documents.length} verarbeitet · ${failed} fehlgeschlagen\n`
       );
 
-    // Cursor updaten nur bei erfolgreicher Verarbeitung
-    if (failed === 0) {
-      updateCursor(app.stateKey, result.newCursor);
+    // The cursor only moves past what was fully written: on partial failure
+    // it stops at the earliest failed change, so those come again next run.
+    const nextCursor = nextCursorAfterBatch({
+      newCursor: result.newCursor,
+      complete: result.complete,
+      failedChangedAt,
+    });
+    if (failed === 0 && nextCursor) {
+      updateCursor(app.stateKey, nextCursor);
       clearAlerts(app.stateKey, "delta_sync_failed");
       clearAlerts(app.stateKey, "delta_gap");
       appendHistory(app.stateKey, "delta", `${written} docs synced`);
-    } else if (written > 0) {
-      // Teilweise erfolgreich — Cursor updaten, aber Alert
-      updateCursor(app.stateKey, result.newCursor);
+    } else if (written > 0 || (failed === 0 && !nextCursor)) {
+      // Teilweise erfolgreich oder unvollständig abgerufen — Cursor nur bis
+      // zur ersten Lücke, Alert
+      if (nextCursor) updateCursor(app.stateKey, nextCursor);
       raiseAlert(
         app.stateKey,
         "delta_sync_partial",
         "warning",
-        `${written} synced, ${failed} failed`
+        result.complete
+          ? `${written} synced, ${failed} failed — werden beim nächsten Lauf erneut geholt`
+          : `${written} synced, RIS-Abfrage unvollständig — Cursor bleibt stehen`
       );
       appendHistory(app.stateKey, "delta", `${written} synced, ${failed} failed`);
     } else {
@@ -609,7 +637,7 @@ async function syncApplikation(
     }
 
     console.log(`  ✅ ${written} geschrieben, ${failed} fehlgeschlagen, ${skipped} übersprungen`);
-    console.log(`  📌 Neuer Cursor: ${result.newCursor}`);
+    console.log(`  📌 Cursor: ${nextCursor ?? `${cursor ?? "(keiner)"} (unverändert)`}`);
 
     return { ...result, written, failed, skipped };
   } catch (err) {
