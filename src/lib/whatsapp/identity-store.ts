@@ -3,7 +3,8 @@
  *
  * Paket 33 (P0-SECR-002): replaces the env-only sender binding with a DB-backed,
  * tenant-scoped, lifecycle-managed identity. The raw phone number is never the
- * key or persisted — lookups go through the SHA-256 `phoneHash`.
+ * key — lookups go through the SHA-256 `phoneHash`; the number itself is kept
+ * only encrypted at rest (Postgres adapter, `phone_enc`).
  *
  * Folgt exakt dem ApiKeyStore-/UserStore-Pattern aus src/lib/api-key-store.ts.
  */
@@ -11,6 +12,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { env } from "@/lib/env";
+import { encrypt, decrypt } from "@/lib/encryption";
 import type { WhatsAppIdentity } from "./types";
 
 export interface WhatsAppIdentityStore {
@@ -145,7 +147,8 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
           verified_at timestamptz,
           created_at timestamptz NOT NULL DEFAULT now(),
           updated_at timestamptz NOT NULL DEFAULT now()
-        )
+        );
+        ALTER TABLE subsumio_whatsapp_identities ADD COLUMN IF NOT EXISTS phone_enc text;
       `
         )
         .then(() => undefined);
@@ -153,7 +156,13 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     return this.ready;
   }
 
-  private row(r: Record<string, unknown>): WhatsAppIdentity {
+  /**
+   * The number itself is kept only encrypted at rest (`phone_enc`, AES-GCM via
+   * src/lib/encryption.ts) — the firm needs it to reach its own staff and
+   * verified clients proactively (approval requests, inbox replies). Lookups
+   * still go through `phone_hash` only.
+   */
+  private async row(r: Record<string, unknown>): Promise<WhatsAppIdentity> {
     const rawScope = r.matter_scope;
     const matterScope: string[] | "all" = Array.isArray(rawScope)
       ? (rawScope as string[])
@@ -164,7 +173,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       id: String(r.id),
       orgId: String(r.org_id),
       brainId: String(r.brain_id),
-      phone: "", // never read back from storage — phone is hashed
+      phone: (await decrypt(typeof r.phone_enc === "string" ? r.phone_enc : null)) ?? "",
       phoneHash: String(r.phone_hash),
       userId: r.user_id ? String(r.user_id) : undefined,
       name: r.name ? String(r.name) : undefined,
@@ -183,7 +192,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       `SELECT * FROM subsumio_whatsapp_identities WHERE phone_hash = $1`,
       [phoneHash]
     );
-    return rows[0] ? this.row(rows[0]) : null;
+    return rows[0] ? await this.row(rows[0]) : null;
   }
 
   async getById(id: string) {
@@ -192,7 +201,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       `SELECT * FROM subsumio_whatsapp_identities WHERE id = $1`,
       [id]
     );
-    return rows[0] ? this.row(rows[0]) : null;
+    return rows[0] ? await this.row(rows[0]) : null;
   }
 
   async listByOrg(orgId: string) {
@@ -201,15 +210,15 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
       `SELECT * FROM subsumio_whatsapp_identities WHERE org_id = $1 ORDER BY created_at DESC`,
       [orgId]
     );
-    return rows.map((r) => this.row(r));
+    return Promise.all(rows.map((r) => this.row(r)));
   }
 
   async create(identity: WhatsAppIdentity) {
     await this.ensureSchema();
     await this.pool().query(
       `INSERT INTO subsumio_whatsapp_identities
-         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+         (id, org_id, brain_id, phone_hash, user_id, name, role, matter_scope, status, verified_at, created_at, updated_at, phone_enc)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         identity.id,
         identity.orgId,
@@ -223,6 +232,7 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
         identity.verifiedAt,
         identity.createdAt,
         identity.updatedAt,
+        await encrypt(identity.phone || null),
       ]
     );
     return identity;
@@ -236,6 +246,18 @@ class PgWhatsAppIdentityStore implements WhatsAppIdentityStore {
     if (patch.name !== undefined) {
       sets.push(`name = $${i++}`);
       vals.push(patch.name);
+    }
+    if (patch.userId !== undefined) {
+      sets.push(`user_id = $${i++}`);
+      vals.push(patch.userId || null);
+    }
+    if (patch.phoneHash !== undefined) {
+      sets.push(`phone_hash = $${i++}`);
+      vals.push(patch.phoneHash);
+    }
+    if (patch.phone) {
+      sets.push(`phone_enc = $${i++}`);
+      vals.push(await encrypt(patch.phone));
     }
     if (patch.role !== undefined) {
       sets.push(`role = $${i++}`);

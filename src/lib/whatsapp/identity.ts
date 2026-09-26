@@ -15,9 +15,9 @@
  * fields (`orgId`, `matterScope`, `status`, `verifiedAt`).
  */
 
-import { normalizePhone, type WhatsAppIdentity } from "./types";
+import { legacyPhoneForms, normalizePhone, type WhatsAppIdentity } from "./types";
 import { phoneHash, loadAllowedSenders } from "./verify";
-import { getWhatsAppIdentityStore } from "./identity-store";
+import { getWhatsAppIdentityStore, type WhatsAppIdentityStore } from "./identity-store";
 
 function isProd(): boolean {
   return process.env.NODE_ENV === "production";
@@ -33,11 +33,17 @@ export async function resolveSenderIdentity(phone: string): Promise<WhatsAppIden
   const normalized = normalizePhone(phone);
   const hash = phoneHash(normalized);
 
-  const stored = await getWhatsAppIdentityStore().getByPhoneHash(hash);
+  const store = getWhatsAppIdentityStore();
+  const stored =
+    (await store.getByPhoneHash(hash)) ?? (await findLegacyIdentity(store, normalized));
   if (stored) {
     if (stored.status !== "active") return null;
-    // Carry the normalized phone so handlers can reply; storage never holds it.
-    return { ...stored, phone: normalized };
+    // Re-key an identity stored under an old normalization, and keep the
+    // (encrypted) number on file so the firm can reach this person later.
+    if (stored.phoneHash !== hash || !stored.phone) {
+      await store.update(stored.id, { phoneHash: hash, phone: normalized }).catch(() => null);
+    }
+    return { ...stored, phoneHash: hash, phone: normalized };
   }
 
   // Not in the store: production denies; dev falls back to the legacy env binding.
@@ -59,6 +65,22 @@ export async function resolveSenderIdentity(phone: string): Promise<WhatsAppIden
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/**
+ * An identity stored before national/00-prefixed numbers were normalized to
+ * E.164 carries the hash of the old form ("+0664…", "+0043664…"). Such a
+ * number never matched an inbound sender; it is found here once and re-keyed.
+ */
+async function findLegacyIdentity(
+  store: WhatsAppIdentityStore,
+  normalized: string
+): Promise<WhatsAppIdentity | null> {
+  for (const form of legacyPhoneForms(normalized)) {
+    const found = await store.getByPhoneHash(phoneHash(form));
+    if (found) return found;
+  }
+  return null;
 }
 
 /**

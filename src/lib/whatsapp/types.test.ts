@@ -6,6 +6,8 @@ import {
   extractTextMessages,
   extractMessageStatuses,
   normalizePhone,
+  phoneCountryFor,
+  legacyPhoneForms,
   type WhatsAppWebhookPayload,
   type WhatsAppTextMessage,
 } from "./types";
@@ -211,5 +213,39 @@ describe("normalizePhone", () => {
 
   test("removes spaces and dashes", () => {
     expect(normalizePhone("+43-699-123-4567")).toBe("+436991234567");
+  });
+
+  // W3-4: national and 00-prefixed forms match what Meta delivers ("43664…").
+  test("national AT number with trunk 0 gets +43", () => {
+    expect(normalizePhone("0664 1234567")).toBe("+436641234567");
+    expect(normalizePhone("0664 1234567")).toBe(normalizePhone("436641234567"));
+  });
+
+  test("international 00 prefix becomes +", () => {
+    expect(normalizePhone("0043 664 1234567")).toBe("+436641234567");
+    expect(normalizePhone("0049 170 1234567")).toBe("+491701234567");
+  });
+
+  test("bracketed trunk zero after the country code is dropped", () => {
+    expect(normalizePhone("+43 (0) 664 123-45-67")).toBe("+436641234567");
+    expect(normalizePhone("+43 (664) 123-45-67")).toBe("+436641234567");
+  });
+
+  test("the firm's default country decides national numbers", () => {
+    expect(normalizePhone("0170 1234567", "DE")).toBe("+491701234567");
+    expect(normalizePhone("079 123 45 67", "CH")).toBe("+41791234567");
+    expect(normalizePhone("+43 664 1234567", "DE")).toBe("+436641234567");
+  });
+
+  test("phoneCountryFor maps jurisdictions, AT otherwise", () => {
+    expect(phoneCountryFor("de")).toBe("DE");
+    expect(phoneCountryFor("CH")).toBe("CH");
+    expect(phoneCountryFor(null)).toBe("AT");
+    expect(phoneCountryFor("eu")).toBe("AT");
+  });
+
+  test("legacyPhoneForms lists the forms the old normalization stored", () => {
+    expect(legacyPhoneForms("+436641234567")).toEqual(["+06641234567", "+00436641234567"]);
+    expect(legacyPhoneForms("+15551234567")).toEqual([]);
   });
 });
