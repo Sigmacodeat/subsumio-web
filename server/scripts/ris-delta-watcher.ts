@@ -46,6 +46,7 @@ import {
   type DeltaResult,
 } from "./ris-delta";
 import { acquireRisLock, releaseRisLock } from "./ris-lock";
+import { forwardAlert } from "./pipeline-alert";
 import { proxyFetchOptions, getUserAgent } from "./ris-proxy";
 import { mapRisReference } from "../src/core/ingestion/connectors/legal-judgements.ts";
 import {
@@ -74,6 +75,7 @@ const CORPUS_ROOT = process.env.LAW_CORPUS_ROOT ?? join(_scriptDir, "..", "..", 
 const SERVER_DIR = join(_scriptDir, "..");
 
 const args = process.argv.slice(2);
+// --once is accepted for CLI compatibility; every run is a single cycle.
 const ONCE = args.includes("--once");
 const DRY_RUN = args.includes("--dry-run");
 const REPORT_ONLY = args.includes("--report-only");
@@ -181,6 +183,28 @@ function raiseAlert(stateKey: string, type: string, severity: string, message: s
      WHERE source_key = '${stateKey}'`
   );
   console.log(`  ⚠️ ALERT [${severity}] ${stateKey}: ${type} — ${message}`);
+  // Webhook + ops mail (error/critical); awaited before the process exits.
+  pendingAlerts.push(forwardAlert({ source: stateKey, ...alert }));
+}
+
+const pendingAlerts: Promise<unknown>[] = [];
+
+/**
+ * Exit code of a watcher run. Any application error, incomplete RIS fetch
+ * or batch in which every document failed is a failure — also with --once,
+ * which is how the pipeline starts it and how it learns about the outcome.
+ * Exported for tests.
+ */
+export function deltaExitCode(input: {
+  errors: string[];
+  results: Array<{ complete: boolean; documents: unknown[]; written: number; failed: number }>;
+}): number {
+  if (input.errors.length > 0) return 1;
+  for (const r of input.results) {
+    if (!r.complete) return 1;
+    if (r.documents.length > 0 && r.written === 0 && r.failed > 0) return 1;
+  }
+  return 0;
 }
 
 function clearAlerts(stateKey: string, type: string): void {
@@ -743,9 +767,14 @@ async function main() {
     psqlQuery("DELETE FROM pipeline_config WHERE key = 'delta_sync_triggered'");
   }
 
-  console.log(`\n✅ Fertig: ${new Date().toISOString()}`);
-
-  if (errors.length > 0 && !ONCE) process.exit(1);
+  const exitCode = deltaExitCode({ errors, results: results.map((r) => r.result) });
+  await Promise.allSettled(pendingAlerts);
+  console.log(
+    exitCode === 0
+      ? `\n✅ Fertig: ${new Date().toISOString()}`
+      : `\n❌ Fertig mit Fehlern: ${new Date().toISOString()}`
+  );
+  if (exitCode !== 0) process.exit(exitCode);
 }
 
 if (import.meta.main) {

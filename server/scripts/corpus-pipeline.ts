@@ -67,6 +67,7 @@ import {
   renameSync,
 } from "fs";
 import { join, dirname, resolve } from "path";
+import { forwardAlert } from "./pipeline-alert";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
@@ -708,14 +709,8 @@ function raiseAlert(key: string, type: string, severity: string, message: string
        ) sub
      ), updated_at = NOW() WHERE source_key = '${keyEsc}'`
   );
-  // Fire webhook if configured
-  if (ALERT_WEBHOOK) {
-    fetch(ALERT_WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source: key, ...alert }),
-    }).catch(() => {});
-  }
+  // Webhook (ALERT_WEBHOOK) + ops mail for error/critical (pipeline-alert.ts).
+  void forwardAlert({ source: key, ...alert });
   console.log(`  ⚠️ ALERT [${severity}] ${key}: ${type} — ${message}`);
 }
 
@@ -745,10 +740,6 @@ interface CycleState {
   pidMap: Record<string, { pid: number; cmd: string; startedAt: string; timeoutS: number }>;
   /** Consecutive failed import attempts, derived from the stage_history tail. */
   importFailCount: Record<string, number>;
-  /** True when the ris-delta process was running in the previous cycle and is now gone. */
-  deltaJustFinished?: boolean;
-  /** True when the ris-delta process is currently running (set each cycle while alive). */
-  deltaWasRunning?: boolean;
 }
 
 /** Give up restarting a source's import after this many consecutive failures. */
@@ -1406,6 +1397,131 @@ function runFassungsSync(): void {
  *  The delta-watcher fetches new/changed documents from RIS OGD API,
  *  writes them to disk, and marks them for import via markiereZumImport.
  *  The regular import stage then picks them up. */
+/** Parse the delta watcher's "summary: …" stage_history line. Exported for tests. */
+export function parseDeltaSummary(details: string): {
+  newCount: number;
+  changedCount: number;
+  failedCount: number;
+  applikationen: string[];
+} {
+  const num = (re: RegExp) => {
+    const m = details.match(re);
+    return m ? parseInt(m[1]!, 10) : 0;
+  };
+  const appMatch = details.match(/applikationen:\s*([^\s,]+(?:,[^\s,]+)*)/);
+  return {
+    newCount: num(/(\d+)\s+neu/),
+    changedCount: num(/(\d+)\s+geändert/),
+    failedCount: num(/(\d+)\s+fehlgeschlagen/),
+    applikationen: appMatch ? appMatch[1]!.split(",").filter(Boolean) : [],
+  };
+}
+
+/**
+ * What a finished delta run means for notification + alerting. Exit 0 is
+ * the only success; anything else (including a missing exit code) is a
+ * failure that must alert. Exported for tests.
+ */
+export function deltaOutcome(
+  exitCode: number | null,
+  summary: ReturnType<typeof parseDeltaSummary>,
+  today: string
+): {
+  ok: boolean;
+  notification: Record<string, unknown>;
+  alert: { type: string; severity: string; message: string } | null;
+} {
+  const total = summary.newCount + summary.changedCount;
+  const base = {
+    newCount: summary.newCount,
+    changedCount: summary.changedCount,
+    failedCount: summary.failedCount,
+    applikationen: summary.applikationen.length > 0 ? summary.applikationen : ["all"],
+    total,
+    url: "/dashboard/admin/corpus",
+    syncDate: today,
+  };
+  if (exitCode !== 0) {
+    const message = `RIS Delta-Sync fehlgeschlagen (Exit ${exitCode ?? "unbekannt"}) — Korpus ist nicht auf aktuellem Stand`;
+    return {
+      ok: false,
+      notification: { ...base, title: message, failed: true },
+      alert: { type: "delta_sync_failed", severity: "error", message },
+    };
+  }
+  return {
+    ok: true,
+    notification: {
+      ...base,
+      title:
+        total > 0
+          ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
+          : "RIS Delta-Sync abgeschlossen — keine Änderungen",
+    },
+    alert: null,
+  };
+}
+
+/**
+ * Evaluate a finished delta run exactly once: its exit file is renamed to
+ * `.evaluated` afterwards. Runs every cycle, independent of the 24 h start
+ * interval, so a failure alerts in the next cycle — not a day later.
+ */
+function evaluateFinishedDelta(key: string): void {
+  const exitFile = exitFileFor("ris-delta");
+  if (!existsSync(exitFile)) return;
+  const exitCode = readExitCode("ris-delta");
+  const deltaRow = psqlJSON<Pick<DBPipelineState, "stage_history">>(
+    `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
+  );
+  let details = "";
+  const stageHistory =
+    Array.isArray(deltaRow) && deltaRow.length > 0 ? deltaRow[0].stage_history : null;
+  if (Array.isArray(stageHistory)) {
+    for (let i = stageHistory.length - 1; i >= 0; i--) {
+      const entry = stageHistory[i];
+      if (entry && typeof entry.action === "string" && entry.action.startsWith("summary:")) {
+        details = entry.action;
+        break;
+      }
+    }
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const outcome = deltaOutcome(exitCode, parseDeltaSummary(details), today);
+  if (outcome.alert) {
+    raiseAlert(key, outcome.alert.type, outcome.alert.severity, outcome.alert.message);
+  } else {
+    clearAlerts(key, "delta_sync_failed");
+  }
+  // Write the notification with psql: this script runs in the engine
+  // image, which does not contain the web app's database helpers.
+  try {
+    const notifId = `notif_corpus_delta_${today}`;
+    psqlQuery(
+      `CREATE TABLE IF NOT EXISTS subsumio_notifications (
+         id text NOT NULL PRIMARY KEY,
+         user_id text NOT NULL,
+         brain_id text NOT NULL,
+         type text NOT NULL,
+         data jsonb NOT NULL DEFAULT '{}'::jsonb,
+         read_at timestamptz,
+         created_at timestamptz NOT NULL DEFAULT now()
+       );
+       INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
+       VALUES (${sqlLiteral(notifId)}, 'system', 'system', 'corpus_delta', ${sqlLiteral(JSON.stringify(outcome.notification))}::jsonb, NULL, now())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, read_at = NULL;`
+    );
+    console.log(`  [ris-delta] Notification geschrieben: ${String(outcome.notification.title)}`);
+  } catch (err) {
+    console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
+  }
+  try {
+    renameSync(exitFile, `${exitFile}.evaluated`);
+  } catch {
+    /* next cycle re-evaluates — notification upsert + alert dedup are idempotent */
+  }
+}
+
 async function runDeltaWatcher(state: CycleState): Promise<void> {
   const key = "ris-delta";
   ensureSourceRow(key);
@@ -1416,105 +1532,18 @@ async function runDeltaWatcher(state: CycleState): Promise<void> {
   ).trim();
   const manualTrigger = triggerRaw !== "";
 
-  // Check if we already ran in the last 24h (unless manually triggered)
-  const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
-  if (!manualTrigger && ranWithin(key, intervalS)) return;
-
-  // Check if delta-watcher is already running
   const procState = checkSourceProcess(key, state);
   if (procState.running) {
-    console.log("  [ris-delta] Läuft bereits — überspringe");
-    // Mark that delta was running so next cycle can detect completion
-    state.deltaWasRunning = true;
+    if (manualTrigger) console.log("  [ris-delta] Läuft bereits — überspringe");
     return;
   }
 
-  // Process just finished — was it running in the previous cycle?
-  if (state.deltaWasRunning) {
-    state.deltaJustFinished = true;
-    delete state.deltaWasRunning;
-  }
+  // A run that finished since the last cycle: notify + alert on failure.
+  evaluateFinishedDelta(key);
 
-  // Process just finished — check exit code and write notification
-  if (state.deltaJustFinished) {
-    const exitCode = readExitCode("ris-delta");
-    if (exitCode === 0) {
-      // Read the delta-watcher's summary from stage_history JSONB array
-      // (append_stage_history stores entries as {stage, action, ts} in pipeline_state.stage_history)
-      const deltaRow = psqlJSON<Pick<DBPipelineState, "stage_history">>(
-        `SELECT stage_history FROM pipeline_state WHERE source_key = 'ris-delta'`
-      );
-      if (Array.isArray(deltaRow) && deltaRow.length > 0) {
-        // Find the "summary:" entry in stage_history (written by ris-delta-watcher.ts)
-        const stageHistory = deltaRow[0].stage_history;
-        let details = "";
-        if (Array.isArray(stageHistory) && stageHistory.length > 0) {
-          // Find the latest entry with action starting "summary:"
-          for (let i = stageHistory.length - 1; i >= 0; i--) {
-            const entry = stageHistory[i];
-            if (entry && typeof entry.action === "string" && entry.action.startsWith("summary:")) {
-              details = entry.action;
-              break;
-            }
-          }
-        }
-        let newCount = 0;
-        let changedCount = 0;
-        let failedCount = 0;
-        const applikationen: string[] = [];
-        if (details) {
-          // Parse "summary: N neu, M geändert, F fehlgeschlagen, applikationen: BrKons,..."
-          const newMatch = details.match(/(\d+)\s+neu/);
-          const changedMatch = details.match(/(\d+)\s+geändert/);
-          const failedMatch = details.match(/(\d+)\s+fehlgeschlagen/);
-          if (newMatch) newCount = parseInt(newMatch[1], 10);
-          if (changedMatch) changedCount = parseInt(changedMatch[1], 10);
-          if (failedMatch) failedCount = parseInt(failedMatch[1], 10);
-          // Extract applikationen from details
-          const appMatch = details.match(/applikationen:\s*([^\s,]+)/);
-          if (appMatch) applikationen.push(...appMatch[1].split(","));
-        }
-        // Write the notification with psql: this script runs in the engine
-        // image, which does not contain the web app's database helpers.
-        try {
-          const today = new Date().toISOString().slice(0, 10);
-          const notifId = `notif_corpus_delta_${today}`;
-          const total = newCount + changedCount;
-          const data = {
-            title:
-              total > 0
-                ? `${total} ${total === 1 ? "neues/geändertes Dokument" : "neue/geänderte Dokumente"} im RIS`
-                : "RIS Delta-Sync abgeschlossen — keine Änderungen",
-            newCount,
-            changedCount,
-            failedCount,
-            applikationen: applikationen.length > 0 ? applikationen : ["all"],
-            total,
-            url: "/dashboard/admin/corpus",
-            syncDate: today,
-          };
-          psqlQuery(
-            `CREATE TABLE IF NOT EXISTS subsumio_notifications (
-               id text NOT NULL PRIMARY KEY,
-               user_id text NOT NULL,
-               brain_id text NOT NULL,
-               type text NOT NULL,
-               data jsonb NOT NULL DEFAULT '{}'::jsonb,
-               read_at timestamptz,
-               created_at timestamptz NOT NULL DEFAULT now()
-             );
-             INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
-             VALUES (${sqlLiteral(notifId)}, 'system', 'system', 'corpus_delta', ${sqlLiteral(JSON.stringify(data))}::jsonb, NULL, now())
-             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, read_at = NULL;`
-          );
-          console.log(`  [ris-delta] Notification geschrieben: ${total} Dokumente`);
-        } catch (err) {
-          console.error(`  [ris-delta] Notification fehlgeschlagen: ${err}`);
-        }
-      }
-    }
-    delete state.deltaJustFinished;
-  }
+  // Check if we already ran in the last 24h (unless manually triggered)
+  const intervalS = parseInt(process.env.PIPELINE_DELTA_INTERVAL_S || "86400", 10);
+  if (!manualTrigger && ranWithin(key, intervalS)) return;
 
   console.log("  [ris-delta] Starte RIS Delta-Watcher...");
 

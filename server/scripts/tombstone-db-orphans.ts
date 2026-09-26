@@ -178,9 +178,7 @@ async function main() {
   await engine.connect(cfg);
 
   const runId = makeRunId(`${values.source ?? "all"}${APPLY ? "" : "-dryrun"}`);
-  const inventory = new InventoryWriter(
-    inventoryPathFor(values["inventory-out"] as string, runId)
-  );
+  const inventory = new InventoryWriter(inventoryPathFor(values["inventory-out"] as string, runId));
   try {
     for (const source of sources) {
       const corpus = SOURCES[source]!;

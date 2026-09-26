@@ -396,6 +396,12 @@ services:
       PIPELINE_RECONCILE_GAP: ${PIPELINE_RECONCILE_GAP:-0.05}
       # Alert webhook (optional — set ALERT_WEBHOOK in .env to enable)
       ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
+      # Error alerts (delta sync, index crawls) mail the ops mailbox
+      # (scripts/pipeline-alert.ts; same channel as cronjob.sh).
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Subsumio <hello@subsum.io>}
+      QUEUE_ALERT_EMAIL: ${QUEUE_ALERT_EMAIL:-}
+      PIPELINE_ALERT_STATE_DIR: /root/subsumio-pipeline-logs/alert-state
       # OpenRouter (for embedding calls via auto-embed-pg.ts). Set
       # OPENROUTER_API_KEY_PIPELINE in .env to give bulk embedding its own key
       # with its own spend limit, separate from the engine's answers.

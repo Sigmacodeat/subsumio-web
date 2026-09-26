@@ -289,7 +289,9 @@ async function main() {
     const totalHits = await fetchTotalHits();
     if (totalHits === null) {
       // Keine Trefferzahl = unbrauchbare Antwort, nie "0 geltende Normen".
-      throw new Error("Keine Trefferzahl (Hits) — Fassungsfilter/Applikation prüfen; Index unverändert.");
+      throw new Error(
+        "Keine Trefferzahl (Hits) — Fassungsfilter/Applikation prüfen; Index unverändert."
+      );
     }
     const totalPages = Math.ceil(totalHits / PAGE_SIZE);
     console.log(

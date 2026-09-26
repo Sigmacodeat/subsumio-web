@@ -13,11 +13,15 @@ describe("parseTotalHits", () => {
     expect(parseTotalHits({ OgdSearchResult: { Error: { Message: "x" } } })).toBeNull();
     expect(parseTotalHits({})).toBeNull();
     expect(parseTotalHits(null)).toBeNull();
-    expect(parseTotalHits({ OgdSearchResult: { OgdDocumentResults: { Hits: { "#text": "0" } } } })).toBeNull();
+    expect(
+      parseTotalHits({ OgdSearchResult: { OgdDocumentResults: { Hits: { "#text": "0" } } } })
+    ).toBeNull();
   });
 
   test("reads the RIS #text node and a plain value", () => {
-    expect(parseTotalHits({ OgdSearchResult: { OgdDocumentResults: { Hits: { "#text": "1234" } } } })).toBe(1234);
+    expect(
+      parseTotalHits({ OgdSearchResult: { OgdDocumentResults: { Hits: { "#text": "1234" } } } })
+    ).toBe(1234);
     expect(parseTotalHits({ OgdSearchResult: { OgdDocumentResults: { Hits: "17" } } })).toBe(17);
   });
 });
@@ -25,7 +29,9 @@ describe("parseTotalHits", () => {
 describe("assessIndexCompleteness", () => {
   test("unknown total, lost pages or a short count are all rejected", () => {
     expect(assessIndexCompleteness({ total: null, written: 0, failedPages: [] }).ok).toBe(false);
-    expect(assessIndexCompleteness({ total: 1000, written: 1000, failedPages: [7] }).ok).toBe(false);
+    expect(assessIndexCompleteness({ total: 1000, written: 1000, failedPages: [7] }).ok).toBe(
+      false
+    );
     expect(assessIndexCompleteness({ total: 1000, written: 980, failedPages: [] }).ok).toBe(false);
   });
 

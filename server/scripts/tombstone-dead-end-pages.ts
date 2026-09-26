@@ -102,9 +102,7 @@ async function main() {
 
   const PAGE_SIZE = 2000;
   const runId = makeRunId(`${values.source ?? "all"}${APPLY ? "" : "-dryrun"}`);
-  const inventory = new InventoryWriter(
-    inventoryPathFor(values["inventory-out"] as string, runId)
-  );
+  const inventory = new InventoryWriter(inventoryPathFor(values["inventory-out"] as string, runId));
   let totalPages = 0;
 
   try {
@@ -161,7 +159,9 @@ async function main() {
   }
 
   if (inventory.lines > 0) {
-    console.log(`Inventar geschrieben: ${inventory.path} (${inventory.lines} Zeilen, Lauf ${runId})`);
+    console.log(
+      `Inventar geschrieben: ${inventory.path} (${inventory.lines} Zeilen, Lauf ${runId})`
+    );
   }
 
   console.log("\n═══════════════════════════════════════════════════════════");
