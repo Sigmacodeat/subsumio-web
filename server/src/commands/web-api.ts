@@ -46,6 +46,7 @@ import {
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
   jobMatterStamp,
+  jobAclStamp,
   jobOwnerStamp,
   matterScopeAllows,
   type MatterAccessRow,
@@ -1063,6 +1064,8 @@ export async function runExtractionAndImport(
     password?: string;
     matterScope?: string[] | "all";
     aclGroups?: string[] | "all";
+    /** The caller is a firm admin: only then may the pipeline stamp ACL "all". */
+    aclAdmin?: boolean;
     /** Bulk-act imports defer analysis until every raw document is ready. */
     autoTriggerLegalPipeline?: boolean;
     /** Signed owner context. Auto AI is forbidden without it. */
@@ -1084,6 +1087,7 @@ export async function runExtractionAndImport(
     password,
     matterScope,
     aclGroups,
+    aclAdmin = false,
     autoTriggerLegalPipeline = true,
     ownerId,
     ownerType,
@@ -1298,6 +1302,7 @@ export async function runExtractionAndImport(
           // pages those agents write are bound to the assigned matter (or kept
           // private for the uploader when the upload has none).
           ...jobMatterStamp(matterScope, undefined),
+          ...jobAclStamp(aclGroups, aclAdmin),
           ...jobOwnerStamp(userId, caseSlug?.trim() || undefined),
           owner_id: ownerId,
           owner_type: ownerType,
@@ -2033,7 +2038,16 @@ function assertMatterWritable(req: Request, slug: string, caseSlug?: string): vo
  * `{}` for unrestricted callers, whose jobs keep today's behaviour.
  */
 function agentMatterStamp(req: Request): Record<string, unknown> {
-  return jobMatterStamp(req.matterScope, req.matterReadOnly);
+  return { ...jobMatterStamp(req.matterScope, req.matterReadOnly), ...agentAclStamp(req) };
+}
+
+/**
+ * The caller's document ACL groups as a job-data stamp (`_acl_groups`). Only
+ * a firm admin's run keeps "all"; everyone else — also a call without an
+ * identity — runs with its group list (possibly empty: open pages only).
+ */
+function agentAclStamp(req: Request): Record<string, unknown> {
+  return jobAclStamp(req.aclGroups, req.userRole === "admin");
 }
 
 export function aclGroupsMiddleware(engine: BrainEngine) {
@@ -6460,6 +6474,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               : {}),
             matter_scope: req.matterScope ?? "all",
             acl_groups: req.aclGroups ?? "all",
+            acl_admin: req.userRole === "admin",
           },
           { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
           { allowProtectedSubmit: true }
@@ -6478,6 +6493,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           password: fields.password || undefined,
           matterScope: req.matterScope ?? "all",
           aclGroups: req.aclGroups ?? "all",
+          aclAdmin: req.userRole === "admin",
           autoTriggerLegalPipeline: shouldAutoTriggerUploadPipeline(fields.defer_pipeline, source),
           ownerId: billingOwnerId || undefined,
           ownerType: billingOwnerType,
@@ -7617,6 +7633,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               auto_trigger_legal_pipeline: confirmPlan.autoTriggerLegalPipeline,
               matter_scope: req.matterScope ?? "all",
               acl_groups: req.aclGroups ?? "all",
+              acl_admin: req.userRole === "admin",
               ...(billingOwnerId && billingOwnerType
                 ? {
                     owner_id: billingOwnerId,
@@ -7649,6 +7666,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             password: pending.password,
             matterScope: req.matterScope ?? "all",
             aclGroups: req.aclGroups ?? "all",
+            aclAdmin: req.userRole === "admin",
             ownerId: billingOwnerId || undefined,
             ownerType: billingOwnerType,
             userId: billingUserId || undefined,
@@ -8515,9 +8533,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // caller's own access replaces it, so replaying a colleague's run never
       // reaches matters the caller may not see.
       // The replay belongs to whoever started it.
-      const stamp = agentMatterStamp(req);
+      const stamp = jobMatterStamp(req.matterScope, req.matterReadOnly);
       const overrides: Record<string, unknown> = {
         ...(Object.keys(stamp).length > 0 ? { _matter_read_only: [], ...stamp } : {}),
+        // The replay reads with the replaying caller's document ACL groups.
+        ...agentAclStamp(req),
         ...jobOwnerStamp(req.userId),
       };
       const job = await queue.replayJob(
