@@ -3,6 +3,8 @@ import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
 import { buildSearchParams } from "@/lib/search-params";
 import { createHandler } from "@/lib/api-handler";
+import { getEnginePage } from "@/lib/engine-page-io";
+import { hideForeignPersonalEventHits } from "@/lib/calendar/personal-events";
 import { logger } from "@/lib/logger";
 
 const log = logger("api/search/palette");
@@ -51,7 +53,12 @@ export const GET = createHandler(
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as unknown;
-        return Array.isArray(data) ? data : [];
+        // Colleagues' personal calendar mirrors are not search results.
+        return Array.isArray(data)
+          ? hideForeignPersonalEventHits(data, ctx.user.id, (slug) =>
+              getEnginePage(ctx.headers, slug, { timeoutMs: 5_000 })
+            )
+          : [];
       })
     );
     const out = { failed: [] as SectionKey[] } as Record<SectionKey, unknown[]> & {

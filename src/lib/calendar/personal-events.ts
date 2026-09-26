@@ -30,3 +30,51 @@ export function hideForeignPersonalEvents<T>(value: T, userId: string | undefine
 export function isPrivateSensitivity(sensitivity: unknown): boolean {
   return sensitivity === "private" || sensitivity === "confidential";
 }
+
+/** Slug prefix of personal Outlook mirrors (graph-user-sync.ts). */
+const PERSONAL_MIRROR_PREFIX = "calendar/outlook/";
+
+function isCalendarHitCandidate(hit: unknown): boolean {
+  if (!hit || typeof hit !== "object") return false;
+  const h = hit as { type?: unknown; slug?: unknown };
+  return (
+    h.type === "calendar_event" ||
+    (typeof h.slug === "string" && h.slug.startsWith(PERSONAL_MIRROR_PREFIX))
+  );
+}
+
+/**
+ * Search hits carry only slug/type, not the owner. Every calendar hit is
+ * therefore checked against its page: someone else's personal mirror is
+ * dropped, and so is a hit whose page cannot be read (fail-closed). Other
+ * hits pass untouched and in order. Used by every search surface (search
+ * API, command palette, Copilot) so private appointments of colleagues never
+ * show up there.
+ */
+export async function hideForeignPersonalEventHits<T>(
+  hits: T[],
+  userId: string | undefined,
+  loadPage: (slug: string) => Promise<unknown | null>
+): Promise<T[]> {
+  if (!Array.isArray(hits)) return hits;
+  const slugs = new Set<string>();
+  for (const h of hits) {
+    if (isCalendarHitCandidate(h)) slugs.add(String((h as { slug?: unknown }).slug ?? ""));
+  }
+  if (slugs.size === 0) return hits;
+  const allowed = new Set<string>();
+  await Promise.all(
+    [...slugs].map(async (slug) => {
+      if (!slug) return;
+      try {
+        const page = await loadPage(slug);
+        if (page && !isForeignPersonalEvent(page, userId)) allowed.add(slug);
+      } catch {
+        // unreadable → treated as not visible
+      }
+    })
+  );
+  return hits.filter(
+    (h) => !isCalendarHitCandidate(h) || allowed.has(String((h as { slug?: unknown }).slug ?? ""))
+  );
+}
