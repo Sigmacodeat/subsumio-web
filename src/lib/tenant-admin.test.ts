@@ -123,6 +123,18 @@ describe("suspending a firm", () => {
   });
 });
 
+describe("reactivation while the firm's data deletion is scheduled or done", () => {
+  it("refuses while a deletion is scheduled (cancel_deletion first) and after the data is deleted", async () => {
+    await suspendTenant(await firm(), { reason: "Vertrag gekündigt", operatorEmail: "ops@x" });
+    orgs.set("org-1", { ...orgs.get("org-1")!, deletionScheduledFor: "2026-10-26T00:00:00Z" });
+    expect(await code(reactivateTenant(await firm()))).toBe("deletion_scheduled");
+    expect(users.get("owner")!.deactivatedAt).toBeTruthy();
+    orgs.set("org-1", { ...orgs.get("org-1")!, dataDeletedAt: "2026-10-27T00:00:00Z" });
+    expect(await code(reactivateTenant(await firm()))).toBe("data_deleted");
+    expect(users.get("lawyer")!.deactivatedAt).toBeTruthy();
+  });
+});
+
 describe("roles and ownership", () => {
   it("keeps the owner admin and never leaves a firm without an admin", async () => {
     expect(await code(setMemberRole(await firm(), "owner", "lawyer"))).toBe(
