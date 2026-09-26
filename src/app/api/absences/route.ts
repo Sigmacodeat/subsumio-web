@@ -10,6 +10,7 @@ import {
   cancelAbsence,
   deadlineSlugsCoveredByAbsence,
   absenceHasStarted,
+  findOverlappingAbsence,
   ABSENCE_KINDS,
   type AbsenceRecord,
 } from "@/lib/absence";
@@ -19,22 +20,54 @@ const log = logger("api/absences");
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const createAbsenceSchema = z.object({
-  user_email: z.string().email(),
-  user_name: z.string().min(1).max(200),
-  delegate_email: z.string().email(),
-  delegate_name: z.string().min(1).max(200),
-  // ISO calendar dates — free-text previously passed through and produced
-  // absence records that never activate.
-  start_date: z.string().regex(DATE_RE, "invalid_date"),
-  end_date: z.string().regex(DATE_RE, "invalid_date"),
-  // Required: decides whether the absence counts against the vacation
-  // account (a free-text reason did so only by accident).
-  kind: z.enum(ABSENCE_KINDS),
-  reason: z.string().max(500).optional(),
-  auto_route_enabled: z.boolean().default(true),
-  notes: z.string().max(2000).optional(),
-});
+const createAbsenceSchema = z
+  .object({
+    user_email: z.string().email(),
+    user_name: z.string().min(1).max(200),
+    // Firm member: e-mail required (checked against the firm's accounts).
+    // External Substitut / mittlerweiliger Stellvertreter (§ 34 RAO):
+    // `substitute_external: true`, name required, e-mail and firm optional.
+    substitute_external: z.boolean().default(false),
+    delegate_email: z
+      .string()
+      .trim()
+      .max(300)
+      .optional()
+      .transform((v) => v || undefined)
+      .pipe(z.string().email().optional()),
+    delegate_name: z.string().trim().min(1).max(200),
+    delegate_firm: z.string().trim().max(200).optional(),
+    // ISO calendar dates — free-text previously passed through and produced
+    // absence records that never activate.
+    start_date: z.string().regex(DATE_RE, "invalid_date"),
+    end_date: z.string().regex(DATE_RE, "invalid_date"),
+    // Required: decides whether the absence counts against the vacation
+    // account (a free-text reason did so only by accident).
+    kind: z.enum(ABSENCE_KINDS),
+    reason: z.string().max(500).optional(),
+    auto_route_enabled: z.boolean().default(true),
+    notes: z.string().max(2000).optional(),
+  })
+  .refine((b) => b.substitute_external || Boolean(b.delegate_email), {
+    message: "delegate_email_required",
+    path: ["delegate_email"],
+  });
+
+/** Every absence record, strictly read (a partial list would miss a clash). */
+async function listAbsences(headers: Record<string, string>): Promise<AbsenceRecord[]> {
+  const pages = await listEnginePages(headers, "absence_record", 10_000, { strict: true });
+  return pages
+    .map((p) => p.frontmatter as unknown as AbsenceRecord | undefined)
+    .filter((a): a is AbsenceRecord => Boolean(a));
+}
+
+function overlapError(clash: AbsenceRecord) {
+  return apiError(
+    "absence_overlap",
+    `Für diese Person ist im Zeitraum bereits eine Abwesenheit eingetragen (${clash.start_date.slice(0, 10)} bis ${clash.end_date.slice(0, 10)}). Bitte diese anpassen oder stornieren.`,
+    409
+  );
+}
 
 /**
  * Which open deadlines / follow-ups the delegate covers: the matter's
@@ -104,7 +137,10 @@ export const POST = createHandler(
     if (new Date(body.end_date) < new Date(body.start_date)) {
       return apiError("invalid_dates", "Enddatum muss nach Startdatum liegen", 422);
     }
-    if (body.user_email.toLowerCase() === body.delegate_email.toLowerCase()) {
+    if (
+      body.delegate_email &&
+      body.user_email.toLowerCase() === body.delegate_email.toLowerCase()
+    ) {
       return apiError(
         "self_delegation",
         "Die Vertretung muss eine andere Person sein als die abwesende Person.",
@@ -112,9 +148,10 @@ export const POST = createHandler(
       );
     }
 
-    // The stand-in must be an active member of the firm — a typo would
-    // otherwise leave every deadline of the absence with nobody.
-    if (ctx.user.orgId) {
+    // A firm-member stand-in must be an active member of the firm — a typo
+    // would otherwise leave every deadline of the absence with nobody. An
+    // explicitly external stand-in (§ 34 RAO) has no account to check.
+    if (ctx.user.orgId && !body.substitute_external && body.delegate_email) {
       let delegate: Awaited<ReturnType<ReturnType<typeof getStore>["getByEmail"]>>;
       try {
         delegate = await getStore().getByEmail(body.delegate_email.trim().toLowerCase());
@@ -137,33 +174,14 @@ export const POST = createHandler(
 
     // One absence per person at a time: with two overlapping records the
     // stand-in shown on a deadline would depend on the listing order.
-    let existing: Awaited<ReturnType<typeof listEnginePages>>;
+    let existing: AbsenceRecord[];
     try {
-      existing = await listEnginePages(ctx.headers, "absence_record", 10_000, { strict: true });
+      existing = await listAbsences(ctx.headers);
     } catch {
       return apiError("engine_error", "Bestehende Abwesenheiten konnten nicht geprüft werden", 502);
     }
-    const who = body.user_email.trim().toLowerCase();
-    const clash = existing
-      .map((p) => p.frontmatter as unknown as AbsenceRecord | undefined)
-      .find(
-        (a) =>
-          a &&
-          String(a.user_email ?? "").toLowerCase() === who &&
-          a.status !== "cancelled" &&
-          a.status !== "completed" &&
-          typeof a.start_date === "string" &&
-          typeof a.end_date === "string" &&
-          a.start_date.slice(0, 10) <= body.end_date &&
-          a.end_date.slice(0, 10) >= body.start_date
-      );
-    if (clash) {
-      return apiError(
-        "absence_overlap",
-        `Für diese Person ist im Zeitraum bereits eine Abwesenheit eingetragen (${clash.start_date.slice(0, 10)} bis ${clash.end_date.slice(0, 10)}). Bitte diese anpassen oder stornieren.`,
-        409
-      );
-    }
+    const clash = findOverlappingAbsence(existing, body);
+    if (clash) return overlapError(clash);
 
     let absence = createAbsence(body);
     // Already under way (e.g. entered on the first sick day): active from the
@@ -251,6 +269,26 @@ export const PATCH = createHandler(
         "Diese Abwesenheit ist bereits abgeschlossen oder storniert.",
         409
       );
+    }
+
+    // Reopening a cancelled/completed absence must not create an overlap
+    // that creating it anew would have been refused for.
+    if (
+      body.action === "activate" &&
+      (record.status === "cancelled" || record.status === "completed")
+    ) {
+      let existing: AbsenceRecord[];
+      try {
+        existing = await listAbsences(ctx.headers);
+      } catch {
+        return apiError(
+          "engine_error",
+          "Bestehende Abwesenheiten konnten nicht geprüft werden",
+          502
+        );
+      }
+      const clash = findOverlappingAbsence(existing, record);
+      if (clash) return overlapError(clash);
     }
 
     const updated =

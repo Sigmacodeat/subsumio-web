@@ -29,6 +29,7 @@ import { cn, formatDate } from "@/lib/utils";
 import {
   ABSENCE_KINDS,
   absenceDisplayStatus,
+  delegateLabel,
   type AbsenceKind,
   type AbsenceRecord,
 } from "@/lib/absence";
@@ -85,6 +86,9 @@ const EMPTY_FORM = {
   user_email: "",
   delegate_name: "",
   delegate_email: "",
+  /** "member" = Kanzleimitglied (Konto wird geprüft), "external" = § 34 RAO. */
+  delegate_kind: "member" as "member" | "external",
+  delegate_firm: "",
   start_date: "",
   end_date: "",
   kind: "" as AbsenceKind | "",
@@ -139,7 +143,7 @@ export default function AbsencePage() {
       !form.user_name.trim() ||
       !form.user_email.trim() ||
       !form.delegate_name.trim() ||
-      !form.delegate_email.trim() ||
+      (form.delegate_kind === "member" && !form.delegate_email.trim()) ||
       !form.start_date ||
       !form.end_date ||
       !form.kind
@@ -160,7 +164,10 @@ export default function AbsencePage() {
           user_name: form.user_name.trim(),
           user_email: form.user_email.trim(),
           delegate_name: form.delegate_name.trim(),
-          delegate_email: form.delegate_email.trim(),
+          delegate_email: form.delegate_email.trim() || undefined,
+          substitute_external: form.delegate_kind === "external",
+          delegate_firm:
+            form.delegate_kind === "external" ? form.delegate_firm.trim() || undefined : undefined,
           start_date: form.start_date,
           end_date: form.end_date,
           kind: form.kind,
@@ -320,6 +327,31 @@ export default function AbsencePage() {
                 required
               />
             </div>
+            <fieldset className="space-y-1 sm:col-span-2">
+              <legend className="text-xs text-[color:var(--ds-text-muted)]">
+                Art der Vertretung
+              </legend>
+              <div className="flex flex-wrap gap-4 text-sm text-[color:var(--ds-text)]">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="absence-delegate-kind"
+                    checked={form.delegate_kind === "member"}
+                    onChange={() => setForm({ ...form, delegate_kind: "member" })}
+                  />
+                  Kanzleimitglied
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="absence-delegate-kind"
+                    checked={form.delegate_kind === "external"}
+                    onChange={() => setForm({ ...form, delegate_kind: "external" })}
+                  />
+                  Externe Vertretung (Substitut, § 34 RAO)
+                </label>
+              </div>
+            </fieldset>
             <div className="space-y-1">
               <Label
                 htmlFor="absence-delegate"
@@ -340,7 +372,8 @@ export default function AbsencePage() {
                 htmlFor="absence-delegate-email"
                 className="text-xs text-[color:var(--ds-text-muted)]"
               >
-                {t("absence.delegate_email")} *
+                {t("absence.delegate_email")}
+                {form.delegate_kind === "member" ? " *" : " (optional)"}
               </Label>
               <Input
                 id="absence-delegate-email"
@@ -350,9 +383,24 @@ export default function AbsencePage() {
                 value={form.delegate_email}
                 onChange={(e) => setForm({ ...form, delegate_email: e.target.value })}
                 placeholder="anna@kanzlei.at"
-                required
+                required={form.delegate_kind === "member"}
               />
             </div>
+            {form.delegate_kind === "external" && (
+              <div className="space-y-1">
+                <Label
+                  htmlFor="absence-delegate-firm"
+                  className="text-xs text-[color:var(--ds-text-muted)]"
+                >
+                  Kanzlei der Vertretung (optional)
+                </Label>
+                <Input
+                  id="absence-delegate-firm"
+                  value={form.delegate_firm}
+                  onChange={(e) => setForm({ ...form, delegate_firm: e.target.value })}
+                />
+              </div>
+            )}
             <div className="space-y-1">
               <Label htmlFor="absence-from" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("absence.from")} *
@@ -528,7 +576,7 @@ export default function AbsencePage() {
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-[color:var(--ds-text-muted)]">
                     <span className="inline-flex items-center gap-1">
                       <UserCheck size={10} aria-hidden="true" />
-                      {t("absence.delegate_label")} {absence.delegate_name}
+                      {t("absence.delegate_label")} {delegateLabel(absence)}
                     </span>
                     {absence.reason && <span>· {absence.reason}</span>}
                     {forwarded > 0 && (

@@ -187,6 +187,28 @@ describe("PATCH /api/absences", () => {
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
+  test("activate einer stornierten Abwesenheit mit Überschneidung → 409, kein Patch", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
+    mockList.mockResolvedValueOnce([
+      { slug: "legal/absences/absence-1", frontmatter: { ...ABSENCE, status: "cancelled" } },
+      {
+        slug: "legal/absences/neu",
+        frontmatter: { ...ABSENCE, id: "neu", start_date: "2026-10-05", end_date: "2026-10-20" },
+      },
+    ]);
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(409);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  test("activate einer stornierten Abwesenheit: Lesefehler → 502 statt ungeprüft", async () => {
+    mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
+    mockList.mockRejectedValueOnce(new Error("down"));
+    const res = await patch({ id: "absence-1", action: "activate" });
+    expect(res.status).toBe(502);
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
   test("activate auf storniert/abgeschlossen → Reopen erlaubt (Undo-Pfad)", async () => {
     mockFetch.mockResolvedValueOnce(pageWith({ ...ABSENCE, status: "cancelled" }));
     const res = await patch({ id: "absence-1", action: "activate" });
@@ -289,6 +311,34 @@ describe("POST /api/absences", () => {
       deactivatedAt: "2026-01-01",
     });
     expect((await post(baseBody)).status).toBe(422);
+  });
+
+  test("externe Vertretung (§ 34 RAO) → ohne Mitgliedsprüfung angelegt, Name/Kanzlei gespeichert", async () => {
+    ctxUser = { ...ctxUser, orgId: "org-1" };
+    mockFetch.mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const { delegate_email: _e, ...noEmail } = baseBody;
+    const res = await post({
+      ...noEmail,
+      delegate_name: "Dr. Substitut",
+      substitute_external: true,
+      delegate_firm: "Kanzlei Beispiel",
+    });
+    expect(res.status).toBe(200);
+    expect(mockGetByEmail).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.data.absence).toMatchObject({
+      substitute_external: true,
+      delegate_name: "Dr. Substitut",
+      delegate_firm: "Kanzlei Beispiel",
+      delegate_email: "",
+    });
+  });
+
+  test("Kanzleimitglied ohne E-Mail → 400", async () => {
+    const { delegate_email: _e, ...noEmail } = baseBody;
+    const res = await post(noEmail);
+    expect(res.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("Kanzlei: aktives Mitglied als Vertretung → angelegt", async () => {
