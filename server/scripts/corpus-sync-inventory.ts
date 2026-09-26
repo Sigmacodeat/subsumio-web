@@ -19,6 +19,14 @@
  *     a number only, so "fehlt bei uns" = Soll − eindeutige Dokumente.
  *   - everything else: no Soll (null), shown as such.
  *
+ * Proof per document (`proof`): a document counts as confirmed only when
+ * all four hold — RIS lists it (index sources), its file is on disk, the
+ * content_hash in the file's frontmatter equals the one of the DB page
+ * (Server = Datenbank, checksum), and the plausibility audit accepted exactly
+ * this content (corpus_page_verified.content_hash = pages.content_hash).
+ * Everything else lands in exactly one problem bucket, so the buckets of the
+ * Soll add up to the Soll — a sum the page can check.
+ *
  * Writes _state/corpus-sync-inventory.json atomically. Runs inside the
  * corpus-pipeline container (the only one that sees files and DB with write
  * access to _state); the pipeline starts it hourly. Read-only on the DB.
@@ -159,6 +167,51 @@ export interface SyncInventorySource {
   notInRisSoll: number | null;
   /** RIS lists fewer than we hold (courts: diskDocs − Soll when positive). */
   aboveSoll: number;
+  /** Per-document proof (in scope only). */
+  proof?: SyncProof;
+}
+
+/**
+ * One bucket per document, in the order of the work: confirmed, then the
+ * three states of a document that is in the DB, then import, then fetch.
+ */
+export const PROOF_BUCKETS = [
+  "confirmed", //   file = DB by checksum, content check passed for this content
+  "mismatch", //    in DB, but checksum file ≠ DB (or missing, or two differing files)
+  "defective", //   checksum ok, content check ran after the last change and failed
+  "unchecked", //   checksum ok, changed after the last content check (or never checked)
+  "importOpen", //  on disk, not in the DB
+  "fetchOpen", //   in the RIS Soll, not on disk, fetch still open (or failed)
+  "unreachable", // in the RIS Soll, RIS delivers no text / does not know the number
+] as const;
+export type ProofBucket = (typeof PROOF_BUCKETS)[number];
+export type ProofCounts = Record<ProofBucket, number>;
+
+export interface ProofSample {
+  id: string;
+  /** "ABGB § 5" from the RIS index; null outside it. */
+  label: string | null;
+}
+
+export interface ProofUnit {
+  counts: ProofCounts;
+  /** Up to SAMPLE_CAP document numbers per problem bucket, for checking by hand. */
+  samples: Partial<Record<ProofBucket, ProofSample[]>>;
+}
+
+export interface SyncProof extends ProofUnit {
+  /**
+   * true = the Soll is a list of document numbers (in-force index): the
+   * buckets add up to risSoll exactly. false = the buckets cover what is on
+   * disk; fetchOpen is Soll − disk from a hit count (or 0 without Soll).
+   */
+  sollExact: boolean;
+  /** Last full content check of this source; null = never checked. */
+  contentCheckAt: string | null;
+  /** Landesrecht: the same buckets per Land (bgld, ktn, …). */
+  parts?: Record<string, ProofUnit>;
+  /** Index sources: counts per statute key (lawKeyFor), in PROOF_BUCKETS order. */
+  laws?: Record<string, number[]>;
 }
 
 export interface SyncInventory {
@@ -174,7 +227,7 @@ interface Engine {
   disconnect(): Promise<void>;
 }
 
-const HEAD_BYTES = 1500;
+const HEAD_BYTES = 4096;
 const headBuf = Buffer.alloc(HEAD_BYTES);
 
 function readHead(path: string): string {
@@ -191,10 +244,19 @@ function readHead(path: string): string {
 }
 
 const DOC_ID_RE = /^doc_id:\s*["']?([^"'\s]+)/m;
+const HASH_RE = /^content_hash:\s*["']?([0-9a-f]{16})\b/m;
 
-/** doc_id → number of files carrying it, plus the plain file count. */
-export function scanNormalized(dir: string): { ids: Map<string, number>; files: number } {
+/**
+ * doc_id → number of files carrying it, the plain file count, and per
+ * doc_id the content_hash values its files carry ("" = file without hash).
+ */
+export function scanNormalized(dir: string): {
+  ids: Map<string, number>;
+  files: number;
+  hashes: Map<string, Set<string>>;
+} {
   const ids = new Map<string, number>();
+  const hashes = new Map<string, Set<string>>();
   let files = 0;
   const walk = (d: string) => {
     let entries;
@@ -208,13 +270,19 @@ export function scanNormalized(dir: string): { ids: Map<string, number>; files: 
       if (e.isDirectory()) walk(p);
       else if (e.name.endsWith(".md")) {
         files++;
-        const id = readHead(p).match(DOC_ID_RE)?.[1];
-        if (id && id !== "null") ids.set(id, (ids.get(id) ?? 0) + 1);
+        const head = readHead(p);
+        const id = head.match(DOC_ID_RE)?.[1];
+        if (id && id !== "null") {
+          ids.set(id, (ids.get(id) ?? 0) + 1);
+          let h = hashes.get(id);
+          if (!h) hashes.set(id, (h = new Set()));
+          h.add(head.match(HASH_RE)?.[1] ?? "");
+        }
       }
     }
   };
   walk(dir);
-  return { ids, files };
+  return { ids, files, hashes };
 }
 
 function countMd(dir: string): number {
@@ -249,6 +317,108 @@ export function loadIndexIds(path: string): Set<string> {
     }
   }
   return ids;
+}
+
+/**
+ * In-force index with the statute each document belongs to — the key is the
+ * same as lawKeyFor() in src/lib/law-coverage.ts (Landesrecht: "stmk-2000…").
+ */
+export function loadIndexEntries(path: string): Map<string, { law: string; label: string | null }> {
+  const out = new Map<string, { law: string; label: string | null }>();
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const d = JSON.parse(line) as {
+        nor?: string;
+        id?: string;
+        gnr?: string;
+        apa?: string | null;
+        abk?: string | null;
+        kurztitel?: string | null;
+      };
+      const nor = d.nor ?? d.id;
+      if (!nor || d.apa === "§ 0") continue;
+      const gnr = d.gnr ?? "";
+      const name = d.abk ?? d.kurztitel ?? (gnr ? `Gesetz ${gnr}` : null);
+      out.set(nor, {
+        law: gnr ? lawKeyFor(nor, gnr) : "",
+        label: name ? `${name}${d.apa ? ` ${d.apa}` : ""}` : (d.apa ?? null),
+      });
+    } catch {
+      // skip
+    }
+  }
+  return out;
+}
+
+/** Same table as LAND_CODES in src/lib/law-coverage.ts (web and engine stay separate). */
+const LAND_CODES: Record<string, string> = {
+  BG: "bgld",
+  KT: "ktn",
+  NO: "noe",
+  OO: "ooe",
+  SB: "sbg",
+  ST: "stmk",
+  TI: "tir",
+  VB: "vbg",
+  WI: "wien",
+};
+
+/** Land of a Landesrecht document number (LST… → stmk); null otherwise. */
+export function landOf(docId: string): string | null {
+  return LAND_CODES[docId.match(/^L([A-Z]{2})\d/)?.[1] ?? ""] ?? null;
+}
+
+function lawKeyFor(nor: string, gnr: string): string {
+  const land = landOf(nor);
+  return land && !gnr.startsWith(`${land}-`) ? `${land}-${gnr}` : gnr;
+}
+
+export const SAMPLE_CAP = 50;
+
+const emptyCounts = (): ProofCounts => ({
+  confirmed: 0,
+  mismatch: 0,
+  defective: 0,
+  unchecked: 0,
+  importOpen: 0,
+  fetchOpen: 0,
+  unreachable: 0,
+});
+
+const emptyUnit = (): ProofUnit => ({ counts: emptyCounts(), samples: {} });
+
+function addTo(unit: ProofUnit, bucket: ProofBucket, sample: ProofSample) {
+  unit.counts[bucket]++;
+  if (bucket === "confirmed") return;
+  const list = (unit.samples[bucket] ??= []);
+  if (list.length < SAMPLE_CAP) list.push(sample);
+}
+
+/** What the DB holds for one doc_id (all live pages carrying it). */
+interface DbDoc {
+  hashes: Set<string>;
+  allVerified: boolean;
+  changedSinceCheck: boolean;
+  dated: boolean;
+}
+
+/**
+ * The bucket of one document that is on disk and in the DB. The checksum
+ * comes first: a page whose content differs from the file is not "the"
+ * document, whatever the content check said about it.
+ */
+export function classifyInDb(
+  disk: Set<string> | undefined,
+  db: DbDoc,
+  checked: boolean
+): Exclude<ProofBucket, "importOpen" | "fetchOpen" | "unreachable"> {
+  const diskHash = disk && disk.size === 1 ? [...disk][0]! : "";
+  const dbHash = db.hashes.size === 1 ? [...db.hashes][0]! : "";
+  if (!diskHash || !dbHash || diskHash !== dbHash) return "mismatch";
+  if (db.allVerified) return "confirmed";
+  if (!checked || db.changedSinceCheck) return "unchecked";
+  return "defective";
 }
 
 function listDirs(root: string): string[] {
@@ -286,6 +456,25 @@ export async function measure(
 
   const smallHits = await lookupHits([...corpora].filter((c) => HITS_QUERY[c]));
 
+  // Content check (audit-plausibility-full.ts): the positive list and the
+  // time of each source's last full run. Both tables appear with the first
+  // audit — before that, nothing is confirmed and everything is unchecked.
+  const hasVerified = await engine
+    .executeRaw(`SELECT to_regclass('corpus_page_verified') IS NOT NULL AS ok`)
+    .then((r) => (r as Array<{ ok: boolean }>)[0]?.ok === true)
+    .catch(() => false);
+  const checkedAt = new Map<string, string>();
+  await engine
+    .executeRaw(
+      `SELECT source_id, last_plausibility_check FROM corpus_status
+        WHERE last_plausibility_check IS NOT NULL`
+    )
+    .then((rows) => {
+      for (const r of rows as Array<{ source_id: string; last_plausibility_check: string | Date }>)
+        checkedAt.set(r.source_id, new Date(r.last_plausibility_check).toISOString());
+    })
+    .catch(() => undefined);
+
   const sources: SyncInventorySource[] = [];
   for (const corpus of [...corpora].sort()) {
     const inScope = corpus === "at" || corpus.startsWith("at-");
@@ -294,35 +483,65 @@ export async function measure(
       ? join(corpusRoot, "eu", corpus.slice(3))
       : join(corpusRoot, corpus);
     const rawFiles = countMd(rawDir);
-    const { ids: diskIds, files: normalizedFiles } = inScope
+    const {
+      ids: diskIds,
+      files: normalizedFiles,
+      hashes: diskHashes,
+    } = inScope
       ? scanNormalized(join(NORMALIZED, corpus))
-      : { ids: new Map<string, number>(), files: 0 };
+      : { ids: new Map<string, number>(), files: 0, hashes: new Map<string, Set<string>>() };
 
+    const lastCheck = checkedAt.get(sourceId) ?? null;
     // DB: distinct doc_id of live pages, read in id order to keep memory flat.
-    const dbIds = new Set<string>();
-    const datedIds = new Set<string>();
+    // Hash and content verdict only where they are used (in scope).
+    const dbDocs = new Map<string, DbDoc>();
     let dbPages = 0;
     let dbPagesWithoutDocId = 0;
     let lastId = 0;
+    const proofCols =
+      inScope && hasVerified
+        ? `, p.frontmatter->>'content_hash' AS fm_hash,
+             (v.content_hash IS NOT NULL AND v.content_hash = p.content_hash) AS verified,
+             ($3::timestamptz IS NULL OR p.updated_at > $3::timestamptz) AS changed`
+        : inScope
+          ? `, p.frontmatter->>'content_hash' AS fm_hash, false AS verified, true AS changed`
+          : "";
+    const proofJoin =
+      inScope && hasVerified ? "LEFT JOIN corpus_page_verified v ON v.page_id = p.id" : "";
     for (;;) {
       const batch = (await engine.executeRaw(
-        `SELECT id, frontmatter->>'doc_id' AS doc_id,
-                nullif(frontmatter->>'in_force_to', '') IS NOT NULL AS dated
-           FROM pages
-          WHERE deleted_at IS NULL AND source_id = $1 AND id > $2
-          ORDER BY id LIMIT 20000`,
-        [sourceId, lastId]
-      )) as Array<{ id: number | string; doc_id: string | null; dated: boolean }>;
+        `SELECT p.id, p.frontmatter->>'doc_id' AS doc_id,
+                nullif(p.frontmatter->>'in_force_to', '') IS NOT NULL AS dated${proofCols}
+           FROM pages p ${proofJoin}
+          WHERE p.deleted_at IS NULL AND p.source_id = $1 AND p.id > $2
+          ORDER BY p.id LIMIT 20000`,
+        inScope && hasVerified ? [sourceId, lastId, lastCheck] : [sourceId, lastId]
+      )) as Array<{
+        id: number | string;
+        doc_id: string | null;
+        dated: boolean;
+        fm_hash?: string | null;
+        verified?: boolean;
+        changed?: boolean;
+      }>;
       if (batch.length === 0) break;
       for (const r of batch) {
         dbPages++;
         if (r.doc_id) {
-          dbIds.add(r.doc_id);
-          if (r.dated) datedIds.add(r.doc_id);
+          let d = dbDocs.get(r.doc_id);
+          if (!d) {
+            d = { hashes: new Set(), allVerified: true, changedSinceCheck: false, dated: false };
+            dbDocs.set(r.doc_id, d);
+          }
+          d.hashes.add(r.fm_hash ?? "");
+          if (r.verified !== true) d.allVerified = false;
+          if (r.changed !== false) d.changedSinceCheck = true;
+          if (r.dated) d.dated = true;
         } else dbPagesWithoutDocId++;
       }
       lastId = Number(batch[batch.length - 1]!.id);
     }
+    const dbIds = dbDocs;
 
     let diskNotInDb = 0;
     for (const id of diskIds.keys()) if (!dbIds.has(id)) diskNotInDb++;
@@ -330,9 +549,9 @@ export async function measure(
     let dbHistorical = 0;
     // Out-of-scope sources have no normalized tree to compare against.
     if (inScope)
-      for (const id of dbIds) {
+      for (const [id, d] of dbIds) {
         if (diskIds.has(id)) continue;
-        if (datedIds.has(id)) dbHistorical++;
+        if (d.dated) dbHistorical++;
         else dbNotOnDisk++;
       }
 
@@ -351,16 +570,47 @@ export async function measure(
 
     const indexFile = INDEX_OF[corpus];
     const indexPath = indexFile ? join(STATE, indexFile) : null;
+    const proof: SyncProof = {
+      ...emptyUnit(),
+      sollExact: false,
+      contentCheckAt: lastCheck,
+    };
+    const parts = corpus === "at-landesrecht" ? new Map<string, ProofUnit>() : null;
+    const laws = new Map<string, number[]>();
+    const place = (id: string, bucket: ProofBucket, label: string | null, law: string | null) => {
+      const sample = { id, label };
+      addTo(proof, bucket, sample);
+      if (parts) {
+        const land = landOf(id) ?? "unbekannt";
+        let u = parts.get(land);
+        if (!u) parts.set(land, (u = emptyUnit()));
+        addTo(u, bucket, sample);
+      }
+      if (law) {
+        let c = laws.get(law);
+        if (!c) laws.set(law, (c = PROOF_BUCKETS.map(() => 0)));
+        c[PROOF_BUCKETS.indexOf(bucket)]!++;
+      }
+    };
+    const inDbBucket = (id: string) =>
+      classifyInDb(diskHashes.get(id), dbIds.get(id)!, lastCheck !== null && hasVerified);
+
     if (indexPath && existsSync(indexPath)) {
-      const soll = loadIndexIds(indexPath);
+      const soll = loadIndexEntries(indexPath);
       risSoll = soll.size;
       risSollKind = "index";
       risSollAt = new Date(statSync(indexPath).mtimeMs).toISOString();
-      for (const id of soll) {
-        if (diskIds.has(id)) continue;
-        missingOnDisk++;
-        const o = outcomes.get(`${corpus}|${id}`);
-        missingByReason[o ? o.outcome : "open"]++;
+      proof.sollExact = true;
+      for (const [id, entry] of soll) {
+        const law = entry.law || null;
+        if (!diskIds.has(id)) {
+          missingOnDisk++;
+          const o = outcomes.get(`${corpus}|${id}`);
+          missingByReason[o ? o.outcome : "open"]++;
+          const unreachable = o?.outcome === "no_text" || o?.outcome === "not_found";
+          place(id, unreachable ? "unreachable" : "fetchOpen", entry.label, law);
+        } else if (!dbIds.has(id)) place(id, "importOpen", entry.label, law);
+        else place(id, inDbBucket(id), entry.label, law);
       }
       notInRisSoll = 0;
       for (const id of diskIds.keys()) if (!soll.has(id)) notInRisSoll++;
@@ -374,7 +624,18 @@ export async function measure(
         missingByReason.open = missingOnDisk;
         aboveSoll = Math.max(0, diskIds.size - hits);
       }
+      // No list of numbers: the buckets cover what is on disk; what RIS
+      // holds beyond it is only known as a count.
+      if (inScope) {
+        for (const id of diskIds.keys()) {
+          if (!dbIds.has(id)) place(id, "importOpen", null, null);
+          else place(id, inDbBucket(id), null, null);
+        }
+        proof.counts.fetchOpen = missingOnDisk;
+      }
     }
+    if (parts) proof.parts = Object.fromEntries([...parts].sort(([a], [b]) => a.localeCompare(b)));
+    if (laws.size > 0) proof.laws = Object.fromEntries(laws);
 
     sources.push({
       corpus,
@@ -397,6 +658,7 @@ export async function measure(
       dbHistorical,
       notInRisSoll,
       aboveSoll,
+      ...(inScope && corpus !== "at" ? { proof } : {}),
     });
   }
 

@@ -8,12 +8,12 @@ import {
   CommandCenterGate,
   PipelineSection,
   RisDeltaSection,
-  SyncStatusSection,
   TrustSection,
   WorkQueueSection,
   useCorpusCommandCenterData,
 } from "@/components/dashboard/corpus-command-center";
 import { CorpusBestand } from "@/components/dashboard/corpus-bestand";
+import { CorpusNachweis } from "@/components/dashboard/corpus-nachweis";
 import { CorpusProtokoll } from "@/components/dashboard/corpus-protokoll";
 import { ChunkInspector } from "@/components/dashboard/chunk-inspector";
 import { ChunkQuality } from "@/components/dashboard/chunk-quality";
@@ -29,10 +29,10 @@ import {
   corpusSearchMode,
 } from "@/components/dashboard/corpus-steward/corpus-files-queries";
 import {
-  corpusCoverageAuditQuery,
   corpusIngestLogQuery,
-  corpusOverviewQuery,
+  corpusLawCoverageQuery,
 } from "@/components/dashboard/corpus-ops-queries";
+import { LAW_SOURCES } from "@/lib/law-coverage";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ShieldCheck, Library, Activity, type LucideIcon } from "lucide-react";
 
@@ -93,8 +93,9 @@ export default function CorpusPage() {
   const prefetchTab = useCallback(
     (id: TabId) => {
       if (id === "bestand") {
-        void queryClient.prefetchQuery(corpusCoverageAuditQuery());
-        void queryClient.prefetchQuery(corpusOverviewQuery());
+        // Seiten-Zählung und Abdeckungs-Matrix liegen zugeklappt und laden
+        // erst beim Aufklappen — vorab nur die Gesetzesliste.
+        void queryClient.prefetchQuery(corpusLawCoverageQuery(LAW_SOURCES[0].id));
       } else if (id === "pipeline") {
         // Default-Ansicht des Protokolls: PAGE_SIZE=50, offset 0,
         // kein Filter — CorpusProtokoll baut dieselbe Param-Menge.
@@ -172,7 +173,7 @@ export default function CorpusPage() {
     <div ref={rootRef} className="mx-0 w-full space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Rechtskorpus"
-        description="Bestand, Eingang und Abgleich mit dem RIS — Stand der Datenbank auf dem Server"
+        description="Was nachweislich 1:1 dem RIS entspricht, was fehlt und was abweicht — nach Rechtsbereich"
       />
       <CorpusAlertBanner />
       <PublishBanner />
@@ -216,8 +217,8 @@ export default function CorpusPage() {
           ))}
         </TabsList>
 
-        <TabsContent value="bestand" className="mt-4 space-y-6">
-          <SyncChainSection
+        <TabsContent value="bestand" className="mt-4 space-y-10">
+          <NachweisSection
             onSelectCorpus={(source) => {
               setSelectedSource(source);
               setActiveTab("qualitaet");
@@ -272,19 +273,17 @@ export default function CorpusPage() {
   );
 }
 
-/** Die klare Linie RIS-Soll → Disk → DB pro Quelle — aus den geteilten
+/** Bestand nach Rechtsbereich mit Nachweis je Dokument — aus den geteilten
  *  Command-Center-Daten (ein Fetch für alle Tabs). */
-function SyncChainSection({ onSelectCorpus }: { onSelectCorpus: (sourceId: string) => void }) {
+function NachweisSection({ onSelectCorpus }: { onSelectCorpus: (sourceId: string) => void }) {
   const query = useCorpusCommandCenterData();
   return (
     <CommandCenterGate query={query}>
       {(d) => (
-        <SyncStatusSection
+        <CorpusNachweis
           rows={d.sync.rows}
-          totals={d.sync.totals}
           measuredAt={d.sync.measuredAt ?? null}
-          snapshotAt={d.snapshotAt ?? null}
-          onSelectCorpus={onSelectCorpus}
+          onInspect={onSelectCorpus}
           onRefresh={() => query.refetch()}
         />
       )}

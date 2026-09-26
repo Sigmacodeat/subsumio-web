@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { computeLawCoverage, type DbLawAgg, type DbLawDoc } from "@/lib/law-coverage";
 import { LAW_SOURCE_CFG, loadLawFetchState, loadRisIndex } from "@/lib/law-coverage-server";
 import { fetchGiiTocCached } from "@/lib/de-statute-coverage";
+import { readSyncInventory } from "@/lib/corpus-sync-inventory";
 
 const log = logger("api/admin/corpus-law-coverage");
 
@@ -92,6 +93,12 @@ export const GET = createHandler(
 
       const { rows, totals } = computeLawCoverage(indexResult?.entries ?? null, docs, aggs);
 
+      // Nachweis je Gesetz (Prüfsumme Server = DB, Inhaltsprüfung) aus der
+      // stündlichen Messung — dieselben Gesetzes-Schlüssel wie hier.
+      const inventory = readSyncInventory();
+      const lawProof = inventory?.sources.find((s) => s.sourceId === source)?.proof?.laws;
+      if (lawProof) for (const r of rows) r.proof = lawProof[r.key] ?? null;
+
       // DE: kurze Slugs ("bgb") als Key — amtliche Langtitel aus dem
       // gii-TOC nachreichen (24-h-Cache, fail-open).
       if (cfg.titleLookup === "gii") {
@@ -122,6 +129,8 @@ export const GET = createHandler(
         },
         totals,
         laws: rows,
+        /** Zeitpunkt der Nachweis-Messung; null = noch keine mit Nachweis. */
+        proof_measured_at: lawProof ? (inventory?.measuredAt ?? null) : null,
       };
       responseCache.set(source, { at: Date.now(), payload });
       return apiSuccess({ ...payload, fetch: await fetchState() });

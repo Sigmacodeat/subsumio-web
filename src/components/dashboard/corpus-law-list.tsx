@@ -34,6 +34,7 @@ import {
 import { corpusLawCoverageQuery } from "./corpus-ops-queries";
 import { useLawRefetch } from "./corpus-law-refetch";
 import { LIST_STEP } from "./corpus-show-more";
+import { PROOF_BUCKETS } from "@/lib/corpus-proof";
 
 const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("de-AT");
 
@@ -68,6 +69,7 @@ type Filter =
   | "unvollstaendig"
   | "fehlt"
   | "vollstaendig"
+  | "abweichend"
   | "nicht-im-ris"
   | "wird-geladen";
 
@@ -77,9 +79,53 @@ const FILTERS: Filter[] = [
   "unvollstaendig",
   "fehlt",
   "vollstaendig",
+  "abweichend",
   "nicht-im-ris",
   "wird-geladen",
 ];
+
+// Positionen in PROOF_BUCKETS (src/lib/corpus-sync-inventory.ts).
+const P_CONFIRMED = PROOF_BUCKETS.indexOf("confirmed");
+const P_MISMATCH = PROOF_BUCKETS.indexOf("mismatch");
+const P_DEFECTIVE = PROOF_BUCKETS.indexOf("defective");
+
+/** Paragraphen mit falscher Prüfsumme oder abgelehntem Inhalt. */
+function wrongCount(l: LawCoverageRow): number {
+  return l.proof ? l.proof[P_MISMATCH]! + l.proof[P_DEFECTIVE]! : 0;
+}
+
+/**
+ * „812 von 820 §§ belegt": nachweislich 1:1 (Prüfsumme + Inhaltsprüfung)
+ * gegen das RIS-Soll des Gesetzes. null = noch nicht gemessen.
+ */
+function ProofCell({ l }: { l: LawCoverageRow }) {
+  if (!l.proof) return <span className="text-[color:var(--ds-text-subtle)]">—</span>;
+  const confirmed = l.proof[P_CONFIRMED]!;
+  const total = l.proof.reduce((a, b) => a + b, 0);
+  const wrong = wrongCount(l);
+  const full = total > 0 && confirmed === total;
+  return (
+    <span
+      className={cn(
+        "tabular-nums",
+        full
+          ? "text-[color:var(--ds-success-text)]"
+          : wrong > 0
+            ? "text-[color:var(--ds-danger-text)]"
+            : "text-[color:var(--ds-text-muted)]"
+      )}
+      title={
+        wrong > 0
+          ? `${fmt(wrong)} §§ mit abweichender Prüfsumme oder fehlerhaftem Inhalt`
+          : "Nachweislich 1:1: Prüfsumme Server = Datenbank und Inhaltsprüfung bestanden"
+      }
+    >
+      {full ? "✓ " : ""}
+      {fmt(confirmed)} von {fmt(total)}
+      {wrong > 0 ? ` · ${fmt(wrong)} falsch` : ""}
+    </span>
+  );
+}
 
 function matchesFilter(l: LawCoverageRow, f: Filter, fetch: LawFetchState | null | undefined) {
   switch (f) {
@@ -93,6 +139,8 @@ function matchesFilter(l: LawCoverageRow, f: Filter, fetch: LawFetchState | null
       return l.status === "missing";
     case "vollstaendig":
       return l.status === "complete";
+    case "abweichend":
+      return wrongCount(l) > 0;
     case "nicht-im-ris":
       return l.status === "db-only";
     case "wird-geladen":
@@ -281,6 +329,7 @@ export function CorpusLawList() {
     unvollstaendig: "Unvollständig",
     fehlt: "Fehlen ganz",
     vollstaendig: "Vollständig",
+    abweichend: "Abweichend/fehlerhaft",
     "nicht-im-ris": hasIndex ? "Nicht im RIS" : "Ohne Abgleich",
     "wird-geladen": "Wird geladen",
   };
@@ -290,6 +339,7 @@ export function CorpusLawList() {
     "unvollstaendig",
     "fehlt",
     "vollstaendig",
+    ...(d?.laws.some((l) => wrongCount(l) > 0) ? (["abweichend"] as Filter[]) : []),
     ...((t?.extra ?? 0) > 0 ? (["nicht-im-ris"] as Filter[]) : []),
     ...(source.refetch ? (["wird-geladen"] as Filter[]) : []),
   ];
@@ -302,7 +352,8 @@ export function CorpusLawList() {
             Gesetze
           </h2>
           <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-            Jedes Gesetz Paragraph für Paragraph mit dem amtlichen Verzeichnis abgeglichen.
+            Jedes Gesetz Paragraph für Paragraph mit dem amtlichen Verzeichnis abgeglichen —
+            „nachweislich 1:1“ heißt: Prüfsumme Server = Datenbank und Inhaltsprüfung bestanden.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -517,13 +568,18 @@ export function CorpusLawList() {
                   <div
                     aria-hidden
                     data-testid="law-list-header"
-                    className="sticky top-[var(--corpus-sticky-top,0px)] z-[15] hidden grid-cols-[minmax(0,1fr)_8.5rem_10rem_6rem_7rem_8.5rem] gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] md:grid"
+                    className="sticky top-[var(--corpus-sticky-top,0px)] z-[15] hidden grid-cols-[minmax(0,1fr)_8.5rem_10rem_5rem_10rem_8.5rem] gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-xs font-medium text-[color:var(--ds-text-muted)] md:grid"
                   >
                     <span>Gesetz</span>
                     <span>Status</span>
                     <span>Bestand</span>
                     <span className="text-right">fehlen</span>
-                    <span className="text-right">durchsuchbar</span>
+                    <span
+                      className="text-right"
+                      title="Prüfsumme Server = Datenbank und Inhaltsprüfung bestanden"
+                    >
+                      nachweislich 1:1
+                    </span>
                     <span />
                   </div>
                   <ul data-testid="law-list" aria-label="Gesetze">
@@ -536,7 +592,7 @@ export function CorpusLawList() {
                         <li
                           key={l.key}
                           id={`gesetz-${l.key}`}
-                          className="relative grid scroll-mt-24 grid-cols-1 gap-1.5 border-b border-[color:var(--ds-border)] px-4 py-3 transition-colors duration-[var(--ds-duration-fast)] last:border-b-0 focus-within:bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none md:grid-cols-[minmax(0,1fr)_8.5rem_10rem_6rem_7rem_8.5rem] md:items-center md:gap-3"
+                          className="relative grid scroll-mt-24 grid-cols-1 gap-1.5 border-b border-[color:var(--ds-border)] px-4 py-3 transition-colors duration-[var(--ds-duration-fast)] last:border-b-0 focus-within:bg-[color:var(--ds-surface-2)] hover:bg-[color:var(--ds-surface-2)] motion-reduce:transition-none md:grid-cols-[minmax(0,1fr)_8.5rem_10rem_5rem_10rem_8.5rem] md:items-center md:gap-3"
                         >
                           <div className="min-w-0">
                             <Link
@@ -562,6 +618,11 @@ export function CorpusLawList() {
                               {haveWantedText(l.have, l.wanted)}
                               {l.missingCount > 0 ? ` · ${fmt(l.missingCount)} fehlen` : ""}
                             </span>
+                            {l.proof && (
+                              <span className="text-xs md:hidden">
+                                <ProofCell l={l} /> belegt
+                              </span>
+                            )}
                           </div>
                           <span className="hidden text-sm tabular-nums md:block">
                             {haveWantedText(l.have, l.wanted)}
@@ -574,8 +635,8 @@ export function CorpusLawList() {
                           >
                             {l.missingCount > 0 ? fmt(l.missingCount) : "—"}
                           </span>
-                          <span className="hidden text-right text-sm text-[color:var(--ds-text-muted)] tabular-nums md:block">
-                            {l.embedPct !== null ? `${l.embedPct} %` : "—"}
+                          <span className="hidden text-right text-sm md:block">
+                            <ProofCell l={l} />
                           </span>
                           <div className="md:text-right">
                             {source.refetch &&

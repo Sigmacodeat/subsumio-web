@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -320,18 +321,43 @@ function ReconChip({ s }: { s: CorpusSourceStats }) {
 }
 
 /**
- * Reiter „Bestand": oben die Gesetze (Zusammenfassung als Filter + Liste mit
- * Link auf die Detailseite), darunter der Gesamtbestand aller Quellen und das
- * Abdeckungs-Audit. Jeder Block lädt für sich — ein langsamer Zähler hält die
- * Gesetzesliste nicht auf.
+ * Reiter „Bestand" unter dem Nachweis nach Rechtsbereich: die Gesetze einzeln
+ * (Zusammenfassung als Filter + Liste mit Link auf die Detailseite), darunter
+ * zugeklappt die übrigen Zählungen — Seiten, Abschnitte, Einbettung,
+ * Eingang, Abdeckungs-Matrix. Die messen andere Einheiten als der Nachweis
+ * (Seiten statt Dokumentnummern) und stehen deshalb nicht daneben, sondern
+ * erst auf Wunsch. Zugeklappt wird nichts geladen.
  */
 export function CorpusBestand() {
   return (
     <div className="space-y-10">
       <CorpusLawList />
-      <OverviewSection />
-      <CoverageAudit />
+      <MoreCounts />
     </div>
+  );
+}
+
+function MoreCounts() {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      className="group rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="cursor-pointer px-4 py-3 text-sm font-medium">
+        Weitere Zählungen
+        <span className="ml-2 text-xs font-normal text-[color:var(--ds-text-muted)]">
+          Seiten, Abschnitte, Einbettung, Eingang der letzten 30 Tage, Abdeckungs-Matrix — in Seiten
+          gezählt, nicht nach Dokumentnummer
+        </span>
+      </summary>
+      {open && (
+        <div className="space-y-10 border-t border-[color:var(--ds-border)] p-4">
+          <OverviewSection />
+          <CoverageAudit />
+        </div>
+      )}
+    </details>
   );
 }
 

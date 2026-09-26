@@ -3,7 +3,7 @@
  * on /ops/corpus.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/ui/toast";
 import { CorpusBestand } from "./corpus-bestand";
@@ -35,6 +35,17 @@ function withQueryClient(ui: React.ReactElement) {
       <ToastProvider>{ui}</ToastProvider>
     </QueryClientProvider>
   );
+}
+
+/** Seiten-Zählung und Abdeckungs-Matrix liegen zugeklappt unter „Weitere Zählungen". */
+function renderBestandOpened() {
+  const view = withQueryClient(<CorpusBestand />);
+  const details = screen.getByText("Weitere Zählungen").closest("details")!;
+  act(() => {
+    details.open = true;
+    details.dispatchEvent(new Event("toggle"));
+  });
+  return view;
 }
 
 const OVERVIEW: CorpusOverview = {
@@ -147,7 +158,7 @@ const text = (expected: string) => (_: string, el: Element | null) =>
 describe("CorpusBestand", () => {
   it("shows totals, per-source rows and the reconciliation status", async () => {
     routeFetch({ "/api/admin/corpus-overview": json(OVERVIEW) });
-    withQueryClient(<CorpusBestand />);
+    renderBestandOpened();
     // "Bundesrecht" steht auch im Quellen-Umschalter der Gesetzesliste —
     // erst auf die Zählung warten, dann prüfen.
     await waitFor(() => expect(screen.getByText(/stündlich neu/)).toBeDefined());
@@ -165,7 +176,7 @@ describe("CorpusBestand", () => {
     // Response instance can only have its body read once, so every caller
     // after the first would see "body stream already read".
     routeFetch({ "/api/admin/corpus-overview": json(OVERVIEW) });
-    withQueryClient(<CorpusBestand />);
+    renderBestandOpened();
     await waitFor(() => expect(screen.getByText("alle Seiten geprüft")).toBeDefined());
     expect(screen.getByText("alle Seiten geprüft")).toBeDefined(); // federal norms: 0 implausible
     expect(screen.getByText(text("698 fehlerhaft"))).toBeDefined(); // OGH
@@ -180,7 +191,7 @@ describe("CorpusBestand", () => {
       sources: OVERVIEW.sources.map((s) => ({ ...s, quality: null })),
     };
     routeFetch({ "/api/admin/corpus-overview": json(noAudit) });
-    withQueryClient(<CorpusBestand />);
+    renderBestandOpened();
     await waitFor(() => expect(screen.getAllByText("noch nicht geprüft").length).toBe(2));
     expect(screen.getAllByText("noch nicht geprüft").length).toBe(2);
   });
@@ -188,13 +199,13 @@ describe("CorpusBestand", () => {
   it("says when no snapshot exists yet", async () => {
     const empty = { ...OVERVIEW, sources: [], generatedAt: null };
     routeFetch({ "/api/admin/corpus-overview": json(empty) });
-    withQueryClient(<CorpusBestand />);
+    renderBestandOpened();
     await waitFor(() => expect(screen.getByText(/Noch keine Zählung vorhanden/)).toBeDefined());
   });
 
   it("offers a retry when the API fails", async () => {
     routeFetch({ "/api/admin/corpus-overview": () => new Response("x", { status: 500 }) });
-    withQueryClient(<CorpusBestand />);
+    renderBestandOpened();
     await waitFor(() =>
       expect(screen.getByText("Bestand konnte nicht geladen werden.")).toBeDefined()
     );
@@ -213,5 +224,18 @@ describe("CorpusProtokoll", () => {
     expect(link.getAttribute("href")).toBe(
       "https://www.ris.bka.gv.at/Dokumente/Bundesnormen/NOR40270195/NOR40270195.html"
     );
+  });
+});
+
+describe("CorpusBestand — zugeklappt", () => {
+  beforeEach(() => vi.restoreAllMocks());
+
+  it("lädt Seiten-Zählung und Abdeckungs-Matrix erst beim Aufklappen", async () => {
+    const spy = routeFetch({});
+    withQueryClient(<CorpusBestand />);
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+    const urls = spy.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("corpus-overview"))).toBe(false);
+    expect(urls.some((u) => u.includes("corpus-coverage-audit"))).toBe(false);
   });
 });

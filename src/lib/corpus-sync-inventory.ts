@@ -19,6 +19,20 @@
 import { existsSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { lawCorpusDir } from "@/lib/corpus-paths";
+import { parseProof, type SyncProof } from "@/lib/corpus-proof";
+
+// Nachweis-Typen und -Parser liegen in corpus-proof.ts (ohne fs, auch im
+// Browser nutzbar) — hier nur weitergereicht.
+export {
+  PROOF_BUCKETS,
+  parseProof,
+  proofTotal,
+  type ProofBucket,
+  type ProofCounts,
+  type ProofSample,
+  type ProofUnit,
+  type SyncProof,
+} from "@/lib/corpus-proof";
 
 export type FetchOutcome = "no_text" | "not_found" | "failed";
 
@@ -43,6 +57,8 @@ export interface SyncInventorySource {
   dbHistorical: number;
   notInRisSoll: number | null;
   aboveSoll: number;
+  /** Fehlt in Messungen vor dem Nachweis-Ausbau (2026-09-26). */
+  proof?: SyncProof;
 }
 
 export interface SyncInventory {
@@ -94,6 +110,10 @@ export interface CorpusSyncRow {
   fullyComplete: boolean;
   canUpdate: boolean;
   pipelineKey: string | null;
+  /** In der DB ohne Dokumentnummer — außerhalb jedes Topfs, eigens ausgewiesen. */
+  dbPagesWithoutDocId: number;
+  /** Nachweis je Dokument; null = Messung vor dem Nachweis-Ausbau. Ohne `laws` (zu groß für die Seite). */
+  proof: Omit<SyncProof, "laws"> | null;
 }
 
 export interface CorpusSyncTotals {
@@ -130,6 +150,7 @@ export function readSyncInventory(root: string = lawCorpusDir()): SyncInventory 
 }
 
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
 const numOrNull = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
@@ -174,6 +195,7 @@ export function parseSyncInventory(json: string): SyncInventory | null {
         dbHistorical: num(s.dbHistorical),
         notInRisSoll: numOrNull(s.notInRisSoll),
         aboveSoll: num(s.aboveSoll),
+        proof: parseProof((s as { proof?: unknown }).proof),
       })),
   };
 }
@@ -247,7 +269,14 @@ export function toSyncRow(
     fullyComplete: status === "complete",
     canUpdate: status === "fetch_open" && pipelineKey !== null,
     pipelineKey,
+    dbPagesWithoutDocId: s.dbPagesWithoutDocId,
+    proof: s.proof && !s.historical && s.inScope ? withoutLaws(s.proof) : null,
   };
+}
+
+function withoutLaws(p: SyncProof): Omit<SyncProof, "laws"> {
+  const { laws: _laws, ...rest } = p;
+  return rest;
 }
 
 export function syncTotals(rows: CorpusSyncRow[]): CorpusSyncTotals {

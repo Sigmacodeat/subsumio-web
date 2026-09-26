@@ -127,6 +127,11 @@ export interface LawCoverageRow {
   embedded: number;
   embedPct: number | null;
   status: LawCoverageStatus;
+  /**
+   * Nachweis je Dokument aus der stündlichen Messung (corpus-sync-inventory),
+   * Töpfe in PROOF_BUCKETS-Reihenfolge; null = noch nicht gemessen.
+   */
+  proof?: number[] | null;
 }
 
 export interface LawCoverageTotals {
@@ -290,6 +295,8 @@ export interface LawCoverageResponse {
   };
   totals: LawCoverageTotals;
   laws: LawCoverageRow[];
+  /** Zeitpunkt der Nachweis-Messung (LawCoverageRow.proof); null = noch keine. */
+  proof_measured_at?: string | null;
   /** Nachlade-Stand (nur law-at-normen hat eine Nachlade-Warteschlange). */
   fetch?: LawFetchState | null;
 }
