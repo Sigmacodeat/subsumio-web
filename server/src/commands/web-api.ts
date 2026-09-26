@@ -5514,7 +5514,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.status(404).json({ error: "page_not_found", message: "Page not found." });
         return;
       }
-      if (e instanceof OperationError && e.code === "matter_read_only") {
+      if (
+        e instanceof OperationError &&
+        (e.code === "matter_read_only" || e.code === "notfrist_second_check_required")
+      ) {
         res.status(403).json({ error: e.code, message: e.message });
         return;
       }
@@ -5550,7 +5553,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       apiError(res, 404, "page_not_found", "Page not found.");
       return;
     }
-    if (e instanceof OperationError && e.code === "matter_read_only") {
+    if (
+      e instanceof OperationError &&
+      (e.code === "matter_read_only" || e.code === "notfrist_second_check_required")
+    ) {
       apiError(res, 403, e.code, msg);
       return;
     }
