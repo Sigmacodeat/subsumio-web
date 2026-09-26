@@ -394,6 +394,35 @@ export function privateAreaPrefix(userId: string): string {
 }
 
 /**
+ * Firm-internal records a client account never reaches, not even for its own
+ * matter: the anti-money-laundering file (identity check, risk rating,
+ * screening) and the ID copies filed with it. The web app keeps the records
+ * under `legal/kyc/<id>`; ID copies are ordinary documents marked with
+ * `doc_type: ausweiskopie` or linked from a record.
+ */
+export const KYC_RECORD_PREFIX = "legal/kyc";
+export const KYC_RECORD_TYPE = "kyc_verification";
+export const ID_COPY_DOC_TYPE = "ausweiskopie";
+
+const FIRM_STAFF_ROLES: ReadonlySet<string> = new Set(["admin", "lawyer", "assistant"]);
+
+/** True for firm staff. Unknown or missing roles are not staff (fail-closed). */
+export function isFirmStaffRole(role: string | undefined): boolean {
+  return typeof role === "string" && FIRM_STAFF_ROLES.has(role);
+}
+
+/**
+ * Deny entries (plain slugs/prefixes, for withDeniedMatters) keeping the
+ * firm-internal records from a caller who is not firm staff. `recordSlugs`
+ * are the individual KYC records and ID copies of the source; the prefix
+ * covers records created after the list was read.
+ */
+export function staffOnlyDenies(role: string | undefined, recordSlugs: string[]): string[] {
+  if (isFirmStaffRole(role)) return [];
+  return [KYC_RECORD_PREFIX, ...recordSlugs.filter(Boolean)];
+}
+
+/**
  * Where the pages an agent run writes may go.
  *
  *   free     no stamp at all (CLI, operator cron): unchanged behaviour.

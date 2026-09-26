@@ -45,16 +45,17 @@ import { publicErrorMessage, redactErrorResponseBody } from "../core/public-erro
 import {
   PRIVATE_CHAT_PREFIX,
   agentRunVisibility,
+  isFirmStaffRole,
   jobMatterStamp,
   jobOwnerStamp,
   matterScopeAllows,
-  type MatterAccessRow,
 } from "../core/matter-access.ts";
 import {
   callerMatterScope,
   loadSourceMatterAccess,
   notifyMatterAccessChanged,
   onMatterAccessChanged,
+  type SourceMatterAccess,
 } from "../core/matter-access-db.ts";
 import {
   canonicalCaseSlugFor,
@@ -1983,11 +1984,8 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * Writes to a case page clear the source's entry (see POST /api/pages).
  */
 const MATTER_ACCESS_TTL_MS = 10_000;
-interface SourceAccess {
+interface SourceAccess extends SourceMatterAccess {
   at: number;
-  rows: MatterAccessRow[];
-  /** Owner segments of private Copilot conversations (chat-sessions/private/<owner>/…). */
-  chatOwners: string[];
 }
 const matterAccessCache = new Map<string, SourceAccess>();
 
@@ -2077,7 +2075,12 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       // Matter access (walls, restricted matters, grants) applies to every
       // role, admins included — see core/matter-access.ts.
       // Other people's private Copilot conversations are hidden from everyone.
-      const known = await sourceAccess(engine, sourceId);
+      // Callers who are not firm staff read the source's access rules fresh:
+      // a KYC record or ID copy filed a moment ago must already be hidden
+      // from them, not only after the cache expires.
+      const known = isFirmStaffRole(payload.role)
+        ? await sourceAccess(engine, sourceId)
+        : await loadSourceMatterAccess(engine, sourceId);
       const effective = callerMatterScope(
         req.matterScope ?? "all",
         { userId: payload.userId, role: payload.role },

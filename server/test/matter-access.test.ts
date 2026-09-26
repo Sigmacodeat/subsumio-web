@@ -173,7 +173,8 @@ describe("aclGroupsMiddleware matter access", () => {
         next = true;
       });
       expect(next).toBe(true);
-      expect(req.matterScope).toEqual(["*", "!cases/restricted"]);
+      // Support is not firm staff: the firm-internal KYC area stays closed too.
+      expect(req.matterScope).toEqual(["*", "!cases/restricted", "!legal/kyc"]);
       expect(req.aclGroups).not.toBe("all");
     });
   });
