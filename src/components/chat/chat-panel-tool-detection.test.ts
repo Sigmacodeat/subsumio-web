@@ -1,7 +1,167 @@
 import { describe, it, expect } from "vitest";
-import { detectToolCalls } from "./chat-panel";
+import { detectNativeToolCalls, detectToolCalls, resolveToolCalls } from "./chat-panel";
 
 const GLOBAL_CTX = { type: "global" as const };
+
+describe("detectNativeToolCalls (structured tool_call events)", () => {
+  it("turns a structured call into the same ToolCall the marker parser yields", () => {
+    const native = detectNativeToolCalls(
+      [
+        {
+          id: "call_1",
+          name: "search_deadlines",
+          args: { case_slug: "cases/1", status: "critical" },
+        },
+      ],
+      GLOBAL_CTX
+    );
+    const marker = detectToolCalls(
+      '[TOOL:search_deadlines case_slug="cases/1" status="critical"]',
+      GLOBAL_CTX
+    );
+    expect(native).toHaveLength(1);
+    expect(native[0].id).toBe("call_1");
+    expect(native[0].type).toBe("search_deadlines");
+    expect(native[0].params).toEqual(marker[0].params);
+    expect(native[0].status).toBe(marker[0].status);
+    expect(native[0].requiresConfirmation).toBe(marker[0].requiresConfirmation);
+  });
+
+  it("keeps the model's order across several calls", () => {
+    const calls = detectNativeToolCalls(
+      [
+        { id: "a", name: "search_cases", args: { query: "Müller" } },
+        { id: "b", name: "navigate", args: { route: "/dashboard/cases" } },
+        { id: "c", name: "create_task", args: { case_slug: "cases/1", title: "Schriftsatz" } },
+      ],
+      GLOBAL_CTX
+    );
+    expect(calls.map((c) => c.type)).toEqual(["search_cases", "navigate", "create_task"]);
+    expect(calls[2].status).toBe("pending");
+    expect(calls[2].requiresConfirmation).toBe(true);
+  });
+
+  it("applies schema defaults and typed arguments", () => {
+    const calls = detectNativeToolCalls(
+      [
+        { id: "1", name: "search_deadlines", args: {} },
+        {
+          id: "2",
+          name: "time_entry",
+          args: { case_slug: "cases/1", description: "Aktenanalyse", hours: 1.5 },
+        },
+        {
+          id: "3",
+          name: "tabular_review",
+          args: { questions: ["Kündigungsfrist?", "Haftung?"], document_slugs: ["docs/a"] },
+        },
+        {
+          id: "4",
+          name: "render_template",
+          args: { template_query: "Klage", create_document: true },
+        },
+      ],
+      GLOBAL_CTX
+    );
+    expect(calls[0].params).toEqual({ case_slug: undefined, status: "open" });
+    expect(calls[1].params).toMatchObject({ hours: 1.5, activity_type: "other" });
+    expect(calls[2].params).toMatchObject({
+      questions: ["Kündigungsfrist?", "Haftung?"],
+      document_slugs: ["docs/a"],
+    });
+    expect(calls[3].params).toMatchObject({ create_document: true });
+  });
+
+  it("drops calls with unknown names, wrong types or missing required arguments", () => {
+    const calls = detectNativeToolCalls(
+      [
+        { id: "1", name: "delete_everything", args: { id: "1" } },
+        { id: "2", name: "send_email", args: { to: ["x@example.com"], subject: "Hi", text: "…" } },
+        {
+          id: "3",
+          name: "time_entry",
+          args: { case_slug: "cases/1", description: "x", hours: "viele" },
+        },
+        { id: "4", name: "create_case", args: { client_name: "Max Mustermann" } },
+        { id: "5", name: "navigate", args: { route: 42 } },
+      ],
+      GLOBAL_CTX
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it("auto-injects case_slug from the open matter before validation", () => {
+    const ctx = { type: "case" as const, caseSlug: "cases/mueller" };
+    const calls = detectNativeToolCalls(
+      [
+        { id: "1", name: "case_summary", args: {} },
+        {
+          id: "2",
+          name: "create_deadline",
+          args: { title: "Berufungsfrist", due_date: "2026-10-15" },
+        },
+        { id: "3", name: "email_draft", args: { subject: "Status" } },
+      ],
+      ctx
+    );
+    expect(calls.map((c) => c.params.case_slug)).toEqual([
+      "cases/mueller",
+      "cases/mueller",
+      "cases/mueller",
+    ]);
+  });
+
+  it("tolerates a call without arguments", () => {
+    const calls = detectNativeToolCalls(
+      [{ id: "1", name: "search_tasks", args: undefined as unknown as Record<string, unknown> }],
+      GLOBAL_CTX
+    );
+    expect(calls).toHaveLength(1);
+    expect(calls[0].params).toMatchObject({ status: "open", priority: "all" });
+  });
+});
+
+describe("resolveToolCalls (native vs. marker fallback)", () => {
+  it("uses structured calls when the engine confirmed native tool use", () => {
+    const calls = resolveToolCalls(
+      {
+        answer: "Ich suche die Akte.",
+        tools_supported: true,
+        tool_calls: [{ id: "1", name: "search_cases", args: { query: "Müller" } }],
+      },
+      GLOBAL_CTX
+    );
+    expect(calls.map((c) => c.type)).toEqual(["search_cases"]);
+  });
+
+  it("ignores marker text in the answer when tool use is native (quotes are not actions)", () => {
+    const calls = resolveToolCalls(
+      {
+        answer: 'Die Syntax wäre [TOOL:create_case title="Klage"] — so sah es früher aus.',
+        tools_supported: true,
+        tool_calls: [],
+      },
+      GLOBAL_CTX
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it("falls back to the marker regex when the engine reports no tool use", () => {
+    const calls = resolveToolCalls(
+      { answer: '[TOOL:search_cases query="Müller"]', tools_supported: false },
+      GLOBAL_CTX
+    );
+    expect(calls.map((c) => c.type)).toEqual(["search_cases"]);
+  });
+
+  it("falls back to the marker regex when an older engine says nothing", () => {
+    const calls = resolveToolCalls(
+      { answer: '[TOOL:navigate route="/dashboard/deadlines"]' },
+      GLOBAL_CTX
+    );
+    expect(calls.map((c) => c.type)).toEqual(["navigate"]);
+  });
+});
 
 describe("detectToolCalls", () => {
   it("parses a marker regardless of attribute order", () => {

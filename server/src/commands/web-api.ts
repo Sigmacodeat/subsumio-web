@@ -4019,6 +4019,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     const callerContext = rawContext.trim()
       ? neutralizeToolMarkers(sanitizePromptInput(rawContext, 40_000).text)
       : undefined;
+    // Native tool use: the caller's tool definitions are DATA for the model
+    // (whitelisted names, capped + scrubbed descriptions, bounded schemas).
+    // The engine only forwards the model's structured calls; execution stays
+    // with the caller. The marker fallback is used when the model has no
+    // tool use; it is sanitized like any other instruction text.
+    const { sanitizeClientTools, MAX_TOOL_FALLBACK_CHARS } =
+      await import("../core/think/client-tools.ts");
+    const clientTools = sanitizeClientTools(body?.tools);
+    const rawToolFallback =
+      typeof body?.tool_fallback_instructions === "string" ? body.tool_fallback_instructions : "";
+    const toolFallbackInstructions =
+      clientTools.length > 0 && rawToolFallback.trim()
+        ? sanitizePromptInput(rawToolFallback, MAX_TOOL_FALLBACK_CHARS).text
+        : undefined;
 
     const rawMode = String(body?.mode ?? "balanced");
     const searchMode = (["conservative", "balanced", "tokenmax"] as const).includes(
@@ -4114,6 +4128,22 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             streamedAnswer += text;
             res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
           },
+          // Native tool use: the caller learns before the first token whether
+          // its tool definitions reached the model (else it reads `[TOOL:…]`
+          // markers), and gets every structured call as its own event. The
+          // engine never executes a tool.
+          ...(clientTools.length > 0
+            ? {
+                tools: clientTools,
+                ...(toolFallbackInstructions ? { toolFallbackInstructions } : {}),
+                onToolsResolved: (supported: boolean) => {
+                  res.write(`data: ${JSON.stringify({ tools_supported: supported })}\n\n`);
+                },
+                onToolCall: (call: { id: string; name: string; args: Record<string, unknown> }) => {
+                  res.write(`data: ${JSON.stringify({ tool_call: call })}\n\n`);
+                },
+              }
+            : {}),
         })
       );
 
@@ -4210,6 +4240,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           warnings,
           trace_id: traceId,
           model: result.modelUsed,
+          // Repeated in the final event so a client that missed the early
+          // signal still knows how to read the answer.
+          ...(result.toolsSupported !== undefined
+            ? { tools_supported: result.toolsSupported }
+            : {}),
           ...finalAnswerEvent(streamedAnswer, result.answer, warnings),
         })}\n\n`
       );

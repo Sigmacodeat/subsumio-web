@@ -172,7 +172,7 @@ export function ToolCallBubble({
         <div className="flex items-center gap-2 border-t border-[color:var(--ds-warning-border)] px-3 py-2">
           <button
             onClick={() => onConfirm?.(toolCall.id)}
-            className="flex items-center gap-1 rounded-md bg-[color:var(--ds-warning-solid)] px-2.5 py-1 text-xs font-medium text-white transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-solid-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
+            className="flex items-center gap-1 rounded-md border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-2.5 py-1 text-xs font-medium text-[color:var(--ds-warning-text)] transition-[background-color,border-color,color] hover:bg-[color:var(--ds-warning-border)] focus-visible:ring-2 focus-visible:ring-[color:var(--ds-warning-solid)] focus-visible:outline-none active:scale-[0.99] motion-reduce:transition-none"
           >
             <Check size={12} />
             {t("chat.tool.confirm")}

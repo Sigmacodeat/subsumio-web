@@ -56,6 +56,22 @@ export interface QueryResponse {
   _grounding?: GroundingMetadata;
   /** True when verification replaced the streamed draft with `answer`. */
   answer_revised?: boolean;
+  /**
+   * Native tool use: true when the model took the request's tool definitions
+   * (structured calls arrive in `tool_calls`), false when the engine fell back
+   * to the `[TOOL:…]` marker prompt, undefined when the engine said nothing
+   * (older engine — treat like false).
+   */
+  tools_supported?: boolean;
+  /** Structured tool calls the model made, in the order it made them. */
+  tool_calls?: QueryToolCall[];
+}
+
+/** One structured tool call from the model (engine SSE event `tool_call`). */
+export interface QueryToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
 }
 
 export interface Citation {

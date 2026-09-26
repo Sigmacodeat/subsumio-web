@@ -15,6 +15,7 @@ import type {
   PlaybookRule,
   PrecedentSearchResponse,
   QueryResponse,
+  QueryToolCall,
   RecentQuery,
   SearchResult,
   TabularReviewResponse,
@@ -119,6 +120,16 @@ interface ThinkOptions {
   onChunk?: (chunk: string) => void;
   /** Verification replaced the streamed draft; the argument is the final text. */
   onRevised?: (finalAnswer: string) => void;
+  /**
+   * Structured tool definitions for native tool use (lib/copilot-tool-schemas).
+   * The engine hands them to the model and streams `tool_call` events; it
+   * never executes a tool itself.
+   */
+  tools?: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>;
+  /** `[TOOL:…]` marker syntax the engine appends when the model has no tool use. */
+  toolFallbackInstructions?: string;
+  /** A structured tool call arrived in the stream (before the final answer). */
+  onToolCall?: (call: QueryToolCall) => void;
 }
 
 // Auth endpoints are consumed by older UI code with shape-specific property access.
@@ -841,6 +852,10 @@ export const api = {
           query_mode: options.queryMode,
           case_slug: options.caseSlug,
           ...(options.model && options.model !== "auto" ? { model: options.model } : {}),
+          ...(options.tools && options.tools.length > 0 ? { tools: options.tools } : {}),
+          ...(options.toolFallbackInstructions
+            ? { tool_fallback_instructions: options.toolFallbackInstructions }
+            : {}),
         }),
         // SSE stream — use 5 min timeout (matches maxDuration=300) when
         // caller doesn't provide a signal. Default 30s would kill the stream.
@@ -886,6 +901,27 @@ export const api = {
           const chunk = result.answer === "" ? lawyerFacingAnswer(parsed.chunk) : parsed.chunk;
           result.answer += chunk;
           options.onChunk?.(chunk);
+        }
+        // Native tool use: the engine says whether the answering model took the
+        // tool definitions (else the chat falls back to `[TOOL:…]` markers), and
+        // streams each structured call as its own event.
+        if (typeof parsed.tools_supported === "boolean") {
+          result.tools_supported = parsed.tools_supported;
+        }
+        if (parsed.tool_call && typeof parsed.tool_call === "object") {
+          const raw = parsed.tool_call as Record<string, unknown>;
+          if (typeof raw.name === "string") {
+            const call: QueryToolCall = {
+              id: typeof raw.id === "string" ? raw.id : `${raw.name}-${Date.now()}`,
+              name: raw.name,
+              args:
+                raw.args && typeof raw.args === "object" && !Array.isArray(raw.args)
+                  ? (raw.args as Record<string, unknown>)
+                  : {},
+            };
+            (result.tool_calls ??= []).push(call);
+            options.onToolCall?.(call);
+          }
         }
         // Verification regenerated the answer after streaming: the final text
         // replaces the streamed draft (callers render result.answer at the end).

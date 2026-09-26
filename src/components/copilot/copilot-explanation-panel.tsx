@@ -141,10 +141,12 @@ export function CopilotExplanationPanel({ query, answer, onClose }: CopilotExpla
             {isEn ? "Explanation unavailable" : "Erklärung nicht verfügbar"}
           </span>
           <button
+            type="button"
             onClick={onClose}
+            aria-label={isEn ? "Close" : "Schließen"}
             className="ml-auto rounded p-0.5 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -165,10 +167,12 @@ export function CopilotExplanationPanel({ query, answer, onClose }: CopilotExpla
           </span>
         </div>
         <button
+          type="button"
           onClick={onClose}
+          aria-label={isEn ? "Close" : "Schließen"}
           className="rounded p-0.5 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
         >
-          <X size={12} />
+          <X size={12} aria-hidden="true" />
         </button>
       </div>
 
