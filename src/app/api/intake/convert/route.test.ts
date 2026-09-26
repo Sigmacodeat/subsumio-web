@@ -82,6 +82,10 @@ vi.mock("@/lib/intake-conversion", () => ({
 
 vi.mock("@/lib/realtime-bus", () => ({ broadcastSseEvent: vi.fn() }));
 vi.mock("@/lib/comments", () => ({ createDocumentRequestNotification: vi.fn() }));
+const mockCaseCreated = vi.fn();
+vi.mock("@/lib/webhook-dispatch", () => ({
+  emitCaseCreated: (...a: unknown[]) => mockCaseCreated(...a),
+}));
 
 import { POST } from "./route";
 
@@ -203,6 +207,9 @@ describe("POST /api/intake/convert", () => {
     expect(body.ok).toBe(true);
     expect(body.case).toBeDefined();
     expect(body.case.type).toBe("legal_case");
+    // A newly created matter fires case.created for the firm (R8-13).
+    expect(mockCaseCreated).toHaveBeenCalledTimes(1);
+    expect(mockCaseCreated.mock.calls[0][0]).toBe("test-brain");
   });
 
   test("retry after case-created-but-intake-failed completes idempotently (no duplicate case)", async () => {

@@ -16,6 +16,7 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
 import { logger } from "@/lib/logger";
+import { emitCaseCreated } from "@/lib/webhook-dispatch";
 const log = logger("api/intake/convert");
 
 export const dynamic = "force-dynamic";
@@ -237,6 +238,7 @@ export const POST = createHandler(
         log.error("[intake/convert] case create failed:", createRes.status, message);
         return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
       }
+      emitCaseCreated(ctx.brainId, casePage);
     }
 
     const now = new Date().toISOString();
