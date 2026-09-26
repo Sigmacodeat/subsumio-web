@@ -1,7 +1,10 @@
 /**
  * Webhook Outgoing Delivery — Dispatches registered webhooks when events fire.
  *
- * Direct fetch with HMAC-SHA256 signing (per-webhook secret, stored encrypted).
+ * HMAC-SHA256 signing (per-webhook secret, stored encrypted). Every delivery
+ * goes through the shared egress guard (https only, public addresses only,
+ * each redirect hop re-checked). A transient failure is queued and retried
+ * with backoff by the `webhook-retry` cron (webhook-delivery-queue.ts).
  *
  * Events are fired from across the app (case creation, deadline alerts,
  * invoice payments, document receipt, intake submissions) via
@@ -13,6 +16,13 @@ import { engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { logger } from "@/lib/logger";
 import { decrypt } from "@/lib/encryption";
+import { EgressError, safeFetch } from "@/lib/security/egress";
+import {
+  claimDueWebhookDeliveries,
+  enqueueWebhookRetry,
+  finishWebhookDelivery,
+  recordWebhookRetryFailure,
+} from "@/lib/webhook-delivery-queue";
 
 const log = logger("webhook-dispatch");
 
@@ -42,43 +52,48 @@ export interface RegisteredWebhook {
 export async function getRegisteredWebhooks(brainId: string): Promise<RegisteredWebhook[]> {
   if (!brainId) return [];
   try {
-    const pages = await listEnginePages(engineHeadersForBrain(brainId), "webhook_config", 1000, {
-      strict: true,
-      timeoutMs: 10_000,
-    });
-
-    const hooks = await Promise.all(
-      pages.map(async (p) => {
-        const fm = p.frontmatter ?? {};
-        // Secrets are stored encrypted (secret_enc); older entries hold `secret`.
-        const secret =
-          typeof fm.secret_enc === "string"
-            ? ((await decrypt(fm.secret_enc).catch(() => null)) ?? "")
-            : typeof fm.secret === "string"
-              ? fm.secret
-              : "";
-        return {
-          id: String(fm.id ?? p.slug),
-          url: String(fm.url ?? ""),
-          events: Array.isArray(fm.events) ? fm.events.map(String) : [],
-          secret,
-          status: String(fm.status ?? "active"),
-          created_at: String(fm.created_at ?? new Date().toISOString()),
-        };
-      })
-    );
-    return hooks.filter((w) => {
-      if (w.status !== "active" || !w.url) return false;
-      if (!w.secret) {
-        log.warn("Webhook skipped: signing secret unavailable", { brainId, webhookId: w.id });
-        return false;
-      }
-      return true;
-    });
+    return await loadRegisteredWebhooks(brainId);
   } catch (err) {
     log.error("Failed to fetch registered webhooks", { brainId, error: String(err) });
     return [];
   }
+}
+
+/** Like getRegisteredWebhooks, but a failed read throws instead of looking like "none". */
+async function loadRegisteredWebhooks(brainId: string): Promise<RegisteredWebhook[]> {
+  const pages = await listEnginePages(engineHeadersForBrain(brainId), "webhook_config", 1000, {
+    strict: true,
+    timeoutMs: 10_000,
+  });
+
+  const hooks = await Promise.all(
+    pages.map(async (p) => {
+      const fm = p.frontmatter ?? {};
+      // Only entries written by the registration route (encrypted secret_enc)
+      // are delivered; a plaintext `secret` did not come from that route and
+      // must be registered again.
+      const secret =
+        typeof fm.secret_enc === "string"
+          ? ((await decrypt(fm.secret_enc).catch(() => null)) ?? "")
+          : "";
+      return {
+        id: String(fm.id ?? p.slug),
+        url: String(fm.url ?? ""),
+        events: Array.isArray(fm.events) ? fm.events.map(String) : [],
+        secret,
+        status: String(fm.status ?? "active"),
+        created_at: String(fm.created_at ?? new Date().toISOString()),
+      };
+    })
+  );
+  return hooks.filter((w) => {
+    if (w.status !== "active" || !w.url) return false;
+    if (!w.secret) {
+      log.warn("Webhook skipped: signing secret unavailable", { brainId, webhookId: w.id });
+      return false;
+    }
+    return true;
+  });
 }
 
 /**
@@ -128,51 +143,181 @@ export async function dispatchWebhookEvent(
 
   await Promise.allSettled(
     webhooks.map(async (webhook) => {
-      try {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const signature = signPayload(body, webhook.secret, timestamp);
-
-        const res = await fetch(webhook.url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Subsumio-Event": eventType,
-            "X-Subsumio-Signature": signature,
-            "X-Subsumio-Timestamp": String(timestamp),
-          },
-          body,
-          signal: AbortSignal.timeout(15_000),
-        });
-
-        if (!res.ok) {
-          log.warn("Webhook delivery failed", {
-            webhookId: webhook.id,
-            url: webhook.url,
-            eventType,
-            status: res.status,
-          });
-          failed++;
-        } else {
-          dispatched++;
-          log.info("Webhook delivered", {
-            webhookId: webhook.id,
-            url: webhook.url,
-            eventType,
-          });
-        }
-      } catch (err) {
-        log.warn("Webhook delivery error", {
+      const result = await deliverOnce(webhook, eventType, body);
+      if (result.ok) {
+        dispatched++;
+        log.info("Webhook delivered", { webhookId: webhook.id, eventType });
+        return;
+      }
+      failed++;
+      log.warn("Webhook delivery failed", {
+        webhookId: webhook.id,
+        eventType,
+        error: result.error,
+        retryable: result.retryable,
+      });
+      if (!result.retryable) return;
+      const queued = await enqueueWebhookRetry({
+        brainId,
+        webhookId: webhook.id,
+        event: eventType,
+        body,
+        error: result.error,
+      }).catch((err) => {
+        log.error("Webhook retry could not be queued", {
           webhookId: webhook.id,
-          url: webhook.url,
-          eventType,
           error: String(err),
         });
-        failed++;
-      }
+        return false;
+      });
+      if (!queued) log.warn("Webhook event not queued for retry", { webhookId: webhook.id });
     })
   );
 
   return { dispatched, failed };
+}
+
+export type DeliveryResult = { ok: true } | { ok: false; error: string; retryable: boolean };
+
+/** Status codes worth another attempt; any other 4xx is the receiver refusing for good. */
+function retryableStatus(status: number): boolean {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+/**
+ * One signed POST to a webhook through the egress guard. A target that is
+ * not https or resolves to an internal address is never contacted (and not
+ * retried).
+ */
+export async function deliverOnce(
+  webhook: Pick<RegisteredWebhook, "url" | "secret">,
+  eventType: string,
+  body: string
+): Promise<DeliveryResult> {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = signPayload(body, webhook.secret, timestamp);
+    const res = await safeFetch(
+      webhook.url,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Subsumio-Event": eventType,
+          "X-Subsumio-Signature": signature,
+          "X-Subsumio-Timestamp": String(timestamp),
+        },
+        body,
+        signal: AbortSignal.timeout(15_000),
+      },
+      { label: "Webhook-Adresse", tooManyRedirectsMessage: "Zu viele Weiterleitungen" }
+    );
+    if (res.ok) return { ok: true };
+    return { ok: false, error: `HTTP ${res.status}`, retryable: retryableStatus(res.status) };
+  } catch (err) {
+    if (err instanceof EgressError) return { ok: false, error: err.message, retryable: false };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      retryable: true,
+    };
+  }
+}
+
+/**
+ * Retries queued deliveries that are due (called by the webhook-retry cron).
+ * Each retry uses the webhook's current registration: a webhook deleted or
+ * deactivated in the meantime gets nothing.
+ */
+export async function retryDueWebhookDeliveries(
+  limit = 50
+): Promise<{ retried: number; delivered: number; failed: number; dropped: number }> {
+  const due = await claimDueWebhookDeliveries(limit);
+  const stats = { retried: due.length, delivered: 0, failed: 0, dropped: 0 };
+  const hooksByBrain = new Map<string, RegisteredWebhook[]>();
+  for (const item of due) {
+    let hooks = hooksByBrain.get(item.brainId);
+    if (!hooks) {
+      try {
+        hooks = await loadRegisteredWebhooks(item.brainId);
+      } catch (err) {
+        // Registration unreadable right now: try again later, do not drop.
+        await recordWebhookRetryFailure(item.id, item.attempts, String(err), true);
+        stats.failed++;
+        continue;
+      }
+      hooksByBrain.set(item.brainId, hooks);
+    }
+    const webhook = hooks.find((w) => w.id === item.webhookId && w.events.includes(item.event));
+    if (!webhook) {
+      await finishWebhookDelivery(item.id, "dropped", "Webhook nicht mehr aktiv");
+      stats.dropped++;
+      continue;
+    }
+    const result = await deliverOnce(webhook, item.event, item.body);
+    if (result.ok) {
+      await finishWebhookDelivery(item.id, "delivered");
+      stats.delivered++;
+    } else {
+      await recordWebhookRetryFailure(item.id, item.attempts + 1, result.error, result.retryable);
+      stats.failed++;
+    }
+  }
+  return stats;
+}
+
+/**
+ * Fire-and-forget dispatch for request paths: delivery (and its retry queue)
+ * never blocks or fails the business action that caused the event.
+ */
+export function emitWebhookEvent(
+  brainId: string | undefined | null,
+  eventType: WebhookEventType,
+  payload: Record<string, unknown>
+): void {
+  if (!brainId) return;
+  void dispatchWebhookEvent(brainId, eventType, payload).catch((err) =>
+    log.warn("Webhook dispatch failed", { eventType, error: String(err) })
+  );
+}
+
+/** The firm (brain) an engine request is scoped to — its `x-subsumio-source`. */
+export function brainIdFromEngineHeaders(headers: Record<string, string>): string | null {
+  const id = headers["x-subsumio-source"];
+  return typeof id === "string" && id ? id : null;
+}
+
+/** `case.created` for a newly created matter (not for bulk imports from other software). */
+export function emitCaseCreated(
+  brainId: string | undefined | null,
+  page: { slug: string; title?: string; frontmatter?: Record<string, unknown> }
+): void {
+  const fm = page.frontmatter ?? {};
+  if (fm.import_project_id) return;
+  emitWebhookEvent(brainId, "case.created", {
+    slug: page.slug,
+    title: page.title ?? (typeof fm.title === "string" ? fm.title : undefined),
+    case_number: typeof fm.case_number === "string" ? fm.case_number : undefined,
+    legal_area: typeof fm.legal_area === "string" ? fm.legal_area : undefined,
+  });
+}
+
+/** `invoice.paid` when a client invoice (Honorarnote) becomes paid. */
+export function emitInvoicePaid(
+  brainId: string | undefined | null,
+  invoice: { slug: string; frontmatter?: Record<string, unknown> },
+  paid: { paid_at?: string; paid_amount?: unknown; payment_method?: string }
+): void {
+  const fm = invoice.frontmatter ?? {};
+  emitWebhookEvent(brainId, "invoice.paid", {
+    slug: invoice.slug,
+    invoice_number: typeof fm.invoice_number === "string" ? fm.invoice_number : undefined,
+    total: fm.total ?? fm.amount ?? undefined,
+    currency: typeof fm.currency === "string" ? fm.currency : "EUR",
+    paid_at: paid.paid_at ?? new Date().toISOString(),
+    paid_amount: paid.paid_amount,
+    payment_method: paid.payment_method,
+  });
 }
 
 /**

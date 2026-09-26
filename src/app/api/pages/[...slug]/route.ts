@@ -34,6 +34,7 @@ import {
 import { checkBilledEntriesWrite, checkInvoiceGenericWrite } from "@/lib/billing-write-guards";
 import { releaseWorkOfInvoice } from "@/lib/invoice-billing-lock";
 import { redactPageSecrets, sealKanzleiSettingsFrontmatter } from "@/lib/kanzlei-settings-secrets";
+import { isForeignPersonalEvent } from "@/lib/calendar/personal-events";
 import { can } from "@/lib/permissions";
 import { mayReceiveRecord } from "@/lib/staff-only-records";
 import {
@@ -83,6 +84,8 @@ export const GET = createHandler(
       const page = (await res.json()) as Record<string, unknown>;
       // Firm-internal AML records answer like a missing page for clients.
       if (!mayReceiveRecord(ctx.user.role, page)) return apiNotFound("not_found");
+      // Another user's personal calendar mirror is theirs alone.
+      if (isForeignPersonalEvent(page, ctx.user?.id)) return apiNotFound("not_found");
       return Response.json(redactPageSecrets(page));
     } catch (err) {
       log.error("[pages/...slug] get failed:", err instanceof Error ? err.message : String(err));

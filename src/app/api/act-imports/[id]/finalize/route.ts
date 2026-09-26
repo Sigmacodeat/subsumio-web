@@ -3,7 +3,12 @@ import { randomUUID } from "node:crypto";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { actImportSessionSlug, computeActImportMetrics, safeImportId } from "@/lib/act-import";
-import { fetchAllActImportItems, fetchEnginePage } from "@/lib/act-import-server";
+import {
+  claimFinalizeLock,
+  fetchAllActImportItems,
+  fetchEnginePage,
+  findForeignDocument,
+} from "@/lib/act-import-server";
 import { estimatePipelineCredits } from "@/lib/billing/credit-rate-card";
 import { refundCredits, reserveCredits, type OwnerType } from "@/lib/billing/credits";
 
@@ -75,6 +80,31 @@ export const POST = createHandler(
         400
       );
     }
+    // Only documents of this matter (and readable for the caller) go into its analysis.
+    const foreign = await findForeignDocument(ctx.headers, partSlugs, caseSlug);
+    if (foreign) {
+      return apiError(
+        "document_not_in_case",
+        "Ein Dokument des Imports gehört nicht zu dieser Akte oder ist nicht zugänglich.",
+        400
+      );
+    }
+    // One finalize per attempt: a double click or a parallel request must not
+    // reserve credits and start the pipeline twice.
+    const attempt = Number(sfm.finalize_attempt ?? 0);
+    const nextAttempt = { finalize_attempt: attempt + 1, updated_at: new Date().toISOString() };
+    let lock: "claimed" | "taken";
+    try {
+      lock = await claimFinalizeLock(ctx.headers, id, attempt, ctx.user.email);
+    } catch {
+      return apiError("finalize_lock_failed", "Analyse konnte nicht gestartet werden.", 503);
+    }
+    if (lock === "taken") {
+      return apiError("already_analyzing", "Für diese Session läuft bereits eine Pipeline.", 409);
+    }
+    const releaseAttempt = () =>
+      enginePatchPage(ctx.headers, { slug: actImportSessionSlug(id), frontmatter: nextAttempt });
+
     const ownerType: OwnerType = ctx.billing.ownerType;
     const ownerId = ctx.billing.ownerId;
     // Finalizing a complete act preserves the former full-pipeline behavior;
@@ -110,7 +140,10 @@ export const POST = createHandler(
         created_at: snapshot.created_at,
       },
     });
-    if (!write.ok) return apiError("snapshot_write_failed", await write.text(), 502);
+    if (!write.ok) {
+      await releaseAttempt();
+      return apiError("snapshot_write_failed", await write.text(), 502);
+    }
     const pipelineKey = `pipeline-${randomUUID()}`;
     const estimatedPages = Math.max(1, metrics.pages || partSlugs.length);
     const reservation = await reserveCredits(
@@ -120,6 +153,7 @@ export const POST = createHandler(
       pipelineKey
     );
     if (!reservation.ok) {
+      await releaseAttempt();
       return apiError(
         "insufficient_credits",
         "Nicht genügend Credits für die vollständige Aktenanalyse.",
@@ -148,6 +182,7 @@ export const POST = createHandler(
     });
     if (!trigger.ok) {
       await refundCredits(ownerId, ownerType, reservation.reservedCredits, 0, pipelineKey);
+      await releaseAttempt();
       return apiError("pipeline_trigger_failed", await trigger.text(), 502);
     }
     const job = (await trigger.json()) as { job_id?: string | number };
@@ -155,6 +190,7 @@ export const POST = createHandler(
       slug: actImportSessionSlug(id),
       frontmatter: {
         status: "analyzing",
+        ...nextAttempt,
         snapshot_id: snapshotId,
         snapshot_slug: snapshotSlug,
         pipeline_job_id: String(job.job_id ?? ""),

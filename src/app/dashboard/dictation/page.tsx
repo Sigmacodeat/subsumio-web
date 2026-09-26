@@ -195,7 +195,7 @@ export default function DictationPage() {
     <div className="ds-page ds-page-medium space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("dictation.title")}
-        description="Diktieren Sie direkt im Browser. Die Aufnahme wird verschriftet und als Text gespeichert; die Audiodatei selbst wird nicht aufbewahrt."
+        description="Diktieren Sie direkt im Browser. Die Aufnahme wird verschriftet und als Text gespeichert; die Audiodatei selbst wird nicht aufbewahrt. Zur Verschriftung geht die Aufnahme an einen externen KI-Dienst (Whisper über OpenRouter, Verarbeitung außerhalb der EU); im EU-Datenmodus ist das Diktat daher nicht verfügbar."
         breadcrumbs={[
           { label: t("breadcrumb.dashboard"), href: "/dashboard" },
           { label: t("dictation.title") },

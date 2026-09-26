@@ -178,6 +178,11 @@
 # Einstellungen → E-Mail-Postfach. No-op when no account opted in.
 */15 * * * *   sh /etc/cronjob.sh outlook-user-sync /api/cron/outlook-user-sync
 
+# ── Every 5 minutes — outgoing webhook retries ──
+# Re-delivers queued webhook events that failed transiently (backoff 1 min …
+# 2 h, five attempts). No-op when nothing is queued.
+*/5 * * * *   sh /etc/cronjob.sh webhook-retry /api/cron/webhook-retry
+
 # ── Every hour — Demo session cleanup ──
 # Purges the isolated engine source of expired demo sessions and mails the
 # ops mailbox when the daily demo question budget or purge backlog spikes.

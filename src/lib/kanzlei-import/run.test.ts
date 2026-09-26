@@ -238,3 +238,58 @@ describe("executeImport", () => {
     expect(pages.get(out.refs.pages[0])!.frontmatter.status).toBe("tombstoned");
   });
 });
+
+describe("refs are saved while the import runs (R8-21)", () => {
+  it("an import that stops after 30 of 100 rows can take back exactly those 30", async () => {
+    const existing: ExistingData = { cases: [], contacts: [], deadlines: [] };
+    const rows = Array.from({ length: 100 }, (_, i) => [`Akte ${i}`, String(1000 + i)]);
+    const plan = planImport("cases", rows, { title: 0, case_number: 1 }, existing, opts);
+    const { client, pages } = fakeClient([]);
+    let created = 0;
+    const tabClosed = new Error("tab closed");
+    const stopping: ImportClient = {
+      ...client,
+      async createPage(p) {
+        if (created === 30) throw tabClosed; // the run never gets further
+        created++;
+        return client.createPage(p);
+      },
+    };
+    let saved: import("./run").ImportRefs | null = null;
+    const run = executeImport(plan, stopping, undefined, {
+      onCheckpoint: async (refs) => {
+        saved = refs;
+        // Simulates the browser going away right after the 30th row.
+        if (refs.pages.length >= 30) throw tabClosed;
+      },
+    });
+    await expect(run).rejects.toBe(tabClosed);
+    expect(saved!.pages).toHaveLength(30);
+
+    const back = await rollbackImport(saved!, client, opts.projectId);
+    expect(back.archivedCases).toBe(30);
+    const archived = [...pages.values()].filter((p) => p.frontmatter.status === "archived");
+    expect(archived).toHaveLength(30);
+  });
+
+  it("a completed import saves its final refs", async () => {
+    const existing: ExistingData = { cases: [], contacts: [], deadlines: [] };
+    const plan = planImport(
+      "cases",
+      [
+        ["A", "1"],
+        ["B", "2"],
+        ["C", "3"],
+      ],
+      { title: 0, case_number: 1 },
+      existing,
+      opts
+    );
+    const { client } = fakeClient([]);
+    const checkpoints: number[] = [];
+    await executeImport(plan, client, undefined, {
+      onCheckpoint: async (refs) => void checkpoints.push(refs.pages.length),
+    });
+    expect(checkpoints.at(-1)).toBe(3);
+  });
+});

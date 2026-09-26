@@ -20,7 +20,7 @@ import { unwrapApiBody } from "@/lib/api-body";
 const EVENT_LABELS: Record<string, { de: string; en: string }> = {
   "case.created": { de: "Akte angelegt", en: "Matter created" },
   "deadline.critical": { de: "Frist wird kritisch", en: "Deadline becomes critical" },
-  "invoice.paid": { de: "Rechnung bezahlt", en: "Invoice paid" },
+  "invoice.paid": { de: "Honorarnote bezahlt", en: "Client invoice paid" },
   "document.received": { de: "Dokument eingegangen", en: "Document received" },
   "intake.new": { de: "Neue Mandatsanfrage", en: "New client enquiry" },
 };
@@ -39,6 +39,13 @@ export default function WebhooksPage() {
       events: string[];
       status: string;
       created_at: string;
+      needs_reregistration?: boolean;
+      delivery?: {
+        pending: number;
+        exhausted: number;
+        lastError: string | null;
+        lastErrorAt: string | null;
+      } | null;
     }>
   >([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +89,17 @@ export default function WebhooksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as {
+          error?: string;
+          code?: string;
+        } | null;
+        if (err?.code === "invalid_webhook_url" && err.error) {
+          addToast({ type: "error", title: err.error });
+          return;
+        }
+        throw new Error();
+      }
       addToast({ type: "success", title: t("webhooks.saved") });
       setShowForm(false);
       setForm({ url: "", events: [], secret: "", description: "" });
@@ -277,6 +294,34 @@ export default function WebhooksPage() {
                 <div className="mt-1 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
                   {t("webhooks.created")} {formatDateTime(wh.created_at)}
                 </div>
+                {wh.needs_reregistration && (
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
+                    {L(
+                      "Wird nicht beliefert: bitte löschen und mit neuem Signaturschlüssel neu anlegen.",
+                      "Not delivered: please delete and register again with a new signing secret."
+                    )}
+                  </p>
+                )}
+                {wh.delivery && (wh.delivery.pending > 0 || wh.delivery.exhausted > 0) && (
+                  <p className="mt-1 text-xs text-[color:var(--ds-danger-text)]" role="status">
+                    {wh.delivery.exhausted > 0
+                      ? L(
+                          `${wh.delivery.exhausted} Ereignis(se) konnten nicht zugestellt werden.`,
+                          `${wh.delivery.exhausted} event(s) could not be delivered.`
+                        )
+                      : L(
+                          `${wh.delivery.pending} Ereignis(se) warten auf erneute Zustellung.`,
+                          `${wh.delivery.pending} event(s) waiting to be re-delivered.`
+                        )}
+                    {wh.delivery.lastError
+                      ? ` ${L("Letzter Fehler", "Last error")}: ${wh.delivery.lastError}${
+                          wh.delivery.lastErrorAt
+                            ? ` (${formatDateTime(wh.delivery.lastErrorAt)})`
+                            : ""
+                        }`
+                      : ""}
+                  </p>
+                )}
               </div>
               <Button
                 onClick={() => void deleteWebhook(wh.id, wh.url)}

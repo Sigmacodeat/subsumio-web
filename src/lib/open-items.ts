@@ -17,6 +17,7 @@ import { ENGINE_URL } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { DUNNING_FEES, type OpenItem } from "@/lib/fibu";
 import { fromCents, toCents } from "@/lib/invoice-totals";
+import { brainIdFromEngineHeaders, emitInvoicePaid } from "@/lib/webhook-dispatch";
 
 interface InvoiceFrontmatterLike {
   invoice_number?: unknown;
@@ -270,5 +271,10 @@ export async function markInvoicePaidFromOpenItem(
     signal: AbortSignal.timeout(WRITE_TIMEOUT),
   });
   if (!write.ok) throw new Error(`invoice update failed: HTTP ${write.status}`);
+  emitInvoicePaid(
+    brainIdFromEngineHeaders(headers),
+    { slug: item.invoice_id, frontmatter: page.frontmatter },
+    { paid_at: paidAt, paid_amount: item.paid_amount, payment_method: "bank_transfer" }
+  );
   return true;
 }

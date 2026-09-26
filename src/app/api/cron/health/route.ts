@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
     }
     const smtpOn = smtpFirms > 0;
     const waOn = !!(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
-    const pushOn = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVER_KEY);
+    const pushOn = !!(process.env.APNS_TEAM_ID || process.env.FCM_SERVICE_ACCOUNT_PATH);
     const platformMailOn = !!process.env.RESEND_API_KEY;
     checks.notifications = {
       ok: unreadable === 0,

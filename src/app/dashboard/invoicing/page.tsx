@@ -32,7 +32,6 @@ import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
-  eInvoicePayload,
   invoiceCaseFromPage,
   invoiceErrorText,
   invoiceFromPage,
@@ -209,15 +208,13 @@ export default function InvoicingPage() {
 
   async function downloadXmlInvoice(inv: Invoice, format: "ebinterface" | "xrechnung") {
     const label = format === "ebinterface" ? "ebInterface" : "XRechnung";
-    const settings = kanzlei ?? (await loadKanzleiSettings());
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format,
-          invoice: eInvoicePayload(inv),
-          settings,
+          invoiceSlug: inv.id,
           options: {
             leitwegId: inv.leitwegId,
           },
@@ -254,7 +251,6 @@ export default function InvoicingPage() {
   }
 
   async function downloadZugferdPdf(inv: Invoice) {
-    const settings = kanzlei ?? (await loadKanzleiSettings());
     setStatusMessage("ZUGFeRD-PDF wird erstellt …");
     try {
       const res = await csrfFetch("/api/e-invoice/generate", {
@@ -262,8 +258,7 @@ export default function InvoicingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format: "zugferd_scratch",
-          invoice: eInvoicePayload(inv),
-          settings,
+          invoiceSlug: inv.id,
           options: {
             leitwegId: inv.leitwegId,
           },

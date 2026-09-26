@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { listEnginePages } from "@/lib/engine-pages";
 import { redactPageSecrets } from "@/lib/kanzlei-settings-secrets";
+import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
 
 const batchListSchema = z.object({
   types: z.array(z.string().min(1).max(64)).min(1).max(20),
@@ -23,13 +24,17 @@ export const POST = createHandler(
     await Promise.all(
       body.types.map(async (type) => {
         try {
-          results[type] = redactPageSecrets(
-            await listEnginePages(ctx.headers, type, body.limit, {
-              timeoutMs: 20_000,
-              // Strict: a mid-scan failure must land in `errors`, not surface
-              // a truncated list that the UI would render as "no entries".
-              strict: true,
-            })
+          // Other users' personal calendar mirrors are theirs alone.
+          results[type] = hideForeignPersonalEvents(
+            redactPageSecrets(
+              await listEnginePages(ctx.headers, type, body.limit, {
+                timeoutMs: 20_000,
+                // Strict: a mid-scan failure must land in `errors`, not surface
+                // a truncated list that the UI would render as "no entries".
+                strict: true,
+              })
+            ),
+            ctx.user?.id
           );
         } catch {
           errors.push(type);

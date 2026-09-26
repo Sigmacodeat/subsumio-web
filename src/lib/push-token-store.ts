@@ -148,19 +148,3 @@ export async function getPushTokensForUser(userId: string): Promise<PushTokenEnt
   );
   return rows as PushTokenEntry[];
 }
-
-export async function getPushTokensForBrain(_brainId: string): Promise<PushTokenEntry[]> {
-  const pool = getSharedPgPool();
-  if (!pool) {
-    return Array.from(memoryStore.values());
-  }
-
-  await ensureSchema();
-  // Join with users via brain_id — but we don't have a direct FK.
-  // Instead, query all tokens and let the caller filter by recipient.
-  // For now, return all tokens (the caller maps brain→users→tokens).
-  const { rows } = await pool.query(
-    `SELECT * FROM subsumio_push_tokens ORDER BY created_at DESC LIMIT 500`
-  );
-  return rows as PushTokenEntry[];
-}

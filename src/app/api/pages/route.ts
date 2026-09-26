@@ -2,6 +2,8 @@ import { withoutStaffOnlyRecords } from "@/lib/staff-only-records";
 import { listEnginePages } from "@/lib/engine-pages";
 import { z } from "zod";
 import { isTombstoned } from "@/lib/tombstone";
+import { hideForeignPersonalEvents } from "@/lib/calendar/personal-events";
+import { emitCaseCreated } from "@/lib/webhook-dispatch";
 import { ENGINE_URL } from "@/lib/engine";
 import { engineWriteBestEffort } from "@/lib/engine-write";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
@@ -117,11 +119,14 @@ export const GET = createHandler(
           timeoutMs: 15_000,
         });
         return Response.json(
-          redactPageSecrets(
-            withoutStaffOnlyRecords(
-              ctx.user.role,
-              all.filter((p) => belongsToMatter(p.frontmatter, query))
-            )
+          hideForeignPersonalEvents(
+            redactPageSecrets(
+              withoutStaffOnlyRecords(
+                ctx.user.role,
+                all.filter((p) => belongsToMatter(p.frontmatter, query))
+              )
+            ),
+            ctx.user?.id
           )
         );
       } catch (err) {
@@ -143,10 +148,14 @@ export const GET = createHandler(
       const raw = (await res.json()) as unknown;
       // Deleted records are tombstoned, not removed; lists must not bring them back.
       const visible = Array.isArray(raw) ? withoutStaffOnlyRecords(ctx.user.role, raw) : raw;
-      const data = redactPageSecrets(
-        Array.isArray(visible) && query.include_tombstoned !== "1"
-          ? visible.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
-          : visible
+      // Other users' personal calendar mirrors are theirs alone.
+      const data = hideForeignPersonalEvents(
+        redactPageSecrets(
+          Array.isArray(visible) && query.include_tombstoned !== "1"
+            ? visible.filter((p) => !isTombstoned(p as { frontmatter?: Record<string, unknown> }))
+            : visible
+        ),
+        ctx.user?.id
       );
       // Relay cursor pagination metadata from engine if present
       const nextCursor = res.headers.get("x-next-cursor");
@@ -550,6 +559,13 @@ export const POST = createHandler(
 
       if (!isMerge && body.type === "legal_case") {
         void markOnboardingProgress(ctx.user.id, { firstCase: true });
+        if (!current) {
+          emitCaseCreated(ctx.brainId, {
+            slug: body.slug,
+            title: body.title,
+            frontmatter: body.frontmatter,
+          });
+        }
       } else if (!isMerge && body.type === "legal_deadline") {
         void markOnboardingProgress(ctx.user.id, { firstDeadline: true });
       }

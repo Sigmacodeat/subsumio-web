@@ -297,6 +297,15 @@ export async function recordCalendarSyncResult(id: string, error: string | null)
   );
 }
 
+/** A calendar sync that failed as a whole: keeps the last successful time. */
+export async function recordCalendarSyncError(id: string, error: string): Promise<void> {
+  await ensureSchema();
+  await pool().query(
+    `UPDATE subsumio_mail_accounts SET last_error = $2, updated_at = now() WHERE id = $1`,
+    [id, error.slice(0, 500)]
+  );
+}
+
 export async function deleteMailAccount(brainId: string, id: string): Promise<boolean> {
   await ensureSchema();
   const res = await pool().query(

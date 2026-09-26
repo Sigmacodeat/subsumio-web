@@ -47,6 +47,7 @@ vi.mock("@/lib/api-handler", async (orig) => {
 });
 
 import { DELETE, GET, POST } from "./route";
+import { setEgressHostResolver } from "@/lib/security/egress";
 
 const SECRET = "super-geheimer-signaturschluessel";
 let posted: Array<Record<string, unknown>>;
@@ -65,12 +66,12 @@ beforeEach(() => {
   );
 });
 
-function register() {
+function register(url = "https://hooks.example.at/x") {
   return POST(
     new Request("http://x/api/webhooks/outgoing", {
       method: "POST",
       body: JSON.stringify({
-        url: "https://hooks.example.at/x",
+        url,
         events: ["case.created"],
         secret: SECRET,
       }),
@@ -86,6 +87,28 @@ describe("/api/webhooks/outgoing", () => {
     const fm = posted[0].frontmatter as Record<string, unknown>;
     expect(fm.secret).toBeUndefined();
     expect(typeof fm.secret_enc).toBe("string");
+  });
+
+  it.each([
+    "http://127.0.0.1/x",
+    "http://10.0.0.5/x",
+    "https://169.254.169.254/latest",
+    "http://hooks.example.at/x",
+  ])("rejects the non-public or non-https target %s with 400", async (url) => {
+    const res = await register(url);
+    expect(res.status).toBe(400);
+    expect(posted).toHaveLength(0);
+  });
+
+  it("rejects a host name that resolves to an internal address", async () => {
+    setEgressHostResolver(async () => ["10.0.0.7"]);
+    try {
+      const res = await register("https://intern.example.at/x");
+      expect(res.status).toBe(400);
+      expect(posted).toHaveLength(0);
+    } finally {
+      setEgressHostResolver(async () => ["93.184.216.34"]);
+    }
   });
 
   it("reports a failed engine write instead of success", async () => {

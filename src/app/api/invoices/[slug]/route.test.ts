@@ -8,6 +8,10 @@ vi.mock("@/lib/engine", () => ({
   enginePatchPage: (...args: unknown[]) => mockPatch(...args),
 }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
+const mockInvoicePaid = vi.fn();
+vi.mock("@/lib/webhook-dispatch", () => ({
+  emitInvoicePaid: (...a: unknown[]) => mockInvoicePaid(...a),
+}));
 const mockRelease = vi.fn(async (..._args: unknown[]) => ({ time: 2, expenses: 0 }));
 vi.mock("@/lib/invoice-billing-lock", () => ({
   releaseWorkOfInvoice: (...args: unknown[]) => mockRelease(...args),
@@ -71,6 +75,21 @@ describe("/api/invoices/[slug]", () => {
     const res = await call("PATCH", { status: "paid", paid_at: "2026-09-23", paid_amount: 1 });
     expect(res.status).toBe(200);
     expect(mockPatch).toHaveBeenCalledOnce();
+  });
+
+  it("a payment fires one invoice.paid webhook with the invoice", async () => {
+    stored = { ...sent, frontmatter: { ...sent.frontmatter, invoice_number: "HN-2026-7" } };
+    await call("PATCH", { status: "paid", paid_at: "2026-09-23", paid_amount: 1 });
+    expect(mockInvoicePaid).toHaveBeenCalledTimes(1);
+    expect(mockInvoicePaid.mock.calls[0][0]).toBe("b");
+    expect(mockInvoicePaid.mock.calls[0][1]).toMatchObject({
+      slug: "legal/invoices/r-1",
+      frontmatter: { invoice_number: "HN-2026-7" },
+    });
+    mockInvoicePaid.mockClear();
+    stored = { ...sent, frontmatter: { status: "paid", total: 1 } };
+    await call("PATCH", { e_invoice_status: "delivered" });
+    expect(mockInvoicePaid).not.toHaveBeenCalled();
   });
 
   it("records e-invoice delivery status on a sent invoice", async () => {

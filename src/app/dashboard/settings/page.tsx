@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { integrationReturnToast, withoutIntegrationReturn } from "@/lib/integration-return";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -240,6 +241,19 @@ function SettingsPageInner() {
   const searchParams = useSearchParams();
   // Derived from the URL so hub links (?tab=…) switch the view on client-side navigation.
   const activeTab = searchParams.get("tab");
+  const router = useRouter();
+  const pathname = usePathname();
+  const { addToast: addReturnToast } = useToast();
+  // Result of an Outlook/DocuSign connection round trip: shown once, then
+  // removed from the URL so a reload does not repeat it.
+  useEffect(() => {
+    const toast = integrationReturnToast(new URLSearchParams(searchParams.toString()));
+    if (!toast) return;
+    addReturnToast(toast);
+    router.replace(
+      `${pathname}${withoutIntegrationReturn(new URLSearchParams(searchParams.toString()))}`
+    );
+  }, [searchParams, addReturnToast, router, pathname]);
   const [referralUrl, setReferralUrl] = useState("");
   const [referrals, setReferrals] = useState<number | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "checking" | "online" | "offline">(
@@ -1560,6 +1574,7 @@ function OutlookCalendarCard() {
   const [state, setState] = useState<"loading" | "unconfigured" | "ready">("loading");
   const [connected, setConnected] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -1572,6 +1587,7 @@ function OutlookCalendarCard() {
         return;
       }
       setConnected(Boolean(d.connected));
+      setNeedsReconnect(!d.connected && d.reason === "needs_reconnect");
       setEmail(d.email ?? null);
       setState("ready");
     } catch {
@@ -1626,7 +1642,9 @@ function OutlookCalendarCard() {
               ? "Verbindungsstatus wird geladen…"
               : connected
                 ? `Verbunden${email ? ` als ${email}` : ""}. Ihre Termine werden in Subsumio gespiegelt und neue Termine können nach Outlook geschrieben werden.`
-                : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
+                : needsReconnect
+                  ? `Die Verbindung${email ? ` (${email})` : ""} ist abgelaufen oder wurde bei Microsoft widerrufen. Termine werden nicht mehr abgeglichen — bitte neu verbinden.`
+                  : "Verbinden Sie Ihren Microsoft-365-Kalender: Ihre Termine werden in Subsumio gespiegelt, und Termine aus Subsumio können in Ihren Outlook-Kalender geschrieben werden (2-Wege)."}
           </p>
         </div>
         {state === "ready" && (
@@ -1645,10 +1663,13 @@ function OutlookCalendarCard() {
                 </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
-                {busy && <Loader2 size={13} className="animate-spin" />}
-                Mit Microsoft verbinden
-              </Button>
+              <>
+                {needsReconnect && <Badge variant="warning">Neu verbinden</Badge>}
+                <Button variant="outline" size="sm" onClick={() => void connect()} disabled={busy}>
+                  {busy && <Loader2 size={13} className="animate-spin" />}
+                  {needsReconnect ? "Outlook neu verbinden" : "Mit Microsoft verbinden"}
+                </Button>
+              </>
             )}
           </div>
         )}

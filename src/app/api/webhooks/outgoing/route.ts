@@ -3,6 +3,11 @@ import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { encrypt, isEncryptionEnabled } from "@/lib/encryption";
+import { assertPublicUrl, EgressError } from "@/lib/security/egress";
+import { getWebhookDeliveryStatus } from "@/lib/webhook-delivery-queue";
+import { logger } from "@/lib/logger";
+
+const log = logger("webhooks/outgoing");
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +39,16 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    // Only public https targets: the server posts firm data there.
+    try {
+      await assertPublicUrl(body.url, { label: "Webhook-Adresse" });
+    } catch (err) {
+      return apiError(
+        "invalid_webhook_url",
+        err instanceof EgressError ? err.message : "Webhook-Adresse ist ungültig",
+        400
+      );
+    }
     const id = `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const slug = `settings/webhooks/${id}`;
 
@@ -84,6 +99,11 @@ export const GET = createHandler(
     } catch {
       return apiError("engine_error", "Webhooks konnten nicht geladen werden", 502);
     }
+    // Delivery state is informative; a failing read must not hide the list.
+    const delivery = await getWebhookDeliveryStatus(ctx.brainId).catch((err) => {
+      log.warn("webhook delivery status unavailable", { error: String(err) });
+      return {} as Awaited<ReturnType<typeof getWebhookDeliveryStatus>>;
+    });
     return apiSuccess({
       webhooks: webhooks.map((w) => ({
         id: w.frontmatter.id,
@@ -91,6 +111,9 @@ export const GET = createHandler(
         events: w.frontmatter.events,
         status: w.frontmatter.status,
         created_at: w.frontmatter.created_at,
+        delivery: delivery[String(w.frontmatter.id ?? "")] ?? null,
+        // Entries without an encrypted secret are not delivered until re-registered.
+        needs_reregistration: typeof w.frontmatter.secret_enc !== "string",
       })),
     });
   }

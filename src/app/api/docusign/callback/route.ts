@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DOCUSIGN_OAUTH_HOST } from "@/lib/docusign";
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 import { externalFetchTimeout } from "@/lib/retry";
 import { env } from "@/lib/env";
 import { timingSafeCompare } from "@/lib/crypto-utils";
@@ -15,37 +15,46 @@ const callbackQuerySchema = z.object({
 
 const DOCUSIGN_OAUTH_STATE_COOKIE = "docusign_oauth_state";
 
+/**
+ * DocuSign sends the browser here after the consent screen: every outcome
+ * leads back to the settings page (`?docusign=<result>`), never to a raw
+ * JSON page. Same role as /api/docusign/auth — each user connects their own
+ * DocuSign account.
+ */
+function backToSettings(result: string): NextResponse {
+  const url = `${env("NEXT_PUBLIC_APP_URL") || ""}/dashboard/settings?docusign=${encodeURIComponent(result)}`;
+  const res = NextResponse.redirect(url);
+  res.cookies.set(DOCUSIGN_OAUTH_STATE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env("NODE_ENV") === "production",
+    maxAge: 0,
+    path: "/api/docusign/callback",
+  });
+  return res;
+}
+
 export const GET = createHandler(
   {
-    action: "settings.write",
+    action: "settings.read",
     rateTier: "standard",
     query: callbackQuerySchema,
     skipCsrf: true,
   },
   async (ctx, _body, query, req) => {
-    if (query.error) {
-      return apiError("oauth_denied", query.error, 400);
-    }
-    if (!query.code) {
-      return apiError("code_required", "Authorization code required", 400);
-    }
+    if (query.error) return backToSettings("denied");
+    if (!query.code) return backToSettings("code_required");
 
     // OAuth CSRF protection: the state we minted in /api/docusign/auth is
     // stored in an httpOnly cookie. DocuSign must return the same value.
     const cookieState = req.cookies.get(DOCUSIGN_OAUTH_STATE_COOKIE)?.value ?? "";
     const queryState = query.state ?? "";
     if (!cookieState || !queryState || !timingSafeCompare(queryState, cookieState)) {
-      return apiError(
-        "state_mismatch",
-        "OAuth state mismatch. Please restart the connection.",
-        403
-      );
+      return backToSettings("state_mismatch");
     }
     const ik = env("DOCUSIGN_INTEGRATION_KEY");
     const secret = env("DOCUSIGN_SECRET_KEY");
-    if (!ik || !secret) {
-      return apiError("docusign_not_configured", "Docusign not configured", 503);
-    }
+    if (!ik || !secret) return backToSettings("not_configured");
 
     const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.io"}/api/docusign/callback`;
     const tokenRes = await fetch(`https://${DOCUSIGN_OAUTH_HOST}/oauth/token`, {
@@ -59,7 +68,8 @@ export const GET = createHandler(
         redirect_uri: redirectUri,
       }),
       signal: externalFetchTimeout(),
-    });
+    }).catch(() => null);
+    if (!tokenRes) return backToSettings("token_exchange_failed");
     const data = (await tokenRes.json().catch(() => ({}))) as {
       access_token?: string;
       refresh_token?: string;
@@ -68,16 +78,8 @@ export const GET = createHandler(
       account_id?: string;
       base_uri?: string;
     };
-    if (!tokenRes.ok) {
-      return apiError(
-        data.error || "token_exchange_failed",
-        data.error || "Token exchange failed",
-        400
-      );
-    }
-
-    if (!data.access_token || !data.expires_in) {
-      return apiError("incomplete_token_response", "Incomplete token response", 502);
+    if (!tokenRes.ok || !data.access_token || !data.expires_in) {
+      return backToSettings("token_exchange_failed");
     }
 
     const store = getStore();
@@ -87,14 +89,6 @@ export const GET = createHandler(
       docusignTokenExpiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
     });
 
-    const res = NextResponse.json({ ok: true, connected: true });
-    res.cookies.set(DOCUSIGN_OAUTH_STATE_COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env("NODE_ENV") === "production",
-      maxAge: 0,
-      path: "/api/docusign/callback",
-    });
-    return res;
+    return backToSettings("connected");
   }
 );

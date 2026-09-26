@@ -84,12 +84,44 @@ function timeKey(e: { date?: unknown; minutes?: unknown; description?: unknown }
   return `${String(e.date ?? "").slice(0, 10)}|${Number(e.minutes ?? 0)}|${normaliseName(e.description)}`;
 }
 
+/** Rows written between two saved checkpoints of the import's refs. */
+export const REFS_CHECKPOINT_EVERY = 10;
+
+function copyRefs(refs: ImportRefs): ImportRefs {
+  return {
+    pages: [...refs.pages],
+    contactCompletions: refs.contactCompletions.map((c) => ({
+      slug: c.slug,
+      fields: { ...c.fields },
+    })),
+    timeEntries: refs.timeEntries.map((t) => ({ caseSlug: t.caseSlug, ids: [...t.ids] })),
+  };
+}
+
 export async function executeImport(
   plan: ImportPlan,
   client: ImportClient,
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  opts: {
+    /**
+     * Saves what was written so far, so the import can be taken back even
+     * when it stops half-way (tab closed, network gone). Called every
+     * REFS_CHECKPOINT_EVERY written rows and after each matter's time
+     * entries. A failing checkpoint stops the import: nothing is written
+     * that could not be taken back.
+     */
+    onCheckpoint?: (refs: ImportRefs) => Promise<void>;
+    checkpointEvery?: number;
+  } = {}
 ): Promise<ImportOutcome> {
   const refs: ImportRefs = { pages: [], contactCompletions: [], timeEntries: [] };
+  const every = Math.max(1, opts.checkpointEvery ?? REFS_CHECKPOINT_EVERY);
+  let unsaved = 0;
+  const checkpoint = async (force = false) => {
+    if (!opts.onCheckpoint || unsaved === 0 || (!force && unsaved < every)) return;
+    await opts.onCheckpoint(copyRefs(refs));
+    unsaved = 0;
+  };
   const outcomes = new Map<PlanRow, RowOutcome>();
   const set = (r: PlanRow, status: RowStatus, reason?: string) =>
     outcomes.set(r, { row: r.row, label: r.label, status, reason, warnings: r.warnings });
@@ -139,6 +171,7 @@ export async function executeImport(
             throw err;
           }
           refs.pages.push(w.slug);
+          unsaved++;
           set(r, "imported");
         }
       } else {
@@ -156,6 +189,7 @@ export async function executeImport(
           } else {
             await client.updatePage({ slug: w.slug, frontmatter: fields });
             refs.contactCompletions.push({ slug: w.slug, fields });
+            unsaved++;
             set(r, "completed", `Ergänzt: ${Object.keys(fields).join(", ")}`);
           }
         }
@@ -164,6 +198,7 @@ export async function executeImport(
       set(r, "failed", message(err));
     }
     tick();
+    await checkpoint();
   }
 
   for (const [caseSlug, rows] of byCase) {
@@ -193,6 +228,7 @@ export async function executeImport(
           // drop an entry another writer just added.
           await client.appendPageArray(caseSlug, "time_entries", added);
           refs.timeEntries.push({ caseSlug, ids: added.map((e) => e.id) });
+          unsaved += added.length;
           const addedIds = new Set(added.map((e) => e.id));
           for (const r of rows) {
             if (addedIds.has((r.write as { entry: ImportedTimeEntry }).entry.id))
@@ -206,7 +242,9 @@ export async function executeImport(
           set(r, "failed", message(err));
     }
     for (let i = 0; i < rows.length; i++) tick();
+    await checkpoint(true);
   }
+  await checkpoint(true);
 
   const rowsOut = plan.rows.map((r) => outcomes.get(r)!);
   const counts: Record<RowStatus, number> = { imported: 0, completed: 0, skipped: 0, failed: 0 };

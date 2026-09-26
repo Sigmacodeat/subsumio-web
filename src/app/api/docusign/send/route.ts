@@ -7,6 +7,8 @@ import {
   type EnvelopeRequest,
 } from "@/lib/docusign";
 import { buildEnvelopeCustomFields } from "@/lib/docusign-connect";
+import { DocusignError } from "@/lib/errors";
+import { checkSignableDocument } from "@/lib/docusign-documents";
 import { ENGINE_URL } from "@/lib/engine";
 import {
   assertOutputActionAllowed,
@@ -115,10 +117,25 @@ export const POST = createHandler(
       );
     }
 
+    // Only real PDF/DOCX files go out for signature (never an error page a
+    // failed download produced); DocuSign gets the type explicitly.
+    const documents: EnvelopeRequest["documents"] = [];
+    for (const doc of body.documents) {
+      const check = checkSignableDocument(doc.documentBase64);
+      if (!check.ok) {
+        return apiError(
+          "invalid_document",
+          `Das Dokument „${doc.name}" ${check.reason} und kann nicht zur Unterschrift gesendet werden.`,
+          400
+        );
+      }
+      documents.push({ ...doc, fileExtension: check.type });
+    }
+
     const req: EnvelopeRequest = {
       emailSubject: body.emailSubject,
       emailBlurb: body.emailBlurb || "",
-      documents: body.documents,
+      documents,
       recipients: {
         signers: body.recipients.signers.map((s, i) => ({
           email: s.email,
@@ -136,11 +153,15 @@ export const POST = createHandler(
     };
 
     try {
-      // Try per-user token first, fall back to service account
+      // The user's own DocuSign connection first; the firm's service account
+      // only when the user has none. Any other failure of the user path
+      // (rejected envelope, expired connection) is reported, never re-sent
+      // under the service account's sender identity.
       let result;
       try {
         result = await createEnvelopeAsUser(ctx.user.id, req);
-      } catch {
+      } catch (err) {
+        if (!(err instanceof DocusignError && err.code === "DOCUSIGN_NOT_CONNECTED")) throw err;
         result = await createEnvelope(req);
       }
 
