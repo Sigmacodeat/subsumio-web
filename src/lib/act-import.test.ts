@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeActImportMetrics, safeImportId, type ActImportItem } from "./act-import";
+import {
+  computeActImportMetrics,
+  safeImportId,
+  uploadFailureRecord,
+  type ActImportItem,
+} from "./act-import";
+import { ApiRequestError } from "./api";
 
 const item = (
   status: ActImportItem["status"],
@@ -80,5 +86,38 @@ describe("act import metrics", () => {
     const metrics = computeActImportMetrics(items84);
     expect(metrics.canFinalize).toBe(false);
     expect(metrics.processing).toBe(2);
+  });
+});
+
+describe("upload failures in an act import", () => {
+  it("a file already in the matter (409 duplicate_file) is skipped, not failed", () => {
+    const err = new ApiRequestError("Datei bereits vorhanden: a.pdf", 409, "duplicate_file", {
+      error: "duplicate_file",
+      existing_slug: "documents/a",
+    });
+    expect(uploadFailureRecord(err)).toEqual({
+      status: "duplicate",
+      error_code: "duplicate_file",
+      error: "Übersprungen – bereits vorhanden",
+      document_slug: "documents/a",
+    });
+  });
+
+  it("a plain 409 with the duplicate message is recognised too", () => {
+    const err = Object.assign(new Error("Datei bereits vorhanden: „a.pdf“"), { status: 409 });
+    expect(uploadFailureRecord(err).status).toBe("duplicate");
+  });
+
+  it("other errors stay retryable failures", () => {
+    expect(uploadFailureRecord(new Error("Netzwerkfehler")).status).toBe("failed");
+    expect(uploadFailureRecord(new ApiRequestError("x", 409, "case_archived")).status).toBe(
+      "failed"
+    );
+  });
+
+  it("a duplicate does not block completion", () => {
+    const m = computeActImportMetrics([item("ready"), item("duplicate")]);
+    expect(m.failed).toBe(0);
+    expect(m.canFinalize).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { applyMatterKnowledgeMutation } from "@/lib/matter-knowledge";
 import { stampInboundEntryBestEffort } from "@/lib/inbound-register-stamp";
 import { signPortalToken } from "@/lib/portal-token";
 import type { CaseFrontmatter } from "@/lib/legal-types";
+import { ordneAktenzahlZu } from "@/lib/legal/geschaeftszahl";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity, WhatsAppIncomingMessage } from "@/lib/whatsapp/types";
 
@@ -36,6 +37,7 @@ function scopedMatters(sender: WhatsAppIdentity): string[] {
   return Array.isArray(sender.matterScope) ? sender.matterScope.filter(Boolean) : [];
 }
 
+/** Legacy form "akte <slug>" (slug of a matter in the sender's scope). */
 function caseSlugFromText(text: string): string | undefined {
   const match = text.match(
     /\b(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?)/i
@@ -48,24 +50,82 @@ function caseSlugFromText(text: string): string | undefined {
   return `legal/cases/${ref}`;
 }
 
-function resolveClientMatter(sender: WhatsAppIdentity, text: string): string | null {
-  const scope = scopedMatters(sender);
-  const explicit = caseSlugFromText(text);
-  if (explicit && scope.includes(explicit)) return explicit;
-  if (scope.length === 1) return scope[0];
-  return null;
+/** Most scoped matters whose number/title is read for matching and the reply. */
+const MAX_SCOPE_LOOKUPS = 10;
+
+interface ScopedMatterLabel {
+  slug: string;
+  caseNumber?: string;
+  title?: string;
 }
 
-function ambiguousReply(sender: WhatsAppIdentity): string {
-  const matters = scopedMatters(sender)
-    .map((slug) => slug.replace(/^legal\/cases\//, ""))
+async function scopedMatterLabels(
+  sender: WhatsAppIdentity,
+  fetchImpl: typeof fetch
+): Promise<ScopedMatterLabel[]> {
+  const out: ScopedMatterLabel[] = [];
+  for (const slug of scopedMatters(sender).slice(0, MAX_SCOPE_LOOKUPS)) {
+    try {
+      const page = await readCaseFrontmatter(sender.brainId, slug, fetchImpl);
+      out.push({
+        slug,
+        caseNumber:
+          typeof page.frontmatter.case_number === "string"
+            ? page.frontmatter.case_number
+            : undefined,
+        title: page.title,
+      });
+    } catch {
+      out.push({ slug });
+    }
+  }
+  return out;
+}
+
+/** What a client may be shown for a matter: its number or title, never an internal slug. */
+export function matterLabelForClient(m: { caseNumber?: string; title?: string }): string | null {
+  const n = m.caseNumber?.trim();
+  if (n) return n;
+  const t = m.title?.trim();
+  return t || null;
+}
+
+/**
+ * The matter a client message belongs to. One matter in scope → that one.
+ * Several → only an unambiguous reference decides: a Geschäftszahl/Aktenzahl
+ * named in the text (shared normalisation, whole tokens) or the legacy slug
+ * form. Anything else (none or several hits) is a question back to the
+ * client, never a guess.
+ */
+export async function resolveClientMatter(
+  sender: WhatsAppIdentity,
+  text: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ caseSlug: string | null; labels?: ScopedMatterLabel[] }> {
+  const scope = scopedMatters(sender);
+  if (scope.length === 1) return { caseSlug: scope[0]! };
+  const explicit = caseSlugFromText(text);
+  if (explicit && scope.includes(explicit)) return { caseSlug: explicit };
+  const labels = await scopedMatterLabels(sender, fetchImpl);
+  const byNumber = ordneAktenzahlZu(
+    text,
+    labels.map((l) => ({ ...l, case_number: l.caseNumber }))
+  );
+  if (byNumber.status === "eindeutig") return { caseSlug: byNumber.treffer[0]!.slug, labels };
+  return { caseSlug: null, labels };
+}
+
+export function ambiguousReply(labels: ScopedMatterLabel[]): string {
+  const matters = labels
+    .map(matterLabelForClient)
+    .filter((l): l is string => Boolean(l))
     .slice(0, 5)
-    .join(", ");
+    .join("; ");
   return [
     "Danke, Ihre Nachricht ist eingegangen.",
     matters
-      ? `Bitte nennen Sie das Aktenzeichen, damit wir die Unterlage korrekt zuordnen koennen. Bekannte Akten: ${matters}.`
-      : "Bitte nennen Sie das Aktenzeichen, damit wir die Unterlage korrekt zuordnen koennen.",
+      ? `Bitte nennen Sie das Aktenzeichen (Geschäftszahl), damit wir die Unterlage korrekt zuordnen koennen. Ihre Akten: ${matters}.`
+      : "Bitte nennen Sie das Aktenzeichen (Geschäftszahl), damit wir die Unterlage korrekt zuordnen koennen.",
   ].join("\n");
 }
 
@@ -131,8 +191,11 @@ async function statusReply(
 ): Promise<string> {
   const page = await readCaseFrontmatter(sender.brainId, caseSlug, fetchImpl);
   const fm = page.frontmatter;
-  const label = caseSlug.replace(/^legal\/cases\//, "");
-  const lines = [`Stand Ihrer Akte ${label}:`, `Status: ${fm.status || "aktiv"}`];
+  const label = matterLabelForClient({ caseNumber: fm.case_number, title: page.title });
+  const lines = [
+    label ? `Stand Ihrer Akte ${label}:` : "Stand Ihrer Akte:",
+    `Status: ${fm.status || "aktiv"}`,
+  ];
   const next = nextOpenDeadline(fm.deadlines);
   lines.push(
     next
@@ -308,12 +371,18 @@ export async function ingestVerifiedClientWhatsAppSubmission(
     };
   }
 
-  const caseSlug = resolveClientMatter(input.sender, input.normalizedText);
+  const caption = input.media && "caption" in input.message ? input.message.caption : undefined;
+  const resolved = await resolveClientMatter(
+    input.sender,
+    [input.normalizedText, caption].filter(Boolean).join("\n"),
+    fetchImpl
+  );
+  const caseSlug = resolved.caseSlug;
   if (!caseSlug) {
     return {
       handled: true,
       reason: "ambiguous_scope",
-      reply: ambiguousReply(input.sender),
+      reply: ambiguousReply(resolved.labels ?? []),
     };
   }
 

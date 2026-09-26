@@ -1479,6 +1479,21 @@ export async function synthesizeDocumentMarkdown(
       // Classification is best-effort — never fail an upload because of it.
     }
   }
+  // Sammelscan: several Schriftstücke in one file (page-based, conservative).
+  // A hint for the lawyer to separate them — the original stays one file.
+  if (extracted.text.includes("###***###")) {
+    try {
+      const { erkenneSchriftstuecke, describeSchriftstuecke } =
+        await import("./legal/bundle-detect.ts");
+      const parts = erkenneSchriftstuecke(extracted.text);
+      if (parts.length > 1) {
+        fm.sammelscan_anzahl = parts.length;
+        fm.sammelscan_hinweis = describeSchriftstuecke(parts).slice(0, 1000);
+      }
+    } catch {
+      // Best-effort, like the classification above.
+    }
+  }
   const sparseWithoutOcr =
     extracted.warnings.some((warning) => warning.startsWith("pdf_text_layer_sparse")) &&
     fm.extraction_method !== "ocr_vision";

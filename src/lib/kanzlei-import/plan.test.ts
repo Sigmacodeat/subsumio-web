@@ -125,7 +125,79 @@ describe("matters", () => {
       },
       opts
     );
-    expect((plan.rows[0].write as { slug: string }).slug).toBe("legal/cases/a-abcdef12-2");
+    const slug = (plan.rows[0].write as { slug: string }).slug;
+    expect(slug).toMatch(/^legal\/cases\/a-[a-z0-9]+$/);
+    expect(slug).not.toBe("legal/cases/a");
+    // Deterministic: another import project plans the same slug.
+    const again = planImport(
+      "cases",
+      [["A", "A"]],
+      { title: 0, case_number: 1 },
+      { ...existing, cases: [{ slug: "legal/cases/a", title: "x", frontmatter: {} }] },
+      { ...opts, projectId: "mig-2000-99999999" }
+    );
+    expect((again.rows[0].write as { slug: string }).slug).toBe(slug);
+  });
+
+  it("a second import of matters without Aktenzahl creates nothing twice", () => {
+    const map = { title: 0, case_number: 1, client_name: 2 };
+    const rows = [["Mietsache Beispiel", "", "Anna Beispiel"]];
+    const first = planImport("cases", rows, map, { ...existing, cases: [] }, opts);
+    expect(actions(first)).toEqual(["2:create"]);
+    const created = first.rows[0].write as {
+      slug: string;
+      title: string;
+      frontmatter: Record<string, unknown>;
+    };
+    const second = planImport(
+      "cases",
+      rows,
+      map,
+      {
+        ...existing,
+        cases: [{ slug: created.slug, title: created.title, frontmatter: created.frontmatter }],
+      },
+      { ...opts, projectId: "mig-2000-99999999" }
+    );
+    expect(actions(second)).toEqual([
+      "2:skip Akte „Mietsache Beispiel“ mit diesem Mandanten existiert bereits",
+    ]);
+  });
+
+  it("the same title for a different client is a different matter", () => {
+    const map = { title: 0, case_number: 1, client_name: 2 };
+    const plan = planImport(
+      "cases",
+      [
+        ["Mietsache", "", "Anna Beispiel"],
+        ["Mietsache", "", "Bernd Beispiel"],
+        ["Mietsache", "", "Anna Beispiel"],
+      ],
+      map,
+      { ...existing, cases: [] },
+      opts
+    );
+    expect(actions(plan)).toEqual([
+      "2:create",
+      "3:create",
+      "4:skip Akte „Mietsache“ mit diesem Mandanten steht schon in Zeile 2",
+    ]);
+  });
+
+  it("Geschäftszahlen are compared normalised", () => {
+    const plan = planImport(
+      "cases",
+      [["Neu", "12Cg34/25X"]],
+      { title: 0, case_number: 1 },
+      {
+        ...existing,
+        cases: [
+          { slug: "legal/cases/x", title: "X", frontmatter: { case_number: "12 Cg 34/25x" } },
+        ],
+      },
+      opts
+    );
+    expect(actions(plan)).toEqual(["2:skip Aktenzahl 12Cg34/25X existiert bereits"]);
   });
 });
 

@@ -6,6 +6,7 @@
  * 2. Case matching with ambiguity detection (multiple matches → user must choose)
  * 3. Thread tracking to link replies to original emails
  */
+import { textNenntAktenzahl } from "@/lib/legal/geschaeftszahl";
 
 export interface EmailHeaders {
   messageId?: string;
@@ -84,7 +85,6 @@ export function matchEmailToCases(
   cases: CaseData[]
 ): { candidates: CaseMatchCandidate[]; isAmbiguous: boolean } {
   const fromLower = headers.from.toLowerCase();
-  const subjectLower = headers.subject.toLowerCase();
   const strippedSubject = stripSubjectPrefix(headers.subject).toLowerCase();
   const candidates: CaseMatchCandidate[] = [];
 
@@ -92,16 +92,12 @@ export function matchEmailToCases(
     let score = 0;
     const reasons: string[] = [];
 
-    // Strategy 1: Case number in subject (strongest signal)
-    const caseNum = c.case_number?.toLowerCase();
-    if (caseNum && caseNum.length > 2) {
-      if (subjectLower.includes(caseNum)) {
-        score += 200;
-        reasons.push("case_number_in_subject");
-      } else if (strippedSubject.includes(caseNum)) {
-        score += 195;
-        reasons.push("case_number_in_stripped_subject");
-      }
+    // Strategy 1: Case number in subject (strongest signal). Shared
+    // Geschäftszahl normalisation: whole tokens only (never "11 Cg 3/25a"
+    // for "1 Cg 3/25a"), spacing/case tolerant, Prüfbuchstabe respected.
+    if (c.case_number && textNenntAktenzahl(headers.subject, c.case_number)) {
+      score += 200;
+      reasons.push("case_number_in_subject");
     }
 
     // Strategy 2: Client email/name in From

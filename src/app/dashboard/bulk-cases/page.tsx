@@ -6,7 +6,12 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
-import { parseCsvCaseRows, type BulkImportResult, type BulkRowStatus } from "@/lib/bulk-cases";
+import {
+  bulkImportFailureMessage,
+  parseCsvCaseRows,
+  type BulkImportResult,
+  type BulkRowStatus,
+} from "@/lib/bulk-cases";
 import { useLang } from "@/lib/use-lang";
 import { encodeSlugPath, formatEur } from "@/lib/utils";
 import type { DashboardKey } from "@/content/dashboard";
@@ -49,18 +54,12 @@ export default function BulkCasesPage() {
       if (r.ok && j?.data) {
         setResult(j.data as BulkImportResult);
       } else {
-        setError(
-          en
-            ? "Import failed — no cases were created. Please check the CSV and try again."
-            : "Import fehlgeschlagen — es wurden keine Akten angelegt. Bitte prüfen Sie die CSV-Daten und versuchen Sie es erneut."
-        );
+        const code = typeof j?.code === "string" ? j.code : undefined;
+        setError(bulkImportFailureMessage(r.status, code, en));
       }
     } catch {
-      setError(
-        en
-          ? "Import failed — the server could not be reached."
-          : "Import fehlgeschlagen — der Server ist gerade nicht erreichbar."
-      );
+      // The connection may drop while the server is still writing rows.
+      setError(bulkImportFailureMessage(0, undefined, en));
     } finally {
       setSubmitting(false);
     }

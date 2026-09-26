@@ -96,9 +96,8 @@ export const POST = createHandler(
           error: "no_case_match",
           threadId: result.threadId,
           message: result.message,
-          suggestions: cases
-            .slice(0, 5)
-            .map((c) => ({ slug: c.slug, caseNumber: c.case_number, title: c.title })),
+          // No arbitrary "first five matters" here: the page offers the full
+          // matter list and re-sends with force_case_slug.
         });
       }
 

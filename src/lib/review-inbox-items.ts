@@ -1,4 +1,5 @@
 import { listEnginePages } from "@/lib/engine-pages";
+import { PARTY_ROLE_LABEL } from "@/lib/legal/case-suggestions";
 import type { BrainPage } from "@/lib/types";
 
 export interface ReviewInboxItem {
@@ -329,7 +330,7 @@ export async function loadReviewInboxItems(
         id: `${page.slug}#suggested_parties.${i}`,
         type: "suggested_party",
         title: party.name || "Parteienvorschlag",
-        description: `Rolle: ${party.role || "unbekannt"} · Quelle: ${party.source || "KI"}`,
+        description: `Rolle: ${PARTY_ROLE_LABEL[party.role] ?? (party.role || "unbekannt")} · Quelle: ${party.source || "KI"}`,
         caseSlug: page.slug,
         caseTitle: page.title || null,
         priority: "medium",

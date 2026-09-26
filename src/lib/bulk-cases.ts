@@ -273,3 +273,34 @@ export function groupByMandateId(items: PortfolioItem[]): Map<string, PortfolioI
   }
   return groups;
 }
+
+/**
+ * What the Massenanlage page says when the import request did not return a
+ * result. Only the answers the route gives BEFORE writing anything
+ * (validation, case list unavailable) mean "nothing was created"; a timeout or
+ * server error may hit after some rows were already written, because the
+ * route writes row by row. Re-running is safe: existing case numbers are
+ * skipped, never overwritten.
+ */
+export function bulkImportFailureMessage(
+  status: number,
+  code: string | undefined,
+  en: boolean
+): string {
+  const beforeWrite =
+    status === 400 ||
+    status === 401 ||
+    status === 403 ||
+    status === 413 ||
+    status === 429 ||
+    code === "guard_unavailable" ||
+    code === "too_many_rows";
+  if (beforeWrite) {
+    return en
+      ? "Import failed — no cases were created. Please check the CSV and try again."
+      : "Import fehlgeschlagen — es wurden keine Akten angelegt. Bitte prüfen Sie die CSV-Daten und versuchen Sie es erneut.";
+  }
+  return en
+    ? "The import was interrupted — some cases may already have been created. Check the case list; running the import again is safe, existing case numbers are skipped."
+    : "Der Import wurde unterbrochen — ein Teil der Akten kann bereits angelegt sein. Bitte die Aktenliste prüfen; ein erneuter Import ist sicher, bestehende Aktenzeichen werden übersprungen.";
+}

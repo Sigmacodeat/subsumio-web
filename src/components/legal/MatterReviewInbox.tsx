@@ -29,11 +29,18 @@ import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter
 import { unwrapApiBody } from "@/lib/api-body";
 import { GroundedOutputPanel } from "@/components/legal/GroundedOutputPanel";
 import { csrfFetch } from "@/lib/csrf";
+import {
+  CASE_FIELD_LABEL,
+  PARTY_ROLE_LABEL,
+  RESOLVED_PARTY_ROLES,
+} from "@/lib/legal/case-suggestions";
+import { contactRoleForSuggestion } from "@/lib/legal/case-suggestion-client";
 
 type ReviewItemKind =
   | "client_submission"
   | "suggested_deadline"
   | "suggested_party"
+  | "suggested_case_field"
   | "pending_fact"
   | "document_request"
   | "conversation";
@@ -59,6 +66,7 @@ const KIND_ICON: Record<ReviewItemKind, ElementType> = {
   client_submission: MessageCircle,
   suggested_deadline: AlertTriangle,
   suggested_party: UserPlus,
+  suggested_case_field: FileText,
   pending_fact: Sparkles,
   document_request: FileText,
   conversation: Inbox,
@@ -153,17 +161,47 @@ export function MatterReviewInbox({
     );
 
     const partyItems = openSuggestions(matter.suggestedParties).map<ReviewItem>(
-      ({ item: party, index: originalIndex }) => ({
-        id: `party-${originalIndex}-${party.name}`,
-        kind: "suggested_party",
-        title: party.name,
-        description: `${party.role} · als Kontakt/Partei einordnen`,
-        source: party.source,
-        priority: "medium",
-        actionLabel: "Kontakt anlegen",
-        secondaryLabel: "Verwerfen",
-        index: originalIndex,
-      })
+      ({ item: party, index: originalIndex }) => {
+        const resolved = RESOLVED_PARTY_ROLES.has(party.role);
+        return {
+          id: `party-${originalIndex}-${party.name}`,
+          kind: "suggested_party",
+          title: party.name,
+          description: resolved
+            ? `${PARTY_ROLE_LABEL[party.role] ?? party.role} · Übernehmen legt den Kontakt an und prüft Kollisionen`
+            : `${PARTY_ROLE_LABEL[party.role] ?? party.role} · Seite (Mandant/Gegner) bitte festlegen`,
+          source: party.source,
+          priority: "medium",
+          actionLabel: resolved ? "Übernehmen" : "Zuordnen",
+          secondaryLabel: "Verwerfen",
+          index: originalIndex,
+        };
+      }
+    );
+
+    const caseFieldItems = openSuggestions(matter.suggestedCaseFields).map<ReviewItem>(
+      ({ item: field, index: originalIndex }) => {
+        const show = (v: unknown) =>
+          field.field === "dispute_value" && typeof v === "number"
+            ? `EUR ${v.toLocaleString("de-AT", { minimumFractionDigits: 2 })}`
+            : String(v);
+        return {
+          id: `case-field-${originalIndex}-${field.field}`,
+          kind: "suggested_case_field",
+          title: `${CASE_FIELD_LABEL[field.field] ?? field.field}: ${show(field.value)}`,
+          description:
+            field.current !== undefined && field.current !== ""
+              ? `Bisher: ${show(field.current)}${field.quote ? ` · „${field.quote.slice(0, 90)}“` : ""}`
+              : field.quote
+                ? `„${field.quote.slice(0, 120)}“`
+                : "Aus dem Schriftstück erkannt",
+          source: field.source ?? "KI-Analyse",
+          priority: "medium",
+          actionLabel: "Übernehmen",
+          secondaryLabel: "Verwerfen",
+          index: originalIndex,
+        };
+      }
     );
 
     const factItems = pendingFacts.map<ReviewItem>((fact) => ({
@@ -214,6 +252,7 @@ export function MatterReviewInbox({
       ...clientSubmissionItems,
       ...deadlineItems,
       ...partyItems,
+      ...caseFieldItems,
       ...factItems,
       ...requestItems,
       ...conversationItems,
@@ -344,18 +383,46 @@ export function MatterReviewInbox({
   async function acceptSuggestedParty(item: ReviewItem) {
     if (typeof item.index !== "number" || !matter?.suggestedParties?.[item.index]) return;
     const suggestion = matter.suggestedParties[item.index];
-    ctx.setContactDialogRole(
-      suggestion.role === "mandant" || suggestion.role === "client"
-        ? "client"
-        : suggestion.role === "gegner" || suggestion.role === "opponent"
-          ? "opponent"
-          : suggestion.role === "gericht" || suggestion.role === "court"
-            ? "court"
-            : "other"
-    );
+    if (RESOLVED_PARTY_ROLES.has(suggestion.role)) {
+      // Server-side: contact + conflict check + placement in the matter.
+      setUpdating(item.id);
+      try {
+        await ctx.confirmSuggestedParty(item.index, true);
+        addToast({ type: "success", title: "Partei übernommen" });
+      } catch (err) {
+        addToast({
+          type: "error",
+          title: err instanceof Error ? err.message : "Partei konnte nicht übernommen werden",
+        });
+      } finally {
+        setUpdating(null);
+      }
+      return;
+    }
+    // Kläger/Beklagter: the lawyer decides the side in the contact dialog.
+    ctx.setContactDialogRole(contactRoleForSuggestion(suggestion.role));
     ctx.setContactDialogName(suggestion.name);
     ctx.setPendingSuggestedPartyIndex(item.index);
     ctx.setContactDialogOpen(true);
+  }
+
+  async function decideCaseField(item: ReviewItem, approve: boolean) {
+    if (typeof item.index !== "number") return;
+    setUpdating(item.id);
+    try {
+      await ctx.decideSuggestedCaseField(item.index, approve);
+      addToast({
+        type: "success",
+        title: approve ? "In die Akte übernommen" : "Vorschlag verworfen",
+      });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Vorschlag konnte nicht bearbeitet werden",
+      });
+    } finally {
+      setUpdating(null);
+    }
   }
 
   async function rejectSuggestedParty(item: ReviewItem) {
@@ -364,6 +431,11 @@ export function MatterReviewInbox({
     try {
       await ctx.confirmSuggestedParty(item.index, false);
       addToast({ type: "success", title: "Kontaktvorschlag verworfen" });
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : "Vorschlag konnte nicht verworfen werden",
+      });
     } finally {
       setUpdating(null);
     }
@@ -467,6 +539,8 @@ export function MatterReviewInbox({
       void acceptSuggestedDeadline(item);
     } else if (item.kind === "suggested_party") {
       void acceptSuggestedParty(item);
+    } else if (item.kind === "suggested_case_field") {
+      void decideCaseField(item, true);
     } else if (item.kind === "pending_fact") {
       void reviewFact(item, "approve");
     } else if (item.kind === "document_request") {
@@ -490,6 +564,8 @@ export function MatterReviewInbox({
       void rejectSuggestedDeadline(item);
     } else if (item.kind === "suggested_party") {
       void rejectSuggestedParty(item);
+    } else if (item.kind === "suggested_case_field") {
+      void decideCaseField(item, false);
     } else if (item.kind === "pending_fact") {
       void reviewFact(item, "mark_party_assertion");
     } else if (item.kind === "document_request") {

@@ -389,3 +389,13 @@ describe("parseEml — multiple recipients", () => {
     expect(parsed.to).toBe("alice@example.com");
   });
 });
+
+describe("parseEml — Geschäftszahl", () => {
+  test("recognises an AT Geschäftszahl without Az. prefix", () => {
+    const parsed = parseEml(
+      ["From: Gericht <post@example.at>", "Subject: 1Cg3/25A Ladung", "", "Text"].join("\n")
+    );
+    expect(parsed.aktenzeichen).toBe("1 Cg 3/25a");
+    expect(parsed.confidence).toBe("high");
+  });
+});

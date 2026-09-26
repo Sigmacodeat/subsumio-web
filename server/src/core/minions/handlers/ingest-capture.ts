@@ -30,6 +30,7 @@
  */
 
 import type { MinionJobContext } from "../types.ts";
+import { normalisiereGZ, gleicheGZ } from "../../legal/gz-validate.ts";
 import type { BrainEngine } from "../../engine.ts";
 import type { IngestionEvent } from "../../ingestion/types.ts";
 import { validateIngestionEvent } from "../../ingestion/types.ts";
@@ -95,31 +96,60 @@ function normalizeCaseReference(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/** Does a stored matter number denote the same case as the reference? */
+export function sameCaseReference(stored: string, reference: string): boolean {
+  // Geschäftszahlen: shared normalisation (Prüfbuchstabe respected, a number
+  // written without it still matches). Other Aktenzahlen: alphanumerics only.
+  const a = normalisiereGZ(stored);
+  const b = normalisiereGZ(reference);
+  if (a && b) return gleicheGZ(a, b);
+  if (a || b) return false;
+  return normalizeCaseReference(stored) === normalizeCaseReference(reference);
+}
+
+const CASE_SCAN_PAGE = 500;
+const CASE_SCAN_MAX = 20_000;
+
 /**
  * Only an exact, unique court/case number is eligible for automatic filing.
  * Fuzzy name matches remain an inbox task: filing into the wrong legal file
- * is materially worse than asking a lawyer once.
+ * is materially worse than asking a lawyer once. Every matter of the firm's
+ * source is compared (paged), not just the first batch.
  */
-async function resolveExactConnectorCase(
-  engine: BrainEngine,
+export async function resolveExactConnectorCase(
+  engine: Pick<BrainEngine, "listPages">,
   sourceId: string,
-  event: IngestionEvent
+  event: Pick<IngestionEvent, "metadata">
 ): Promise<string | undefined> {
   const reference = [event.metadata?.case_reference, event.metadata?.matter_reference].find(
     (value): value is string => typeof value === "string" && value.trim().length > 0
   );
   if (!reference) return undefined;
-  const normalizedReference = normalizeCaseReference(reference);
-  if (normalizedReference.length < 4) return undefined;
+  if (normalizeCaseReference(reference).length < 4) return undefined;
 
-  const cases = await engine.listPages({ type: "legal_case", limit: 500, sourceId });
-  const matches = cases.filter((page) => {
-    const frontmatter = (page.frontmatter ?? {}) as Record<string, unknown>;
-    return [frontmatter.case_number, frontmatter.court_case_number, frontmatter.geschäftszahl]
-      .filter((value): value is string => typeof value === "string")
-      .some((value) => normalizeCaseReference(value) === normalizedReference);
-  });
-  return matches.length === 1 ? matches[0]?.slug : undefined;
+  const matches: string[] = [];
+  for (let offset = 0; offset < CASE_SCAN_MAX; offset += CASE_SCAN_PAGE) {
+    const cases = await engine.listPages({
+      type: "legal_case",
+      limit: CASE_SCAN_PAGE,
+      offset,
+      sort: "slug",
+      sourceId,
+    });
+    for (const page of cases) {
+      const frontmatter = (page.frontmatter ?? {}) as Record<string, unknown>;
+      const hit = [
+        frontmatter.case_number,
+        frontmatter.court_case_number,
+        frontmatter.geschäftszahl,
+      ]
+        .filter((value): value is string => typeof value === "string")
+        .some((value) => sameCaseReference(value, reference));
+      if (hit) matches.push(page.slug);
+    }
+    if (matches.length > 1 || cases.length < CASE_SCAN_PAGE) break;
+  }
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 async function queueApprovedConnectorAnalysis(

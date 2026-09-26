@@ -2,6 +2,7 @@
 
 import { describe, test, expect } from "vitest";
 import {
+  bulkImportFailureMessage,
   parseCsvCases,
   parseCsvCaseRows,
   parseDisputeValue,
@@ -287,5 +288,22 @@ describe("Austrian CSV input (UIS-2-4)", () => {
 456,Anna,Miete,M-2`);
     expect(parsed.rows.map((r) => r.line)).toEqual([3]);
     expect(parsed.invalid).toEqual([expect.objectContaining({ line: 2, case_number: "123" })]);
+  });
+});
+
+describe("bulkImportFailureMessage", () => {
+  test("says nothing was created only when the route stops before writing", () => {
+    expect(bulkImportFailureMessage(400, "too_many_rows", false)).toMatch(/keine Akten angelegt/);
+    expect(bulkImportFailureMessage(503, "guard_unavailable", false)).toMatch(
+      /keine Akten angelegt/
+    );
+  });
+
+  test("a timeout or server error may have created some matters", () => {
+    for (const status of [0, 500, 502, 504]) {
+      const msg = bulkImportFailureMessage(status, undefined, false);
+      expect(msg).not.toMatch(/keine Akten angelegt/);
+      expect(msg).toMatch(/Teil der Akten kann bereits angelegt sein/);
+    }
   });
 });
