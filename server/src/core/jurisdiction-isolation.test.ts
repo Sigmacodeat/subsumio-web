@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type { BrainEngine } from "../core/engine.ts";
 import {
-  AT_LAW_SOURCES_ALL,
   AT_LAW_SOURCES_JUDIKATUR,
-  DE_LAW_SOURCES_ALL,
   DE_LAW_SOURCES_JUDIKATUR,
-  CH_LAW_SOURCES_ALL,
   CH_LAW_SOURCES_JUDIKATUR,
+  scopedReadSources,
 } from "./legal/jurisdiction.ts";
 
 // Minimal mock engine — hardSourceFilter/sourceScopeOpts don't call it,
@@ -202,18 +200,7 @@ describe("WP4: sourceScopeOpts — precedence ladder", () => {
 // ─── WP1: readSourcesFor jurisdiction logic ────────────────────────────
 
 describe("WP1: readSourcesFor — Case > User > Fail-Closed jurisdiction", () => {
-  // We test the jurisdiction resolution logic by replicating the core
-  // decision tree from web-api.ts readSourcesFor(), since the function
-  // requires a full Express Request object.
-
-  // Nutzt die kanonischen Konstanten — kein Drift zwischen Test-Replik
-  // und web-api.ts JURISDICTION_LAW_SOURCES.
-  const JURISDICTION_LAW_SOURCES: Record<string, string[]> = {
-    DE: DE_LAW_SOURCES_ALL,
-    AT: AT_LAW_SOURCES_ALL,
-    CH: CH_LAW_SOURCES_ALL,
-  };
-
+  // The product decision (web-api.ts readSourcesFor delegates to it).
   const SHARED_READ_SOURCES = [
     "law-at",
     "law-de",
@@ -229,16 +216,7 @@ describe("WP1: readSourcesFor — Case > User > Fail-Closed jurisdiction", () =>
     caseJur?: string,
     userJur?: string
   ): string[] | undefined {
-    if (SHARED_READ_SOURCES.length === 0) return undefined;
-    const caseJurUpper = caseJur?.toUpperCase();
-    const userJurUpper = userJur?.toUpperCase();
-    const jur = caseJurUpper ?? userJurUpper;
-    if (jur && JURISDICTION_LAW_SOURCES[jur]) {
-      const scoped = JURISDICTION_LAW_SOURCES[jur].filter((s) => SHARED_READ_SOURCES.includes(s));
-      return [...new Set([ownSource, ...scoped])];
-    }
-    // Fail-closed: no jurisdiction → only own source
-    return [ownSource];
+    return scopedReadSources(SHARED_READ_SOURCES, ownSource, caseJur, userJur);
   }
 
   it("case jurisdiction takes priority over user jurisdiction", () => {
