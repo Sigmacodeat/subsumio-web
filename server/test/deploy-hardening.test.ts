@@ -3,7 +3,9 @@
  * the committed compose file, Dockerfile and deploy script — no Docker needed.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import yaml from "js-yaml";
 
@@ -95,6 +97,51 @@ describe("stack hygiene: logs, limits, no install at start", () => {
     }
     for (const name of ["engine", "web", "cron", "clamav", "corpus-pipeline"]) {
       expect({ name, mem: Boolean(compose.services[name].mem_limit) }).toEqual({ name, mem: true });
+    }
+  });
+});
+
+describe("scripts/deploy.sh only deploys reviewed, pushed main", () => {
+  const script = join(SERVER, "..", "scripts", "deploy.sh");
+  const src = readFileSync(script, "utf8");
+
+  test("it never stages, commits or pushes", () => {
+    const code = src
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .join("\n");
+    expect(code).not.toMatch(/git\s+(add|commit|push)\b/);
+    expect(code).toContain("git status --porcelain");
+    expect(code).toMatch(/rev-parse HEAD\)" != "\$\(git rev-parse origin\/main\)/);
+  });
+
+  test("a dirty working tree stops it before anything else", () => {
+    const repo = mkdtempSync(join(tmpdir(), "deploy-sh-"));
+    try {
+      const git = (...args: string[]) =>
+        spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+      git("init", "-q");
+      git(
+        "-c",
+        "user.email=t@example.invalid",
+        "-c",
+        "user.name=t",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "init"
+      );
+      mkdirSync(join(repo, "scripts"));
+      copyFileSync(script, join(repo, "scripts", "deploy.sh"));
+      writeFileSync(join(repo, "half-done.txt"), "wip");
+      const res = spawnSync("bash", ["scripts/deploy.sh"], { cwd: repo, encoding: "utf8" });
+      expect(res.status).toBe(1);
+      expect(res.stdout + res.stderr).toContain("nicht sauber");
+      // Nothing was committed.
+      expect(git("rev-list", "--count", "HEAD").stdout.trim()).toBe("1");
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
     }
   });
 });

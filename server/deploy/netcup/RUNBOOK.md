@@ -73,7 +73,7 @@ Deploy mit Grenzen `docker stats --no-stream` prüfen und die Werte bei Bedarf a
 Vom Mac aus dem Repository — rollt den gepushten Stand (`origin/main`) aus:
 
 ```sh
-bash scripts/deploy.sh                                 # commit + push + deploy
+bash scripts/deploy.sh                                 # nur bei sauberem Baum und HEAD == origin/main; committet/pusht nie
 sh server/deploy/netcup/deploy-code.sh --build         # nur bauen, Dienste laufen weiter
 sh server/deploy/netcup/deploy-code.sh                 # bauen und umschalten
 sh server/deploy/netcup/deploy-code.sh --app           # Web + Engine, Korpus-Pipeline läuft weiter
