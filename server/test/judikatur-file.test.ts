@@ -188,6 +188,18 @@ describe("validateBody: statute too_short", () => {
       "Magistrat der Stadt\nDVR: 0069699\nUID: ATU12345678\n\n" + "Bescheidtext. ".repeat(10);
     expect(validateBody(briefkopf, "statute").map((i) => i.code)).toContain("letterhead");
   });
+
+  test("letterhead: Impressumszeile unter echter Kundmachung ist kein Briefkopf", async () => {
+    const { validateBody } = await import("../scripts/normalize/canonical-schema.ts");
+    const kundmachung =
+      "# Kundmachung Rechnungsabschluss 2024\n\n" +
+      "Gemäß § 54 Abs. 5 Kärntner Gemeindehaushaltsgesetz wird kundgemacht, dass der " +
+      "Gemeinderat den Rechnungsabschluss 2024 beschlossen hat. Der Rechnungsabschluss " +
+      "liegt zur öffentlichen Einsicht auf und wird im elektronisch geführten Amtsblatt " +
+      "bereitgestellt. ".repeat(9) +
+      "\n9132 Gallizien, Wildenstein 100/2, DVR: 0108286, UID: ATU47851301\n";
+    expect(validateBody(kundmachung, "statute").map((i) => i.code)).not.toContain("letterhead");
+  });
 });
 
 describe("metadata backfill", () => {

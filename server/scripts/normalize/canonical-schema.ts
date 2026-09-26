@@ -323,12 +323,16 @@ export function validateBody(body: string, docClass: DocClass): ValidationIssue[
   // Briefkopf-Impressum besteht aus MEHREREN dieser Angaben zusammen.
   // "DVR: 9999999" allein ist auch legitimer Vordruck-Text (FSG-PV Anl. 3
   // Zahlschein), "P.b.b." kommt in Postverkehrs-Klauseln vor — ein
-  // Einzeltreffer darf nicht reichen.
+  // Einzeltreffer darf nicht reichen. Und selbst zwei Treffer sind nur dann
+  // ein Befund, wenn die Datei sonst keine Substanz hat: amtssignierte
+  // Kundmachungen aus dem Gemeinderecht tragen die Impressumszeile
+  // (DVR + UID) der Gemeinde als Schlussblock unter echtem Rechtstext.
   const letterheadTreffer =
     Number(/DVR:\s*\d{7}/.test(text)) +
     Number(/UID:\s*ATU\d+/.test(text)) +
     Number(/P\.b\.b\. Erscheinungsort/.test(text));
-  if (letterheadTreffer >= 2) bad("letterhead", "behördlicher Briefkopf im Fließtext");
+  if (letterheadTreffer >= 2 && substanceText(body).length < 400)
+    bad("letterhead", "behördlicher Briefkopf im Fließtext");
   // Sprachausgabe-Dopplung: verwerfen NUR bei hoher Dichte.
   //
   // Als Ja/Nein-Regel war das die teuerste Fehlentscheidung der Schleuse:
