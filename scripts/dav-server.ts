@@ -28,8 +28,21 @@
  * Usage: bun x tsx scripts/dav-server.ts
  */
 
-import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import { multistatus, collectionHref, calendarDataMultistatus } from "../src/lib/dav-xml";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "http";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+import {
+  multistatus,
+  collectionHref,
+  calendarDataMultistatus,
+  type DavResource,
+} from "../src/lib/dav-xml";
+import {
+  DAV_TRUNCATION_NOTICE_NAME,
+  davTruncationNotice,
+  parseDavDocumentListing,
+  type DavDocumentListing,
+} from "../src/lib/dav-documents";
 
 const WEB_URL = (process.env.SUBSUMIO_WEB_URL || "http://localhost:3000").replace(/\/+$/, "");
 const PORT = parseInt(process.env.DAV_PORT || "4080", 10);
@@ -80,23 +93,34 @@ function denyAuth(res: ServerResponse) {
   });
 }
 
-async function fetchDocuments(token: string): Promise<DavDoc[] | null> {
+async function fetchDocuments(
+  webUrl: string,
+  token: string
+): Promise<DavDocumentListing<DavDoc> | null> {
   try {
-    const res = await fetch(`${WEB_URL}/api/calendar/${encodeURIComponent(token)}/dav/documents`, {
+    const res = await fetch(`${webUrl}/api/calendar/${encodeURIComponent(token)}/dav/documents`, {
       signal: AbortSignal.timeout(15_000),
     });
     if (res.status === 404 || res.status === 429) return null;
     if (!res.ok) throw new Error(`documents ${res.status}`);
-    const data = (await res.json()) as { documents?: DavDoc[] };
-    return data.documents ?? [];
+    const listing = parseDavDocumentListing<DavDoc>(await res.json());
+    // A cut listing is shown as such (notice file) and logged — never passed
+    // off as the complete drive. The token itself is never logged.
+    if (listing?.truncated) {
+      console.warn(
+        `[dav] Dokumentliste unvollständig: ${listing.documents.length} Dokumente gezeigt` +
+          (listing.limit != null ? ` (Obergrenze ${listing.limit})` : "")
+      );
+    }
+    return listing;
   } catch {
     return null;
   }
 }
 
-async function fetchIcs(token: string): Promise<string | null> {
+async function fetchIcs(webUrl: string, token: string): Promise<string | null> {
   try {
-    const res = await fetch(`${WEB_URL}/api/calendar/${encodeURIComponent(token)}/fristen.ics`, {
+    const res = await fetch(`${webUrl}/api/calendar/${encodeURIComponent(token)}/fristen.ics`, {
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return null;
@@ -113,147 +137,181 @@ function docMemberName(doc: DavDoc): string {
   return `${base}.md`;
 }
 
-const server = createServer(async (req, res) => {
-  const method = (req.method ?? "GET").toUpperCase();
-  const path = decodeURIComponent(new URL(req.url ?? "/", "http://dav").pathname);
-  const startedAt = Date.now();
-  // Structured request log — method/path/status/ms. The feed token lives
-  // only in the Authorization header and is never logged.
-  const origEnd = res.end.bind(res);
-  res.end = ((chunk?: unknown, ...rest: unknown[]) => {
-    console.log(`[dav] ${method} ${path} → ${res.statusCode} (${Date.now() - startedAt}ms)`);
-    return origEnd(chunk as never, ...(rest as never[]));
-  }) as typeof res.end;
+/** The bridge's HTTP server (not yet listening); `webUrl` is the web app it proxies. */
+export function createDavServer(webUrl: string = WEB_URL): Server {
+  return createServer(async (req, res) => {
+    const method = (req.method ?? "GET").toUpperCase();
+    const path = decodeURIComponent(new URL(req.url ?? "/", "http://dav").pathname);
+    const startedAt = Date.now();
+    // Structured request log — method/path/status/ms. The feed token lives
+    // only in the Authorization header and is never logged.
+    const origEnd = res.end.bind(res);
+    res.end = ((chunk?: unknown, ...rest: unknown[]) => {
+      console.log(`[dav] ${method} ${path} → ${res.statusCode} (${Date.now() - startedAt}ms)`);
+      return origEnd(chunk as never, ...(rest as never[]));
+    }) as typeof res.end;
 
-  // Unauthenticated liveness probe for Docker/Caddy healthchecks — exposes
-  // nothing beyond process aliveness.
-  if (path === "/health" && (method === "GET" || method === "HEAD")) {
-    return reply(res, 200, JSON.stringify({ ok: true }), {
-      "Content-Type": "application/json",
-    });
-  }
-
-  // CORS-style preflight + DAV discovery.
-  if (method === "OPTIONS") {
-    res.writeHead(204, {
-      DAV: DAV_HEADER,
-      Allow: "OPTIONS, PROPFIND, GET, HEAD, REPORT",
-      "Content-Length": "0",
-    });
-    res.end();
-    return;
-  }
-
-  if (!["PROPFIND", "GET", "HEAD", "REPORT"].includes(method)) {
-    reply(res, 405, "Read-only DAV", { Allow: "OPTIONS, PROPFIND, GET, HEAD, REPORT" });
-    return;
-  }
-
-  const token = tokenFromAuth(req);
-  if (!token) return denyAuth(res);
-
-  // ---- CalDAV: /fristen/ ------------------------------------------------
-  if (path === "/fristen" || path.startsWith("/fristen/")) {
-    if (method === "PROPFIND") {
-      const depth = req.headers.depth ?? "1";
-      const resources = [
-        {
-          href: "/fristen/",
-          name: "Subsumio Fristen",
-          collection: true,
-          extraProps:
-            `<C:supported-calendar-component-set>` +
-            `<C:comp name="VEVENT"/></C:supported-calendar-component-set>`,
-        },
-      ];
-      if (depth !== "0") {
-        resources.push({
-          href: "/fristen/fristen.ics",
-          name: "fristen.ics",
-          contentType: "text/calendar",
-        });
-      }
-      return reply(res, 207, multistatus(resources), XML_HEADERS);
-    }
-    if (method === "REPORT") {
-      const ics = await fetchIcs(token);
-      if (ics == null) return reply(res, 502, "Calendar unavailable");
-      return reply(res, 207, calendarDataMultistatus("/fristen/fristen.ics", ics), XML_HEADERS);
-    }
-    // GET /fristen/fristen.ics (or the collection itself) → raw ICS.
-    const ics = await fetchIcs(token);
-    if (ics == null) return reply(res, 404, "Not found");
-    return reply(res, 200, ics, { "Content-Type": "text/calendar; charset=utf-8" });
-  }
-
-  // ---- WebDAV: /dokumente/ ----------------------------------------------
-  if (path === "/dokumente" || path.startsWith("/dokumente/")) {
-    if (method === "PROPFIND") {
-      const docs = await fetchDocuments(token);
-      if (docs == null) return denyAuth(res);
-      const depth = req.headers.depth ?? "1";
-      const resources = [{ href: "/dokumente/", name: "Subsumio Dokumente", collection: true }];
-      if (depth !== "0") {
-        for (const d of docs) {
-          resources.push({
-            href: `/dokumente/${encodeURIComponent(docMemberName(d))}`,
-            name: docMemberName(d),
-            contentType: d.hasFile ? d.mimeType || "application/octet-stream" : "text/markdown",
-            contentLength: d.size ?? undefined,
-            lastModified: d.updated ? new Date(d.updated).toUTCString() : undefined,
-          } as never);
-        }
-      }
-      return reply(res, 207, multistatus(resources), XML_HEADERS);
+    // Unauthenticated liveness probe for Docker/Caddy healthchecks — exposes
+    // nothing beyond process aliveness.
+    if (path === "/health" && (method === "GET" || method === "HEAD")) {
+      return reply(res, 200, JSON.stringify({ ok: true }), {
+        "Content-Type": "application/json",
+      });
     }
 
-    if (method === "GET" || method === "HEAD") {
-      const member = path.slice("/dokumente/".length).replace(/\/+$/, "");
-      if (!member) return reply(res, 404, "Not found");
-      const docs = await fetchDocuments(token);
-      if (docs == null) return denyAuth(res);
-      const doc = docs.find((d) => docMemberName(d) === member);
-      if (!doc) return reply(res, 404, "Not found");
-      const upstream = await fetch(
-        `${WEB_URL}/api/calendar/${encodeURIComponent(token)}/dav/documents/${encodeURIComponent(doc.slug)}`,
-        { signal: AbortSignal.timeout(30_000) }
-      );
-      if (!upstream.ok) return reply(res, upstream.status === 404 ? 404 : 502, "Unavailable");
-      const headers: Record<string, string> = {
-        "Content-Type": upstream.headers.get("content-type") ?? "application/octet-stream",
-      };
-      const cl = upstream.headers.get("content-length");
-      if (cl) headers["Content-Length"] = cl;
-      if (method === "HEAD") {
-        res.writeHead(200, headers);
-        return res.end();
-      }
-      res.writeHead(200, headers);
-      res.end(Buffer.from(await upstream.arrayBuffer()));
+    // CORS-style preflight + DAV discovery.
+    if (method === "OPTIONS") {
+      res.writeHead(204, {
+        DAV: DAV_HEADER,
+        Allow: "OPTIONS, PROPFIND, GET, HEAD, REPORT",
+        "Content-Length": "0",
+      });
+      res.end();
       return;
     }
-    return reply(res, 405, "Read-only");
-  }
 
-  // ---- Root collection ---------------------------------------------------
-  if (method === "PROPFIND" && (path === "/" || path === "")) {
-    const resources = [
-      { href: "/", name: "Subsumio", collection: true },
-      ...(req.headers.depth === "0"
-        ? []
-        : [
-            { href: "/fristen/", name: "Fristen", collection: true },
-            { href: "/dokumente/", name: "Dokumente", collection: true },
-          ]),
-    ];
-    return reply(res, 207, multistatus(resources), XML_HEADERS);
-  }
+    if (!["PROPFIND", "GET", "HEAD", "REPORT"].includes(method)) {
+      reply(res, 405, "Read-only DAV", { Allow: "OPTIONS, PROPFIND, GET, HEAD, REPORT" });
+      return;
+    }
 
-  reply(res, 404, "Not found");
-});
+    const token = tokenFromAuth(req);
+    if (!token) return denyAuth(res);
 
-server.listen(PORT, BIND, () => {
-  console.log(`[dav-server] read-only WebDAV/CalDAV bridge on http://${BIND}:${PORT}`);
-  console.log(`[dav-server] proxying ${WEB_URL} — Basic auth password = DAV access token`);
-  console.log(`[dav-server] mount: /dokumente/ (WebDAV), /fristen/ (CalDAV)`);
-});
+    // ---- CalDAV: /fristen/ ------------------------------------------------
+    if (path === "/fristen" || path.startsWith("/fristen/")) {
+      if (method === "PROPFIND") {
+        const depth = req.headers.depth ?? "1";
+        const resources: DavResource[] = [
+          {
+            href: "/fristen/",
+            name: "Subsumio Fristen",
+            collection: true,
+            extraProps:
+              `<C:supported-calendar-component-set>` +
+              `<C:comp name="VEVENT"/></C:supported-calendar-component-set>`,
+          },
+        ];
+        if (depth !== "0") {
+          resources.push({
+            href: "/fristen/fristen.ics",
+            name: "fristen.ics",
+            contentType: "text/calendar",
+          });
+        }
+        return reply(res, 207, multistatus(resources), XML_HEADERS);
+      }
+      if (method === "REPORT") {
+        const ics = await fetchIcs(webUrl, token);
+        if (ics == null) return reply(res, 502, "Calendar unavailable");
+        return reply(res, 207, calendarDataMultistatus("/fristen/fristen.ics", ics), XML_HEADERS);
+      }
+      // GET /fristen/fristen.ics (or the collection itself) → raw ICS.
+      const ics = await fetchIcs(webUrl, token);
+      if (ics == null) return reply(res, 404, "Not found");
+      return reply(res, 200, ics, { "Content-Type": "text/calendar; charset=utf-8" });
+    }
+
+    // ---- WebDAV: /dokumente/ ----------------------------------------------
+    if (path === "/dokumente" || path.startsWith("/dokumente/")) {
+      if (method === "PROPFIND") {
+        const listing = await fetchDocuments(webUrl, token);
+        if (listing == null) return denyAuth(res);
+        const depth = req.headers.depth ?? "1";
+        const resources: DavResource[] = [
+          { href: "/dokumente/", name: "Subsumio Dokumente", collection: true },
+        ];
+        if (depth !== "0") {
+          if (listing.truncated) {
+            resources.push({
+              href: `/dokumente/${encodeURIComponent(DAV_TRUNCATION_NOTICE_NAME)}`,
+              name: DAV_TRUNCATION_NOTICE_NAME,
+              contentType: "text/plain",
+              contentLength: Buffer.byteLength(davTruncationNotice(listing)),
+            });
+          }
+          for (const d of listing.documents) {
+            resources.push({
+              href: `/dokumente/${encodeURIComponent(docMemberName(d))}`,
+              name: docMemberName(d),
+              contentType: d.hasFile ? d.mimeType || "application/octet-stream" : "text/markdown",
+              contentLength: d.size ?? undefined,
+              lastModified: d.updated ? new Date(d.updated).toUTCString() : undefined,
+            });
+          }
+        }
+        return reply(res, 207, multistatus(resources), {
+          ...XML_HEADERS,
+          ...(listing.truncated ? { "X-Subsumio-Listing": "truncated" } : {}),
+        });
+      }
+
+      if (method === "GET" || method === "HEAD") {
+        const member = path.slice("/dokumente/".length).replace(/\/+$/, "");
+        if (!member) return reply(res, 404, "Not found");
+        const listing = await fetchDocuments(webUrl, token);
+        if (listing == null) return denyAuth(res);
+        if (listing.truncated && member === DAV_TRUNCATION_NOTICE_NAME) {
+          const text = davTruncationNotice(listing);
+          const headers = {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Content-Length": String(Buffer.byteLength(text)),
+          };
+          if (method === "HEAD") {
+            res.writeHead(200, headers);
+            return res.end();
+          }
+          return reply(res, 200, text, headers);
+        }
+        const doc = listing.documents.find((d) => docMemberName(d) === member);
+        if (!doc) return reply(res, 404, "Not found");
+        const upstream = await fetch(
+          `${webUrl}/api/calendar/${encodeURIComponent(token)}/dav/documents/${encodeURIComponent(doc.slug)}`,
+          { signal: AbortSignal.timeout(30_000) }
+        );
+        if (!upstream.ok) return reply(res, upstream.status === 404 ? 404 : 502, "Unavailable");
+        const headers: Record<string, string> = {
+          "Content-Type": upstream.headers.get("content-type") ?? "application/octet-stream",
+        };
+        const cl = upstream.headers.get("content-length");
+        if (cl) headers["Content-Length"] = cl;
+        if (method === "HEAD") {
+          res.writeHead(200, headers);
+          return res.end();
+        }
+        res.writeHead(200, headers);
+        res.end(Buffer.from(await upstream.arrayBuffer()));
+        return;
+      }
+      return reply(res, 405, "Read-only");
+    }
+
+    // ---- Root collection ---------------------------------------------------
+    if (method === "PROPFIND" && (path === "/" || path === "")) {
+      const resources: DavResource[] = [
+        { href: "/", name: "Subsumio", collection: true },
+        ...(req.headers.depth === "0"
+          ? []
+          : [
+              { href: "/fristen/", name: "Fristen", collection: true },
+              { href: "/dokumente/", name: "Dokumente", collection: true },
+            ]),
+      ];
+      return reply(res, 207, multistatus(resources), XML_HEADERS);
+    }
+
+    reply(res, 404, "Not found");
+  });
+}
+
+// Listen only when run as a script (tests import createDavServer).
+const isMain = process.argv[1]
+  ? fileURLToPath(import.meta.url) === resolve(process.argv[1])
+  : false;
+if (isMain) {
+  createDavServer().listen(PORT, BIND, () => {
+    console.log(`[dav-server] read-only WebDAV/CalDAV bridge on http://${BIND}:${PORT}`);
+    console.log(`[dav-server] proxying ${WEB_URL} — Basic auth password = DAV access token`);
+    console.log(`[dav-server] mount: /dokumente/ (WebDAV), /fristen/ (CalDAV)`);
+  });
+}
