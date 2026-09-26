@@ -365,10 +365,12 @@ export function PlanningModePanel({ caseSlug, onClose }: PlanningModePanelProps)
           </button>
           {onClose && (
             <button
+              type="button"
               onClick={onClose}
+              aria-label={isEn ? "Close" : "Schließen"}
               className="rounded p-1 text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             >
-              <X size={14} />
+              <X size={14} aria-hidden="true" />
             </button>
           )}
         </div>
