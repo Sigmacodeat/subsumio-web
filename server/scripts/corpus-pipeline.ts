@@ -417,6 +417,110 @@ export const SIMPLE: SimpleSource[] = [
       "--no-embed",
     ]),
   },
+  // Smaller RIS collections (Sonstige, Bezirke, Gemeinden). Until 2026-09-25
+  // they were only ever imported by hand (import-all-at-sources.sh), so files
+  // the fetchers added never reached the DB — the sync inventory measured
+  // 2,059 AVSV and 513 Erlass documents on disk but not in the DB. Flat
+  // directories; the importer resolves each page by doc_id, so re-imports
+  // update instead of duplicating.
+  {
+    kind: "dirimport",
+    key: "at-avn",
+    dir: "at-avn",
+    sourceId: "law-at-avn",
+    importCmd: viaNormalized("at-avn", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-avn",
+      "--disk-dir",
+      "law-corpus/_normalized/at-avn",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-avsv",
+    dir: "at-avsv",
+    sourceId: "law-at-avsv",
+    importCmd: viaNormalized("at-avsv", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-avsv",
+      "--disk-dir",
+      "law-corpus/_normalized/at-avsv",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-bezirke",
+    dir: "at-bezirke",
+    sourceId: "law-at-bezirke",
+    importCmd: viaNormalized("at-bezirke", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-bezirke",
+      "--disk-dir",
+      "law-corpus/_normalized/at-bezirke",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-bmerl",
+    dir: "at-bmerl",
+    sourceId: "law-at-bmerl",
+    importCmd: viaNormalized("at-bmerl", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-bmerl",
+      "--disk-dir",
+      "law-corpus/_normalized/at-bmerl",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-gemeinden",
+    dir: "at-gemeinden",
+    sourceId: "law-at-gemeinden",
+    importCmd: viaNormalized("at-gemeinden", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-gemeinden",
+      "--disk-dir",
+      "law-corpus/_normalized/at-gemeinden",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-kmger",
+    dir: "at-kmger",
+    sourceId: "law-at-kmger",
+    importCmd: viaNormalized("at-kmger", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-kmger",
+      "--disk-dir",
+      "law-corpus/_normalized/at-kmger",
+      "--no-embed",
+    ]),
+  },
+  {
+    kind: "dirimport",
+    key: "at-spg",
+    dir: "at-spg",
+    sourceId: "law-at-spg",
+    importCmd: viaNormalized("at-spg", [
+      "scripts/batch-import-from-disk.ts",
+      "--source",
+      "law-at-spg",
+      "--disk-dir",
+      "law-corpus/_normalized/at-spg",
+      "--no-embed",
+    ]),
+  },
   // Literatur + Gesetzesmaterialien (Phase 1: freie/CC-lizenzierte Quellen;
   // Lizenzgates leben in den fetch-Scripts via checkStaticCompliance).
   {
