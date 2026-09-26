@@ -88,6 +88,27 @@ describe("aclGroupsMiddleware", () => {
     });
   });
 
+  // KI4-04: a signed token without a person (the former WhatsApp staff token)
+  // must not resolve to unrestricted document access.
+  test("valid token without userId → 403, never aclGroups = all", async () => {
+    await withEnv({ SUBSUMIO_WEB_API_KEY: SECRET }, async () => {
+      const token = createIdentityToken({ sourceId: "tenant-1", matterScope: "all" }, SECRET);
+      const middleware = aclGroupsMiddleware(makeMockEngine(false));
+      const req = makeReq(token);
+      const res = makeRes();
+      let nextCalled = false;
+
+      await middleware(req as Request, res as Response, () => {
+        nextCalled = true;
+      });
+
+      expect(nextCalled).toBe(false);
+      expect(res.statusCode).toBe(403);
+      expect((res.body as { error?: string }).error).toBe("identity_token_no_user");
+      expect(req.aclGroups).toBeUndefined();
+    });
+  });
+
   test('admin token → aclGroups = "all"', async () => {
     await withEnv({ SUBSUMIO_WEB_API_KEY: SECRET }, async () => {
       const token = createIdentityToken(

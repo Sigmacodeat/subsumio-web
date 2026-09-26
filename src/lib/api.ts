@@ -2040,6 +2040,7 @@ export const api = {
         id: string;
         brainId: string;
         userId?: string;
+        memberUserId?: string;
         name?: string;
         role?: string;
         status: string;
@@ -2089,6 +2090,8 @@ export const api = {
       role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
       status?: "active" | "suspended" | "revoked";
       matter_scope?: "all" | string[];
+      /** Firm member who owns a staff number ("" on update removes it). */
+      member_user_id?: string;
     }): Promise<{ identity: unknown }> {
       return request("/api/whatsapp/identities", {
         method: "POST",
@@ -2102,6 +2105,8 @@ export const api = {
       role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
       status?: "active" | "suspended" | "revoked";
       matter_scope?: "all" | string[];
+      /** Firm member who owns a staff number ("" on update removes it). */
+      member_user_id?: string;
     }): Promise<{ identity: unknown }> {
       return request("/api/whatsapp/identities", {
         method: "PATCH",

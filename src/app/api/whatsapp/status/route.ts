@@ -46,6 +46,7 @@ export const GET = createHandler(
         id: identity.id,
         brainId: identity.brainId,
         userId: identity.userId,
+        memberUserId: identity.memberUserId,
         name: identity.name,
         role: identity.role,
         status: identity.status,

@@ -1,7 +1,7 @@
 import { requestConflictCheck } from "@/lib/conflict-gate";
 import { createCaseSafely, engineCaseCreateDeps } from "@/lib/safe-case-create";
 import { randomUUID } from "node:crypto";
-import { engineHeadersForBrain, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import { engineHeadersForBrain } from "@/lib/engine";
 import { listEnginePages } from "@/lib/engine-pages";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createInvoiceReservingEntries } from "@/lib/invoice-billing-lock";
@@ -9,12 +9,24 @@ import { allocateInvoiceNumber, highestInvoiceNumber } from "@/lib/invoice-numbe
 import { computeInvoiceTotals, roundEur } from "@/lib/invoice-totals";
 import { gobdFrontmatter, invoiceContentString, sha256Hex } from "@/lib/gobd";
 import { vatRateFor } from "@/lib/kanzlei-settings";
-import { engineRequest, listPages, think, type EnginePageInput } from "@/lib/engine-client";
+import {
+  engineRequest,
+  listPages,
+  think,
+  withEngineSender,
+  type EnginePageInput,
+} from "@/lib/engine-client";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
-import { identityCanAccessMatter } from "@/lib/whatsapp/identity";
+import {
+  identityCanAccessMatter,
+  UNBOUND_STAFF_REPLY,
+  whatsAppEngineHeaders,
+  whatsAppEngineScope,
+} from "@/lib/whatsapp/identity";
+import { finalizeWhatsAppAiAnswer } from "@/lib/whatsapp/ai-answer";
 import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
@@ -1239,9 +1251,7 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     };
     const title = opponentName ? `${clientName} vs. ${opponentName}` : clientName;
     const created = await createCaseSafely(
-      engineCaseCreateDeps(
-        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope)
-      ),
+      engineCaseCreateDeps(whatsAppEngineHeaders(ctx.sender)),
       {
         title,
         slugHint: caseNumber,
@@ -1413,7 +1423,7 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     );
     const invoiceSlug = `legal/invoices/${invoiceNumber}`;
     const vatLabel = vatPercentLabel(vatRate);
-    const headers = engineHeadersForBrainWithMatterScope(brainId, ctx.sender.matterScope);
+    const headers = whatsAppEngineHeaders(ctx.sender);
     const outcome = await createInvoiceReservingEntries(headers, createServerBrainClient(headers), {
       slug: invoiceSlug,
       title: `Rechnung ${invoiceNumber} — ${casePage.title}`,
@@ -2167,7 +2177,17 @@ async function getRecentContext(brainId: string, fromPhone: string): Promise<str
   }
 }
 
+/**
+ * Staff entry point. Every engine call below runs for the firm member who
+ * owns the number (walls, restricted matters, document ACL — KI4-04). A
+ * number without a bound member gets no matter or brain access at all.
+ */
 export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> {
+  if (!ctx.sender.member) return UNBOUND_STAFF_REPLY;
+  return withEngineSender(whatsAppEngineScope(ctx.sender), () => handleMessageAsMember(ctx));
+}
+
+async function handleMessageAsMember(ctx: ChatContext): Promise<string> {
   // Expand relative dates ("morgen" → "2026-07-14", "freitag" → "2026-07-17")
   // so the regex-based parseIntent can match them
   const expandedText = hasRelativeDates(ctx.text) ? expandRelativeDates(ctx.text) : ctx.text;
@@ -2327,12 +2347,14 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       recentMessages.length > 0
         ? `[Kontext: Letzte Nachrichten von diesem Anwalt — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
         : "";
-    const answer = await think(
+    const { answer, warnings } = await think(
       ctx.sender.brainId,
       `${contextPrefix}${intent.query}`,
-      ctx.sender.matterScope
+      whatsAppEngineScope(ctx.sender)
     );
-    return answer.slice(0, 3500);
+    // Grounding, search-failure note and KI label (KI5-02) — WhatsApp has no
+    // CitationPanel, so they go into the message itself.
+    return finalizeWhatsAppAiAnswer(answer, { warnings });
   }
 
   if (intent.kind === "rvg_calc") {
@@ -2364,10 +2386,9 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
 
   if (intent.kind === "conflict_check") {
     try {
-      const result = await requestConflictCheck(
-        engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
-        { name: intent.name }
-      );
+      const result = await requestConflictCheck(whatsAppEngineHeaders(ctx.sender), {
+        name: intent.name,
+      });
       const relevant = result.matches.filter((m) => m.assessment !== "info");
       if (relevant.length > 0) {
         return [
@@ -3122,7 +3143,16 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   return "Unbekannter Befehl. Schreibe `hilfe` für alle Befehle.";
 }
 
+/** Staff entry point for media — same member binding as handleLegalChatMessage. */
 export async function handleLegalChatMedia(
+  ctx: MediaChatContext,
+  media: StoredWhatsAppMedia
+): Promise<string> {
+  if (!ctx.sender.member) return UNBOUND_STAFF_REPLY;
+  return withEngineSender(whatsAppEngineScope(ctx.sender), () => handleMediaAsMember(ctx, media));
+}
+
+async function handleMediaAsMember(
   ctx: MediaChatContext,
   media: StoredWhatsAppMedia
 ): Promise<string> {

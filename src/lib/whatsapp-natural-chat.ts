@@ -3,6 +3,8 @@ import { parseIntent, processIntent, type ParsedIntent } from "@/lib/legal-chat/
 import type { BrainPage } from "@/lib/types";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
+import { whatsAppEngineScope } from "@/lib/whatsapp/identity";
+import { finalizeWhatsAppAiAnswer } from "@/lib/whatsapp/ai-answer";
 import { expandRelativeDates, hasRelativeDates } from "@/lib/whatsapp/relative-date";
 import { parseIntentWithLLM, isLLMIntentParserAvailable } from "@/lib/whatsapp/llm-intent";
 import {
@@ -312,14 +314,12 @@ function buildDashboardOverviewReply(sender: WhatsAppIdentity, ctx: DashboardCon
   return parts.join("\n");
 }
 
-function addDisclaimer(intent: ChatIntent, text: string): string {
+/** Extra note for legal research answers; the KI label itself comes from finalizeWhatsAppAiAnswer. */
+export function disclaimerNote(intent: ChatIntent): string | undefined {
   if (intent === "legal_research") {
-    return `${text}\n\n⚖️ Hinweis: Diese Rechts-Recherche ersetzt keine anwaltliche Prüfung. Bitte überprüfe alle Rechtsfragen eigenverantwortlich.`;
+    return "⚖️ Hinweis: Diese Rechts-Recherche ersetzt keine anwaltliche Prüfung. Bitte prüfen Sie alle Rechtsfragen eigenverantwortlich.";
   }
-  if (intent === "general" || intent === "daily_ops") {
-    return `${text}\n\n🤖 Subsumio Kanzlei-Assistent — für den Alltag, nicht für Rechtsberatung.`;
-  }
-  return text;
+  return undefined;
 }
 
 export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<string> {
@@ -465,15 +465,18 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     .join("\n\n");
 
   try {
-    const rawAnswer = await think(
+    const { answer: rawAnswer, warnings } = await think(
       ctx.sender.brainId,
       enrichedQuery,
-      ctx.sender.matterScope,
+      whatsAppEngineScope(ctx.sender),
       "balanced"
     );
     const cleaned = cleanEngineAnswer(rawAnswer);
-    const withDisclaimer = addDisclaimer(intent, cleaned);
-    return withDisclaimer.slice(0, 3500);
+    // Grounding, search-failure note and KI label (KI5-02).
+    return await finalizeWhatsAppAiAnswer(cleaned, {
+      warnings,
+      extraNote: disclaimerNote(intent),
+    });
   } catch (err) {
     console.error("[whatsapp-natural-chat] think failed:", err);
     return "Ich konnte Ihre Frage gerade nicht beantworten. Bitte versuchen Sie es später erneut oder öffnen Sie Subsumio im Browser.";

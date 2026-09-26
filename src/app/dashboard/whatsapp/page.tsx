@@ -39,6 +39,16 @@ import { WhatsAppInbox } from "@/components/whatsapp/whatsapp-inbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { formatDateTime } from "@/lib/utils";
+import { useOrg } from "@/lib/queries/settings";
+import { useMe } from "@/lib/queries/auth";
+
+/** A firm member a staff number can belong to. */
+interface MemberOption {
+  id: string;
+  label: string;
+}
+
+const STAFF_ROLES = new Set(["admin", "lawyer", "assistant"]);
 
 /** German wording for workflow/identity status values stored in English. */
 const STATUS_DE: Record<string, string> = {
@@ -94,6 +104,7 @@ interface WhatsAppStatus {
     id: string;
     brainId: string;
     userId?: string;
+    memberUserId?: string;
     name?: string;
     role?: string;
     status: string;
@@ -130,7 +141,36 @@ export default function WhatsAppDashboardPage() {
   const [identityRole, setIdentityRole] = useState<"lawyer" | "assistant" | "client" | "intake">(
     "lawyer"
   );
+  const [identityMember, setIdentityMember] = useState("");
   const [savingIdentity, setSavingIdentity] = useState(false);
+  const orgQuery = useOrg();
+  const meQuery = useMe();
+  // Staff numbers belong to one firm member (walls and document ACL are that
+  // person's). A firm lists its members; a solo lawyer is the only member.
+  const memberOptions = useMemo<MemberOption[]>(() => {
+    const org = orgQuery.data as
+      | {
+          org: unknown;
+          members?: Array<{ id: string; name?: string; email?: string; role?: string }>;
+        }
+      | undefined;
+    const members = org?.org
+      ? (org.members ?? [])
+      : (() => {
+          const me = (
+            meQuery.data as {
+              user?: { id: string; name?: string; email?: string; role?: string };
+            } | null
+          )?.user;
+          return me ? [me] : [];
+        })();
+    return members
+      .filter((m) => STAFF_ROLES.has(m.role ?? ""))
+      .map((m) => ({ id: m.id, label: m.name || m.email || m.id }));
+  }, [orgQuery.data, meQuery.data]);
+  const memberLabel = (id?: string) =>
+    id ? (memberOptions.find((m) => m.id === id)?.label ?? "Kanzleimitglied") : null;
+  const staffRoleSelected = identityRole === "lawyer" || identityRole === "assistant";
   const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
   const [caseSelections, setCaseSelections] = useState<Record<string, string>>({});
 
@@ -229,11 +269,12 @@ export default function WhatsAppDashboardPage() {
         name: identityName.trim() || undefined,
         role: identityRole,
         status: "active",
-        matter_scope: "all",
+        ...(staffRoleSelected ? { member_user_id: identityMember } : {}),
       });
       setPhone("");
       setIdentityName("");
       setIdentityRole("lawyer");
+      setIdentityMember("");
       await reload();
     } catch {
       setError(t("whatsapp.err_save_identity"));
@@ -550,7 +591,7 @@ export default function WhatsAppDashboardPage() {
                 {t("whatsapp.phone_numbers")}
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1fr_160px_auto]">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1fr_160px_1fr_auto]">
               <div className="space-y-1.5">
                 <Label htmlFor="whatsapp-phone" className="text-xs">
                   Telefon
@@ -592,10 +633,35 @@ export default function WhatsAppDashboardPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-member" className="text-xs">
+                  Kanzleimitglied
+                </Label>
+                {staffRoleSelected ? (
+                  <Select value={identityMember} onValueChange={setIdentityMember}>
+                    <SelectTrigger id="whatsapp-member">
+                      <SelectValue placeholder="Wem gehört die Nummer?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {memberOptions.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="pt-2 text-xs text-[color:var(--ds-text-muted)]">
+                    nur für Kanzlei-Nummern
+                  </p>
+                )}
+              </div>
               <div className="flex items-end">
                 <Button
                   onClick={() => void addIdentity()}
-                  disabled={savingIdentity || !phone.trim()}
+                  disabled={
+                    savingIdentity || !phone.trim() || (staffRoleSelected && !identityMember)
+                  }
                 >
                   {savingIdentity ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -625,6 +691,42 @@ export default function WhatsAppDashboardPage() {
                         {de(STATUS_DE, identity.status)} ·{" "}
                         {identity.verifiedAt ? t("whatsapp.verified") : t("whatsapp.not_verified")}
                       </div>
+                      {STAFF_ROLES.has(identity.role ?? "lawyer") &&
+                        (identity.memberUserId ? (
+                          <div className="text-[color:var(--ds-text-muted)]">
+                            Gehört: {memberLabel(identity.memberUserId)}
+                          </div>
+                        ) : (
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[color:var(--ds-warning-text)]">
+                            <span>
+                              Keinem Kanzleimitglied zugeordnet — Akten- und Wissensabfragen
+                              gesperrt.
+                            </span>
+                            <Select
+                              value=""
+                              onValueChange={(memberId) =>
+                                void api.whatsapp
+                                  .updateIdentity({ id: identity.id, member_user_id: memberId })
+                                  .then(() => reload())
+                                  .catch(() => setError(t("whatsapp.err_save_identity")))
+                              }
+                            >
+                              <SelectTrigger
+                                className="h-7 w-48"
+                                aria-label="Kanzleimitglied zuordnen"
+                              >
+                                <SelectValue placeholder="Mitglied zuordnen…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {memberOptions.map((m) => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {m.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

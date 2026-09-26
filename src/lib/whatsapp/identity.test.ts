@@ -1,4 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// Firm accounts for the member binding (KI4-04).
+const users = vi.hoisted(
+  () =>
+    new Map<
+      string,
+      { id: string; role: string; orgId: string | null; brainId: string; deactivatedAt?: string }
+    >()
+);
+vi.mock("@/lib/auth/store", () => ({
+  getStore: () => ({ getById: async (id: string) => users.get(id) ?? null }),
+}));
+vi.mock("@/lib/auth/account-status", () => ({
+  isAccountBlocked: async (u: { deactivatedAt?: string } | null) => !u || !!u.deactivatedAt,
+}));
+vi.mock("@/lib/engine", async (orig) => ({
+  ...(await orig<typeof import("@/lib/engine")>()),
+  // Firm members work in their firm's brain.
+  firmBrainIdFor: async (u: { orgId: string | null; brainId: string }) =>
+    u.orgId === "org-a" ? "brain-a" : u.brainId,
+}));
+
 import { resolveSenderIdentity, identityCanAccessMatter } from "./identity";
 import { getWhatsAppIdentityStore, __resetWhatsAppIdentityStoreForTests } from "./identity-store";
 import { phoneHash } from "./verify";
@@ -107,6 +129,75 @@ describe("resolveSenderIdentity", () => {
     await getWhatsAppIdentityStore().create(makeIdentity({ brainId: "brain-stored" }));
     const resolved = await resolveSenderIdentity(PHONE);
     expect(resolved!.brainId).toBe("brain-stored");
+  });
+});
+
+describe("resolveSenderIdentity — owning firm member (KI4-04)", () => {
+  const origDataDir = process.env.SUBSUMIO_DATA_DIR;
+
+  beforeEach(() => {
+    process.env.SUBSUMIO_DATA_DIR = `/tmp/wa-identity-test-${Math.random().toString(36).slice(2)}`;
+    __resetWhatsAppIdentityStoreForTests();
+    users.clear();
+    users.set("u-admin-creator", {
+      id: "u-admin-creator",
+      role: "admin",
+      orgId: "org-a",
+      brainId: "p1",
+    });
+    users.set("u-lawyer-b", { id: "u-lawyer-b", role: "lawyer", orgId: "org-a", brainId: "p2" });
+    users.set("u-other-firm", {
+      id: "u-other-firm",
+      role: "lawyer",
+      orgId: "org-z",
+      brainId: "brain-z",
+    });
+    users.set("u-gone", {
+      id: "u-gone",
+      role: "lawyer",
+      orgId: "org-a",
+      brainId: "p3",
+      deactivatedAt: "2026-09-01T00:00:00.000Z",
+    });
+    users.set("u-viewer", { id: "u-viewer", role: "client_viewer", orgId: "org-a", brainId: "p4" });
+  });
+
+  afterEach(() => {
+    if (origDataDir === undefined) delete process.env.SUBSUMIO_DATA_DIR;
+    else process.env.SUBSUMIO_DATA_DIR = origDataDir;
+    __resetWhatsAppIdentityStoreForTests();
+  });
+
+  it("binds the number to its owner with the owner's current role", async () => {
+    await getWhatsAppIdentityStore().create(
+      makeIdentity({ userId: "u-admin-creator", memberUserId: "u-lawyer-b" })
+    );
+    const resolved = await resolveSenderIdentity(PHONE);
+    expect(resolved!.member).toEqual({ userId: "u-lawyer-b", role: "lawyer", orgId: "org-a" });
+  });
+
+  it("never treats the creator (legacy userId) as the owner", async () => {
+    await getWhatsAppIdentityStore().create(makeIdentity({ userId: "u-admin-creator" }));
+    const resolved = await resolveSenderIdentity(PHONE);
+    expect(resolved).not.toBeNull();
+    expect(resolved!.member).toBeUndefined();
+  });
+
+  it.each([
+    ["deactivated account", "u-gone"],
+    ["member of another firm", "u-other-firm"],
+    ["non-staff account", "u-viewer"],
+    ["unknown account", "u-missing"],
+  ])("no member for a %s", async (_label, memberUserId) => {
+    await getWhatsAppIdentityStore().create(makeIdentity({ memberUserId }));
+    expect((await resolveSenderIdentity(PHONE))!.member).toBeUndefined();
+  });
+
+  it("client numbers never get a member", async () => {
+    await getWhatsAppIdentityStore().create(
+      makeIdentity({ role: "client", memberUserId: "u-lawyer-b" })
+    );
+    expect((await resolveSenderIdentity(PHONE))!.member).toBeUndefined();
   });
 });
 

@@ -10,7 +10,12 @@ vi.mock("@/lib/engine", async (orig) => ({
 import { processIntent } from "./actions";
 
 const ctx = {
-  sender: { brainId: "firm-a", matterScope: "all", name: "Anwalt" },
+  sender: {
+    brainId: "firm-a",
+    matterScope: "all",
+    name: "Anwalt",
+    member: { userId: "u-lawyer", role: "lawyer", orgId: "org-a" },
+  },
 } as unknown as Parameters<typeof processIntent>[0];
 
 function engineAnswer(answer: Record<string, unknown> | null, status = 200) {
