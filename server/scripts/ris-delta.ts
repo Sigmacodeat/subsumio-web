@@ -278,14 +278,35 @@ async function fetchDeltaPage(
 
   if (!res || !res.ok) return null;
 
-  const data = (await res.json()) as Record<string, unknown>;
-  const results = (data?.OgdSearchResult as Record<string, unknown>)?.OgdDocumentResults as
-    | { Hits?: { "#text"?: string }; OgdDocumentReference?: unknown }
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    return null; // Wartungsseite/HTML statt JSON — unvollständig, Cursor bleibt
+  }
+  return parseDeltaPage(data);
+}
+
+/**
+ * Parse one RIS search page. `null` = unusable answer (error object, missing
+ * result block or missing hit count) — the caller treats it as an
+ * incomplete fetch and keeps the cursor. Only an explicit `Hits` value
+ * counts; a response that merely lacks results is never "no changes".
+ * Exported for tests.
+ */
+export function parseDeltaPage(data: unknown): { refs: unknown[]; totalHits: number } | null {
+  const search = (data as Record<string, unknown> | null)?.OgdSearchResult as
+    | Record<string, unknown>
     | undefined;
+  if (!search || search.Error) return null;
+  const results = search.OgdDocumentResults as
+    | { Hits?: { "#text"?: string } | string; OgdDocumentReference?: unknown }
+    | undefined;
+  if (!results) return null;
 
-  if (!results) return { refs: [], totalHits: 0 };
-
-  const totalHits = results.Hits?.["#text"] ? parseInt(results.Hits["#text"], 10) : 0;
+  const hitsRaw = typeof results.Hits === "object" ? results.Hits?.["#text"] : results.Hits;
+  const totalHits = hitsRaw === undefined || hitsRaw === "" ? NaN : parseInt(String(hitsRaw), 10);
+  if (!Number.isFinite(totalHits) || totalHits < 0) return null;
   const refsRaw = results.OgdDocumentReference;
   const refs = Array.isArray(refsRaw) ? refsRaw : refsRaw ? [refsRaw] : [];
 
@@ -482,6 +503,9 @@ export async function fetchDelta(
     pagesFetched = page;
 
     if (result.refs.length === 0) {
+      // Seite 1 meldet Treffer, liefert aber keine Referenzen: kaputte
+      // Antwort, nicht "keine Änderungen" — Cursor bleibt stehen.
+      if (page === 1 && result.totalHits > 0) break;
       complete = true;
       break;
     }
