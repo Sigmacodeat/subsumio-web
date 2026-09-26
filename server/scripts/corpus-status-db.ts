@@ -193,6 +193,11 @@ export async function pruneLawCompleteness(
   sourceId: string,
   keepGnrs: string[]
 ): Promise<number> {
+  // An empty keep-list means the index was empty or unreadable — never a
+  // reason to wipe every row of the source.
+  if (keepGnrs.length === 0) {
+    throw new Error(`pruneLawCompleteness(${sourceId}): leere Soll-Liste — Abbruch, nichts gelöscht`);
+  }
   await ensureLawTable(engine);
   const deleted = (await engine.executeRaw(
     `DELETE FROM law_completeness

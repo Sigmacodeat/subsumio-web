@@ -21,15 +21,21 @@
  * hours on 2026-09-24 and stalled every import.
  *
  * Refuses to run when the disk scan looks broken (fewer documents on disk
- * than half the DB's), so an unmounted corpus can never empty the DB.
+ * than half the DB's), so an unmounted corpus can never empty the DB. The
+ * RIS Soll is checked just as strictly (`checkSollPlausible`): no run while
+ * the crawler's `.skipped.json` sidecar exists, none with an empty Soll or
+ * one that shrank below 95 % of the last accepted Soll, and none that would
+ * tombstone more than 2 % of the live pages — `--allow-mass` overrides only
+ * the last two, deliberately.
  *
  * Usage:
  *   bun run scripts/tombstone-db-orphans.ts                       # dry run, both sources
  *   bun run scripts/tombstone-db-orphans.ts --source law-at-landesrecht --yes
+ *   (--dry-run is accepted and is the default; --allow-mass see above)
  */
 
 import { parseArgs } from "util";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig, toEngineConfig } from "../src/core/config.ts";
 import { createEngine } from "../src/core/engine-factory.ts";
@@ -78,17 +84,71 @@ export function selectOrphans(
   return plan;
 }
 
+/** Minimum share of the last accepted Soll a new Soll must reach. */
+export const SOLL_MIN_SHARE_OF_PREVIOUS = 0.95;
+/** Maximum share of live pages one run may tombstone without --allow-mass. */
+export const MAX_ORPHAN_SHARE = 0.02;
+
+/**
+ * Plausibility of the RIS Soll + the resulting plan. Throws with the reason;
+ * a shrunken or gap-ridden index must never turn into mass soft-deletes.
+ */
+export function checkSollPlausible(input: {
+  source: string;
+  sollSize: number;
+  previousSollSize: number | null;
+  skippedSidecar: boolean;
+  orphanCount: number;
+  livePages: number;
+  allowMass: boolean;
+}): void {
+  const { source, sollSize, previousSollSize, skippedSidecar, orphanCount, livePages } = input;
+  if (skippedSidecar) {
+    throw new Error(
+      `${source}: RIS-Index hat übersprungene Seiten (.skipped.json) — erst nachladen. Abbruch.`
+    );
+  }
+  if (sollSize === 0) throw new Error(`${source}: RIS-Soll ist leer — Abbruch.`);
+  if (input.allowMass) return;
+  if (previousSollSize !== null && sollSize < previousSollSize * SOLL_MIN_SHARE_OF_PREVIOUS) {
+    throw new Error(
+      `${source}: RIS-Soll ${sollSize} < ${Math.round(SOLL_MIN_SHARE_OF_PREVIOUS * 100)} % des letzten ` +
+        `akzeptierten (${previousSollSize}) — Index unvollständig? Abbruch (--allow-mass übersteuert).`
+    );
+  }
+  if (livePages > 0 && orphanCount > livePages * MAX_ORPHAN_SHARE) {
+    throw new Error(
+      `${source}: ${orphanCount} von ${livePages} Seiten wären verwaist (> ${MAX_ORPHAN_SHARE * 100} %) — ` +
+        `Abbruch (--allow-mass übersteuert).`
+    );
+  }
+}
+
+type SollBaseline = Record<string, number>;
+
+function readBaseline(path: string): SollBaseline {
+  try {
+    const v = JSON.parse(readFileSync(path, "utf8")) as unknown;
+    return v && typeof v === "object" ? (v as SollBaseline) : {};
+  } catch {
+    return {};
+  }
+}
+
 async function main() {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
     options: {
       source: { type: "string" },
       yes: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
+      "allow-mass": { type: "boolean", default: false },
       root: { type: "string", default: process.env.LAW_CORPUS_ROOT ?? "/law-corpus" },
       "inventory-out": { type: "string", default: "/law-corpus/_state/tombstone-db-orphans.jsonl" },
     },
     allowPositionals: false,
   });
+  if (values.yes && values["dry-run"]) throw new Error("--yes und --dry-run schließen sich aus.");
   const APPLY = values.yes as boolean;
   const root = values.root as string;
   const sources = values.source ? [values.source as string] : Object.keys(SOURCES);
@@ -110,6 +170,8 @@ async function main() {
       const indexPath = join(root, "_state", INDEX_OF[corpus]!);
       if (!existsSync(indexPath)) throw new Error(`RIS-Index fehlt: ${indexPath}`);
       const soll = loadIndexIds(indexPath);
+      const baselinePath = join(root, "_state", "tombstone-db-orphans.soll-baseline.json");
+      const baseline = readBaseline(baselinePath);
       const { ids: onDisk } = scanNormalized(join(root, "_normalized", corpus));
 
       const rows: Array<{ id: number; slug: string; doc_id: string | null; dated: boolean }> = [];
@@ -136,6 +198,17 @@ async function main() {
       }
 
       const plan = selectOrphans(rows, onDisk, soll);
+      checkSollPlausible({
+        source,
+        sollSize: soll.size,
+        previousSollSize: typeof baseline[source] === "number" ? baseline[source]! : null,
+        skippedSidecar: existsSync(`${indexPath}.skipped.json`),
+        orphanCount: plan.orphans.length,
+        livePages: plan.livePages,
+        allowMass: values["allow-mass"] as boolean,
+      });
+      // Nur ein akzeptiertes Soll wird zur neuen Vergleichsbasis.
+      writeFileSync(baselinePath, JSON.stringify({ ...baseline, [source]: soll.size }) + "\n");
       const f = (n: number) => n.toLocaleString("de-AT");
       console.log(
         `${source}: ${f(plan.livePages)} aktive Seiten · ${f(plan.orphans.length)} nur in DB (weder Platte noch RIS-Soll)` +

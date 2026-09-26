@@ -1598,6 +1598,7 @@ function runKnownBadGenerationRepair(state: CycleState): void {
 // nicht veralten. Beide Crawler nehmen selbst den RIS-Lock + Pacing.
 
 const INFORCE_REFRESH_INTERVAL_S = 7 * 86400;
+const INFORCE_RETRY_AFTER_FAILURE_S = 86400;
 const INFORCE_INDEX_DIR = "/law-corpus/_state";
 
 function runInforceIndexRefresh(state: CycleState): void {
@@ -1620,6 +1621,9 @@ function runInforceIndexRefresh(state: CycleState): void {
       existsSync(indexPath) &&
       Date.now() - statSync(indexPath).mtimeMs < INFORCE_REFRESH_INTERVAL_S * 1000;
     if (indexFresh && ranWithin(job.key, INFORCE_REFRESH_INTERVAL_S)) continue;
+    // Ein unvollstaendiger Crawl laesst den Index bewusst unveraendert (alt);
+    // ohne diese Sperre wuerde jeder Zyklus einen neuen Voll-Crawl starten.
+    if (!indexFresh && ranWithin(job.key, INFORCE_RETRY_AFTER_FAILURE_S)) continue;
     if (checkSourceProcess(job.key, state).running) continue;
     startProcess(
       job.key,
